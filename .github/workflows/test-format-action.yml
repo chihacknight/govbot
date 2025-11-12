@@ -1,7 +1,7 @@
 name: Test Format Action
 
 on:
-  workflow_dispatch: # Manual trigger
+  workflow_dispatch: # Manual trigger - works on any branch
     inputs:
       state:
         description: 'State abbreviation to test (e.g., id, il, tx, ny, or usa)'
@@ -14,6 +14,7 @@ on:
   push:
     branches:
       - main
+      - create-test
     paths:
       - 'actions/format/**'
   pull_request:
@@ -28,6 +29,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Test Format Action
         id: format

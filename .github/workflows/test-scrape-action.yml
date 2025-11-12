@@ -1,7 +1,7 @@
 name: Test Scrape Action
 
 on:
-  workflow_dispatch: # Manual trigger
+  workflow_dispatch: # Manual trigger - works on any branch
     inputs:
       state:
         description: 'State abbreviation to test (e.g., id, il, tx, ny, or usa)'
@@ -15,6 +15,7 @@ on:
   push:
     branches:
       - main
+      - create-test
     paths:
       - 'actions/scrape/**'
   pull_request:
@@ -29,6 +30,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Test Scrape Action
         id: scrape

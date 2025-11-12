@@ -1,7 +1,7 @@
 name: Test All Actions
 
 on:
-    workflow_dispatch: # Manual trigger
+    workflow_dispatch: # Manual trigger - works on any branch
         inputs:
             state:
                 description: "State abbreviation to test (e.g., id, il, tx, ny, or usa)"
@@ -10,27 +10,27 @@ on:
             test-sources:
                 description: "Test sources action"
                 required: false
-                default: "true"
+                default: true
                 type: boolean
             test-scrape:
                 description: "Test scrape action"
                 required: false
-                default: "true"
+                default: true
                 type: boolean
             test-format:
                 description: "Test format action"
                 required: false
-                default: "true"
+                default: true
                 type: boolean
             test-extract:
                 description: "Test extract action"
                 required: false
-                default: "false"
+                default: false
                 type: boolean
             test-recent-items:
                 description: "Test recent-items action"
                 required: false
-                default: "true"
+                default: true
                 type: boolean
 
 jobs:
@@ -40,6 +40,8 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.ref }}
 
             - name: Test Sources Action
               uses: ./actions/sources
@@ -54,6 +56,8 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.ref }}
 
             - name: Test Scrape Action
               uses: ./actions/scrape
@@ -69,6 +73,8 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.ref }}
 
             - name: Download scrape artifact
               uses: actions/download-artifact@v4
@@ -90,6 +96,8 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.ref }}
 
             - name: Download format artifacts
               uses: actions/download-artifact@v4
@@ -110,6 +118,8 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.ref }}
 
             - name: Test Sources Action (for recent-items)
               id: sources
