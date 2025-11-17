@@ -1,0 +1,62 @@
+name: Test Format Action
+
+on:
+  workflow_dispatch: # Manual trigger - works on any branch
+    inputs:
+      state:
+        description: 'State abbreviation to test (e.g., id, il, tx, ny, or usa)'
+        required: true
+        default: 'id'
+      scrape-artifact-name:
+        description: 'Name of the scrape artifact to download'
+        required: false
+        default: 'scrape-snapshot-nightly'
+  push:
+    branches:
+      - main
+      - create-test
+    paths:
+      - 'actions/format/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'actions/format/**'
+
+jobs:
+  test-format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Test Format Action
+        id: format
+        uses: ./actions/format
+        with:
+          state: ${{ inputs.state || 'id' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          scrape-artifact-name: ${{ inputs.scrape-artifact-name || 'scrape-snapshot-nightly' }}
+
+      - name: Display format results
+        run: |
+          echo "Format action completed"
+          if [ -d "country:us" ]; then
+            echo "=== Formatted data structure ==="
+            find country:us -type f -name "*.json" | head -10 || true
+            echo "Total files: $(find country:us -type f -name "*.json" | wc -l)"
+          fi
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-format-output
+          path: |
+            country:us/
+            .windycivi/
+          retention-days: 1
+          if-no-files-found: warn
+

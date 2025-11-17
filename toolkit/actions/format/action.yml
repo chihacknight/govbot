@@ -1,0 +1,205 @@
+name: "OpenStates Formatter"
+description: "Format scraped legislative data to blockchain layout and push to caller repo"
+
+inputs:
+  state:
+    description: "State abbreviation (e.g., id, il, tx, ny, or 'usa')"
+    required: true
+  github-token:
+    description: "GitHub token for releases/artifacts"
+    required: true
+    default: "${{ github.token }}"
+  scrape-artifact-name:
+    description: "Name of the scrape artifact to download"
+    required: false
+    default: "scrape-snapshot-nightly"
+  force-update:
+    description: "Force push even if upstream changed"
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+
+    - name: Download scrape artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.scrape-artifact-name }}
+        path: ${{ github.workspace }}
+
+    - name: Extract tarball for formatter
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p "${RUNNER_TEMP}/scrape-snapshot-nightly"
+        tar xzf "${GITHUB_WORKSPACE}/scrape-snapshot-nightly.tgz" -C "${RUNNER_TEMP}/scrape-snapshot-nightly"
+        echo "✅ Extraction complete"
+
+    - name: Ensure jq present
+      shell: bash
+      run: |
+        set -euo pipefail
+        command -v jq >/dev/null 2>&1 || sudo apt-get update && sudo apt-get install -y jq
+
+    - name: Sanitize scraped JSON (_id, scraped_at)
+      shell: bash
+      working-directory: ${{ runner.temp }}/scrape-snapshot-nightly
+      run: |
+        set -euo pipefail
+        tmpc="${RUNNER_TEMP}/san_count.txt"
+        : > "$tmpc"
+        find . -type f -name "*.json" -print0 | while IFS= read -r -d '' f; do
+          jq 'del(..|._id?, .scraped_at?)' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+          echo 1 >> "$tmpc"
+        done
+        echo "Sanitized $(wc -l < "$tmpc") files"
+
+    - name: Install formatter deps (pipenv)
+      shell: bash
+      working-directory: ${{ github.action_path }}/../..
+      env:
+        PIPENV_VENV_IN_PROJECT: "1"
+        PIPENV_IGNORE_VIRTUALENVS: "1"
+      run: |
+        set -euo pipefail
+        python -m pip install --upgrade pip
+        pip install pipenv
+        pipenv install --deploy --dev
+
+    - name: Run formatter
+      shell: bash
+      env:
+        OPENSTATE_DATA_FOLDER: ${{ runner.temp }}/scrape-snapshot-nightly
+        GIT_REPO_FOLDER: ${{ github.workspace }}
+        STATE: ${{ inputs.state }}
+      run: |
+        set -euo pipefail
+        cd "${{ github.action_path }}/../.."
+
+        # Capture formatter output
+        FORMATTER_OUTPUT=$(pipenv run python scrape_and_format/main.py \
+          --state "$STATE" \
+          --openstates-data-folder "$OPENSTATE_DATA_FOLDER" \
+          --git-repo-folder "$GIT_REPO_FOLDER" 2>&1) || true
+
+        echo "$FORMATTER_OUTPUT"
+
+        # Extract summary statistics for GitHub Actions summary
+        BILLS_SAVED=$(echo "$FORMATTER_OUTPUT" | grep -oP 'Bills saved: \K\d+' || echo "0")
+        VOTES_SAVED=$(echo "$FORMATTER_OUTPUT" | grep -oP 'Vote events saved: \K\d+' || echo "0")
+        PLACEHOLDERS_CLEANED=$(echo "$FORMATTER_OUTPUT" | grep -oP 'Placeholders cleaned: \K\d+' || echo "0")
+        ORPHANS_FOUND=$(echo "$FORMATTER_OUTPUT" | grep -oP 'Orphaned bills found: \K\d+' || echo "0")
+
+        # Create GitHub Actions summary
+        echo "## 📊 Scrape & Format Summary for $STATE" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Bills Saved | $BILLS_SAVED |" >> $GITHUB_STEP_SUMMARY
+        echo "| Vote Events Saved | $VOTES_SAVED |" >> $GITHUB_STEP_SUMMARY
+        echo "| Placeholders Cleaned | $PLACEHOLDERS_CLEANED |" >> $GITHUB_STEP_SUMMARY
+        echo "| Orphaned Bills Found | $ORPHANS_FOUND |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Status:** Complete" >> $GITHUB_STEP_SUMMARY
+
+    - name: Clean ephemeral build dirs
+      shell: bash
+      run: |
+        set -euo pipefail
+        rm -rf bill_session_mapping sessions || true
+
+    - name: Commit & push to caller repo
+      shell: bash
+      run: |
+        set -euo pipefail
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+
+        # Commit the actual deliverables: legislative data and pipeline metadata
+        git add country:us/ .windycivi/ || true
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          # Commit first (before pulling) to avoid "uncommitted changes" errors
+          git commit -m "Automated OpenStates data update for ${{ inputs.state }}"
+
+          # Now pull and handle conflicts with merge strategy
+          echo "📥 Pulling latest changes..."
+          if ! git pull --no-rebase origin main 2>&1; then
+            echo "⚠️ Merge conflict detected, resolving intelligently..."
+
+            # Find all conflicted metadata.json files
+            CONFLICTED_FILES=$(git diff --name-only --diff-filter=U | grep metadata.json || true)
+
+            # For each conflicted metadata.json: preserve extraction's _processing object
+            for file in $CONFLICTED_FILES; do
+              echo "  Resolving conflict in: $file"
+
+              # Extract their (extraction's) _processing object if it exists
+              THEIR_PROCESSING=$(git show :3:"$file" | jq -c '.metadata._processing // empty' 2>/dev/null || echo "")
+
+              # Keep our version (scraper is source of truth for bill data)
+              git checkout --ours "$file"
+
+              # Merge in their _processing object if it exists
+              if [ -n "$THEIR_PROCESSING" ] && [ "$THEIR_PROCESSING" != "null" ] && [ "$THEIR_PROCESSING" != "empty" ]; then
+                jq --argjson proc "$THEIR_PROCESSING" '.metadata._processing = $proc' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+                echo "  ✓ Preserved extraction's _processing metadata in $file"
+              fi
+            done
+
+            # Keep extraction's files/ directories (they own extracted text content)
+            git checkout --theirs "**/files/" 2>/dev/null || true
+
+            # Keep our .windycivi/ metadata (scraper owns pipeline metadata)
+            git checkout --ours .windycivi/ 2>/dev/null || true
+
+            git add -A
+            git commit --no-edit -m "🔄 Auto-merge: kept scraper data + extraction metadata + files"
+            echo "✅ Conflicts resolved intelligently"
+          fi
+
+          # Retry push up to 3 times in case of concurrent updates
+          for i in 1 2 3; do
+            if [ "${{ inputs.force-update }}" = "true" ]; then
+              if git push --force-with-lease origin main; then
+                echo "✅ Changes pushed successfully (attempt $i)"
+                break
+              fi
+            else
+              if git push origin main; then
+                echo "✅ Changes pushed successfully (attempt $i)"
+                break
+              fi
+            fi
+
+            if [ $i -lt 3 ]; then
+              echo "⚠️ Push failed (attempt $i), pulling and retrying..."
+              # Use merge strategy for concurrent updates
+              if ! git pull --no-rebase origin main 2>&1; then
+                # Resolve conflicts intelligently
+                CONFLICTED_FILES=$(git diff --name-only --diff-filter=U | grep metadata.json || true)
+                for file in $CONFLICTED_FILES; do
+                  THEIR_PROCESSING=$(git show :3:"$file" | jq -c '.metadata._processing // empty' 2>/dev/null || echo "")
+                  git checkout --ours "$file" 2>/dev/null || true
+                  if [ -n "$THEIR_PROCESSING" ] && [ "$THEIR_PROCESSING" != "null" ] && [ "$THEIR_PROCESSING" != "empty" ]; then
+                    jq --argjson proc "$THEIR_PROCESSING" '.metadata._processing = $proc' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+                  fi
+                done
+                git checkout --theirs "**/files/" 2>/dev/null || true
+                git checkout --ours .windycivi/ 2>/dev/null || true
+                git add -A 2>/dev/null || true
+                git commit --no-edit -m "🔄 Auto-merge: kept scraper data + extraction metadata + files" 2>/dev/null || true
+              fi
+              sleep 2
+            else
+              echo "❌ Failed to push after 3 attempts"
+              exit 1
+            fi
+          done
+        fi

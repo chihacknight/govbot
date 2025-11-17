@@ -1,0 +1,100 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific
+test_output/
+*.log
+sample_data/*
+
+# Project documentation (local development notes)
+project_docs/*
+WORKFLOW_PREFERENCES.md
+
+# Temporary files
+*.tmp
+*.temp
+file_structure.md
+
+# Analysis outputs
+llm_analysis_results.json
+bill_tracker_report.json
+wyoming_bill_tracker_report.json
+*_llm_analysis_*.json
+
+# Data outputs (keep structure but ignore content)
+data_output/data_processed/*/logs/
+data_output/data_processed/*/files/
+data_output/data_not_processed/
+data_output/event_archive/
+
+# Cache and temporary files
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Testing - Sample data (too large for repo)
+testing/sample_data/usa-complete/
+testing/sample_data/usa-latest/
+testing/sample_data/comprehensive/
+testing/incremental/test_input/
+testing/incremental/test_output/
+docs/action_logs/*
+
