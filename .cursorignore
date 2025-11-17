@@ -1,0 +1,20 @@
+# Cursor indexing ignore file
+# Prevents Cursor from indexing large test data files
+
+# Testing sample data directories (contains 50k+ JSON files)
+testing/sample_data/
+testing/incremental/test_output/
+testing/incremental/test_input/
+
+# Any data output directories
+data_output/
+
+# Python cache
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Pipenv lock file (huge, not useful for indexing)
+Pipfile.lock
+
+

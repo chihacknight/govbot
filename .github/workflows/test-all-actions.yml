@@ -1,0 +1,136 @@
+name: Test All Actions
+
+on:
+    workflow_dispatch: # Manual trigger - works on any branch
+        inputs:
+            state:
+                description: "State abbreviation to test (e.g., id, il, tx, ny, or usa)"
+                required: true
+                default: "id"
+            test-sources:
+                description: "Test sources action"
+                required: false
+                default: true
+                type: boolean
+            test-scrape:
+                description: "Test scrape action"
+                required: false
+                default: true
+                type: boolean
+            test-format:
+                description: "Test format action"
+                required: false
+                default: true
+                type: boolean
+            test-extract:
+                description: "Test extract action"
+                required: false
+                default: false
+                type: boolean
+            test-recent-items:
+                description: "Test recent-items action"
+                required: false
+                default: true
+                type: boolean
+
+jobs:
+    test-sources:
+        if: ${{ inputs.test-sources != 'false' }}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.ref }}
+
+            - name: Test Sources Action
+              uses: ./actions/sources
+              with:
+                  sources: |
+                      windy-civi-pipelines/usa-data-pipeline
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+    test-scrape:
+        if: ${{ inputs.test-scrape != 'false' }}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.ref }}
+
+            - name: Test Scrape Action
+              uses: ./actions/scrape
+              with:
+                  state: ${{ inputs.state || 'id' }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  use-scrape-cache: "true"
+
+    test-format:
+        if: ${{ inputs.test-format != 'false' }}
+        needs: test-scrape
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.ref }}
+
+            - name: Download scrape artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: scrape-snapshot-nightly
+                  path: ${{ github.workspace }}
+
+            - name: Test Format Action
+              uses: ./actions/format
+              with:
+                  state: ${{ inputs.state || 'id' }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  scrape-artifact-name: scrape-snapshot-nightly
+
+    test-extract:
+        if: ${{ inputs.test-extract != 'false' }}
+        needs: test-format
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.ref }}
+
+            - name: Download format artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  path: ${{ github.workspace }}
+
+            - name: Test Extract Action
+              uses: ./actions/extract
+              with:
+                  state: ${{ inputs.state || 'id' }}
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  force-update: "false"
+
+    test-recent-items:
+        if: ${{ inputs.test-recent-items != 'false' }}
+        needs: test-sources
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.ref }}
+
+            - name: Test Sources Action (for recent-items)
+              id: sources
+              uses: ./actions/sources
+              with:
+                  sources: |
+                      windy-civi-pipelines/usa-data-pipeline
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Test Recent Items Action
+              uses: ./actions/recent-items
+              with:
+                  limit: "100"
+                  output_file: "test_recent_items.txt"

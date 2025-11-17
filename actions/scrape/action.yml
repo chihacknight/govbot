@@ -1,0 +1,205 @@
+name: "OpenStates Scraper"
+description: "Scrape legislative data via Docker and persist as artifacts"
+
+inputs:
+  state:
+    description: "State abbreviation (e.g., id, il, tx, ny, or 'usa')"
+    required: true
+  github-token:
+    description: "GitHub token for releases/artifacts"
+    required: true
+    default: "${{ github.token }}"
+  use-scrape-cache:
+    description: "Skip scraping and reuse the latest nightly artifact"
+    required: false
+    default: "false"
+
+outputs:
+  scrape-artifact-name:
+    description: "Name of the uploaded scrape artifact"
+    value: "scrape-snapshot-nightly"
+  scrape-tarball-path:
+    description: "Path to the scrape tarball"
+    value: "${{ github.workspace }}/scrape-snapshot-nightly.tgz"
+  manifest-path:
+    description: "Path to the scrape manifest"
+    value: "${{ github.workspace }}/scrape-manifest.json"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+
+    - name: Prep working dirs
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p "${RUNNER_TEMP}/_working/_data" "${RUNNER_TEMP}/_working/_cache"
+        mkdir -p "${RUNNER_TEMP}/scrape-snapshot-nightly"
+        echo "Working root: ${RUNNER_TEMP}"
+
+    - name: Cache scrapes (best-effort)
+      if: inputs.use-scrape-cache != 'true'
+      uses: actions/cache@v4
+      with:
+        path: ${{ runner.temp }}/_working/_cache
+        key: cache-scrapes-${{ inputs.state }}-${{ github.sha }}
+        restore-keys: |
+          cache-scrapes-${{ inputs.state }}-
+          cache-scrapes-
+
+    - name: Scrape data with Docker (resilient)
+      if: inputs.use-scrape-cache != 'true'
+      shell: bash
+      working-directory: ${{ runner.temp }}
+      env:
+        DOCKER_IMAGE_TAG: latest
+      run: |
+        set -euo pipefail
+        mkdir -p _working/_data _working/_cache
+
+        # Persist image tag for later steps (manifest)
+        echo "DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG}" >> "${GITHUB_ENV}"
+
+        echo "🕷️ Scraping ${{ inputs.state }} (with retries + DNS override)..."
+        exit_code=1
+        for i in 1 2 3; do
+          docker pull openstates/scrapers:${DOCKER_IMAGE_TAG} || true
+          if docker run \
+              --dns 8.8.8.8 --dns 1.1.1.1 \
+              -v "$(pwd)/_working/_data":/opt/openstates/openstates/_data \
+              -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
+              openstates/scrapers:${DOCKER_IMAGE_TAG} \
+              ${{ inputs.state }} bills --scrape --fastmode
+          then
+            exit_code=0
+            break
+          fi
+          echo "⚠️ scrape attempt $i failed; sleeping 20s..."
+          sleep 20
+        done
+
+        # If anything was scraped, stage a tarball; otherwise fall back later
+        JSON_DIR="_working/_data/${{ inputs.state }}"
+        if [ -d "$JSON_DIR" ]; then
+          COUNT_JSON=$(find "$JSON_DIR" -type f -name '*.json' | wc -l | tr -d ' ')
+        else
+          COUNT_JSON=0
+        fi
+        echo "Found ${COUNT_JSON} JSON files in $JSON_DIR"
+        if [ "$COUNT_JSON" -gt 0 ]; then
+          tar zcf scrape-snapshot-nightly.tgz --mode=755 -C "$JSON_DIR" .
+          # put it in workspace so later steps can use a single path
+          cp scrape-snapshot-nightly.tgz "${GITHUB_WORKSPACE}/scrape-snapshot-nightly.tgz"
+          echo "SCRAPE_TARBALL=present" >> "${GITHUB_ENV}"
+          echo "✅ Created local scrape tarball"
+        else
+          echo "SCRAPE_TARBALL=absent" >> "${GITHUB_ENV}"
+          echo "ℹ️ No new files found; will use nightly fallback."
+        fi
+
+        # Do not fail the job; proceed with fallback or partial data
+        if [ $exit_code -ne 0 ]; then
+          echo "::warning::Scrape step exited non-zero; continuing with fallback/nightly artifact."
+        fi
+
+    - name: Upload scraped artifact (rolling)
+      if: inputs.use-scrape-cache != 'true' && env.SCRAPE_TARBALL == 'present'
+      uses: actions/upload-artifact@v4
+      with:
+        name: scrape-snapshot-nightly
+        path: ${{ github.workspace }}/scrape-snapshot-nightly.tgz
+        retention-days: 30
+        overwrite: true
+
+    - name: Update nightly release (rolling)
+      if: inputs.use-scrape-cache != 'true' && env.SCRAPE_TARBALL == 'present'
+      uses: andelf/nightly-release@v1
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      with:
+        tag_name: nightly
+        name: "Nightly OpenStates scrape"
+        prerelease: false
+        files: |
+          ${{ github.workspace }}/scrape-snapshot-nightly.tgz
+
+    - name: Build archive manifest (immutable)
+      if: env.SCRAPE_TARBALL == 'present'
+      shell: bash
+      run: |
+        set -euo pipefail
+        set -x
+        SNAP_DATE=$(date -u +'%Y-%m-%d')
+        echo "SNAP_DATE=${SNAP_DATE}" >> "${GITHUB_ENV}"
+
+        TAR_PATH="${GITHUB_WORKSPACE}/scrape-snapshot-nightly.tgz"
+        if [ ! -f "$TAR_PATH" ]; then
+          echo "::error::Tarball not found at $TAR_PATH"
+          exit 1
+        fi
+
+        # Count JSON files inside the tarball safely (don't abort on transient tar warnings)
+        set +e
+        COUNT=$(tar tzf "$TAR_PATH" 2>/dev/null | grep -E '\.json$' | wc -l | tr -d ' ')
+        TAR_STATUS=$?
+        set -e
+        if [ "$TAR_STATUS" -ne 0 ]; then
+          echo "::warning::Could not list tar contents, setting COUNT=0"
+          COUNT=0
+        fi
+
+        # Cross-platform sha (ubuntu has sha256sum; fallback to shasum)
+        if command -v sha256sum >/dev/null 2>&1; then
+          SHA256=$(sha256sum "$TAR_PATH" | cut -d' ' -f1)
+        else
+          SHA256=$(shasum -a 256 "$TAR_PATH" | cut -d' ' -f1)
+        fi
+
+        cat > "${GITHUB_WORKSPACE}/scrape-manifest.json" <<JSON
+        {
+          "state": "${{ inputs.state }}",
+          "date_utc": "${SNAP_DATE}",
+          "files": ${COUNT},
+          "sha256": "${SHA256}",
+          "source_image": "openstates/scrapers:${DOCKER_IMAGE_TAG}"
+        }
+        JSON
+        echo "🧾 Manifest written: scrape-manifest.json"
+
+    - name: Publish immutable archive (date-stamped release)
+      if: env.SCRAPE_TARBALL == 'present'
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      with:
+        tag_name: archive-${{ inputs.state }}-${{ env.SNAP_DATE }}
+        name: "Archive ${{ inputs.state }} ${{ env.SNAP_DATE }}"
+        draft: false
+        prerelease: false
+        files: |
+          ${{ github.workspace }}/scrape-snapshot-nightly.tgz
+          ${{ github.workspace }}/scrape-manifest.json
+
+    # Only download the nightly if we did NOT produce a fresh local tarball
+    - name: Download nightly artifact (fallback)
+      if: env.SCRAPE_TARBALL != 'present'
+      uses: Xotl/cool-github-releases@v1
+      with:
+        mode: download
+        tag_name: nightly
+        assets: scrape-snapshot-nightly.tgz
+        github_token: ${{ inputs.github-token }}
+
+    - name: Ensure tarball exists
+      if: env.SCRAPE_TARBALL != 'present'
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ ! -f "${GITHUB_WORKSPACE}/scrape-snapshot-nightly.tgz" ]; then
+          echo "::error::No scrape tarball found (fresh scrape failed and nightly not available)."
+          exit 1
+        fi
