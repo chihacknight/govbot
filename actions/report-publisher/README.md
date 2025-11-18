@@ -1,4 +1,4 @@
-# JSON Publisher
+# Report Publisher
 
 A GitHub Action that takes JSON from stdin and publishes it in multiple formats.
 
@@ -16,7 +16,7 @@ Takes JSON input from stdin and outputs it in one of three formats:
 
 ```yaml
 - name: Publish JSON
-  uses: ./actions/json-publisher
+  uses: ./actions/report-publisher
   with:
     mode: git
     json-input: report.json
@@ -28,7 +28,7 @@ Takes JSON input from stdin and outputs it in one of three formats:
 ### As a Standalone Script
 
 ```bash
-cat report.json | python3 actions/json-publisher/publish.py \
+cat report.json | python3 actions/report-publisher/publish.py \
   --mode git \
   --output results/report.json
 ```
@@ -53,5 +53,5 @@ See `action.yml` for the complete list of inputs.
 The `examples/` folder contains test cases. Each test generates output that can be compared against reference snapshots in `examples/test_snapshots/`. Run the tests with:
 
 ```bash
-./actions/json-publisher/test.sh
+./actions/report-publisher/test.sh
 ```

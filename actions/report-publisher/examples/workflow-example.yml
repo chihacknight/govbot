@@ -1,4 +1,4 @@
-# Example GitHub Actions workflow using JSON Publisher
+# Example GitHub Actions workflow using Report Publisher
 name: Test and Publish Report
 
 on:
@@ -42,7 +42,7 @@ jobs:
 
       # Example 1: Save report to repository
       - name: Save report to repository
-        uses: ./actions/json-publisher
+        uses: ./actions/report-publisher
         with:
           mode: git
           json-input: test-report.json
@@ -53,7 +53,7 @@ jobs:
 
       # Example 2: Publish HTML version to a docs folder
       - name: Publish HTML report
-        uses: ./actions/json-publisher
+        uses: ./actions/report-publisher
         with:
           mode: pages
           json-input: test-report.json
@@ -78,7 +78,7 @@ jobs:
           echo '{"version": "${{ github.event.release.tag_name }}", "date": "$(date -u +%Y-%m-%d)"}' > release-info.json
 
       - name: Attach to release
-        uses: ./actions/json-publisher
+        uses: ./actions/report-publisher
         with:
           mode: release
           json-input: release-info.json
@@ -113,7 +113,7 @@ jobs:
           EOF
 
       - name: Publish to GitHub Pages
-        uses: ./actions/json-publisher
+        uses: ./actions/report-publisher
         with:
           mode: pages
           json-input: metrics.json

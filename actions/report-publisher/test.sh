@@ -120,7 +120,7 @@ process_yml_file() {
 main() {
     echo ""
     echo "╔════════════════════════════════════════╗"
-    echo "║   JSON Publisher Test Runner          ║"
+    echo "║   Report Publisher Test Runner        ║"
     echo "╚════════════════════════════════════════╝"
     echo ""
     echo "Looking for .yml files in: $EXAMPLES_DIR"

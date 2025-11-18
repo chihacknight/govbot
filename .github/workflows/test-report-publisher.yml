@@ -1,19 +1,19 @@
-name: Test JSON Publisher
+name: Test Report Publisher
 
 on:
   push:
     paths:
-      - 'actions/json-publisher/**'
-      - '.github/workflows/test-json-publisher.yml'
+      - 'actions/report-publisher/**'
+      - '.github/workflows/test-report-publisher.yml'
   pull_request:
     paths:
-      - 'actions/json-publisher/**'
-      - '.github/workflows/test-json-publisher.yml'
+      - 'actions/report-publisher/**'
+      - '.github/workflows/test-report-publisher.yml'
   workflow_dispatch:
 
 jobs:
   test:
-    name: Test JSON Publisher
+    name: Test Report Publisher
     runs-on: ubuntu-latest
 
     steps:
@@ -27,5 +27,6 @@ jobs:
 
       - name: Run test runner
         run: |
-          cd actions/json-publisher
+          cd actions/report-publisher
           ./test.sh
+

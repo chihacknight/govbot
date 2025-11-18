@@ -10,6 +10,6 @@ jobs:
 
       - name: Handle empty JSON gracefully
         run: |
-          echo '{}' | python3 actions/json-publisher/publish.py \
+          echo '{}' | python3 actions/report-publisher/publish.py \
             --mode pages \
             --output empty.html

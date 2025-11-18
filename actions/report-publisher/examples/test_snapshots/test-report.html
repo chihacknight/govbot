@@ -127,20 +127,45 @@
 <body>
     <div class="container">
         <h1>JSON Report</h1>
-        <div class="timestamp">Generated: 2025-11-18 17:24:10 UTC</div>
+        <div class="timestamp">Generated: 2025-11-18 17:27:53 UTC</div>
 
         <div class="json-container">
-            <span class="json-object">{}</span>
+            <div class="json-object">{<div class="json-line"><span class="json-key">"timestamp"</span>: <span class="json-string">"2025-11-18T10:30:00Z"</span>,</div><div class="json-line"><span class="json-key">"project"</span>: <span class="json-string">"toolkit"</span>,</div><div class="json-line"><span class="json-key">"build"</span>: <div class="json-object">{<div class="json-line"><span class="json-key">"status"</span>: <span class="json-string">"success"</span>,</div><div class="json-line"><span class="json-key">"duration"</span>: <span class="json-number">45.2</span>,</div><div class="json-line"><span class="json-key">"commit"</span>: <span class="json-string">"abc123"</span></div>}</div>,</div><div class="json-line"><span class="json-key">"tests"</span>: <div class="json-object">{<div class="json-line"><span class="json-key">"total"</span>: <span class="json-number">127</span>,</div><div class="json-line"><span class="json-key">"passed"</span>: <span class="json-number">125</span>,</div><div class="json-line"><span class="json-key">"failed"</span>: <span class="json-number">2</span>,</div><div class="json-line"><span class="json-key">"skipped"</span>: <span class="json-number">0</span>,</div><div class="json-line"><span class="json-key">"coverage"</span>: <span class="json-number">94.5</span></div>}</div>,</div><div class="json-line"><span class="json-key">"failures"</span>: <div class="json-array">[<div class="json-line"><div class="json-object">{<div class="json-line"><span class="json-key">"test"</span>: <span class="json-string">"authentication.test.js"</span>,</div><div class="json-line"><span class="json-key">"reason"</span>: <span class="json-string">"Expected 200 but got 401"</span></div>}</div>,</div><div class="json-line"><div class="json-object">{<div class="json-line"><span class="json-key">"test"</span>: <span class="json-string">"database.test.js"</span>,</div><div class="json-line"><span class="json-key">"reason"</span>: <span class="json-string">"Connection timeout"</span></div>}</div></div>]</div></div>}</div>
         </div>
 
         <div class="actions">
             <button class="btn" onclick="toggleRaw()">Toggle Raw JSON</button>
             <button class="btn" onclick="copyToClipboard()">Copy JSON</button>
-            <a class="btn" href="/Users/sartaj/Git/toolkit/actions/json-publisher/examples/test_snapshots/empty.json" download>Download JSON</a>
+            <a class="btn" href="/Users/sartaj/Git/toolkit/actions/report-publisher/examples/test_snapshots/test-report.json" download>Download JSON</a>
         </div>
 
         <div class="raw-json" id="rawJson">
-            <pre>{}</pre>
+            <pre>{
+  "timestamp": "2025-11-18T10:30:00Z",
+  "project": "toolkit",
+  "build": {
+    "status": "success",
+    "duration": 45.2,
+    "commit": "abc123"
+  },
+  "tests": {
+    "total": 127,
+    "passed": 125,
+    "failed": 2,
+    "skipped": 0,
+    "coverage": 94.5
+  },
+  "failures": [
+    {
+      "test": "authentication.test.js",
+      "reason": "Expected 200 but got 401"
+    },
+    {
+      "test": "database.test.js",
+      "reason": "Connection timeout"
+    }
+  ]
+}</pre>
         </div>
     </div>
 
@@ -150,7 +175,7 @@
         }
 
         function copyToClipboard() {
-            const json = "{}";
+            const json = "{\"timestamp\": \"2025-11-18T10:30:00Z\", \"project\": \"toolkit\", \"build\": {\"status\": \"success\", \"duration\": 45.2, \"commit\": \"abc123\"}, \"tests\": {\"total\": 127, \"passed\": 125, \"failed\": 2, \"skipped\": 0, \"coverage\": 94.5}, \"failures\": [{\"test\": \"authentication.test.js\", \"reason\": \"Expected 200 but got 401\"}, {\"test\": \"database.test.js\", \"reason\": \"Connection timeout\"}]}";
             navigator.clipboard.writeText(json).then(() => {
                 alert('JSON copied to clipboard!');
             });

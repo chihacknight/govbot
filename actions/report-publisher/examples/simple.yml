@@ -13,6 +13,6 @@ jobs:
           echo '{
             "test": "simple",
             "value": 123
-          }' | python3 actions/json-publisher/publish.py \
+          }' | python3 actions/report-publisher/publish.py \
             --mode pages \
             --output simple.html

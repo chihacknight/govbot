@@ -127,34 +127,20 @@
 <body>
     <div class="container">
         <h1>JSON Report</h1>
-        <div class="timestamp">Generated: 2025-11-18 17:24:10 UTC</div>
+        <div class="timestamp">Generated: 2025-11-18 17:27:53 UTC</div>
 
         <div class="json-container">
-            <div class="json-object">{<div class="json-line"><span class="json-key">"string"</span>: <span class="json-string">"test"</span>,</div><div class="json-line"><span class="json-key">"number"</span>: <span class="json-number">42</span>,</div><div class="json-line"><span class="json-key">"float"</span>: <span class="json-number">3.14</span>,</div><div class="json-line"><span class="json-key">"boolean"</span>: <span class="json-number">True</span>,</div><div class="json-line"><span class="json-key">"null_value"</span>: <span class="json-null">null</span>,</div><div class="json-line"><span class="json-key">"array"</span>: <div class="json-array">[<div class="json-line"><span class="json-number">1</span>,</div><div class="json-line"><span class="json-number">2</span>,</div><div class="json-line"><span class="json-number">3</span></div>]</div>,</div><div class="json-line"><span class="json-key">"nested"</span>: <div class="json-object">{<div class="json-line"><span class="json-key">"deep"</span>: <span class="json-string">"value"</span></div>}</div></div>}</div>
+            <span class="json-object">{}</span>
         </div>
 
         <div class="actions">
             <button class="btn" onclick="toggleRaw()">Toggle Raw JSON</button>
             <button class="btn" onclick="copyToClipboard()">Copy JSON</button>
-            <a class="btn" href="/Users/sartaj/Git/toolkit/actions/json-publisher/examples/test_snapshots/complex.json" download>Download JSON</a>
+            <a class="btn" href="/Users/sartaj/Git/toolkit/actions/report-publisher/examples/test_snapshots/empty.json" download>Download JSON</a>
         </div>
 
         <div class="raw-json" id="rawJson">
-            <pre>{
-  "string": "test",
-  "number": 42,
-  "float": 3.14,
-  "boolean": true,
-  "null_value": null,
-  "array": [
-    1,
-    2,
-    3
-  ],
-  "nested": {
-    "deep": "value"
-  }
-}</pre>
+            <pre>{}</pre>
         </div>
     </div>
 
@@ -164,7 +150,7 @@
         }
 
         function copyToClipboard() {
-            const json = "{\"string\": \"test\", \"number\": 42, \"float\": 3.14, \"boolean\": true, \"null_value\": null, \"array\": [1, 2, 3], \"nested\": {\"deep\": \"value\"}}";
+            const json = "{}";
             navigator.clipboard.writeText(json).then(() => {
                 alert('JSON copied to clipboard!');
             });

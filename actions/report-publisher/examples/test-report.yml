@@ -37,6 +37,6 @@ jobs:
                 "reason": "Connection timeout"
               }
             ]
-          }' | python3 actions/json-publisher/publish.py \
+          }' | python3 actions/report-publisher/publish.py \
             --mode pages \
             --output test-report.html

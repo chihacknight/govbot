@@ -20,6 +20,6 @@ jobs:
             "nested": {
               "deep": "value"
             }
-          }' | python3 actions/json-publisher/publish.py \
+          }' | python3 actions/report-publisher/publish.py \
             --mode pages \
             --output complex.html
