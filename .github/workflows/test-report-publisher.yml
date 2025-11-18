@@ -1,12 +1,8 @@
 name: Test Report Publisher
 
 on:
-  push:
-    paths:
-      - 'actions/report-publisher/**'
-      - '.github/workflows/test-report-publisher.yml'
   pull_request:
-    paths:
+      paths:
       - 'actions/report-publisher/**'
       - '.github/workflows/test-report-publisher.yml'
   workflow_dispatch:

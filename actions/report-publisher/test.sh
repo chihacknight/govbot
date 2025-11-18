@@ -1,12 +1,13 @@
 #!/bin/bash
-# Test runner for JSON Publisher
-# Finds all .yml files in examples/ and generates corresponding HTML outputs in test_snapshots/
+# Test runner for Report Publisher
+# Finds all .yml files in examples/ and compares generated HTML outputs with snapshots in test_snapshots/
+# Set UPDATE=1 to update snapshots instead of comparing them
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXAMPLES_DIR="$SCRIPT_DIR/examples"
-SNAPSHOTS_DIR="$EXAMPLES_DIR/test_snapshots"
+SNAPSHOTS_DIR="$EXAMPLES_DIR/__snapshots__"
 PUBLISHER="$SCRIPT_DIR/publish.py"
 
 # Colors for output
@@ -85,7 +86,8 @@ extract_json_from_yml() {
 process_yml_file() {
     local yml_file="$1"
     local basename=$(basename "$yml_file" .yml)
-    local output_file="$SNAPSHOTS_DIR/${basename}.html"
+    local expected_file="$SNAPSHOTS_DIR/${basename}.html"
+    local actual_file=$(mktemp)
     
     echo -e "${YELLOW}Processing:${NC} $basename.yml"
     
@@ -94,25 +96,72 @@ process_yml_file() {
     
     if [ -z "$json_data" ]; then
         echo -e "${RED}✗${NC} Failed to extract JSON from $basename.yml"
+        rm -f "$actual_file"
         ((FAILED++))
         return 1
     fi
     
-    # Run the publisher
-    if echo "$json_data" | python3 "$PUBLISHER" --mode pages --output "$output_file" > /dev/null 2>&1; then
-        if [ -f "$output_file" ]; then
-            echo -e "${GREEN}✓${NC} Generated $basename.html"
+    # Run the publisher to generate actual output
+    if ! echo "$json_data" | python3 "$PUBLISHER" --mode pages --output "$actual_file" > /dev/null 2>&1; then
+        echo -e "${RED}✗${NC} Failed to generate output for $basename.html"
+        rm -f "$actual_file"
+        ((FAILED++))
+        return 1
+    fi
+    
+    if [ ! -f "$actual_file" ]; then
+        echo -e "${RED}✗${NC} Output file not created: $basename.html"
+        rm -f "$actual_file"
+        ((FAILED++))
+        return 1
+    fi
+    
+    # Handle missing snapshot
+    if [ ! -f "$expected_file" ]; then
+        if [ "${UPDATE:-0}" = "1" ]; then
+            # Update mode: create the snapshot
+            cp "$actual_file" "$expected_file"
+            echo -e "${GREEN}✓${NC} Created snapshot: $basename.html"
+            rm -f "$actual_file"
             ((PASSED++))
             return 0
         else
-            echo -e "${RED}✗${NC} Output file not created: $basename.html"
+            # Test mode: fail with instructions
+            echo -e "${RED}✗${NC} Expected snapshot not found: $basename.html"
+            echo -e "${YELLOW}  To create the snapshot, run:${NC}"
+            echo -e "${YELLOW}    UPDATE=1 ./test.sh${NC}"
+            rm -f "$actual_file"
             ((FAILED++))
             return 1
         fi
+    fi
+    
+    # Compare files
+    if diff -q "$expected_file" "$actual_file" > /dev/null 2>&1; then
+        echo -e "${GREEN}✓${NC} Snapshot matches: $basename.html"
+        rm -f "$actual_file"
+        ((PASSED++))
+        return 0
     else
-        echo -e "${RED}✗${NC} Failed to generate $basename.html"
-        ((FAILED++))
-        return 1
+        # Snapshots differ
+        if [ "${UPDATE:-0}" = "1" ]; then
+            # Update mode: update the snapshot
+            cp "$actual_file" "$expected_file"
+            echo -e "${GREEN}✓${NC} Updated snapshot: $basename.html"
+            rm -f "$actual_file"
+            ((PASSED++))
+            return 0
+        else
+            # Test mode: fail with instructions
+            echo -e "${RED}✗${NC} Snapshot differs: $basename.html"
+            echo -e "${YELLOW}  Differences:${NC}"
+            diff -u "$expected_file" "$actual_file" || true
+            echo -e "${YELLOW}  To update the snapshot, run:${NC}"
+            echo -e "${YELLOW}    UPDATE=1 ./test.sh${NC}"
+            rm -f "$actual_file"
+            ((FAILED++))
+            return 1
+        fi
     fi
 }
 
@@ -122,6 +171,12 @@ main() {
     echo "╔════════════════════════════════════════╗"
     echo "║   Report Publisher Test Runner        ║"
     echo "╚════════════════════════════════════════╝"
+    echo ""
+    if [ "${UPDATE:-0}" = "1" ]; then
+        echo -e "${YELLOW}Mode: UPDATE (snapshots will be updated)${NC}"
+    else
+        echo -e "${YELLOW}Mode: TEST (snapshots will be compared)${NC}"
+    fi
     echo ""
     echo "Looking for .yml files in: $EXAMPLES_DIR"
     echo "Output directory: $SNAPSHOTS_DIR"
@@ -149,7 +204,7 @@ main() {
     
     # Process each YAML file
     for yml_file in "${yml_files[@]}"; do
-        process_yml_file "$yml_file"
+        process_yml_file "$yml_file" || true  # Continue even if a test fails
     done
     
     # Clean up orphaned snapshot files
