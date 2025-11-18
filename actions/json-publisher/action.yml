@@ -34,11 +34,9 @@ inputs:
   github-token:
     description: 'GitHub token for API operations'
     required: false
-    default: ${{ github.token }}
   repo:
     description: 'Repository in format owner/repo'
     required: false
-    default: ${{ github.repository }}
   git-user:
     description: 'Git user name'
     required: false
@@ -58,52 +56,52 @@ runs:
     - name: Publish JSON
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-        GITHUB_REPOSITORY: ${{ inputs.repo }}
+        GITHUB_TOKEN: ${{ inputs.github-token || github.token }}
+        GITHUB_REPOSITORY: ${{ inputs.repo || github.repository }}
       run: |
         set -e
 
         # Determine if input is a file or raw JSON
         if [ -f "${{ inputs.json-input }}" ]; then
-          JSON_INPUT="$(cat ${{ inputs.json-input }})"
+          JSON_INPUT="$(cat "${{ inputs.json-input }}")"
         else
           JSON_INPUT="${{ inputs.json-input }}"
         fi
 
-        # Build command arguments
-        ARGS="--mode ${{ inputs.mode }}"
+        # Build command array
+        CMD_ARGS=("--mode" "${{ inputs.mode }}")
 
         if [ -n "${{ inputs.output }}" ]; then
-          ARGS="$ARGS --output ${{ inputs.output }}"
+          CMD_ARGS+=("--output" "${{ inputs.output }}")
         fi
 
         if [ "${{ inputs.commit }}" = "true" ]; then
-          ARGS="$ARGS --commit"
+          CMD_ARGS+=("--commit")
         fi
 
         if [ "${{ inputs.push }}" = "true" ]; then
-          ARGS="$ARGS --push"
+          CMD_ARGS+=("--push")
         fi
 
         if [ -n "${{ inputs.branch }}" ]; then
-          ARGS="$ARGS --branch ${{ inputs.branch }}"
+          CMD_ARGS+=("--branch" "${{ inputs.branch }}")
         fi
 
         if [ -n "${{ inputs.commit-message }}" ]; then
-          ARGS="$ARGS --commit-message '${{ inputs.commit-message }}'"
+          CMD_ARGS+=("--commit-message" "${{ inputs.commit-message }}")
         fi
 
         if [ -n "${{ inputs.tag }}" ]; then
-          ARGS="$ARGS --tag ${{ inputs.tag }}"
+          CMD_ARGS+=("--tag" "${{ inputs.tag }}")
         fi
 
         if [ -n "${{ inputs.git-user }}" ]; then
-          ARGS="$ARGS --git-user '${{ inputs.git-user }}'"
+          CMD_ARGS+=("--git-user" "${{ inputs.git-user }}")
         fi
 
         if [ -n "${{ inputs.git-email }}" ]; then
-          ARGS="$ARGS --git-email '${{ inputs.git-email }}'"
+          CMD_ARGS+=("--git-email" "${{ inputs.git-email }}")
         fi
 
-        # Execute publisher
-        echo "$JSON_INPUT" | python3 ${{ github.action_path }}/publish.py $ARGS
+        # Execute publisher with proper argument handling
+        echo "$JSON_INPUT" | python3 "${{ github.action_path }}/publish.py" "${CMD_ARGS[@]}"
