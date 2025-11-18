@@ -12,8 +12,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-standalone-script:
-    name: Test Standalone Script
+  test:
+    name: Test JSON Publisher
     runs-on: ubuntu-latest
 
     steps:
@@ -24,6 +24,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Install validation tools
+        run: sudo apt-get update && sudo apt-get install -y jq tidy
 
       - name: Test 1 - Stdin input with git mode
         run: |
@@ -229,27 +232,7 @@ jobs:
 
           echo "✓ Test 7 passed: HTML interactive features"
 
-      - name: Test Summary
-        run: |
-          echo "========================================="
-          echo "All standalone script tests passed! ✓"
-          echo "========================================="
-
-
-  test-output-formats:
-    name: Test Output Format Validation
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install validation tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq tidy
-
-      - name: Test JSON output format
+      - name: Test 8 - JSON output format
         run: |
           cat > /tmp/format-test.json <<'EOF'
           {
@@ -280,9 +263,9 @@ jobs:
             exit 1
           fi
 
-          echo "✓ JSON format validation passed"
+          echo "✓ Test 8 passed: JSON format validation"
 
-      - name: Test HTML output format
+      - name: Test 9 - HTML output format
         run: |
           echo '{"html": "test"}' | \
           python3 actions/json-publisher/publish.py \
@@ -306,9 +289,9 @@ jobs:
             exit 1
           fi
 
-          echo "✓ HTML format validation passed"
+          echo "✓ Test 9 passed: HTML format validation"
 
-      - name: Test responsive design elements
+      - name: Test 10 - Responsive design elements
         run: |
           echo '{"responsive": true}' | \
           python3 actions/json-publisher/publish.py \
@@ -326,17 +309,9 @@ jobs:
             exit 1
           fi
 
-          echo "✓ Responsive design validation passed"
+          echo "✓ Test 10 passed: Responsive design validation"
 
-  test-edge-cases:
-    name: Test Edge Cases
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Test empty JSON object
+      - name: Test 11 - Empty JSON object
         run: |
           echo '{}' | \
           python3 actions/json-publisher/publish.py \
@@ -348,9 +323,9 @@ jobs:
             exit 1
           fi
 
-          echo "✓ Empty JSON object test passed"
+          echo "✓ Test 11 passed: Empty JSON object"
 
-      - name: Test empty array
+      - name: Test 12 - Empty array
         run: |
           echo '[]' | \
           python3 actions/json-publisher/publish.py \
@@ -362,9 +337,9 @@ jobs:
             exit 1
           fi
 
-          echo "✓ Empty array test passed"
+          echo "✓ Test 12 passed: Empty array"
 
-      - name: Test large JSON file
+      - name: Test 13 - Large JSON file
         run: |
           # Generate a large JSON file
           python3 -c "
@@ -386,9 +361,9 @@ jobs:
             exit 1
           fi
 
-          echo "✓ Large JSON file test passed"
+          echo "✓ Test 13 passed: Large JSON file"
 
-      - name: Test special characters
+      - name: Test 14 - Special characters
         run: |
           cat > /tmp/special.json <<'EOF'
           {
@@ -409,9 +384,9 @@ jobs:
             exit 1
           fi
 
-          echo "✓ Special characters test passed"
+          echo "✓ Test 14 passed: Special characters"
 
-      - name: Test deeply nested structure
+      - name: Test 15 - Deeply nested structure
         run: |
           python3 -c "
           import json
@@ -428,33 +403,22 @@ jobs:
             exit 1
           fi
 
-          echo "✓ Deeply nested structure test passed"
+          echo "✓ Test 15 passed: Deeply nested structure"
 
-  test-summary:
-    name: Test Summary
-    runs-on: ubuntu-latest
-    needs: [test-standalone-script, test-output-formats, test-edge-cases]
-    if: always()
-
-    steps:
-      - name: Check test results
+      - name: Test Summary
         run: |
+          echo ""
           echo "========================================="
           echo "JSON Publisher Test Summary"
           echo "========================================="
           echo ""
-          echo "Test Jobs:"
-          echo "  - Standalone Script Tests: ${{ needs.test-standalone-script.result }}"
-          echo "  - Output Format Tests: ${{ needs.test-output-formats.result }}"
-          echo "  - Edge Case Tests: ${{ needs.test-edge-cases.result }}"
+          echo "✓ All 15 tests passed successfully!"
           echo ""
-
-          if [ "${{ needs.test-standalone-script.result }}" != "success" ] || \
-             [ "${{ needs.test-output-formats.result }}" != "success" ] || \
-             [ "${{ needs.test-edge-cases.result }}" != "success" ]; then
-            echo "❌ Some tests failed!"
-            exit 1
-          fi
-
-          echo "✓ All tests passed successfully!"
+          echo "Tests covered:"
+          echo "  - Stdin/file input handling"
+          echo "  - Git and Pages modes"
+          echo "  - HTML generation with formatting"
+          echo "  - JSON/HTML validation"
+          echo "  - Error handling"
+          echo "  - Edge cases (Unicode, large files, nesting)"
           echo "========================================="

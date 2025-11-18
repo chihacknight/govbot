@@ -351,23 +351,23 @@ Automated tests run on every push via GitHub Actions:
 # .github/workflows/test-json-publisher.yml
 ```
 
-Test jobs include:
-1. **Standalone Script Tests** - Core functionality validation (7 tests)
-2. **Output Format Tests** - JSON and HTML structure validation (3 tests)
-3. **Edge Case Tests** - Special scenarios and error conditions (5 tests)
+Single test job with comprehensive coverage:
+- **15 automated tests** covering all features
+- Runs in ~30 seconds
+- Tests stdin/file input, all modes, HTML generation, validation, error handling, and edge cases
 
 ### Test Coverage
 
 | Feature | Tests | Status |
 |---------|-------|--------|
 | Stdin/File Input | 2 tests | ✓ Passing |
-| Git Mode | 2 tests | ✓ Passing |
-| Pages Mode | 4 tests | ✓ Passing |
+| Git & Pages Modes | 2 tests | ✓ Passing |
+| Complex JSON Structures | 2 tests | ✓ Passing |
 | Error Handling | 3 tests | ✓ Passing |
-| HTML Generation | 4 tests | ✓ Passing |
-| Edge Cases | 5 tests | ✓ Passing |
+| HTML Generation | 2 tests | ✓ Passing |
+| Output Validation | 4 tests | ✓ Passing |
 
-**Total: 20 automated tests**
+**Total: 15 automated tests in 1 job**
 
 ### Manual Testing
 
