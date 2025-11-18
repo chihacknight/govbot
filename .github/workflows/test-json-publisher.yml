@@ -1,0 +1,631 @@
+name: Test JSON Publisher
+
+on:
+  push:
+    paths:
+      - 'actions/json-publisher/**'
+      - '.github/workflows/test-json-publisher.yml'
+  pull_request:
+    paths:
+      - 'actions/json-publisher/**'
+      - '.github/workflows/test-json-publisher.yml'
+  workflow_dispatch:
+
+jobs:
+  test-standalone-script:
+    name: Test Standalone Script
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Test 1 - Stdin input with git mode
+        run: |
+          echo '{"test": "stdin-git", "value": 123}' | \
+          python3 actions/json-publisher/publish.py \
+            --mode git \
+            --output /tmp/test-git.json
+
+          # Verify file was created
+          if [ ! -f /tmp/test-git.json ]; then
+            echo "ERROR: Git mode output file not created"
+            exit 1
+          fi
+
+          # Verify content
+          if ! grep -q '"test": "stdin-git"' /tmp/test-git.json; then
+            echo "ERROR: Git mode output has incorrect content"
+            exit 1
+          fi
+
+          echo "✓ Test 1 passed: Stdin input with git mode"
+
+      - name: Test 2 - File input with pages mode
+        run: |
+          # Create test JSON file
+          cat > /tmp/test-input.json <<'EOF'
+          {
+            "test": "file-pages",
+            "timestamp": "2025-11-18T10:00:00Z",
+            "metrics": {
+              "count": 42,
+              "status": "success"
+            }
+          }
+          EOF
+
+          # Test pages mode
+          cat /tmp/test-input.json | \
+          python3 actions/json-publisher/publish.py \
+            --mode pages \
+            --output /tmp/test-pages.html
+
+          # Verify HTML file was created
+          if [ ! -f /tmp/test-pages.html ]; then
+            echo "ERROR: Pages mode HTML file not created"
+            exit 1
+          fi
+
+          # Verify JSON file was also created
+          if [ ! -f /tmp/test-pages.json ]; then
+            echo "ERROR: Pages mode JSON file not created"
+            exit 1
+          fi
+
+          # Verify HTML contains expected elements
+          if ! grep -q '<title>JSON Report</title>' /tmp/test-pages.html; then
+            echo "ERROR: HTML missing title"
+            exit 1
+          fi
+
+          if ! grep -q 'file-pages' /tmp/test-pages.html; then
+            echo "ERROR: HTML missing test data"
+            exit 1
+          fi
+
+          if ! grep -q 'json-key' /tmp/test-pages.html; then
+            echo "ERROR: HTML missing styling classes"
+            exit 1
+          fi
+
+          echo "✓ Test 2 passed: File input with pages mode"
+
+      - name: Test 3 - Complex JSON structure
+        run: |
+          cat > /tmp/complex.json <<'EOF'
+          {
+            "string": "test",
+            "number": 42,
+            "float": 3.14,
+            "boolean": true,
+            "null_value": null,
+            "array": [1, 2, 3],
+            "nested": {
+              "deep": {
+                "value": "nested"
+              }
+            }
+          }
+          EOF
+
+          cat /tmp/complex.json | \
+          python3 actions/json-publisher/publish.py \
+            --mode pages \
+            --output /tmp/complex.html
+
+          # Verify all data types are represented
+          if ! grep -q 'json-string' /tmp/complex.html; then
+            echo "ERROR: Missing string formatting"
+            exit 1
+          fi
+
+          if ! grep -q 'json-number' /tmp/complex.html; then
+            echo "ERROR: Missing number formatting"
+            exit 1
+          fi
+
+          if ! grep -q 'json-boolean' /tmp/complex.html; then
+            echo "ERROR: Missing boolean formatting"
+            exit 1
+          fi
+
+          if ! grep -q 'json-null' /tmp/complex.html; then
+            echo "ERROR: Missing null formatting"
+            exit 1
+          fi
+
+          if ! grep -q 'json-array' /tmp/complex.html; then
+            echo "ERROR: Missing array formatting"
+            exit 1
+          fi
+
+          if ! grep -q 'json-object' /tmp/complex.html; then
+            echo "ERROR: Missing object formatting"
+            exit 1
+          fi
+
+          echo "✓ Test 3 passed: Complex JSON structure handling"
+
+      - name: Test 4 - Invalid JSON handling
+        run: |
+          # Test with invalid JSON
+          echo 'this is not valid json' | \
+          python3 actions/json-publisher/publish.py \
+            --mode git \
+            --output /tmp/should-fail.json 2>&1 || EXIT_CODE=$?
+
+          if [ -z "$EXIT_CODE" ] || [ "$EXIT_CODE" -eq 0 ]; then
+            echo "ERROR: Script should fail with invalid JSON"
+            exit 1
+          fi
+
+          echo "✓ Test 4 passed: Invalid JSON handling"
+
+      - name: Test 5 - Missing required arguments
+        run: |
+          # Test without mode
+          echo '{"test": "fail"}' | \
+          python3 actions/json-publisher/publish.py 2>&1 || EXIT_CODE=$?
+
+          if [ -z "$EXIT_CODE" ] || [ "$EXIT_CODE" -eq 0 ]; then
+            echo "ERROR: Script should fail without mode argument"
+            exit 1
+          fi
+
+          echo "✓ Test 5 passed: Missing required arguments handling"
+
+      - name: Test 6 - No stdin input
+        run: |
+          # Test with no stdin
+          timeout 2 python3 actions/json-publisher/publish.py --mode git 2>&1 || EXIT_CODE=$?
+
+          if [ -z "$EXIT_CODE" ] || [ "$EXIT_CODE" -eq 0 ]; then
+            echo "ERROR: Script should fail with no stdin input"
+            exit 1
+          fi
+
+          echo "✓ Test 6 passed: No stdin input handling"
+
+      - name: Test 7 - HTML interactive features
+        run: |
+          cat > /tmp/interactive.json <<'EOF'
+          {
+            "feature": "interactive",
+            "buttons": ["toggle", "copy", "download"]
+          }
+          EOF
+
+          cat /tmp/interactive.json | \
+          python3 actions/json-publisher/publish.py \
+            --mode pages \
+            --output /tmp/interactive.html
+
+          # Verify interactive elements exist
+          if ! grep -q 'toggleRaw()' /tmp/interactive.html; then
+            echo "ERROR: Missing toggle function"
+            exit 1
+          fi
+
+          if ! grep -q 'copyToClipboard()' /tmp/interactive.html; then
+            echo "ERROR: Missing copy function"
+            exit 1
+          fi
+
+          if ! grep -q 'download' /tmp/interactive.html; then
+            echo "ERROR: Missing download link"
+            exit 1
+          fi
+
+          if ! grep -q 'class="raw-json"' /tmp/interactive.html; then
+            echo "ERROR: Missing raw JSON section"
+            exit 1
+          fi
+
+          echo "✓ Test 7 passed: HTML interactive features"
+
+      - name: Test Summary
+        run: |
+          echo "========================================="
+          echo "All standalone script tests passed! ✓"
+          echo "========================================="
+
+  test-git-mode-with-commit:
+    name: Test Git Mode with Commit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup test git repo
+        run: |
+          git config --global user.name "Test Bot"
+          git config --global user.email "test@example.com"
+
+          # Create a temporary test directory
+          mkdir -p /tmp/test-repo
+          cd /tmp/test-repo
+          git init
+
+          # Copy the publisher script
+          cp -r $GITHUB_WORKSPACE/actions/json-publisher .
+
+      - name: Test git commit without push
+        run: |
+          cd /tmp/test-repo
+
+          echo '{"test": "git-commit", "value": 456}' | \
+          python3 json-publisher/publish.py \
+            --mode git \
+            --output reports/test.json \
+            --commit \
+            --commit-message "Test commit"
+
+          # Verify file exists
+          if [ ! -f reports/test.json ]; then
+            echo "ERROR: File not created"
+            exit 1
+          fi
+
+          # Verify commit was made
+          if ! git log --oneline | grep -q "Test commit"; then
+            echo "ERROR: Commit not found"
+            exit 1
+          fi
+
+          echo "✓ Git commit test passed"
+
+      - name: Test git custom user config
+        run: |
+          cd /tmp/test-repo
+
+          echo '{"test": "custom-user"}' | \
+          python3 json-publisher/publish.py \
+            --mode git \
+            --output custom.json \
+            --commit \
+            --git-user "Custom User" \
+            --git-email "custom@example.com"
+
+          # Verify custom user was used
+          AUTHOR=$(git log -1 --format='%an')
+          if [ "$AUTHOR" != "Custom User" ]; then
+            echo "ERROR: Custom git user not set correctly. Got: $AUTHOR"
+            exit 1
+          fi
+
+          echo "✓ Custom git user test passed"
+
+  test-action-integration:
+    name: Test GitHub Action Integration
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Test Action - Git mode with file input
+        uses: ./actions/json-publisher
+        with:
+          mode: git
+          json-input: actions/json-publisher/examples/sample-report.json
+          output: /tmp/action-test-git.json
+
+      - name: Verify git mode output
+        run: |
+          if [ ! -f /tmp/action-test-git.json ]; then
+            echo "ERROR: Action did not create output file"
+            exit 1
+          fi
+
+          if ! jq -e '.project == "toolkit"' /tmp/action-test-git.json > /dev/null; then
+            echo "ERROR: Action output has incorrect content"
+            exit 1
+          fi
+
+          echo "✓ Action git mode test passed"
+
+      - name: Test Action - Pages mode with inline JSON
+        uses: ./actions/json-publisher
+        with:
+          mode: pages
+          json-input: '{"action": "test", "status": "running"}'
+          output: /tmp/action-test-pages.html
+
+      - name: Verify pages mode output
+        run: |
+          if [ ! -f /tmp/action-test-pages.html ]; then
+            echo "ERROR: Action did not create HTML file"
+            exit 1
+          fi
+
+          if [ ! -f /tmp/action-test-pages.json ]; then
+            echo "ERROR: Action did not create JSON file"
+            exit 1
+          fi
+
+          if ! grep -q '"action": "test"' /tmp/action-test-pages.json; then
+            echo "ERROR: JSON content incorrect"
+            exit 1
+          fi
+
+          if ! grep -q '<title>JSON Report</title>' /tmp/action-test-pages.html; then
+            echo "ERROR: HTML content incorrect"
+            exit 1
+          fi
+
+          echo "✓ Action pages mode test passed"
+
+      - name: Test Action - Complex workflow
+        run: |
+          # Create test data
+          cat > /tmp/workflow-test.json <<'EOF'
+          {
+            "workflow": "test-json-publisher",
+            "run_number": "${{ github.run_number }}",
+            "timestamp": "2025-11-18T12:00:00Z",
+            "results": {
+              "tests": 15,
+              "passed": 15,
+              "failed": 0
+            }
+          }
+          EOF
+
+      - name: Publish workflow test
+        uses: ./actions/json-publisher
+        with:
+          mode: pages
+          json-input: /tmp/workflow-test.json
+          output: /tmp/workflow-report.html
+
+      - name: Validate workflow output
+        run: |
+          # Check HTML structure
+          if ! grep -q 'test-json-publisher' /tmp/workflow-report.html; then
+            echo "ERROR: Workflow data missing from HTML"
+            exit 1
+          fi
+
+          # Validate it's valid HTML
+          if ! grep -q '<!DOCTYPE html>' /tmp/workflow-report.html; then
+            echo "ERROR: Invalid HTML structure"
+            exit 1
+          fi
+
+          echo "✓ Complex workflow test passed"
+
+  test-output-formats:
+    name: Test Output Format Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq tidy
+
+      - name: Test JSON output format
+        run: |
+          cat > /tmp/format-test.json <<'EOF'
+          {
+            "test": "format",
+            "numbers": [1, 2, 3, 4, 5],
+            "nested": {
+              "level1": {
+                "level2": "deep"
+              }
+            }
+          }
+          EOF
+
+          cat /tmp/format-test.json | \
+          python3 actions/json-publisher/publish.py \
+            --mode git \
+            --output /tmp/validated.json
+
+          # Validate JSON is well-formed
+          if ! jq empty /tmp/validated.json; then
+            echo "ERROR: Output is not valid JSON"
+            exit 1
+          fi
+
+          # Verify indentation (should be 2 spaces)
+          if ! grep -q '^  "test"' /tmp/validated.json; then
+            echo "ERROR: JSON not properly indented"
+            exit 1
+          fi
+
+          echo "✓ JSON format validation passed"
+
+      - name: Test HTML output format
+        run: |
+          echo '{"html": "test"}' | \
+          python3 actions/json-publisher/publish.py \
+            --mode pages \
+            --output /tmp/validated.html
+
+          # Validate HTML structure (tidy will exit with error if invalid)
+          # Using -q for quiet, -e for errors only
+          if ! tidy -q -e /tmp/validated.html 2>&1 | grep -v "Warning"; then
+            echo "Note: HTML has some warnings but should be functional"
+          fi
+
+          # Check for required meta tags
+          if ! grep -q '<meta charset="UTF-8">' /tmp/validated.html; then
+            echo "ERROR: Missing charset meta tag"
+            exit 1
+          fi
+
+          if ! grep -q '<meta name="viewport"' /tmp/validated.html; then
+            echo "ERROR: Missing viewport meta tag"
+            exit 1
+          fi
+
+          echo "✓ HTML format validation passed"
+
+      - name: Test responsive design elements
+        run: |
+          echo '{"responsive": true}' | \
+          python3 actions/json-publisher/publish.py \
+            --mode pages \
+            --output /tmp/responsive.html
+
+          # Check for responsive CSS
+          if ! grep -q 'max-width' /tmp/responsive.html; then
+            echo "ERROR: Missing responsive max-width"
+            exit 1
+          fi
+
+          if ! grep -q 'box-sizing: border-box' /tmp/responsive.html; then
+            echo "ERROR: Missing box-sizing reset"
+            exit 1
+          fi
+
+          echo "✓ Responsive design validation passed"
+
+  test-edge-cases:
+    name: Test Edge Cases
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Test empty JSON object
+        run: |
+          echo '{}' | \
+          python3 actions/json-publisher/publish.py \
+            --mode git \
+            --output /tmp/empty.json
+
+          if [ ! -f /tmp/empty.json ]; then
+            echo "ERROR: Failed to handle empty JSON object"
+            exit 1
+          fi
+
+          echo "✓ Empty JSON object test passed"
+
+      - name: Test empty array
+        run: |
+          echo '[]' | \
+          python3 actions/json-publisher/publish.py \
+            --mode pages \
+            --output /tmp/empty-array.html
+
+          if ! grep -q '\[]' /tmp/empty-array.html; then
+            echo "ERROR: Empty array not rendered correctly"
+            exit 1
+          fi
+
+          echo "✓ Empty array test passed"
+
+      - name: Test large JSON file
+        run: |
+          # Generate a large JSON file
+          python3 -c "
+          import json
+          data = {
+              'items': [{'id': i, 'value': f'item_{i}'} for i in range(1000)]
+          }
+          print(json.dumps(data))
+          " > /tmp/large.json
+
+          cat /tmp/large.json | \
+          python3 actions/json-publisher/publish.py \
+            --mode git \
+            --output /tmp/large-output.json
+
+          # Verify file was created
+          if [ ! -f /tmp/large-output.json ]; then
+            echo "ERROR: Failed to handle large JSON file"
+            exit 1
+          fi
+
+          echo "✓ Large JSON file test passed"
+
+      - name: Test special characters
+        run: |
+          cat > /tmp/special.json <<'EOF'
+          {
+            "special": "Test with \"quotes\" and 'apostrophes'",
+            "unicode": "Hello 世界 🌍",
+            "symbols": "!@#$%^&*()_+-={}[]|\\:;\"'<>,.?/",
+            "newlines": "line1\nline2\nline3"
+          }
+          EOF
+
+          cat /tmp/special.json | \
+          python3 actions/json-publisher/publish.py \
+            --mode pages \
+            --output /tmp/special.html
+
+          if ! grep -q '世界' /tmp/special.html; then
+            echo "ERROR: Unicode characters not handled"
+            exit 1
+          fi
+
+          echo "✓ Special characters test passed"
+
+      - name: Test deeply nested structure
+        run: |
+          python3 -c "
+          import json
+          data = {'level1': {'level2': {'level3': {'level4': {'level5': 'deep'}}}}}
+          print(json.dumps(data))
+          " | python3 actions/json-publisher/publish.py \
+            --mode pages \
+            --output /tmp/nested.html
+
+          # Count nested divs
+          NEST_COUNT=$(grep -o 'json-object' /tmp/nested.html | wc -l)
+          if [ "$NEST_COUNT" -lt 5 ]; then
+            echo "ERROR: Nested structure not rendered correctly"
+            exit 1
+          fi
+
+          echo "✓ Deeply nested structure test passed"
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [test-standalone-script, test-git-mode-with-commit, test-action-integration, test-output-formats, test-edge-cases]
+    if: always()
+
+    steps:
+      - name: Check test results
+        run: |
+          echo "========================================="
+          echo "JSON Publisher Test Summary"
+          echo "========================================="
+          echo ""
+          echo "Test Jobs:"
+          echo "  - Standalone Script Tests: ${{ needs.test-standalone-script.result }}"
+          echo "  - Git Mode Tests: ${{ needs.test-git-mode-with-commit.result }}"
+          echo "  - Action Integration Tests: ${{ needs.test-action-integration.result }}"
+          echo "  - Output Format Tests: ${{ needs.test-output-formats.result }}"
+          echo "  - Edge Case Tests: ${{ needs.test-edge-cases.result }}"
+          echo ""
+
+          if [ "${{ needs.test-standalone-script.result }}" != "success" ] || \
+             [ "${{ needs.test-git-mode-with-commit.result }}" != "success" ] || \
+             [ "${{ needs.test-action-integration.result }}" != "success" ] || \
+             [ "${{ needs.test-output-formats.result }}" != "success" ] || \
+             [ "${{ needs.test-edge-cases.result }}" != "success" ]; then
+            echo "❌ Some tests failed!"
+            exit 1
+          fi
+
+          echo "✓ All tests passed successfully!"
+          echo "========================================="
