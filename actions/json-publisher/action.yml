@@ -1,0 +1,109 @@
+name: 'JSON Publisher'
+description: 'Publish JSON reports to Git files, GitHub Releases, or GitHub Pages'
+branding:
+  icon: 'file-text'
+  color: 'blue'
+
+inputs:
+  mode:
+    description: 'Publishing mode: git, release, or pages'
+    required: true
+  json-input:
+    description: 'JSON string or file path to publish'
+    required: true
+  output:
+    description: 'Output file path'
+    required: false
+  commit:
+    description: 'Whether to commit changes'
+    required: false
+    default: 'false'
+  push:
+    description: 'Whether to push changes to remote'
+    required: false
+    default: 'false'
+  branch:
+    description: 'Git branch to use'
+    required: false
+  commit-message:
+    description: 'Custom commit message'
+    required: false
+  tag:
+    description: 'Release tag (required for release mode)'
+    required: false
+  github-token:
+    description: 'GitHub token for API operations'
+    required: false
+    default: ${{ github.token }}
+  repo:
+    description: 'Repository in format owner/repo'
+    required: false
+    default: ${{ github.repository }}
+  git-user:
+    description: 'Git user name'
+    required: false
+    default: 'github-actions[bot]'
+  git-email:
+    description: 'Git user email'
+    required: false
+    default: 'github-actions[bot]@users.noreply.github.com'
+
+outputs:
+  result:
+    description: 'Path or URL of published content'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Publish JSON
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_REPOSITORY: ${{ inputs.repo }}
+      run: |
+        set -e
+
+        # Determine if input is a file or raw JSON
+        if [ -f "${{ inputs.json-input }}" ]; then
+          JSON_INPUT="$(cat ${{ inputs.json-input }})"
+        else
+          JSON_INPUT="${{ inputs.json-input }}"
+        fi
+
+        # Build command arguments
+        ARGS="--mode ${{ inputs.mode }}"
+
+        if [ -n "${{ inputs.output }}" ]; then
+          ARGS="$ARGS --output ${{ inputs.output }}"
+        fi
+
+        if [ "${{ inputs.commit }}" = "true" ]; then
+          ARGS="$ARGS --commit"
+        fi
+
+        if [ "${{ inputs.push }}" = "true" ]; then
+          ARGS="$ARGS --push"
+        fi
+
+        if [ -n "${{ inputs.branch }}" ]; then
+          ARGS="$ARGS --branch ${{ inputs.branch }}"
+        fi
+
+        if [ -n "${{ inputs.commit-message }}" ]; then
+          ARGS="$ARGS --commit-message '${{ inputs.commit-message }}'"
+        fi
+
+        if [ -n "${{ inputs.tag }}" ]; then
+          ARGS="$ARGS --tag ${{ inputs.tag }}"
+        fi
+
+        if [ -n "${{ inputs.git-user }}" ]; then
+          ARGS="$ARGS --git-user '${{ inputs.git-user }}'"
+        fi
+
+        if [ -n "${{ inputs.git-email }}" ]; then
+          ARGS="$ARGS --git-email '${{ inputs.git-email }}'"
+        fi
+
+        # Execute publisher
+        echo "$JSON_INPUT" | python3 ${{ github.action_path }}/publish.py $ARGS

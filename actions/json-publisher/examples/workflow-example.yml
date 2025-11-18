@@ -1,0 +1,124 @@
+# Example GitHub Actions workflow using JSON Publisher
+name: Test and Publish Report
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required for git commits and pushes
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        run: |
+          # Your setup steps here
+          echo "Setting up test environment..."
+
+      - name: Run tests and generate JSON report
+        run: |
+          # Example: Generate a test report in JSON format
+          # This could be from pytest, jest, or any test framework
+          cat > test-report.json <<'EOF'
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "tests": {
+              "total": 150,
+              "passed": 148,
+              "failed": 2,
+              "skipped": 0,
+              "coverage": 92.5
+            },
+            "duration": 45.2
+          }
+          EOF
+
+      # Example 1: Save report to repository
+      - name: Save report to repository
+        uses: ./actions/json-publisher
+        with:
+          mode: git
+          json-input: test-report.json
+          output: reports/latest.json
+          commit: true
+          push: true
+          commit-message: "Update test report [skip ci]"
+
+      # Example 2: Publish HTML version to a docs folder
+      - name: Publish HTML report
+        uses: ./actions/json-publisher
+        with:
+          mode: pages
+          json-input: test-report.json
+          output: docs/test-report.html
+          commit: true
+          push: true
+          commit-message: "Update HTML report [skip ci]"
+
+  publish-release:
+    # Only run on release creation
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate release report
+        run: |
+          echo '{"version": "${{ github.event.release.tag_name }}", "date": "$(date -u +%Y-%m-%d)"}' > release-info.json
+
+      - name: Attach to release
+        uses: ./actions/json-publisher
+        with:
+          mode: release
+          json-input: release-info.json
+          output: release-metadata.json
+          tag: ${{ github.event.release.tag_name }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  daily-metrics:
+    # Example of publishing metrics to GitHub Pages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+
+      - name: Collect metrics
+        run: |
+          # Your metrics collection logic here
+          cat > metrics.json <<'EOF'
+          {
+            "date": "$(date -u +%Y-%m-%d)",
+            "metrics": {
+              "users": 1250,
+              "requests": 45230,
+              "errors": 12
+            }
+          }
+          EOF
+
+      - name: Publish to GitHub Pages
+        uses: ./actions/json-publisher
+        with:
+          mode: pages
+          json-input: metrics.json
+          output: index.html
+          commit: true
+          push: true
+          branch: gh-pages
+          commit-message: "Update daily metrics dashboard"

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #3498db;
+        }
+
+        .timestamp {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .json-container {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .json-key {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+
+        .json-string {
+            color: #27ae60;
+        }
+
+        .json-number {
+            color: #3498db;
+        }
+
+        .json-boolean {
+            color: #9b59b6;
+            font-weight: 600;
+        }
+
+        .json-null {
+            color: #95a5a6;
+            font-style: italic;
+        }
+
+        .json-object, .json-array {
+            margin-left: 20px;
+        }
+
+        .json-line {
+            margin: 4px 0;
+        }
+
+        .actions {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .raw-json {
+            display: none;
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 4px;
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        .raw-json pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .raw-json.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>JSON Report</h1>
+        <div class="timestamp">Generated: 2025-11-18 19:04:52 UTC</div>
+
+        <div class="json-container">
+            <div class="json-object">{<div class="json-line"><span class="json-key">"timestamp"</span>: <span class="json-string">"2025-11-18T10:30:00Z"</span>,</div><div class="json-line"><span class="json-key">"project"</span>: <span class="json-string">"toolkit"</span>,</div><div class="json-line"><span class="json-key">"build"</span>: <div class="json-object">{<div class="json-line"><span class="json-key">"status"</span>: <span class="json-string">"success"</span>,</div><div class="json-line"><span class="json-key">"duration"</span>: <span class="json-number">45.2</span>,</div><div class="json-line"><span class="json-key">"commit"</span>: <span class="json-string">"6123a7b"</span></div>}</div>,</div><div class="json-line"><span class="json-key">"tests"</span>: <div class="json-object">{<div class="json-line"><span class="json-key">"total"</span>: <span class="json-number">127</span>,</div><div class="json-line"><span class="json-key">"passed"</span>: <span class="json-number">125</span>,</div><div class="json-line"><span class="json-key">"failed"</span>: <span class="json-number">2</span>,</div><div class="json-line"><span class="json-key">"skipped"</span>: <span class="json-number">0</span>,</div><div class="json-line"><span class="json-key">"coverage"</span>: <span class="json-number">94.5</span></div>}</div>,</div><div class="json-line"><span class="json-key">"failures"</span>: <div class="json-array">[<div class="json-line"><div class="json-object">{<div class="json-line"><span class="json-key">"test"</span>: <span class="json-string">"authentication.test.js"</span>,</div><div class="json-line"><span class="json-key">"reason"</span>: <span class="json-string">"Expected 200 but got 401"</span></div>}</div>,</div><div class="json-line"><div class="json-object">{<div class="json-line"><span class="json-key">"test"</span>: <span class="json-string">"database.test.js"</span>,</div><div class="json-line"><span class="json-key">"reason"</span>: <span class="json-string">"Connection timeout"</span></div>}</div></div>]</div>,</div><div class="json-line"><span class="json-key">"performance"</span>: <div class="json-object">{<div class="json-line"><span class="json-key">"buildTime"</span>: <span class="json-string">"45.2s"</span>,</div><div class="json-line"><span class="json-key">"testTime"</span>: <span class="json-string">"23.1s"</span>,</div><div class="json-line"><span class="json-key">"totalTime"</span>: <span class="json-string">"68.3s"</span></div>}</div>,</div><div class="json-line"><span class="json-key">"environment"</span>: <div class="json-object">{<div class="json-line"><span class="json-key">"os"</span>: <span class="json-string">"ubuntu-latest"</span>,</div><div class="json-line"><span class="json-key">"node"</span>: <span class="json-string">"20.x"</span>,</div><div class="json-line"><span class="json-key">"python"</span>: <span class="json-string">"3.11"</span></div>}</div></div>}</div>
+        </div>
+
+        <div class="actions">
+            <button class="btn" onclick="toggleRaw()">Toggle Raw JSON</button>
+            <button class="btn" onclick="copyToClipboard()">Copy JSON</button>
+            <a class="btn" href="test-output/index.json" download>Download JSON</a>
+        </div>
+
+        <div class="raw-json" id="rawJson">
+            <pre>{
+  "timestamp": "2025-11-18T10:30:00Z",
+  "project": "toolkit",
+  "build": {
+    "status": "success",
+    "duration": 45.2,
+    "commit": "6123a7b"
+  },
+  "tests": {
+    "total": 127,
+    "passed": 125,
+    "failed": 2,
+    "skipped": 0,
+    "coverage": 94.5
+  },
+  "failures": [
+    {
+      "test": "authentication.test.js",
+      "reason": "Expected 200 but got 401"
+    },
+    {
+      "test": "database.test.js",
+      "reason": "Connection timeout"
+    }
+  ],
+  "performance": {
+    "buildTime": "45.2s",
+    "testTime": "23.1s",
+    "totalTime": "68.3s"
+  },
+  "environment": {
+    "os": "ubuntu-latest",
+    "node": "20.x",
+    "python": "3.11"
+  }
+}</pre>
+        </div>
+    </div>
+
+    <script>
+        function toggleRaw() {
+            document.getElementById('rawJson').classList.toggle('show');
+        }
+
+        function copyToClipboard() {
+            const json = "{\"timestamp\": \"2025-11-18T10:30:00Z\", \"project\": \"toolkit\", \"build\": {\"status\": \"success\", \"duration\": 45.2, \"commit\": \"6123a7b\"}, \"tests\": {\"total\": 127, \"passed\": 125, \"failed\": 2, \"skipped\": 0, \"coverage\": 94.5}, \"failures\": [{\"test\": \"authentication.test.js\", \"reason\": \"Expected 200 but got 401\"}, {\"test\": \"database.test.js\", \"reason\": \"Connection timeout\"}], \"performance\": {\"buildTime\": \"45.2s\", \"testTime\": \"23.1s\", \"totalTime\": \"68.3s\"}, \"environment\": {\"os\": \"ubuntu-latest\", \"node\": \"20.x\", \"python\": \"3.11\"}}";
+            navigator.clipboard.writeText(json).then(() => {
+                alert('JSON copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>

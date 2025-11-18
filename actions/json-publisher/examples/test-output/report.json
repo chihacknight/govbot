@@ -1,0 +1,36 @@
+{
+  "timestamp": "2025-11-18T10:30:00Z",
+  "project": "toolkit",
+  "build": {
+    "status": "success",
+    "duration": 45.2,
+    "commit": "6123a7b"
+  },
+  "tests": {
+    "total": 127,
+    "passed": 125,
+    "failed": 2,
+    "skipped": 0,
+    "coverage": 94.5
+  },
+  "failures": [
+    {
+      "test": "authentication.test.js",
+      "reason": "Expected 200 but got 401"
+    },
+    {
+      "test": "database.test.js",
+      "reason": "Connection timeout"
+    }
+  ],
+  "performance": {
+    "buildTime": "45.2s",
+    "testTime": "23.1s",
+    "totalTime": "68.3s"
+  },
+  "environment": {
+    "os": "ubuntu-latest",
+    "node": "20.x",
+    "python": "3.11"
+  }
+}
