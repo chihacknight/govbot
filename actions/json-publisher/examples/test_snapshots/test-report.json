@@ -4,7 +4,7 @@
   "build": {
     "status": "success",
     "duration": 45.2,
-    "commit": "6123a7b"
+    "commit": "abc123"
   },
   "tests": {
     "total": 127,
@@ -22,15 +22,5 @@
       "test": "database.test.js",
       "reason": "Connection timeout"
     }
-  ],
-  "performance": {
-    "buildTime": "45.2s",
-    "testTime": "23.1s",
-    "totalTime": "68.3s"
-  },
-  "environment": {
-    "os": "ubuntu-latest",
-    "node": "20.x",
-    "python": "3.11"
-  }
+  ]
 }
