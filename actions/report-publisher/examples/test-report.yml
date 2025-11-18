@@ -1,0 +1,42 @@
+name: Example - Test Report
+
+on: [push]
+
+jobs:
+  test-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run tests and generate report
+        run: |
+          # Your test command here would generate JSON
+          # For this example, we'll create a sample test report
+          echo '{
+            "timestamp": "2025-11-18T10:30:00Z",
+            "project": "toolkit",
+            "build": {
+              "status": "success",
+              "duration": 45.2,
+              "commit": "abc123"
+            },
+            "tests": {
+              "total": 127,
+              "passed": 125,
+              "failed": 2,
+              "skipped": 0,
+              "coverage": 94.5
+            },
+            "failures": [
+              {
+                "test": "authentication.test.js",
+                "reason": "Expected 200 but got 401"
+              },
+              {
+                "test": "database.test.js",
+                "reason": "Connection timeout"
+              }
+            ]
+          }' | python3 actions/report-publisher/publish.py \
+            --mode pages \
+            --output test-report.html

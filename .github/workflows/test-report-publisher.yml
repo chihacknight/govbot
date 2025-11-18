@@ -1,0 +1,28 @@
+name: Test Report Publisher
+
+on:
+  pull_request:
+      paths:
+      - 'actions/report-publisher/**'
+      - '.github/workflows/test-report-publisher.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test Report Publisher
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run test runner
+        run: |
+          cd actions/report-publisher
+          ./test.sh
+

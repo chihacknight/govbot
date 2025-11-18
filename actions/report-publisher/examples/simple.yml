@@ -1,0 +1,18 @@
+name: Example - Simple Report
+
+on: [push]
+
+jobs:
+  publish-simple:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate and publish simple report
+        run: |
+          echo '{
+            "test": "simple",
+            "value": 123
+          }' | python3 actions/report-publisher/publish.py \
+            --mode pages \
+            --output simple.html
