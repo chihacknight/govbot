@@ -27,6 +27,19 @@ runs:
       run: |
         python -m pip install --upgrade pip
         pip install pipenv
+        # Ensure we're in the action directory where Pipfile is located
+        ACTION_DIR="${{ github.action_path }}"
+        cd "$ACTION_DIR"
+        echo "Current directory: $(pwd)"
+        echo "Looking for Pipfile at: $ACTION_DIR/Pipfile"
+        if [ ! -f "$ACTION_DIR/Pipfile" ]; then
+          echo "::error::❌ Pipfile not found at $ACTION_DIR/Pipfile"
+          ls -la "$ACTION_DIR" || true
+          exit 1
+        fi
+        echo "✅ Found Pipfile, installing dependencies..."
+        # Explicitly tell pipenv where the Pipfile is
+        export PIPENV_PIPFILE="$ACTION_DIR/Pipfile"
         pipenv install --deploy
 
     - name: Extract Text from PDFs and XMLs
@@ -169,22 +182,27 @@ runs:
         # Change to action directory where main.py and Pipfile are colocated
         ACTION_DIR="${{ github.action_path }}"
         cd "$ACTION_DIR"
+        echo "Running from: $(pwd)"
 
         # Verify main.py exists in action directory
         if [ ! -f "$ACTION_DIR/main.py" ]; then
           echo "::error::❌ main.py not found at $ACTION_DIR/main.py"
+          ls -la "$ACTION_DIR" || true
           exit 1
         fi
 
         # Verify Pipfile exists in action directory
         if [ ! -f "$ACTION_DIR/Pipfile" ]; then
           echo "::error::❌ Pipfile not found at $ACTION_DIR/Pipfile"
+          ls -la "$ACTION_DIR" || true
           exit 1
         fi
 
         # Run text extraction using the colocated main.py
+        # Explicitly set Pipfile location for pipenv
+        export PIPENV_PIPFILE="$ACTION_DIR/Pipfile"
         EXIT_CODE=0
-        EXTRACTION_OUTPUT=$(pipenv run python main.py \
+        EXTRACTION_OUTPUT=$(cd "$ACTION_DIR" && pipenv run python main.py \
           --state "${{ inputs.state }}" \
           --data-folder "${{ github.workspace }}" \
           --output-folder "${{ github.workspace }}" \
@@ -193,8 +211,14 @@ runs:
         echo "$EXTRACTION_OUTPUT"
 
         # Stop the auto-commit background process
+        echo "🛑 Stopping auto-commit background process..."
         rm -f /tmp/text_extraction_running
-        wait $AUTO_COMMIT_PID 2>/dev/null || true
+        # Kill the background process if it's still running (don't wait for it)
+        kill $AUTO_COMMIT_PID 2>/dev/null || true
+        # Give it a moment to exit gracefully, then force kill if needed
+        sleep 1
+        kill -9 $AUTO_COMMIT_PID 2>/dev/null || true
+        echo "✅ Auto-commit process stopped"
 
         # Extract summary statistics for GitHub Actions summary (take last match only)
         TOTAL_BILLS=$(echo "$EXTRACTION_OUTPUT" | grep -oP 'Total bills: \K\d+' | tail -1 || echo "0")
