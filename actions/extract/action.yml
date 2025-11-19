@@ -211,8 +211,14 @@ runs:
         echo "$EXTRACTION_OUTPUT"
 
         # Stop the auto-commit background process
+        echo "🛑 Stopping auto-commit background process..."
         rm -f /tmp/text_extraction_running
-        wait $AUTO_COMMIT_PID 2>/dev/null || true
+        # Kill the background process if it's still running (don't wait for it)
+        kill $AUTO_COMMIT_PID 2>/dev/null || true
+        # Give it a moment to exit gracefully, then force kill if needed
+        sleep 1
+        kill -9 $AUTO_COMMIT_PID 2>/dev/null || true
+        echo "✅ Auto-commit process stopped"
 
         # Extract summary statistics for GitHub Actions summary (take last match only)
         TOTAL_BILLS=$(echo "$EXTRACTION_OUTPUT" | grep -oP 'Total bills: \K\d+' | tail -1 || echo "0")
