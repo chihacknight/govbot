@@ -79,10 +79,10 @@ runs:
         STATE: ${{ inputs.state }}
       run: |
         set -euo pipefail
-        cd "${{ github.action_path }}/../.."
+        cd "${{ github.action_path }}"
 
         # Capture formatter output
-        FORMATTER_OUTPUT=$(pipenv run python scrape_and_format/main.py \
+        FORMATTER_OUTPUT=$(pipenv run python main.py \
           --state "$STATE" \
           --openstates-data-folder "$OPENSTATE_DATA_FOLDER" \
           --git-repo-folder "$GIT_REPO_FOLDER" 2>&1) || true
