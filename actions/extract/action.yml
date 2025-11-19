@@ -167,11 +167,11 @@ runs:
         echo "🔄 Auto-commit process started (PID: $AUTO_COMMIT_PID)"
 
         # Change back to action directory to run Python
-        cd "${{ github.action_path }}/../.."
+        cd "${{ github.action_path }}"
 
         # Run text extraction using the main.py interface with incremental flag
         EXIT_CODE=0
-        EXTRACTION_OUTPUT=$(pipenv run python text_extraction/main.py \
+        EXTRACTION_OUTPUT=$(pipenv run python main.py \
           --state "${{ inputs.state }}" \
           --data-folder "${{ github.workspace }}" \
           --output-folder "${{ github.workspace }}" \
