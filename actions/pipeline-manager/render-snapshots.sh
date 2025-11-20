@@ -22,10 +22,22 @@ if [ $total -gt $limit ]; then
   done
 
   # Ensure indices are unique and valid
-  declare -A seen
   keeps=()
   for idx in "${keep_indices[@]}"; do
-    [ $idx -ge 0 ] && [ $idx -lt $total ] && [ -z "${seen[$idx]}" ] && keeps+=(${dirs[$idx]}) && seen[$idx]=1
+    if [ $idx -ge 0 ] && [ $idx -lt $total ]; then
+      dir_to_add="${dirs[$idx]}"
+      # Check if this directory is already in keeps
+      already_added=0
+      for k in "${keeps[@]}"; do
+        if [ "$dir_to_add" == "$k" ]; then
+          already_added=1
+          break
+        fi
+      done
+      if [ $already_added -eq 0 ]; then
+        keeps+=("$dir_to_add")
+      fi
+    fi
   done
 
   # Delete folders not in keeps

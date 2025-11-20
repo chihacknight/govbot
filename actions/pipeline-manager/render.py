@@ -46,10 +46,10 @@ def render_template(template_file, output_file, locale, toolkit_branch="main", m
     escaped_close = escape_sed_pattern(marker_close)
     
     # Use sed to do all replacements in one pipeline, reading from file
-    # Build sed script
-    sed_script = f"sed 's|{escaped_open} locale {escaped_close}|{locale}|g'"
-    sed_script += f" | sed 's|{escaped_open} toolkit_branch {escaped_close}|{toolkit_branch}|g'"
-    sed_script += f" | sed 's|{escaped_open} managed {escaped_close}|{managed}|g'"
+    # Build sed script - match variable names with optional whitespace (trim whitespace)
+    sed_script = f"sed 's|{escaped_open}[[:space:]]*locale[[:space:]]*{escaped_close}|{locale}|g'"
+    sed_script += f" | sed 's|{escaped_open}[[:space:]]*toolkit_branch[[:space:]]*{escaped_close}|{toolkit_branch}|g'"
+    sed_script += f" | sed 's|{escaped_open}[[:space:]]*managed[[:space:]]*{escaped_close}|{managed}|g'"
     
     # Add extra variable replacements
     for var in extra_vars:
@@ -57,7 +57,7 @@ def render_template(template_file, output_file, locale, toolkit_branch="main", m
             key, value = var.split("=", 1)
             # Escape special sed characters in value using shell
             escaped_value = run_shell(f"echo '{value}' | sed 's/[[\\.*^$()+?{{|}}]/\\\\&/g'")
-            sed_script += f" | sed 's|{escaped_open} {key} {escaped_close}|{escaped_value}|g'"
+            sed_script += f" | sed 's|{escaped_open}[[:space:]]*{key}[[:space:]]*{escaped_close}|{escaped_value}|g'"
     
     # Execute sed pipeline and write to output
     cmd = f"cat '{template_file}' | {sed_script} > '{output_file}'"
@@ -185,10 +185,10 @@ def parse_config(config_file):
 
 def render_folder_name(folder_name_template, locale, marker_open, marker_close):
     """Render the folder name template by replacing locale marker with actual locale."""
-    # Replace the locale marker pattern (e.g., ✏️{locale}✏️) with the actual locale
-    # The pattern is: marker_open + "locale" + marker_close
-    pattern = f"{marker_open}locale{marker_close}"
-    return folder_name_template.replace(pattern, locale)
+    # Replace the locale marker pattern (e.g., ✏️{locale}✏️ or ✏️{ locale }✏️) with the actual locale
+    # Match with optional whitespace (trim whitespace)
+    pattern = re.escape(marker_open) + r'\s*locale\s*' + re.escape(marker_close)
+    return re.sub(pattern, locale, folder_name_template)
 
 
 def process_locale(locale, config_str, templates_dir, output_dir, marker_open, marker_close, templates):
