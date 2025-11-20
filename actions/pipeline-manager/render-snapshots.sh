@@ -1,6 +1,6 @@
 #!/bin/bash
 
-output_dir="./__snapshot__"
+output_dir="./__snapshots__"
 
 python3 render.py -o $output_dir
 
