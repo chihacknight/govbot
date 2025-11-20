@@ -1,4 +1,4 @@
-[![Tests](https://github.com/windy-civi/toolkit/actions/workflows/test-runner.yml/badge.svg)](https://github.com/windy-civi/toolkit/actions/workflows/test-runner.yml)
+[![Validate Snapshots](https://github.com/windy-civi/toolkit/actions/workflows/validate-snapshots.yml/badge.svg)](https://github.com/windy-civi/toolkit/actions/workflows/validate-snapshots.yml)
 
 # 🏛️ Windy Civi Toolkit - Tools To Watch & Analyze Governemnt Actions
 
