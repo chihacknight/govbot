@@ -10,11 +10,14 @@ WIP: Ideally, these scripts should be accessible via the following ways.
 - CLI / Unix pipe friendliness where possible. CLI is the most portable of solutions.
 - GitHub Actionable if possible
 
-## Folder Structure
+
+## Contribute
+
+### Folder Structure
 
 This repo is a monorepo, with `actions` being self contained. `actions` as a name is because it's what Github expects.
 
-## Contribute - Each Action Must
+### Requirements For Each Action
 
 - Be a runnable as basic scripts in python, bash, rust, or typescript which can run as shell scripts with args.
 - Have an `action.yml` file to run as a runner, most likely in GitHub Actions.
