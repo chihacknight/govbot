@@ -133,7 +133,7 @@ impl PipelineProcessor {
     }
 
     /// Process files from stdin (one path per line)
-    /// Useful for stdio pipelines: `find ... | from-chn-distributed-gov --stdin`
+    /// Useful for stdio pipelines: `find ... | govbot --stdin`
     pub fn process_from_stdin(
         config: &Config,
         paths: impl Iterator<Item = String>,

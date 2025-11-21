@@ -1,4 +1,4 @@
-# from-chn-distributed-gov development tasks
+# govbot development tasks
 # Install just: cargo install just
 # Then run: just --list to see all available tasks
 
@@ -121,7 +121,7 @@ run-release:
 
 # Show project info
 info:
-    @echo "Project: from-chn-distributed-gov"
+    @echo "Project: govbot"
     @echo "Rust version: $(rustc --version)"
     @echo "Cargo version: $(cargo --version)"
     @echo ""

@@ -14,7 +14,7 @@ fn get_binary_path() -> PathBuf {
     // Cargo will handle incremental builds, so this is fast if nothing changed
     eprintln!("Building binary to ensure latest version...");
     let status = Command::new("cargo")
-        .args(&["build", "--bin", "from-chn-distributed-gov"])
+        .args(&["build", "--bin", "govbot"])
         .current_dir(&manifest_dir)
         .status()
         .expect("Failed to run cargo build");
@@ -24,10 +24,7 @@ fn get_binary_path() -> PathBuf {
     }
 
     // Use debug build for tests (faster to build, and cargo test uses debug by default)
-    let debug_path = manifest_dir
-        .join("target")
-        .join("debug")
-        .join("from-chn-distributed-gov");
+    let debug_path = manifest_dir.join("target").join("debug").join("govbot");
 
     // Verify the binary exists after building
     if !debug_path.exists() {
@@ -104,7 +101,7 @@ fn parse_shell_script(script_content: &str) -> Vec<String> {
     }
 
     // Remove the binary name (first argument) since we'll use get_binary_path()
-    if !args.is_empty() && args[0] == "from-chn-distributed-gov" {
+    if !args.is_empty() && args[0] == "govbot" {
         args.remove(0);
     }
 

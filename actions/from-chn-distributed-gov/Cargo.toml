@@ -1,12 +1,12 @@
 [package]
-name = "from-chn-distributed-gov"
+name = "govbot"
 version = "0.1.0"
 edition = "2021"
 description = "Streaming pipeline log government events from distributed government data"
 authors = ["sartaj"]
 
 [lib]
-name = "from_chn_distributed_gov"
+name = "govbot"
 path = "src/lib.rs"
 
 [dependencies]
@@ -34,7 +34,7 @@ anyhow = "1.0"
 pathdiff = "0.2"
 
 [[bin]]
-name = "from-chn-distributed-gov"
+name = "govbot"
 path = "src/main.rs"
 
 [dev-dependencies]

@@ -46,7 +46,7 @@ runs:
       shell: bash
       working-directory: ${{ github.action_path }}
       run: |
-        cargo build --release --bin from-chn-distributed-gov
+        cargo build --release --bin govbot
     
     - name: Run pipeline
       id: pipeline
@@ -56,7 +56,7 @@ runs:
         TOKEN: ${{ inputs.token }}
         GITHUB_OUTPUT: ${{ github.output }}
       run: |
-        BINARY="target/release/from-chn-distributed-gov"
+        BINARY="target/release/govbot"
         
         # Build command with flags
         CMD="$BINARY"

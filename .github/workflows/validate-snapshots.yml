@@ -14,7 +14,7 @@ jobs:
     outputs:
       report-publisher: ${{ steps.changes.outputs.report-publisher }}
       pipeline-manager: ${{ steps.changes.outputs.pipeline-manager }}
-      from-chn-distributed-gov: ${{ steps.changes.outputs.from-chn-distributed-gov }}
+      govbot: ${{ steps.changes.outputs.govbot }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,7 +28,7 @@ jobs:
           MODULES=(
             "report-publisher:actions/report-publisher"
             "pipeline-manager:actions/pipeline-manager"
-            "from-chn-distributed-gov:actions/from-chn-distributed-gov"
+            "govbot:actions/from-chn-distributed-gov"
           )
 
           # Always run all tests on main branch or workflow_dispatch
@@ -114,10 +114,10 @@ jobs:
           ./render-snapshots.sh
           ../../scripts/verify-snapshots.sh examples/__snapshots__
 
-  from-chn-distributed-gov-snapshots:
+  govbot-snapshots:
     runs-on: ubuntu-latest
     needs: detect-changes
-    if: needs.detect-changes.outputs.from-chn-distributed-gov == 'true'
+    if: needs.detect-changes.outputs.govbot == 'true'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

@@ -1,11 +1,11 @@
 use clap::Parser;
-use from_chn_distributed_gov::prelude::*;
+use govbot::prelude::*;
 use futures::StreamExt;
 use std::io::{self, BufRead};
 
 /// Type-safe, functional reactive processor for pipeline log files
 #[derive(Parser, Debug)]
-#[command(name = "from-chn-distributed-gov")]
+#[command(name = "govbot")]
 #[command(about = "Process pipeline log files with type-safe reactive streams")]
 #[command(version)]
 struct Args {
@@ -30,7 +30,7 @@ struct Args {
     join: String,
 
     /// Read file paths from stdin instead of discovering files
-    /// Useful for stdio pipelines: find ... | from-chn-distributed-gov --stdin
+    /// Useful for stdio pipelines: find ... | govbot --stdin
     #[arg(long)]
     stdin: bool,
 }

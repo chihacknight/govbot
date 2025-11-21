@@ -1,4 +1,4 @@
-use from_chn_distributed_gov::prelude::*;
+use govbot::prelude::*;
 use futures::StreamExt;
 
 use insta;
@@ -60,8 +60,8 @@ async fn test_pipeline_processor_snapshot() {
 /// Snapshot test for a single log entry structure
 #[tokio::test]
 async fn test_log_entry_structure() {
-    use from_chn_distributed_gov::types::{LogContent, LogEntry, VoteEventResult};
-    use from_chn_distributed_gov::types::MinimalMetadata;
+    use govbot::types::{LogContent, LogEntry, VoteEventResult};
+    use govbot::types::MinimalMetadata;
 
     // Create a sample log entry
     let entry = LogEntry {
@@ -84,7 +84,7 @@ async fn test_log_entry_structure() {
 /// Snapshot test for vote event processing
 #[tokio::test]
 async fn test_vote_event_processing() {
-    use from_chn_distributed_gov::types::VoteEventResult;
+    use govbot::types::VoteEventResult;
 
     let results = vec![
         VoteEventResult::Pass,
