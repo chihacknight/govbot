@@ -1,0 +1,109 @@
+name: Govbot Nightly
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+  pull_request:    
+    paths:
+      - '.github/workflows/release-nightly.yml'
+      - 'actions/govbot/**'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }} (${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            arch: x86_64
+            target: x86_64-unknown-linux-gnu
+            artifact_name: govbot-linux-x86_64
+          - os: macos-latest
+            arch: arm64
+            target: aarch64-apple-darwin
+            artifact_name: govbot-macos-arm64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            actions/govbot/target/
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('actions/govbot/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.target }}-cargo-
+
+      - name: Build binary
+        working-directory: actions/govbot
+        run: |
+          # Install target if not already installed
+          rustup target add ${{ matrix.target }} || true
+          cargo build --release --bin govbot --target ${{ matrix.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: actions/govbot/target/${{ matrix.target }}/release/govbot
+          retention-days: 1
+
+  create-nightly-release:
+    name: Create nightly
+    if: github.ref == 'refs/heads/main'
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: release_artifacts
+
+      - name: Prepare release files
+        shell: bash
+        run: |
+          mkdir -p release_files
+          for dir in release_artifacts/*/; do
+            if [ -d "$dir" ]; then
+              artifact_name=$(basename "$dir")
+              # Find the binary file in the artifact directory
+              for file in "$dir"*; do
+                if [ -f "$file" ]; then
+                  cp "$file" "release_files/$artifact_name"
+                  chmod +x "release_files/$artifact_name"
+                  break
+                fi
+              done
+            fi
+          done
+
+      - name: Update Nightly Release
+        uses: andelf/nightly-release@main
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+            tag_name: nightly
+            prerelease: true
+            files: |
+              release_files/*
+        

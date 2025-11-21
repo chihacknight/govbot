@@ -8,4 +8,5 @@ govbot
 Output:
 Available commands:
   clone   Clone or pull data pipeline repositories (default: all locales)
+  delete  Delete data pipeline repositories (use 'delete all' to delete all)
   logs    Process and display pipeline log files
