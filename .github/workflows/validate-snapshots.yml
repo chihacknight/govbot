@@ -28,7 +28,7 @@ jobs:
           MODULES=(
             "report-publisher:actions/report-publisher"
             "pipeline-manager:actions/pipeline-manager"
-            "govbot:actions/from-chn-distributed-gov"
+            "govbot:actions/govbot"
           )
 
           # Always run all tests on main branch or workflow_dispatch
@@ -147,7 +147,7 @@ jobs:
 
       - name: Copy test data from snapshots
         run: |
-          cd actions/from-chn-distributed-gov
+          cd actions/govbot
           mkdir -p tmp/git/windy-civi-pipelines
           # Copy snapshot data from sync-windy-civi-pipelines to test location
           # The snapshots contain directories like il-data-pipeline, usa-data-pipeline
@@ -163,6 +163,6 @@ jobs:
 
       - name: Run tests
         run: |
-          cd actions/from-chn-distributed-gov
+          cd actions/govbot
           # Use cargo insta test for snapshot tests - this properly handles snapshot failures in CI
           cargo insta test
