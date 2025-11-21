@@ -1,0 +1,130 @@
+# from-chn-distributed-gov development tasks
+# Install just: cargo install just
+# Then run: just --list to see all available tasks
+
+# Default task: show help
+default:
+    @just --list
+
+# Setup development environment
+setup:
+    #!/usr/bin/env bash
+    set -e
+    echo "🚀 Setting up development environment..."
+    
+    # Check if Rust is installed
+    if ! command -v cargo &> /dev/null; then
+        echo "❌ Error: Rust/Cargo is not installed."
+        echo "   Please install Rust from https://rustup.rs/"
+        exit 1
+    fi
+    
+    echo "✅ Rust toolchain found: $(rustc --version)"
+    
+    # Install Rust dependencies
+    echo ""
+    echo "📦 Installing Rust dependencies..."
+    cargo build
+    
+    # Install cargo-insta if not present
+    if ! command -v cargo-insta &> /dev/null; then
+        echo ""
+        echo "📦 Installing cargo-insta (required for snapshot testing)..."
+        cargo install cargo-insta
+    else
+        echo "✅ cargo-insta already installed: $(cargo-insta --version 2>/dev/null || echo 'installed')"
+    fi
+
+    # Copy snapshots from sync-windy-civi-pipelines
+    rm -rf tmp/git/windy-civi-pipelines
+    mkdir -p tmp/git/windy-civi-pipelines
+    cp -r ../sync-windy-civi-pipelines/__snapshots__/* tmp/git/windy-civi-pipelines/
+    
+
+    echo ""
+    echo "✅ Development environment setup complete!"
+    echo ""
+    echo "Next steps:"
+    echo "  - Run tests: just test"
+    echo "  - Review snapshots: just review"
+    echo "  - Build release: just build-release"
+
+# Build the project (debug)
+build:
+    cargo build
+
+# Build the project (release)
+build-release:
+    cargo build --release
+
+# Run all tests
+test:
+    cargo test
+
+# Run tests with output
+test-verbose:
+    cargo test -- --nocapture
+
+# Run a specific test
+test-single TEST:
+    cargo test {{TEST}}
+
+# Review snapshot changes
+review:
+    cargo insta review
+
+# Accept all snapshot changes
+accept:
+    cargo insta accept
+
+# Reject all snapshot changes
+reject:
+    cargo insta reject
+
+# Format code
+fmt:
+    cargo fmt
+
+# Check formatting
+fmt-check:
+    cargo fmt -- --check
+
+# Run clippy
+clippy:
+    cargo clippy -- -D warnings
+
+# Run clippy with fixes
+clippy-fix:
+    cargo clippy --fix --allow-dirty
+
+# Run all checks (format, clippy, tests)
+check:
+    just fmt-check
+    just clippy
+    just test
+
+# Clean build artifacts
+clean:
+    cargo clean
+
+# Run the CLI with example arguments
+run:
+    cargo run -- --git-dir tmp/git/windy-civi-pipelines --sort DESC --limit 10
+
+# Run the CLI with custom arguments
+run-args ARGS:
+    cargo run -- {{ARGS}}
+
+# Run the release binary
+run-release:
+    cargo run --release -- --git-dir tmp/git/windy-civi-pipelines --sort DESC --limit 10
+
+# Show project info
+info:
+    @echo "Project: from-chn-distributed-gov"
+    @echo "Rust version: $(rustc --version)"
+    @echo "Cargo version: $(cargo --version)"
+    @echo ""
+    @echo "Available tasks:"
+    @just --list
+

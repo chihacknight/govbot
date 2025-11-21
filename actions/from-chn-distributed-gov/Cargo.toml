@@ -1,0 +1,43 @@
+[package]
+name = "from-chn-distributed-gov"
+version = "0.1.0"
+edition = "2021"
+description = "Streaming pipeline log government events from distributed government data"
+authors = ["sartaj"]
+
+[lib]
+name = "from_chn_distributed_gov"
+path = "src/lib.rs"
+
+[dependencies]
+# Async runtime and streams
+tokio = { version = "1.0", features = ["full"] }
+futures = "0.3"
+async-stream = "0.3"
+
+# JSON handling
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# File system operations - jwalk is faster and supports parallel traversal
+jwalk = "0.8"
+regex = "1.10"
+
+# CLI support for stdio pipeline
+clap = { version = "4.5", features = ["derive"] }
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Path manipulation
+pathdiff = "0.2"
+
+[[bin]]
+name = "from-chn-distributed-gov"
+path = "src/main.rs"
+
+[dev-dependencies]
+tokio-test = "0.4"
+insta = { version = "1.39", features = ["json"] }
+

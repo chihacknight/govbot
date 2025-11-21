@@ -36,21 +36,33 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+    
+    - name: Build Rust binary
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        cargo build --release --bin from-chn-distributed-gov
+    
     - name: Run pipeline
       id: pipeline
       shell: bash
+      working-directory: ${{ github.action_path }}
       env:
         TOKEN: ${{ inputs.token }}
         GITHUB_OUTPUT: ${{ github.output }}
       run: |
-        SCRIPT="${{ github.action_path }}/main.sh"
-        chmod +x "$SCRIPT"
+        BINARY="target/release/from-chn-distributed-gov"
         
         # Build command with flags
-        CMD="$SCRIPT"
+        CMD="$BINARY"
         
-        # Add --output-dir flag (has default in action.yml)
-        CMD="$CMD --output-dir=${{ inputs.output_dir }}"
+        # Add --git-dir flag (maps from output_dir input)
+        CMD="$CMD --git-dir=${{ inputs.output_dir }}"
         
         # Add --sort flag (has default in action.yml)
         CMD="$CMD --sort=${{ inputs.sort }}"
@@ -60,14 +72,15 @@ runs:
           CMD="$CMD --limit=${{ inputs.limit }}"
         fi
         
-        # Add --output flag (has default in action.yml)
-        CMD="$CMD --output=${{ inputs.output_file }}"
+        # Add --join flag (default to minimal_metadata to match original behavior)
+        CMD="$CMD --join=minimal_metadata"
         
-        # Add sources as positional arguments
-        # Split sources by space and add each as an argument
-        for source in ${{ inputs.sources }}; do
-          CMD="$CMD $source"
-        done
+        # Add sources as --sources flag (clap accepts multiple values)
+        if [ -n "${{ inputs.sources }}" ]; then
+          CMD="$CMD --sources ${{ inputs.sources }}"
+        fi
         
-        # Execute the command
-        $CMD
+        # Execute the command and redirect stdout to output file
+        # The Rust binary writes JSON to stdout, errors to stderr
+        # Errors will be visible in GitHub Actions logs, output goes to file
+        $CMD > "${{ inputs.output_file }}"

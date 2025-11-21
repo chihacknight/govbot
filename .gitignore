@@ -33,6 +33,7 @@ venv.bak/
 .idea/
 *.swp
 *.swo
+*.iml
 *~
 
 # OS
@@ -99,3 +100,19 @@ testing/incremental/test_output/
 docs/action_logs/*
 
 **/tmp/*
+
+# Rust / Cargo
+target/
+**/target/
+Cargo.lock
+# Save .cargo/config if used for config, not secrets
+
+# Rust build output
+*.rs.bk
+
+# Rust/Cargo temporary and backup files
+*.rs.bk
+*.rlib
+
+
+

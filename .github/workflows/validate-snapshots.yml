@@ -14,7 +14,7 @@ jobs:
     outputs:
       report-publisher: ${{ steps.changes.outputs.report-publisher }}
       pipeline-manager: ${{ steps.changes.outputs.pipeline-manager }}
-      from-windy-civi-pipelines: ${{ steps.changes.outputs.from-windy-civi-pipelines }}
+      from-chn-distributed-gov: ${{ steps.changes.outputs.from-chn-distributed-gov }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,7 +28,7 @@ jobs:
           MODULES=(
             "report-publisher:actions/report-publisher"
             "pipeline-manager:actions/pipeline-manager"
-            "from-windy-civi-pipelines:actions/from-windy-civi-pipelines"
+            "from-chn-distributed-gov:actions/from-chn-distributed-gov"
           )
 
           # Always run all tests on main branch or workflow_dispatch
@@ -53,11 +53,12 @@ jobs:
           echo "$CHANGED_FILES"
 
           # If workflow file changes, run all tests
-          if echo "$CHANGED_FILES" | grep -q "\.github/workflows/test-runner\.yml"; then
+          if echo "$CHANGED_FILES" | grep -q "\.github/workflows/validate-snapshots\.yml"; then
             for module in "${MODULES[@]}"; do
               JOB_NAME="${module%%:*}"
               echo "${JOB_NAME}=true" >> $GITHUB_OUTPUT
             done
+            exit 0
           else
             # Otherwise, check each module individually
             for module in "${MODULES[@]}"; do
@@ -93,28 +94,6 @@ jobs:
           ./render-snapshots.sh
           ../../scripts/verify-snapshots.sh __snapshots__
 
-  from-windy-civi-pipelines-snapshots:
-    runs-on: ubuntu-latest
-    needs: detect-changes
-    if: needs.detect-changes.outputs.from-windy-civi-pipelines == 'true'
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Run test runner
-        run: |
-          cd actions/from-windy-civi-pipelines
-          ../../scripts/before-snapshots.sh __snapshots__
-          ./render-snapshots.sh
-          ../../scripts/verify-snapshots.sh __snapshots__
-
   report-publisher-snapshots:
     runs-on: ubuntu-latest
     needs: detect-changes
@@ -134,3 +113,56 @@ jobs:
           ../../scripts/before-snapshots.sh examples/__snapshots__
           ./render-snapshots.sh
           ../../scripts/verify-snapshots.sh examples/__snapshots__
+
+  from-chn-distributed-gov-snapshots:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.from-chn-distributed-gov == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install cargo-insta
+        run: cargo install cargo-insta --locked --force
+
+      - name: Copy test data from snapshots
+        run: |
+          cd actions/from-chn-distributed-gov
+          mkdir -p tmp/git/windy-civi-pipelines
+          # Copy snapshot data from sync-windy-civi-pipelines to test location
+          # The snapshots contain directories like il-data-pipeline, usa-data-pipeline
+          # which should be copied into tmp/git/windy-civi-pipelines/
+          if [ -d "../sync-windy-civi-pipelines/__snapshots__" ]; then
+            cp -r ../sync-windy-civi-pipelines/__snapshots__/* tmp/git/windy-civi-pipelines/
+            echo "Test data copied successfully"
+            ls -la tmp/git/windy-civi-pipelines/
+          else
+            echo "Warning: snapshot data not found at ../sync-windy-civi-pipelines/__snapshots__"
+            echo "Tests will be skipped if test data is missing"
+          fi
+
+      - name: Run tests
+        run: |
+          cd actions/from-chn-distributed-gov
+          # Use cargo insta test for snapshot tests - this properly handles snapshot failures in CI
+          cargo insta test

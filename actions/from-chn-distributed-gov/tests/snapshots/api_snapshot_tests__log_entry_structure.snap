@@ -1,0 +1,15 @@
+---
+source: tests/api_snapshot_tests.rs
+expression: "&entry"
+---
+{
+  "log": {
+    "result": "pass"
+  },
+  "filename": "test/path/to/logs/20240101T120000Z_vote_event.pass.json",
+  "minimal_metadata": {
+    "title": "Test Bill Title",
+    "description": "A test bill description",
+    "sources": null
+  }
+}
