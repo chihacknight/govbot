@@ -1,0 +1,84 @@
+# Example caller workflow for text extraction
+# Copy this to your state data repo as .github/workflows/extract-text.yml
+
+name: Text Extraction from Bills
+
+on:
+  schedule:
+    - cron: "0 8 * * *" # Daily at 8 AM UTC (~3 AM ET, ~12 AM PT)
+  workflow_dispatch:
+
+jobs:
+  extract-text:
+    name: Text Extraction
+    runs-on: ubuntu-latest
+    timeout-minutes: 355 # ~5.9 hours (close to GitHub's 6-hour limit)
+    continue-on-error: true # Don't fail workflow on timeout - let restart job handle it
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout state repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run text extraction action
+        id: extract
+        uses: windy-civi/toolkit/actions/extract@main
+        with:
+          state: wy # WY
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          force-update: "false"
+
+      - name: Display extraction summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f ".extraction_summary.txt" ]; then
+            cat .extraction_summary.txt
+          else
+            echo "⚠️  Summary file not found"
+          fi
+
+  # Auto-restart job if extraction was cancelled (timeout) or failed
+  check-and-restart:
+    name: Check Status & Restart if Needed
+    needs: extract-text
+    runs-on: ubuntu-latest
+    if: needs.extract-text.result == 'cancelled' || needs.extract-text.result == 'failure'
+    permissions:
+      actions: write
+      contents: read
+
+    steps:
+      - name: Checkout to check completion status
+        uses: actions/checkout@v4
+
+      - name: Check if more work remains
+        id: check
+        shell: bash
+        run: |
+          # Count bills that still need text extraction
+          # Bills without _processing.text_extraction_latest_update need processing
+          TOTAL_BILLS=$(find country:us/state:*/sessions/*/bills/*/metadata.json 2>/dev/null | wc -l || echo "0")
+
+          if [ "$TOTAL_BILLS" -gt 0 ]; then
+            echo "📊 Found $TOTAL_BILLS bills total"
+            echo "needs_restart=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ No bills found or extraction complete"
+            echo "needs_restart=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Trigger workflow restart
+        if: steps.check.outputs.needs_restart == 'true'
+        env:
+          # Note: GITHUB_TOKEN cannot trigger workflows due to GitHub security restrictions
+          # You must create a Personal Access Token (PAT) with 'workflow' scope and add it as a secret
+          # See: https://docs.github.com/en/actions/security-guides/automatic-token-authentication#using-the-github_token-in-a-workflow
+          GH_TOKEN: ${{ secrets.PAT_WORKFLOW_TRIGGER }}
+        run: |
+          echo "⚠️ Previous run was cancelled/failed. Restarting to continue extraction..."
+          echo "   (Incremental processing will skip already-completed bills)"
+          gh workflow run extract-text.yml --repo ${{ github.repository }}

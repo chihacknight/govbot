@@ -2,193 +2,361 @@
 template_markers:
   open: "✏️{"
   close: "}✏️"
+org:
+  username: chn-openstates-files
 templates:
-  openstates-to-ocd-decentralized:
-    folder-name: ✏️{locale}✏️-data-pipeline
+  openstates-to-ocd-files:
+    folder-name: ✏️{ locale.key }✏️-legislation
+    fully_override_dirs:
+      - .github
 locales:
   al:
-    template: openstates-to-ocd-decentralized
-    toolkit_branch: main # Switch the branch name
-    text_extraction: false # Switch to true to enable text extraction
+    template: openstates-to-ocd-files
+    name: Alabama
+    toolkit_branch: main # Defaults to main, but can make whatever.
+    disabled_jobs:
+      - extract-text # Exclude extract-text.yml workflow
   ak:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Alaska
   az:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Arizona
   ar:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Arkansas
     labels:
       - working
   ca:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: California
   co:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Colorado
   ct:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Connecticut
   de:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Delaware
     labels:
       - working
   fl:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Florida
     labels:
       - working
   ga:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Georgia
     labels:
       - working
   hi:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Hawaii
   id:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Idaho
   il:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Illinois
     labels:
       - working
   in:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Indiana
   ia:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Iowa
     labels:
       - working
   ks:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Kansas
     labels:
       - working
   ky:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Kentucky
     labels:
       - working
   la:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Louisiana
     labels:
       - working
   me:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Maine
   md:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Maryland
   ma:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Massachusetts
   mi:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Michigan
   mn:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Minnesota
     labels:
       - working
   ms:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Mississippi
   mo:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Missouri
     labels:
       - working
   mt:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Montana
     labels:
       - working
   ne:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Nebraska
     labels:
       - working
   nv:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Nevada
     labels:
       - working
   nh:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: New Hampshire
     labels:
       - working
   nj:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: New Jersey
     labels:
       - working
   nm:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: New Mexico
     labels:
       - working
   ny:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: New York
   nc:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: North Carolina
     labels:
       - working
   nd:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: North Dakota
     labels:
       - working
   oh:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Ohio
   ok:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Oklahoma
     labels:
       - working
   or:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Oregon
     labels:
       - working
   pa:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Pennsylvania
     labels:
       - working
   ri:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Rhode Island
     labels:
       - working
   sc:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: South Carolina
     labels:
       - working
   sd:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: South Dakota
   tn:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Tennessee
     labels:
       - working
   tx:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Texas
     labels:
       - working
   ut:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Utah
     labels:
       - working
   vt:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Vermont
     labels:
       - working
   va:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Virginia
   wa:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Washington
     labels:
       - working
   wv:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: West Virginia
     labels:
       - working
   wi:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Wisconsin
     labels:
       - working
   wy:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Wyoming
     labels:
       - working
   pr:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Puerto Rico
     labels:
       - working
   mp:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Northern Mariana Islands
     labels:
       - working
   vi:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: U.S. Virgin Islands
     labels:
       - working
   gu:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: Guam
     labels:
       - working
   usa:
-    template: openstates-to-ocd-decentralized
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    name: United States
     labels:
       - working

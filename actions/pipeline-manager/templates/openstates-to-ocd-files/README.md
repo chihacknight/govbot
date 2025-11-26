@@ -1,4 +1,4 @@
-# 🏛️ pr legislation file tree
+# 🏛️ ✏️{ locale.name }✏️ legislation file tree
 
 Download a copy of your states legislation.
 

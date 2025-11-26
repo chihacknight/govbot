@@ -1,15 +1,26 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "required": ["locales"],
+  "required": ["org", "locales"],
   "$defs": {
     "templateName": {
-      "enum": ["openstates-to-ocd-decentralized"]
+      "enum": ["openstates-to-ocd-files"]
     }
   },
   "properties": {
     "$schema": {
       "type": "string"
+    },
+    "org": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "GitHub organization or username where repositories are managed"
+        }
+      },
+      "required": ["username"],
+      "additionalProperties": false
     },
     "template_markers": {
       "type": "object",
@@ -29,12 +40,19 @@
     "templates": {
       "type": "object",
       "patternProperties": {
-        "^(openstates-to-ocd-decentralized)$": {
+        "^(openstates-to-ocd-files)$": {
           "type": "object",
           "properties": {
             "folder-name": {
               "type": "string",
               "description": "The folder name for the locale"
+            },
+            "fully_override_dirs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "List of directory names that should be fully overridden when applying templates. Files in these directories that don't exist in the template will be deleted."
             }
           },
           "additionalProperties": false
@@ -51,16 +69,22 @@
           "properties": {
             "template": {
               "$ref": "#/$defs/templateName",
-              "description": "Whether the locale is managed by the pipeline manager"
+              "description": "Which template to use for the locale"
             },
             "toolkit_branch": {
               "type": "string",
               "description": "The branch of the toolkit to use for the locale"
             },
-            "text_extraction": {
-                "type": "boolean",
-                "description": "Whether the locale uses text extraction",
-                "default": false
+            "disabled_jobs": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "List of job/workflow file names (without .yml extension) to exclude from the generated repository. For example, ['extract-text'] will exclude extract-text.yml"
+            },
+            "name": {
+                "type": "string",
+                "description": "Full name of the locale (e.g., 'Alabama', 'Alaska')"
             },
             "labels": {
                 "type": "array",
