@@ -13,7 +13,7 @@ locales:
   al:
     template: openstates-to-ocd-files
     name: Alabama
-    toolkit_branch: main # Defaults to main, but can make whatever.
+    toolkit_branch: feat/decouple-format-from-scrape # Defaults to main, but can make whatever.
     disabled_jobs:
       - extract-text # Exclude extract-text.yml workflow
   ak:

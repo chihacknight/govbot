@@ -13,6 +13,7 @@ on:
 
 env:
   STATE_CODE: ✏️{ locale.key }✏️
+  FILES_REPO: chn-openstates-files/✏️{ locale.key }✏️-legislation
 
 jobs:
   scrape:
@@ -40,3 +41,17 @@ jobs:
           commit-and-push: true
           force-update: ${{ inputs.force-update }}
           branch: main
+
+      - name: Trigger files repo to format data
+        if: success()
+        run: |
+          echo "🚀 Triggering format workflow in ${{ env.FILES_REPO }}..."
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            /repos/${{ env.FILES_REPO }}/dispatches \
+            -f event_type='scrape-complete' \
+            -f client_payload='{"state":"${{ env.STATE_CODE }}","triggered_by":"${{ github.repository }}"}'
+          echo "✅ Triggered format workflow"
+        env:
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}

@@ -10,9 +10,13 @@ inputs:
     required: true
     default: "${{ github.token }}"
   scrape-artifact-name:
-    description: "Name of the scrape artifact to download"
+    description: "Name of the scrape artifact to download (ignored if scrape-data-path provided)"
     required: false
     default: "scrape-snapshot-nightly"
+  scrape-data-path:
+    description: "Path to pre-existing scraped data directory (skips artifact download if provided)"
+    required: false
+    default: ""
   force-update:
     description: "Force push even if upstream changed"
     required: false
@@ -27,18 +31,31 @@ runs:
         python-version: "3.13"
 
     - name: Download scrape artifact
+      if: inputs.scrape-data-path == ''
       uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.scrape-artifact-name }}
         path: ${{ github.workspace }}
 
     - name: Extract tarball for formatter
+      if: inputs.scrape-data-path == ''
       shell: bash
       run: |
         set -euo pipefail
         mkdir -p "${RUNNER_TEMP}/scrape-snapshot-nightly"
         tar xzf "${GITHUB_WORKSPACE}/scrape-snapshot-nightly.tgz" -C "${RUNNER_TEMP}/scrape-snapshot-nightly"
         echo "✅ Extraction complete"
+
+    - name: Use provided scrape data path
+      if: inputs.scrape-data-path != ''
+      shell: bash
+      run: |
+        echo "📂 Using pre-existing scrape data from: ${{ inputs.scrape-data-path }}"
+        # Copy data to expected location
+        mkdir -p "${RUNNER_TEMP}/scrape-snapshot-nightly"
+        cp -r "${{ inputs.scrape-data-path }}"/* "${RUNNER_TEMP}/scrape-snapshot-nightly/" || true
+        ls -la "${RUNNER_TEMP}/scrape-snapshot-nightly/" | head -20
+        echo "✅ Scrape data ready"
 
     - name: Ensure jq present
       shell: bash
