@@ -1,4 +1,4 @@
-name: Scrape and Format Data For ✏️{ locale.key }✏️
+name: OpenStates Scrape for ✏️{ locale.key }✏️
 
 on:
   schedule:

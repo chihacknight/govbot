@@ -1,0 +1,306 @@
+# yaml-language-server: $schema=./config.schema.json
+template_markers:
+  open: "✏️{"
+  close: "}✏️"
+org:
+  username: chn-openstates-scrapers
+templates:
+  openstates-scrape:
+    folder-name: ✏️{ locale.key }✏️-legislation
+    fully_override_dirs:
+      - .github
+locales:
+  al:
+    template: openstates-scrape
+    name: Alabama
+    toolkit_branch: feat/decouple-format-from-scrape
+  ak:
+    template: openstates-scrape
+    name: Alaska
+    toolkit_branch: feat/decouple-format-from-scrape
+  az:
+    template: openstates-scrape
+    name: Arizona
+    toolkit_branch: feat/decouple-format-from-scrape
+  ar:
+    template: openstates-scrape
+    name: Arkansas
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  ca:
+    template: openstates-scrape
+    name: California
+    toolkit_branch: feat/decouple-format-from-scrape
+  co:
+    template: openstates-scrape
+    name: Colorado
+    toolkit_branch: feat/decouple-format-from-scrape
+  ct:
+    template: openstates-scrape
+    name: Connecticut
+    toolkit_branch: feat/decouple-format-from-scrape
+  de:
+    template: openstates-scrape
+    name: Delaware
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  fl:
+    template: openstates-scrape
+    name: Florida
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  ga:
+    template: openstates-scrape
+    name: Georgia
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  hi:
+    template: openstates-scrape
+    name: Hawaii
+    toolkit_branch: feat/decouple-format-from-scrape
+  id:
+    template: openstates-scrape
+    name: Idaho
+    toolkit_branch: feat/decouple-format-from-scrape
+  il:
+    template: openstates-scrape
+    name: Illinois
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  in:
+    template: openstates-scrape
+    name: Indiana
+    toolkit_branch: feat/decouple-format-from-scrape
+  ia:
+    template: openstates-scrape
+    name: Iowa
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  ks:
+    template: openstates-scrape
+    name: Kansas
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  ky:
+    template: openstates-scrape
+    name: Kentucky
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  la:
+    template: openstates-scrape
+    name: Louisiana
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  me:
+    template: openstates-scrape
+    name: Maine
+    toolkit_branch: feat/decouple-format-from-scrape
+  md:
+    template: openstates-scrape
+    name: Maryland
+    toolkit_branch: feat/decouple-format-from-scrape
+  ma:
+    template: openstates-scrape
+    name: Massachusetts
+    toolkit_branch: feat/decouple-format-from-scrape
+  mi:
+    template: openstates-scrape
+    name: Michigan
+    toolkit_branch: feat/decouple-format-from-scrape
+  mn:
+    template: openstates-scrape
+    name: Minnesota
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  ms:
+    template: openstates-scrape
+    name: Mississippi
+    toolkit_branch: feat/decouple-format-from-scrape
+  mo:
+    template: openstates-scrape
+    name: Missouri
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  mt:
+    template: openstates-scrape
+    name: Montana
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  ne:
+    template: openstates-scrape
+    name: Nebraska
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  nv:
+    template: openstates-scrape
+    name: Nevada
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  nh:
+    template: openstates-scrape
+    name: New Hampshire
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  nj:
+    template: openstates-scrape
+    name: New Jersey
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  nm:
+    template: openstates-scrape
+    name: New Mexico
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  ny:
+    template: openstates-scrape
+    name: New York
+    toolkit_branch: feat/decouple-format-from-scrape
+  nc:
+    template: openstates-scrape
+    name: North Carolina
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  nd:
+    template: openstates-scrape
+    name: North Dakota
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  oh:
+    template: openstates-scrape
+    name: Ohio
+    toolkit_branch: feat/decouple-format-from-scrape
+  ok:
+    template: openstates-scrape
+    name: Oklahoma
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  or:
+    template: openstates-scrape
+    name: Oregon
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  pa:
+    template: openstates-scrape
+    name: Pennsylvania
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  ri:
+    template: openstates-scrape
+    name: Rhode Island
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  sc:
+    template: openstates-scrape
+    name: South Carolina
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  sd:
+    template: openstates-scrape
+    name: South Dakota
+    toolkit_branch: feat/decouple-format-from-scrape
+  tn:
+    template: openstates-scrape
+    name: Tennessee
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  tx:
+    template: openstates-scrape
+    name: Texas
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  ut:
+    template: openstates-scrape
+    name: Utah
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  vt:
+    template: openstates-scrape
+    name: Vermont
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  va:
+    template: openstates-scrape
+    name: Virginia
+    toolkit_branch: feat/decouple-format-from-scrape
+  wa:
+    template: openstates-scrape
+    name: Washington
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  wv:
+    template: openstates-scrape
+    name: West Virginia
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  wi:
+    template: openstates-scrape
+    name: Wisconsin
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  wy:
+    template: openstates-scrape
+    name: Wyoming
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  pr:
+    template: openstates-scrape
+    name: Puerto Rico
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  mp:
+    template: openstates-scrape
+    name: Northern Mariana Islands
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  vi:
+    template: openstates-scrape
+    name: U.S. Virgin Islands
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  gu:
+    template: openstates-scrape
+    name: Guam
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working
+  usa:
+    template: openstates-scrape
+    name: United States
+    toolkit_branch: feat/decouple-format-from-scrape
+    labels:
+      - working

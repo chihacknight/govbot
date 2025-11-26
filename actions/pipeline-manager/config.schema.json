@@ -4,7 +4,7 @@
   "required": ["org", "locales"],
   "$defs": {
     "templateName": {
-      "enum": ["openstates-to-ocd-files", "openstates-scraper"]
+      "enum": ["openstates-to-ocd-files", "openstates-scrape"]
     }
   },
   "properties": {
@@ -40,7 +40,7 @@
     "templates": {
       "type": "object",
       "patternProperties": {
-        "^(openstates-to-ocd-files|openstates-scraper)$": {
+        "^(openstates-to-ocd-files|openstates-scrape)$": {
           "type": "object",
           "properties": {
             "folder-name": {
@@ -76,22 +76,22 @@
               "description": "The branch of the toolkit to use for the locale"
             },
             "disabled_jobs": {
-                "type": "array",
-                "items": {
-                    "type": "string"
-                },
-                "description": "List of job/workflow file names (without .yml extension) to exclude from the generated repository. For example, ['extract-text'] will exclude extract-text.yml"
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "List of job/workflow file names (without .yml extension) to exclude from the generated repository. For example, ['extract-text'] will exclude extract-text.yml"
             },
             "name": {
-                "type": "string",
-                "description": "Full name of the locale (e.g., 'Alabama', 'Alaska')"
+              "type": "string",
+              "description": "Full name of the locale (e.g., 'Alabama', 'Alaska')"
             },
             "labels": {
-                "type": "array",
-                "items": {
-                    "type": "string"
-                },
-                "description": "Labels for the locale (e.g., 'working')"
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Labels for the locale (e.g., 'working')"
             }
           },
           "additionalProperties": false
@@ -102,4 +102,3 @@
   },
   "additionalProperties": false
 }
-
