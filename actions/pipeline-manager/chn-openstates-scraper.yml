@@ -1,0 +1,306 @@
+# yaml-language-server: $schema=./config.schema.json
+template_markers:
+  open: "✏️{"
+  close: "}✏️"
+org:
+  username: chn-openstates-scrapers
+templates:
+  openstates-scraper:
+    folder-name: ✏️{ locale.key }✏️-legislation
+    fully_override_dirs:
+      - .github
+locales:
+  al:
+    template: openstates-scraper
+    name: Alabama
+    toolkit_branch: apply-pipeline-manager
+  ak:
+    template: openstates-scraper
+    name: Alaska
+    toolkit_branch: apply-pipeline-manager
+  az:
+    template: openstates-scraper
+    name: Arizona
+    toolkit_branch: apply-pipeline-manager
+  ar:
+    template: openstates-scraper
+    name: Arkansas
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  ca:
+    template: openstates-scraper
+    name: California
+    toolkit_branch: apply-pipeline-manager
+  co:
+    template: openstates-scraper
+    name: Colorado
+    toolkit_branch: apply-pipeline-manager
+  ct:
+    template: openstates-scraper
+    name: Connecticut
+    toolkit_branch: apply-pipeline-manager
+  de:
+    template: openstates-scraper
+    name: Delaware
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  fl:
+    template: openstates-scraper
+    name: Florida
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  ga:
+    template: openstates-scraper
+    name: Georgia
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  hi:
+    template: openstates-scraper
+    name: Hawaii
+    toolkit_branch: apply-pipeline-manager
+  id:
+    template: openstates-scraper
+    name: Idaho
+    toolkit_branch: apply-pipeline-manager
+  il:
+    template: openstates-scraper
+    name: Illinois
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  in:
+    template: openstates-scraper
+    name: Indiana
+    toolkit_branch: apply-pipeline-manager
+  ia:
+    template: openstates-scraper
+    name: Iowa
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  ks:
+    template: openstates-scraper
+    name: Kansas
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  ky:
+    template: openstates-scraper
+    name: Kentucky
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  la:
+    template: openstates-scraper
+    name: Louisiana
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  me:
+    template: openstates-scraper
+    name: Maine
+    toolkit_branch: apply-pipeline-manager
+  md:
+    template: openstates-scraper
+    name: Maryland
+    toolkit_branch: apply-pipeline-manager
+  ma:
+    template: openstates-scraper
+    name: Massachusetts
+    toolkit_branch: apply-pipeline-manager
+  mi:
+    template: openstates-scraper
+    name: Michigan
+    toolkit_branch: apply-pipeline-manager
+  mn:
+    template: openstates-scraper
+    name: Minnesota
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  ms:
+    template: openstates-scraper
+    name: Mississippi
+    toolkit_branch: apply-pipeline-manager
+  mo:
+    template: openstates-scraper
+    name: Missouri
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  mt:
+    template: openstates-scraper
+    name: Montana
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  ne:
+    template: openstates-scraper
+    name: Nebraska
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  nv:
+    template: openstates-scraper
+    name: Nevada
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  nh:
+    template: openstates-scraper
+    name: New Hampshire
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  nj:
+    template: openstates-scraper
+    name: New Jersey
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  nm:
+    template: openstates-scraper
+    name: New Mexico
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  ny:
+    template: openstates-scraper
+    name: New York
+    toolkit_branch: apply-pipeline-manager
+  nc:
+    template: openstates-scraper
+    name: North Carolina
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  nd:
+    template: openstates-scraper
+    name: North Dakota
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  oh:
+    template: openstates-scraper
+    name: Ohio
+    toolkit_branch: apply-pipeline-manager
+  ok:
+    template: openstates-scraper
+    name: Oklahoma
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  or:
+    template: openstates-scraper
+    name: Oregon
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  pa:
+    template: openstates-scraper
+    name: Pennsylvania
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  ri:
+    template: openstates-scraper
+    name: Rhode Island
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  sc:
+    template: openstates-scraper
+    name: South Carolina
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  sd:
+    template: openstates-scraper
+    name: South Dakota
+    toolkit_branch: apply-pipeline-manager
+  tn:
+    template: openstates-scraper
+    name: Tennessee
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  tx:
+    template: openstates-scraper
+    name: Texas
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  ut:
+    template: openstates-scraper
+    name: Utah
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  vt:
+    template: openstates-scraper
+    name: Vermont
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  va:
+    template: openstates-scraper
+    name: Virginia
+    toolkit_branch: apply-pipeline-manager
+  wa:
+    template: openstates-scraper
+    name: Washington
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  wv:
+    template: openstates-scraper
+    name: West Virginia
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  wi:
+    template: openstates-scraper
+    name: Wisconsin
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  wy:
+    template: openstates-scraper
+    name: Wyoming
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  pr:
+    template: openstates-scraper
+    name: Puerto Rico
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  mp:
+    template: openstates-scraper
+    name: Northern Mariana Islands
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  vi:
+    template: openstates-scraper
+    name: U.S. Virgin Islands
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  gu:
+    template: openstates-scraper
+    name: Guam
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working
+  usa:
+    template: openstates-scraper
+    name: United States
+    toolkit_branch: apply-pipeline-manager
+    labels:
+      - working

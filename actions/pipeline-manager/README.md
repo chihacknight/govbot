@@ -2,7 +2,7 @@ Tools to manage the potentially 100s or 10s of 1000s of repos inside `windy-civi
 
 ## Template System
 
-This directory includes a template rendering system that generates files for each locale based on `config.yml`. Uses bash and standard tools - no pip installs required!
+This directory includes a template rendering system that generates files for each locale based on a config YAML file. Uses bash and standard tools - no pip installs required!
 
 ### Usage
 
@@ -28,7 +28,7 @@ generated/
 
 In your template files, you can use the following variables:
 
-- **Variables**: `✏️{ variable }✏️` - Replaced with the actual value from config.yml
+- **Variables**: `✏️{ variable }✏️` - Replaced with the actual value from the config YAML file
 
 Example:
 

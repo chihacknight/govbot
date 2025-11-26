@@ -87,7 +87,7 @@ def get_config_value(config_str, key, default=""):
 
 
 def parse_config(config_file):
-    """Parse config.yml using Python but with shell-style regex matching."""
+    """Parse config YAML file using Python but with shell-style regex matching."""
     
     all_locales = []
     all_configs = []
@@ -378,36 +378,15 @@ def process_locale(locale, config_str, templates_dir, output_dir, marker_open, m
         )
 
 
-def main():
-    """Main entry point."""
-    parser = argparse.ArgumentParser(description="Template renderer for pipeline-manager")
-    parser.add_argument(
-        "-o", "--output",
-        type=str,
-        default="generated",
-        help="Output directory (default: generated, relative to script directory)"
-    )
-    args = parser.parse_args()
-    
-    script_dir = Path(__file__).parent
-    config_file = script_dir / "config.yml"
-    templates_dir = script_dir / "templates"
-    output_dir = script_dir / args.output
-    
-    # Check if config file exists
-    if not config_file.exists():
-        print(f"Error: config.yml not found at {config_file}", file=sys.stderr)
-        sys.exit(1)
-    
-    # Check if templates directory exists
-    if not templates_dir.exists():
-        print(f"Error: templates directory not found at {templates_dir}", file=sys.stderr)
-        sys.exit(1)
+def process_config_file(config_file, script_dir, templates_dir, base_output_dir):
+    """Process a single config file."""
+    # Get config name (without .yml extension) and append to output directory
+    config_name = config_file.stem
+    output_dir = base_output_dir / config_name
     
     # Delete output directory if it exists to ensure clean output
     if output_dir.exists():
         shutil.rmtree(output_dir)
-        print(f"✓ Deleted existing output directory: {output_dir}")
     
     # Create output directory
     os.makedirs(output_dir, exist_ok=True)
@@ -425,6 +404,57 @@ def main():
     print("")
     print(f"✓ Template rendering complete. Output written to {output_dir}")
     print(f"  Generated folders: {count} locales")
+    
+    return output_dir
+
+
+def main():
+    """Main entry point."""
+    parser = argparse.ArgumentParser(description="Template renderer for pipeline-manager")
+    parser.add_argument(
+        "-o", "--output",
+        type=str,
+        default="generated",
+        help="Output directory (default: generated, relative to script directory)"
+    )
+    parser.add_argument(
+        "-c", "--config",
+        type=str,
+        default=None,
+        help="Config YAML file (relative to script directory). If not provided, processes all *.yml files in current directory."
+    )
+    args = parser.parse_args()
+    
+    script_dir = Path(__file__).parent
+    templates_dir = script_dir / "templates"
+    base_output_dir = script_dir / args.output
+    
+    # Check if templates directory exists
+    if not templates_dir.exists():
+        print(f"Error: templates directory not found at {templates_dir}", file=sys.stderr)
+        sys.exit(1)
+    
+    # Find config files
+    if args.config:
+        # Single config file provided
+        config_file = script_dir / args.config
+        if not config_file.exists():
+            print(f"Error: Config file not found at {config_file}", file=sys.stderr)
+            sys.exit(1)
+        config_files = [config_file]
+    else:
+        # Find all config YAML files in the current directory
+        config_files = sorted(script_dir.glob("*.yml"))
+        if not config_files:
+            print("No config YAML files found in current directory", file=sys.stderr)
+            sys.exit(1)
+        print(f"Found {len(config_files)} config file(s): {[f.name for f in config_files]}")
+    
+    # Process each config file
+    for config_file in config_files:
+        print("")
+        print(f"Processing {config_file.name}...")
+        process_config_file(config_file, script_dir, templates_dir, base_output_dir)
 
 
 if __name__ == "__main__":

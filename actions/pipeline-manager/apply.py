@@ -2,7 +2,7 @@
 """
 Config-driven repository management script.
 
-This script reads config.yml and ensures that all repositories in the GitHub
+This script reads a config YAML file and ensures that all repositories in the GitHub
 organization match the declarative configuration:
 - Creates repos that are in config but not in GitHub
 - Deletes repos that are in GitHub but not in config
@@ -66,7 +66,7 @@ def check_requirements():
 
 def get_expected_repos(config_file: Path, generated_dir: Path) -> Tuple[Dict[str, Dict], str]:
     """
-    Get expected repos from config.yml and generated directory.
+    Get expected repos from config YAML file and generated directory.
     Returns tuple of (dict mapping repo_name -> {locale, generated_path, config}, org_username)
     """
     # First, run render.py to generate files
@@ -75,7 +75,7 @@ def get_expected_repos(config_file: Path, generated_dir: Path) -> Tuple[Dict[str
     
     print("📝 Generating template files...")
     try:
-        run_shell(f"cd '{script_dir}' && python3 '{render_script}' -o generated", check=True)
+        run_shell(f"cd '{script_dir}' && python3 '{render_script}' -c '{config_file.name}' -o generated", check=True)
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to generate templates: {e}", file=sys.stderr)
         sys.exit(1)
@@ -415,13 +415,13 @@ def update_repo(org: str, repo_name: str, generated_path: Path, dry_run: bool = 
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Apply config.yml to manage repositories declaratively"
+        description="Apply config YAML file to manage repositories declaratively"
     )
     parser.add_argument(
         "--org",
         type=str,
         default=None,
-        help="GitHub organization name (overrides config.yml, default: read from config.yml)"
+        help="GitHub organization name (overrides config file, default: read from config file)"
     )
     parser.add_argument(
         "--dry-run",
@@ -433,6 +433,12 @@ def main():
         action="store_true",
         help="Skip deletion of repos not in config"
     )
+    parser.add_argument(
+        "-c", "--config",
+        type=str,
+        required=True,
+        help="Config YAML file (relative to script directory)"
+    )
     args = parser.parse_args()
     
     # Check requirements
@@ -440,11 +446,11 @@ def main():
     
     # Get script directory
     script_dir = Path(__file__).parent
-    config_file = script_dir / "config.yml"
+    config_file = script_dir / args.config
     generated_dir = script_dir / "generated"
     
     if not config_file.exists():
-        print(f"❌ config.yml not found at {config_file}", file=sys.stderr)
+        print(f"❌ Config file not found at {config_file}", file=sys.stderr)
         sys.exit(1)
     
     # Get expected and actual repos (this also parses config to get org)
@@ -453,7 +459,7 @@ def main():
     # Get org from args or config
     org = args.org if args.org else org_from_config
     if not org:
-        print("❌ org.username not found in config.yml and --org not provided", file=sys.stderr)
+        print(f"❌ org.username not found in {args.config} and --org not provided", file=sys.stderr)
         sys.exit(1)
     
     print("🚀 Config-driven repository management")

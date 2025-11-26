@@ -47,6 +47,25 @@ else
 fi
 echo "Found ${COUNT_JSON} JSON files in $JSON_DIR"
 if [ "$COUNT_JSON" -gt 0 ]; then
+  # Copy files directly to workspace _data directory
+  mkdir -p "${OUTPUT_DIR}/_data/${STATE}"
+  
+  # Copy all files from JSON_DIR to output directory
+  if [ -d "$JSON_DIR" ]; then
+    # Use rsync if available (more reliable), otherwise use cp with proper glob handling
+    if command -v rsync >/dev/null 2>&1; then
+      rsync -av "$JSON_DIR/" "${OUTPUT_DIR}/_data/${STATE}/"
+    else
+      # Use find to copy files reliably
+      find "$JSON_DIR" -type f -exec cp {} "${OUTPUT_DIR}/_data/${STATE}/" \;
+    fi
+    
+    # Verify files were copied
+    COPIED_COUNT=$(find "${OUTPUT_DIR}/_data/${STATE}" -type f -name '*.json' 2>/dev/null | wc -l | tr -d ' ')
+    echo "✅ Copied ${COPIED_COUNT} scraped files to ${OUTPUT_DIR}/_data/${STATE}/"
+  fi
+  
+  # Also create tarball for artifacts/releases
   tar zcf scrape-snapshot-nightly.tgz --mode=755 -C "$JSON_DIR" .
   cp scrape-snapshot-nightly.tgz "${OUTPUT_DIR}/scrape-snapshot-nightly.tgz"
   echo "✅ Created local scrape tarball"

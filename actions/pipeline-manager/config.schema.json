@@ -4,7 +4,7 @@
   "required": ["org", "locales"],
   "$defs": {
     "templateName": {
-      "enum": ["openstates-to-ocd-files"]
+      "enum": ["openstates-to-ocd-files", "openstates-scraper"]
     }
   },
   "properties": {
@@ -40,7 +40,7 @@
     "templates": {
       "type": "object",
       "patternProperties": {
-        "^(openstates-to-ocd-files)$": {
+        "^(openstates-to-ocd-files|openstates-scraper)$": {
           "type": "object",
           "properties": {
             "folder-name": {

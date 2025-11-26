@@ -13,6 +13,18 @@ inputs:
     description: "Skip scraping and reuse the latest nightly artifact"
     required: false
     default: "false"
+  commit-and-push:
+    description: "Commit and push scraped files to git repository"
+    required: false
+    default: "false"
+  force-update:
+    description: "Force push even if upstream changed (use with caution)"
+    required: false
+    default: "false"
+  branch:
+    description: "Git branch to push to"
+    required: false
+    default: "main"
 
 outputs:
   scrape-artifact-name:
@@ -167,4 +179,100 @@ runs:
         if [ ! -f "${GITHUB_WORKSPACE}/scrape-snapshot-nightly.tgz" ]; then
           echo "::error::No scrape tarball found (fresh scrape failed and nightly not available)."
           exit 1
+        fi
+
+    - name: Extract files to workspace
+      if: inputs.commit-and-push == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        TARBALL_PATH="${GITHUB_WORKSPACE}/scrape-snapshot-nightly.tgz"
+        DATA_DIR="${GITHUB_WORKSPACE}/_data/${{ inputs.state }}"
+        
+        # Extract tarball if files don't exist in workspace (safety net)
+        if [ -f "$TARBALL_PATH" ]; then
+          if [ ! -d "$DATA_DIR" ] || [ -z "$(ls -A "$DATA_DIR" 2>/dev/null)" ]; then
+            echo "📦 Extracting tarball to workspace (files not found)..."
+            mkdir -p "$DATA_DIR"
+            tar xzf "$TARBALL_PATH" -C "$DATA_DIR"
+            EXTRACTED_COUNT=$(find "$DATA_DIR" -type f -name '*.json' 2>/dev/null | wc -l | tr -d ' ')
+            echo "✅ Extracted ${EXTRACTED_COUNT} files to _data/${{ inputs.state }}/"
+          else
+            EXISTING_COUNT=$(find "$DATA_DIR" -type f -name '*.json' 2>/dev/null | wc -l | tr -d ' ')
+            echo "ℹ️ Files already exist in _data/${{ inputs.state }}/ (${EXISTING_COUNT} files)"
+          fi
+        fi
+
+    - name: Commit and push scraped files
+      if: inputs.commit-and-push == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        
+        DATA_DIR="${GITHUB_WORKSPACE}/_data/${{ inputs.state }}"
+        BRANCH="${{ inputs.branch }}"
+        
+        # Check if scraped files exist
+        if [ ! -d "$DATA_DIR" ] || [ -z "$(ls -A "$DATA_DIR" 2>/dev/null)" ]; then
+          echo "⚠️ No scraped files found in _data/${{ inputs.state }}/"
+          exit 0
+        fi
+        
+        # Check if we're in a git repository
+        if [ ! -d "${GITHUB_WORKSPACE}/.git" ]; then
+          echo "⚠️ Not in a git repository, skipping commit/push"
+          exit 0
+        fi
+        
+        # Configure git
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Add scraped files
+        git add "_data/${{ inputs.state }}/"
+        
+        # Commit if there are changes
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "🕷️ Scrape data for ${{ inputs.state }} - $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          
+          # Pull latest changes before pushing
+          echo "📥 Pulling latest changes..."
+          if ! git pull --no-rebase origin "$BRANCH" 2>&1; then
+            echo "⚠️ Merge conflict detected, resolving..."
+            # In case of conflicts, keep our scraped files
+            git checkout --ours "_data/${{ inputs.state }}/" 2>/dev/null || true
+            git add "_data/${{ inputs.state }}/"
+            git commit --no-edit -m "🔄 Auto-merge: kept scraped data" || true
+          fi
+          
+          # Push with retries
+          PUSH_SUCCESS=false
+          for i in 1 2 3; do
+            if [ "${{ inputs.force-update }}" = "true" ]; then
+              if git push --force-with-lease origin "$BRANCH"; then
+                echo "✅ Changes pushed successfully (attempt $i)"
+                PUSH_SUCCESS=true
+                break
+              fi
+            else
+              if git push origin "$BRANCH"; then
+                echo "✅ Changes pushed successfully (attempt $i)"
+                PUSH_SUCCESS=true
+                break
+              fi
+            fi
+            
+            if [ $i -lt 3 ]; then
+              echo "⚠️ Push failed (attempt $i), pulling and retrying..."
+              git pull --no-rebase origin "$BRANCH" || true
+              sleep 2
+            fi
+          done
+          
+          if [ "$PUSH_SUCCESS" = "false" ]; then
+            echo "❌ Failed to push after 3 attempts"
+            exit 1
+          fi
         fi
