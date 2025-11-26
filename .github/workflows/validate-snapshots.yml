@@ -15,6 +15,7 @@ jobs:
       report-publisher: ${{ steps.changes.outputs.report-publisher }}
       pipeline-manager: ${{ steps.changes.outputs.pipeline-manager }}
       govbot: ${{ steps.changes.outputs.govbot }}
+      format: ${{ steps.changes.outputs.format }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,6 +30,7 @@ jobs:
             "report-publisher:actions/report-publisher"
             "pipeline-manager:actions/pipeline-manager"
             "govbot:actions/govbot"
+            "format:actions/format"
           )
 
           # Always run all tests on main branch or workflow_dispatch
@@ -147,3 +149,84 @@ jobs:
         run: |
           cd actions/govbot
           cargo test
+
+  format-snapshots:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.format == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install jsonschema
+        run: |
+          pip install jsonschema
+
+      - name: Validate snapshots against schemas
+        run: |
+          cd actions/format
+          python3 << 'EOF'
+          import json
+          import os
+          from pathlib import Path
+          from jsonschema import validate, ValidationError
+
+          schemas_dir = Path("schemas")
+          snapshots_dir = Path("snapshots")
+
+          # Load schemas
+          metadata_schema = json.load(open(schemas_dir / "metadata.schema.json"))
+          action_log_schema = json.load(open(schemas_dir / "action_log.schema.json"))
+          vote_event_log_schema = json.load(open(schemas_dir / "vote_event_log.schema.json"))
+
+          errors = []
+
+          # Validate all metadata.json files
+          for metadata_file in snapshots_dir.rglob("metadata.json"):
+              try:
+                  data = json.load(open(metadata_file))
+                  validate(instance=data, schema=metadata_schema)
+                  print(f"✓ {metadata_file}")
+              except ValidationError as e:
+                  error_msg = str(e)
+                  errors.append(f"{metadata_file}: {error_msg}")
+                  print(f"✗ {metadata_file}: {error_msg}")
+
+          # Validate all log files
+          for log_file in snapshots_dir.rglob("logs/*.json"):
+              try:
+                  data = json.load(open(log_file))
+                  # Determine schema based on file structure
+                  if "action" in data and "bill_id" in data:
+                      validate(instance=data, schema=action_log_schema)
+                  elif "votes" in data and "counts" in data:
+                      validate(instance=data, schema=vote_event_log_schema)
+                  else:
+                      print(f"⚠ {log_file}: Unknown log type, skipping")
+                      continue
+                  print(f"✓ {log_file}")
+              except ValidationError as e:
+                  error_msg = str(e)
+                  errors.append(f"{log_file}: {error_msg}")
+                  print(f"✗ {log_file}: {error_msg}")
+
+          if errors:
+              print(f"\n{len(errors)} validation error(s) found:")
+              for error in errors:
+                  print(f"  - {error}")
+              exit(1)
+          else:
+              print(f"\n✓ All snapshots validated successfully")
+          EOF
+
+      - name: Verify snapshots match committed versions
+        run: |
+          cd actions/format
+          ../../scripts/verify-snapshots.sh snapshots

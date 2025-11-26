@@ -1,0 +1,383 @@
+# Schema definitions for code generation
+# This file maps file paths to schema definitions that can be used to generate:
+# - JSON Schema files (.schema.json)
+# - Type definitions (TypeScript, Python, Rust, etc.)
+# - Parsers and validators
+
+schemas:
+  # Action log schema - for files matching: logs/*.json (action logs)
+  action_log:
+    path: logs/*.json
+    description: Schema for validating action log files from formatted snapshots
+    file: action_log.schema.json
+    type: ActionLog
+    properties:
+      action:
+        type: Action
+        required: true
+        description: The action object
+      bill_id:
+        type: string
+        required: true
+        description: The bill identifier (e.g., SF0001)
+
+  # Metadata schema - for files matching: metadata.json
+  metadata:
+    path: metadata.json
+    description: Schema for validating bill metadata.json files from formatted snapshots
+    file: metadata.schema.json
+    type: Metadata
+    properties:
+      legislative_session:
+        type: string
+        required: true
+        description: The legislative session identifier
+      identifier:
+        type: string
+        required: true
+        description: The bill identifier (e.g., SF0001)
+      title:
+        type: string
+        required: true
+        description: The title of the bill
+      classification:
+        type: string[]
+        required: true
+        description: Array of classification strings (e.g., ['bill'])
+      jurisdiction:
+        type: Jurisdiction
+        required: true
+      from_organization:
+        type: string | null
+        description: The organization that introduced the bill, may be a JSON string
+      subject:
+        type: string[]
+        description: Array of subject tags
+      abstracts:
+        type: Abstract[]
+        description: Array of abstract objects
+      other_titles:
+        type: OtherTitle[]
+        description: Array of alternative title objects
+      other_identifiers:
+        type: string[]
+        description: Array of other identifier strings
+      actions:
+        type: Action[]
+        description: Array of action objects representing bill history
+      sponsorships:
+        type: Sponsorship[]
+        description: Array of sponsorship objects
+      related_bills:
+        type: object[]
+        description: Array of related bill objects
+      versions:
+        type: Version[]
+        description: Array of version objects
+      documents:
+        type: Document[]
+        description: Array of document objects
+      citations:
+        type: object[]
+        description: Array of citation objects
+      sources:
+        type: Source[]
+        description: Array of source objects
+      extras:
+        type: object
+        description: Additional metadata specific to the jurisdiction
+      _processing:
+        type: ProcessingMetadata
+        description: Processing metadata
+
+  # Vote event log schema - for files matching: logs/*.json (vote events)
+  vote_event_log:
+    path: logs/*.json
+    description: Schema for validating vote event log files from formatted snapshots
+    file: vote_event_log.schema.json
+    type: VoteEventLog
+    properties:
+      identifier:
+        type: string
+        required: true
+        description: Optional identifier for the vote event (may be empty string)
+      motion_text:
+        type: string
+        required: true
+        description: Text describing the motion being voted on
+      motion_classification:
+        type: string[]
+        required: true
+        description: Array of motion classification strings
+      start_date:
+        type: string
+        format: date-time
+        required: true
+        description: ISO 8601 timestamp of when the vote occurred
+      result:
+        type: string
+        enum: [pass, fail, tie, other]
+        required: true
+        description: Result of the vote
+      organization:
+        type: string
+        required: true
+        description: The organization conducting the vote, may be a JSON string
+      legislative_session:
+        type: string
+        required: true
+        description: The legislative session identifier
+      bill:
+        type: string
+        required: true
+        description: ID reference to the related bill
+      bill_action:
+        type: string | null
+        required: true
+        description: Optional reference to a specific bill action
+      bill_identifier:
+        type: string
+        required: true
+        description: The bill identifier (e.g., SF0001)
+      votes:
+        type: Vote[]
+        required: true
+        description: Array of individual vote objects
+      counts:
+        type: VoteCount[]
+        required: true
+        description: Array of vote count objects
+      sources:
+        type: Source[]
+        required: true
+        description: Array of source objects
+      extras:
+        type: object
+        required: true
+        description: Additional metadata specific to the jurisdiction
+
+# Type definitions (shared components)
+types:
+  Action:
+    description: Description of the action
+    properties:
+      description:
+        type: string
+        required: true
+        description: Description of the action
+      date:
+        type: string
+        format: date-time
+        required: true
+        description: ISO 8601 timestamp of when the action occurred
+      organization_id:
+        type: string
+        required: true
+        description: The organization that performed the action, may be a JSON string
+      classification:
+        type: string[]
+        required: true
+        description: Array of classification strings
+      related_entities:
+        type: object[]
+        required: true
+        description: Array of related entity objects
+      _processing:
+        type: ActionProcessing
+        description: Processing metadata for the action
+
+  ActionProcessing:
+    properties:
+      log_file_created:
+        type: string
+        format: date-time
+        description: ISO 8601 timestamp of when the log file was created
+
+  Jurisdiction:
+    description: Jurisdiction information
+    properties:
+      id:
+        type: string
+        required: true
+        description: Jurisdiction identifier
+      name:
+        type: string
+        required: true
+        description: Name of the jurisdiction
+      classification:
+        type: string
+        enum: [state, municipality, county, federal]
+        required: true
+        description: Classification of the jurisdiction
+      division_id:
+        type: string
+        required: true
+        description: Open Civic Data division identifier
+
+  Abstract:
+    properties:
+      abstract:
+        type: string
+        description: The abstract text
+      note:
+        type: string
+        description: Note about the abstract
+
+  OtherTitle:
+    properties:
+      note:
+        type: string
+        description: Note about the title
+      title:
+        type: string
+        description: The alternative title
+
+  Sponsorship:
+    properties:
+      name:
+        type: string
+        required: true
+        description: Name of the sponsor
+      classification:
+        type: string
+        required: true
+        description: Classification of the sponsorship (e.g., 'primary')
+      entity_type:
+        type: string
+        enum: [person, organization]
+        required: true
+        description: Type of entity sponsoring the bill
+      primary:
+        type: boolean
+        required: true
+        description: Whether this is a primary sponsorship
+      person_id:
+        type: string | null
+        description: ID of the person sponsor, may be a JSON string
+      organization_id:
+        type: string | null
+        description: ID of the organization sponsor, may be a JSON string
+
+  Version:
+    properties:
+      note:
+        type: string
+        description: Note describing the version
+      links:
+        type: Link[]
+        description: Array of link objects
+      date:
+        type: string
+        description: Date of the version
+      classification:
+        type: string
+        description: Classification of the version
+      extras:
+        type: object
+        description: Additional metadata for the version
+
+  Document:
+    properties:
+      note:
+        type: string
+        description: Note describing the document
+      links:
+        type: Link[]
+        description: Array of link objects
+      date:
+        type: string
+        description: Date of the document
+      classification:
+        type: string
+        description: Classification of the document
+
+  Link:
+    properties:
+      url:
+        type: string
+        format: uri
+        required: true
+        description: URL of the link
+      media_type:
+        type: string
+        description: Media type of the linked resource
+
+  Source:
+    properties:
+      url:
+        type: string
+        format: uri
+        required: true
+        description: URL of the source
+      note:
+        type: string
+        description: Note about the source
+
+  ProcessingMetadata:
+    properties:
+      logs_latest_update:
+        type: string
+        format: date-time
+        description: ISO 8601 timestamp of when logs were last updated
+      text_extraction_latest_update:
+        type: string
+        format: date-time
+        description: ISO 8601 timestamp of when text extraction was last updated
+
+  Vote:
+    properties:
+      option:
+        type: string
+        enum: [yes, no, abstain, absent, excused, other]
+        required: true
+        description: The vote option
+      voter_name:
+        type: string
+        required: true
+        description: Name of the voter
+      voter_id:
+        type: string
+        required: true
+        description: ID of the voter, may be a JSON string
+      note:
+        type: string
+        required: true
+        description: Optional note about the vote
+
+  VoteCount:
+    properties:
+      option:
+        type: string
+        enum: [yes, no, abstain, absent, excused, other]
+        required: true
+        description: The vote option
+      value:
+        type: integer
+        minimum: 0
+        required: true
+        description: The count for this option
+
+# Code generation targets
+generators:
+  json_schema:
+    output_dir: .
+    file_suffix: .schema.json
+  
+  typescript:
+    output_dir: generated/typescript
+    file_suffix: .ts
+  
+  python:
+    output_dir: generated/python
+    file_suffix: .py
+    use_dataclasses: true
+  
+  rust:
+    output_dir: generated/rust
+    file_suffix: .rs
+    use_serde: true
+  
+  parsers:
+    output_dir: generated/parsers
+    languages: [typescript, python, rust]
+
