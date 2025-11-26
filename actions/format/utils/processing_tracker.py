@@ -9,14 +9,14 @@ existing data while ensuring no new data is missed.
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional, Tuple
 
 from .path_utils import build_bill_path
 
 
 def load_existing_metadata(
     data_processed_folder: Path, state_abbr: str, bill_data: dict
-) -> dict | None:
+) -> Optional[dict]:
     """
     Load existing metadata.json for a bill if it exists.
 
@@ -151,8 +151,8 @@ def get_current_timestamp() -> str:
 
 
 def compare_action_counts(
-    existing_metadata: dict | None, incoming_data: dict
-) -> tuple[bool, int, int]:
+    existing_metadata: Optional[dict], incoming_data: dict
+) -> Tuple[bool, int, int]:
     """
     Compare action counts between existing and incoming data.
 

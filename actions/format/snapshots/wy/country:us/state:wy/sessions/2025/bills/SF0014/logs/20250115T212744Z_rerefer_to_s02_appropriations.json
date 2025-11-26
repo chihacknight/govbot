@@ -1,0 +1,12 @@
+{
+  "action": {
+    "description": ":Rerefer to S02 - Appropriations",
+    "date": "2025-01-15T21:27:44+00:00",
+    "organization_id": "~{\"classification\": \"upper\"}",
+    "classification": [
+      "referral-committee"
+    ],
+    "related_entities": []
+  },
+  "bill_id": "SF0014"
+}

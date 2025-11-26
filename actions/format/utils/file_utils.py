@@ -3,7 +3,7 @@ from datetime import datetime
 import json
 from pathlib import Path
 from urllib import request
-from typing import Any, TypedDict
+from typing import Any, TypedDict, Optional, Union
 
 
 class SessionInfo(TypedDict):
@@ -26,7 +26,7 @@ def verify_folder_exists(folder_path):
         raise FileNotFoundError(f"Required folder does not exist: {folder_path}")
 
 
-def format_timestamp(date_str: str) -> str | None:
+def format_timestamp(date_str: str) -> Optional[str]:
     try:
         dt = datetime.fromisoformat(date_str)
         return dt.strftime("%Y%m%dT%H%M%SZ")
@@ -50,7 +50,7 @@ def extract_session_mapping(jurisdiction_data: dict) -> dict[str, SessionInfo]:
 
 
 def ensure_session_mapping(
-    state_abbr: str, windycivi_folder: Path, input_folder: str | Path
+    state_abbr: str, windycivi_folder: Path, input_folder: Union[str, Path]
 ) -> dict[str, SessionInfo]:
     """
     Ensures .windycivi/sessions.json exists.
@@ -89,28 +89,35 @@ def ensure_session_mapping(
     print(f"🌐 Fetching session list from OpenStates API")
     url = f"https://v3.openstates.org/jurisdictions/{state_abbr}/sessions"
     try:
-        response = request.get(url, timeout=10)
-        if response.status_code == 200:
-            sessions = response.json()
-            session_mapping = {}
-            for s in sessions:
-                identifier = s.get("identifier")
-                name = s.get("name")
-                start = s.get("start_date", "")[:4]
-                end = s.get("end_date", "")[:4]
-                if identifier and name and start and end:
-                    session_mapping[identifier] = {
-                        "name": name,
-                        "date_folder": f"{start}-{end}",
-                    }
-            with open(session_cache_path, "w", encoding="utf-8") as f:
-                json.dump(session_mapping, f, indent=2)
-            print(f"✅ Wrote session mapping to .windycivi/sessions.json")
-            return session_mapping
-        else:
-            print(f"⚠️ Failed to fetch sessions (status {response.status_code})")
+        with request.urlopen(url, timeout=10) as response:
+            if response.status == 200:
+                sessions = json.loads(response.read().decode('utf-8'))
+                session_mapping = {}
+                for s in sessions:
+                    identifier = s.get("identifier")
+                    name = s.get("name")
+                    start = s.get("start_date", "")[:4]
+                    end = s.get("end_date", "")[:4]
+                    if identifier and name and start and end:
+                        session_mapping[identifier] = {
+                            "name": name,
+                            "date_folder": f"{start}-{end}",
+                        }
+                with open(session_cache_path, "w", encoding="utf-8") as f:
+                    json.dump(session_mapping, f, indent=2)
+                print(f"✅ Wrote session mapping to .windycivi/sessions.json")
+                return session_mapping
+            else:
+                print(f"⚠️ Failed to fetch sessions (status {response.status})")
     except Exception as e:
         print(f"❌ Error fetching sessions: {e}")
+
+    # Even if we couldn't fetch sessions, create an empty file so downstream code doesn't fail
+    # The file will be populated when jurisdiction data is processed
+    if not session_cache_path.exists():
+        with open(session_cache_path, "w", encoding="utf-8") as f:
+            json.dump({}, f, indent=2)
+        print(f"⚠️ Created empty sessions.json file (will be populated from jurisdiction data)")
 
     return {}
 
@@ -119,9 +126,9 @@ def validate_required_field(
     data: dict[str, Any],
     field_name: str,
     filename: str,
-    error_folder: str | Path,
+    error_folder: Union[str, Path],
     error_category: str,
-    custom_message: str | None = None,
+    custom_message: Optional[str] = None,
 ) -> Any:
     """
     Validate that a required field exists in data.
@@ -165,11 +172,11 @@ def validate_required_field(
 
 
 def record_error_file(
-    error_folder: str | Path,
+    error_folder: Union[str, Path],
     category: str,
     filename: str,
     data: dict[str, Any],
-    original_filename: str | None = None,
+    original_filename: Optional[str] = None,
 ) -> None:
     folder = Path(error_folder) / category
     folder.mkdir(parents=True, exist_ok=True)
@@ -212,7 +219,7 @@ def slugify(text: str, max_length=100):
 
 
 def write_action_logs(
-    actions: list[dict[str, Any]], bill_identifier: str, log_folder: str | Path
+    actions: list[dict[str, Any]], bill_identifier: str, log_folder: Union[str, Path]
 ) -> None:
     """
     Writes one JSON file per action for a bill.
@@ -251,7 +258,7 @@ def write_action_logs(
             json.dump({"action": action, "bill_id": bill_identifier}, f, indent=2)
 
 
-def write_vote_event_log(vote_event: dict[str, Any], log_folder: str | Path) -> None:
+def write_vote_event_log(vote_event: dict[str, Any], log_folder: Union[str, Path]) -> None:
     """
     Saves a single vote_event file as a timestamped log.
 

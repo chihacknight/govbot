@@ -1,0 +1,12 @@
+{
+  "action": {
+    "description": "H06 - Travel:Do Pass Failed 2-7-0-0-0",
+    "date": "2025-02-27T21:36:25+00:00",
+    "organization_id": "~{\"classification\": \"lower\"}",
+    "classification": [
+      "committee-failure"
+    ],
+    "related_entities": []
+  },
+  "bill_id": "SF0002"
+}

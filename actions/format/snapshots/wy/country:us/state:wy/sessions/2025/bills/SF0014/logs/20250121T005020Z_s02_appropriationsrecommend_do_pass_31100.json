@@ -1,0 +1,12 @@
+{
+  "action": {
+    "description": "S02 - Appropriations:Recommend Do Pass 3-1-1-0-0",
+    "date": "2025-01-21T00:50:20+00:00",
+    "organization_id": "~{\"classification\": \"upper\"}",
+    "classification": [
+      "committee-passage-favorable"
+    ],
+    "related_entities": []
+  },
+  "bill_id": "SF0014"
+}

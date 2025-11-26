@@ -1,0 +1,12 @@
+{
+  "action": {
+    "description": "S09 - Minerals:Recommend Amend and Do Pass 5-0-0-0-0",
+    "date": "2025-01-20T23:32:22+00:00",
+    "organization_id": "~{\"classification\": \"upper\"}",
+    "classification": [
+      "committee-passage-favorable"
+    ],
+    "related_entities": []
+  },
+  "bill_id": "SF0019"
+}

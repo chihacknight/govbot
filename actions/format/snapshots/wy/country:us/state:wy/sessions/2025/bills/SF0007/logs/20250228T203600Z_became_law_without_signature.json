@@ -1,0 +1,10 @@
+{
+  "action": {
+    "description": "Became Law without Signature",
+    "date": "2025-02-28T20:36:00+00:00",
+    "organization_id": "~{\"classification\": \"legislature\"}",
+    "classification": [],
+    "related_entities": []
+  },
+  "bill_id": "SF0007"
+}

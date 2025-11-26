@@ -1,0 +1,12 @@
+{
+  "action": {
+    "description": "S Received for Introduction",
+    "date": "2024-12-19T18:23:18+00:00",
+    "organization_id": "~{\"classification\": \"upper\"}",
+    "classification": [
+      "filing"
+    ],
+    "related_entities": []
+  },
+  "bill_id": "SF0018"
+}

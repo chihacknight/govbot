@@ -46,19 +46,6 @@ runs:
         set -euo pipefail
         command -v jq >/dev/null 2>&1 || sudo apt-get update && sudo apt-get install -y jq
 
-    - name: Sanitize scraped JSON (_id, scraped_at)
-      shell: bash
-      working-directory: ${{ runner.temp }}/scrape-snapshot-nightly
-      run: |
-        set -euo pipefail
-        tmpc="${RUNNER_TEMP}/san_count.txt"
-        : > "$tmpc"
-        find . -type f -name "*.json" -print0 | while IFS= read -r -d '' f; do
-          jq 'del(..|._id?, .scraped_at?)' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
-          echo 1 >> "$tmpc"
-        done
-        echo "Sanitized $(wc -l < "$tmpc") files"
-
     - name: Install formatter deps (pipenv)
       shell: bash
       working-directory: ${{ github.action_path }}
@@ -97,29 +84,16 @@ runs:
       run: |
         set -euo pipefail
         ACTION_DIR="${{ github.action_path }}"
-        PIPFILE_PATH="$ACTION_DIR/Pipfile"
         
-        # Verify Pipfile and main.py exist
-        if [ ! -f "$PIPFILE_PATH" ]; then
-          echo "::error::❌ Pipfile not found at $PIPFILE_PATH"
-          ls -la "$ACTION_DIR" || true
-          exit 1
-        fi
-        if [ ! -f "$ACTION_DIR/main.py" ]; then
-          echo "::error::❌ main.py not found at $ACTION_DIR/main.py"
-          ls -la "$ACTION_DIR" || true
-          exit 1
-        fi
-        
-        # Ensure we're in the action directory and pipenv knows where the Pipfile is
+        # Ensure we're in the action directory
         cd "$ACTION_DIR"
-        export PIPENV_PIPFILE="$PIPFILE_PATH"
-
-        # Capture formatter output
-        FORMATTER_OUTPUT=$(pipenv run python main.py \
-          --state "$STATE" \
-          --openstates-data-folder "$OPENSTATE_DATA_FOLDER" \
-          --git-repo-folder "$GIT_REPO_FOLDER" 2>&1) || true
+        
+        # Use main.sh with pipenv command pre-set for CI
+        FORMATTER_OUTPUT=$("$ACTION_DIR/main.sh" \
+          "$STATE" \
+          "$OPENSTATE_DATA_FOLDER" \
+          "$GIT_REPO_FOLDER" \
+          "pipenv" 2>&1) || true
 
         echo "$FORMATTER_OUTPUT"
 
@@ -155,7 +129,9 @@ runs:
         git config --local user.name "github-actions[bot]"
 
         # Commit the actual deliverables: legislative data and pipeline metadata
-        git add country:us/ .windycivi/ || true
+        # Add files only if they exist (suppress errors for missing paths)
+        [ -d "country:us" ] && git add country:us/ || true
+        [ -d ".windycivi" ] && git add .windycivi/ || true
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else

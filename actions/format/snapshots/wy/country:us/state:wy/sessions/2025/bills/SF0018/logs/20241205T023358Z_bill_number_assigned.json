@@ -1,0 +1,12 @@
+{
+  "action": {
+    "description": "Bill Number Assigned",
+    "date": "2024-12-05T02:33:58+00:00",
+    "organization_id": "~{\"classification\": \"executive\"}",
+    "classification": [
+      "reading-1"
+    ],
+    "related_entities": []
+  },
+  "bill_id": "SF0018"
+}

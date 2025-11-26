@@ -1,0 +1,10 @@
+{
+  "action": {
+    "description": "House:Pursuant to JR 14-1 (g) referred directly to JCC",
+    "date": "2025-02-12T00:20:01+00:00",
+    "organization_id": "~{\"classification\": \"lower\"}",
+    "classification": [],
+    "related_entities": []
+  },
+  "bill_id": "SF0001"
+}

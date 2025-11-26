@@ -1,17 +1,18 @@
 #!/bin/bash
 
-# PROD DATA SEED: We don't run this script on every test run as it is prod data.
+# This file will run openstate scrape and make new production mocks.
+# These mocks are used downstream, specifically right now by `actions/format`.
 
-SNAPSHOTS_DIR="__snapshots__"
-OPENSTATES_DATA_DIR="$SNAPSHOTS_DIR/_working/_data"
+PROD_MOCKS="prod-mocks-$(date +%F)"
+OPENSTATES_DATA_DIR="$PROD_MOCKS/_working/_data"
 
-rm -rf "$SNAPSHOTS_DIR"
-mkdir -p "$SNAPSHOTS_DIR"
+rm -rf "$PROD_MOCKS"
+mkdir -p "$PROD_MOCKS"
 
 # Using wy because its fast
-./scrape.sh wy latest "$SNAPSHOTS_DIR"
+./scrape.sh wy latest "$PROD_MOCKS"
 
-files=($(find "$SNAPSHOTS_DIR" -type f | sort))
+files=($(find "$PROD_MOCKS" -type f | sort))
 total=${#files[@]}
 echo "Initial total count of files: $total"
 
@@ -31,7 +32,7 @@ echo "Found types: ${types[*]}"
 # For each type, keep only the first 20 files max
 for type in "${types[@]}"; do
     echo "Processing type: $type"
-    files=($(find "$SNAPSHOTS_DIR" -type f -name "${type}_*.json" | sort))
+    files=($(find "$PROD_MOCKS" -type f -name "${type}_*.json" | sort))
     total=${#files[@]}
     echo "  Total files for $type: $total"
     
@@ -49,6 +50,6 @@ for type in "${types[@]}"; do
 done
 
 # Final count
-files=($(find "$SNAPSHOTS_DIR" -type f | sort))
+files=($(find "$PROD_MOCKS" -type f | sort))
 total=${#files[@]}
 echo "Final total count of files: $total"

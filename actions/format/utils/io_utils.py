@@ -1,6 +1,7 @@
 import os
 import json
 from pathlib import Path
+from typing import Union
 from utils.file_utils import record_error_file
 from utils.timestamp_tracker import (
     is_newer_than_latest,
@@ -13,9 +14,9 @@ from utils.processing_tracker import (
 
 
 def load_json_files(
-    input_folder: str | Path,
-    EVENT_ARCHIVE_FOLDER: str | Path,
-    DATA_NOT_PROCESSED_FOLDER: str | Path,
+    input_folder: Union[str, Path],
+    EVENT_ARCHIVE_FOLDER: Union[str, Path],
+    DATA_NOT_PROCESSED_FOLDER: Union[str, Path],
     latest_timestamps: LatestTimestamps,
     state_abbr: str,
     data_processed_folder: Path,

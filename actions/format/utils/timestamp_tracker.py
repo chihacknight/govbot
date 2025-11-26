@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from datetime import datetime
-from typing import Any, Optional, TypedDict
+from typing import Any, Optional, TypedDict, Union
 from .file_utils import format_timestamp, record_error_file
 
 
@@ -38,7 +38,7 @@ def read_latest_timestamps(output_folder: Path) -> LatestTimestamps:
         return get_default_timestamps()
 
 
-def to_dt_obj(ts_str: str | datetime) -> Optional[datetime]:
+def to_dt_obj(ts_str: Union[str, datetime]) -> Optional[datetime]:
     if isinstance(ts_str, datetime):
         return ts_str
     try:
@@ -70,7 +70,7 @@ def update_latest_timestamp(
     return existing_dt
 
 
-def extract_timestamp(data: dict[str, Any], category: str) -> str | None:
+def extract_timestamp(data: dict[str, Any], category: str) -> Optional[str]:
     """
     Extract timestamp from data for events and vote_events.
     Note: Bills no longer use this - they use incremental processing with _processing metadata.

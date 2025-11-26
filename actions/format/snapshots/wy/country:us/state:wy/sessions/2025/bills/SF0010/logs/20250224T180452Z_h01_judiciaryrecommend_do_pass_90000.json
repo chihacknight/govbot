@@ -1,0 +1,12 @@
+{
+  "action": {
+    "description": "H01 - Judiciary:Recommend Do Pass 9-0-0-0-0",
+    "date": "2025-02-24T18:04:52+00:00",
+    "organization_id": "~{\"classification\": \"lower\"}",
+    "classification": [
+      "committee-passage-favorable"
+    ],
+    "related_entities": []
+  },
+  "bill_id": "SF0010"
+}
