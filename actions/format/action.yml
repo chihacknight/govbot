@@ -51,10 +51,24 @@ runs:
       shell: bash
       run: |
         echo "📂 Using pre-existing scrape data from: ${{ inputs.scrape-data-path }}"
-        # Copy data to expected location
-        mkdir -p "${RUNNER_TEMP}/scrape-snapshot-nightly"
-        cp -r "${{ inputs.scrape-data-path }}"/* "${RUNNER_TEMP}/scrape-snapshot-nightly/" || true
-        ls -la "${RUNNER_TEMP}/scrape-snapshot-nightly/" | head -20
+        
+        # Verify source exists
+        if [ ! -d "${{ inputs.scrape-data-path }}" ]; then
+          echo "❌ Source directory does not exist: ${{ inputs.scrape-data-path }}"
+          exit 1
+        fi
+        
+        # Create target directory with state subfolder (formatter expects this structure)
+        TARGET_DIR="${RUNNER_TEMP}/scrape-snapshot-nightly/_data/${{ inputs.state }}"
+        mkdir -p "$TARGET_DIR"
+        
+        # Copy data
+        echo "📦 Copying to: $TARGET_DIR"
+        cp -r "${{ inputs.scrape-data-path }}"/* "$TARGET_DIR/"
+        
+        echo "📋 Files copied:"
+        ls "$TARGET_DIR" | head -10
+        echo "   ... ($(ls "$TARGET_DIR" | wc -l) total files)"
         echo "✅ Scrape data ready"
 
     - name: Ensure jq present
