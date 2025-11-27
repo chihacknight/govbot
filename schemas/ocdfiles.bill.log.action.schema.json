@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/windy-civi/toolkit/actions/format/schemas/action_log.schema.json",
+  "title": "Action Log Schema",
+  "description": "Schema for validating action log files from formatted snapshots (includes both action logs and classification logs)",
+  "type": "object",
+  "required": [
+    "action",
+    "bill_id"
+  ],
+  "properties": {
+    "action": {
+      "$ref": "#/definitions/Action",
+      "description": "The action object"
+    },
+    "bill_id": {
+      "type": "string",
+      "description": "The bill identifier (e.g., SF0001)"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "Action": {
+      "type": "object",
+      "required": [
+        "description",
+        "date",
+        "organization_id",
+        "classification",
+        "related_entities"
+      ],
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Description of the action"
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of when the action occurred"
+        },
+        "organization_id": {
+          "type": "string",
+          "description": "The organization that performed the action, may be a JSON string"
+        },
+        "classification": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Array of classification strings"
+        },
+        "related_entities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "Array of related entity objects"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
+

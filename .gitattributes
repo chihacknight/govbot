@@ -1,0 +1,7 @@
+# Mark all files in generated directories as generated code
+# This will collapse diffs in PRs and exclude from language statistics
+**/generated/** linguist-generated=true
+
+# Mark all files in snapshot directories as generated for linguist, but do not hide diffs
+**/snapshots/** linguist-generated=true linguist-detectable=true
+**/__snapshots__/** linguist-generated=true linguist-detectable=true

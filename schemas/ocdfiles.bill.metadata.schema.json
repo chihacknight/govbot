@@ -1,0 +1,368 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/windy-civi/toolkit/actions/format/schemas/metadata.schema.json",
+  "title": "Bill Metadata Schema",
+  "description": "Schema for validating bill metadata.json files from formatted snapshots",
+  "type": "object",
+  "required": [
+    "legislative_session",
+    "identifier",
+    "title",
+    "classification",
+    "jurisdiction"
+  ],
+  "properties": {
+    "legislative_session": {
+      "type": "string",
+      "description": "The legislative session identifier"
+    },
+    "identifier": {
+      "type": "string",
+      "description": "The bill identifier (e.g., SF0001)"
+    },
+    "title": {
+      "type": "string",
+      "description": "The title of the bill"
+    },
+    "from_organization": {
+      "type": ["string", "null"],
+      "description": "The organization that introduced the bill, may be a JSON string"
+    },
+    "classification": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of classification strings (e.g., ['bill'])"
+    },
+    "subject": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of subject tags"
+    },
+    "abstracts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "abstract": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Array of abstract objects"
+    },
+    "other_titles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Array of alternative title objects"
+    },
+    "other_identifiers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of other identifier strings"
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Action"
+      },
+      "description": "Array of action objects representing bill history"
+    },
+    "sponsorships": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Sponsorship"
+      },
+      "description": "Array of sponsorship objects"
+    },
+    "related_bills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "description": "Array of related bill objects"
+    },
+    "versions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Version"
+      },
+      "description": "Array of version objects"
+    },
+    "documents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Document"
+      },
+      "description": "Array of document objects"
+    },
+    "citations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "description": "Array of citation objects"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Source"
+      },
+      "description": "Array of source objects"
+    },
+    "extras": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Additional metadata specific to the jurisdiction"
+    },
+    "jurisdiction": {
+      "$ref": "#/definitions/Jurisdiction"
+    },
+    "_processing": {
+      "type": "object",
+      "properties": {
+        "logs_latest_update": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of when logs were last updated"
+        },
+        "text_extraction_latest_update": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of when text extraction was last updated"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Processing metadata"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "Action": {
+      "type": "object",
+      "required": [
+        "description",
+        "date",
+        "organization_id",
+        "classification",
+        "related_entities"
+      ],
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Description of the action"
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of when the action occurred"
+        },
+        "organization_id": {
+          "type": "string",
+          "description": "The organization that performed the action, may be a JSON string"
+        },
+        "classification": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Array of classification strings"
+        },
+        "related_entities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "Array of related entity objects"
+        },
+        "_processing": {
+          "type": "object",
+          "properties": {
+            "log_file_created": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO 8601 timestamp of when the log file was created"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "Sponsorship": {
+      "type": "object",
+      "required": [
+        "name",
+        "classification",
+        "entity_type",
+        "primary"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the sponsor"
+        },
+        "classification": {
+          "type": "string",
+          "description": "Classification of the sponsorship (e.g., 'primary')"
+        },
+        "entity_type": {
+          "type": "string",
+          "enum": ["person", "organization"],
+          "description": "Type of entity sponsoring the bill"
+        },
+        "primary": {
+          "type": "boolean",
+          "description": "Whether this is a primary sponsorship"
+        },
+        "person_id": {
+          "type": ["string", "null"],
+          "description": "ID of the person sponsor, may be a JSON string"
+        },
+        "organization_id": {
+          "type": ["string", "null"],
+          "description": "ID of the organization sponsor, may be a JSON string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Version": {
+      "type": "object",
+      "properties": {
+        "note": {
+          "type": "string",
+          "description": "Note describing the version"
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Link"
+          },
+          "description": "Array of link objects"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the version"
+        },
+        "classification": {
+          "type": "string",
+          "description": "Classification of the version"
+        },
+        "extras": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Additional metadata for the version"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Document": {
+      "type": "object",
+      "properties": {
+        "note": {
+          "type": "string",
+          "description": "Note describing the document"
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Link"
+          },
+          "description": "Array of link objects"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the document"
+        },
+        "classification": {
+          "type": "string",
+          "description": "Classification of the document"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Link": {
+      "type": "object",
+      "required": ["url"],
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the link"
+        },
+        "media_type": {
+          "type": "string",
+          "description": "Media type of the linked resource"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Source": {
+      "type": "object",
+      "required": ["url"],
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the source"
+        },
+        "note": {
+          "type": "string",
+          "description": "Note about the source"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Jurisdiction": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "classification",
+        "division_id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Jurisdiction identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the jurisdiction"
+        },
+        "classification": {
+          "type": "string",
+          "enum": ["state", "municipality", "county", "federal"],
+          "description": "Classification of the jurisdiction"
+        },
+        "division_id": {
+          "type": "string",
+          "description": "Open Civic Data division identifier"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
+
