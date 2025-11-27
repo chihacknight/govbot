@@ -5,14 +5,13 @@ inputs:
   state:
     description: "State abbreviation (e.g., id, il, tx, ny, or 'usa')"
     required: true
+  scraper-repo:
+    description: "GitHub repo containing scraped data (e.g., chn-openstates-scrapers/wy-legislation)"
+    required: true
   github-token:
-    description: "GitHub token for releases/artifacts"
+    description: "GitHub token for API calls"
     required: true
     default: "${{ github.token }}"
-  scrape-artifact-name:
-    description: "Name of the scrape artifact to download"
-    required: false
-    default: "scrape-snapshot-nightly"
   force-update:
     description: "Force push even if upstream changed"
     required: false
@@ -26,19 +25,39 @@ runs:
       with:
         python-version: "3.13"
 
-    - name: Download scrape artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: ${{ inputs.scrape-artifact-name }}
-        path: ${{ github.workspace }}
-
-    - name: Extract tarball for formatter
+    - name: Clone scraper repo for data
       shell: bash
       run: |
-        set -euo pipefail
-        mkdir -p "${RUNNER_TEMP}/scrape-snapshot-nightly"
-        tar xzf "${GITHUB_WORKSPACE}/scrape-snapshot-nightly.tgz" -C "${RUNNER_TEMP}/scrape-snapshot-nightly"
-        echo "✅ Extraction complete"
+        echo "📥 Cloning data from ${{ inputs.scraper-repo }}..."
+        git clone --depth 1 https://github.com/${{ inputs.scraper-repo }}.git scraper-data
+
+        # Check if _data folder exists
+        if [ -d "scraper-data/_data/${{ inputs.state }}" ]; then
+          echo "✅ Found scraped data in _data/${{ inputs.state }}"
+        else
+          echo "❌ No scraped data found in _data/${{ inputs.state }}"
+          echo "   Available folders:"
+          ls -la scraper-data/_data/ 2>/dev/null || echo "   (no _data folder found)"
+          exit 1
+        fi
+
+        # Create target directory with state subfolder (formatter expects this structure)
+        TARGET_DIR="${RUNNER_TEMP}/scrape-snapshot-nightly/_data/${{ inputs.state }}"
+        mkdir -p "$TARGET_DIR"
+
+        # Copy data
+        echo "📦 Copying to: $TARGET_DIR"
+        cp -r "scraper-data/_data/${{ inputs.state }}"/* "$TARGET_DIR/"
+
+        FILE_COUNT=$(find "$TARGET_DIR" -type f -name "*.json" | wc -l)
+        echo "📋 Files copied: $FILE_COUNT JSON files"
+
+        if [ "$FILE_COUNT" -eq 0 ]; then
+          echo "❌ No JSON files found in scrape data"
+          exit 1
+        fi
+
+        echo "✅ Scrape data ready"
 
     - name: Ensure jq present
       shell: bash
@@ -57,14 +76,14 @@ runs:
         set -euo pipefail
         ACTION_DIR="${{ github.action_path }}"
         PIPFILE_PATH="$ACTION_DIR/Pipfile"
-        
+
         # Verify Pipfile exists
         if [ ! -f "$PIPFILE_PATH" ]; then
           echo "::error::❌ Pipfile not found at $PIPFILE_PATH"
           ls -la "$ACTION_DIR" || true
           exit 1
         fi
-        
+
         python -m pip install --upgrade pip
         pip install pipenv
         # Tell pipenv to use the Python installed by setup-python action
@@ -84,10 +103,10 @@ runs:
       run: |
         set -euo pipefail
         ACTION_DIR="${{ github.action_path }}"
-        
+
         # Ensure we're in the action directory
         cd "$ACTION_DIR"
-        
+
         # Use main.sh with pipenv command pre-set for CI
         FORMATTER_OUTPUT=$("$ACTION_DIR/main.sh" \
           "$STATE" \
