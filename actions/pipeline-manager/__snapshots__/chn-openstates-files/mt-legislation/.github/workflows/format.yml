@@ -29,25 +29,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Clone scraper repo for data
-        run: |
-          echo "📥 Cloning data from ${{ env.SCRAPER_REPO }}..."
-          git clone --depth 1 https://github.com/${{ env.SCRAPER_REPO }}.git scraper-data
-          
-          # Check if _data folder exists
-          if [ -d "scraper-data/_data/${{ env.STATE_CODE }}" ]; then
-            echo "✅ Found scraped data in _data/${{ env.STATE_CODE }}"
-            ls -la scraper-data/_data/${{ env.STATE_CODE }}/ | head -20
-          else
-            echo "❌ No scraped data found in _data/${{ env.STATE_CODE }}"
-            exit 1
-          fi
-
       - name: Run formatter action
         uses: windy-civi/toolkit/actions/format@feat/decouple-format-from-scrape
         with:
           state: ${{ env.STATE_CODE }}
+          scraper-repo: ${{ env.SCRAPER_REPO }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          scrape-data-path: scraper-data/_data/${{ env.STATE_CODE }}
           force-update: ${{ inputs.force-update }}
 
