@@ -12,28 +12,28 @@ templates:
 locales:
   al:
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Alabama
-    toolkit_branch: feat/decouple-format-from-scrape # Defaults to main, but can make whatever.
+    toolkit_branch: main # Defaults to main, but can make whatever.
     disabled_jobs:
       - extract-text # Exclude extract-text.yml workflow
   ak:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Alaska
   az:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Arizona
   ar:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Arkansas
     labels:
       - working
@@ -41,25 +41,25 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: California
   co:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Colorado
   ct:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Connecticut
   de:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Delaware
     labels:
       - working
@@ -67,7 +67,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Florida
     labels:
       - working
@@ -75,7 +75,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Georgia
     labels:
       - working
@@ -83,19 +83,19 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Hawaii
   id:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Idaho
   il:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Illinois
     labels:
       - working
@@ -103,13 +103,13 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Indiana
   ia:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Iowa
     labels:
       - working
@@ -117,7 +117,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Kansas
     labels:
       - working
@@ -125,7 +125,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Kentucky
     labels:
       - working
@@ -133,7 +133,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Louisiana
     labels:
       - working
@@ -141,31 +141,31 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Maine
   md:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Maryland
   ma:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Massachusetts
   mi:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Michigan
   mn:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Minnesota
     labels:
       - working
@@ -173,13 +173,13 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Mississippi
   mo:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Missouri
     labels:
       - working
@@ -187,7 +187,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Montana
     labels:
       - working
@@ -195,7 +195,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Nebraska
     labels:
       - working
@@ -203,7 +203,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Nevada
     labels:
       - working
@@ -211,7 +211,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: New Hampshire
     labels:
       - working
@@ -219,7 +219,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: New Jersey
     labels:
       - working
@@ -227,7 +227,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: New Mexico
     labels:
       - working
@@ -235,13 +235,13 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: New York
   nc:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: North Carolina
     labels:
       - working
@@ -249,7 +249,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: North Dakota
     labels:
       - working
@@ -257,13 +257,13 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Ohio
   ok:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Oklahoma
     labels:
       - working
@@ -271,7 +271,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Oregon
     labels:
       - working
@@ -279,7 +279,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Pennsylvania
     labels:
       - working
@@ -287,7 +287,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Rhode Island
     labels:
       - working
@@ -295,7 +295,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: South Carolina
     labels:
       - working
@@ -303,13 +303,13 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: South Dakota
   tn:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Tennessee
     labels:
       - working
@@ -317,7 +317,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Texas
     labels:
       - working
@@ -325,7 +325,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Utah
     labels:
       - working
@@ -333,7 +333,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Vermont
     labels:
       - working
@@ -341,13 +341,13 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Virginia
   wa:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Washington
     labels:
       - working
@@ -355,7 +355,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: West Virginia
     labels:
       - working
@@ -363,7 +363,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Wisconsin
     labels:
       - working
@@ -371,7 +371,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Wyoming
     labels:
       - working
@@ -379,7 +379,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Puerto Rico
     labels:
       - working
@@ -387,7 +387,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Northern Mariana Islands
     labels:
       - working
@@ -395,7 +395,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: U.S. Virgin Islands
     labels:
       - working
@@ -403,7 +403,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: Guam
     labels:
       - working
@@ -411,7 +411,7 @@ locales:
     disabled_jobs:
       - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: feat/decouple-format-from-scrape
+    toolkit_branch: main
     name: United States
     labels:
       - working

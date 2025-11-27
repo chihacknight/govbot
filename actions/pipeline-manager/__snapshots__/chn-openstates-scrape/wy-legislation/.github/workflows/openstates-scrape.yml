@@ -29,7 +29,7 @@ jobs:
 
       - name: Run scraper action
         id: scrape
-        uses: windy-civi/toolkit/actions/scrape@feat/decouple-format-from-scrape
+        uses: windy-civi/toolkit/actions/scrape@main
         with:
           state: ${{ env.STATE_CODE }}
           github-token: ${{ secrets.GITHUB_TOKEN }}

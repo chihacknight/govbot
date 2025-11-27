@@ -1,6 +1,9 @@
 name: Format Data for pr
 
 on:
+  # Backup schedule in case dispatch trigger fails
+  schedule:
+    - cron: "0 12 * * *"  # Daily at 12:00 PM UTC (6:00 AM Chicago time)
   # Triggered by scraper repo when scrape completes
   repository_dispatch:
     types: [scrape-and-format-complete]
@@ -30,7 +33,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run formatter action
-        uses: windy-civi/toolkit/actions/format@feat/decouple-format-from-scrape
+        uses: windy-civi/toolkit/actions/format@main
         with:
           state: ${{ env.STATE_CODE }}
           scraper-repo: ${{ env.SCRAPER_REPO }}
