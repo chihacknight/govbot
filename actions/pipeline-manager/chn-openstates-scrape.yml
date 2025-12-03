@@ -40,6 +40,10 @@ locales:
     template: openstates-scrape
     name: Connecticut
     toolkit_branch: main
+  dc:
+    template: openstates-scrape
+    name: District of Columbia
+    toolkit_branch: main
   de:
     template: openstates-scrape
     name: Delaware

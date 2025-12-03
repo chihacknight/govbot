@@ -22,11 +22,7 @@ from typing import Dict, Set, List, Tuple, Optional
 def run_shell(cmd: str, check: bool = True, capture_output: bool = True) -> str:
     """Run a shell command and return the result."""
     result = subprocess.run(
-        cmd,
-        shell=True,
-        check=check,
-        capture_output=capture_output,
-        text=True
+        cmd, shell=True, check=check, capture_output=capture_output, text=True
     )
     if capture_output:
         return result.stdout.strip()
@@ -50,11 +46,7 @@ def check_requirements():
     print("🔐 Checking GitHub authentication...")
     try:
         result = subprocess.run(
-            "gh auth status",
-            shell=True,
-            capture_output=True,
-            text=True,
-            check=True
+            "gh auth status", shell=True, capture_output=True, text=True, check=True
         )
         print("   ✅ Authenticated")
     except subprocess.CalledProcessError:
@@ -64,7 +56,12 @@ def check_requirements():
         sys.exit(1)
 
 
-def get_expected_repos(config_file: Path, generated_dir: Path) -> Tuple[Dict[str, Dict], str]:
+def get_expected_repos(
+    config_file: Path,
+    generated_dir: Path,
+    test_states: Optional[str] = None,
+    all_states: bool = False,
+) -> Tuple[Dict[str, Dict], str]:
     """
     Get expected repos from config YAML file and generated directory.
     Returns tuple of (dict mapping repo_name -> {locale, generated_path, config}, org_username)
@@ -75,7 +72,12 @@ def get_expected_repos(config_file: Path, generated_dir: Path) -> Tuple[Dict[str
 
     print("📝 Generating template files...")
     try:
-        run_shell(f"cd '{script_dir}' && python3 '{render_script}' -c '{config_file.name}' -o generated", check=True)
+        cmd = f"cd '{script_dir}' && python3 '{render_script}' -c '{config_file.name}' -o generated"
+        if all_states:
+            cmd += " --all-states"
+        elif test_states:
+            cmd += f" --test-states '{test_states}'"
+        run_shell(cmd, check=True)
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to generate templates: {e}", file=sys.stderr)
         sys.exit(1)
@@ -83,12 +85,41 @@ def get_expected_repos(config_file: Path, generated_dir: Path) -> Tuple[Dict[str
     # Parse config to get locale info
     # Import render module from the same directory
     import importlib.util
+
     render_path = script_dir / "render.py"
     spec = importlib.util.spec_from_file_location("render", render_path)
     render = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(render)
 
-    all_locales, all_configs, marker_open, marker_close, templates, org_username = render.parse_config(config_file)
+    all_locales, all_configs, marker_open, marker_close, templates, org_username = (
+        render.parse_config(config_file)
+    )
+
+    # Filter locales based on test_states/all_states flags (same logic as render.py)
+    if not all_states:
+        # Default: only process test states
+        if test_states is None:
+            test_states_list = ["al", "ak", "de", "wy", "sd"]  # Default test states
+        else:
+            # Parse comma-separated string
+            test_states_list = [s.strip() for s in test_states.split(",") if s.strip()]
+
+        # Filter to only test states
+        filtered_locales = []
+        filtered_configs = []
+        for locale, config_str in zip(all_locales, all_configs):
+            if str(locale) in test_states_list:
+                filtered_locales.append(locale)
+                filtered_configs.append(config_str)
+
+        all_locales = filtered_locales
+        all_configs = filtered_configs
+
+        print(
+            f"  🧪 Test mode: Processing {len(all_locales)} test states: {', '.join(test_states_list)}"
+        )
+    else:
+        print(f"  🌍 Processing all {len(all_locales)} states from config")
 
     expected_repos = {}
 
@@ -105,24 +136,26 @@ def get_expected_repos(config_file: Path, generated_dir: Path) -> Tuple[Dict[str
 
         # Get folder name (repo name)
         folder_name = locale  # default
-        if template in templates and 'folder-name' in templates[template]:
-            folder_name_template = templates[template]['folder-name']
-            folder_name = render.render_folder_name(folder_name_template, locale, marker_open, marker_close)
+        if template in templates and "folder-name" in templates[template]:
+            folder_name_template = templates[template]["folder-name"]
+            folder_name = render.render_folder_name(
+                folder_name_template, locale, marker_open, marker_close
+            )
 
         generated_path = generated_dir / config_file.stem / folder_name
 
         if generated_path.exists():
             # Get fully_override_dirs from template config
             fully_override_dirs = None
-            if template in templates and 'fully_override_dirs' in templates[template]:
-                fully_override_dirs = templates[template]['fully_override_dirs']
+            if template in templates and "fully_override_dirs" in templates[template]:
+                fully_override_dirs = templates[template]["fully_override_dirs"]
 
             expected_repos[folder_name] = {
-                'locale': locale,
-                'generated_path': generated_path,
-                'config': config_str,
-                'template': template,
-                'fully_override_dirs': fully_override_dirs
+                "locale": locale,
+                "generated_path": generated_path,
+                "config": config_str,
+                "template": template,
+                "fully_override_dirs": fully_override_dirs,
             }
 
     return expected_repos, org_username
@@ -132,15 +165,20 @@ def get_actual_repos(org: str) -> Set[str]:
     """Get list of actual repos in the GitHub organization."""
     print(f"📋 Fetching existing repos in {org}...")
     try:
-        repos_json = run_shell(f"gh repo list '{org}' --limit 1000 --json name", check=True)
+        repos_json = run_shell(
+            f"gh repo list '{org}' --limit 1000 --json name", check=True
+        )
         repos_data = json.loads(repos_json)
-        return {repo['name'] for repo in repos_data}
+        return {repo["name"] for repo in repos_data}
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to list repos in {org}", file=sys.stderr)
         print(f"   Error: {e}", file=sys.stderr)
         print("", file=sys.stderr)
         print("   Possible causes:", file=sys.stderr)
-        print("   - Not authenticated with GitHub CLI (run: gh auth login)", file=sys.stderr)
+        print(
+            "   - Not authenticated with GitHub CLI (run: gh auth login)",
+            file=sys.stderr,
+        )
         print(f"   - No access to organization '{org}'", file=sys.stderr)
         print(f"   - Organization '{org}' does not exist", file=sys.stderr)
         sys.exit(1)
@@ -149,7 +187,9 @@ def get_actual_repos(org: str) -> Set[str]:
         sys.exit(1)
 
 
-def create_repo(org: str, repo_name: str, locale: str, generated_path: Path, dry_run: bool = False) -> bool:
+def create_repo(
+    org: str, repo_name: str, locale: str, generated_path: Path, dry_run: bool = False
+) -> bool:
     """Create a new repository and push template files."""
     full_repo = f"{org}/{repo_name}"
 
@@ -165,11 +205,12 @@ def create_repo(org: str, repo_name: str, locale: str, generated_path: Path, dry
             f"gh repo create '{full_repo}' --public "
             f"--description '🏛️ {locale.upper()} legislative data pipeline' "
             f"--clone=false",
-            check=True
+            check=True,
         )
 
         # Wait for repo to be ready
         import time
+
         time.sleep(2)
 
         # Clone repo
@@ -177,7 +218,10 @@ def create_repo(org: str, repo_name: str, locale: str, generated_path: Path, dry
         repo_dir = temp_dir / repo_name
 
         try:
-            run_shell(f"gh repo clone '{full_repo}' '{repo_dir}' -- --depth 1 --quiet", check=True)
+            run_shell(
+                f"gh repo clone '{full_repo}' '{repo_dir}' -- --depth 1 --quiet",
+                check=True,
+            )
 
             # Copy all files from generated_path to repo_dir
             for item in generated_path.rglob("*"):
@@ -188,22 +232,31 @@ def create_repo(org: str, repo_name: str, locale: str, generated_path: Path, dry
                     shutil.copy2(item, dest_path)
 
             # Commit and push
-            run_shell(f"cd '{repo_dir}' && git config user.name 'github-actions[bot]'", check=True)
-            run_shell(f"cd '{repo_dir}' && git config user.email 'github-actions[bot]@users.noreply.github.com'", check=True)
+            run_shell(
+                f"cd '{repo_dir}' && git config user.name 'github-actions[bot]'",
+                check=True,
+            )
+            run_shell(
+                f"cd '{repo_dir}' && git config user.email 'github-actions[bot]@users.noreply.github.com'",
+                check=True,
+            )
             run_shell(f"cd '{repo_dir}' && git add .", check=True)
 
             # Check if there are any changes to commit
             result = subprocess.run(
                 f"cd '{repo_dir}' && git diff --staged --quiet",
                 shell=True,
-                capture_output=True
+                capture_output=True,
             )
             if result.returncode == 0:
                 # No changes
                 print(f"     ℹ️  No files to commit (repo may be empty)")
             else:
                 # There are changes, commit them
-                run_shell(f"cd '{repo_dir}' && git commit -m 'Initial commit: Generated from template'", check=True)
+                run_shell(
+                    f"cd '{repo_dir}' && git commit -m 'Initial commit: Generated from template'",
+                    check=True,
+                )
 
             # Try to push to main, fallback to master if needed
             try:
@@ -251,7 +304,13 @@ def delete_repo(org: str, repo_name: str, dry_run: bool = False) -> bool:
         return False
 
 
-def update_repo(org: str, repo_name: str, generated_path: Path, dry_run: bool = False, fully_override_dirs: Optional[List[str]] = None) -> bool:
+def update_repo(
+    org: str,
+    repo_name: str,
+    generated_path: Path,
+    dry_run: bool = False,
+    fully_override_dirs: Optional[List[str]] = None,
+) -> bool:
     """Update template files in an existing repository.
 
     Args:
@@ -263,7 +322,7 @@ def update_repo(org: str, repo_name: str, generated_path: Path, dry_run: bool = 
                              Files in these directories that don't exist in generated will be deleted.
     """
     if fully_override_dirs is None:
-        fully_override_dirs = ['.github']  # Default: fully override .github directory
+        fully_override_dirs = [".github"]  # Default: fully override .github directory
 
     full_repo = f"{org}/{repo_name}"
 
@@ -272,7 +331,9 @@ def update_repo(org: str, repo_name: str, generated_path: Path, dry_run: bool = 
     if dry_run:
         print(f"     [DRY RUN] Would update template files")
         if fully_override_dirs:
-            print(f"     [DRY RUN] Fully override directories: {', '.join(fully_override_dirs)}")
+            print(
+                f"     [DRY RUN] Fully override directories: {', '.join(fully_override_dirs)}"
+            )
         return True
 
     temp_dir = Path(subprocess.check_output(["mktemp", "-d"], text=True).strip())
@@ -280,7 +341,9 @@ def update_repo(org: str, repo_name: str, generated_path: Path, dry_run: bool = 
 
     try:
         # Clone repo
-        run_shell(f"gh repo clone '{full_repo}' '{repo_dir}' -- --depth 1 --quiet", check=True)
+        run_shell(
+            f"gh repo clone '{full_repo}' '{repo_dir}' -- --depth 1 --quiet", check=True
+        )
 
         changes_made = False
 
@@ -293,7 +356,7 @@ def update_repo(org: str, repo_name: str, generated_path: Path, dry_run: bool = 
                 generated_files[rel_path] = item
                 # Track parent directories
                 for parent in rel_path.parents:
-                    if str(parent) != '.':
+                    if str(parent) != ".":
                         generated_dirs.add(parent)
 
         # Update or create files
@@ -312,7 +375,7 @@ def update_repo(org: str, repo_name: str, generated_path: Path, dry_run: bool = 
 
         # Get all files in repo (excluding .git and data directories)
         repo_files = {}
-        data_dirs = ('.git', 'country:us', '.windycivi', '_data')
+        data_dirs = (".git", "country:us", ".windycivi", "_data")
         for item in repo_dir.rglob("*"):
             if item.is_file():
                 rel_path = item.relative_to(repo_dir)
@@ -343,8 +406,10 @@ def update_repo(org: str, repo_name: str, generated_path: Path, dry_run: bool = 
                     # Only remove if it's a root-level file (not in any subdirectory)
                     if len(repo_file_path.parts) == 1:
                         # Check if it's a common template file (README.md, etc.)
-                        if repo_file_path.name in ('README.md',):
-                            print(f"     🗑️  Deleting {repo_file_path} (not in template)")
+                        if repo_file_path.name in ("README.md",):
+                            print(
+                                f"     🗑️  Deleting {repo_file_path} (not in template)"
+                            )
                             repo_file.unlink()
                             deleted_files.append(repo_file_path)
                             changes_made = True
@@ -361,7 +426,9 @@ def update_repo(org: str, repo_name: str, generated_path: Path, dry_run: bool = 
                         continue
                     try:
                         if not any(root_path.iterdir()):
-                            print(f"     🗑️  Removing empty directory {root_path.relative_to(repo_dir)}")
+                            print(
+                                f"     🗑️  Removing empty directory {root_path.relative_to(repo_dir)}"
+                            )
                             root_path.rmdir()
                             changes_made = True
                     except OSError:
@@ -372,15 +439,20 @@ def update_repo(org: str, repo_name: str, generated_path: Path, dry_run: bool = 
             return True
 
         # Commit and push
-        run_shell(f"cd '{repo_dir}' && git config user.name 'github-actions[bot]'", check=True)
-        run_shell(f"cd '{repo_dir}' && git config user.email 'github-actions[bot]@users.noreply.github.com'", check=True)
+        run_shell(
+            f"cd '{repo_dir}' && git config user.name 'github-actions[bot]'", check=True
+        )
+        run_shell(
+            f"cd '{repo_dir}' && git config user.email 'github-actions[bot]@users.noreply.github.com'",
+            check=True,
+        )
         run_shell(f"cd '{repo_dir}' && git add .", check=True)
 
         # Check if there are changes
         result = subprocess.run(
             f"cd '{repo_dir}' && git diff --staged --quiet",
             shell=True,
-            capture_output=True
+            capture_output=True,
         )
         if result.returncode == 0:
             # No changes
@@ -389,7 +461,7 @@ def update_repo(org: str, repo_name: str, generated_path: Path, dry_run: bool = 
 
         run_shell(
             f"cd '{repo_dir}' && git commit -m 'chore: update template files from config'",
-            check=True
+            check=True,
         )
 
         # Try main branch first, fallback to master
@@ -421,23 +493,33 @@ def main():
         "--org",
         type=str,
         default=None,
-        help="GitHub organization name (overrides config file, default: read from config file)"
+        help="GitHub organization name (overrides config file, default: read from config file)",
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Show what would be done without making changes"
+        help="Show what would be done without making changes",
     )
     parser.add_argument(
-        "--no-delete",
-        action="store_true",
-        help="Skip deletion of repos not in config"
+        "--no-delete", action="store_true", help="Skip deletion of repos not in config"
     )
     parser.add_argument(
-        "-c", "--config",
+        "-c",
+        "--config",
         type=str,
         required=True,
-        help="Config YAML file (relative to script directory)"
+        help="Config YAML file (relative to script directory)",
+    )
+    parser.add_argument(
+        "--all-states",
+        action="store_true",
+        help="Process all states from config (default: only test states: al,ak,de,wy,sd)",
+    )
+    parser.add_argument(
+        "--test-states",
+        type=str,
+        default=None,
+        help="Comma-separated list of test states to process (default: al,ak,de,wy,sd). Ignored if --all-states is used.",
     )
     args = parser.parse_args()
 
@@ -454,12 +536,17 @@ def main():
         sys.exit(1)
 
     # Get expected and actual repos (this also parses config to get org)
-    expected_repos, org_from_config = get_expected_repos(config_file, generated_dir)
+    expected_repos, org_from_config = get_expected_repos(
+        config_file, generated_dir, args.test_states, args.all_states
+    )
 
     # Get org from args or config
     org = args.org if args.org else org_from_config
     if not org:
-        print(f"❌ org.username not found in {args.config} and --org not provided", file=sys.stderr)
+        print(
+            f"❌ org.username not found in {args.config} and --org not provided",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     print("🚀 Config-driven repository management")
@@ -498,7 +585,13 @@ def main():
         success_count = 0
         for repo_name in sorted(to_create):
             repo_info = expected_repos[repo_name]
-            if create_repo(org, repo_name, repo_info['locale'], repo_info['generated_path'], args.dry_run):
+            if create_repo(
+                org,
+                repo_name,
+                repo_info["locale"],
+                repo_info["generated_path"],
+                args.dry_run,
+            ):
                 success_count += 1
         print()
         print(f"✅ Created {success_count}/{len(to_create)} repositories")
@@ -513,8 +606,14 @@ def main():
         for repo_name in sorted(to_update):
             repo_info = expected_repos[repo_name]
             # Get fully_override_dirs from template config, default to ['.github'] if not specified
-            fully_override_dirs = repo_info.get('fully_override_dirs', ['.github'])
-            if update_repo(org, repo_name, repo_info['generated_path'], args.dry_run, fully_override_dirs=fully_override_dirs):
+            fully_override_dirs = repo_info.get("fully_override_dirs", [".github"])
+            if update_repo(
+                org,
+                repo_name,
+                repo_info["generated_path"],
+                args.dry_run,
+                fully_override_dirs=fully_override_dirs,
+            ):
                 success_count += 1
         print()
         print(f"✅ Updated {success_count}/{len(to_update)} repositories")
@@ -541,7 +640,9 @@ def main():
         print()
     elif to_delete:
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        print(f"⚠️  {len(to_delete)} repositories would be deleted (use --no-delete to skip)")
+        print(
+            f"⚠️  {len(to_delete)} repositories would be deleted (use --no-delete to skip)"
+        )
         print()
 
     print("✅ Done!")
@@ -549,4 +650,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

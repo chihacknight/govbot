@@ -114,5 +114,7 @@ Cargo.lock
 *.rs.bk
 *.rlib
 
+sample_data/*
+
 
 

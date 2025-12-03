@@ -73,9 +73,9 @@ runs:
         set -euo pipefail
         # Persist image tag for later steps (manifest)
         echo "DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG}" >> "${GITHUB_ENV}"
-        
+
         bash "${{ github.action_path }}/scrape.sh" "${{ inputs.state }}" "${DOCKER_IMAGE_TAG}" "$(pwd)" "${{ github.workspace }}" || true
-        
+
         # Check if tarball was created
         if [ -f "${{ github.workspace }}/scrape-snapshot-nightly.tgz" ]; then
           echo "SCRAPE_TARBALL=present" >> "${GITHUB_ENV}"
@@ -181,6 +181,122 @@ runs:
           exit 1
         fi
 
+    - name: Write scrape summary
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        TAR_PATH="${GITHUB_WORKSPACE}/scrape-snapshot-nightly.tgz"
+        SUMMARY_FILE="${GITHUB_WORKSPACE}/scrape-summary.json"
+
+        # Determine source type
+        if [ "${{ env.SCRAPE_TARBALL }}" = "present" ]; then
+          SOURCE="🕷️ Fresh scrape"
+        else
+          SOURCE="📦 Nightly fallback"
+        fi
+
+        # Count files in tarball
+        if [ -f "$TAR_PATH" ]; then
+          FILE_COUNT=$(tar tzf "$TAR_PATH" 2>/dev/null | grep -E '\.json$' | wc -l | tr -d ' ')
+          STATUS="✅ Success"
+        else
+          FILE_COUNT=0
+          STATUS="❌ Failed"
+        fi
+
+        # Read parsed data from summary JSON if available
+        if [ -f "$SUMMARY_FILE" ]; then
+          # Main data objects
+          BILL_COUNT=$(jq -r '.objects.bill // 0' "$SUMMARY_FILE")
+          VOTE_EVENT_COUNT=$(jq -r '.objects.vote_event // 0' "$SUMMARY_FILE")
+          EVENT_COUNT=$(jq -r '.objects.event // 0' "$SUMMARY_FILE")
+          # Metadata objects
+          JURISDICTION_COUNT=$(jq -r '.metadata.jurisdiction // 0' "$SUMMARY_FILE")
+          ORG_COUNT=$(jq -r '.metadata.organization // 0' "$SUMMARY_FILE")
+          # Other
+          DURATION=$(jq -r '.duration // "unknown"' "$SUMMARY_FILE")
+          ERROR_COUNT=$(jq -r '.error_count // 0' "$SUMMARY_FILE")
+          ERRORS=$(jq -r '.errors | if length > 0 then .[] else empty end' "$SUMMARY_FILE" 2>/dev/null || echo "")
+        else
+          BILL_COUNT="N/A"
+          VOTE_EVENT_COUNT="N/A"
+          EVENT_COUNT="N/A"
+          JURISDICTION_COUNT="N/A"
+          ORG_COUNT="N/A"
+          DURATION="N/A"
+          ERROR_COUNT=0
+          ERRORS=""
+        fi
+
+        # Calculate metadata total
+        if [ "$JURISDICTION_COUNT" != "N/A" ] && [ "$ORG_COUNT" != "N/A" ]; then
+          METADATA_TOTAL=$((JURISDICTION_COUNT + ORG_COUNT))
+        else
+          METADATA_TOTAL="N/A"
+        fi
+
+        # Write GitHub Actions summary
+        echo "## 🕷️ Scrape Summary for ${{ inputs.state }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| 📜 Bills | $BILL_COUNT |" >> $GITHUB_STEP_SUMMARY
+        echo "| 🗳️ Vote Events | $VOTE_EVENT_COUNT |" >> $GITHUB_STEP_SUMMARY
+        echo "| 📅 Events | $EVENT_COUNT |" >> $GITHUB_STEP_SUMMARY
+        echo "| 🏛️ Metadata (jurisdiction + org) | $METADATA_TOTAL |" >> $GITHUB_STEP_SUMMARY
+        echo "| 📁 Total JSON Files | $FILE_COUNT |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| | |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| ⏱️ Duration | $DURATION |" >> $GITHUB_STEP_SUMMARY
+        echo "| 📦 Source | $SOURCE |" >> $GITHUB_STEP_SUMMARY
+        echo "| Status | $STATUS |" >> $GITHUB_STEP_SUMMARY
+
+        # Show errors if any (only if scrape actually failed, or if there are critical errors)
+        EXIT_CODE=$(jq -r '.exit_code // 0' "$SUMMARY_FILE" 2>/dev/null || echo "0")
+        if [ -f "$SUMMARY_FILE" ] && [ "$ERROR_COUNT" -gt 0 ] && [ -n "$ERRORS" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "### ❌ Errors Detected ($ERROR_COUNT) - Scrape Failed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ⚠️ Warnings/Errors Detected ($ERROR_COUNT) - Scrape Succeeded" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          # Show up to 15 lines for tracebacks, 5 for other errors
+          if echo "$ERRORS" | grep -q "Traceback"; then
+            echo "$ERRORS" | head -15 >> $GITHUB_STEP_SUMMARY
+          else
+            echo "$ERRORS" | head -5 >> $GITHUB_STEP_SUMMARY
+          fi
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          if [ "$ERROR_COUNT" -gt 5 ]; then
+            echo "_...and $((ERROR_COUNT - 5)) more. Check logs for details._" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi
+
+    - name: Fail action if scrape failed
+      shell: bash
+      run: |
+        set -euo pipefail
+        
+        SUMMARY_FILE="${GITHUB_WORKSPACE}/scrape-summary.json"
+        
+        # Check if scrape failed by reading exit code from summary
+        if [ -f "$SUMMARY_FILE" ]; then
+          EXIT_CODE=$(jq -r '.exit_code // 0' "$SUMMARY_FILE")
+          
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "❌ Scrape failed with exit code $EXIT_CODE"
+            echo "::error::Scrape failed for ${{ inputs.state }}. Check the summary above for details."
+            exit 1
+          else
+            echo "✅ Scrape succeeded"
+          fi
+        else
+          echo "⚠️ No summary file found, assuming success"
+        fi
+
     - name: Extract files to workspace
       if: inputs.commit-and-push == 'true'
       shell: bash
@@ -188,7 +304,7 @@ runs:
         set -euo pipefail
         TARBALL_PATH="${GITHUB_WORKSPACE}/scrape-snapshot-nightly.tgz"
         DATA_DIR="${GITHUB_WORKSPACE}/_data/${{ inputs.state }}"
-        
+
         # Extract tarball if files don't exist in workspace (safety net)
         if [ -f "$TARBALL_PATH" ]; then
           if [ ! -d "$DATA_DIR" ] || [ -z "$(ls -A "$DATA_DIR" 2>/dev/null)" ]; then
@@ -208,35 +324,35 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        
+
         DATA_DIR="${GITHUB_WORKSPACE}/_data/${{ inputs.state }}"
         BRANCH="${{ inputs.branch }}"
-        
+
         # Check if scraped files exist
         if [ ! -d "$DATA_DIR" ] || [ -z "$(ls -A "$DATA_DIR" 2>/dev/null)" ]; then
           echo "⚠️ No scraped files found in _data/${{ inputs.state }}/"
           exit 0
         fi
-        
+
         # Check if we're in a git repository
         if [ ! -d "${GITHUB_WORKSPACE}/.git" ]; then
           echo "⚠️ Not in a git repository, skipping commit/push"
           exit 0
         fi
-        
+
         # Configure git
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        
+
         # Add scraped files
         git add "_data/${{ inputs.state }}/"
-        
+
         # Commit if there are changes
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else
           git commit -m "🕷️ Scrape data for ${{ inputs.state }} - $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
-          
+
           # Pull latest changes before pushing
           echo "📥 Pulling latest changes..."
           if ! git pull --no-rebase origin "$BRANCH" 2>&1; then
@@ -246,7 +362,7 @@ runs:
             git add "_data/${{ inputs.state }}/"
             git commit --no-edit -m "🔄 Auto-merge: kept scraped data" || true
           fi
-          
+
           # Push with retries
           PUSH_SUCCESS=false
           for i in 1 2 3; do
@@ -263,14 +379,14 @@ runs:
                 break
               fi
             fi
-            
+
             if [ $i -lt 3 ]; then
               echo "⚠️ Push failed (attempt $i), pulling and retrying..."
               git pull --no-rebase origin "$BRANCH" || true
               sleep 2
             fi
           done
-          
+
           if [ "$PUSH_SUCCESS" = "false" ]; then
             echo "❌ Failed to push after 3 attempts"
             exit 1

@@ -20,21 +20,26 @@ fi
 cd "$WORKING_DIR"
 mkdir -p _working/_data _working/_cache
 
+# Log file to capture Docker output for summary
+SCRAPE_LOG="${OUTPUT_DIR}/scrape-output.log"
+> "$SCRAPE_LOG"  # Clear/create log file
+
 echo "🕷️ Scraping ${STATE} (with retries + DNS override)..."
 exit_code=1
 for i in 1 2 3; do
   docker pull openstates/scrapers:${DOCKER_IMAGE_TAG} || true
+  # Capture output to log file while still displaying it
   if docker run \
       --dns 8.8.8.8 --dns 1.1.1.1 \
       -v "$(pwd)/_working/_data":/opt/openstates/openstates/_data \
       -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
       openstates/scrapers:${DOCKER_IMAGE_TAG} \
-      ${STATE} bills --scrape --fastmode
+      ${STATE} bills --scrape --fastmode 2>&1 | tee -a "$SCRAPE_LOG"
   then
     exit_code=0
     break
   fi
-  echo "⚠️ scrape attempt $i failed; sleeping 20s..."
+  echo "⚠️ scrape attempt $i failed; sleeping 20s..." | tee -a "$SCRAPE_LOG"
   sleep 20
 done
 
@@ -48,23 +53,28 @@ fi
 echo "Found ${COUNT_JSON} JSON files in $JSON_DIR"
 if [ "$COUNT_JSON" -gt 0 ]; then
   # Copy files directly to workspace _data directory
+  # Clean the directory first to avoid accumulating stale files with different UUIDs
   mkdir -p "${OUTPUT_DIR}/_data/${STATE}"
   
   # Copy all files from JSON_DIR to output directory
   if [ -d "$JSON_DIR" ]; then
-    # Use rsync if available (more reliable), otherwise use cp with proper glob handling
+    # Use rsync if available (more reliable), with --delete to remove stale files
     if command -v rsync >/dev/null 2>&1; then
-      rsync -av "$JSON_DIR/" "${OUTPUT_DIR}/_data/${STATE}/"
+      echo "🧹 Syncing scraped files (removing stale files)..."
+      rsync -av --delete "$JSON_DIR/" "${OUTPUT_DIR}/_data/${STATE}/"
     else
-      # Use find to copy files reliably
+      # Fallback: clean directory manually then copy
+      echo "🧹 Cleaning _data/${STATE}/ directory..."
+      rm -rf "${OUTPUT_DIR}/_data/${STATE}"
+      mkdir -p "${OUTPUT_DIR}/_data/${STATE}"
       find "$JSON_DIR" -type f -exec cp {} "${OUTPUT_DIR}/_data/${STATE}/" \;
     fi
     
     # Verify files were copied
     COPIED_COUNT=$(find "${OUTPUT_DIR}/_data/${STATE}" -type f -name '*.json' 2>/dev/null | wc -l | tr -d ' ')
-    echo "✅ Copied ${COPIED_COUNT} scraped files to ${OUTPUT_DIR}/_data/${STATE}/"
+    echo "✅ ${COPIED_COUNT} scraped files in ${OUTPUT_DIR}/_data/${STATE}/"
   fi
-  
+
   # Also create tarball for artifacts/releases
   tar zcf scrape-snapshot-nightly.tgz --mode=755 -C "$JSON_DIR" .
   cp scrape-snapshot-nightly.tgz "${OUTPUT_DIR}/scrape-snapshot-nightly.tgz"
@@ -77,6 +87,78 @@ fi
 if [ $exit_code -ne 0 ]; then
   echo "Warning: Scrape step exited non-zero; continuing with fallback/nightly artifact." >&2
 fi
+
+# Parse scrape log and create summary JSON
+SUMMARY_FILE="${OUTPUT_DIR}/scrape-summary.json"
+
+# Extract object counts from "object_type: N" patterns
+# Main data objects
+BILL_COUNT=$(grep -oP '^\s*bill:\s*\K\d+' "$SCRAPE_LOG" 2>/dev/null | tail -1 || echo "0")
+VOTE_EVENT_COUNT=$(grep -oP '^\s*vote_event:\s*\K\d+' "$SCRAPE_LOG" 2>/dev/null | tail -1 || echo "0")
+EVENT_COUNT=$(grep -oP '^\s*event:\s*\K\d+' "$SCRAPE_LOG" 2>/dev/null | tail -1 || echo "0")
+
+# Metadata objects
+JURISDICTION_COUNT=$(grep -oP '^\s*jurisdiction:\s*\K\d+' "$SCRAPE_LOG" 2>/dev/null | tail -1 || echo "0")
+ORG_COUNT=$(grep -oP '^\s*organization:\s*\K\d+' "$SCRAPE_LOG" 2>/dev/null | tail -1 || echo "0")
+
+# Extract duration from "duration: H:MM:SS" pattern (bills scrape)
+DURATION=$(grep -A2 'bills scrape:' "$SCRAPE_LOG" 2>/dev/null | grep -oP 'duration:\s*\K[\d:\.]+' || echo "unknown")
+
+# Extract errors - look for Python tracebacks and exceptions
+# First, find traceback blocks (multi-line)
+TRACEBACKS=$(grep -A 10 '^Traceback (most recent call last):' "$SCRAPE_LOG" 2>/dev/null | head -30 || echo "")
+
+# Find exception lines (but exclude common retry/resolved messages and INFO level logs)
+EXCEPTIONS=$(grep -iE '^\w+Error:|^\w+Exception:|^\w+Warning:' "$SCRAPE_LOG" 2>/dev/null | \
+  grep -vE '(retry|retrying|resolved|recovered|succeeded after|^\d+:\d+:\d+ INFO)' | head -10 || echo "")
+
+# Find other error indicators (ERROR/EXCEPTION/TRACEBACK in caps, exclude INFO logs and "failed" in vote messages)
+# Only match actual error keywords in caps, not "failed" in vote outcomes
+# Exclude ALL lines that contain " INFO " (case-insensitive) to filter out informational logs
+OTHER_ERRORS=$(grep -E '(ERROR|EXCEPTION|TRACEBACK|AssertionError|TimeoutError|ConnectionError|HTTPError)' "$SCRAPE_LOG" 2>/dev/null | \
+  grep -viE '( INFO |scrape attempt|retry|retrying|resolved|recovered|succeeded)' | \
+  head -10 || echo "")
+
+# Combine errors, prioritizing tracebacks
+if [ -n "$TRACEBACKS" ]; then
+  ERRORS="$TRACEBACKS"
+elif [ -n "$EXCEPTIONS" ]; then
+  ERRORS="$EXCEPTIONS"
+else
+  ERRORS="$OTHER_ERRORS"
+fi
+
+# Count unique error occurrences (rough estimate)
+if [ -n "$TRACEBACKS" ]; then
+  ERROR_COUNT=$(echo "$TRACEBACKS" | grep -c 'Traceback\|Error\|Exception' 2>/dev/null || echo "1")
+elif [ -n "$EXCEPTIONS" ]; then
+  ERROR_COUNT=$(echo "$EXCEPTIONS" | wc -l | tr -d ' ')
+else
+  ERROR_COUNT=$(echo "$OTHER_ERRORS" | wc -l | tr -d ' ')
+fi
+
+# Write summary JSON
+cat > "$SUMMARY_FILE" <<EOF
+{
+  "state": "${STATE}",
+  "exit_code": ${exit_code},
+  "objects": {
+    "bill": ${BILL_COUNT:-0},
+    "vote_event": ${VOTE_EVENT_COUNT:-0},
+    "event": ${EVENT_COUNT:-0}
+  },
+  "metadata": {
+    "jurisdiction": ${JURISDICTION_COUNT:-0},
+    "organization": ${ORG_COUNT:-0}
+  },
+  "json_files": ${COUNT_JSON:-0},
+  "duration": "${DURATION}",
+  "error_count": ${ERROR_COUNT},
+  "errors": $(echo "$ERRORS" | head -5 | jq -R -s 'split("\n") | map(select(. != ""))')
+}
+EOF
+
+echo "📊 Scrape summary written to $SUMMARY_FILE"
 
 exit $exit_code
 
