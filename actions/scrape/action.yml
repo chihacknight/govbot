@@ -25,6 +25,10 @@ inputs:
     description: "Git branch to push to"
     required: false
     default: "main"
+  api-keys:
+    description: "JSON object with API keys for states that require them (e.g., DC_API_KEY, NEW_YORK_API_KEY)"
+    required: false
+    default: "{}"
 
 outputs:
   scrape-artifact-name:
@@ -69,6 +73,7 @@ runs:
       working-directory: ${{ runner.temp }}
       env:
         DOCKER_IMAGE_TAG: latest
+        API_KEYS_JSON: ${{ inputs.api-keys }}
       run: |
         set -euo pipefail
         # Persist image tag for later steps (manifest)

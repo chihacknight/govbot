@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: scrape.sh <state> [DOCKER_IMAGE_TAG] [working_dir] [output_dir]
+# Usage: scrape.sh <state> [DOCKER_IMAGE_TAG] [working_dir] [output_dir] [api_keys_json]
 #   state: State abbreviation (e.g., "id", "il", "tx", "ny", or "usa")
 #   DOCKER_IMAGE_TAG: Docker image tag to use (defaults to "latest")
 #   working_dir: Optional working directory (defaults to current directory)
 #   output_dir: Optional output directory for tarball (defaults to current directory)
+#   api_keys_json: Optional JSON object with API keys (defaults to "{}")
 
 STATE="${1:-}"
 DOCKER_IMAGE_TAG="${2:-latest}"
 WORKING_DIR="${3:-$(pwd)}"
 OUTPUT_DIR="${4:-$(pwd)}"
+API_KEYS_JSON="${5:-{}}"
 
 if [ -z "$STATE" ]; then
   echo "Error: State argument is required" >&2
@@ -24,6 +26,39 @@ mkdir -p _working/_data _working/_cache
 SCRAPE_LOG="${OUTPUT_DIR}/scrape-output.log"
 > "$SCRAPE_LOG"  # Clear/create log file
 
+# Parse API keys from JSON and build Docker env flags
+# Use array to properly handle values with spaces/special chars
+DOCKER_ENV_FLAGS=()
+if [ -n "$API_KEYS_JSON" ] && [ "$API_KEYS_JSON" != "{}" ]; then
+  echo "🔑 Parsing API keys..."
+  # Extract all keys from JSON and build -e flags for Docker
+  # List of known API key environment variables
+  API_KEY_NAMES=(
+    "DC_API_KEY"
+    "NEW_YORK_API_KEY"
+    "INDIANA_API_KEY"
+    "USER_AGENT"
+    "VIRGINIA_FTP_USER"
+    "VIRGINIA_FTP_PASSWORD"
+  )
+
+  for key_name in "${API_KEY_NAMES[@]}"; do
+    # Try to extract key value from JSON using jq (if available) or fallback to grep
+    if command -v jq >/dev/null 2>&1; then
+      key_value=$(echo "$API_KEYS_JSON" | jq -r ".${key_name} // empty" 2>/dev/null || echo "")
+    else
+      # Fallback: use grep/sed to extract (basic parsing)
+      key_value=$(echo "$API_KEYS_JSON" | grep -o "\"${key_name}\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" | sed 's/.*"\([^"]*\)"$/\1/' || echo "")
+    fi
+
+    if [ -n "$key_value" ] && [ "$key_value" != "null" ]; then
+      # Add to array with proper quoting for values with spaces
+      DOCKER_ENV_FLAGS+=(-e "${key_name}=${key_value}")
+      echo "  ✓ Set ${key_name}"
+    fi
+  done
+fi
+
 echo "🕷️ Scraping ${STATE} (with retries + DNS override)..."
 exit_code=1
 for i in 1 2 3; do
@@ -33,6 +68,7 @@ for i in 1 2 3; do
       --dns 8.8.8.8 --dns 1.1.1.1 \
       -v "$(pwd)/_working/_data":/opt/openstates/openstates/_data \
       -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
+      "${DOCKER_ENV_FLAGS[@]+"${DOCKER_ENV_FLAGS[@]}"}" \
       openstates/scrapers:${DOCKER_IMAGE_TAG} \
       ${STATE} bills --scrape --fastmode 2>&1 | tee -a "$SCRAPE_LOG"
   then
@@ -55,7 +91,7 @@ if [ "$COUNT_JSON" -gt 0 ]; then
   # Copy files directly to workspace _data directory
   # Clean the directory first to avoid accumulating stale files with different UUIDs
   mkdir -p "${OUTPUT_DIR}/_data/${STATE}"
-  
+
   # Copy all files from JSON_DIR to output directory
   if [ -d "$JSON_DIR" ]; then
     # Use rsync if available (more reliable), with --delete to remove stale files
@@ -69,7 +105,7 @@ if [ "$COUNT_JSON" -gt 0 ]; then
       mkdir -p "${OUTPUT_DIR}/_data/${STATE}"
       find "$JSON_DIR" -type f -exec cp {} "${OUTPUT_DIR}/_data/${STATE}/" \;
     fi
-    
+
     # Verify files were copied
     COPIED_COUNT=$(find "${OUTPUT_DIR}/_data/${STATE}" -type f -name '*.json' 2>/dev/null | wc -l | tr -d ' ')
     echo "✅ ${COPIED_COUNT} scraped files in ${OUTPUT_DIR}/_data/${STATE}/"
