@@ -136,7 +136,7 @@ fn process_single_locale(
     token_str: Option<&str>,
     verbose: bool,
 ) -> CloneResult {
-    let repo_name = format!("{}-data-pipeline", locale);
+    let repo_name = git::build_repo_name(locale);
     let target_dir = repos_dir.join(&repo_name);
     
     let local_size = if target_dir.exists() {

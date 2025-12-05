@@ -1,5 +1,6 @@
 use crate::config::{Config, JoinOption};
 use crate::error::{Error, Result};
+use crate::git;
 use crate::types::{
     FileWithTimestamp, LogContent, LogEntry, Metadata, MinimalMetadata, Sponsors,
     VoteEventResult,
@@ -77,7 +78,7 @@ impl PipelineProcessor {
             config
                 .sources
                 .iter()
-                .map(|source| search_dir.join(format!("{}-data-pipeline", source)))
+                .map(|source| search_dir.join(git::build_repo_name(source)))
                 .collect()
         };
 

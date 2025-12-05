@@ -11,7 +11,7 @@ use insta;
 #[tokio::test]
 async fn test_pipeline_processor_snapshot() {
     // Use the same test data directory as the example
-    let git_dir = "tmp/git/windy-civi-pipelines";
+    let git_dir = "tmp/git/repos";
     
     // Build configuration matching the render-snapshots.sh script
     let config = ConfigBuilder::new(git_dir)

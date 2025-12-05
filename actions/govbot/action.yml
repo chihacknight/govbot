@@ -12,7 +12,7 @@ inputs:
   output_dir:
     description: "Output directory for cloned repositories"
     required: false
-    default: "logs/windy-civi-pipelines"
+    default: "./govbot/repos"
   sort:
     description: "Sort order for results (ASC or DESC)"
     required: false
@@ -23,7 +23,7 @@ inputs:
   output_file:
     description: "Path to the output file"
     required: false
-    default: "./logs/windy-civi-pipelines.log"
+    default: "./govbot/logs/govbot.log"
 
 outputs:
   directories:

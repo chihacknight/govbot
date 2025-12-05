@@ -170,6 +170,6 @@ impl ConfigBuilder {
 
 impl Default for Config {
     fn default() -> Self {
-        Self::new("tmp/git/windy-civi-pipelines")
+        Self::new("tmp/repos")
     }
 }

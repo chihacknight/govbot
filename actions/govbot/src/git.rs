@@ -3,6 +3,91 @@ use git2::{build::RepoBuilder, FetchOptions, RemoteCallbacks, Repository};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+// Repository URL template - fully configurable for any git hosting service
+//
+// This template uses {locale} as a placeholder that will be replaced with the actual locale.
+// You can configure it via the GOVBOT_REPO_URL_TEMPLATE environment variable.
+//
+// Examples:
+//   - GitHub: https://github.com/org/{locale}-suffix.git
+//   - GitLab: https://gitlab.com/org/{locale}-suffix.git
+//   - Bitbucket: https://bitbucket.org/org/{locale}-suffix.git
+//   - Self-hosted GitLab: https://git.example.com/group/{locale}-repo.git
+//   - Self-hosted Gitea: https://gitea.example.com/org/{locale}-data.git
+//
+// To use a custom URL template, set the environment variable:
+//   export GOVBOT_REPO_URL_TEMPLATE="https://gitlab.com/myorg/{locale}-data.git"
+const DEFAULT_REPO_URL_TEMPLATE: &str =
+    "https://github.com/chn-openstates-files/{locale}-legislation.git";
+
+/// Get the repository URL template from environment or use default
+fn get_repo_url_template() -> String {
+    std::env::var("GOVBOT_REPO_URL_TEMPLATE")
+        .unwrap_or_else(|_| DEFAULT_REPO_URL_TEMPLATE.to_string())
+}
+
+/// Build the clone URL for a repository
+pub fn build_clone_url(locale: &str) -> String {
+    let template = get_repo_url_template();
+    template.replace("{locale}", locale)
+}
+
+/// Extract repository name from URL template
+/// For example: "https://github.com/org/{locale}-suffix.git" -> "{locale}-suffix"
+fn extract_repo_name_pattern(template: &str) -> String {
+    // Extract the part after the last / and before .git
+    if let Some(start) = template.rfind('/') {
+        let after_slash = &template[start + 1..];
+        if let Some(end) = after_slash.rfind(".git") {
+            after_slash[..end].to_string()
+        } else {
+            // No .git extension, just take after last /
+            after_slash.to_string()
+        }
+    } else {
+        // Fallback: return template as-is (might be just the pattern)
+        template.to_string()
+    }
+}
+
+/// Extract organization/group from URL template
+/// For example: "https://github.com/org/{locale}-suffix.git" -> "org"
+fn extract_repo_org(template: &str) -> String {
+    // Extract the part between domain and repository name
+    // Format: https://domain.com/org/{locale}-suffix.git
+    if let Some(protocol_pos) = template.find("://") {
+        let after_protocol = &template[protocol_pos + 3..];
+        if let Some(domain_end) = after_protocol.find('/') {
+            let after_domain = &after_protocol[domain_end + 1..];
+            // Find the next / which should be before the repo name
+            if let Some(org_end) = after_domain.find('/') {
+                return after_domain[..org_end].to_string();
+            }
+            // If no second /, the whole thing might be the org (unlikely but handle it)
+            if let Some(repo_start) = after_domain.find('{') {
+                return after_domain[..repo_start].trim_end_matches('/').to_string();
+            }
+        }
+    }
+    // Fallback: return default org
+    "chn-openstates-files".to_string()
+}
+
+/// Build the repository name (used for local directory names)
+pub fn build_repo_name(locale: &str) -> String {
+    let template = get_repo_url_template();
+    let pattern = extract_repo_name_pattern(&template);
+    pattern.replace("{locale}", locale)
+}
+
+/// Build the repository path (org/repo-name format, used for display)
+pub fn build_repo_path(locale: &str) -> String {
+    let template = get_repo_url_template();
+    let org = extract_repo_org(&template);
+    let repo_name = build_repo_name(locale);
+    format!("{}/{}", org, repo_name)
+}
+
 /// Get the default repos directory: $HOME/.govbot/repos
 pub fn default_repos_dir() -> Result<PathBuf> {
     let home = std::env::var("HOME")
@@ -73,14 +158,10 @@ pub fn clone_or_pull_repo_quiet(
     token: Option<&str>,
     quiet: bool,
 ) -> Result<&'static str> {
-    let repo_name = format!("{}-data-pipeline", locale);
-    let repo_path = "windy-civi-pipelines/".to_string() + &repo_name;
+    let clone_url = build_clone_url(locale);
+    let repo_name = build_repo_name(locale);
+    let repo_path = build_repo_path(locale);
     let target_dir = repos_dir.join(&repo_name);
-
-    // Build clone URL (always use HTTPS, token will be in credentials)
-    let clone_url = format!("https://github.com/{}.git", repo_path);
-
-    // Track if we're doing a reclone (after deleting due to merge error)
     let mut is_reclone = false;
 
     // Check if repository already exists
@@ -467,8 +548,8 @@ pub fn pull_repo_quiet(
     token: Option<&str>,
     quiet: bool,
 ) -> Result<()> {
-    let repo_name = format!("{}-data-pipeline", locale);
-    let repo_path = "windy-civi-pipelines/".to_string() + &repo_name;
+    let repo_name = build_repo_name(locale);
+    let repo_path = build_repo_path(locale);
     let target_dir = repos_dir.join(&repo_name);
 
     let repo = match Repository::open(&target_dir) {
@@ -619,12 +700,27 @@ pub fn get_remote_repo_size_estimate(
     }
 }
 
+/// Extract suffix from URL template (everything after {locale})
+/// For example: "{locale}-legislation" -> "-legislation"
+fn extract_repo_suffix(template: &str) -> String {
+    let pattern = extract_repo_name_pattern(template);
+    if let Some(locale_pos) = pattern.find("{locale}") {
+        // Get everything after {locale}
+        pattern[locale_pos + 8..].to_string() // 8 is length of "{locale}"
+    } else {
+        // Fallback: try common patterns
+        "-legislation".to_string()
+    }
+}
+
 /// Get all available locale repositories in the repos directory
 pub fn get_available_locales(repos_dir: &Path) -> Result<Vec<String>> {
     if !repos_dir.exists() {
         return Ok(Vec::new());
     }
 
+    let template = get_repo_url_template();
+    let suffix = extract_repo_suffix(&template);
     let mut locales = Vec::new();
 
     for entry in std::fs::read_dir(repos_dir)? {
@@ -633,6 +729,14 @@ pub fn get_available_locales(repos_dir: &Path) -> Result<Vec<String>> {
 
         if path.is_dir() && Repository::open(&path).is_ok() {
             if let Some(dir_name) = path.file_name().and_then(|n| n.to_str()) {
+                // Check for current format first, then old format for backward compatibility
+                if !suffix.is_empty() {
+                    if let Some(locale) = dir_name.strip_suffix(&suffix) {
+                        locales.push(locale.to_string());
+                        continue;
+                    }
+                }
+                // Fallback to old format for backward compatibility
                 if let Some(locale) = dir_name.strip_suffix("-data-pipeline") {
                     locales.push(locale.to_string());
                 }
@@ -749,7 +853,7 @@ fn remove_dir_all_robust(path: &Path) -> std::io::Result<()> {
 
 /// Delete a repository for a given locale
 pub fn delete_repo(locale: &str, repos_dir: &Path) -> Result<()> {
-    let repo_name = format!("{}-data-pipeline", locale);
+    let repo_name = build_repo_name(locale);
     let target_dir = repos_dir.join(&repo_name);
 
     if !target_dir.exists() {

@@ -51,6 +51,37 @@ build:
 build-release:
     cargo build --release
 
+# Run govbot CLI with repo-local directory (doesn't touch user's ~/.govbot)
+# Automatically uses .test-govbot as the govbot directory unless --govbot-dir is specified
+# Usage: just govbot [COMMAND] [ARGS...]
+# Examples:
+#   just govbot --help
+#   just govbot clone usa il
+#   just govbot clone --govbot-dir custom-dir usa
+#   just govbot logs --sources usa
+govbot *ARGS:
+    #!/usr/bin/env bash
+    set -e
+    
+    TEST_DIR=".test-govbot"
+    
+    # Build release binary if it doesn't exist or is outdated
+    if [ ! -f "target/release/govbot" ] || [ "src" -nt "target/release/govbot" ]; then
+        echo "🔨 Building release target..."
+        cargo build --release
+    fi
+    
+    # Check if --govbot-dir is already in the arguments
+    # Convert ARGS to a string and check if it contains --govbot-dir
+    ARGS_STR="{{ARGS}}"
+    if [[ "$ARGS_STR" =~ --govbot-dir ]]; then
+        echo "📍 Using custom govbot-dir from arguments"
+        ./target/release/govbot {{ARGS}}
+    else
+        echo "📍 Using repo-local directory: $TEST_DIR (your ~/.govbot won't be modified)"
+        ./target/release/govbot {{ARGS}} --govbot-dir "$TEST_DIR"
+    fi
+
 # Run all tests
 test:
     cargo test
