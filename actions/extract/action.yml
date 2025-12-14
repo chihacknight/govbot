@@ -19,7 +19,7 @@ runs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.13"
+        python-version: "3.9"
 
     - name: Install dependencies
       shell: bash
@@ -40,7 +40,11 @@ runs:
         echo "✅ Found Pipfile, installing dependencies..."
         # Explicitly tell pipenv where the Pipfile is
         export PIPENV_PIPFILE="$ACTION_DIR/Pipfile"
-        pipenv install --deploy
+        # Remove any existing virtualenv to ensure we use the correct Python version
+        pipenv --rm 2>/dev/null || true
+        # Verify Python version before creating venv
+        python --version
+        pipenv install --deploy --python "$(which python)"
 
     - name: Extract Text from PDFs and XMLs
       id: extract

@@ -23,7 +23,7 @@ runs:
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.13"
+        python-version: "3.9"
 
     - name: Clone scraper repo for data
       shell: bash
@@ -90,7 +90,11 @@ runs:
         # Explicitly set Pipfile location to ensure pipenv uses the correct one
         export PIPENV_PIPFILE="$PIPFILE_PATH"
         cd "$ACTION_DIR"
-        pipenv install --deploy --dev --python python
+        # Remove any existing virtualenv to ensure we use the correct Python version
+        pipenv --rm 2>/dev/null || true
+        # Verify Python version before creating venv
+        python --version
+        pipenv install --deploy --dev --python "$(which python)"
 
     - name: Run formatter
       shell: bash
@@ -134,6 +138,28 @@ runs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "✅ **Status:** Complete" >> $GITHUB_STEP_SUMMARY
 
+    - name: Generate DCAT data.json
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        set -euo pipefail
+        ACTION_DIR="${{ github.action_path }}"
+
+        # Generate state name for title (capitalize first letter)
+        STATE_UPPER=$(echo "${{ inputs.state }}" | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
+        STATE_TITLE="${STATE_UPPER} Legislation"
+
+        # Get repo URL from GitHub context
+        REPO_URL="https://github.com/${{ github.repository }}"
+
+        # Run the DCAT generator script
+        python3 "$ACTION_DIR/generate_dcat.py" \
+          --repo-root "${{ github.workspace }}" \
+          --title "$STATE_TITLE" \
+          --repo-url "$REPO_URL"
+
+        echo "✅ DCAT data.json generated at ${{ github.workspace }}/data.json"
+
     - name: Clean ephemeral build dirs
       shell: bash
       run: |
@@ -147,10 +173,11 @@ runs:
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
 
-        # Commit the actual deliverables: legislative data and pipeline metadata
+        # Commit the actual deliverables: legislative data, pipeline metadata, and DCAT catalog
         # Add files only if they exist (suppress errors for missing paths)
         [ -d "country:us" ] && git add country:us/ || true
         [ -d ".windycivi" ] && git add .windycivi/ || true
+        [ -f "data.json" ] && git add data.json || true
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else
