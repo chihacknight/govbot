@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use govbot::git;
 use govbot::{TagMatcher, hash_text, TagFile, TagFileMetadata, BillTagResult};
-use govbot::similarity::extract_text_from_json;
+use govbot::selectors::ocd_files_select_default;
 use futures::StreamExt;
 use futures::stream;
 use std::io::{self, Write, BufRead, BufReader};
@@ -166,7 +166,12 @@ enum Command {
     /// Tag bills using semantic or built-in similarity based on govbot.yml in the current directory.
     /// Reads JSON lines from stdin (from `govbot logs`), processes entries with bill identifiers,
     /// and writes per-tag files under the directory containing govbot.yml.
+    /// By default, acts as a filter: only outputs lines that match tags.
+    /// If a tag name is provided, only processes and outputs lines matching that specific tag.
     Tag {
+        /// Optional tag name to filter to a specific tag (e.g., "lgbtq", "budget")
+        tag_name: Option<String>,
+
         /// Output directory (defaults to the directory containing govbot.yml)
         #[arg(long = "output-dir")]
         output_dir: Option<String>,
@@ -174,6 +179,10 @@ enum Command {
         /// Govbot directory (default: $CWD/.govbot/repos, or GOVBOT_DIR env var)
         #[arg(long = "govbot-dir")]
         govbot_dir: Option<String>,
+
+        /// Force re-tagging even if bill already exists in tag files
+        #[arg(long)]
+        overwrite: bool,
     },
 }
 
@@ -1443,10 +1452,79 @@ fn ensure_embedding_files(model_dir: &std::path::Path) -> bool {
 /// Tag result structure: (tag_key, score_breakdown)
 type TagResult = (String, govbot::ScoreBreakdown);
 
+/// Check if a bill is already tagged in tag file(s) for the given session
+/// If tag_name is Some, only checks that specific tag file
+/// Returns a list of tag names that contain this bill
+fn check_existing_tags(
+    tags_dir: &PathBuf,
+    bill_id: &str,
+    tag_name: Option<&str>,
+) -> anyhow::Result<Vec<String>> {
+    let mut matched_tags = Vec::new();
+    
+    if !tags_dir.exists() {
+        return Ok(matched_tags);
+    }
+    
+    // If a specific tag is requested, only check that tag file
+    if let Some(requested_tag) = tag_name {
+        let tag_path = tags_dir.join(format!("{}.tag.json", requested_tag));
+        if tag_path.exists() {
+            match fs::read_to_string(&tag_path) {
+                Ok(contents) => {
+                    if let Ok(tag_file) = serde_json::from_str::<TagFile>(&contents) {
+                        if tag_file.bills.contains_key(bill_id) {
+                            matched_tags.push(requested_tag.to_string());
+                        }
+                    }
+                }
+                Err(_) => {
+                    // Tag file exists but can't be read - return empty
+                }
+            }
+        }
+        return Ok(matched_tags);
+    }
+    
+    // Otherwise, scan all .tag.json files in the tags directory
+    for entry in fs::read_dir(tags_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        
+        if let Some(ext) = path.extension() {
+            if ext == "json" {
+                if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                    // Remove .tag suffix if present (e.g., "budget.tag" -> "budget")
+                    let tag_name = stem.strip_suffix(".tag").unwrap_or(stem);
+                    
+                    match fs::read_to_string(&path) {
+                        Ok(contents) => {
+                            if let Ok(tag_file) = serde_json::from_str::<TagFile>(&contents) {
+                                // Check if bill_id exists in bills map
+                                if tag_file.bills.contains_key(bill_id) {
+                                    matched_tags.push(tag_name.to_string());
+                                }
+                            }
+                        }
+                        Err(_) => {
+                            // Skip files that can't be read
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    Ok(matched_tags)
+}
+
 async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
     let Command::Tag {
+        tag_name,
         output_dir,
         govbot_dir,
+        overwrite,
     } = cmd else {
         unreachable!()
     };
@@ -1467,52 +1545,38 @@ async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
     let model_path = model_dir.join("model.onnx");
     let tokenizer_path = model_dir.join("tokenizer.json");
     
-    // Determine if we should use embedding mode (govbot.yml present)
-    let use_embedding = default_tags_cfg.exists();
+    // Require govbot.yml
+    if !default_tags_cfg.exists() {
+        return Err(anyhow::anyhow!(
+            "govbot.yml not found in current directory"
+        ));
+    }
 
-    let embedding_matcher = if use_embedding {
-        // Ensure files exist (download if missing)
-        if !ensure_embedding_files(&model_dir) {
-            eprintln!("Embedding download failed or dependencies missing; falling back to builtin TF-IDF mode.");
-            None
-        } else {
-            let tags_path = default_tags_cfg.clone();
+    // Load tag definitions (needed for both embedding and keyword fallback)
+    let tag_defs = govbot::embeddings::load_tags_config(&default_tags_cfg)
+        .map_err(|e| anyhow::anyhow!("Failed to parse govbot.yml: {}", e))?;
 
-            eprintln!("Using embedding mode:");
-            eprintln!("  Model: {}", model_path.display());
-            eprintln!("  Tokenizer: {}", tokenizer_path.display());
-            eprintln!("  Tags config: {}", tags_path.display());
+    // Try embedding mode first
+    let embedding_matcher = if ensure_embedding_files(&model_dir) {
+        let tags_path = default_tags_cfg.clone();
 
-            Some(
-                TagMatcher::from_files(&model_path, &tokenizer_path, &tags_path)
-                    .map_err(|e| anyhow::anyhow!("Failed to initialize embedding matcher: {}", e))?,
-            )
-        }
-    } else {
-        None
-    };
-    
-    // Load tags for builtin mode (only if not using embedding)
-    let mut tag_thresholds: HashMap<String, f64> = HashMap::new();
-    let tag_list: Vec<String> = if !use_embedding {
-        if default_tags_cfg.exists() {
-            // load from govbot.yml
-            let tag_defs = govbot::embeddings::load_tags_config(&default_tags_cfg)
-                .map_err(|e| anyhow::anyhow!("Failed to parse govbot.yml: {}", e))?;
-            eprintln!("Using govbot.yml for builtin mode (extracting tag names)");
-            let mut names = Vec::new();
-            for tag in tag_defs {
-                tag_thresholds.insert(tag.name.clone(), tag.threshold as f64);
-                names.push(tag.name);
+        eprintln!("Using embedding mode:");
+        eprintln!("  Model: {}", model_path.display());
+        eprintln!("  Tokenizer: {}", tokenizer_path.display());
+        eprintln!("  Tags config: {}", tags_path.display());
+
+        match TagMatcher::from_files(&model_path, &tokenizer_path, &tags_path) {
+            Ok(matcher) => Some(matcher),
+            Err(e) => {
+                eprintln!("Warning: Failed to initialize embedding matcher: {}", e);
+                eprintln!("Falling back to keyword-based matching.");
+                None
             }
-            names
-        } else {
-            return Err(anyhow::anyhow!(
-                "govbot.yml not found in current directory"
-            ));
         }
     } else {
-        Vec::new() // embedding mode
+        eprintln!("Embedding files not available; using keyword-based matching.");
+        eprintln!("  Tags config: {}", default_tags_cfg.display());
+        None
     };
     
     // Determine output directory
@@ -1540,7 +1604,6 @@ async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
     let mut processed_count = 0;
     let mut skipped_count = 0;
     let mut read_count: usize = 0;
-    let _tag_defs = embedding_matcher.as_ref().map(|m| m.tag_definitions());
     
     eprintln!("Reading JSON lines from stdin...");
     
@@ -1565,7 +1628,7 @@ async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
                     .and_then(|id| id.as_str());
 
                 // Extract text from JSON for embedding comparison
-                let bill_text = extract_text_from_json(&json_value);
+                let bill_text = ocd_files_select_default(&json_value);
                 
                 // Extract path info from sources.log (default selector format)
                 let path_info = json_value
@@ -1586,78 +1649,104 @@ async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
                         format!("entry_{}", &text_hash[..8])
                     });
                     
-                    // Choose strategy based on mode
-                    let tags: Vec<TagResult> = if let Some(matcher) = embedding_matcher.as_ref() {
-                        match matcher.match_json_value(&json_value) {
-                            Ok(results) => results,
+                    // Determine tags directory
+                    let tags_dir = base_output_dir
+                        .join(&format!("country:{}", country))
+                        .join(&format!("state:{}", state))
+                        .join("sessions")
+                        .join(&session_id)
+                        .join("tags");
+                    
+                    // Validate tag_name if provided
+                    if let Some(ref requested_tag) = tag_name {
+                        if !tag_defs.iter().any(|td| td.name == *requested_tag) {
+                            return Err(anyhow::anyhow!(
+                                "Tag '{}' not found in govbot.yml. Available tags: {}",
+                                requested_tag,
+                                tag_defs.iter().map(|td| td.name.clone()).collect::<Vec<_>>().join(", ")
+                            ));
+                        }
+                    }
+                    
+                    // Fast path: check if bill is already tagged (unless overwrite is set)
+                    let mut matched_tags: Vec<String> = Vec::new();
+                    let mut should_run_tagging = overwrite;
+                    
+                    if !overwrite {
+                        match check_existing_tags(&tags_dir, &bill_id, tag_name.as_deref()) {
+                            Ok(existing_tags) => {
+                                if !existing_tags.is_empty() {
+                                    // Bill is already tagged - output the line and skip tagging
+                                    matched_tags = existing_tags;
+                                    should_run_tagging = false;
+                                } else {
+                                    // Bill not found in tag file(s) - need to run tagging
+                                    should_run_tagging = true;
+                                }
+                            }
                             Err(e) => {
-                                eprintln!("Error running embedding matcher for bill {}: {}", bill_id, e);
-                                skipped_count += 1;
-                                continue;
+                                // Error checking tags - run tagging to be safe
+                                eprintln!("Warning: Error checking existing tags for {}: {}", bill_id, e);
+                                should_run_tagging = true;
                             }
                         }
-                    } else {
-                        // Use built-in similarity matcher - convert to ScoreBreakdown
-                        govbot::match_tags(&tag_list, &json_value)
-                            .into_iter()
-                            .filter(|(tag_key, score)| {
-                                let threshold = tag_thresholds.get(tag_key).copied().unwrap_or(0.5);
-                                *score >= threshold
-                            })
-                            .map(|(tag, score)| {
-                                (tag, govbot::ScoreBreakdown {
-                                    final_score: score,
-                                    base_embedding: None,
-                                    example_similarity: None,
-                                    keyword_match: false,
-                                    negative_penalty: 0.0,
-                                })
-                            })
-                            .collect()
-                    };
+                    }
                     
-                    if !tags.is_empty() {
-                        let text_hash = hash_text(&bill_text);
-                                
-                                // Write per-tag files immediately
-                                let tags_dir = base_output_dir
-                                    .join(&format!("country:{}", country))
-                                    .join(&format!("state:{}", state))
-                                    .join("sessions")
-                                    .join(&session_id)
-                                    .join("tags");
-                                fs::create_dir_all(&tags_dir)?;
+                    // Run tagging logic if needed
+                    if should_run_tagging {
+                        // Choose strategy based on mode
+                        let mut tags: Vec<TagResult> = if let Some(matcher) = embedding_matcher.as_ref() {
+                            match matcher.match_json_value(&json_value) {
+                                Ok(results) => results,
+                                Err(e) => {
+                                    eprintln!("Error running embedding matcher for bill {}: {}", bill_id, e);
+                                    eprintln!("Falling back to keyword-based matching for this entry.");
+                                    // Fall back to keyword matching for this entry
+                                    govbot::embeddings::match_tags_keywords(&tag_defs, &json_value)
+                                }
+                            }
+                        } else {
+                            // Use keyword-based fallback matcher
+                            govbot::embeddings::match_tags_keywords(&tag_defs, &json_value)
+                        };
+                        
+                        // Filter to specific tag if requested
+                        if let Some(ref requested_tag) = tag_name {
+                            tags.retain(|(tag, _)| tag == requested_tag);
+                        }
+                        
+                        // Extract tag names from results
+                        matched_tags = tags.iter().map(|(tag_name, _)| tag_name.clone()).collect();
+                        
+                        // Save tags to files if we found matches
+                        if !tags.is_empty() {
+                            let text_hash = hash_text(&bill_text);
+                            
+                            // Write per-tag files immediately
+                            fs::create_dir_all(&tags_dir)?;
 
-                                // Get current timestamp for metadata
-                                let now = chrono::Utc::now().to_rfc3339();
-                                let model_path_str = if use_embedding {
-                                    model_path.to_string_lossy().to_string()
-                                } else {
-                                    "builtin-tfidf".to_string()
-                                };
+                            // Get current timestamp for metadata
+                            let now = chrono::Utc::now().to_rfc3339();
+                            let model_path_str = if embedding_matcher.is_some() {
+                                model_path.to_string_lossy().to_string()
+                            } else {
+                                "keyword-fallback".to_string()
+                            };
 
-                                for (tag_key, score_breakdown) in tags {
-                                    let tag_path = tags_dir.join(format!("{}.tag.json", tag_key));
+                            for (tag_key, score_breakdown) in tags {
+                                let tag_path = tags_dir.join(format!("{}.tag.json", tag_key));
 
-                                    // Load or create TagFile structure
-                                    let mut tag_file: TagFile = if tag_path.exists() {
+                                // Load or create TagFile structure
+                                let mut tag_file: TagFile = if tag_path.exists() {
                                         match fs::read_to_string(&tag_path) {
                                             Ok(contents) => {
                                                 serde_json::from_str(&contents).unwrap_or_else(|_| {
                                                     // If parsing fails, create a new TagFile
-                                                    let tag_def = if let Some(matcher) = embedding_matcher.as_ref() {
-                                                        matcher.tag_definitions().get(&tag_key).cloned()
-                                                            .unwrap_or_else(|| govbot::TagDefinition {
-                                                                name: tag_key.clone(),
-                                                                description: String::new(),
-                                                                examples: Vec::new(),
-                                                                include_keywords: Vec::new(),
-                                                                exclude_keywords: Vec::new(),
-                                                                negative_examples: Vec::new(),
-                                                                threshold: 0.5,
-                                                            })
-                                                    } else {
-                                                        govbot::TagDefinition {
+                                                    let tag_def = tag_defs
+                                                        .iter()
+                                                        .find(|td| td.name == tag_key)
+                                                        .cloned()
+                                                        .unwrap_or_else(|| govbot::TagDefinition {
                                                             name: tag_key.clone(),
                                                             description: String::new(),
                                                             examples: Vec::new(),
@@ -1665,8 +1754,7 @@ async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
                                                             exclude_keywords: Vec::new(),
                                                             negative_examples: Vec::new(),
                                                             threshold: 0.5,
-                                                        }
-                                                    };
+                                                        });
                                                     
                                                     let tag_config_hash = hash_text(&serde_json::to_string(&tag_def).unwrap_or_default());
                                                     
@@ -1684,28 +1772,19 @@ async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
                                             }
                                             Err(_) => {
                                                 // Create new TagFile
-                                                let tag_def = if let Some(matcher) = embedding_matcher.as_ref() {
-                                                    matcher.tag_definitions().get(&tag_key).cloned()
-                                                        .unwrap_or_else(||                                                             govbot::TagDefinition {
-                                                                name: tag_key.clone(),
-                                                                description: String::new(),
-                                                                examples: Vec::new(),
-                                                                include_keywords: Vec::new(),
-                                                                exclude_keywords: Vec::new(),
-                                                                negative_examples: Vec::new(),
-                                                                threshold: 0.5,
-                                                            })
-                                                } else {
-                                                            govbot::TagDefinition {
-                                                                name: tag_key.clone(),
-                                                                description: String::new(),
-                                                                examples: Vec::new(),
-                                                                include_keywords: Vec::new(),
-                                                                exclude_keywords: Vec::new(),
-                                                                negative_examples: Vec::new(),
-                                                                threshold: 0.5,
-                                                            }
-                                                };
+                                                let tag_def = tag_defs
+                                                    .iter()
+                                                    .find(|td| td.name == tag_key)
+                                                    .cloned()
+                                                    .unwrap_or_else(|| govbot::TagDefinition {
+                                                        name: tag_key.clone(),
+                                                        description: String::new(),
+                                                        examples: Vec::new(),
+                                                        include_keywords: Vec::new(),
+                                                        exclude_keywords: Vec::new(),
+                                                        negative_examples: Vec::new(),
+                                                        threshold: 0.5,
+                                                    });
                                                 
                                                 let tag_config_hash = hash_text(&serde_json::to_string(&tag_def)?);
                                                 
@@ -1723,28 +1802,19 @@ async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
                                         }
                                     } else {
                                         // Create new TagFile
-                                        let tag_def = if let Some(matcher) = embedding_matcher.as_ref() {
-                                            matcher.tag_definitions().get(&tag_key).cloned()
-                                                .unwrap_or_else(||                                                             govbot::TagDefinition {
-                                                                name: tag_key.clone(),
-                                                                description: String::new(),
-                                                                examples: Vec::new(),
-                                                                include_keywords: Vec::new(),
-                                                                exclude_keywords: Vec::new(),
-                                                                negative_examples: Vec::new(),
-                                                                threshold: 0.5,
-                                                            })
-                                        } else {
-                                                            govbot::TagDefinition {
-                                                                name: tag_key.clone(),
-                                                                description: String::new(),
-                                                                examples: Vec::new(),
-                                                                include_keywords: Vec::new(),
-                                                                exclude_keywords: Vec::new(),
-                                                                negative_examples: Vec::new(),
-                                                                threshold: 0.5,
-                                                            }
-                                        };
+                                        let tag_def = tag_defs
+                                            .iter()
+                                            .find(|td| td.name == tag_key)
+                                            .cloned()
+                                            .unwrap_or_else(|| govbot::TagDefinition {
+                                                name: tag_key.clone(),
+                                                description: String::new(),
+                                                examples: Vec::new(),
+                                                include_keywords: Vec::new(),
+                                                exclude_keywords: Vec::new(),
+                                                negative_examples: Vec::new(),
+                                                threshold: 0.5,
+                                            });
                                         
                                         let tag_config_hash = hash_text(&serde_json::to_string(&tag_def)?);
                                         
@@ -1760,53 +1830,57 @@ async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
                                         }
                                     };
 
-                                    // Update metadata
-                                    tag_file.metadata.last_run = now.clone();
-                                    tag_file.metadata.model = model_path_str.clone();
-                                    
-                                    // Update tag config if it changed
-                                    let current_tag_def = if let Some(matcher) = embedding_matcher.as_ref() {
-                                        matcher.tag_definitions().get(&tag_key).cloned()
-                                            .unwrap_or_else(|| tag_file.tag_config.clone())
-                                    } else {
-                                        tag_file.tag_config.clone()
-                                    };
-                                    
-                                    let current_config_hash = hash_text(&serde_json::to_string(&current_tag_def)?);
-                                    if current_config_hash != tag_file.metadata.tag_config_hash {
-                                        tag_file.tag_config = current_tag_def;
-                                        tag_file.metadata.tag_config_hash = current_config_hash;
-                                    }
-                                    
-                                    // Add text to cache if not present
-                                    if !tag_file.text_cache.contains_key(&text_hash) {
-                                        tag_file.text_cache.insert(text_hash.clone(), bill_text.clone());
-                                    }
-                                    
-                                    // Add/update bill result
-                                    tag_file.bills.insert(bill_id.to_string(), BillTagResult {
-                                        text_hash: text_hash.clone(),
-                                        score: score_breakdown,
-                                    });
-
-                                    // Write updated TagFile
-                                    let json_string = serde_json::to_string_pretty(&tag_file)?;
-                                    fs::write(&tag_path, json_string)?;
+                                // Update metadata
+                                tag_file.metadata.last_run = now.clone();
+                                tag_file.metadata.model = model_path_str.clone();
+                                
+                                // Update tag config if it changed
+                                let current_tag_def = tag_defs
+                                    .iter()
+                                    .find(|td| td.name == tag_key)
+                                    .cloned()
+                                    .unwrap_or_else(|| tag_file.tag_config.clone());
+                                
+                                let current_config_hash = hash_text(&serde_json::to_string(&current_tag_def)?);
+                                if current_config_hash != tag_file.metadata.tag_config_hash {
+                                    tag_file.tag_config = current_tag_def;
+                                    tag_file.metadata.tag_config_hash = current_config_hash;
                                 }
-
-                                processed_count += 1;
-                                if processed_count % 50 == 0 {
-                                    eprintln!("Processed {} entries...", processed_count);
+                                
+                                // Add text to cache if not present
+                                if !tag_file.text_cache.contains_key(&text_hash) {
+                                    tag_file.text_cache.insert(text_hash.clone(), bill_text.clone());
                                 }
-                    } else {
-                        // No tags met thresholds; count as processed-but-unmatched
-                        processed_count += 1;
-                        if processed_count % 200 == 0 {
-                            eprintln!(
-                                "Processed {} entries with no tag matches yet (thresholds may be high)...",
-                                processed_count
-                            );
+                                
+                                // Add/update bill result
+                                tag_file.bills.insert(bill_id.to_string(), BillTagResult {
+                                    text_hash: text_hash.clone(),
+                                    score: score_breakdown,
+                                });
+
+                                // Write updated TagFile
+                                let json_string = serde_json::to_string_pretty(&tag_file)?;
+                                fs::write(&tag_path, json_string)?;
+                            }
                         }
+                    }
+                    
+                    // Output the line if it matches tags (filter mode)
+                    // If a specific tag was requested, only output if that tag matches
+                    // Otherwise, output if any tag matches
+                    let should_output = if let Some(ref requested_tag) = tag_name {
+                        matched_tags.contains(requested_tag)
+                    } else {
+                        !matched_tags.is_empty()
+                    };
+                    
+                    if should_output {
+                        write_json_line(line)?;
+                    }
+                    
+                    processed_count += 1;
+                    if processed_count % 50 == 0 {
+                        eprintln!("Processed {} entries (matched: {} tags)...", processed_count, matched_tags.len());
                     }
                 } else {
                     // No path info - skip this entry (default selector should always provide sources.log)

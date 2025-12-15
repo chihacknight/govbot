@@ -2,41 +2,69 @@
 
 The `govbot tag` command can automatically tag legislative logs using semantic similarity matching.
 
+### How tagging works
+
+- **Primary mode (embeddings)**: Uses a sentence-transformer model (`model.onnx` + `tokenizer.json`) to embed logs and tags, combining:
+  - **Base similarity** between the log text and each tag’s description/examples
+  - **Example similarity** to individual positive examples
+  - **Keyword boosts** from `include_keywords` / `exclude_keywords`
+  - **Negative examples** penalties via `negative_examples`
+- **Fallback mode (keywords only)**: If the embedding model or tokenizer cannot be loaded, govbot falls back to **keyword-based tagging** using `include_keywords` / `exclude_keywords` from the tag definitions.
+
+In both modes, each tag has a **`threshold`** and a structured **score breakdown** is stored in per-tag `.tag.json` files.
+
 ## Quick Start
 
 1. **Place required files in your working directory:**
 
-   - `tags.toml` - Tag definitions (see example below)
-   - `model.onnx` - ONNX sentence transformer model (e.g., all-MiniLM-L6-v2)
-   - `tokenizer.json` - Tokenizer file for the model
+   - `govbot.yml` – Tag definitions (see below)
+   - `model.onnx` – ONNX sentence transformer model (e.g., all-MiniLM-L6-v2)
+   - `tokenizer.json` – Tokenizer file for the model
 
 2. **Run the command:**
+
    ```bash
    just govbot logs --repos il --limit 10 | just govbot tag
    ```
 
-The command will automatically detect `tags.toml` and use embedding mode if all three files are present.
+govbot will:
 
-## Tag Configuration (tags.toml)
+- Require `govbot.yml`
+- Try to use **embedding mode** (`model.onnx` + `tokenizer.json`)
+- If embeddings are unavailable or fail to initialize, automatically **fall back to keyword-based matching** (using `include_keywords` / `exclude_keywords`).
 
-Each tag defines:
+## Tag Configuration (`govbot.yml`)
 
-- `name`: The tag identifier
+Each tag defines (YAML schema):
+
+- `name`: Tag identifier (key name in `tags:` map)
 - `description`: Semantic description of what the tag represents
-- `threshold`: Minimum similarity score (0.0-1.0) to match
-- `examples`: Optional example phrases (helps improve matching)
+- `threshold`: Minimum similarity score (0.0–1.0) to match
+- `examples`: Optional positive example phrases (improves embeddings)
+- `include_keywords`: Phrases whose presence should strongly favor this tag
+- `exclude_keywords`: Phrases that should block this tag
+- `negative_examples`: Texts that should **not** match this tag (used as embedding negatives)
 
 Example:
 
-```toml
-[[tag]]
-name = "education"
-description = "Legislation related to schools, education funding, curriculum standards, teacher certification, higher education policy, student loans, charter schools"
-threshold = 0.60
-examples = [
-    "School funding bill",
-    "Teacher certification requirements"
-]
+```yaml
+tags:
+  education:
+    description: >
+      Legislation related to schools, education funding, curriculum standards,
+      teacher certification, higher education policy, student loans, charter schools
+    threshold: 0.6
+    examples:
+      - School funding bill
+      - Teacher certification requirements
+    include_keywords:
+      - education
+      - school funding
+      - curriculum
+    exclude_keywords:
+      - driver education
+    negative_examples:
+      - Resolution honoring local high school sports teams
 ```
 
 ## Getting the Model Files
@@ -51,40 +79,31 @@ To use embedding mode, you need:
    optimum-cli export onnx --model sentence-transformers/all-MiniLM-L6-v2 minilm-l6-v2-onnx/
    ```
 
-2. **Tokenizer**: The tokenizer.json file is included in the exported model directory
+2. **Tokenizer**: The `tokenizer.json` file is included in the exported model directory.
 
-3. **Copy files**: Place `model.onnx` and `tokenizer.json` in your working directory
+3. **Copy files**: Place `model.onnx` and `tokenizer.json` in your working directory (or in the directory pointed to by `--govbot-dir` / `GOVBOT_DIR`).
 
-## Alternative: Using Built-in TF-IDF Mode
-
-If you don't have model files, you can use the built-in TF-IDF similarity matcher:
-
-```bash
-just govbot logs --repos il --limit 10 | \
-  just govbot tag --ai-tool builtin --tags "education,budget,healthcare"
-```
+If either file is missing or cannot be loaded, govbot will **still run** using the keyword-based fallback described above.
 
 ## Output
 
-Tagged results are written to:
+Tagged results are written to per-tag files under the session’s `tags/` directory:
 
-```
-country:us/state:{locale}/sessions/{session_id}/tags.json
+```text
+country:us/state:{state}/sessions/{session_id}/tags/{tag_name}.tag.json
 ```
 
-The output format:
+Each `{tag_name}.tag.json` file contains:
 
-```json
-{
-  "bills": {
-    "SB1234": [
-      ["education", 0.85],
-      ["budget", 0.72]
-    ]
-  },
-  "tags": {
-    "education": "Legislation related to schools...",
-    "budget": "Legislation concerning state budgets..."
-  }
-}
-```
+- `metadata`: Model info, last run timestamp, hash of the tag config
+- `tag_config`: The tag definition as used on the last run
+- `text_cache`: Deduplicated bill/log texts keyed by content hash
+- `bills`: Map of bill identifiers to their `ScoreBreakdown`
+
+`ScoreBreakdown` includes:
+
+- `final_score`: Final score used for threshold comparison
+- `base_embedding`: Base embedding similarity (if embeddings were used)
+- `example_similarity`: Max similarity to positive examples
+- `keyword_match`: Whether include_keywords matched
+- `negative_penalty`: Penalty applied from negative examples (if any)

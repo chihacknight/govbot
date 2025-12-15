@@ -10,7 +10,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::similarity::extract_text_from_json;
+use crate::selectors::ocd_files_select_default;
 
 /// Breakdown of scoring components for a tag match
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -18,7 +18,9 @@ pub struct ScoreBreakdown {
     pub final_score: f64,
     pub base_embedding: Option<f64>,
     pub example_similarity: Option<f64>,
-    pub keyword_match: bool,
+    /// Keywords from include_keywords that matched in the text
+    #[serde(default)]
+    pub keyword_match: Vec<String>,
     pub negative_penalty: f64,
 }
 
@@ -189,15 +191,18 @@ impl EmbeddingService {
     }
 }
 
-/// Check if any keywords from the list appear in the text (case-insensitive, word-boundary aware)
-fn matches_keywords(text: &str, keywords: &[String]) -> bool {
+/// Return all keywords from the list that appear in the text
+/// (case-insensitive, word-boundary aware).
+fn find_matching_keywords(text: &str, keywords: &[String]) -> Vec<String> {
     let text_lower = text.to_lowercase();
-    keywords.iter().any(|keyword| {
+    let mut matches = Vec::new();
+
+    for keyword in keywords {
         let keyword_lower = keyword.to_lowercase();
         // Check for exact word match or phrase match
         // For multi-word keywords, use contains
         // For single-word keywords, check word boundaries
-        if keyword_lower.contains(' ') {
+        let is_match = if keyword_lower.contains(' ') {
             // Multi-word phrase: use contains
             text_lower.contains(&keyword_lower)
         } else {
@@ -209,8 +214,14 @@ fn matches_keywords(text: &str, keywords: &[String]) -> bool {
             Regex::new(&pattern)
                 .map(|re| re.is_match(&text_lower))
                 .unwrap_or_else(|_| text_lower.contains(&keyword_lower))
+        };
+
+        if is_match {
+            matches.push(keyword.clone());
         }
-    })
+    }
+
+    matches
 }
 
 /// Matcher that precomputes tag embeddings and scores logs against them
@@ -286,22 +297,28 @@ impl TagMatcher {
         tag_def: &TagDefinition,
         embeddings: &mut EmbeddingService,
     ) -> ScoreBreakdown {
-        // 4. Exclude keywords: zero out if exclude keywords match (check first)
+        // 4. Exclude keywords: zero out if exclude keywords match (check first).
+        // We don't currently expose which exclude keyword matched; we just block the tag.
         if !tag_def.exclude_keywords.is_empty() {
-            if matches_keywords(log_text, &tag_def.exclude_keywords) {
+            let exclude_matches = find_matching_keywords(log_text, &tag_def.exclude_keywords);
+            if !exclude_matches.is_empty() {
                 return ScoreBreakdown {
                     final_score: 0.0,
                     base_embedding: None,
                     example_similarity: None,
-                    keyword_match: false,
+                    keyword_match: Vec::new(),
                     negative_penalty: 0.0,
                 };
             }
         }
 
         // 3. Include keywords: if keywords match, they have the heaviest impact
-        let has_keyword_match = !tag_def.include_keywords.is_empty()
-            && matches_keywords(log_text, &tag_def.include_keywords);
+        let include_matches = if tag_def.include_keywords.is_empty() {
+            Vec::new()
+        } else {
+            find_matching_keywords(log_text, &tag_def.include_keywords)
+        };
+        let has_keyword_match = !include_matches.is_empty();
 
         let mut score = 0.0;
         let mut weight_sum = 0.0;
@@ -309,10 +326,12 @@ impl TagMatcher {
         let mut example_similarity_score: Option<f32> = None;
 
         // 1. Base score: embedding similarity to description + examples
+        // Industry standard: embeddings are the primary signal
         if let Some(tag_emb) = self.tag_embeddings.get(tag_name) {
             let base_score = embeddings.cosine_similarity(log_embedding, tag_emb);
             base_embedding_score = Some(base_score);
-            let weight = if has_keyword_match { 0.3 } else { 0.4 };
+            // Weight embeddings less when keywords match (keywords will add boost)
+            let weight = if has_keyword_match { 0.35 } else { 0.5 };
             score += base_score * weight;
             weight_sum += weight;
         }
@@ -325,69 +344,32 @@ impl TagMatcher {
                     .map(|example_emb| embeddings.cosine_similarity(log_embedding, example_emb))
                     .fold(0.0f32, f32::max);
                 example_similarity_score = Some(max_example_score);
-                let weight = if has_keyword_match { 0.2 } else { 0.3 };
+                let weight = if has_keyword_match { 0.25 } else { 0.35 };
                 score += max_example_score * weight;
                 weight_sum += weight;
             }
         }
 
-        // 3. Keyword boost: add significant boost if keywords match
-        // Strong LGBTQ keywords get higher boost even with lower embeddings
-        let is_strong_keyword = has_keyword_match && {
-            let text_lower = log_text.to_lowercase();
-            text_lower.contains("lgbtq")
-                || text_lower.contains("sexual orientation")
-                || text_lower.contains("gender identity")
-                || text_lower.contains("gender expression")
-                || text_lower.contains("transgender")
-                || text_lower.contains("conversion therapy")
-                || text_lower.contains("gender affirming")
-                || text_lower.contains("gender transition")
-        };
-
+        // 3. Keyword boost: additive boost when keywords match
+        // Keywords are explicit signals and should have strong weight
+        // This ensures keyword matches are strong but still respect embedding quality
         if has_keyword_match {
-            let min_embedding = base_embedding_score
-                .unwrap_or(0.0)
-                .max(example_similarity_score.unwrap_or(0.0));
-
-            if is_strong_keyword {
-                // Strong keywords get aggressive boost - these are very specific LGBTQ terms
-                if min_embedding > 0.15 {
-                    score += 0.4; // 40% boost for strong keywords
-                    weight_sum += 0.4;
-                } else {
-                    score += 0.25; // Still give boost even with low embeddings for strong keywords
-                    weight_sum += 0.25;
-                }
-            } else if min_embedding > 0.2 {
-                // Weak keywords need reasonable embeddings
-                score += 0.35;
-                weight_sum += 0.35;
-            } else {
-                score += 0.15;
-                weight_sum += 0.15;
-            }
+            // Strong boost for keywords - they are explicit signals from the tag definition
+            // Higher than typical industry systems because keywords are curated and highly reliable
+            let keyword_boost = 0.4;
+            score += keyword_boost;
+            weight_sum += keyword_boost;
         }
 
-        // Normalize the score
+        // Normalize the weighted combination
         if weight_sum > 0.0 {
             score = score / weight_sum;
         }
 
-        // If strong keywords matched, guarantee minimum score
+        // If keywords matched, ensure minimum score meets threshold (before negative penalty)
+        // Keywords are explicit signals, so they should guarantee threshold unless negated
         if has_keyword_match {
-            let min_embedding = base_embedding_score
-                .unwrap_or(0.0)
-                .max(example_similarity_score.unwrap_or(0.0));
-
-            if is_strong_keyword {
-                // Strong keywords guarantee at least 0.5 (threshold)
-                score = score.max(0.5);
-            } else if min_embedding > 0.3 {
-                score = score.max(0.6);
-            } else if min_embedding > 0.2 {
-                score = score.max(0.5);
-            }
+            score = score.max(tag_def.threshold);
         }
 
         // 5. Negative examples: penalty if too similar to negative examples
@@ -412,7 +394,7 @@ impl TagMatcher {
             final_score: final_score as f64,
             base_embedding: base_embedding_score.map(|s| s as f64),
             example_similarity: example_similarity_score.map(|s| s as f64),
-            keyword_match: has_keyword_match,
+            keyword_match: include_matches,
             negative_penalty: negative_penalty as f64,
         }
     }
@@ -422,7 +404,7 @@ impl TagMatcher {
         &self,
         value: &serde_json::Value,
     ) -> anyhow::Result<Vec<(String, ScoreBreakdown)>> {
-        let text = extract_text_from_json(value);
+        let text = ocd_files_select_default(value);
         let mut embeddings = self.embeddings.lock().unwrap();
         let log_embedding = embeddings.embed(&text)?;
 
@@ -453,4 +435,62 @@ impl TagMatcher {
     pub fn tag_definitions(&self) -> &HashMap<String, TagDefinition> {
         &self.tags
     }
+}
+
+/// Keyword-based fallback matcher when embedding mode is unavailable
+/// Matches tags based on include_keywords and exclude_keywords from tag definitions
+pub fn match_tags_keywords(
+    tag_defs: &[TagDefinition],
+    json_entry: &serde_json::Value,
+) -> Vec<(String, ScoreBreakdown)> {
+    let text = ocd_files_select_default(json_entry);
+    let text_lower = text.to_lowercase();
+
+    let mut results = Vec::new();
+
+    for tag_def in tag_defs {
+        // Check exclude_keywords first - if any match, skip this tag
+        if !tag_def.exclude_keywords.is_empty() {
+            let exclude_matches = find_matching_keywords(&text_lower, &tag_def.exclude_keywords);
+            if !exclude_matches.is_empty() {
+                continue;
+            }
+        }
+
+        // Check include_keywords - if any match, create a match
+        let include_matches = if tag_def.include_keywords.is_empty() {
+            Vec::new()
+        } else {
+            find_matching_keywords(&text_lower, &tag_def.include_keywords)
+        };
+
+        if !include_matches.is_empty() {
+            // If keywords match, assign a score based on threshold
+            // Use threshold as the base score, or 0.6 if threshold is lower
+            let score = tag_def.threshold.max(0.6) as f64;
+
+            // Only include if score meets threshold
+            if score >= tag_def.threshold as f64 {
+                results.push((
+                    tag_def.name.clone(),
+                    ScoreBreakdown {
+                        final_score: score,
+                        base_embedding: None,
+                        example_similarity: None,
+                        keyword_match: include_matches,
+                        negative_penalty: 0.0,
+                    },
+                ));
+            }
+        }
+    }
+
+    // Sort by score descending
+    results.sort_by(|a, b| {
+        b.1.final_score
+            .partial_cmp(&a.1.final_score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    results
 }

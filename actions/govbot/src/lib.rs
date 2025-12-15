@@ -10,7 +10,7 @@ pub mod filter;
 pub mod git;
 pub mod locale_generated;
 pub mod processor;
-pub mod similarity;
+pub mod selectors;
 pub mod types;
 
 pub use config::{Config, ConfigBuilder, JoinOption, SortOrder};
@@ -22,7 +22,6 @@ pub use filter::{FilterAlias, FilterManager, FilterResult, LogFilter};
 pub use locale::WorkingLocale;
 pub use locale_generated as locale;
 pub use processor::PipelineProcessor;
-pub use similarity::match_tags;
 pub use types::{LogContent, LogEntry, Metadata, VoteEventResult};
 
 /// Re-export commonly used types for convenience
