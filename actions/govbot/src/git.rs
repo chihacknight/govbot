@@ -88,18 +88,12 @@ pub fn build_repo_path(locale: &str) -> String {
     format!("{}/{}", org, repo_name)
 }
 
-/// Get the default repos directory: $HOME/.govbot/repos
+/// Get the default repos directory: $CWD/.govbot/repos
 pub fn default_repos_dir() -> Result<PathBuf> {
-    let home = std::env::var("HOME")
-        .or_else(|_| std::env::var("USERPROFILE"))
-        .map_err(|_| {
-            Error::Config(
-                "Could not determine home directory. Set HOME or USERPROFILE environment variable."
-                    .to_string(),
-            )
-        })?;
+    let cwd = std::env::current_dir()
+        .map_err(|_| Error::Config("Could not determine current working directory.".to_string()))?;
 
-    Ok(PathBuf::from(home).join(".govbot").join("repos"))
+    Ok(cwd.join(".govbot").join("repos"))
 }
 
 /// Build callbacks for git operations with optional token authentication

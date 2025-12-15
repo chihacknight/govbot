@@ -1,0 +1,13 @@
+{
+  "@type": "dcat:Dataset",
+  "title": "Gu Legislation",
+  "distribution": [
+    {
+      "@type": "dcat:Distribution",
+      "mediaType": "application/json",
+      "conformsTo": "https://raw.githubusercontent.com/windy-civi/toolkit/refs/heads/main/schemas/ocdfiles.bill.metadata.schema.json",
+      "accessURL": "https://github.com/chn-openstates-files/gu-legislation",
+      "ex:pathPattern": "country:{country_code}/state:{jurisdiction_code}/sessions/{session_id}/bills/{bill_id}/metadata.json"
+    }
+  ]
+}

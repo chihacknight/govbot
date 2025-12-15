@@ -1,8 +1,8 @@
-use crate::config::{Config, JoinOption};
+use crate::config::Config;
 use crate::error::{Error, Result};
 use crate::git;
 use crate::types::{
-    FileWithTimestamp, LogContent, LogEntry, Metadata, MinimalMetadata, Sponsors,
+    FileWithTimestamp, LogContent, LogEntry, Metadata,
     VoteEventResult,
 };
 use async_stream::stream;
@@ -71,14 +71,14 @@ impl PipelineProcessor {
         let mut files = Vec::new();
         let search_dir = &config.git_dir;
 
-        // If sources are specified, search only in those directories
-        let search_paths = if config.sources.is_empty() {
+        // If repos are specified, search only in those directories
+        let search_paths = if config.repos.is_empty() {
             vec![search_dir.clone()]
         } else {
             config
-                .sources
+                .repos
                 .iter()
-                .map(|source| search_dir.join(git::build_repo_name(source)))
+                .map(|repo| search_dir.join(git::build_repo_name(repo)))
                 .collect()
         };
 
@@ -292,7 +292,7 @@ impl PipelineProcessor {
     }
 
     /// Process a vote event file
-    async fn process_vote_event_file_internal(config: &Config, file: &FileWithTimestamp) -> Result<Option<LogEntry>> {
+    async fn process_vote_event_file_internal(_config: &Config, file: &FileWithTimestamp) -> Result<Option<LogEntry>> {
         // Extract vote event result from filename
         let vote_event_regex = Regex::new(r"\.vote_event\.([^.]+)\.")?;
         let result = vote_event_regex
@@ -303,71 +303,33 @@ impl PipelineProcessor {
 
         let log_content = LogContent::VoteEvent { result };
 
-        // Try to load metadata if join options require it
-        let metadata = Self::load_metadata_if_needed(config, &file.path).await?;
-
-        let mut entry = LogEntry {
+        let entry = LogEntry {
             log: log_content,
             filename: file.relative_path.clone(),
-            minimal_metadata: None,
-            sponsors: None,
         };
-
-        // Apply join options
-        if let Some(meta) = metadata {
-            if config.join_options.contains(&JoinOption::MinimalMetadata) {
-                entry.minimal_metadata = Some(MinimalMetadata {
-                    title: meta.title,
-                    description: meta.description,
-                    sources: meta.sources,
-                });
-            }
-
-            if config.join_options.contains(&JoinOption::Sponsors) {
-                entry.sponsors = meta.sponsors.map(|sponsors| Sponsors { sponsors: Some(sponsors) });
-            }
-        }
 
         Ok(Some(entry))
     }
 
     /// Process a regular (non-vote-event) file
-    async fn process_regular_file_internal(config: &Config, file: &FileWithTimestamp) -> Result<Option<LogEntry>> {
+    async fn process_regular_file_internal(_config: &Config, file: &FileWithTimestamp) -> Result<Option<LogEntry>> {
         // Read and parse JSON content
         let json_content = tokio::fs::read_to_string(&file.path).await?;
         let log_value: serde_json::Value = serde_json::from_str(&json_content)?;
 
         let log_content = LogContent::Full(log_value);
 
-        // Try to load metadata if join options require it
-        let metadata = Self::load_metadata_if_needed(config, &file.path).await?;
-
-        let mut entry = LogEntry {
+        let entry = LogEntry {
             log: log_content,
             filename: file.relative_path.clone(),
-            minimal_metadata: None,
-            sponsors: None,
         };
-
-        // Apply join options
-        if let Some(meta) = metadata {
-            if config.join_options.contains(&JoinOption::MinimalMetadata) {
-                entry.minimal_metadata = Some(MinimalMetadata {
-                    title: meta.title,
-                    description: meta.description,
-                    sources: meta.sources,
-                });
-            }
-
-            if config.join_options.contains(&JoinOption::Sponsors) {
-                entry.sponsors = meta.sponsors.map(|sponsors| Sponsors { sponsors: Some(sponsors) });
-            }
-        }
 
         Ok(Some(entry))
     }
 
     /// Load metadata from metadata.json if it exists and join options require it
+    /// Note: Currently not used since join_options are empty, but kept for potential future use
+    #[allow(dead_code)]
     async fn load_metadata_if_needed(config: &Config, log_path: &Path) -> Result<Option<Metadata>> {
         // Check if we need metadata at all
         if config.join_options.is_empty() {

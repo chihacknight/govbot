@@ -1,0 +1,1592 @@
+{
+  "legislative_session": "2025",
+  "identifier": "HB0001",
+  "title": "General government appropriations-2.",
+  "from_organization": "~{\"classification\": \"lower\"}",
+  "classification": [
+    "bill"
+  ],
+  "subject": [],
+  "abstracts": [],
+  "other_titles": [
+    {
+      "note": "",
+      "title": "AN ACT relating to supplemental appropriations for the operation of state government for the fiscal biennium commencing July 1, 2024 and ending June 30, 2026; providing definitions; providing additional appropriations and transfers of funds for the period of the budget; increasing or decreasing specified amounts; adjusting the number of positions; modifying prior appropriations; providing for duties, terms and conditions and other requirements relating to appropriations for the period of the budget as specified; providing for position and other budgetary limitations; providing for loans and loan repayments; and providing for an effective date."
+    }
+  ],
+  "other_identifiers": [],
+  "actions": [
+    {
+      "description": "H See Mirror Bill SF0001",
+      "date": "2025-03-06T21:50:11+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:36:59Z"
+      }
+    },
+    {
+      "description": "S Appointed JCC01 Members",
+      "date": "2025-02-25T23:35:47+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:36:59Z"
+      }
+    },
+    {
+      "description": "Senate:Pursuant to JR 14-1 (g) referred directly to JCC",
+      "date": "2025-02-25T23:33:56+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:36:59Z"
+      }
+    },
+    {
+      "description": "Senate:Pursuant to JR 14-1 (f) referred directly to 3rd Reading",
+      "date": "2025-02-25T23:13:51+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:36:59Z"
+      }
+    },
+    {
+      "description": "S Introduced and Referred to S02",
+      "date": "2025-02-10T19:16:59+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "introduction",
+        "referral-committee"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:36:59Z"
+      }
+    },
+    {
+      "description": "S Received for Introduction",
+      "date": "2025-02-10T16:27:30+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "filing"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:36:59Z"
+      }
+    },
+    {
+      "description": "H 3rd Reading:Passed 43-14-5-0-0",
+      "date": "2025-02-08T04:22:31+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "passage",
+        "reading-3"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:36:59Z"
+      }
+    },
+    {
+      "description": "H 2nd Reading:Passed",
+      "date": "2025-02-06T04:24:03+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "reading-2"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:36:59Z"
+      }
+    },
+    {
+      "description": "H COW:Passed",
+      "date": "2025-02-03T22:50:27+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "committee-passage-favorable"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:36:59Z"
+      }
+    },
+    {
+      "description": "H Introduced and Referred to HCOW",
+      "date": "2025-01-31T03:09:31+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "introduction",
+        "referral-committee"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:36:59Z"
+      }
+    },
+    {
+      "description": "H Received for Introduction",
+      "date": "2025-01-29T17:06:54+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "filing"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:36:59Z"
+      }
+    },
+    {
+      "description": "Bill Number Assigned",
+      "date": "2025-01-29T02:27:03+00:00",
+      "organization_id": "~{\"classification\": \"executive\"}",
+      "classification": [
+        "reading-1"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:36:59Z"
+      }
+    }
+  ],
+  "sponsorships": [
+    {
+      "name": "Appropriations",
+      "classification": "primary",
+      "entity_type": "organization",
+      "primary": true,
+      "person_id": null,
+      "organization_id": "~{\"name\": \"Appropriations\"}"
+    }
+  ],
+  "related_bills": [],
+  "versions": [
+    {
+      "note": "Introduced",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Introduced/HB0001.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    },
+    {
+      "note": "Amendment HB0001H2001 (2nd reading) - Representative Connolly (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2001.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2001",
+        "sponsor": "Representative Connolly"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2002 (2nd reading) - Representative Chestek (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2002.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2002",
+        "sponsor": "Representative Chestek"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2003 (2nd reading) - Representative Larsen, L (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2003.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2003",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2004 (2nd reading) - Representative Yin (Corrected, Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2004.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2004",
+        "sponsor": "Representative Yin"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2005 (2nd reading) - Representative Lucas (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2005.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2005",
+        "sponsor": "Representative Lucas"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2006 (2nd reading) - Representative Yin (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2006.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2006",
+        "sponsor": "Representative Yin"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2007 (2nd reading) - Representative Larsen, L (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2007.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2007",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2008 (2nd reading) - Representative Winter (Corrected, Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2008.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2008",
+        "sponsor": "Representative Winter"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2009 (2nd reading) - Representative Harshman (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2009.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2009",
+        "sponsor": "Representative Harshman"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2010 (2nd reading) - Representative Larsen, L (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2010.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2010",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2011 (2nd reading) - Representative Lawley (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2011.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2011",
+        "sponsor": "Representative Lawley"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2012 (2nd reading) - Representative Larsen, L (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2012.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2012",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2013 (2nd reading) - Representative Haroldson (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2013.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2013",
+        "sponsor": "Representative Haroldson"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2014 (2nd reading) - Representative Larsen, L (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2014.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2014",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2015 (2nd reading) - Representative Larsen, L (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2015.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2015",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2016 (2nd reading) - Representative Larsen, L (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2016.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2016",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2017 (2nd reading) - Representative Larsen, L (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2017.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2017",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2018 (2nd reading) - Representative Provenza (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2018.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2018",
+        "sponsor": "Representative Provenza"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2019 (2nd reading) - Representative Larsen, L (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2019.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2019",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2020 (2nd reading) - Representative Larsen, L (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2020.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2020",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2021 (2nd reading) - Representative Webber (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2021.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2021",
+        "sponsor": "Representative Webber"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2022 (2nd reading) - Representative Brown, G (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2022.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2022",
+        "sponsor": "Representative Brown, G"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2023 (2nd reading) - Representative Williams (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2023.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2023",
+        "sponsor": "Representative Williams"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2024 (2nd reading) - Representative Storer (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2024.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2024",
+        "sponsor": "Representative Storer"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2025 (2nd reading) - Representative Chestek (Corrected, Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2025.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2025",
+        "sponsor": "Representative Chestek"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2026 (2nd reading) - Representative Posey (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2026.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2026",
+        "sponsor": "Representative Posey"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2027 (2nd reading) - Representative Larsen, L (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2027.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2027",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2028 (2nd reading) - Representative Larsen, L (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2028.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2028",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2029 (2nd reading) - Representative Brown, L (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2029.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2029",
+        "sponsor": "Representative Brown, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2030 (2nd reading) - Representative Wylie (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2030.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2030",
+        "sponsor": "Representative Wylie"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2031 (2nd reading) - Representative Harshman (Corrected, Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2031.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2031",
+        "sponsor": "Representative Harshman"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2032 (2nd reading) - Representative Larsen, L (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2032.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2032",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2033 (2nd reading) - Representative Heiner (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2033.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2033",
+        "sponsor": "Representative Heiner"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2034 (2nd reading) - Representative Larsen, L (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2034.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2034",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2035 (2nd reading) - Representative Provenza (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2035.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2035",
+        "sponsor": "Representative Provenza"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2036 (2nd reading) - Representative Larsen, L (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2036.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2036",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2037 (2nd reading) - Representative Lien (Corrected, Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2037.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2037",
+        "sponsor": "Representative Lien"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2038 (2nd reading) - Representative Harshman (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2038.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2038",
+        "sponsor": "Representative Harshman"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2039 (2nd reading) - Representative Harshman (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2039.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2039",
+        "sponsor": "Representative Harshman"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2040 (2nd reading) - Representative Schmid (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2040.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2040",
+        "sponsor": "Representative Schmid"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2041 (2nd reading) - Representative Harshman (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2041.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2041",
+        "sponsor": "Representative Harshman"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2042 (2nd reading) - Representative Sherwood (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2042.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2042",
+        "sponsor": "Representative Sherwood"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2043 (2nd reading) - Representative Larson, JT (Corrected, Corrected, Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2043.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2043",
+        "sponsor": "Representative Larson, JT"
+      }
+    },
+    {
+      "note": "Amendment HB0001H2044 (2nd reading) - Representative Yin (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H2044.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H2044",
+        "sponsor": "Representative Yin"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3001 (3rd reading) - Representative Nicholas (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3001.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3001",
+        "sponsor": "Representative Nicholas"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3002 (3rd reading) - Representative Yin (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3002.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3002",
+        "sponsor": "Representative Yin"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3003 (3rd reading) - Representative Bear (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3003.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3003",
+        "sponsor": "Representative Bear"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3004 (3rd reading) - Representative Heiner (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3004.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3004",
+        "sponsor": "Representative Heiner"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3005 (3rd reading) - Representative Nicholas (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3005.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3005",
+        "sponsor": "Representative Nicholas"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3006 (3rd reading) - Representative Nicholas (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3006.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3006",
+        "sponsor": "Representative Nicholas"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3007 (3rd reading) - Representative Eklund (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3007.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3007",
+        "sponsor": "Representative Eklund"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3008 (3rd reading) - Representative Webber (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3008.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3008",
+        "sponsor": "Representative Webber"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3009 (3rd reading) - Representative Lien (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3009.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3009",
+        "sponsor": "Representative Lien"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3010 (3rd reading) - Representative Nicholas (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3010.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3010",
+        "sponsor": "Representative Nicholas"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3011 (3rd reading) - Representative Harshman (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3011.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3011",
+        "sponsor": "Representative Harshman"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3012 (3rd reading) - Representative Larsen, L (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3012.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3012",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3013 (3rd reading) - Representative Pendergraft (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3013.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3013",
+        "sponsor": "Representative Pendergraft"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3014 (3rd reading) - Representative Lawley (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3014.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3014",
+        "sponsor": "Representative Lawley"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3015 (3rd reading) - Representative Nicholas (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3015.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3015",
+        "sponsor": "Representative Nicholas"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3016 (3rd reading) - Representative Larsen, L (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3016.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3016",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3017 (3rd reading) - Representative Haroldson (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3017.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3017",
+        "sponsor": "Representative Haroldson"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3018 (3rd reading) - Representative Nicholas (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3018.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3018",
+        "sponsor": "Representative Nicholas"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3019 (3rd reading) - Representative Larsen, L (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3019.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3019",
+        "sponsor": "Representative Larsen, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3020 (3rd reading) - Representative Webber (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3020.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3020",
+        "sponsor": "Representative Webber"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3021 (3rd reading) - Representative Yin (Divided)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3021.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3021",
+        "sponsor": "Representative Yin"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3021.01 (3rd reading) - Representative Yin (Corrected, Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3021.01.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3021.01",
+        "sponsor": "Representative Yin"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3021.02 (3rd reading) - Representative Yin (Corrected, Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3021.02.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3021.02",
+        "sponsor": "Representative Yin"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3022 (3rd reading) - Representative Williams (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3022.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3022",
+        "sponsor": "Representative Williams"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3023 (3rd reading) - Representative Nicholas (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3023.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3023",
+        "sponsor": "Representative Nicholas"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3024 (3rd reading) - Representative Davis (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3024.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3024",
+        "sponsor": "Representative Davis"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3025 (3rd reading) - Representative Jarvis (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3025.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3025",
+        "sponsor": "Representative Jarvis"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3026 (3rd reading) - Representative Brown, L (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3026.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3026",
+        "sponsor": "Representative Brown, L"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3027 (3rd reading) - Representative Harshman (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3027.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3027",
+        "sponsor": "Representative Harshman"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3028 (3rd reading) - Representative Knapp (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3028.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3028",
+        "sponsor": "Representative Knapp"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3029 (3rd reading) - Representative Harshman (Corrected, Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3029.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3029",
+        "sponsor": "Representative Harshman"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3030 (3rd reading) - Representative Harshman (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3030.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3030",
+        "sponsor": "Representative Harshman"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3031 (3rd reading) - Representative Lawley (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3031.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3031",
+        "sponsor": "Representative Lawley"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3032 (3rd reading) - Representative Webber (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3032.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3032",
+        "sponsor": "Representative Webber"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3033 (3rd reading) - Representative Sherwood (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3033.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3033",
+        "sponsor": "Representative Sherwood"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3034 (3rd reading) - Representative Bear (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3034.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3034",
+        "sponsor": "Representative Bear"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3035 (3rd reading) - Representative Bear (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3035.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3035",
+        "sponsor": "Representative Bear"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3036 (3rd reading) - Representative Bear (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3036.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3036",
+        "sponsor": "Representative Bear"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3037 (3rd reading) - Representative Bear (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3037.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3037",
+        "sponsor": "Representative Bear"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3038 (3rd reading) - Representative Larson, JT (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3038.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3038",
+        "sponsor": "Representative Larson, JT"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3039 (3rd reading) - Representative Yin (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3039.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3039",
+        "sponsor": "Representative Yin"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3040 (3rd reading) - Representative Harshman (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3040.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3040",
+        "sponsor": "Representative Harshman"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3041 (3rd reading) - Representative Brown, G (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3041.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3041",
+        "sponsor": "Representative Brown, G"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3042 (3rd reading) - Representative Bear (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3042.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3042",
+        "sponsor": "Representative Bear"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3043 (3rd reading) - Representative Bear (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3043.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3043",
+        "sponsor": "Representative Bear"
+      }
+    },
+    {
+      "note": "Amendment HB0001H3044 (3rd reading) - Representative Bear (Corrected, Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001H3044.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001H3044",
+        "sponsor": "Representative Bear"
+      }
+    },
+    {
+      "note": "Amendment HB0001SS001 (Standing Committee) - Senate Appropriations Committee (Reported)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0001SS001.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0001SS001",
+        "sponsor": "Senate Appropriations Committee"
+      }
+    }
+  ],
+  "documents": [
+    {
+      "note": "Fiscal Note",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Fiscal/HB0001.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    },
+    {
+      "note": "Bill Digest",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Digest/HB0001.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    }
+  ],
+  "citations": [],
+  "sources": [
+    {
+      "url": "https://wyoleg.gov/Legislation/2025/HB0001",
+      "note": ""
+    }
+  ],
+  "extras": {
+    "effective_date": "2025-03-01",
+    "wy_bill_id": 12897
+  },
+  "jurisdiction": {
+    "id": "ocd-jurisdiction/country:us/state:wy/government",
+    "name": "Wyoming",
+    "classification": "state",
+    "division_id": "ocd-division/country:us/state:wy"
+  },
+  "_processing": {
+    "logs_latest_update": "2025-11-27T00:37:03Z"
+  }
+}

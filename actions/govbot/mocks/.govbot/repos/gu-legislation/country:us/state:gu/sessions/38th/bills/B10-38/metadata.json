@@ -1,0 +1,56 @@
+{
+  "legislative_session": "38th",
+  "identifier": "B 10-38",
+  "title": "AN ACT TO ADD NEW \u00a7\u00a7 4131 AND 4131.1 TO ARTICLE 1 OF CHAPTER 4, TITLE 4, GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING THE GOVERNMENT OF GUAM PUBLIC SAFETY AND LAW ENFORCEMENT OFFICERS\u2019 LINE OF DUTY DEATH BENEFIT, AND TO REQUIRE THE DEVELOPMENT OF ADMINISTRATIVE RULES AND REGULATIONS.",
+  "from_organization": "~{\"classification\": \"legislature\"}",
+  "classification": [
+    "bill"
+  ],
+  "subject": [],
+  "abstracts": [],
+  "other_titles": [],
+  "other_identifiers": [],
+  "actions": [],
+  "sponsorships": [
+    {
+      "name": "Eulogio Shawn Gumataotao",
+      "classification": "primary",
+      "entity_type": "person",
+      "primary": true,
+      "person_id": "~{\"chamber\": \"legislature\", \"name\": \"Eulogio Shawn Gumataotao\"}",
+      "organization_id": null
+    }
+  ],
+  "related_bills": [],
+  "versions": [
+    {
+      "note": "Bill No. 10-38 (COR)",
+      "links": [
+        {
+          "url": "http://guamlegislature.gov/38th_Guam_Legislature/Bill_History_38th/STATUS Bill No. 10-38 (COR).pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    }
+  ],
+  "documents": [],
+  "citations": [],
+  "sources": [
+    {
+      "url": "https://guamlegislature.gov/bills/",
+      "note": ""
+    }
+  ],
+  "extras": {},
+  "jurisdiction": {
+    "id": "ocd-jurisdiction/country:us/territory:gu/government",
+    "name": "Guam",
+    "classification": "state",
+    "division_id": "ocd-division/country:us/territory:gu"
+  },
+  "_processing": {
+    "logs_latest_update": "2025-11-27T00:27:21Z"
+  }
+}

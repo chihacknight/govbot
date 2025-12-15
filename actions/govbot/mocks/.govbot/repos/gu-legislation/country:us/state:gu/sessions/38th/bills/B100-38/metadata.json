@@ -1,0 +1,56 @@
+{
+  "legislative_session": "38th",
+  "identifier": "B 100-38",
+  "title": "AN ACT TO AMEND \u00a7 1102, CHAPTER 1, DIVISION 1; TO AMEND \u00a7 2407(f) OF ARTICLE 4, CHAPTER 2, DIVISION 1; AMEND ARTICLE 1, CHAPTER 12; ADD A NEW \u00a7 12101.1 OF ARTICLE 1, CHAPTER 12; ADD A NEW \u00a7 80110 (c)(11) TO CHAPTER 80, DIVISION 4; ADD A NEW \u00a7 86105 (e) TO CHAPTER 86, ALL OF TITLE 10, GUAM CODE ANNOTATED; ADD A NEW \u00a7 3102.1 (t) TO CHAPTER 3; AMEND \u00a7 16104.1 TO CHAPTER 16; ADD A NEW \u00a7 31108 (h) TO CHAPTER 31, ALL OF TITLE 17, GUAM CODE ANNOTATED; AND TO AMEND \u00a7 2102 TO CHAPTER 2, TITLE 7, GUAM CODE ANNOTATED, RELATIVE TO INCREASING AWARENESS OF AND STRENGTHENING EARLY CHILDHOOD DEVELOPMENT BY EXPANDING GUAM\u2019S EARLY CHILD CARE AND EDUCATION SYSTEM.",
+  "from_organization": "~{\"classification\": \"legislature\"}",
+  "classification": [
+    "bill"
+  ],
+  "subject": [],
+  "abstracts": [],
+  "other_titles": [],
+  "other_identifiers": [],
+  "actions": [],
+  "sponsorships": [
+    {
+      "name": "Sabina Flores Perez",
+      "classification": "primary",
+      "entity_type": "person",
+      "primary": true,
+      "person_id": "~{\"chamber\": \"legislature\", \"name\": \"Sabina Flores Perez\"}",
+      "organization_id": null
+    }
+  ],
+  "related_bills": [],
+  "versions": [
+    {
+      "note": "Bill No. 100-38 (COR)",
+      "links": [
+        {
+          "url": "http://guamlegislature.gov/38th_Guam_Legislature/Bill_History_38th/STATUS Bill No. 100-38 (COR).pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    }
+  ],
+  "documents": [],
+  "citations": [],
+  "sources": [
+    {
+      "url": "https://guamlegislature.gov/bills/",
+      "note": ""
+    }
+  ],
+  "extras": {},
+  "jurisdiction": {
+    "id": "ocd-jurisdiction/country:us/territory:gu/government",
+    "name": "Guam",
+    "classification": "state",
+    "division_id": "ocd-division/country:us/territory:gu"
+  },
+  "_processing": {
+    "logs_latest_update": "2025-11-27T00:27:21Z"
+  }
+}

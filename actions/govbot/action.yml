@@ -3,8 +3,8 @@ description: "Clones repositories and runs the legislation tools pipeline on clo
 author: "Your Name"
 
 inputs:
-  sources:
-    description: "List of repositories to clone (space-separated source names)"
+  repos:
+    description: "List of repositories to clone (space-separated repository names)"
     required: true
   token:
     description: "GitHub token for authentication"
@@ -75,9 +75,9 @@ runs:
         # Add --join flag (default to minimal_metadata to match original behavior)
         CMD="$CMD --join=minimal_metadata"
         
-        # Add sources as --sources flag (clap accepts multiple values)
-        if [ -n "${{ inputs.sources }}" ]; then
-          CMD="$CMD --sources ${{ inputs.sources }}"
+        # Add repos as --repos flag (clap accepts multiple values)
+        if [ -n "${{ inputs.repos }}" ]; then
+          CMD="$CMD --repos ${{ inputs.repos }}"
         fi
         
         # Execute the command and redirect stdout to output file

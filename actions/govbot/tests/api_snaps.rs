@@ -18,7 +18,7 @@ async fn test_pipeline_processor_snapshot() {
         .sort_order_str("DESC")
         .unwrap()
         .limit(100)
-        .join_options_str("minimal_metadata")
+        .join_options_str("bill")
         .unwrap()
         .build();
     
@@ -61,7 +61,6 @@ async fn test_pipeline_processor_snapshot() {
 #[tokio::test]
 async fn test_log_entry_structure() {
     use govbot::types::{LogContent, LogEntry, VoteEventResult};
-    use govbot::types::MinimalMetadata;
 
     // Create a sample log entry
     let entry = LogEntry {
@@ -69,12 +68,6 @@ async fn test_log_entry_structure() {
             result: VoteEventResult::Pass,
         },
         filename: "test/path/to/logs/20240101T120000Z_vote_event.pass.json".to_string(),
-        minimal_metadata: Some(MinimalMetadata {
-            title: Some("Test Bill Title".to_string()),
-            description: Some("A test bill description".to_string()),
-            sources: None,
-        }),
-        sponsors: None,
     };
 
     // Use assert_json_snapshot! for structured data

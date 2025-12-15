@@ -8,12 +8,6 @@ pub struct LogEntry {
     pub log: LogContent,
     /// The relative filename path
     pub filename: String,
-    /// Optional minimal metadata (title, description, sources)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub minimal_metadata: Option<MinimalMetadata>,
-    /// Optional sponsors metadata
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub sponsors: Option<Sponsors>,
 }
 
 /// Log content can be either a full JSON value or a vote event result
@@ -45,25 +39,11 @@ impl From<&str> for VoteEventResult {
     }
 }
 
-/// Minimal metadata extracted from metadata.json
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MinimalMetadata {
-    pub title: Option<String>,
-    pub description: Option<String>,
-    pub sources: Option<Vec<Source>>,
-}
-
 /// Source information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Source {
     pub url: String,
     pub note: String,
-}
-
-/// Sponsors metadata
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Sponsors {
-    pub sponsors: Option<Vec<serde_json::Value>>,
 }
 
 /// Complete metadata structure from metadata.json
@@ -72,7 +52,7 @@ pub struct Metadata {
     pub title: Option<String>,
     pub description: Option<String>,
     pub sources: Option<Vec<Source>>,
-    pub sponsors: Option<Vec<serde_json::Value>>,
+    // Note: sponsors field removed - use the new join system instead
 }
 
 /// Internal representation of a file with its timestamp

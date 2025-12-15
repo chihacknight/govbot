@@ -6,7 +6,7 @@ Command:
 govbot clone --list
 
 Output:
-Available locales:
+Available repos:
   ak
   al
   ar
@@ -58,4 +58,4 @@ Available locales:
   wi
   wv
   wy
-  all (clone all locales)
+  all (clone all repos)

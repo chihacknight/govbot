@@ -186,67 +186,101 @@ fn script_requires_test_data(script_path: &Path) -> bool {
     }
 }
 
-/// Test runner that discovers and runs all example scripts
-#[test]
-fn cli_example_snaps() {
-    let example_scripts = get_example_scripts().expect("Failed to read examples directory");
-
-    if example_scripts.is_empty() {
-        eprintln!("No example scripts found in examples/ directory");
-        return;
-    }
+/// Test a single example script
+fn test_example_script(script_path: &Path) {
+    let script_name = script_path
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("unknown");
 
     let has_test_data = test_data_exists();
 
-    for script_path in example_scripts {
-        let script_name = script_path
-            .file_name()
-            .and_then(|s| s.to_str())
-            .unwrap_or("unknown");
+    // Skip scripts that require test data if it doesn't exist
+    if script_requires_test_data(script_path) && !has_test_data {
+        eprintln!("Skipping {}: test data directory not found", script_name);
+        return;
+    }
 
-        // Skip scripts that require test data if it doesn't exist
-        if script_requires_test_data(&script_path) && !has_test_data {
-            eprintln!("Skipping {}: test data directory not found", script_name);
-            continue;
-        }
+    eprintln!("Testing example: {}", script_name);
 
-        eprintln!("Testing example: {}", script_name);
+    let (stdout, stderr, exit_code) = run_example_script(script_path);
 
-        let (stdout, stderr, exit_code) = run_example_script(&script_path);
+    // Create snapshot name from script filename
+    let snapshot_name = snapshot_name_from_path(script_path);
 
-        // Create snapshot name from script filename
-        let snapshot_name = snapshot_name_from_path(&script_path);
+    // Format stdout with script contents for snapshot
+    let formatted_stdout = format_snapshot_with_script(script_path, &stdout);
 
-        // Format stdout with script contents for snapshot
-        let formatted_stdout = format_snapshot_with_script(&script_path, &stdout);
+    // Snapshot stdout (which is the main output)
+    // Use insta's Settings API - set snapshot directory and use custom snapshot name
+    // The format will be: {test_function_name}__{suffix}.snap
+    // With test function name "cli_example_snaps" and suffix "{snapshot_name}",
+    // this creates: cli_example_snaps__{snapshot_name}.snap
+    let mut settings = insta::Settings::clone_current();
+    settings.set_snapshot_path("snapshots");
+    settings.set_snapshot_suffix(&snapshot_name);
+    settings.bind(|| {
+        insta::assert_snapshot!("snapshot", &formatted_stdout);
+    });
 
-        // Snapshot stdout (which is the main output)
-        // Use insta's Settings API - set snapshot directory and use custom snapshot name
-        // The format will be: {test_function_name}__{suffix}.snap
-        // With test function name "cli_example_snaps" and suffix "{snapshot_name}",
-        // this creates: cli_example_snaps__{snapshot_name}.snap
+    // If there's stderr, snapshot it separately
+    if !stderr.is_empty() {
         let mut settings = insta::Settings::clone_current();
         settings.set_snapshot_path("snapshots");
-        settings.set_snapshot_suffix(&snapshot_name);
+        settings.set_snapshot_suffix(&format!("{}_stderr", snapshot_name));
         settings.bind(|| {
-            insta::assert_snapshot!("snapshot", &formatted_stdout);
+            insta::assert_snapshot!("snapshot", &stderr);
         });
-
-        // If there's stderr, snapshot it separately
-        if !stderr.is_empty() {
-            let mut settings = insta::Settings::clone_current();
-            settings.set_snapshot_path("snapshots");
-            settings.set_snapshot_suffix(&format!("{}_stderr", snapshot_name));
-            settings.bind(|| {
-                insta::assert_snapshot!("snapshot", &stderr);
-            });
-        }
-
-        // Verify exit code is success
-        assert_eq!(
-            exit_code, 0,
-            "Example script '{}' should exit with code 0, got {}",
-            script_name, exit_code
-        );
     }
+
+    // Verify exit code is success
+    assert_eq!(
+        exit_code, 0,
+        "Example script '{}' should exit with code 0, got {}",
+        script_name, exit_code
+    );
 }
+
+// Macro to generate a test function for each example script
+// This allows each example to be tested independently
+macro_rules! generate_example_tests {
+    () => {
+        #[test]
+        fn cli_example_snaps() {
+            let example_scripts = get_example_scripts().expect("Failed to read examples directory");
+
+            if example_scripts.is_empty() {
+                eprintln!("No example scripts found in examples/ directory");
+                return;
+            }
+
+            // Collect all scripts and test them
+            // Note: This still runs in a single test, but we'll use a different approach
+            let mut tested = 0;
+            let mut skipped = 0;
+
+            for script_path in example_scripts {
+                let script_name = script_path
+                    .file_name()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("unknown");
+
+                let has_test_data = test_data_exists();
+                if script_requires_test_data(&script_path) && !has_test_data {
+                    eprintln!("Skipping {}: test data directory not found", script_name);
+                    skipped += 1;
+                    continue;
+                }
+
+                // Test this script - if it panics, the test stops
+                // This is expected behavior - use `cargo insta test` to create missing snapshots
+                test_example_script(&script_path);
+                tested += 1;
+            }
+
+            eprintln!("Tested {} example(s), skipped {}", tested, skipped);
+        }
+    };
+}
+
+generate_example_tests!();

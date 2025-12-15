@@ -37,6 +37,19 @@ pathdiff = "0.2"
 # Git operations (vendored-openssl is for mac x86 compat. remove when not supporting)
 git2 = { version = "0.18", features = ["vendored-openssl"] }
 
+# Text similarity and embeddings (lightweight, no external models)
+# Using ONNX Runtime + tokenizers for semantic embeddings
+ort = { version = "2.0.0-rc.10", default-features = true, features = ["ndarray"] }
+tokenizers = "0.19"
+ndarray = "0.15"
+toml = "0.8"
+# HTTP client for downloading models
+reqwest = { version = "0.11", features = ["blocking"] }
+# Hashing for text deduplication
+sha2 = "0.10"
+# Timestamps
+chrono = { version = "0.4", features = ["serde"] }
+
 [[bin]]
 name = "govbot"
 path = "src/main.rs"

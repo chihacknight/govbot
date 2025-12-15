@@ -49,7 +49,6 @@ Thumbs.db
 test_output/
 *.log
 sample_data/*
-.test-govbot/
 
 # Project documentation (local development notes)
 project_docs/*
