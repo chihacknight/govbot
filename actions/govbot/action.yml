@@ -1,5 +1,5 @@
-name: "Govbot RSS Publisher"
-description: "Generate and publish RSS feeds from govbot.yml configuration"
+name: "Govbot"
+description: "Tag bills, push tags, and publish RSS feeds from govbot.yml configuration"
 branding:
   icon: 'rss'
   color: 'orange'
@@ -20,11 +20,22 @@ inputs:
   govbot-dir:
     description: 'Govbot directory (default: $CWD/.govbot/repos, or GOVBOT_DIR env var)'
     required: false
+  push-tags:
+    description: 'Whether to commit and push tag files (default: true)'
+    required: false
+    default: 'true'
+  deploy-pages:
+    description: 'Whether to deploy RSS feeds to GitHub Pages (default: true)'
+    required: false
+    default: 'true'
 
 outputs:
   feed-path:
     description: 'Path to the generated RSS feed file'
     value: ${{ steps.publish.outputs.feed-path }}
+  feed-dir:
+    description: 'Directory containing the generated RSS feed'
+    value: ${{ steps.publish.outputs.feed-dir }}
 
 runs:
   using: "composite"
@@ -91,6 +102,25 @@ runs:
         echo "🏷️  Tagging bills..."
         ${{ github.action_path }}/bin/govbot logs | ${{ github.action_path }}/bin/govbot tag || true
     
+    - name: Commit and push tag files
+      if: inputs.push-tags == 'true'
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        
+        # Add all .tag.json files
+        git add $(find . -name "*.tag.json" -type f) || true
+        
+        # Check if there are changes to commit
+        if git diff --cached --quiet; then
+          echo "No tag file changes to commit"
+        else
+          git commit -m "Update tag files from govbot tag" || true
+          git push || true
+        fi
+    
     - name: Generate RSS feed
       id: publish
       shell: bash
@@ -146,3 +176,21 @@ runs:
         fi
         
         echo "feed-path=${{ github.workspace }}/$OUTPUT_DIR/$OUTPUT_FILE" >> $GITHUB_OUTPUT
+        echo "feed-dir=${{ github.workspace }}/$OUTPUT_DIR" >> $GITHUB_OUTPUT
+    
+    - name: Setup Pages
+      if: inputs.deploy-pages == 'true'
+      uses: actions/configure-pages@v4
+      with:
+        enablement: true
+    
+    - name: Upload artifact
+      if: inputs.deploy-pages == 'true'
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ${{ steps.publish.outputs.feed-dir }}
+    
+    - name: Deploy to GitHub Pages
+      if: inputs.deploy-pages == 'true'
+      id: deployment
+      uses: actions/deploy-pages@v4

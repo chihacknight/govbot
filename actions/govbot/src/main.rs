@@ -2021,8 +2021,8 @@ publish:
     if workflow_path.exists() && !force {
         eprintln!("⚠️  .github/workflows/publish-rss.yml already exists. Use --force to overwrite.");
     } else {
-        let workflow_content = r#"# Publish RSS Feed
-# Automatically generates and publishes RSS feeds from govbot.yml configuration
+        let workflow_content = r#"# Run Govbot
+# Runs govbot to tag bills, push tags, and publish to endpoints.
 
 name: Publish Govbot
 
@@ -2045,10 +2045,10 @@ on:
         type: string
 
 jobs:
-  publish:
+  govbot:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pages: write
       id-token: write
     
@@ -2056,25 +2056,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Publish RSS feed
+      - name: Run Govbot
         uses: windy-civi/toolkit/actions/govbot@main
         with:
           tags: ${{ inputs.tags }}
           limit: ${{ inputs.limit }}
-      
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-        with:
-          enablement: true
-      
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: feeds
-      
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
 "#;
         fs::write(&workflow_path, workflow_content)?;
         println!("✓ Created .github/workflows/publish-rss.yml");
@@ -2085,8 +2071,9 @@ jobs:
     println!("  1. Edit govbot.yml to customize tags and publish settings");
     println!("  2. Update the base_url in govbot.yml to match your GitHub Pages URL");
     println!("  3. Run 'govbot clone' to download legislation repositories");
-    println!("  4. Run 'govbot publish' to generate your RSS feed");
-    println!("  5. Push to GitHub - the workflow will automatically enable GitHub Pages and deploy your feed!");
+    println!("  4. Push to GitHub - the workflow will automatically:");
+    println!("     - Tag bills and commit/push tag files to the repository");
+    println!("     - Generate and publish RSS feeds to GitHub Pages");
     
     Ok(())
 }
