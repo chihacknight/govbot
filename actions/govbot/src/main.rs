@@ -2024,7 +2024,7 @@ publish:
         let workflow_content = r#"# Publish RSS Feed
 # Automatically generates and publishes RSS feeds from govbot.yml configuration
 
-name: Publish RSS Feed
+name: Publish Govbot
 
 on:
   push:
@@ -2064,6 +2064,8 @@ jobs:
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
+        with:
+          enablement: true
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -2084,7 +2086,7 @@ jobs:
     println!("  2. Update the base_url in govbot.yml to match your GitHub Pages URL");
     println!("  3. Run 'govbot clone' to download legislation repositories");
     println!("  4. Run 'govbot publish' to generate your RSS feed");
-    println!("  5. Enable GitHub Pages in your repository settings (Source: GitHub Actions)");
+    println!("  5. Push to GitHub - the workflow will automatically enable GitHub Pages and deploy your feed!");
     
     Ok(())
 }
@@ -2418,10 +2420,11 @@ async fn run_update_command() -> anyhow::Result<()> {
     eprintln!("🔄 Updating govbot to latest nightly version...");
     eprintln!("Downloading and running install script from: {}", install_script_url);
     
-    // Execute the install script using sh -c "$(curl -fsSL <url>)"
+    // Execute the install script by piping curl directly to sh
+    // This avoids issues with shebang lines being interpreted as commands
     let mut cmd = ProcessCommand::new("sh");
     cmd.arg("-c");
-    cmd.arg(&format!("$(curl -fsSL {})", install_script_url));
+    cmd.arg(&format!("curl -fsSL {} | sh", install_script_url));
     
     // Inherit stdin/stdout/stderr so the install script can interact with the user
     cmd.stdin(std::process::Stdio::inherit());

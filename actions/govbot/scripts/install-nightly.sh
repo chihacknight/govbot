@@ -169,7 +169,8 @@ ensure_path_entry() {
   if [[ "${already_in_path}" = false ]] && [[ -n "${sourced_profile}" ]]; then
     log "Sourcing ${sourced_profile} to update current session"
     # shellcheck disable=SC1090
-    source "${sourced_profile}"
+    # Suppress errors from oh-my-zsh or other shell frameworks that might not be fully configured
+    source "${sourced_profile}" 2>/dev/null || true
   fi
 }
 

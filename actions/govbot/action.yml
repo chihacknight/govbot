@@ -29,30 +29,41 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Setup Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
-    
-    - name: Build govbot
+    - name: Download govbot binary
       shell: bash
-      working-directory: ${{ github.action_path }}
       run: |
-        cargo build --release --bin govbot
+        mkdir -p "${{ github.action_path }}/bin"
+        curl -fsSL "https://github.com/windy-civi/toolkit/releases/download/nightly/govbot-linux-x86_64" \
+          -o "${{ github.action_path }}/bin/govbot"
+        chmod +x "${{ github.action_path }}/bin/govbot"
+    
+    - name: Set GOVBOT_DIR
+      id: set-govbot-dir
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        if [ -n "${{ inputs.govbot-dir }}" ]; then
+          export GOVBOT_DIR="${{ inputs.govbot-dir }}"
+        else
+          export GOVBOT_DIR="${{ github.workspace }}/.govbot"
+        fi
+        echo "GOVBOT_DIR=$GOVBOT_DIR" >> $GITHUB_ENV
+        echo "repos-dir=$GOVBOT_DIR/repos" >> $GITHUB_OUTPUT
+    
+    - name: Restore repos cache
+      id: cache-repos
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.set-govbot-dir.outputs.repos-dir }}
+        key: govbot-repos-${{ runner.os }}-${{ hashFiles('govbot.yml') }}
+        restore-keys: |
+          govbot-repos-${{ runner.os }}-
     
     - name: Clone legislation repositories
       id: clone
       shell: bash
       working-directory: ${{ github.workspace }}
       run: |
-        # Set GOVBOT_DIR
-        if [ -n "${{ inputs.govbot-dir }}" ]; then
-          export GOVBOT_DIR="${{ inputs.govbot-dir }}"
-        else
-          export GOVBOT_DIR="${{ github.workspace }}/.govbot"
-        fi
-        
         # Check if govbot.yml exists
         if [ ! -f "${{ github.workspace }}/govbot.yml" ]; then
           echo "::error::govbot.yml not found in repository root"
@@ -63,20 +74,28 @@ runs:
         # For now, we'll clone all repos by default
         # Users can specify repos in govbot.yml
         echo "📥 Cloning legislation repositories..."
-        ${{ github.action_path }}/target/release/govbot clone all \
+        ${{ github.action_path }}/bin/govbot clone all \
           --govbot-dir "$GOVBOT_DIR" || true
+    
+    - name: Save repos cache
+      if: steps.cache-repos.outputs.cache-hit != 'true'
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.set-govbot-dir.outputs.repos-dir }}
+        key: govbot-repos-${{ runner.os }}-${{ hashFiles('govbot.yml') }}
+    
+    - name: Tag bills
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        echo "🏷️  Tagging bills..."
+        ${{ github.action_path }}/bin/govbot logs | ${{ github.action_path }}/bin/govbot tag || true
     
     - name: Generate RSS feed
       id: publish
       shell: bash
       working-directory: ${{ github.workspace }}
       run: |
-        # Set GOVBOT_DIR
-        if [ -n "${{ inputs.govbot-dir }}" ]; then
-          export GOVBOT_DIR="${{ inputs.govbot-dir }}"
-        else
-          export GOVBOT_DIR="${{ github.workspace }}/.govbot"
-        fi
         # Build command arguments
         ARGS=""
         
@@ -109,7 +128,7 @@ runs:
         
         # Run publish command
         # govbot.yml is automatically found in workspace root
-        ${{ github.action_path }}/target/release/govbot publish $ARGS
+        ${{ github.action_path }}/bin/govbot publish $ARGS
         
         # Determine output path (read from govbot.yml or use defaults)
         if [ -n "${{ inputs.output-dir }}" ]; then
