@@ -12,10 +12,10 @@ inputs:
     description: 'Limit number of entries per feed'
     required: false
   output-dir:
-    description: 'Output directory for RSS feed (default: from govbot.yml publish.output_dir)'
+    description: 'Output directory for RSS feed (default: from govbot.yml build.output_dir)'
     required: false
   output-file:
-    description: 'Output filename for RSS feed (default: from govbot.yml publish.output_file)'
+    description: 'Output filename for RSS feed (default: from govbot.yml build.output_file)'
     required: false
   govbot-dir:
     description: 'Govbot directory (default: $CWD/.govbot/repos, or GOVBOT_DIR env var)'
@@ -147,23 +147,23 @@ runs:
           ARGS="$ARGS --govbot-dir ${{ inputs.govbot-dir }}"
         fi
         
-        # Run publish command
+        # Run build command
         # govbot.yml is automatically found in workspace root
-        ${{ github.action_path }}/bin/govbot publish $ARGS
+        ${{ github.action_path }}/bin/govbot build $ARGS
         
         # Determine output path (read from govbot.yml or use defaults)
         if [ -n "${{ inputs.output-dir }}" ]; then
           OUTPUT_DIR="${{ inputs.output-dir }}"
         else
-          # Try to read from govbot.yml, default to feeds
-          OUTPUT_DIR=$(grep -A 5 "^publish:" "${{ github.workspace }}/govbot.yml" | grep "output_dir:" | awk '{print $2}' | tr -d '"' || echo "feeds")
+          # Try to read from govbot.yml, default to docs
+          OUTPUT_DIR=$(grep -A 5 "^build:" "${{ github.workspace }}/govbot.yml" | grep "output_dir:" | awk '{print $2}' | tr -d '"' || echo "docs")
         fi
         
         if [ -n "${{ inputs.output-file }}" ]; then
           OUTPUT_FILE="${{ inputs.output-file }}"
         else
           # Try to read from govbot.yml, default to feed.xml
-          OUTPUT_FILE=$(grep -A 5 "^publish:" "${{ github.workspace }}/govbot.yml" | grep "output_file:" | awk '{print $2}' | tr -d '"' || echo "feed.xml")
+          OUTPUT_FILE=$(grep -A 5 "^build:" "${{ github.workspace }}/govbot.yml" | grep "output_file:" | awk '{print $2}' | tr -d '"' || echo "feed.xml")
         fi
         
         echo "feed-path=${{ github.workspace }}/$OUTPUT_DIR/$OUTPUT_FILE" >> $GITHUB_OUTPUT

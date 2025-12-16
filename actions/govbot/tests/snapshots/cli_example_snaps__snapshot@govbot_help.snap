@@ -12,6 +12,6 @@ Available commands:
   delete  Delete data pipeline repositories (use 'delete all' to delete all)
   logs    Process and display pipeline log files
   load    Load bill metadata into a DuckDB database file
-  publish Generate RSS feed from govbot.yml configuration
+  build   Generate RSS feed and HTML index from govbot.yml configuration
   tag     Tag bills using AI based on log entries
   update  Update govbot to the latest nightly version

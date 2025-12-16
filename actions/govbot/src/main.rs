@@ -173,22 +173,22 @@ enum Command {
         force: bool,
     },
 
-    /// Publish RSS feed from govbot.yml configuration
-    /// Generates a combined RSS feed from logs filtered by tags in govbot.yml
-    Publish {
+    /// Build RSS feed and HTML index from govbot.yml configuration
+    /// Generates a combined RSS feed and HTML index from logs filtered by tags in govbot.yml
+    Build {
         /// Specific tags to include in feed (default: all tags from govbot.yml)
         #[arg(long, num_args = 0..)]
         tags: Vec<String>,
         
-        /// Limit number of entries per feed (default: 15, use "none" for all entries)
+        /// Limit number of entries per feed (default: 100, use "none" for all entries)
         #[arg(long)]
         limit: Option<String>,
         
-        /// Output directory for RSS feed (default: from govbot.yml publish.output_dir)
+        /// Output directory for RSS feed and HTML (default: from govbot.yml build.output_dir, or "docs")
         #[arg(long)]
         output_dir: Option<String>,
         
-        /// Output filename for RSS feed (default: from govbot.yml publish.output_file)
+        /// Output filename for RSS feed (default: from govbot.yml build.output_file, or "feed.xml")
         #[arg(long)]
         output_file: Option<String>,
         
@@ -227,7 +227,7 @@ fn print_available_commands() {
     println!("  delete  Delete data pipeline repositories (use 'delete all' to delete all)");
     println!("  logs    Process and display pipeline log files");
     println!("  load    Load bill metadata into a DuckDB database file");
-    println!("  publish Generate RSS feed from govbot.yml configuration");
+    println!("  build   Generate RSS feed and HTML index from govbot.yml configuration");
     println!("  tag     Tag bills using AI based on log entries");
     println!("  update  Update govbot to the latest nightly version");
 }
@@ -1980,12 +1980,12 @@ tags:
       - "Mandates comprehensive sex education curriculum in all public schools"
       - "Expands eligibility for state financial aid programs to include part-time students"
 
-publish:
+build:
   base_url: "https://yourusername.github.io/your-repo-name"
-  output_dir: "feeds"
+  output_dir: "docs"
   output_file: "feed.xml"
-  # Optional: limit number of entries (default: 15, use "none" for all)
-  # limit: 15
+  # Optional: limit number of entries (default: 100, use "none" for all)
+  # limit: 100
 "#;
         fs::write(&govbot_yml_path, govbot_yml_content)?;
         println!("✓ Created govbot.yml");
@@ -2017,14 +2017,14 @@ publish:
     let workflows_dir = cwd.join(".github").join("workflows");
     fs::create_dir_all(&workflows_dir)?;
     
-    let workflow_path = workflows_dir.join("publish-rss.yml");
+    let workflow_path = workflows_dir.join("build.yml");
     if workflow_path.exists() && !force {
-        eprintln!("⚠️  .github/workflows/publish-rss.yml already exists. Use --force to overwrite.");
+        eprintln!("⚠️  .github/workflows/build.yml already exists. Use --force to overwrite.");
     } else {
         let workflow_content = r#"# Run Govbot
-# Runs govbot to clone repos, tag bills, and create RSS feeds.
+# Runs govbot to clone repos, tag bills, and build RSS feeds and HTML index.
 
-name: Publish Govbot
+name: Build Govbot
 
 on:
   push:
@@ -2059,12 +2059,12 @@ jobs:
           limit: ${{ inputs.limit }}
 "#;
         fs::write(&workflow_path, workflow_content)?;
-        println!("✓ Created .github/workflows/publish-rss.yml");
+        println!("✓ Created .github/workflows/build.yml");
     }
     
     println!("\n✅ Govbot project initialized!");
     println!("\nNext steps:");
-    println!("  1. Edit govbot.yml to customize tags and publish settings");
+    println!("  1. Edit govbot.yml to customize tags and build settings");
     println!("  2. Update the base_url in govbot.yml to match your feed URL");
     println!("  3. Run 'govbot clone' to download legislation repositories");
     println!("  4. Push to GitHub - the workflow will automatically:");
@@ -2074,8 +2074,8 @@ jobs:
     Ok(())
 }
 
-async fn run_publish_command(cmd: Command) -> anyhow::Result<()> {
-    let Command::Publish {
+async fn run_build_command(cmd: Command) -> anyhow::Result<()> {
+    let Command::Build {
         tags,
         limit,
         output_dir,
@@ -2103,12 +2103,12 @@ async fn run_publish_command(cmd: Command) -> anyhow::Result<()> {
     
     // Determine which tags to use
     let tags_to_use: Vec<String> = if tags.is_empty() {
-        // Use tags from publish config, or all tags
-        if let Some(publish_tags) = config.get("publish")
+        // Use tags from build config, or all tags
+        if let Some(build_tags) = config.get("build")
             .and_then(|p| p.get("tags"))
             .and_then(|t| t.as_array())
         {
-            publish_tags
+            build_tags
                 .iter()
                 .filter_map(|v| v.as_str().map(|s| s.to_string()))
                 .collect()
@@ -2130,17 +2130,17 @@ async fn run_publish_command(cmd: Command) -> anyhow::Result<()> {
         return Err(anyhow::anyhow!("No valid tags to process"));
     }
     
-    // Get publish configuration
-    let publish_config = config.get("publish").and_then(|p| p.as_object());
+    // Get build configuration
+    let build_config = config.get("build").and_then(|p| p.as_object());
     
     // Get output directory
     let output_dir_path = if let Some(dir) = output_dir {
         PathBuf::from(dir)
     } else {
-        let dir_str = publish_config
+        let dir_str = build_config
             .and_then(|p| p.get("output_dir"))
             .and_then(|d| d.as_str())
-            .unwrap_or("feeds");
+            .unwrap_or("docs");
         PathBuf::from(dir_str)
     };
     
@@ -2148,7 +2148,7 @@ async fn run_publish_command(cmd: Command) -> anyhow::Result<()> {
     let output_filename = if let Some(file) = output_file {
         file
     } else {
-        publish_config
+        build_config
             .and_then(|p| p.get("output_file"))
             .and_then(|f| f.as_str())
             .unwrap_or("feed.xml")
@@ -2156,7 +2156,7 @@ async fn run_publish_command(cmd: Command) -> anyhow::Result<()> {
     };
     
     // Get feed metadata
-    let feed_title = publish_config
+    let feed_title = build_config
         .and_then(|p| p.get("title"))
         .and_then(|t| t.as_str())
         .map(|s| s.to_string())
@@ -2176,7 +2176,7 @@ async fn run_publish_command(cmd: Command) -> anyhow::Result<()> {
                 .join(" & "))
         });
     
-    let feed_description = publish_config
+    let feed_description = build_config
         .and_then(|p| p.get("description"))
         .and_then(|d| d.as_str())
         .map(|s| s.to_string())
@@ -2206,7 +2206,7 @@ async fn run_publish_command(cmd: Command) -> anyhow::Result<()> {
             }
         });
     
-    let feed_link = publish_config
+    let feed_link = build_config
         .and_then(|p| p.get("base_url"))
         .and_then(|u| u.as_str())
         .unwrap_or("https://example.com");
@@ -2224,9 +2224,9 @@ async fn run_publish_command(cmd: Command) -> anyhow::Result<()> {
     };
     
     // Get limit - parse "none" as no limit, otherwise parse as usize
-    // Default to 15 (RSS standard) if not specified
+    // Default to 100 if not specified
     let limit_str_opt = limit.or_else(|| {
-        publish_config
+        build_config
             .and_then(|p| p.get("limit"))
             .and_then(|l| {
                 if let Some(s) = l.as_str() {
@@ -2246,7 +2246,7 @@ async fn run_publish_command(cmd: Command) -> anyhow::Result<()> {
             limit_str.parse().ok()
         }
     } else {
-        Some(15) // Default to 15 items (RSS standard)
+        Some(100) // Default to 100 items
     };
     
     // Run logs command and collect entries
@@ -2356,14 +2356,14 @@ async fn run_publish_command(cmd: Command) -> anyhow::Result<()> {
     if total_entries == 0 {
         eprintln!("Warning: No log entries found. Make sure repositories are cloned and contain log files.");
     } else if filtered_entries == 0 && !tags_to_use.is_empty() {
-        eprintln!("Warning: Found {} entries but none matched the specified tags. Entries may not have tags yet - consider running 'govbot tag' first, or publish without --tags to include all entries.", total_entries);
+        eprintln!("Warning: Found {} entries but none matched the specified tags. Entries may not have tags yet - consider running 'govbot tag' first, or build without --tags to include all entries.", total_entries);
     }
     
     // Deduplicate and sort
     entries = deduplicate_entries(entries);
     entries = sort_by_timestamp(entries);
     
-    // Apply limit (default is 15, RSS standard)
+    // Apply limit (default is 100)
     let original_count = entries.len();
     if let Some(lim) = limit_value {
         entries.truncate(lim);
@@ -2372,26 +2372,43 @@ async fn run_publish_command(cmd: Command) -> anyhow::Result<()> {
         }
     }
     
+    // Create output directory
+    fs::create_dir_all(&output_dir_path)?;
+    
     // Generate RSS
     eprintln!("Generating RSS feed with {} entries...", entries.len());
     let rss_xml = rss::json_to_rss(
-        entries,
+        entries.clone(),
         &feed_title,
         &feed_description,
         feed_link,
         base_url.as_deref(),
         "en-us",
-        Some(&tags_to_use),
     );
     
-    // Create output directory
-    fs::create_dir_all(&output_dir_path)?;
-    
     // Write RSS feed
-    let output_path = output_dir_path.join(&output_filename);
-    fs::write(&output_path, rss_xml)?;
+    let rss_output_path = output_dir_path.join(&output_filename);
+    fs::write(&rss_output_path, rss_xml)?;
+    eprintln!("✓ Generated RSS feed: {}", rss_output_path.display());
     
-    eprintln!("✓ Generated RSS feed: {}", output_path.display());
+    // Generate HTML
+    eprintln!("Generating HTML index with {} entries...", entries.len());
+    // Only pass title if it was explicitly set in config (not auto-generated)
+    let html_title = build_config
+        .and_then(|p| p.get("title"))
+        .and_then(|t| t.as_str())
+        .filter(|s| !s.trim().is_empty());
+    let html_content = rss::json_to_html(
+        entries,
+        html_title,
+        feed_link,
+        base_url.as_deref(),
+    );
+    
+    // Write HTML index
+    let html_output_path = output_dir_path.join("index.html");
+    fs::write(&html_output_path, html_content)?;
+    eprintln!("✓ Generated HTML index: {}", html_output_path.display());
     eprintln!("  Tags included: {}", tags_to_use.join(", "));
     
     Ok(())
@@ -2449,8 +2466,8 @@ async fn main() -> anyhow::Result<()> {
         Some(cmd @ Command::Tag { .. }) => {
             run_tag_command(cmd).await
         }
-        Some(cmd @ Command::Publish { .. }) => {
-            run_publish_command(cmd).await
+        Some(cmd @ Command::Build { .. }) => {
+            run_build_command(cmd).await
         }
         Some(cmd @ Command::Init { .. }) => {
             run_init_command(cmd).await

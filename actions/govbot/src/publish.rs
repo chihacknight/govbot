@@ -1,9 +1,9 @@
+use crate::rss;
 use anyhow::{Context, Result};
 use serde_json::Value;
 use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
-use crate::rss;
 
 /// Load and parse govbot.yml configuration
 pub fn load_config(config_path: &Path) -> Result<Value> {
@@ -29,41 +29,45 @@ pub fn get_repos_from_config(config: &Value) -> Vec<String> {
 }
 
 /// Filter entries by tags
-/// If tag_names is empty, includes all entries
-/// If tags are specified but entry has no tags field, includes it (tags may not be generated yet)
-/// If entry has tags, only includes if any tag matches
+/// Only includes entries that have tags (excludes untagged entries)
+/// If tag_names is empty, includes any entry that has tags
+/// If tag_names are specified, only includes entries that have at least one matching tag
 pub fn filter_by_tags(entry: &Value, tag_names: &[String]) -> bool {
+    // Get tags from entry - if no tags field exists, exclude it
+    let tags = match entry.get("tags").and_then(|t| t.as_object()) {
+        Some(tags) => tags,
+        None => {
+            // Entry has no tags field - exclude it (only include tagged entries)
+            return false;
+        }
+    };
+
+    // If tags object is empty, exclude it (only include entries with actual tags)
+    if tags.is_empty() {
+        return false;
+    }
+
+    // If no specific tags requested, include any entry that has tags
     if tag_names.is_empty() {
         return true;
     }
-    
-    // If entry has tags, check if any match
-    if let Some(tags) = entry.get("tags").and_then(|t| t.as_object()) {
-        if tags.is_empty() {
-            // Entry has tags object but it's empty - include it
+
+    // Check if any specified tag matches
+    for tag_name in tag_names {
+        if tags.contains_key(tag_name) {
             return true;
         }
-        // Check if any specified tag matches
-        for tag_name in tag_names {
-            if tags.contains_key(tag_name) {
-                return true;
-            }
-        }
-        // Entry has tags but none match - exclude it
-        return false;
     }
-    
-    // Entry has no tags field - include it
-    // This allows entries without tags to pass through
-    // (Tags may not be generated yet, or entry may legitimately have no tags)
-    true
+
+    // Entry has tags but none match the specified tags - exclude it
+    false
 }
 
 /// Deduplicate entries by GUID
 pub fn deduplicate_entries(entries: Vec<Value>) -> Vec<Value> {
     let mut seen = HashSet::new();
     let mut result = Vec::new();
-    
+
     for entry in entries {
         let guid = rss::extract_guid(&entry);
         if !seen.contains(&guid) {
@@ -71,7 +75,7 @@ pub fn deduplicate_entries(entries: Vec<Value>) -> Vec<Value> {
             result.push(entry);
         }
     }
-    
+
     result
 }
 
@@ -84,4 +88,3 @@ pub fn sort_by_timestamp(mut entries: Vec<Value>) -> Vec<Value> {
     });
     entries
 }
-

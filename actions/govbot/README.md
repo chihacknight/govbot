@@ -155,6 +155,7 @@ Generate RSS feeds for each tag defined in `govbot.yml` using the declarative pu
 ### Quick Start
 
 1. **Configure `govbot.yml`** with your tags and publish settings:
+
    ```yaml
    repos:
      - all
@@ -167,11 +168,13 @@ Generate RSS feeds for each tag defined in `govbot.yml` using the declarative pu
    ```
 
 2. **Generate RSS feed:**
+
    ```bash
    govbot publish
    ```
 
 3. **Generate feed for specific tags:**
+
    ```bash
    govbot publish --tags lgbtq education
    ```
@@ -184,6 +187,7 @@ Generate RSS feeds for each tag defined in `govbot.yml` using the declarative pu
 ### Configuration
 
 The `publish:` section in `govbot.yml` supports:
+
 - `base_url`: Base URL for RSS feed links (required for GitHub Pages)
 - `output_dir`: Directory where RSS feeds are generated (default: `feeds`)
 - `limit`: Maximum entries per feed (optional)
@@ -191,142 +195,13 @@ The `publish:` section in `govbot.yml` supports:
 ### Per-Tag Customization
 
 Tags can override default RSS feed settings:
+
 ```yaml
 tags:
   lgbtq:
     description: "..."
-    rss_title: "LGBTQ+ Legislation Updates"  # Optional
-    rss_description: "Custom description"    # Optional
-```
-
-### GitHub Pages Setup
-
-**Option 1: Manual (Local)**
-1. Set `base_url` in `govbot.yml` to your GitHub Pages URL
-2. Generate feed: `govbot publish`
-3. Commit the `feeds/` directory to your repository
-4. Enable GitHub Pages in repository settings
-5. Feed will be available at `https://yourusername.github.io/repo-name/feeds/feed.xml`
-
-**Option 2: Automated (GitHub Actions) - Recommended**
-
-Use the reusable action - no need to build anything yourself!
-
-1. **Create `.github/workflows/publish-rss.yml`**:
-   ```yaml
-   name: Publish RSS Feed
-   on:
-     push:
-       branches: [main]
-     schedule:
-       - cron: '0 0 * * *'
-   jobs:
-     publish:
-       runs-on: ubuntu-latest
-       permissions:
-         contents: read
-         pages: write
-         id-token: write
-       steps:
-         - uses: actions/checkout@v4
-         - uses: windy-civi/toolkit/actions/govbot@main
-         - uses: actions/configure-pages@v4
-         - uses: actions/upload-pages-artifact@v3
-           with:
-             path: feeds
-         - uses: actions/deploy-pages@v4
-   ```
-
-2. **Create `govbot.yml`** in your repository root with your configuration
-
-3. **Enable GitHub Pages** in repository settings (Source: GitHub Actions)
-
-The action automatically:
-- Finds `govbot.yml` in your repository root
-- Builds the Rust binary internally
-- Clones legislation repositories
-- Generates RSS feed
-- **No Python dependencies needed** - everything runs in Rust!
-
-## GitHub Actions Integration
-
-Automate RSS feed generation and publishing with GitHub Actions using the reusable action.
-
-### Quick Setup
-
-1. **Create `govbot.yml`** in your repository root:
-   ```yaml
-   repos:
-     - all
-   tags:
-     lgbtq:
-       description: "Legislation related to LGBTQ+ issues..."
-   publish:
-     base_url: "https://yourusername.github.io/repo-name"
-     output_dir: "feeds"
-   ```
-
-2. **Create `.github/workflows/publish-rss.yml`**:
-   ```yaml
-   name: Publish RSS Feed
-   
-   on:
-     push:
-       branches: [main]
-     schedule:
-       - cron: '0 0 * * *'
-   
-   jobs:
-     publish:
-       runs-on: ubuntu-latest
-       permissions:
-         contents: read
-         pages: write
-         id-token: write
-       steps:
-         - uses: actions/checkout@v4
-         - uses: windy-civi/toolkit/actions/govbot@main
-         - uses: actions/configure-pages@v4
-         - uses: actions/upload-pages-artifact@v3
-           with:
-             path: feeds
-         - uses: actions/deploy-pages@v4
-   ```
-
-3. **Enable GitHub Pages** in repository settings (Source: GitHub Actions)
-
-That's it! The action will:
-- Automatically find `govbot.yml` in your repository root
-- Build the Rust binary internally (no setup needed)
-- Clone legislation repositories
-- Generate RSS feed
-- Deploy to GitHub Pages
-
-### Action Inputs
-
-- `tags`: Comma-separated list of tags (default: all tags from govbot.yml)
-- `limit`: Limit number of entries per feed
-- `output-dir`: Output directory (default: from govbot.yml)
-- `output-file`: Output filename (default: feed.xml)
-- `govbot-dir`: Custom govbot directory (optional)
-
-### Example Usage
-
-```yaml
-- uses: windy-civi/toolkit/actions/govbot@main
-  with:
-    tags: lgbtq,education
-    limit: 100
-```
-
-## Tagging Bills
-
-Tag legislative logs using semantic similarity matching. See [TAGGING.md](./TAGGING.md) for detailed setup instructions.
-
-**Quick start** (with `tags.toml`, `model.onnx`, and `tokenizer.json` in current directory):
-
-```bash
-just govbot logs --repos il --limit 10 | just govbot tag
+    rss_title: "LGBTQ+ Legislation Updates" # Optional
+    rss_description: "Custom description" # Optional
 ```
 
 ## Using DuckDB

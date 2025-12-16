@@ -1,6 +1,28 @@
 [![Validate Snapshots](https://github.com/windy-civi/toolkit/actions/workflows/validate-snapshots.yml/badge.svg)](https://github.com/windy-civi/toolkit/actions/workflows/validate-snapshots.yml)
 
-# 🏛️ Windy Civi Toolkit - Tools To Watch & Analyze Governemnt Actions
+# 🏛️ govbot
+
+`govbot` enables distributed data anaylsis of government updates via a friendly terminal interface. Git repos function as datasets, including the legislation of all 47 states/jurisdictions.
+
+## 1 Line Install
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/windy-civi/toolkit/main/actions/govbot/scripts/install-nightly.sh)"
+```
+
+```bash
+govbot # to see help
+govbot init # creates govbot.yml file
+govbot clone # to show
+govbot clone {{repo}} {{repo}} # to download specific items
+govbot delete {{repo}} # to delete specific items
+govbot delete all # to delete everything
+govbot logs | govbot tag # tag things based on what's inside govbot.yml
+govbot load # load bill metadata into DuckDB database
+govbot update # updates govbot
+```
+
+# 🏛️ Govbot Legislation Effort
 
 - Nearly all state governments
 - Federal
@@ -9,7 +31,6 @@ WIP: Ideally, these scripts should be accessible via the following ways.
 
 - CLI / Unix pipe friendliness where possible. CLI is the most portable of solutions.
 - GitHub Actionable if possible
-
 
 ## Contribute
 
