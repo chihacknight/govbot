@@ -1,0 +1,168 @@
+{
+  "@context": "https://project-open-data.cio.gov/v1.1/schema/catalog.jsonld",
+  "@type": "dcat:Catalog",
+  "conformsTo": "https://project-open-data.cio.gov/v1.1/schema",
+  "dataset": [
+    {
+      "identifier": "openstates-scrape-bill",
+      "title": "OpenStates Scraped Bill",
+      "description": "Bill objects from OpenStates scraped legislative data",
+      "keyword": ["legislation", "bills", "openstates", "scrape"],
+      "modified": "2024-11-26T00:00:00Z",
+      "publisher": {
+        "@type": "org:Organization",
+        "name": "Windy Civi Project"
+      },
+      "contactPoint": {
+        "@type": "vcard:Contact",
+        "fn": "Chi Hack Night",
+        "hasEmail": "mailto:info@chihacknight.org"
+      },
+      "accessLevel": "public",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "x-filesystem-path": "./_working/{locale}/bill_{uuid}.json",
+      "x-schema-file": "schemas/openstates.bill.schema.json",
+      "x-path-parameters": [
+        {
+          "name": "locale",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "description": "The locale of the data (could be an enum)"
+          }
+        },
+        {
+          "name": "uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "description": "Unique identifier (UUID)"
+          }
+        }
+      ]
+    },
+    {
+      "identifier": "openstates-scrape-vote-event",
+      "title": "OpenStates Scraped Vote Event",
+      "description": "Vote event objects from OpenStates scraped legislative data",
+      "keyword": ["legislation", "votes", "openstates", "scrape"],
+      "modified": "2024-11-26T00:00:00Z",
+      "publisher": {
+        "@type": "org:Organization",
+        "name": "Windy Civi Project"
+      },
+      "contactPoint": {
+        "@type": "vcard:Contact",
+        "fn": "Chi Hack Night",
+        "hasEmail": "mailto:info@chihacknight.org"
+      },
+      "accessLevel": "public",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "x-filesystem-path": "./_working/{locale}/vote_event_{uuid}.json",
+      "x-schema-file": "schemas/openstates.vote_event.schema.json",
+      "x-path-parameters": [
+        {
+          "name": "locale",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "description": "The locale of the data (could be an enum)"
+          }
+        },
+        {
+          "name": "uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "description": "Unique identifier (UUID)"
+          }
+        }
+      ]
+    },
+    {
+      "identifier": "openstates-scrape-jurisdiction",
+      "title": "OpenStates Scraped Jurisdiction",
+      "description": "Jurisdiction objects from OpenStates scraped legislative data",
+      "keyword": ["legislation", "jurisdiction", "openstates", "scrape"],
+      "modified": "2024-11-26T00:00:00Z",
+      "publisher": {
+        "@type": "org:Organization",
+        "name": "Windy Civi Project"
+      },
+      "contactPoint": {
+        "@type": "vcard:Contact",
+        "fn": "Chi Hack Night",
+        "hasEmail": "mailto:info@chihacknight.org"
+      },
+      "accessLevel": "public",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "x-filesystem-path": "./_working/{locale}/jurisdiction_{key}.json",
+      "x-schema-file": "schemas/openstates.schema.json",
+      "x-path-parameters": [
+        {
+          "name": "locale",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "description": "The locale of the data (could be an enum)"
+          }
+        },
+        {
+          "name": "key",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "description": "OCD compliant key"
+          }
+        }
+      ]
+    },
+    {
+      "identifier": "openstates-scrape-organization",
+      "title": "OpenStates Scraped Organization",
+      "description": "Organization objects from OpenStates scraped legislative data",
+      "keyword": ["legislation", "organization", "openstates", "scrape"],
+      "modified": "2024-11-26T00:00:00Z",
+      "publisher": {
+        "@type": "org:Organization",
+        "name": "Windy Civi Project"
+      },
+      "contactPoint": {
+        "@type": "vcard:Contact",
+        "fn": "Chi Hack Night",
+        "hasEmail": "mailto:info@chihacknight.org"
+      },
+      "accessLevel": "public",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "x-filesystem-path": "./_working/{locale}/organization_{uuid}.json",
+      "x-schema-file": "schemas/openstates.organization.schema.json",
+      "x-path-parameters": [
+        {
+          "name": "locale",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "description": "The locale of the data (could be an enum)"
+          }
+        },
+        {
+          "name": "uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "description": "Unique identifier (UUID)"
+          }
+        }
+      ]
+    }
+  ]
+}
+

@@ -1,0 +1,165 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/windy-civi/toolkit/actions/format/schemas/vote_event_log.schema.json",
+  "title": "Vote Event Log Schema",
+  "description": "Schema for validating vote event log files from formatted snapshots",
+  "type": "object",
+  "required": [
+    "identifier",
+    "motion_text",
+    "motion_classification",
+    "start_date",
+    "result",
+    "organization",
+    "legislative_session",
+    "bill",
+    "bill_action",
+    "bill_identifier",
+    "votes",
+    "counts",
+    "sources",
+    "extras"
+  ],
+  "properties": {
+    "identifier": {
+      "type": "string",
+      "description": "Optional identifier for the vote event (may be empty string)"
+    },
+    "motion_text": {
+      "type": "string",
+      "description": "Text describing the motion being voted on"
+    },
+    "motion_classification": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of motion classification strings"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when the vote occurred"
+    },
+    "result": {
+      "type": "string",
+      "enum": ["pass", "fail", "tie", "other"],
+      "description": "Result of the vote"
+    },
+    "organization": {
+      "type": "string",
+      "description": "The organization conducting the vote, may be a JSON string"
+    },
+    "legislative_session": {
+      "type": "string",
+      "description": "The legislative session identifier"
+    },
+    "bill": {
+      "type": "string",
+      "description": "ID reference to the related bill"
+    },
+    "bill_action": {
+      "type": ["string", "null"],
+      "description": "Optional reference to a specific bill action"
+    },
+    "bill_identifier": {
+      "type": "string",
+      "description": "The bill identifier (e.g., SF0001)"
+    },
+    "votes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Vote"
+      },
+      "description": "Array of individual vote objects"
+    },
+    "counts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/VoteCount"
+      },
+      "description": "Array of vote count objects"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Source"
+      },
+      "description": "Array of source objects"
+    },
+    "extras": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Additional metadata specific to the jurisdiction"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "Vote": {
+      "type": "object",
+      "required": [
+        "option",
+        "voter_name",
+        "voter_id",
+        "note"
+      ],
+      "properties": {
+        "option": {
+          "type": "string",
+          "enum": ["yes", "no", "abstain", "absent", "excused", "other"],
+          "description": "The vote option"
+        },
+        "voter_name": {
+          "type": "string",
+          "description": "Name of the voter"
+        },
+        "voter_id": {
+          "type": "string",
+          "description": "ID of the voter, may be a JSON string"
+        },
+        "note": {
+          "type": "string",
+          "description": "Optional note about the vote"
+        }
+      },
+      "additionalProperties": false
+    },
+    "VoteCount": {
+      "type": "object",
+      "required": [
+        "option",
+        "value"
+      ],
+      "properties": {
+        "option": {
+          "type": "string",
+          "enum": ["yes", "no", "abstain", "absent", "excused", "other"],
+          "description": "The vote option"
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The count for this option"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Source": {
+      "type": "object",
+      "required": ["url"],
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the source"
+        },
+        "note": {
+          "type": "string",
+          "description": "Note about the source"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
+

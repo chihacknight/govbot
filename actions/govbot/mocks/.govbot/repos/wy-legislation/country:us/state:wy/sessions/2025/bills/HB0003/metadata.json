@@ -1,0 +1,147 @@
+{
+  "legislative_session": "2025",
+  "identifier": "HB0003",
+  "title": "Animal abuse-predatory animals.",
+  "from_organization": "~{\"classification\": \"lower\"}",
+  "classification": [
+    "bill"
+  ],
+  "subject": [],
+  "abstracts": [],
+  "other_titles": [
+    {
+      "note": "",
+      "title": "AN ACT relating to crimes and offenses; providing for a new criminal offense of cruelty to animals; increasing the maximum fine for a misdemeanor first offense cruelty to animals conviction; providing for the suspension of hunting privileges for a cruelty to animals conviction as specified; authorizing game and fish law enforcement to enforce the criminal provisions of cruelty to animals as specified; specifying applicability; and providing for an effective date."
+    }
+  ],
+  "other_identifiers": [],
+  "actions": [
+    {
+      "description": "H:Died in Committee Returned Bill Pursuant to HR 5-4",
+      "date": "2025-03-03T22:50:51+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "committee-failure"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:36:59Z"
+      }
+    },
+    {
+      "description": "H No report prior to CoW Cutoff",
+      "date": "2025-02-08T03:15:23+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:36:59Z"
+      }
+    },
+    {
+      "description": "H Introduced and Referred to H06 - Travel",
+      "date": "2025-01-16T18:14:01+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "introduction",
+        "referral-committee"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:36:59Z"
+      }
+    },
+    {
+      "description": "H Received for Introduction",
+      "date": "2025-01-02T19:17:11+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "filing"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:36:59Z"
+      }
+    },
+    {
+      "description": "Bill Number Assigned",
+      "date": "2024-12-03T00:54:09+00:00",
+      "organization_id": "~{\"classification\": \"executive\"}",
+      "classification": [
+        "reading-1"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:36:59Z"
+      }
+    }
+  ],
+  "sponsorships": [
+    {
+      "name": "Travel, Recreation, Wildlife and Cultural Resource",
+      "classification": "primary",
+      "entity_type": "organization",
+      "primary": true,
+      "person_id": null,
+      "organization_id": "~{\"name\": \"Travel, Recreation, Wildlife and Cultural Resource\"}"
+    }
+  ],
+  "related_bills": [],
+  "versions": [
+    {
+      "note": "Introduced",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Introduced/HB0003.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    }
+  ],
+  "documents": [
+    {
+      "note": "Fiscal Note",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Fiscal/HB0003.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    },
+    {
+      "note": "Bill Digest",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Digest/HB0003.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    }
+  ],
+  "citations": [],
+  "sources": [
+    {
+      "url": "https://wyoleg.gov/Legislation/2025/HB0003",
+      "note": ""
+    }
+  ],
+  "extras": {
+    "effective_date": "2025-03-01",
+    "wy_bill_id": 12206
+  },
+  "jurisdiction": {
+    "id": "ocd-jurisdiction/country:us/state:wy/government",
+    "name": "Wyoming",
+    "classification": "state",
+    "division_id": "ocd-division/country:us/state:wy"
+  },
+  "_processing": {
+    "logs_latest_update": "2025-11-27T00:37:02Z"
+  }
+}

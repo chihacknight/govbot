@@ -1,0 +1,61 @@
+---
+source: tests/cli_example_snaps.rs
+expression: "&formatted_stdout"
+---
+Command:
+govbot clone --list
+
+Output:
+Available repos:
+  ak
+  al
+  ar
+  ca
+  co
+  de
+  fl
+  ga
+  gu
+  hi
+  ia
+  id
+  il
+  in
+  ks
+  ky
+  la
+  ma
+  md
+  me
+  mi
+  mn
+  mo
+  mp
+  ms
+  mt
+  nc
+  nd
+  ne
+  nh
+  nj
+  nm
+  nv
+  ny
+  oh
+  ok
+  or
+  pa
+  pr
+  ri
+  sc
+  sd
+  tn
+  usa
+  ut
+  vi
+  vt
+  wa
+  wi
+  wv
+  wy
+  all (clone all repos)

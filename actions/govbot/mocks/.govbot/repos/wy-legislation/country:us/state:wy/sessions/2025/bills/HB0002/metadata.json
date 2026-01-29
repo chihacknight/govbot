@@ -1,0 +1,174 @@
+{
+  "legislative_session": "2025",
+  "identifier": "HB0002",
+  "title": "Hunting license application fees increase.",
+  "from_organization": "~{\"classification\": \"lower\"}",
+  "classification": [
+    "bill"
+  ],
+  "subject": [],
+  "abstracts": [],
+  "other_titles": [
+    {
+      "note": "",
+      "title": "AN ACT relating to game and fish; authorizing the game and fish commission to set application fees for hunting licenses as specified; removing minimum contribution requirements to property damage compensation fund; requiring rulemaking; and providing for effective dates."
+    }
+  ],
+  "other_identifiers": [],
+  "actions": [
+    {
+      "description": "H COW:H Did not consider for COW",
+      "date": "2025-02-11T04:07:26+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "committee-failure"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:37:00Z"
+      }
+    },
+    {
+      "description": "H Placed on General File",
+      "date": "2025-02-07T02:10:33+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:37:00Z"
+      }
+    },
+    {
+      "description": "H06 - Travel:Recommend Amend and Do Pass 8-1-0-0-0",
+      "date": "2025-02-07T02:10:24+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "committee-passage-favorable"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:37:00Z"
+      }
+    },
+    {
+      "description": "H Introduced and Referred to H06 - Travel",
+      "date": "2025-01-16T18:13:36+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "introduction",
+        "referral-committee"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:37:00Z"
+      }
+    },
+    {
+      "description": "H Received for Introduction",
+      "date": "2025-01-02T19:16:16+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "filing"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:37:00Z"
+      }
+    },
+    {
+      "description": "Bill Number Assigned",
+      "date": "2024-12-03T00:51:58+00:00",
+      "organization_id": "~{\"classification\": \"executive\"}",
+      "classification": [
+        "reading-1"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-27T00:37:00Z"
+      }
+    }
+  ],
+  "sponsorships": [
+    {
+      "name": "Travel, Recreation, Wildlife and Cultural Resource",
+      "classification": "primary",
+      "entity_type": "organization",
+      "primary": true,
+      "person_id": null,
+      "organization_id": "~{\"name\": \"Travel, Recreation, Wildlife and Cultural Resource\"}"
+    }
+  ],
+  "related_bills": [],
+  "versions": [
+    {
+      "note": "Introduced",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Introduced/HB0002.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    },
+    {
+      "note": "Amendment HB0002HS001 (Standing Committee)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/HB0002HS001.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "HB0002HS001",
+        "sponsor": "House Travel, Recreation, Wildlife and Cultural Re"
+      }
+    }
+  ],
+  "documents": [
+    {
+      "note": "Fiscal Note",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Fiscal/HB0002.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    },
+    {
+      "note": "Bill Digest",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Digest/HB0002.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    }
+  ],
+  "citations": [],
+  "sources": [
+    {
+      "url": "https://wyoleg.gov/Legislation/2025/HB0002",
+      "note": ""
+    }
+  ],
+  "extras": {
+    "effective_date": "2025-03-01",
+    "wy_bill_id": 12129
+  },
+  "jurisdiction": {
+    "id": "ocd-jurisdiction/country:us/state:wy/government",
+    "name": "Wyoming",
+    "classification": "state",
+    "division_id": "ocd-division/country:us/state:wy"
+  },
+  "_processing": {
+    "logs_latest_update": "2025-11-27T00:37:03Z"
+  }
+}

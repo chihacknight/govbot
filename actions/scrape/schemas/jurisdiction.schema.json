@@ -1,0 +1,113 @@
+{
+  "title": "Jurisdiction Schema",
+  "description": "Schema for validating jurisdiction objects from scraped legislative data",
+  "required": [
+    "_id",
+    "id",
+    "name",
+    "division_id",
+    "classification",
+    "legislative_sessions",
+    "extras"
+  ],
+  "properties": {
+    "_id": {
+      "description": "Unique identifier for the jurisdiction",
+      "type": "string"
+    },
+    "id": {
+      "description": "Jurisdiction identifier (typically same as _id)",
+      "type": "string"
+    },
+    "name": {
+      "description": "Name of the jurisdiction",
+      "type": "string"
+    },
+    "url": {
+      "description": "URL of the jurisdiction's legislative website",
+      "type": "string",
+      "format": "uri"
+    },
+    "division_id": {
+      "description": "Open Civic Data division identifier",
+      "type": "string"
+    },
+    "classification": {
+      "description": "Classification of the jurisdiction",
+      "type": "string",
+      "enum": [
+        "state",
+        "municipality",
+        "county",
+        "federal"
+      ]
+    },
+    "legislative_sessions": {
+      "items": {
+        "$ref": "#/definitions/LegislativeSession"
+      },
+      "description": "Array of legislative session objects",
+      "type": "array"
+    },
+    "extras": {
+      "additionalProperties": true,
+      "description": "Additional metadata specific to the jurisdiction",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/windy-civi/toolkit/schemas/openstates_scrape_jurisdiction.schema.json",
+  "definitions": {
+    "LegislativeSession": {
+      "type": "object",
+      "required": [
+        "_scraped_name",
+        "classification",
+        "identifier",
+        "name",
+        "start_date",
+        "end_date"
+      ],
+      "properties": {
+        "_scraped_name": {
+          "description": "The name as scraped from the source",
+          "type": "string"
+        },
+        "classification": {
+          "description": "Classification of the session",
+          "type": "string",
+          "enum": [
+            "primary",
+            "special"
+          ]
+        },
+        "identifier": {
+          "description": "Unique identifier for the session",
+          "type": "string"
+        },
+        "name": {
+          "description": "Display name of the session",
+          "type": "string"
+        },
+        "start_date": {
+          "description": "Start date of the session",
+          "type": "string",
+          "format": "date"
+        },
+        "end_date": {
+          "description": "End date of the session",
+          "type": "string",
+          "format": "date"
+        },
+        "active": {
+          "description": "Whether the session is currently active",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
+

@@ -1,0 +1,340 @@
+{
+  "legislative_session": "2025",
+  "identifier": "SF0008",
+  "title": "Protection orders-effective during appeal or review.",
+  "from_organization": "~{\"classification\": \"lower\"}",
+  "classification": [
+    "bill"
+  ],
+  "subject": [],
+  "abstracts": [
+    {
+      "note": "summary",
+      "abstract": "2025/Summaries/SF0008.pdf"
+    }
+  ],
+  "other_titles": [
+    {
+      "note": "",
+      "title": "AN ACT relating to protection orders; specifying the applicability of stalking, sexual assault and domestic violence protection orders during appeal or review; and providing for an effective date."
+    }
+  ],
+  "other_identifiers": [],
+  "actions": [
+    {
+      "description": "Assigned Chapter Number 67",
+      "date": "2025-02-28T20:44:38+00:00",
+      "organization_id": "~{\"classification\": \"executive\"}",
+      "classification": [
+        "became-law"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "Governor Signed SEA No. 0034",
+      "date": "2025-02-28T20:42:31+00:00",
+      "organization_id": "~{\"classification\": \"legislature\"}",
+      "classification": [
+        "executive-signature"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H Speaker Signed SEA No. 0034",
+      "date": "2025-02-25T23:48:59+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S President Signed SEA No. 0034",
+      "date": "2025-02-25T21:48:30+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "Assigned Number SEA No. 0034",
+      "date": "2025-02-25T21:21:30+00:00",
+      "organization_id": "~{\"classification\": \"executive\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H 3rd Reading:Passed 61-0-1-0-0",
+      "date": "2025-02-25T20:32:23+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "passage",
+        "reading-3"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H 2nd Reading:Passed",
+      "date": "2025-02-24T17:57:27+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "reading-2"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H COW:Passed",
+      "date": "2025-02-21T22:54:54+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "committee-passage-favorable"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H Placed on General File",
+      "date": "2025-02-19T17:27:36+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H01 - Judiciary:Recommend Do Pass 8-0-1-0-0",
+      "date": "2025-02-19T17:27:28+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "committee-passage-favorable"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H Introduced and Referred to H01 - Judiciary",
+      "date": "2025-02-11T17:29:19+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "introduction",
+        "referral-committee"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H Received for Introduction",
+      "date": "2025-01-24T18:40:08+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "filing"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S 3rd Reading:Passed 30-0-1-0-0",
+      "date": "2025-01-24T17:56:52+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "passage",
+        "reading-3"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S 2nd Reading:Passed",
+      "date": "2025-01-23T17:18:07+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "reading-2"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S COW:Passed",
+      "date": "2025-01-22T22:53:53+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "committee-passage-favorable"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S Placed on General File",
+      "date": "2025-01-22T00:13:41+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S01 - Judiciary:Recommend Do Pass 4-0-1-0-0",
+      "date": "2025-01-22T00:13:33+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "committee-passage-favorable"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S Introduced and Referred to S01 - Judiciary",
+      "date": "2025-01-15T21:17:47+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "introduction",
+        "referral-committee"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S Received for Introduction",
+      "date": "2024-12-19T18:20:56+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "filing"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "Bill Number Assigned",
+      "date": "2024-12-03T00:34:42+00:00",
+      "organization_id": "~{\"classification\": \"executive\"}",
+      "classification": [
+        "reading-1"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    }
+  ],
+  "sponsorships": [
+    {
+      "name": "Judiciary",
+      "classification": "primary",
+      "entity_type": "organization",
+      "primary": true,
+      "person_id": null,
+      "organization_id": "~{\"name\": \"Judiciary\"}"
+    }
+  ],
+  "related_bills": [],
+  "versions": [
+    {
+      "note": "Introduced",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Introduced/SF0008.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    },
+    {
+      "note": "Enrolled",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Enroll/SF0008.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    }
+  ],
+  "documents": [
+    {
+      "note": "Fiscal Note",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Fiscal/SF0008.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    },
+    {
+      "note": "Bill Digest",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Digest/SF0008.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    }
+  ],
+  "citations": [],
+  "sources": [
+    {
+      "url": "https://wyoleg.gov/Legislation/2025/SF0008",
+      "note": ""
+    }
+  ],
+  "extras": {
+    "wy_enrolled_number": "SEA0034",
+    "chapter": "CH0067",
+    "effective_date": "2025-07-01",
+    "wy_bill_id": 12195
+  },
+  "jurisdiction": {
+    "id": "ocd-jurisdiction/country:us/state:wy/government",
+    "name": "Wyoming",
+    "classification": "state",
+    "division_id": "ocd-division/country:us/state:wy"
+  },
+  "_processing": {
+    "logs_latest_update": "2025-11-26T01:06:41Z"
+  }
+}

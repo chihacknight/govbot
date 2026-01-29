@@ -1,0 +1,1122 @@
+{
+  "legislative_session": "2025",
+  "identifier": "SF0001",
+  "title": "General government appropriations.",
+  "from_organization": "~{\"classification\": \"lower\"}",
+  "classification": [
+    "bill"
+  ],
+  "subject": [],
+  "abstracts": [],
+  "other_titles": [
+    {
+      "note": "",
+      "title": "AN ACT relating to supplemental appropriations for the operation of state government for the fiscal biennium commencing July 1, 2024 and ending June 30, 2026; providing definitions; providing additional appropriations and transfers of funds for the period of the budget; increasing or decreasing specified amounts; adjusting the number of positions; modifying prior appropriations; providing for duties, terms and conditions and other requirements relating to appropriations for the period of the budget as specified; providing for position and other budgetary limitations; providing for loans and loan repayments; and providing for an effective date."
+    }
+  ],
+  "other_identifiers": [],
+  "actions": [
+    {
+      "description": "S postponed indefinitely",
+      "date": "2025-03-06T22:01:00+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S Appointed JCC01 Members",
+      "date": "2025-02-25T23:37:06+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H Appointed JCC01 Members",
+      "date": "2025-02-12T00:21:56+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "House:Pursuant to JR 14-1 (g) referred directly to JCC",
+      "date": "2025-02-12T00:20:01+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "House:Pursuant to JR 14-1 (f) referred directly to 3rd Reading",
+      "date": "2025-02-11T17:35:02+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H Introduced and Referred to H02",
+      "date": "2025-02-10T18:45:19+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "introduction",
+        "referral-committee"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H Received for Introduction",
+      "date": "2025-02-08T00:54:51+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "filing"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S 3rd Reading:Passed 28-3-0-0-0",
+      "date": "2025-02-08T00:07:08+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "passage",
+        "reading-3"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S 2nd Reading:Passed",
+      "date": "2025-02-06T00:05:11+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "reading-2"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S COW:Passed",
+      "date": "2025-02-04T00:29:49+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "committee-passage-favorable"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S Introduced and Referred to SCOW",
+      "date": "2025-01-31T00:14:23+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "introduction",
+        "referral-committee"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S Received for Introduction",
+      "date": "2025-01-29T15:01:37+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "filing"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "Bill Number Assigned",
+      "date": "2025-01-29T02:26:35+00:00",
+      "organization_id": "~{\"classification\": \"executive\"}",
+      "classification": [
+        "reading-1"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    }
+  ],
+  "sponsorships": [
+    {
+      "name": "Appropriations",
+      "classification": "primary",
+      "entity_type": "organization",
+      "primary": true,
+      "person_id": null,
+      "organization_id": "~{\"name\": \"Appropriations\"}"
+    }
+  ],
+  "related_bills": [],
+  "versions": [
+    {
+      "note": "Introduced",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Introduced/SF0001.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    },
+    {
+      "note": "Amendment SF0001HS001 (Standing Committee) - House Appropriations Committee (Reported)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001HS001.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001HS001",
+        "sponsor": "House Appropriations Committee"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2001 (2nd reading) - Senator Boner (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2001.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2001",
+        "sponsor": "Senator Boner"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2002 (2nd reading) - Senator Smith, D (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2002.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2002",
+        "sponsor": "Senator Smith, D"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2003 (2nd reading) - Senator Driskill (Corrected, Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2003.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2003",
+        "sponsor": "Senator Driskill"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2004 (2nd reading) - Senator Driskill (Corrected, Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2004.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2004",
+        "sponsor": "Senator Driskill"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2005 (2nd reading) - Senator Hicks (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2005.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2005",
+        "sponsor": "Senator Hicks"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2006 (2nd reading) - Senator Driskill (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2006.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2006",
+        "sponsor": "Senator Driskill"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2007 (2nd reading) - Senator Jones (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2007.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2007",
+        "sponsor": "Senator Jones"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2008 (2nd reading) - Senator Laursen, D (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2008.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2008",
+        "sponsor": "Senator Laursen, D"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2009 (2nd reading) - Senator Driskill (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2009.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2009",
+        "sponsor": "Senator Driskill"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2010 (2nd reading) - Senator Driskill (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2010.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2010",
+        "sponsor": "Senator Driskill"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2011 (2nd reading) - Senator Landen (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2011.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2011",
+        "sponsor": "Senator Landen"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2012 (2nd reading) - Senator Driskill (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2012.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2012",
+        "sponsor": "Senator Driskill"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2013 (2nd reading) - Senator Pearson (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2013.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2013",
+        "sponsor": "Senator Pearson"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2014 (2nd reading) - Senator Cooper (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2014.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2014",
+        "sponsor": "Senator Cooper"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2015 (2nd reading) - Senator Driskill (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2015.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2015",
+        "sponsor": "Senator Driskill"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2016 (2nd reading) - Senator Gierau (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2016.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2016",
+        "sponsor": "Senator Gierau"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2017 (2nd reading) - Senator Crum (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2017.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2017",
+        "sponsor": "Senator Crum"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2018 (2nd reading) - Senator Driskill (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2018.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2018",
+        "sponsor": "Senator Driskill"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2019 (2nd reading) - Senator Driskill (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2019.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2019",
+        "sponsor": "Senator Driskill"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2020 (2nd reading) - Senator Gierau (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2020.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2020",
+        "sponsor": "Senator Gierau"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2021 (2nd reading) - Senator Driskill (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2021.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2021",
+        "sponsor": "Senator Driskill"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2022 (2nd reading) - Senator Driskill (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2022.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2022",
+        "sponsor": "Senator Driskill"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2023 (2nd reading) - Senator Brennan (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2023.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2023",
+        "sponsor": "Senator Brennan"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2024 (2nd reading) - Senator Gierau (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2024.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2024",
+        "sponsor": "Senator Gierau"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2025 (2nd reading) - Senator Dockstader (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2025.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2025",
+        "sponsor": "Senator Dockstader"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2026 (2nd reading) - Senator Dockstader (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2026.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2026",
+        "sponsor": "Senator Dockstader"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2027 (2nd reading) - Senator Ide (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2027.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2027",
+        "sponsor": "Senator Ide"
+      }
+    },
+    {
+      "note": "Amendment SF0001S2028 (2nd reading) - Senator Crago (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S2028.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S2028",
+        "sponsor": "Senator Crago"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3001 (3rd reading) - Senator Gierau (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3001.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3001",
+        "sponsor": "Senator Gierau"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3002 (3rd reading) - Senator Hicks (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3002.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3002",
+        "sponsor": "Senator Hicks"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3003 (3rd reading) - Senator Laursen, D (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3003.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3003",
+        "sponsor": "Senator Laursen, D"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3004 (3rd reading) - Senator Steinmetz (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3004.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3004",
+        "sponsor": "Senator Steinmetz"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3005 (3rd reading) - Senator Pappas (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3005.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3005",
+        "sponsor": "Senator Pappas"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3006 (3rd reading) - Senator Jones (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3006.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3006",
+        "sponsor": "Senator Jones"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3007 (3rd reading) - Senator Rothfuss (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3007.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3007",
+        "sponsor": "Senator Rothfuss"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3008 (3rd reading) - Senator Ide (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3008.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3008",
+        "sponsor": "Senator Ide"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3009 (3rd reading) - Senator Steinmetz (Corrected, Corrected, Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3009.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3009",
+        "sponsor": "Senator Steinmetz"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3010 (3rd reading) - Senator Steinmetz (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3010.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3010",
+        "sponsor": "Senator Steinmetz"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3011 (3rd reading) - Senator Rothfuss (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3011.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3011",
+        "sponsor": "Senator Rothfuss"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3012 (3rd reading) - Senator Ide (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3012.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3012",
+        "sponsor": "Senator Ide"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3013 (3rd reading) - Senator Olsen (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3013.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3013",
+        "sponsor": "Senator Olsen"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3014 (3rd reading) - Senator Driskill (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3014.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3014",
+        "sponsor": "Senator Driskill"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3015 (3rd reading) - Senator Rothfuss (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3015.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3015",
+        "sponsor": "Senator Rothfuss"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3016 (3rd reading) - Senator Salazar (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3016.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3016",
+        "sponsor": "Senator Salazar"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3017 (3rd reading) - Senator Steinmetz (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3017.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3017",
+        "sponsor": "Senator Steinmetz"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3018 (3rd reading) - Senator Steinmetz (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3018.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3018",
+        "sponsor": "Senator Steinmetz"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3019 (3rd reading) - Senator Cooper (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3019.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3019",
+        "sponsor": "Senator Cooper"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3020 (3rd reading) - Senator Crago (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3020.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3020",
+        "sponsor": "Senator Crago"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3021 (3rd reading) - Senator Driskill (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3021.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3021",
+        "sponsor": "Senator Driskill"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3022 (3rd reading) - Senator Brennan (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3022.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3022",
+        "sponsor": "Senator Brennan"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3023 (3rd reading) - Senator Cooper (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3023.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3023",
+        "sponsor": "Senator Cooper"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3024 (3rd reading) - Senator Rothfuss (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3024.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3024",
+        "sponsor": "Senator Rothfuss"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3025 (3rd reading) - Senator Steinmetz (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3025.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3025",
+        "sponsor": "Senator Steinmetz"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3026 (3rd reading) - Senator Pearson (Withdrawn)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3026.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3026",
+        "sponsor": "Senator Pearson"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3027 (3rd reading) - Senator Hicks (Failed)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3027.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3027",
+        "sponsor": "Senator Hicks"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3028 (3rd reading) - Senator Crago (Corrected, Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3028.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3028",
+        "sponsor": "Senator Crago"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3029 (3rd reading) - Senator Salazar (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3029.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3029",
+        "sponsor": "Senator Salazar"
+      }
+    },
+    {
+      "note": "Amendment SF0001S3030 (3rd reading) - Senator Salazar (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0001S3030.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0001S3030",
+        "sponsor": "Senator Salazar"
+      }
+    }
+  ],
+  "documents": [
+    {
+      "note": "Fiscal Note",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Fiscal/SF0001.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    },
+    {
+      "note": "Bill Digest",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Digest/SF0001.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    }
+  ],
+  "citations": [],
+  "sources": [
+    {
+      "url": "https://wyoleg.gov/Legislation/2025/SF0001",
+      "note": ""
+    }
+  ],
+  "extras": {
+    "effective_date": "2025-03-01",
+    "wy_bill_id": 12898
+  },
+  "jurisdiction": {
+    "id": "ocd-jurisdiction/country:us/state:wy/government",
+    "name": "Wyoming",
+    "classification": "state",
+    "division_id": "ocd-division/country:us/state:wy"
+  },
+  "_processing": {
+    "logs_latest_update": "2025-11-26T01:06:41Z"
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["org", "locales"],
+  "$defs": {
+    "templateName": {
+      "enum": ["openstates-to-ocd-files", "openstates-scrape"]
+    }
+  },
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "org": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "GitHub organization or username where repositories are managed"
+        }
+      },
+      "required": ["username"],
+      "additionalProperties": false
+    },
+    "template_markers": {
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "string",
+          "description": "Opening marker for template variables"
+        },
+        "close": {
+          "type": "string",
+          "description": "Closing marker for template variables"
+        }
+      },
+      "required": ["open", "close"],
+      "additionalProperties": false
+    },
+    "templates": {
+      "type": "object",
+      "patternProperties": {
+        "^(openstates-to-ocd-files|openstates-scrape)$": {
+          "type": "object",
+          "properties": {
+            "folder-name": {
+              "type": "string",
+              "description": "The folder name for the locale"
+            },
+            "fully_override_dirs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "List of directory names that should be fully overridden when applying templates. Files in these directories that don't exist in the template will be deleted."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "locales": {
+      "type": "object",
+      "patternProperties": {
+        "^(al|ak|az|ar|ca|co|ct|de|fl|ga|gu|hi|id|il|in|ia|ks|ky|la|me|md|ma|mi|mn|mp|ms|mo|mt|ne|nv|nh|nj|nm|ny|nc|nd|oh|ok|or|pa|pr|ri|sc|sd|tn|tx|ut|usa|vi|vt|va|wa|wv|wi|wy)$": {
+          "type": "object",
+          "required": ["template"],
+          "properties": {
+            "template": {
+              "$ref": "#/$defs/templateName",
+              "description": "Which template to use for the locale"
+            },
+            "toolkit_branch": {
+              "type": "string",
+              "description": "The branch of the toolkit to use for the locale"
+            },
+            "disabled_jobs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "List of job/workflow file names (without .yml extension) to exclude from the generated repository. For example, ['extract-text'] will exclude extract-text.yml"
+            },
+            "name": {
+              "type": "string",
+              "description": "Full name of the locale (e.g., 'Alabama', 'Alaska')"
+            },
+            "labels": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Labels for the locale (e.g., 'working')"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

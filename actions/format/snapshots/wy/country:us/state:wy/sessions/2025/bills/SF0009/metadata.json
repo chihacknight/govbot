@@ -1,0 +1,355 @@
+{
+  "legislative_session": "2025",
+  "identifier": "SF0009",
+  "title": "Restoration of rights amendments.",
+  "from_organization": "~{\"classification\": \"lower\"}",
+  "classification": [
+    "bill"
+  ],
+  "subject": [],
+  "abstracts": [
+    {
+      "note": "summary",
+      "abstract": "2025/Summaries/SF0009.pdf"
+    }
+  ],
+  "other_titles": [
+    {
+      "note": "",
+      "title": "AN ACT relating to criminal procedure; specifying eligibility for the restoration of rights; expanding the scope of judicial review of restoration of rights eligibility determinations; amending notification requirements regarding the issuance of restoration of rights certificates; clarifying the effect of a new felony conviction upon a prior restoration of rights; amending the definition of violent felony; making conforming amendments; and providing for an effective date."
+    }
+  ],
+  "other_identifiers": [],
+  "actions": [
+    {
+      "description": "Assigned Chapter Number 100",
+      "date": "2025-03-04T03:21:11+00:00",
+      "organization_id": "~{\"classification\": \"executive\"}",
+      "classification": [
+        "became-law"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "Governor Signed SEA No. 0052",
+      "date": "2025-03-04T03:20:46+00:00",
+      "organization_id": "~{\"classification\": \"legislature\"}",
+      "classification": [
+        "executive-signature"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H Speaker Signed SEA No. 0052",
+      "date": "2025-02-28T01:59:43+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S President Signed SEA No. 0052",
+      "date": "2025-02-28T01:25:45+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "Assigned Number SEA No. 0052",
+      "date": "2025-02-27T20:32:32+00:00",
+      "organization_id": "~{\"classification\": \"executive\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H 3rd Reading:Passed 60-0-2-0-0",
+      "date": "2025-02-27T18:17:17+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "passage",
+        "reading-3"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H 2nd Reading:Passed",
+      "date": "2025-02-26T17:46:48+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "reading-2"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H COW:Passed",
+      "date": "2025-02-25T23:42:42+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "committee-passage-favorable"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H Placed on General File",
+      "date": "2025-02-21T17:36:12+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H01 - Judiciary:Recommend Do Pass 9-0-0-0-0",
+      "date": "2025-02-21T17:36:05+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "committee-passage-favorable"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H Introduced and Referred to H01 - Judiciary",
+      "date": "2025-02-13T17:38:21+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "introduction",
+        "referral-committee"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H Received for Introduction",
+      "date": "2025-01-29T16:32:33+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "filing"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S 3rd Reading:Passed 27-2-2-0-0",
+      "date": "2025-01-28T17:36:24+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "passage",
+        "reading-3"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S 2nd Reading:Passed",
+      "date": "2025-01-27T18:17:57+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "reading-2"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S COW:Passed",
+      "date": "2025-01-24T22:39:31+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "committee-passage-favorable"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S Placed on General File",
+      "date": "2025-01-24T00:03:57+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S01 - Judiciary:Recommend Amend and Do Pass 4-1-0-0-0",
+      "date": "2025-01-24T00:03:47+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "committee-passage-favorable"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S Introduced and Referred to S01 - Judiciary",
+      "date": "2025-01-17T00:03:56+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "introduction",
+        "referral-committee"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S Received for Introduction",
+      "date": "2024-12-19T18:21:09+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "filing"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "Bill Number Assigned",
+      "date": "2024-12-03T00:37:18+00:00",
+      "organization_id": "~{\"classification\": \"executive\"}",
+      "classification": [
+        "reading-1"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    }
+  ],
+  "sponsorships": [
+    {
+      "name": "Judiciary",
+      "classification": "primary",
+      "entity_type": "organization",
+      "primary": true,
+      "person_id": null,
+      "organization_id": "~{\"name\": \"Judiciary\"}"
+    }
+  ],
+  "related_bills": [],
+  "versions": [
+    {
+      "note": "Introduced",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Introduced/SF0009.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    },
+    {
+      "note": "Enrolled",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Enroll/SF0009.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    },
+    {
+      "note": "Amendment SF0009SS001 (Standing Committee) - Senate Judiciary Committee (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0009SS001.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0009SS001",
+        "sponsor": "Senate Judiciary Committee"
+      }
+    }
+  ],
+  "documents": [
+    {
+      "note": "Fiscal Note",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Fiscal/SF0009.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    },
+    {
+      "note": "Bill Digest",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Digest/SF0009.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    }
+  ],
+  "citations": [],
+  "sources": [
+    {
+      "url": "https://wyoleg.gov/Legislation/2025/SF0009",
+      "note": ""
+    }
+  ],
+  "extras": {
+    "wy_enrolled_number": "SEA0052",
+    "chapter": "CH0100",
+    "effective_date": "2025-03-03",
+    "wy_bill_id": 12211
+  },
+  "jurisdiction": {
+    "id": "ocd-jurisdiction/country:us/state:wy/government",
+    "name": "Wyoming",
+    "classification": "state",
+    "division_id": "ocd-division/country:us/state:wy"
+  },
+  "_processing": {
+    "logs_latest_update": "2025-11-26T01:06:41Z"
+  }
+}

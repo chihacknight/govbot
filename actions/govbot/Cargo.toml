@@ -1,0 +1,66 @@
+[package]
+name = "govbot"
+version = "0.1.0"
+edition = "2021"
+description = "Streaming pipeline log government events from distributed government data"
+authors = ["sartaj"]
+
+[lib]
+name = "govbot"
+path = "src/lib.rs"
+
+[dependencies]
+# Async runtime and streams
+tokio = { version = "1.0", features = ["rt", "rt-multi-thread", "fs", "macros"] }
+futures = "0.3"
+async-stream = "0.3"
+
+# JSON handling
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+
+# File system operations - jwalk is faster and supports parallel traversal
+jwalk = "0.8"
+regex = "1.10"
+
+# CLI support for stdio pipeline
+clap = { version = "4.5", features = ["derive"] }
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Path manipulation
+pathdiff = "0.2"
+
+# Git operations
+git2 = { version = "0.18" }
+
+# Text similarity and embeddings (lightweight, no external models)
+# Using ONNX Runtime + tokenizers for semantic embeddings
+ort = { version = "2.0.0-rc.10", default-features = true, features = ["ndarray"] }
+tokenizers = "0.19"
+ndarray = "0.15"
+toml = "0.8"
+# HTTP client for downloading models
+reqwest = { version = "0.11", features = ["blocking"] }
+# Hashing for text deduplication
+sha2 = "0.10"
+# Timestamps
+chrono = { version = "0.4", features = ["serde"] }
+# RSS feed generation
+rss = "2.0"
+
+[[bin]]
+name = "govbot"
+path = "src/main.rs"
+
+[[bin]]
+name = "generate-locale-enum"
+path = "src/bin/generate-locale-enum.rs"
+
+[dev-dependencies]
+tokio-test = "0.4"
+insta = { version = "1.39", features = ["json"] }
+

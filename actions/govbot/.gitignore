@@ -1,0 +1,5 @@
+.govbot/
+!mocks/**/.govbot/
+country:us/
+govbot.yml
+feeds/

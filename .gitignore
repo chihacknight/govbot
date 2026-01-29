@@ -1,47 +1,119 @@
-# Linux
-*~
-.fuse_hidden*
-.directory
-.Trash-*
-.nfs*
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-Icon
-._*
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
-*.icloud
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
 
-# Windows
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
-[Dd]esktop.ini
-$RECYCLE.BIN/
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
-*.lnk
-
-# IDE and Editor folders
-.idea/
+# IDE
 .vscode/
+.idea/
 *.swp
 *.swo
+*.iml
 *~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific
+test_output/
+*.log
+sample_data/*
+
+# Project documentation (local development notes)
+project_docs/*
+WORKFLOW_PREFERENCES.md
+
+# Temporary files
+*.tmp
+*.temp
+file_structure.md
+
+# Analysis outputs
+llm_analysis_results.json
+bill_tracker_report.json
+wyoming_bill_tracker_report.json
+*_llm_analysis_*.json
+
+# Data outputs (keep structure but ignore content)
+data_output/data_processed/*/logs/
+data_output/data_processed/*/files/
+data_output/data_not_processed/
+data_output/event_archive/
+
+# Cache and temporary files
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Testing - Sample data (too large for repo)
+testing/sample_data/usa-complete/
+testing/sample_data/usa-latest/
+testing/sample_data/comprehensive/
+testing/incremental/test_input/
+testing/incremental/test_output/
+docs/action_logs/*
+
+**/tmp/*
+
+# Rust / Cargo
+target/
+**/target/
+# Save .cargo/config if used for config, not secrets
+
+# Rust build output
+*.rs.bk
+
+# Rust/Cargo temporary and backup files
+*.rs.bk
+*.rlib
+
+sample_data/*
+
+
+

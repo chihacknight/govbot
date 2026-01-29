@@ -1,0 +1,12 @@
+{
+  "action": {
+    "description": "S06 - Travel:Recommend Do Pass 5-0-0-0-0",
+    "date": "2025-01-16T17:36:39+00:00",
+    "organization_id": "~{\"classification\": \"upper\"}",
+    "classification": [
+      "committee-passage-favorable"
+    ],
+    "related_entities": []
+  },
+  "bill_id": "SF0004"
+}

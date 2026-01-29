@@ -1,0 +1,256 @@
+{
+  "legislative_session": "2025",
+  "identifier": "SF0019",
+  "title": "Impact assistance payments-maximum percentages and review.",
+  "from_organization": "~{\"classification\": \"lower\"}",
+  "classification": [
+    "bill"
+  ],
+  "subject": [],
+  "abstracts": [],
+  "other_titles": [
+    {
+      "note": "",
+      "title": "AN ACT relating to industrial development and siting; specifying that the industrial siting council may increase the impact assistance payments of specified projects beyond the maximum allowable percentages; requiring approval of increases; specifying that approvals are not subject to judicial review; making conforming amendments; specifying applicability; and providing for an effective date."
+    }
+  ],
+  "other_identifiers": [],
+  "actions": [
+    {
+      "description": "H:Died in Committee Returned Bill Pursuant to HR 5-4",
+      "date": "2025-03-03T22:41:30+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "committee-failure"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H No report prior to CoW Cutoff",
+      "date": "2025-02-28T17:54:25+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": ":Recall from Committee failed Pursuant to HR 5-6 16-45-1-0-0",
+      "date": "2025-02-25T22:25:58+00:00",
+      "organization_id": "~{\"classification\": \"legislature\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H Introduced and Referred to H09 - Minerals",
+      "date": "2025-02-12T18:36:36+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "introduction",
+        "referral-committee"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "H Received for Introduction",
+      "date": "2025-01-24T15:37:06+00:00",
+      "organization_id": "~{\"classification\": \"lower\"}",
+      "classification": [
+        "filing"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S 3rd Reading:Passed 24-6-1-0-0",
+      "date": "2025-01-23T17:31:08+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "passage",
+        "reading-3"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S 2nd Reading:Passed",
+      "date": "2025-01-22T17:12:20+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "reading-2"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S COW:Passed",
+      "date": "2025-01-21T21:56:59+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "committee-passage-favorable"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S Placed on General File",
+      "date": "2025-01-20T23:32:30+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S09 - Minerals:Recommend Amend and Do Pass 5-0-0-0-0",
+      "date": "2025-01-20T23:32:22+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "committee-passage-favorable"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S Introduced and Referred to S09 - Minerals",
+      "date": "2025-01-14T21:06:42+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "introduction",
+        "referral-committee"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S Received for Introduction",
+      "date": "2024-12-19T18:23:32+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "filing"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "Bill Number Assigned",
+      "date": "2024-12-05T02:37:35+00:00",
+      "organization_id": "~{\"classification\": \"executive\"}",
+      "classification": [
+        "reading-1"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    }
+  ],
+  "sponsorships": [
+    {
+      "name": "Minerals, Business and Economic Development",
+      "classification": "primary",
+      "entity_type": "organization",
+      "primary": true,
+      "person_id": null,
+      "organization_id": "~{\"name\": \"Minerals, Business and Economic Development\"}"
+    }
+  ],
+  "related_bills": [],
+  "versions": [
+    {
+      "note": "Introduced",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Introduced/SF0019.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    },
+    {
+      "note": "Amendment SF0019SS001 (Standing Committee) - Senate Minerals, Business and Economic Development (Adopted)",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Amends/SF0019SS001.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": "",
+      "extras": {
+        "amendmentNumber": "SF0019SS001",
+        "sponsor": "Senate Minerals, Business and Economic Development"
+      }
+    }
+  ],
+  "documents": [
+    {
+      "note": "Fiscal Note",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Fiscal/SF0019.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    },
+    {
+      "note": "Bill Digest",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Digest/SF0019.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    }
+  ],
+  "citations": [],
+  "sources": [
+    {
+      "url": "https://wyoleg.gov/Legislation/2025/SF0019",
+      "note": ""
+    }
+  ],
+  "extras": {
+    "effective_date": "2025-03-01",
+    "wy_bill_id": 12147
+  },
+  "jurisdiction": {
+    "id": "ocd-jurisdiction/country:us/state:wy/government",
+    "name": "Wyoming",
+    "classification": "state",
+    "division_id": "ocd-division/country:us/state:wy"
+  },
+  "_processing": {
+    "logs_latest_update": "2025-11-26T01:06:41Z"
+  }
+}

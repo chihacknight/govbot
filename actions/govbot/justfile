@@ -1,0 +1,327 @@
+# govbot development tasks
+# Install just: cargo install just
+# Then run: just --list to see all available tasks
+
+# Default task: show help
+default:
+    @just --list
+
+# Setup development environment
+setup:
+    #!/usr/bin/env bash
+    set -e
+    echo "🚀 Setting up development environment..."
+    
+    # Check if Rust is installed
+    if ! command -v cargo &> /dev/null; then
+        echo "❌ Error: Rust/Cargo is not installed."
+        echo "   Please install Rust from https://rustup.rs/"
+        exit 1
+    fi
+    
+    echo "✅ Rust toolchain found: $(rustc --version)"
+    
+    # Install Rust dependencies
+    echo ""
+    echo "📦 Installing Rust dependencies..."
+    cargo build
+    
+    # Install cargo-insta if not present
+    if ! command -v cargo-insta &> /dev/null; then
+        echo ""
+        echo "📦 Installing cargo-insta (required for snapshot testing)..."
+        cargo install cargo-insta
+    else
+        echo "✅ cargo-insta already installed: $(cargo-insta --version 2>/dev/null || echo 'installed')"
+    fi
+
+    echo ""
+    echo "✅ Development environment setup complete!"
+    echo ""
+    echo "Next steps:"
+    echo "  - Run tests: just test"
+    echo "  - Review snapshots: just review"
+    echo "  - Build release: just build-release"
+
+# Build the project (debug)
+build:
+    cargo build
+
+# Build the project (release)
+build-release:
+    cargo build --release
+
+# Run govbot CLI with repo-local directory (doesn't touch user's ~/.govbot)
+# Automatically uses .test-govbot as the govbot directory unless --govbot-dir is specified
+# Usage: just govbot [COMMAND] [ARGS...]
+# Examples:
+#   just govbot --help
+#   just govbot clone usa il
+#   just govbot clone --govbot-dir custom-dir usa
+#   just govbot logs --repos usa
+govbot *ARGS:
+    #!/usr/bin/env bash
+    set -e
+    
+    DEV_DIR=".govbot"
+    
+    # Build release binary if it doesn't exist or if any source files are newer
+    if [ ! -f "target/release/govbot" ] || [ "src" -nt "target/release/govbot" ] || find src -name "*.rs" -newer "target/release/govbot" 2>/dev/null | grep -q .; then
+        echo "🔨 Building release target..."
+        cargo build --release
+    fi
+    
+    # Check if --govbot-dir is already in the arguments
+    # Convert ARGS to a string and check if it contains --govbot-dir
+    ARGS_STR="{{ARGS}}"
+    if [[ "$ARGS_STR" =~ --govbot-dir ]]; then
+        # echo "📍 Using custom govbot-dir from arguments"
+        ./target/release/govbot {{ARGS}}
+    else
+        # echo "📍 Using repo-local directory: $DEV_DIR (your ~/.govbot won't be modified)"
+        ./target/release/govbot {{ARGS}} --govbot-dir "$DEV_DIR"
+    fi
+
+# Run all tests
+test:
+    cargo test
+
+# Run tests with output
+test-verbose:
+    cargo test -- --nocapture
+
+# Run a specific test
+test-single TEST:
+    cargo test {{TEST}}
+
+# Review snapshot changes
+review:
+    cargo insta review
+
+# Accept all snapshot changes
+accept:
+    cargo insta accept
+
+# Reject all snapshot changes
+reject:
+    cargo insta reject
+
+# Format code
+fmt:
+    cargo fmt
+
+# Check formatting
+fmt-check:
+    cargo fmt -- --check
+
+# Run clippy
+clippy:
+    cargo clippy -- -D warnings
+
+# Run clippy with fixes
+clippy-fix:
+    cargo clippy --fix --allow-dirty
+
+# Run all checks (format, clippy, tests)
+check:
+    just fmt-check
+    just clippy
+    just test
+
+# Clean build artifacts
+clean:
+    cargo clean
+
+# Run the CLI with example arguments
+run:
+    cargo run
+
+# Run the CLI with custom arguments
+run-args ARGS:
+    cargo run -- {{ARGS}}
+
+# Tag bills using AI (reads JSON lines from stdin)
+# Usage: just govbot logs --repos il --limit 10 | just govbot tag --ai-tool "ollama run llama3"
+# Example: just govbot logs --repos il --limit 10 | just govbot tag --ai-tool "ollama"
+# Note: The tag command reads from stdin, so pipe the logs output to it
+tag *ARGS:
+    #!/usr/bin/env bash
+    set -e
+    
+    DEV_DIR=".govbot"
+    
+    # Build release binary if it doesn't exist or if any source files are newer
+    if [ ! -f "target/release/govbot" ] || [ "src" -nt "target/release/govbot" ] || find src -name "*.rs" -newer "target/release/govbot" 2>/dev/null | grep -q .; then
+        echo "🔨 Building release target..."
+        cargo build --release
+    fi
+    
+    # Check if --govbot-dir is already in the arguments
+    ARGS_STR="{{ARGS}}"
+    if [[ "$ARGS_STR" =~ --govbot-dir ]]; then
+        ./target/release/govbot tag {{ARGS}}
+    else
+        ./target/release/govbot tag {{ARGS}} --govbot-dir "$DEV_DIR"
+    fi
+
+# Run the release binary
+run-release:
+    cargo run --release
+
+# Generate locale enum from pipeline-manager config
+generate:
+    cargo run --bin generate-locale-enum
+
+# Update mocks by cloning/pulling repos and cleaning them up
+# Usage: just mocks [LOCALES...]
+# Example: just mocks usa il
+# Default: clones usa il if no locales specified
+mocks *LOCALES:
+    #!/usr/bin/env bash
+    set -e
+    
+    BILL_LIMIT=${BILL_LIMIT:-5}
+    LOG_LIMIT=${LOG_LIMIT:-3}
+    MOCKS_DIR="mocks/.govbot"
+    
+    # Default to wy gu if no locales provided
+    if [ -z "{{LOCALES}}" ]; then
+        LOCALES="wy gu"
+    else
+        LOCALES="{{LOCALES}}"
+    fi
+
+    echo "🧹 Deleting mocks directory..."
+    rm -rf mocks
+    
+    echo "🔄 Updating mocks..."
+    
+    # Ensure binary is built
+    cargo build --bin govbot
+    
+    # Clone/pull repositories using govbot
+    echo ""
+    echo "📥 Cloning/pulling repositories..."
+    cargo run --bin govbot -- clone --govbot-dir "$MOCKS_DIR" $LOCALES
+    
+    # Cleanup functions
+    function delete_files_dir {
+        local child="$1"
+        [ -d "$child" ] || return 0
+        find "$child" -type d -name "files" -exec rm -rf {} + 2>/dev/null || true
+    }
+    
+    function delete_unnecessary_dirs {
+        local child="$1"
+        [ -d "$child" ] || return 0
+        # Delete .windycivi, .github, and other unnecessary directories
+        find "$child" -type d \( -name ".windycivi" -o -name ".github" \) -exec rm -rf {} + 2>/dev/null || true
+        # Delete README.md, .gitignore, and other unnecessary files
+        find "$child" -type f \( -name "README.md" -o -name ".gitignore" \) -delete 2>/dev/null || true
+    }
+    
+    function prune_logs {
+        local child="$1"
+        [ -d "$child" ] || return 0
+        # For each logs directory (both bill-level and session-level), keep only the first $LOG_LIMIT log files
+        # This handles both regular files and symlinks
+        while IFS= read -r logs_dir; do
+            [ -d "$logs_dir" ] || continue
+            
+            local log_files=()
+            # Find both regular files and symlinks (symlinks are type l, but we want to check all entries)
+            while IFS= read -r log_file; do
+                [ -e "$log_file" ] && log_files+=("$log_file")
+            done < <(find "$logs_dir" -mindepth 1 -maxdepth 1 \( -type f -o -type l \) -name "*.json" 2>/dev/null | sort)
+            
+            local log_count=${#log_files[@]}
+            if (( log_count <= LOG_LIMIT )); then
+                continue
+            fi
+            
+            for ((i=LOG_LIMIT; i<log_count; i++)); do
+                local excess_file="${log_files[i]}"
+                if [ -n "$excess_file" ] && [ -e "$excess_file" ]; then
+                    rm -f "$excess_file"
+                fi
+            done
+        done < <(find "$child" -type d -name "logs" 2>/dev/null)
+    }
+    
+    function prune_bills {
+        local child="$1"
+        [ -d "$child" ] || return 0
+        # For every 'bills' directory under the repo, keep only the first $BILL_LIMIT subfolders
+        while IFS= read -r bills_dir; do
+            [ -d "$bills_dir" ] || continue
+    
+            local bill_dirs=()
+            while IFS= read -r bill_dir; do
+                [ -d "$bill_dir" ] && bill_dirs+=("$bill_dir")
+            done < <(find "$bills_dir" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
+    
+            local bill_count=${#bill_dirs[@]}
+            if (( bill_count <= BILL_LIMIT )); then
+                continue
+            fi
+    
+            for ((i=BILL_LIMIT; i<bill_count; i++)); do
+                local excess_dir="${bill_dirs[i]}"
+                if [ -n "$excess_dir" ] && [ -d "$excess_dir" ]; then
+                    echo "Deleting excess bill folder: $excess_dir"
+                    rm -rf "$excess_dir"
+                fi
+            done
+        done < <(find "$child" -type d -name "bills" 2>/dev/null)
+    }
+    
+    function delete_git_dir {
+        local child="$1"
+        rm -rf "$child/.git"
+    }
+    
+    function remove_dead_symlinks {
+        local child="$1"
+        [ -d "$child" ] || return 0
+        # Find all dead symlinks in logs directories and remove them
+        # This is needed because pruning bills can leave symlinks pointing to deleted files
+        local dead_count=0
+        while IFS= read -r symlink; do
+            # Check if symlink is dead (target doesn't exist)
+            if [ ! -e "$symlink" ]; then
+                rm -f "$symlink" && ((dead_count++))
+            fi
+        done < <(find "$child" -type l -path "*/logs/*" 2>/dev/null)
+        
+        if [ $dead_count -gt 0 ]; then
+            echo "Removed $dead_count dead symlink(s) from logs directories"
+        fi
+    }
+    
+    # For each repo, do some pruning/cleanup
+    echo ""
+    echo "🧹 Cleaning up mocks..."
+    for child in "$MOCKS_DIR/repos"/*; do
+        if [ -d "$child" ]; then
+            delete_unnecessary_dirs "$child"
+            delete_files_dir "$child"
+            prune_bills "$child"
+            prune_logs "$child"
+            delete_git_dir "$child"
+            # Remove dead symlinks after pruning (pruning bills can break symlinks in logs)
+            remove_dead_symlinks "$child"
+        fi
+    done
+    
+    echo ""
+    echo "✅ Mocks updated successfully!"
+
+# Show project info
+info:
+    @echo "Project: govbot"
+    @echo "Rust version: $(rustc --version)"
+    @echo "Cargo version: $(cargo --version)"
+    @echo ""
+    @echo "Available tasks:"
+    @just --list
+

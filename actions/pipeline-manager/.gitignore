@@ -1,0 +1,12 @@
+# Output directory for rendered templates
+generated/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment (if used)
+venv/
+env/
+

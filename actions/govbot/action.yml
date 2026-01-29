@@ -1,0 +1,170 @@
+name: "Govbot"
+description: "Clone repos, tag bills, and create RSS feeds from govbot.yml configuration"
+branding:
+  icon: 'rss'
+  color: 'orange'
+
+inputs:
+  tags:
+    description: 'Comma-separated list of tags to include in feed (default: all tags from govbot.yml)'
+    required: false
+  limit:
+    description: 'Limit number of entries per feed'
+    required: false
+  output-dir:
+    description: 'Output directory for RSS feed (default: from govbot.yml build.output_dir)'
+    required: false
+  output-file:
+    description: 'Output filename for RSS feed (default: from govbot.yml build.output_file)'
+    required: false
+  govbot-dir:
+    description: 'Govbot directory (default: $CWD/.govbot/repos, or GOVBOT_DIR env var)'
+    required: false
+
+outputs:
+  feed-path:
+    description: 'Path to the generated RSS feed file'
+    value: ${{ steps.publish.outputs.feed-path }}
+  feed-dir:
+    description: 'Directory containing the generated RSS feed'
+    value: ${{ steps.publish.outputs.feed-dir }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Download govbot binary
+      shell: bash
+      run: |
+        mkdir -p "${{ github.action_path }}/bin"
+        curl -fsSL "https://github.com/windy-civi/toolkit/releases/download/nightly/govbot-linux-x86_64" \
+          -o "${{ github.action_path }}/bin/govbot"
+        chmod +x "${{ github.action_path }}/bin/govbot"
+    
+    - name: Set GOVBOT_DIR
+      id: set-govbot-dir
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        if [ -n "${{ inputs.govbot-dir }}" ]; then
+          export GOVBOT_DIR="${{ inputs.govbot-dir }}"
+        else
+          export GOVBOT_DIR="${{ github.workspace }}/.govbot"
+        fi
+        echo "GOVBOT_DIR=$GOVBOT_DIR" >> $GITHUB_ENV
+        echo "repos-dir=$GOVBOT_DIR/repos" >> $GITHUB_OUTPUT
+    
+    - name: Restore repos cache
+      id: cache-repos
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.set-govbot-dir.outputs.repos-dir }}
+        key: govbot-repos-${{ runner.os }}-${{ hashFiles('govbot.yml') }}
+        restore-keys: |
+          govbot-repos-${{ runner.os }}-
+    
+    - name: Debug cache status
+      shell: bash
+      run: |
+        echo "Cache hit: ${{ steps.cache-repos.outputs.cache-hit }}"
+        if [ "${{ steps.cache-repos.outputs.cache-hit }}" == "true" ]; then
+          echo "✅ Using cached repos - will only update existing repos"
+        else
+          echo "❌ Cache miss - will clone all repos"
+        fi
+    
+    - name: Clone legislation repositories
+      id: clone
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        # Check if govbot.yml exists
+        if [ ! -f "${{ github.workspace }}/govbot.yml" ]; then
+          echo "::error::govbot.yml not found in repository root"
+          exit 1
+        fi
+        
+        # If cache was hit, govbot clone will just update existing repos (git pull)
+        # If cache was missed, govbot clone will do fresh clones
+        # When no repos are specified, govbot clone updates existing repos only
+        if [ "${{ steps.cache-repos.outputs.cache-hit }}" == "true" ]; then
+          echo "📥 Cache hit - updating existing repositories..."
+          # Update existing repos (no args = update existing only)
+          ${{ github.action_path }}/bin/govbot clone \
+            --govbot-dir "$GOVBOT_DIR" || true
+        else
+          echo "📥 Cache miss - cloning all repositories..."
+          # Clone all repos
+          ${{ github.action_path }}/bin/govbot clone all \
+            --govbot-dir "$GOVBOT_DIR" || true
+        fi
+    
+    - name: Save repos cache
+      if: steps.cache-repos.outputs.cache-hit != 'true'
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.set-govbot-dir.outputs.repos-dir }}
+        key: govbot-repos-${{ runner.os }}-${{ hashFiles('govbot.yml') }}
+    
+    - name: Tag bills
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        echo "🏷️  Tagging bills..."
+        ${{ github.action_path }}/bin/govbot logs | ${{ github.action_path }}/bin/govbot tag || true
+    
+    - name: Generate RSS feed
+      id: publish
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        # Build command arguments
+        ARGS=""
+        
+        # Add tags if specified
+        if [ -n "${{ inputs.tags }}" ]; then
+          # Convert comma-separated to space-separated
+          TAGS=$(echo "${{ inputs.tags }}" | tr ',' ' ')
+          ARGS="$ARGS --tags $TAGS"
+        fi
+        
+        # Add limit if specified
+        if [ -n "${{ inputs.limit }}" ]; then
+          ARGS="$ARGS --limit ${{ inputs.limit }}"
+        fi
+        
+        # Add output directory if specified
+        if [ -n "${{ inputs.output-dir }}" ]; then
+          ARGS="$ARGS --output-dir ${{ inputs.output-dir }}"
+        fi
+        
+        # Add output file if specified
+        if [ -n "${{ inputs.output-file }}" ]; then
+          ARGS="$ARGS --output-file ${{ inputs.output-file }}"
+        fi
+        
+        # Add govbot-dir if specified
+        if [ -n "${{ inputs.govbot-dir }}" ]; then
+          ARGS="$ARGS --govbot-dir ${{ inputs.govbot-dir }}"
+        fi
+        
+        # Run build command
+        # govbot.yml is automatically found in workspace root
+        ${{ github.action_path }}/bin/govbot build $ARGS
+        
+        # Determine output path (read from govbot.yml or use defaults)
+        if [ -n "${{ inputs.output-dir }}" ]; then
+          OUTPUT_DIR="${{ inputs.output-dir }}"
+        else
+          # Try to read from govbot.yml, default to docs
+          OUTPUT_DIR=$(grep -A 5 "^build:" "${{ github.workspace }}/govbot.yml" | grep "output_dir:" | awk '{print $2}' | tr -d '"' || echo "docs")
+        fi
+        
+        if [ -n "${{ inputs.output-file }}" ]; then
+          OUTPUT_FILE="${{ inputs.output-file }}"
+        else
+          # Try to read from govbot.yml, default to feed.xml
+          OUTPUT_FILE=$(grep -A 5 "^build:" "${{ github.workspace }}/govbot.yml" | grep "output_file:" | awk '{print $2}' | tr -d '"' || echo "feed.xml")
+        fi
+        
+        echo "feed-path=${{ github.workspace }}/$OUTPUT_DIR/$OUTPUT_FILE" >> $GITHUB_OUTPUT
+        echo "feed-dir=${{ github.workspace }}/$OUTPUT_DIR" >> $GITHUB_OUTPUT

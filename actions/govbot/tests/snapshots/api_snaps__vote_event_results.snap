@@ -1,0 +1,9 @@
+---
+source: tests/api_snaps.rs
+expression: "&results"
+---
+[
+  "pass",
+  "fail",
+  "unknown"
+]

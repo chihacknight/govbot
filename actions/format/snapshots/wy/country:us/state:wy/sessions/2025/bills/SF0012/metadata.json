@@ -1,0 +1,147 @@
+{
+  "legislative_session": "2025",
+  "identifier": "SF0012",
+  "title": "Permanent protection orders.",
+  "from_organization": "~{\"classification\": \"lower\"}",
+  "classification": [
+    "bill"
+  ],
+  "subject": [],
+  "abstracts": [],
+  "other_titles": [
+    {
+      "note": "",
+      "title": "AN ACT relating to criminal procedure; providing for permanent protection orders for victims of sexual assault, stalking and domestic violence; specifying requirements, procedures and conditions for permanent protection orders; making conforming amendments; specifying applicability; and providing for an effective date."
+    }
+  ],
+  "other_identifiers": [],
+  "actions": [
+    {
+      "description": "S:Died in Committee Returned Bill Pursuant to SR 5-4",
+      "date": "2025-03-03T22:48:08+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "committee-failure"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S No report prior to CoW Cutoff",
+      "date": "2025-02-10T15:13:33+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S Introduced and Referred to S01 - Judiciary",
+      "date": "2025-01-15T21:31:51+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "introduction",
+        "referral-committee"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "S Received for Introduction",
+      "date": "2024-12-19T18:21:54+00:00",
+      "organization_id": "~{\"classification\": \"upper\"}",
+      "classification": [
+        "filing"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    },
+    {
+      "description": "Bill Number Assigned",
+      "date": "2024-12-03T00:44:13+00:00",
+      "organization_id": "~{\"classification\": \"executive\"}",
+      "classification": [
+        "reading-1"
+      ],
+      "related_entities": [],
+      "_processing": {
+        "log_file_created": "2025-11-26T01:06:41Z"
+      }
+    }
+  ],
+  "sponsorships": [
+    {
+      "name": "Judiciary",
+      "classification": "primary",
+      "entity_type": "organization",
+      "primary": true,
+      "person_id": null,
+      "organization_id": "~{\"name\": \"Judiciary\"}"
+    }
+  ],
+  "related_bills": [],
+  "versions": [
+    {
+      "note": "Introduced",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Introduced/SF0012.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    }
+  ],
+  "documents": [
+    {
+      "note": "Fiscal Note",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Fiscal/SF0012.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    },
+    {
+      "note": "Bill Digest",
+      "links": [
+        {
+          "url": "https://wyoleg.gov/2025/Digest/SF0012.pdf",
+          "media_type": "application/pdf"
+        }
+      ],
+      "date": "",
+      "classification": ""
+    }
+  ],
+  "citations": [],
+  "sources": [
+    {
+      "url": "https://wyoleg.gov/Legislation/2025/SF0012",
+      "note": ""
+    }
+  ],
+  "extras": {
+    "effective_date": "2025-03-01",
+    "wy_bill_id": 12355
+  },
+  "jurisdiction": {
+    "id": "ocd-jurisdiction/country:us/state:wy/government",
+    "name": "Wyoming",
+    "classification": "state",
+    "division_id": "ocd-division/country:us/state:wy"
+  },
+  "_processing": {
+    "logs_latest_update": "2025-11-26T01:06:41Z"
+  }
+}

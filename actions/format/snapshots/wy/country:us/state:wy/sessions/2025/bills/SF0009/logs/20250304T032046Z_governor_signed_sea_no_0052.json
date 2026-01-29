@@ -1,0 +1,12 @@
+{
+  "action": {
+    "description": "Governor Signed SEA No. 0052",
+    "date": "2025-03-04T03:20:46+00:00",
+    "organization_id": "~{\"classification\": \"legislature\"}",
+    "classification": [
+      "executive-signature"
+    ],
+    "related_entities": []
+  },
+  "bill_id": "SF0009"
+}

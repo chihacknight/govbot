@@ -1,0 +1,12 @@
+{
+  "action": {
+    "description": "S04 - Education:Recommend Amend and Do Pass 4-1-0-0-0",
+    "date": "2025-01-15T21:27:35+00:00",
+    "organization_id": "~{\"classification\": \"upper\"}",
+    "classification": [
+      "committee-passage-favorable"
+    ],
+    "related_entities": []
+  },
+  "bill_id": "SF0014"
+}

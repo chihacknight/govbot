@@ -1,0 +1,25 @@
+name: Example - Complex Data Report
+
+on: [push]
+
+jobs:
+  publish-complex:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate report with all JSON data types
+        run: |
+          echo '{
+            "string": "test",
+            "number": 42,
+            "float": 3.14,
+            "boolean": true,
+            "null_value": null,
+            "array": [1, 2, 3],
+            "nested": {
+              "deep": "value"
+            }
+          }' | python3 actions/report-publisher/publish.py \
+            --mode pages \
+            --output complex.html

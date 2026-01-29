@@ -1,0 +1,339 @@
+name: "OpenStates Formatter"
+description: "Format scraped legislative data to blockchain layout and push to caller repo"
+
+inputs:
+  state:
+    description: "State abbreviation (e.g., id, il, tx, ny, or 'usa')"
+    required: true
+  scraper-repo:
+    description: "GitHub repo containing scraped data (e.g., chn-openstates-scrapers/wy-legislation)"
+    required: true
+  github-token:
+    description: "GitHub token for API calls"
+    required: true
+    default: "${{ github.token }}"
+  force-update:
+    description: "Force push even if upstream changed"
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.9"
+
+    - name: Clone scraper repo for data
+      shell: bash
+      run: |
+        echo "📥 Cloning data from ${{ inputs.scraper-repo }}..."
+        git clone --depth 1 https://github.com/${{ inputs.scraper-repo }}.git scraper-data
+
+        # Check if _data folder exists
+        if [ -d "scraper-data/_data/${{ inputs.state }}" ]; then
+          echo "✅ Found scraped data in _data/${{ inputs.state }}"
+        else
+          echo "❌ No scraped data found in _data/${{ inputs.state }}"
+          echo "   Available folders:"
+          ls -la scraper-data/_data/ 2>/dev/null || echo "   (no _data folder found)"
+          exit 1
+        fi
+
+        # Create target directory with state subfolder (formatter expects this structure)
+        TARGET_DIR="${RUNNER_TEMP}/scrape-snapshot-nightly/_data/${{ inputs.state }}"
+        mkdir -p "$TARGET_DIR"
+
+        # Copy data
+        echo "📦 Copying to: $TARGET_DIR"
+        cp -r "scraper-data/_data/${{ inputs.state }}"/* "$TARGET_DIR/"
+
+        FILE_COUNT=$(find "$TARGET_DIR" -type f -name "*.json" | wc -l)
+        echo "📋 Files copied: $FILE_COUNT JSON files"
+
+        if [ "$FILE_COUNT" -eq 0 ]; then
+          echo "❌ No JSON files found in scrape data"
+          exit 1
+        fi
+
+        echo "✅ Scrape data ready"
+
+    - name: Ensure jq present
+      shell: bash
+      run: |
+        set -euo pipefail
+        command -v jq >/dev/null 2>&1 || sudo apt-get update && sudo apt-get install -y jq
+
+    - name: Install formatter deps (pipenv)
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      env:
+        PIPENV_VENV_IN_PROJECT: "1"
+        PIPENV_IGNORE_VIRTUALENVS: "1"
+        PIPENV_PIPFILE: ${{ github.action_path }}/Pipfile
+      run: |
+        set -euo pipefail
+        ACTION_DIR="${{ github.action_path }}"
+        PIPFILE_PATH="$ACTION_DIR/Pipfile"
+
+        # Verify Pipfile exists
+        if [ ! -f "$PIPFILE_PATH" ]; then
+          echo "::error::❌ Pipfile not found at $PIPFILE_PATH"
+          ls -la "$ACTION_DIR" || true
+          exit 1
+        fi
+
+        python -m pip install --upgrade pip
+        pip install pipenv
+        # Tell pipenv to use the Python installed by setup-python action
+        # Explicitly set Pipfile location to ensure pipenv uses the correct one
+        export PIPENV_PIPFILE="$PIPFILE_PATH"
+        cd "$ACTION_DIR"
+        # Remove any existing virtualenv to ensure we use the correct Python version
+        pipenv --rm 2>/dev/null || true
+        # Verify Python version before creating venv
+        python --version
+        pipenv install --deploy --dev --python "$(which python)"
+
+    - name: Run formatter
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      env:
+        OPENSTATE_DATA_FOLDER: ${{ runner.temp }}/scrape-snapshot-nightly
+        GIT_REPO_FOLDER: ${{ github.workspace }}
+        STATE: ${{ inputs.state }}
+        PIPENV_PIPFILE: ${{ github.action_path }}/Pipfile
+      run: |
+        set -euo pipefail
+        ACTION_DIR="${{ github.action_path }}"
+
+        # Ensure we're in the action directory
+        cd "$ACTION_DIR"
+
+        # Use main.sh with pipenv command pre-set for CI
+        FORMATTER_OUTPUT=$("$ACTION_DIR/main.sh" \
+          "$STATE" \
+          "$OPENSTATE_DATA_FOLDER" \
+          "$GIT_REPO_FOLDER" \
+          "pipenv" 2>&1) || true
+
+        echo "$FORMATTER_OUTPUT"
+
+        # Extract summary statistics for GitHub Actions summary
+        BILLS_SAVED=$(echo "$FORMATTER_OUTPUT" | grep -oP 'Bills saved: \K\d+' || echo "0")
+        VOTES_SAVED=$(echo "$FORMATTER_OUTPUT" | grep -oP 'Vote events saved: \K\d+' || echo "0")
+        PLACEHOLDERS_CLEANED=$(echo "$FORMATTER_OUTPUT" | grep -oP 'Placeholders cleaned: \K\d+' || echo "0")
+        ORPHANS_FOUND=$(echo "$FORMATTER_OUTPUT" | grep -oP 'Orphaned bills found: \K\d+' || echo "0")
+
+        # Create GitHub Actions summary
+        echo "## 📊 Scrape & Format Summary for $STATE" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Bills Saved | $BILLS_SAVED |" >> $GITHUB_STEP_SUMMARY
+        echo "| Vote Events Saved | $VOTES_SAVED |" >> $GITHUB_STEP_SUMMARY
+        echo "| Placeholders Cleaned | $PLACEHOLDERS_CLEANED |" >> $GITHUB_STEP_SUMMARY
+        echo "| Orphaned Bills Found | $ORPHANS_FOUND |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Status:** Complete" >> $GITHUB_STEP_SUMMARY
+
+    - name: Create session-level log symlinks
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        set -euo pipefail
+        ACTION_DIR="${{ github.action_path }}"
+        REPO_ROOT="${{ github.workspace }}"
+        STATE_CODE="${{ inputs.state }}"
+
+        # Find the state directory (could be country:us/state:{state} or just state:{state})
+        STATE_DIR=""
+        if [ -d "$REPO_ROOT/country:us/state:$STATE_CODE" ]; then
+          STATE_DIR="$REPO_ROOT/country:us/state:$STATE_CODE"
+        elif [ -d "$REPO_ROOT/state:$STATE_CODE" ]; then
+          STATE_DIR="$REPO_ROOT/state:$STATE_CODE"
+        else
+          echo "⚠️ State directory not found, skipping log symlinks"
+          exit 0
+        fi
+
+        # Find all session directories
+        SESSIONS_DIR="$STATE_DIR/sessions"
+        if [ ! -d "$SESSIONS_DIR" ]; then
+          echo "⚠️ No sessions directory found, skipping log symlinks"
+          exit 0
+        fi
+
+        # Process each session
+        TOTAL_SESSIONS=0
+        PROCESSED_SESSIONS=0
+        FAILED_SESSIONS=0
+
+        while IFS= read -r session_dir; do
+          if [ ! -d "$session_dir" ]; then
+            continue
+          fi
+
+          SESSION_ID=$(basename "$session_dir")
+          BILLS_PATH="$session_dir/bills"
+
+          # Check if this session has bills with logs
+          if [ ! -d "$BILLS_PATH" ]; then
+            continue
+          fi
+
+          # Check if there are any log files
+          LOG_COUNT=$(find "$BILLS_PATH" -type f -path "*/logs/*.json" 2>/dev/null | wc -l | tr -d ' ')
+          if [ "$LOG_COUNT" -eq 0 ]; then
+            continue
+          fi
+
+          TOTAL_SESSIONS=$((TOTAL_SESSIONS + 1))
+          TARGET_LOGS_DIR="$session_dir/logs"
+
+          echo "📦 Processing: $STATE_CODE / $SESSION_ID ($LOG_COUNT log files)"
+
+          # Run symlink-logs Python script
+          if python3 "$ACTION_DIR/symlink_logs.py" \
+            --root "$STATE_DIR" \
+            --session "$SESSION_ID" \
+            --target "$TARGET_LOGS_DIR"; then
+            PROCESSED_SESSIONS=$((PROCESSED_SESSIONS + 1))
+            echo "✅ Linked logs for $STATE_CODE / $SESSION_ID"
+          else
+            FAILED_SESSIONS=$((FAILED_SESSIONS + 1))
+            echo "❌ Failed to process $STATE_CODE / $SESSION_ID"
+          fi
+        done < <(find "$SESSIONS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort || true)
+
+        if [ "$TOTAL_SESSIONS" -eq 0 ]; then
+          echo "ℹ️ No sessions with log files found"
+        else
+          echo "✅ Processed $PROCESSED_SESSIONS/$TOTAL_SESSIONS sessions"
+          if [ "$FAILED_SESSIONS" -gt 0 ]; then
+            echo "⚠️ $FAILED_SESSIONS sessions failed"
+          fi
+        fi
+
+    - name: Generate DCAT data.json
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        set -euo pipefail
+        ACTION_DIR="${{ github.action_path }}"
+
+        # Generate state name for title (capitalize first letter)
+        STATE_UPPER=$(echo "${{ inputs.state }}" | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
+        STATE_TITLE="${STATE_UPPER} Legislation"
+
+        # Get repo URL from GitHub context
+        REPO_URL="https://github.com/${{ github.repository }}"
+
+        # Run the DCAT generator script
+        python3 "$ACTION_DIR/generate_dcat.py" \
+          --repo-root "${{ github.workspace }}" \
+          --title "$STATE_TITLE" \
+          --repo-url "$REPO_URL"
+
+        echo "✅ DCAT data.json generated at ${{ github.workspace }}/data.json"
+
+    - name: Clean ephemeral build dirs
+      shell: bash
+      run: |
+        set -euo pipefail
+        rm -rf bill_session_mapping sessions || true
+
+    - name: Commit & push to caller repo
+      shell: bash
+      run: |
+        set -euo pipefail
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+
+        # Commit the actual deliverables: legislative data, pipeline metadata, and DCAT catalog
+        # Add files only if they exist (suppress errors for missing paths)
+        [ -d "country:us" ] && git add country:us/ || true
+        [ -d ".windycivi" ] && git add .windycivi/ || true
+        [ -f "data.json" ] && git add data.json || true
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          # Commit first (before pulling) to avoid "uncommitted changes" errors
+          git commit -m "Automated OpenStates data update for ${{ inputs.state }}"
+
+          # Now pull and handle conflicts with merge strategy
+          echo "📥 Pulling latest changes..."
+          if ! git pull --no-rebase origin main 2>&1; then
+            echo "⚠️ Merge conflict detected, resolving intelligently..."
+
+            # Find all conflicted metadata.json files
+            CONFLICTED_FILES=$(git diff --name-only --diff-filter=U | grep metadata.json || true)
+
+            # For each conflicted metadata.json: preserve extraction's _processing object
+            for file in $CONFLICTED_FILES; do
+              echo "  Resolving conflict in: $file"
+
+              # Extract their (extraction's) _processing object if it exists
+              THEIR_PROCESSING=$(git show :3:"$file" | jq -c '.metadata._processing // empty' 2>/dev/null || echo "")
+
+              # Keep our version (scraper is source of truth for bill data)
+              git checkout --ours "$file"
+
+              # Merge in their _processing object if it exists
+              if [ -n "$THEIR_PROCESSING" ] && [ "$THEIR_PROCESSING" != "null" ] && [ "$THEIR_PROCESSING" != "empty" ]; then
+                jq --argjson proc "$THEIR_PROCESSING" '.metadata._processing = $proc' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+                echo "  ✓ Preserved extraction's _processing metadata in $file"
+              fi
+            done
+
+            # Keep extraction's files/ directories (they own extracted text content)
+            git checkout --theirs "**/files/" 2>/dev/null || true
+
+            # Keep our .windycivi/ metadata (scraper owns pipeline metadata)
+            git checkout --ours .windycivi/ 2>/dev/null || true
+
+            git add -A
+            git commit --no-edit -m "🔄 Auto-merge: kept scraper data + extraction metadata + files"
+            echo "✅ Conflicts resolved intelligently"
+          fi
+
+          # Retry push up to 3 times in case of concurrent updates
+          for i in 1 2 3; do
+            if [ "${{ inputs.force-update }}" = "true" ]; then
+              if git push --force-with-lease origin main; then
+                echo "✅ Changes pushed successfully (attempt $i)"
+                break
+              fi
+            else
+              if git push origin main; then
+                echo "✅ Changes pushed successfully (attempt $i)"
+                break
+              fi
+            fi
+
+            if [ $i -lt 3 ]; then
+              echo "⚠️ Push failed (attempt $i), pulling and retrying..."
+              # Use merge strategy for concurrent updates
+              if ! git pull --no-rebase origin main 2>&1; then
+                # Resolve conflicts intelligently
+                CONFLICTED_FILES=$(git diff --name-only --diff-filter=U | grep metadata.json || true)
+                for file in $CONFLICTED_FILES; do
+                  THEIR_PROCESSING=$(git show :3:"$file" | jq -c '.metadata._processing // empty' 2>/dev/null || echo "")
+                  git checkout --ours "$file" 2>/dev/null || true
+                  if [ -n "$THEIR_PROCESSING" ] && [ "$THEIR_PROCESSING" != "null" ] && [ "$THEIR_PROCESSING" != "empty" ]; then
+                    jq --argjson proc "$THEIR_PROCESSING" '.metadata._processing = $proc' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+                  fi
+                done
+                git checkout --theirs "**/files/" 2>/dev/null || true
+                git checkout --ours .windycivi/ 2>/dev/null || true
+                git add -A 2>/dev/null || true
+                git commit --no-edit -m "🔄 Auto-merge: kept scraper data + extraction metadata + files" 2>/dev/null || true
+              fi
+              sleep 2
+            else
+              echo "❌ Failed to push after 3 attempts"
+              exit 1
+            fi
+          done
+        fi

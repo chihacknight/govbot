@@ -1,0 +1,110 @@
+{
+  "title": "Vote Event Schema",
+  "description": "Schema for validating vote event objects from scraped legislative data",
+  "required": [
+    "motion_text",
+    "start_date",
+    "result",
+    "organization",
+    "legislative_session",
+    "bill",
+    "bill_identifier",
+    "votes",
+    "counts",
+    "sources",
+    "extras",
+    "_id"
+  ],
+  "properties": {
+    "identifier": {
+      "description": "Optional identifier for the vote event (may be empty string)",
+      "type": "string"
+    },
+    "motion_text": {
+      "description": "Text describing the motion being voted on",
+      "type": "string"
+    },
+    "motion_classification": {
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of motion classification strings",
+      "type": "array"
+    },
+    "start_date": {
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when the vote occurred",
+      "type": "string"
+    },
+    "result": {
+      "enum": [
+        "pass",
+        "fail",
+        "tie",
+        "other"
+      ],
+      "description": "Result of the vote",
+      "type": "string"
+    },
+    "organization": {
+      "description": "The organization conducting the vote, may be a JSON string",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "legislative_session": {
+      "description": "The legislative session identifier",
+      "type": "string"
+    },
+    "bill": {
+      "description": "ID reference to the related bill",
+      "type": "string"
+    },
+    "bill_action": {
+      "description": "Optional reference to a specific bill action",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "bill_identifier": {
+      "description": "The bill identifier (e.g., HJ0002)",
+      "type": "string"
+    },
+    "votes": {
+      "items": {
+        "$ref": "#/definitions/Vote"
+      },
+      "description": "Array of individual vote objects",
+      "type": "array"
+    },
+    "counts": {
+      "items": {
+        "$ref": "#/definitions/VoteCount"
+      },
+      "description": "Array of vote count objects",
+      "type": "array"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/definitions/Source"
+      },
+      "description": "Array of source objects",
+      "type": "array"
+    },
+    "extras": {
+      "additionalProperties": true,
+      "description": "Additional metadata specific to the jurisdiction",
+      "type": "object"
+    },
+    "_id": {
+      "description": "Unique identifier for the vote event",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/windy-civi/toolkit/schemas/openstates_scrape_vote_event.schema.json"
+}

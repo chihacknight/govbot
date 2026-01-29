@@ -1,0 +1,15 @@
+name: Example - Empty Report
+
+on: [push]
+
+jobs:
+  publish-empty:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Handle empty JSON gracefully
+        run: |
+          echo '{}' | python3 actions/report-publisher/publish.py \
+            --mode pages \
+            --output empty.html

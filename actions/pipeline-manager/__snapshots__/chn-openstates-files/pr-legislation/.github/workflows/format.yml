@@ -1,0 +1,42 @@
+name: Format Data for pr
+
+on:
+  # Backup schedule in case dispatch trigger fails
+  schedule:
+    - cron: "0 12 * * *"  # Daily at 12:00 PM UTC (6:00 AM Chicago time)
+  # Triggered by scraper repo when scrape completes
+  repository_dispatch:
+    types: [scrape-and-format-complete]
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      force-update:
+        type: boolean
+        description: "Force push even if upstream changed (use with caution)"
+        default: false
+
+env:
+  STATE_CODE: pr
+  SCRAPER_REPO: chn-openstates-scrapers/pr-legislation
+
+jobs:
+  format:
+    name: "📝 Format Data"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout files repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run formatter action
+        uses: windy-civi/toolkit/actions/format@main
+        with:
+          state: ${{ env.STATE_CODE }}
+          scraper-repo: ${{ env.SCRAPER_REPO }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          force-update: ${{ inputs.force-update }}
+

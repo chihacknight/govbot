@@ -1,0 +1,70 @@
+{
+  "title": "Organization Schema",
+  "description": "Schema for validating organization objects from scraped legislative data",
+  "required": [
+    "_id",
+    "name",
+    "classification",
+    "parent_id",
+    "links",
+    "sources",
+    "extras"
+  ],
+  "properties": {
+    "_id": {
+      "description": "Unique identifier for the organization",
+      "type": "string"
+    },
+    "name": {
+      "description": "Name of the organization",
+      "type": "string"
+    },
+    "classification": {
+      "description": "Classification of the organization",
+      "type": "string",
+      "enum": [
+        "legislature",
+        "upper",
+        "lower",
+        "committee",
+        "subcommittee",
+        "party",
+        "office"
+      ]
+    },
+    "parent_id": {
+      "description": "ID of the parent organization, null if this is a top-level organization",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "links": {
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "description": "Array of link objects",
+      "type": "array"
+    },
+    "sources": {
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "description": "Array of source objects",
+      "type": "array"
+    },
+    "extras": {
+      "additionalProperties": true,
+      "description": "Additional metadata specific to the organization",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/windy-civi/toolkit/schemas/openstates_scrape_organization.schema.json"
+}
+
+

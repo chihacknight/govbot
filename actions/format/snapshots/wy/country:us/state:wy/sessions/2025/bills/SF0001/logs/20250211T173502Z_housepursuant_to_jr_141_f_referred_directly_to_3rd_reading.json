@@ -1,0 +1,10 @@
+{
+  "action": {
+    "description": "House:Pursuant to JR 14-1 (f) referred directly to 3rd Reading",
+    "date": "2025-02-11T17:35:02+00:00",
+    "organization_id": "~{\"classification\": \"lower\"}",
+    "classification": [],
+    "related_entities": []
+  },
+  "bill_id": "SF0001"
+}

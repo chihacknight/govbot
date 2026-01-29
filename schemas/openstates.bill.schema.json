@@ -1,0 +1,154 @@
+{
+  "title": "Bill Schema",
+  "description": "Schema for validating bill objects from scraped legislative data",
+  "required": [
+    "legislative_session",
+    "identifier",
+    "title",
+    "classification",
+    "jurisdiction",
+    "scraped_at",
+    "_id"
+  ],
+  "properties": {
+    "legislative_session": {
+      "description": "The legislative session identifier",
+      "type": "string"
+    },
+    "identifier": {
+      "description": "The bill identifier (e.g., SF0004)",
+      "type": "string"
+    },
+    "title": {
+      "description": "The title of the bill",
+      "type": "string"
+    },
+    "from_organization": {
+      "description": "The organization that introduced the bill, may be a JSON string",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "classification": {
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of classification strings (e.g., ['bill'])",
+      "type": "array"
+    },
+    "subject": {
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of subject tags",
+      "type": "array"
+    },
+    "abstracts": {
+      "items": {
+        "$ref": "#/definitions/Abstract"
+      },
+      "description": "Array of abstract objects",
+      "type": "array"
+    },
+    "other_titles": {
+      "items": {
+        "$ref": "#/definitions/OtherTitle"
+      },
+      "description": "Array of alternative title objects",
+      "type": "array"
+    },
+    "other_identifiers": {
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of other identifier strings",
+      "type": "array"
+    },
+    "actions": {
+      "items": {
+        "$ref": "#/definitions/BillAction"
+      },
+      "description": "Array of action objects representing bill history",
+      "type": "array"
+    },
+    "sponsorships": {
+      "items": {
+        "$ref": "#/definitions/Sponsorship"
+      },
+      "description": "Array of sponsorship objects",
+      "type": "array"
+    },
+    "related_bills": {
+      "items": {
+        "type": "object"
+      },
+      "description": "Array of related bill objects",
+      "type": "array"
+    },
+    "versions": {
+      "items": {
+        "$ref": "#/definitions/Version"
+      },
+      "description": "Array of version objects",
+      "type": "array"
+    },
+    "documents": {
+      "items": {
+        "$ref": "#/definitions/Document"
+      },
+      "description": "Array of document objects",
+      "type": "array"
+    },
+    "citations": {
+      "items": {
+        "type": "object"
+      },
+      "description": "Array of citation objects",
+      "type": "array"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/definitions/Source"
+      },
+      "description": "Array of source objects",
+      "type": "array"
+    },
+    "extras": {
+      "additionalProperties": true,
+      "description": "Additional metadata specific to the jurisdiction",
+      "properties": {
+        "wy_enrolled_number": {
+          "type": "string"
+        },
+        "chapter": {
+          "type": "string"
+        },
+        "effective_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "wy_bill_id": {
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "jurisdiction": {
+      "$ref": "#/definitions/Jurisdiction"
+    },
+    "scraped_at": {
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when the data was scraped",
+      "type": "string"
+    },
+    "_id": {
+      "description": "Unique identifier for the bill",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/windy-civi/toolkit/schemas/openstates_scrape_bill.schema.json"
+}
