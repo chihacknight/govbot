@@ -25,19 +25,20 @@ jobs:
           govbot --version
           govbot --help
 
-      - name: Run govbot clone (Wyoming - small state for fast testing)
+      - name: Run govbot clone all
         id: clone
         run: |
-          # Clone a single small state repository
-          govbot clone wy --verbose
+          # Clone all repositories
+          govbot clone all --verbose
 
-          # Verify the clone produced output
-          if [ ! -d "${HOME}/.govbot/repos/wy-legislation" ]; then
-            echo "::error::govbot clone failed - repository directory not created"
+          # Verify at least one repository was cloned
+          REPO_COUNT=$(ls -1 "${HOME}/.govbot/repos" 2>/dev/null | wc -l)
+          if [ "$REPO_COUNT" -eq 0 ]; then
+            echo "::error::govbot clone all failed - no repositories were cloned"
             exit 1
           fi
 
-          echo "Clone completed successfully"
+          echo "Clone completed successfully - $REPO_COUNT repositories"
 
       - name: Run govbot logs and validate output
         id: logs
