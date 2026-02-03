@@ -14,11 +14,18 @@ jobs:
     name: Synthetic Real-World Test
     runs-on: ubuntu-latest
     steps:
-      - name: Install govbot via install script
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Build govbot
         run: |
-          sh -c "$(curl -fsSL https://raw.githubusercontent.com/windy-civi/toolkit/main/actions/govbot/scripts/install-nightly.sh)"
+          cd actions/govbot
+          cargo build --release
           # Add to PATH for subsequent steps
-          echo "${HOME}/.govbot/bin" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/actions/govbot/target/release" >> $GITHUB_PATH
 
       - name: Verify govbot installation
         run: |
@@ -87,6 +94,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Step | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Install | ${{ steps.clone.outcome == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ steps.clone.outcome == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Clone | ${{ steps.clone.outcome == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Logs | ${{ steps.logs.outcome == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
