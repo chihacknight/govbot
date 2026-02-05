@@ -239,9 +239,11 @@ govbot load --memory-limit 32GB --threads 8
 duckdb --ui govbot.duckdb
 ```
 
-### Helper Scripts
+### Learn More
 
-```bash
-# Run example queries
-./duckdb-query.sh examples/duckdb-example.sql
-```
+See [DUCKDB.md](./DUCKDB.md) for comprehensive examples including:
+- Working with JSON arrays and nested data
+- Cross-state analysis queries
+- Sponsor analysis
+- Exporting to CSV/Parquet
+- Performance optimization tips
