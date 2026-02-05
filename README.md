@@ -1,5 +1,8 @@
 [![Validate Snapshots](https://github.com/windy-civi/toolkit/actions/workflows/validate-snapshots.yml/badge.svg)](https://github.com/windy-civi/toolkit/actions/workflows/validate-snapshots.yml)
 
+📺 **Project overview and demo**  
+[![Govbot presentation video](https://img.youtube.com/vi/IFnE1oeUIXo/maxresdefault.jpg)](https://youtu.be/IFnE1oeUIXo)
+
 # 🏛️ govbot
 
 `govbot` enables distributed data anaylsis of government updates via a friendly terminal interface. Git repos function as datasets, including the legislation of all 47 states/jurisdictions.
