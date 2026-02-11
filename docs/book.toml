@@ -1,17 +1,16 @@
 [book]
 language = "en"
 src = "src"
-title = "windy-civi"
+title = "govbot"
 
 [rust]
 edition = "2021"
 
 [output.html]
-git-repository-url = "https://github.com/windy-civi/docs/tree/main"
-edit-url-template = "https://github.com/windy-civi/docs/edit/main/{path}"
+git-repository-url = "https://github.com/chihacknight/govbot/tree/main/docs"
+edit-url-template = "https://github.com/chihacknight/govbot/edit/main/docs/{path}"
 default-theme = "rust"
 preferred-dark-theme = "coal"
-cname = "docs.windycivi.com"
 
 [output.html.search]
 limit-results = 20
