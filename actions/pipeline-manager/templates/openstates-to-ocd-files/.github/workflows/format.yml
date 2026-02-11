@@ -17,7 +17,7 @@ on:
 
 env:
   STATE_CODE: ✏️{ locale.key }✏️
-  SCRAPER_REPO: chn-openstates-scrapers/✏️{ locale.key }✏️-legislation
+  SCRAPER_REPO: govbot-openstates-scrapers/✏️{ locale.key }✏️-legislation
 
 jobs:
   format:
@@ -33,7 +33,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run formatter action
-        uses: windy-civi/toolkit/actions/format@✏️{ locale.toolkit_branch }✏️
+        uses: chihacknight/govbot/actions/format@✏️{ locale.toolkit_branch }✏️
         with:
           state: ${{ env.STATE_CODE }}
           scraper-repo: ${{ env.SCRAPER_REPO }}

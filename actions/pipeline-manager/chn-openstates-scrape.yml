@@ -3,7 +3,7 @@ template_markers:
   open: "✏️{"
   close: "}✏️"
 org:
-  username: chn-openstates-scrapers
+  username: govbot-openstates-scrapers
 templates:
   openstates-scrape:
     folder-name: ✏️{ locale.key }✏️-legislation

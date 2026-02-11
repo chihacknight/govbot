@@ -25,7 +25,7 @@ jobs:
 
       - name: Run text extraction action
         id: extract
-        uses: windy-civi/toolkit/actions/extract@✏️{ locale.toolkit_branch }✏️
+        uses: chihacknight/govbot/actions/extract@✏️{ locale.toolkit_branch }✏️
         with:
           state: ✏️{ locale.key }✏️
           github-token: ${{ secrets.GITHUB_TOKEN }}

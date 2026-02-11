@@ -62,27 +62,27 @@ This approach keeps every state repository consistent, auditable, and easy to ma
    env:
      STATE_CODE: pr # CHANGE THIS to your state abbreviation
 
-   jobs:
-     scrape:
-       - name: Scrape data
-         uses: windy-civi/toolkit/actions/scrape@main
-         with:
-           state: ${{ env.STATE_CODE }}
+  jobs:
+    scrape:
+      - name: Scrape data
+        uses: chihacknight/govbot/actions/scrape@main
+        with:
+          state: ${{ env.STATE_CODE }}
 
-     format:
-       - name: Format data
-         uses: windy-civi/toolkit/actions/format@main
-         with:
-           state: ${{ env.STATE_CODE }}
+    format:
+      - name: Format data
+        uses: chihacknight/govbot/actions/format@main
+        with:
+          state: ${{ env.STATE_CODE }}
    ```
 
    **In `.github/workflows/extract-text.yml`:**
 
    ```yaml
-   - name: Extract text
-     uses: windy-civi/toolkit/actions/extract@main
-     with:
-       state: pr # CHANGE THIS to your state abbreviation
+  - name: Extract text
+    uses: chihacknight/govbot/actions/extract@main
+    with:
+      state: pr # CHANGE THIS to your state abbreviation
    ```
 
    Make sure the state abbreviation matches the folder name used in [Open States scrapers](https://github.com/openstates/openstates-scrapers/tree/main/scrapers).
@@ -242,7 +242,7 @@ The pipeline automatically tracks **orphaned bills** - bills that have vote even
 - Check for typos in bill identifiers or scraper configuration
 - Orphans automatically resolve when the bill data arrives! 🎉
 
-📖 See [orphan tracking documentation](https://github.com/windy-civi/toolkit/blob/main/docs/orphan_tracking.md) for more details.
+📖 See [orphan tracking documentation](https://github.com/chihacknight/govbot/blob/main/docs/orphan_tracking.md) for more details.
 
 ---
 
@@ -294,7 +294,7 @@ The text extraction workflow supports:
 ### Scrape Action Inputs
 
 ```yaml
-uses: windy-civi/toolkit/actions/scrape@main
+uses: chihacknight/govbot/actions/scrape@main
 with:
   state: pr # State abbreviation (required)
   github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -304,7 +304,7 @@ with:
 ### Format Action Inputs
 
 ```yaml
-uses: windy-civi/toolkit/actions/format@main
+uses: chihacknight/govbot/actions/format@main
 with:
   state: pr # State abbreviation (required)
   github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -313,7 +313,7 @@ with:
 ### Text Extraction Action Inputs
 
 ```yaml
-uses: windy-civi/toolkit/actions/extract@main
+uses: chihacknight/govbot/actions/extract@main
 with:
   state: pr # State abbreviation (required)
   github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -396,7 +396,7 @@ pipenv run python text_extraction/main.py \
 
 ## 🔍 Known Issues
 
-See the [known_problems/](https://github.com/windy-civi/toolkit/tree/main/known_problems) directory in the main repository for:
+See the [known_problems/](https://github.com/chihacknight/govbot/tree/main/known_problems) directory in the main repository for:
 
 - State-specific scraper issues
 - Formatter validation issues
@@ -452,7 +452,7 @@ See the [known_problems/](https://github.com/windy-civi/toolkit/tree/main/known_
 
 This template is part of the [Windy Civi](https://github.com/windy-civi) project. If you're onboarding a new state or improving the automation, feel free to open an issue or PR.
 
-**Main Repository**: https://github.com/windy-civi/toolkit
+**Main Repository**: https://github.com/chihacknight/govbot
 
 For discussions, join our community on Slack or GitHub Discussions.
 
@@ -473,9 +473,9 @@ For discussions, join our community on Slack or GitHub Discussions.
 
 ## 📚 Additional Documentation
 
-- **[Incremental Processing Guide](https://github.com/windy-civi/toolkit/blob/main/docs/incremental_processing/)** - How incremental updates work
-- **[Orphan Tracking Guide](https://github.com/windy-civi/toolkit/blob/main/docs/orphan_tracking.md)** - Understanding data quality monitoring
-- **[Main Repository README](https://github.com/windy-civi/toolkit)** - Full technical documentation
+- **[Incremental Processing Guide](https://github.com/chihacknight/govbot/blob/main/docs/incremental_processing/)** - How incremental updates work
+- **[Orphan Tracking Guide](https://github.com/chihacknight/govbot/blob/main/docs/orphan_tracking.md)** - Understanding data quality monitoring
+- **[Main Repository README](https://github.com/chihacknight/govbot)** - Full technical documentation
 
 ---
 
