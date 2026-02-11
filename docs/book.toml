@@ -1,0 +1,23 @@
+[book]
+language = "en"
+src = "src"
+title = "windy-civi"
+
+[rust]
+edition = "2021"
+
+[output.html]
+git-repository-url = "https://github.com/windy-civi/docs/tree/main"
+edit-url-template = "https://github.com/windy-civi/docs/edit/main/{path}"
+default-theme = "rust"
+preferred-dark-theme = "coal"
+cname = "docs.windycivi.com"
+
+[output.html.search]
+limit-results = 20
+use-boolean-and = true
+boost-title = 2
+boost-hierarchy = 2
+boost-paragraph = 1
+expand = true
+heading-split-level = 2
