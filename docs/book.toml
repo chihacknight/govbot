@@ -1,0 +1,22 @@
+[book]
+language = "en"
+src = "src"
+title = "govbot"
+
+[rust]
+edition = "2021"
+
+[output.html]
+git-repository-url = "https://github.com/chihacknight/govbot/tree/main/docs"
+edit-url-template = "https://github.com/chihacknight/govbot/edit/main/docs/{path}"
+default-theme = "rust"
+preferred-dark-theme = "coal"
+
+[output.html.search]
+limit-results = 20
+use-boolean-and = true
+boost-title = 2
+boost-hierarchy = 2
+boost-paragraph = 1
+expand = true
+heading-split-level = 2
