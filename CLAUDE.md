@@ -85,31 +85,8 @@ govbot clone all     # Download all state legislation datasets
 govbot clone wy il   # Download specific states
 govbot logs          # Stream legislative activity as JSON Lines
 govbot logs | govbot tag  # Process and tag data
-govbot load          # Load bill metadata into DuckDB
 govbot build         # Generate RSS feeds
 ```
-
-## DuckDB Integration
-
-The `govbot load` command loads bill metadata into a DuckDB database for SQL analysis.
-
-**Prerequisites**: DuckDB CLI must be installed (`brew install duckdb` or see https://duckdb.org/docs/installation/)
-
-**How it works**:
-- Shells out to `duckdb` binary (not a Rust library dependency)
-- Reads all `metadata.json` files from cloned repos
-- Creates `bills` table and `bills_summary` view
-- Database saved to `~/.govbot/govbot.duckdb`
-
-**Usage**:
-```bash
-govbot clone all                    # First, get the data
-govbot load                         # Load into DuckDB
-govbot load --memory-limit 32GB     # For large datasets
-duckdb --ui ~/.govbot/govbot.duckdb # Open in browser UI
-```
-
-See `actions/govbot/DUCKDB.md` for query examples and schema documentation.
 
 ## Testing with Mock Data
 

@@ -10,7 +10,7 @@ The Govbot team's goal is to bridge this gap - building the framework for the bu
 
 # What We Offer
 
-The main Govbot dataset currently includes legislative updates from bills in the U.S. House & Senate, all 50 states, territories like Guam, and the city of Chicago, as .json files organized using the [Project Open Data](https://project-open-data.cio.gov/) catalog format. The Govbot scrapers update regularly, appending new logs, and then running them through Claude to provide topic-based tagging and summaries. This data can then be analyzed using SQL, via an interface built with DuckDB, or plugged into applications like [our example website, WindyCivi](https://windycivi.com/), and a test BlueSky bot built in collaboration with U.S. Representative Hoan Huynh. (https://bsky.app/profile/test-hoan-huynh.bsky.social).
+The main Govbot dataset currently includes legislative updates from bills in the U.S. House & Senate, all 50 states, territories like Guam, and the city of Chicago, as .json files organized using the [Project Open Data](https://project-open-data.cio.gov/) catalog format. The Govbot scrapers update regularly, appending new logs, and then running them through Claude to provide topic-based tagging and summaries. This data can then be plugged into applications like [our example website, WindyCivi](https://windycivi.com/), and a test BlueSky bot built in collaboration with U.S. Representative Hoan Huynh. (https://bsky.app/profile/test-hoan-huynh.bsky.social).
 
 # How Do I Use It?
 You can install govbot, and access the 47 currently existing datasets with a simple one-line install from our GitHub repository - the example below is done in Bash.
@@ -26,8 +26,6 @@ Once installed, you can call Govbot and be provided with options to:
 - clone specific items (such as only items in a specific state, session, or for a specific bill)
 - delete specific items
 - delete everything
-- load metadata into a SQL-accessible DuckDB database
-
 An example of each of the above commands is provided below, as well as a key for dataset updates.
 
 Dataset Key:
@@ -42,49 +40,6 @@ govbot clone # to show
 govbot clone {{locale}} {{locale}} # to download specific items
 govbot delete {{locale}} # to delete specific items
 govbot delete all # to delete everything
-govbot load # load bill metadata into DuckDB database
-```
-
-## Querying in SQL using DuckDB
-
-You can query the data using SQL, via DuckDB, which creates a simiulated database from the .json log files. See [DUCKDB.md](./DUCKDB.md) for more details.
-
-### Running Queries in the Command Line
-
-```sql
--- Load JSON extension
-INSTALL json;
-LOAD json;
-
--- Query all bill metadata
-SELECT * 
-FROM read_json_auto('~/.govbot/repos/**/bills/*/metadata.json')
-LIMIT 10;
-```
-
-### Additional Commands, and Querying via the Web UI
-
-Additional examples of commands, and setup for the web UI, can be found below: 
-
-```bash
-# Load all data into a database (default: govbot.duckdb)
-govbot load
-
-# Or specify a custom database file
-govbot load --database my-bills.duckdb
-
-# With memory limit and thread settings
-govbot load --memory-limit 32GB --threads 8
-
-# Open in DuckDB UI (opens in your browser)
-duckdb --ui govbot.duckdb
-```
-
-### Helper Scripts
-
-```bash
-# Run example queries
-./duckdb-query.sh examples/duckdb-example.sql
 ```
 
 ## Contributing & Testing

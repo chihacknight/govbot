@@ -11,7 +11,6 @@ Available commands:
   clone   Clone or pull data pipeline repositories (default: updates existing repos, use 'clone all' to clone all)
   delete  Delete data pipeline repositories (use 'delete all' to delete all)
   logs    Process and display pipeline log files
-  load    Load bill metadata into a DuckDB database file
   build   Generate RSS feed and HTML index from govbot.yml configuration
   tag     Tag bills using AI based on log entries
   update  Update govbot to the latest nightly version

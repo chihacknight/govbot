@@ -140,27 +140,6 @@ enum Command {
         verbose: bool,
     },
 
-    /// Load bill metadata into a DuckDB database file
-    /// Loads all metadata.json files from cloned repos into a DuckDB database for analysis.
-    /// The database file is saved in the base govbot directory (e.g., ./.govbot/govbot.duckdb)
-    Load {
-        /// Output database filename (default: govbot.duckdb). Saved in the base govbot directory.
-        #[arg(long, default_value = "govbot.duckdb")]
-        database: String,
-
-        /// Directory containing repositories (default: $CWD/.govbot/repos, or GOVBOT_DIR env var)
-        #[arg(long = "govbot-dir")]
-        govbot_dir: Option<String>,
-
-        /// Memory limit for DuckDB (e.g., "8GB", "16GB")
-        #[arg(long)]
-        memory_limit: Option<String>,
-
-        /// Number of threads for DuckDB (default: 4)
-        #[arg(long)]
-        threads: Option<usize>,
-    },
-
     /// Update govbot to the latest nightly version
     /// Downloads and installs the latest nightly build from GitHub releases
     Update,
@@ -226,7 +205,6 @@ fn print_available_commands() {
     println!("  clone   Clone or pull data pipeline repositories (default: updates existing repos, use 'clone all' to clone all)");
     println!("  delete  Delete data pipeline repositories (use 'delete all' to delete all)");
     println!("  logs    Process and display pipeline log files");
-    println!("  load    Load bill metadata into a DuckDB database file");
     println!("  build   Generate RSS feed and HTML index from govbot.yml configuration");
     println!("  tag     Tag bills using AI based on log entries");
     println!("  update  Update govbot to the latest nightly version");
@@ -1256,155 +1234,6 @@ fn compute_relative_source_path(file_path: &PathBuf, git_dir: &PathBuf) -> Strin
                 .unwrap_or_else(|| file_path.to_string_lossy().replace('\\', "/"))
         }
     }
-}
-
-async fn run_load_command(cmd: Command) -> anyhow::Result<()> {
-    let Command::Load {
-        database,
-        govbot_dir,
-        memory_limit,
-        threads,
-    } = cmd else {
-        unreachable!()
-    };
-
-    let repos_dir = get_govbot_dir(govbot_dir)?;
-
-    // Check if directory exists
-    if !repos_dir.exists() {
-        eprintln!("Error: Govbot repos directory not found: {}", repos_dir.display());
-        eprintln!("Run 'govbot clone all' first to clone repositories.");
-        return Ok(());
-    }
-
-    // Get base govbot directory (parent of repos)
-    // e.g., if repos_dir is ./.govbot/repos, base_dir is ./.govbot
-    let base_govbot_dir = repos_dir.parent()
-        .ok_or_else(|| anyhow::anyhow!("Could not determine base govbot directory"))?;
-    
-    // Ensure base directory exists
-    std::fs::create_dir_all(base_govbot_dir)?;
-
-    // Check if duckdb is available
-    let duckdb_check = ProcessCommand::new("duckdb")
-        .arg("--version")
-        .output();
-
-    if duckdb_check.is_err() {
-        eprintln!("Error: 'duckdb' command not found.");
-        eprintln!("Please install DuckDB: https://duckdb.org/docs/installation/");
-        return Ok(());
-    }
-
-    // Database file goes in the base govbot directory
-    // Resolve to absolute path to ensure it's created in the right location
-    let db_path = base_govbot_dir.canonicalize()
-        .unwrap_or_else(|_| base_govbot_dir.to_path_buf())
-        .join(&database);
-    let db_path_str = db_path.to_string_lossy().to_string();
-
-    // Remove existing database if it exists
-    if db_path.exists() {
-        eprintln!("Removing existing database: {}", db_path.display());
-        std::fs::remove_file(&db_path)?;
-    }
-
-    eprintln!("Loading data into {}...", db_path.display());
-    eprintln!("This may take a few minutes depending on the number of files...");
-
-    // Create SQL script
-    let mut sql_script = String::new();
-    sql_script.push_str("-- Load JSON extension\n");
-    sql_script.push_str("INSTALL json;\n");
-    sql_script.push_str("LOAD json;\n");
-    sql_script.push_str("\n");
-
-    // Set memory limit if provided
-    if let Some(ref mem_limit) = memory_limit {
-        sql_script.push_str(&format!("SET memory_limit='{}';\n", mem_limit));
-    } else {
-        // Default to 16GB if not specified
-        sql_script.push_str("SET memory_limit='16GB';\n");
-    }
-
-    // Set thread count
-    let num_threads = threads.unwrap_or(4);
-    sql_script.push_str(&format!("SET threads={};\n", num_threads));
-    sql_script.push_str("SET preserve_insertion_order=false;\n");
-    sql_script.push_str("\n");
-
-    // Create table from metadata.json files
-    let repos_dir_str = repos_dir.to_string_lossy();
-    sql_script.push_str("-- Create table from metadata.json files only\n");
-    sql_script.push_str("-- Using union_by_name to handle schema variations across files\n");
-    sql_script.push_str("CREATE TABLE bills AS\n");
-    sql_script.push_str("SELECT \n");
-    sql_script.push_str("    *,\n");
-    sql_script.push_str("    filename as source_file\n");
-    sql_script.push_str(&format!("FROM read_json_auto('{}/**/bills/*/metadata.json', \n", repos_dir_str));
-    sql_script.push_str("    filename=true, \n");
-    sql_script.push_str("    union_by_name=true);\n");
-    sql_script.push_str("\n");
-
-    // Create summary view
-    sql_script.push_str("-- Create some useful views\n");
-    sql_script.push_str("CREATE VIEW bills_summary AS\n");
-    sql_script.push_str("SELECT \n");
-    sql_script.push_str("    identifier,\n");
-    sql_script.push_str("    title,\n");
-    sql_script.push_str("    legislative_session,\n");
-    sql_script.push_str("    jurisdiction->>'id' as jurisdiction_id,\n");
-    sql_script.push_str("    jurisdiction->>'name' as jurisdiction_name,\n");
-    sql_script.push_str("    json_array_length(actions) as action_count,\n");
-    sql_script.push_str("    json_array_length(sponsorships) as sponsor_count,\n");
-    sql_script.push_str("    source_file\n");
-    sql_script.push_str("FROM bills;\n");
-    sql_script.push_str("\n");
-
-    // Show summary
-    sql_script.push_str("-- Show summary\n");
-    sql_script.push_str("SELECT 'Bills loaded:' as info, COUNT(*) as count FROM bills;\n");
-
-    // Run duckdb as subprocess
-    let mut duckdb_cmd = ProcessCommand::new("duckdb");
-    duckdb_cmd.arg(&db_path_str);
-    duckdb_cmd.stdin(std::process::Stdio::piped());
-    duckdb_cmd.stdout(std::process::Stdio::piped());
-    duckdb_cmd.stderr(std::process::Stdio::piped());
-
-    let mut child = duckdb_cmd.spawn()?;
-    
-    // Write SQL to stdin
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin.write_all(sql_script.as_bytes())?;
-        stdin.flush()?;
-    }
-
-    // Wait for completion and capture output
-    let output = child.wait_with_output()?;
-
-    if !output.status.success() {
-        eprintln!("Error loading data into DuckDB:");
-        eprintln!("{}", String::from_utf8_lossy(&output.stderr));
-        return Err(anyhow::anyhow!("DuckDB command failed"));
-    }
-
-    // Print stdout (summary)
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    if !stdout.trim().is_empty() {
-        print!("{}", stdout);
-    }
-
-    eprintln!("\n✅ Database created: {}", db_path.display());
-    eprintln!("\nTo open in DuckDB UI, run:");
-    eprintln!("  duckdb --ui {}", db_path.display());
-    eprintln!("\nOr query from command line:");
-    eprintln!("  duckdb {}", db_path.display());
-    eprintln!("\nAvailable tables:");
-    eprintln!("  - bills (bill metadata from metadata.json files)");
-    eprintln!("  - bills_summary (summary view)");
-
-    Ok(())
 }
 
 /// Extract country, state, and session_id from a log path
@@ -2456,9 +2285,6 @@ async fn main() -> anyhow::Result<()> {
         }
         Some(cmd @ Command::Logs { .. }) => {
             run_logs_command(cmd).await
-        }
-        Some(cmd @ Command::Load { .. }) => {
-            run_load_command(cmd).await
         }
         Some(Command::Update) => {
             run_update_command().await

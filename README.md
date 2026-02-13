@@ -21,7 +21,6 @@ govbot clone {{repo}} {{repo}} # to download specific items
 govbot delete {{repo}} # to delete specific items
 govbot delete all # to delete everything
 govbot logs | govbot tag # tag things based on what's inside govbot.yml
-govbot load # load bill metadata into DuckDB database
 govbot update # updates govbot
 ```
 
