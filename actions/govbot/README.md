@@ -1,20 +1,53 @@
 # govbot
 
-`govbot` enables distributed data anaylsis of government updates via a friendly terminal interface. Git repos function as datasets, including the legislation of all 47 states/jurisdictions.
+`govbot` enables distributed data analysis of government updates via a friendly terminal interface. Git repos function as datasets, including the legislation of all 47 states/jurisdictions.
 
-## 1 Line Install
+## Quick Start
+
+### 1. Install
 
 ```bash
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/windy-civi/toolkit/main/actions/govbot/scripts/install-nightly.sh)"
 ```
 
+### 2. Run govbot
+
 ```bash
-govbot # to see help
-govbot clone # to show
-govbot clone {{repo}} {{repo}} # to download specific items
-govbot delete {{locale}} # to delete specific items
-govbot delete all # to delete everything
-govbot load # load bill metadata into DuckDB database
+govbot
+```
+
+That's it. If no `govbot.yml` exists, an interactive wizard walks you through setup:
+
+1. **Sources** - Choose all 47 states or pick specific ones
+2. **Tags** - Start with an example tag, or get an AI prompt to create your own
+3. **Publishing** - RSS feeds configured automatically
+
+The wizard creates `govbot.yml`, `.gitignore`, and a GitHub Actions workflow.
+
+### 3. Run the pipeline
+
+```bash
+govbot
+```
+
+With `govbot.yml` present, running `govbot` executes the full pipeline:
+
+1. Clones/updates legislation repositories (smart: only clones on first run, pulls after)
+2. Tags bills based on your tag definitions
+3. Generates RSS feeds in the `docs/` directory
+
+### Other Commands
+
+```bash
+govbot clone all           # download all state legislation datasets
+govbot clone il ca ny      # download specific states
+govbot logs                # stream legislative activity as JSON Lines
+govbot logs | govbot tag   # process and tag data
+govbot build               # generate RSS feeds
+govbot load                # load bill metadata into DuckDB
+govbot delete all          # remove all downloaded data
+govbot update              # update govbot to latest version
+govbot --help              # see all commands and options
 ```
 
 ## Contribute

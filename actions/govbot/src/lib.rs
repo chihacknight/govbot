@@ -9,11 +9,13 @@ pub mod error;
 pub mod filter;
 pub mod git;
 pub mod locale_generated;
+pub mod pipeline;
 pub mod processor;
 pub mod publish;
 pub mod rss;
 pub mod selectors;
 pub mod types;
+pub mod wizard;
 
 pub use config::{Config, ConfigBuilder, JoinOption, SortOrder};
 pub use embeddings::{

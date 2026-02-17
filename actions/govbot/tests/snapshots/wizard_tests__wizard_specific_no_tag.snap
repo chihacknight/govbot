@@ -1,0 +1,26 @@
+---
+source: tests/wizard_tests.rs
+expression: "&yml"
+---
+# Govbot Configuration
+# Schema: https://raw.githubusercontent.com/windy-civi/toolkit/main/schemas/govbot.schema.json
+$schema: https://raw.githubusercontent.com/windy-civi/toolkit/main/schemas/govbot.schema.json
+
+repos:
+  - il
+  - ca
+  - ny
+
+tags:
+  # Add your tags here. Example:
+  # my_topic:
+  #   description: |
+  #     Legislation related to ...
+  #   examples:
+  #     - "Example bill description"
+  {}
+
+build:
+  base_url: "https://example.com"
+  output_dir: "docs"
+  output_file: "feed.xml"

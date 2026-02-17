@@ -27,6 +27,9 @@ regex = "1.10"
 # CLI support for stdio pipeline
 clap = { version = "4.5", features = ["derive"] }
 
+# Interactive terminal prompts for setup wizard
+dialoguer = "0.11"
+
 # Error handling
 thiserror = "1.0"
 anyhow = "1.0"
