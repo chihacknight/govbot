@@ -316,6 +316,49 @@ mocks *LOCALES:
     echo ""
     echo "✅ Mocks updated successfully!"
 
+# Record terminal GIFs from tape files (requires VHS: https://github.com/charmbracelet/vhs)
+# Usage: just record          # record all tapes
+#        just record govbot-help  # record a specific tape
+record *TAPE:
+    #!/usr/bin/env bash
+    set -e
+
+    if ! command -v vhs &> /dev/null; then
+        echo "❌ VHS is not installed."
+        echo "   Install: brew install charmbracelet/tap/vhs"
+        echo "   Or see: https://github.com/charmbracelet/vhs"
+        exit 1
+    fi
+
+    # Build release binary if needed
+    if [ ! -f "target/release/govbot" ] || find src -name "*.rs" -newer "target/release/govbot" 2>/dev/null | grep -q .; then
+        echo "🔨 Building release target..."
+        cargo build --release
+    fi
+
+    export PATH="$PWD/target/release:$PATH"
+
+    if [ -n "{{TAPE}}" ]; then
+        tape="tapes/{{TAPE}}.tape"
+        if [ ! -f "$tape" ]; then
+            echo "❌ Tape not found: $tape"
+            echo "   Available tapes:"
+            ls tapes/*.tape 2>/dev/null | sed 's|tapes/||;s|\.tape||;s|^|     |'
+            exit 1
+        fi
+        echo "🎬 Recording: $tape"
+        vhs "$tape"
+    else
+        for tape in tapes/*.tape; do
+            [ -f "$tape" ] || continue
+            echo "🎬 Recording: $tape"
+            vhs "$tape"
+        done
+    fi
+
+    echo ""
+    echo "✅ GIFs saved to tapes/"
+
 # Show project info
 info:
     @echo "Project: govbot"
