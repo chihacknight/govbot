@@ -45,10 +45,18 @@ jobs:
           cargo build --release
           echo "$PWD/target/release" >> $GITHUB_PATH
 
+      - name: Install VHS dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
       - name: Install VHS
-        uses: charmbracelet/vhs-action@v2
-        with:
-          install-only: true
+        run: |
+          VHS_VERSION="0.8.0"
+          curl -fsSL "https://github.com/charmbracelet/vhs/releases/download/v${VHS_VERSION}/vhs_${VHS_VERSION}_amd64.deb" -o vhs.deb
+          sudo dpkg -i vhs.deb
+          rm vhs.deb
+          vhs --version
 
       - name: Record terminal GIFs
         run: |
