@@ -1,0 +1,123 @@
+---
+source: tests/wizard_tests.rs
+expression: "&session.to_snapshot()"
+---
+=== Wizard Session ===
+
+Welcome to govbot! Let's set up your project.
+
+? What data sources do you want to track?
+  All states (47 jurisdictions)
+> Select specific states
+
+Available states/jurisdictions:
+  ak, al, ar, ca, co, de, fl, ga, gu, hi
+  ia, id, il, in, ks, ky, la, ma, md, me
+  mi, mn, mo, mp, ms, mt, nc, nd, ne, nh
+  nj, nm, nv, ny, oh, ok, or, pa, pr, ri
+  sc, sd, tn, usa, ut, vi, vt, wa, wi, wv
+  wy
+
+? Enter state codes separated by spaces: il ca ny
+
+Tags let govbot categorize legislation by topics you care about.
+Here's an example tag definition:
+
+  education:
+    description: |
+      Legislation related to schools, education funding,
+      curriculum standards, and educational policy.
+    examples:
+      - "Increases per-pupil funding for public schools"
+      - "Mandates comprehensive sex education curriculum"
+
+? How would you like to set up tags?
+> Use the example "education" tag to start
+  I'll create my own tags later
+
+Publishing is configured for RSS feeds by default.
+Your feeds will be generated in the "docs" directory.
+
+? Base URL for your feeds: https://activist.github.io/legislation
+
+  ✓ Created govbot.yml
+  ✓ Created .gitignore with .govbot
+  ✓ Created .github/workflows/build.yml
+
+Setup complete! Run 'govbot' again to start the pipeline.
+
+=== Generated: govbot.yml ===
+
+# Govbot Configuration
+# Schema: https://raw.githubusercontent.com/windy-civi/toolkit/main/schemas/govbot.schema.json
+$schema: https://raw.githubusercontent.com/windy-civi/toolkit/main/schemas/govbot.schema.json
+
+repos:
+  - il
+  - ca
+  - ny
+
+tags:
+  education:
+    description: |
+      Legislation related to schools, education funding, curriculum standards, and educational policy, including:
+      - K-12 public school funding, budgets, and resource allocation
+      - Curriculum standards, content requirements, and academic programs
+      - Teacher certification, training, professional development, and compensation
+      - Higher education policy, tuition, financial aid, and student loans
+      - Charter schools, school choice, vouchers, and alternative education models
+      - Special education services, accommodations, and individualized education plans
+      - School safety, security measures, and student discipline policies
+      - Early childhood education, pre-K programs, and childcare
+      - Standardized testing, assessments, and accountability measures
+      - School district governance, administration, and oversight
+      - Educational technology, digital learning, and online education
+      - Career and technical education, vocational training, and workforce development
+    examples:
+      - "Increases per-pupil funding for public schools and establishes minimum teacher salary requirements"
+      - "Mandates comprehensive sex education curriculum in all public schools"
+      - "Expands eligibility for state financial aid programs to include part-time students"
+
+build:
+  base_url: "https://activist.github.io/legislation"
+  output_dir: "docs"
+  output_file: "feed.xml"
+
+=== Generated: .github/workflows/build.yml ===
+
+# Run Govbot
+# Runs govbot to clone repos, tag bills, and build RSS feeds and HTML index.
+
+name: Build Govbot
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: 'Comma-separated list of tags to include (leave empty for all tags)'
+        required: false
+        type: string
+      limit:
+        description: 'Limit number of entries per feed (default: 15, use "none" for all)'
+        required: false
+        type: string
+
+jobs:
+  govbot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Govbot
+        uses: windy-civi/toolkit/actions/govbot@main
+        with:
+          tags: ${{ inputs.tags }}
+          limit: ${{ inputs.limit }}

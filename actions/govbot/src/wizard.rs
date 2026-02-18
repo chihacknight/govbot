@@ -3,6 +3,137 @@ use dialoguer::{Input, Select};
 use std::fs;
 use std::path::Path;
 
+/// Represents the user's choices during the wizard.
+/// Used both by the interactive wizard and by tests to simulate different paths.
+pub struct WizardChoices {
+    pub repos: Vec<String>,
+    pub include_example_tag: bool,
+    pub base_url: String,
+}
+
+/// Captures the full wizard session output: what the user sees at each step,
+/// plus the generated files. This makes the entire wizard experience snapshotable.
+pub struct WizardSession {
+    /// The text shown during the wizard (prompts, guidance, etc.)
+    pub display: String,
+    /// The generated govbot.yml content
+    pub govbot_yml: String,
+    /// The generated GitHub Actions workflow content
+    pub workflow_yml: String,
+}
+
+impl WizardSession {
+    /// Render a complete wizard session from a set of choices.
+    /// This is deterministic and requires no interactive input.
+    pub fn from_choices(choices: &WizardChoices) -> Self {
+        let mut display = String::new();
+
+        // Welcome
+        display.push_str("Welcome to govbot! Let's set up your project.\n\n");
+
+        // Step 1: Sources
+        display.push_str("? What data sources do you want to track?\n");
+        if choices.repos == ["all"] {
+            display.push_str("> All states (47 jurisdictions)\n");
+            display.push_str("  Select specific states\n");
+        } else {
+            display.push_str("  All states (47 jurisdictions)\n");
+            display.push_str("> Select specific states\n");
+            display.push('\n');
+            display.push_str("Available states/jurisdictions:\n");
+            let all_locales = crate::locale::WorkingLocale::all();
+            let locale_strs: Vec<String> = all_locales.iter().map(|l| l.as_str().to_string()).collect();
+            for chunk in locale_strs.chunks(10) {
+                display.push_str(&format!("  {}\n", chunk.join(", ")));
+            }
+            display.push('\n');
+            display.push_str(&format!("? Enter state codes separated by spaces: {}\n", choices.repos.join(" ")));
+        }
+        display.push('\n');
+
+        // Step 2: Tags
+        display.push_str("Tags let govbot categorize legislation by topics you care about.\n");
+        display.push_str("Here's an example tag definition:\n\n");
+        display.push_str("  education:\n");
+        display.push_str("    description: |\n");
+        display.push_str("      Legislation related to schools, education funding,\n");
+        display.push_str("      curriculum standards, and educational policy.\n");
+        display.push_str("    examples:\n");
+        display.push_str("      - \"Increases per-pupil funding for public schools\"\n");
+        display.push_str("      - \"Mandates comprehensive sex education curriculum\"\n\n");
+
+        display.push_str("? How would you like to set up tags?\n");
+        if choices.include_example_tag {
+            display.push_str("> Use the example \"education\" tag to start\n");
+            display.push_str("  I'll create my own tags later\n");
+        } else {
+            display.push_str("  Use the example \"education\" tag to start\n");
+            display.push_str("> I'll create my own tags later\n");
+            display.push('\n');
+            display.push_str(&ai_prompt_template());
+        }
+        display.push('\n');
+
+        // Step 3: Publishing
+        display.push_str("Publishing is configured for RSS feeds by default.\n");
+        display.push_str("Your feeds will be generated in the \"docs\" directory.\n\n");
+        display.push_str(&format!("? Base URL for your feeds: {}\n\n", choices.base_url));
+
+        // Summary
+        display.push_str("  ✓ Created govbot.yml\n");
+        display.push_str("  ✓ Created .gitignore with .govbot\n");
+        display.push_str("  ✓ Created .github/workflows/build.yml\n\n");
+        display.push_str("Setup complete! Run 'govbot' again to start the pipeline.\n");
+
+        let govbot_yml = generate_govbot_yml(&choices.repos, choices.include_example_tag, &choices.base_url);
+        let workflow_yml = github_workflow_content().to_string();
+
+        WizardSession {
+            display,
+            govbot_yml,
+            workflow_yml,
+        }
+    }
+
+    /// Render the full session as a single string for snapshot testing.
+    /// Shows exactly what a user would experience for this set of choices.
+    pub fn to_snapshot(&self) -> String {
+        let mut out = String::new();
+        out.push_str("=== Wizard Session ===\n\n");
+        out.push_str(&self.display);
+        out.push_str("\n=== Generated: govbot.yml ===\n\n");
+        out.push_str(&self.govbot_yml);
+        out.push_str("\n=== Generated: .github/workflows/build.yml ===\n\n");
+        out.push_str(&self.workflow_yml);
+        out
+    }
+}
+
+/// The AI prompt template shown when users choose to create their own tags.
+pub fn ai_prompt_template() -> String {
+    let mut s = String::new();
+    s.push_str("To create a tag, copy this prompt into your preferred AI tool:\n\n");
+    s.push_str("---\n");
+    s.push_str("Create a govbot tag definition in YAML for tracking [YOUR TOPIC] legislation.\n");
+    s.push_str("The tag should have:\n");
+    s.push_str("- A description (multiline, covering subtopics)\n");
+    s.push_str("- 2-3 example bill descriptions that would match\n");
+    s.push_str("- Optional: include_keywords and exclude_keywords lists\n\n");
+    s.push_str("Format:\n");
+    s.push_str("  tag_name:\n");
+    s.push_str("    description: |\n");
+    s.push_str("      ...\n");
+    s.push_str("    examples:\n");
+    s.push_str("      - \"...\"\n");
+    s.push_str("    include_keywords:\n");
+    s.push_str("      - keyword1\n");
+    s.push_str("    exclude_keywords:\n");
+    s.push_str("      - keyword1\n");
+    s.push_str("---\n\n");
+    s.push_str("Paste the result into your govbot.yml under the 'tags:' section.\n");
+    s
+}
+
 /// Run the interactive setup wizard to create govbot.yml and supporting files.
 pub fn run_wizard() -> Result<()> {
     // Check if stdin is a terminal - wizard requires interactive input
@@ -117,30 +248,10 @@ fn prompt_tags() -> Result<bool> {
         .interact()?;
 
     if selection == 1 {
-        // Print the AI prompt template
-        eprintln!();
-        eprintln!("To create a tag, copy this prompt into your preferred AI tool:");
-        eprintln!();
-        eprintln!("---");
-        eprintln!("Create a govbot tag definition in YAML for tracking [YOUR TOPIC] legislation.");
-        eprintln!("The tag should have:");
-        eprintln!("- A description (multiline, covering subtopics)");
-        eprintln!("- 2-3 example bill descriptions that would match");
-        eprintln!("- Optional: include_keywords and exclude_keywords lists");
-        eprintln!();
-        eprintln!("Format:");
-        eprintln!("  tag_name:");
-        eprintln!("    description: |");
-        eprintln!("      ...");
-        eprintln!("    examples:");
-        eprintln!("      - \"...\"");
-        eprintln!("    include_keywords:");
-        eprintln!("      - keyword1");
-        eprintln!("    exclude_keywords:");
-        eprintln!("      - keyword1");
-        eprintln!("---");
-        eprintln!();
-        eprintln!("Paste the result into your govbot.yml under the 'tags:' section.");
+        let template = ai_prompt_template();
+        for line in template.lines() {
+            eprintln!("{}", line);
+        }
         eprintln!();
     }
 
@@ -244,13 +355,8 @@ pub fn write_gitignore(cwd: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Write GitHub Actions workflow file
-pub fn write_github_workflow(cwd: &Path) -> Result<()> {
-    let workflows_dir = cwd.join(".github").join("workflows");
-    fs::create_dir_all(&workflows_dir)?;
-
-    let workflow_path = workflows_dir.join("build.yml");
-    let workflow_content = r#"# Run Govbot
+fn github_workflow_content() -> &'static str {
+    r#"# Run Govbot
 # Runs govbot to clone repos, tag bills, and build RSS feeds and HTML index.
 
 name: Build Govbot
@@ -286,9 +392,16 @@ jobs:
         with:
           tags: ${{ inputs.tags }}
           limit: ${{ inputs.limit }}
-"#;
+"#
+}
 
-    fs::write(&workflow_path, workflow_content)?;
+/// Write GitHub Actions workflow file
+pub fn write_github_workflow(cwd: &Path) -> Result<()> {
+    let workflows_dir = cwd.join(".github").join("workflows");
+    fs::create_dir_all(&workflows_dir)?;
+
+    let workflow_path = workflows_dir.join("build.yml");
+    fs::write(&workflow_path, github_workflow_content())?;
     eprintln!("  ✓ Created .github/workflows/build.yml");
 
     Ok(())
