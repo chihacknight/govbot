@@ -33,25 +33,25 @@ Sleep 1s
 # Step 2: Launch govbot — no govbot.yml exists, so the wizard starts
 Type "govbot"
 Enter
-Wait@10s /What data sources do you want to track/
+Wait+Screen@10s /What data sources do you want to track/
 
 # Wizard Step 1: Select "Select specific states" (move down from default)
 Down
 Enter
-Wait@5s /Enter state codes/
+Wait+Screen@5s /Enter state codes/
 
 # Enter state codes: gu (Guam) and wy (Wyoming)
 Type "gu wy"
 Enter
-Wait@5s /How would you like to set up tags/
+Wait+Screen@5s /How would you like to set up tags/
 
 # Wizard Step 2: Use the example "education" tag (default selection)
 Enter
-Wait@5s /Base URL for your feeds/
+Wait+Screen@5s /Base URL for your feeds/
 
 # Wizard Step 3: Accept default base URL (https://example.com)
 Enter
-Wait@10s /Setup complete/
+Wait+Screen@10s /Setup complete/
 
 # Step 3: Run govbot again — govbot.yml exists, so the pipeline runs
 # Pipeline: clone repos → tag bills → build RSS feeds
@@ -77,4 +77,4 @@ Wait+Screen@5s /feed.xml/
 
 Type "echo 'E2E test complete'"
 Enter
-Wait@5s /E2E test complete/
+Wait+Screen@5s /E2E test complete/
