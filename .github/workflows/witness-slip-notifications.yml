@@ -1,0 +1,114 @@
+name: IL Witness Slip Notifications - Transportation & Housing
+
+on:
+  repository_dispatch:
+    types: [il-data-updated]
+  
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Test mode (no emails sent)'
+        required: false
+        default: 'false'
+  
+  schedule:
+    - cron: '0 9 * * 1-5'
+
+jobs:
+  notify-witness-slips:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pyyaml python-dateutil
+      
+      - name: Fetch IL legislative data
+        run: |
+          DATA_URL="https://raw.githubusercontent.com/govbot-openstates-scrapers/il-legislation/main/_data/il"
+          echo "Fetching data from: $DATA_URL"
+          mkdir -p data/il
+          
+          # Download bill data files
+          curl -s "$DATA_URL/" | grep -oP 'href="\K[^"]+\.json' | while read file; do
+            wget -q -P data/il "$DATA_URL/$file"
+          done
+      
+      - name: Parse bills and generate notifications
+        env:
+          # User configuration from secrets
+          USER_NAME: ${{ secrets.WITNESS_SLIP_USER_NAME || 'Urbanist Advocate' }}
+          USER_EMAIL: ${{ secrets.WITNESS_SLIP_USER_EMAIL || '[email protected]' }}
+          USER_ORG: ${{ secrets.WITNESS_SLIP_ORG || 'Chicago Urbanists' }}
+          
+          # Topic subscriptions from secrets (comma-separated)
+          TOPICS_TRANSPORTATION: ${{ secrets.TOPICS_TRANSPORTATION || 'Transportation,Public Transit,Roads,Highways,Bicycle,Pedestrian,Traffic' }}
+          TOPICS_HOUSING: ${{ secrets.TOPICS_HOUSING || 'Housing,Affordable Housing,Real Estate,Zoning,Land Use,Development' }}
+          
+          # Recipients from secrets (comma-separated)
+          RECIPIENTS_TRANSPORTATION: ${{ secrets.RECIPIENTS_TRANSPORTATION }}
+          RECIPIENTS_HOUSING: ${{ secrets.RECIPIENTS_HOUSING }}
+          RECIPIENTS_ALL: ${{ secrets.RECIPIENTS_ALL }}
+          
+          # Specific bill tracking (comma-separated)
+          TRACKED_BILLS: ${{ secrets.TRACKED_BILLS || '' }}
+          
+          # Notification settings
+          URGENCY_THRESHOLD_DAYS: ${{ secrets.URGENCY_THRESHOLD_DAYS || '7' }}
+        run: |
+          python scripts/witness_slip_notifier.py --mode github-action
+      
+      - name: Send email notifications
+        if: github.event.inputs.test_mode != 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.MAIL_SERVER }}
+          server_port: ${{ secrets.MAIL_PORT }}
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "[Govbot] 🚇🏘️ IL Transportation & Housing Bills - Witness Slip Action"
+          to: ${{ secrets.NOTIFICATION_RECIPIENTS }}
+          from: ${{ secrets.MAIL_FROM }}
+          body: file://notifications_output.txt
+          html_body: file://notifications_output.html
+          attachments: witness_slip_notifications.json
+      
+      - name: Post summary
+        if: always()
+        run: |
+          echo "## 📊 Witness Slip Notification Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f witness_slip_notifications.json ]; then
+            BILL_COUNT=$(jq '. | length' witness_slip_notifications.json)
+            echo "**Bills Processed:** $BILL_COUNT" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            if [ "$BILL_COUNT" -gt 0 ]; then
+              echo "### 🚇 Transportation & 🏘️ Housing Bills:" >> $GITHUB_STEP_SUMMARY
+              jq -r '.[] | "- **\(.bill_number)**: \(.title) | Topics: \(.topics | join(", "))"' witness_slip_notifications.json >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "⚠️ No bills requiring action." >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: witness-slip-notifications-${{ github.run_number }}
+          path: |
+            witness_slip_notifications.json
+            notifications_output.txt
+            notifications_output.html
+          retention-days: 30

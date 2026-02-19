@@ -115,5 +115,25 @@ target/
 
 sample_data/*
 
+# ~ IL Witness Slip Testing ~
+
+# Environment files
+.env.local
+.env.test
+config/subscriptions.json
+
+# Notification outputs
+notifications_output.txt
+notifications_output.html
+witness_slip_notifications.json
+
+# Data directory
+data/il/
+data/
+
+# MailHog/Mailpit
+MailHog*
+mailpit*
+
 
 

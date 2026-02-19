@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: govbot-mailhog
+    ports:
+      - "1025:1025"  # SMTP server
+      - "8025:8025"  # Web UI
+    networks:
+      - govbot-test
+
+  # Alternative: Mailpit (more modern)
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: govbot-mailpit
+    ports:
+      - "1026:1025"  # SMTP server (different port to avoid conflict)
+      - "8026:8025"  # Web UI
+    networks:
+      - govbot-test
+    profiles:
+      - mailpit
+
+networks:
+  govbot-test:
+    driver: bridge
