@@ -2262,7 +2262,7 @@ async fn run_build_command(cmd: Command) -> anyhow::Result<()> {
 }
 
 async fn run_update_command() -> anyhow::Result<()> {
-    let install_script_url = "https://raw.githubusercontent.com/windy-civi/toolkit/main/actions/govbot/scripts/install-nightly.sh";
+    let install_script_url = "https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh";
     
     eprintln!("🔄 Updating govbot to latest nightly version...");
     eprintln!("Downloading and running install script from: {}", install_script_url);

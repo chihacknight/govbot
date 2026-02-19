@@ -16,7 +16,7 @@ Set Height 800
 Set Padding 20
 
 # Step 1: Install govbot via the 1-click installer
-Type "curl -fsSL https://raw.githubusercontent.com/windy-civi/toolkit/main/actions/govbot/scripts/install-nightly.sh | sh"
+Type "curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh | sh"
 Enter
 Sleep 15s
 

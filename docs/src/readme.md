@@ -17,7 +17,7 @@ The main Govbot dataset currently includes legislative updates from bills in the
 ## 1. Install
 
 ```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/windy-civi/toolkit/main/actions/govbot/scripts/install-nightly.sh)"
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"
 ```
 
 ## 2. Run govbot
