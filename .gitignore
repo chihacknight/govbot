@@ -101,6 +101,9 @@ docs/action_logs/*
 
 **/tmp/*
 
+# VHS generated recordings (stored as CI artifacts, not in repo)
+*.gif
+
 # Rust / Cargo
 target/
 **/target/
