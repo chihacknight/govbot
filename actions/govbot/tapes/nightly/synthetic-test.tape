@@ -20,10 +20,15 @@ Type "curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/acti
 Enter
 Wait+Screen@60s /govbot installed at/
 
+# Source profile so govbot is on PATH (installer updates profile in a subshell)
+Type "export PATH=\"$HOME/.govbot/bin:$PATH\""
+Enter
+Sleep 1s
+
 # Work in a clean directory
 Type "mkdir -p /tmp/govbot-test && cd /tmp/govbot-test"
 Enter
-Sleep 2s
+Sleep 1s
 
 # Step 2: Launch govbot — no govbot.yml exists, so the wizard starts
 Type "govbot"
