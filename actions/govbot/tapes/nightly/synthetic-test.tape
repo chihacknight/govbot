@@ -18,7 +18,7 @@ Set Padding 20
 # Step 1: Install govbot via the 1-click installer
 Type "curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh | sh"
 Enter
-Wait@60s +Screen /govbot installed at/
+Wait+Screen@60s /govbot installed at/
 
 # Work in a clean directory
 Type "mkdir -p /tmp/govbot-test && cd /tmp/govbot-test"
@@ -53,22 +53,22 @@ Wait@10s /Setup complete/
 Type "govbot"
 Enter
 Hide
-Wait@300s +Screen /Pipeline complete/
+Wait+Screen@300s /Pipeline complete/
 Show
 Sleep 2s
 
 # Verify outputs
 Type "cat govbot.yml"
 Enter
-Wait@5s +Screen /output_dir/
+Wait+Screen@5s /output_dir/
 
 Type "ls .govbot/repos/"
 Enter
-Wait@5s +Screen /gu/
+Wait+Screen@5s /gu/
 
 Type "ls docs/"
 Enter
-Wait@5s +Screen /feed.xml/
+Wait+Screen@5s /feed.xml/
 
 Type "echo 'E2E test complete'"
 Enter
