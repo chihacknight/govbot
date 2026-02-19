@@ -6,7 +6,7 @@
 # This tape is run by the synthetic-test.yml workflow on a nightly schedule.
 # It lives in tapes/nightly/ to avoid being picked up by terminal-screenshots.yml.
 
-Output /tmp/govbot-synthetic-test.gif
+Output "/tmp/govbot-synthetic-test.gif"
 
 Set Shell bash
 Set FontSize 14
