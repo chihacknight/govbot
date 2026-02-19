@@ -52,11 +52,9 @@ Wait+Screen@5s /Base URL for your feeds/
 
 # Wizard Step 3: Accept default base URL (https://example.com)
 # After this Enter, the wizard writes config files and the pipeline starts
-# automatically (clone → tag → build). Hide the lengthy pipeline output.
+# automatically (clone → tag → build).
 Enter
-Hide
 Wait+Screen@300s /Pipeline complete/
-Show
 Sleep 2s
 
 # Verify outputs (govbot has exited, shell is back)
