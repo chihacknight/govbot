@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="windy-civi/toolkit"
+REPO="chihacknight/govbot"
 BINARY_NAME="govbot"
 INSTALL_DIR="${HOME}/.govbot/bin"
 INSTALL_PATH="${INSTALL_DIR}/${BINARY_NAME}"

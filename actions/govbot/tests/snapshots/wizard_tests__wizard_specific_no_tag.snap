@@ -3,8 +3,8 @@ source: tests/wizard_tests.rs
 expression: "&yml"
 ---
 # Govbot Configuration
-# Schema: https://raw.githubusercontent.com/windy-civi/toolkit/main/schemas/govbot.schema.json
-$schema: https://raw.githubusercontent.com/windy-civi/toolkit/main/schemas/govbot.schema.json
+# Schema: https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json
+$schema: https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json
 
 repos:
   - il
