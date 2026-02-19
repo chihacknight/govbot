@@ -36,7 +36,7 @@ runs:
       shell: bash
       run: |
         mkdir -p "${{ github.action_path }}/bin"
-        curl -fsSL "https://github.com/windy-civi/toolkit/releases/download/nightly/govbot-linux-x86_64" \
+        curl -fsSL "https://github.com/chihacknight/govbot/releases/download/nightly/govbot-linux-x86_64" \
           -o "${{ github.action_path }}/bin/govbot"
         chmod +x "${{ github.action_path }}/bin/govbot"
     
