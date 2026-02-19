@@ -2,7 +2,7 @@
 # Exercises the full user journey from scratch:
 #   1. Installs govbot via the 1-click installer
 #   2. Runs the interactive wizard to generate govbot.yml
-#   3. Runs govbot again to execute the full pipeline (clone → tag → build)
+#   3. The same govbot invocation then runs the full pipeline (clone → tag → build)
 #
 # This tape is run by the synthetic-test.yml workflow on a nightly schedule.
 # It lives in tapes/nightly/ to avoid being picked up by terminal-screenshots.yml.
@@ -30,7 +30,8 @@ Type "mkdir -p /tmp/govbot-test && cd /tmp/govbot-test"
 Enter
 Sleep 1s
 
-# Step 2: Launch govbot — no govbot.yml exists, so the wizard starts
+# Step 2: Launch govbot — no govbot.yml exists, so the wizard starts.
+# After the wizard, govbot immediately runs the pipeline in the same process.
 Type "govbot"
 Enter
 Wait+Screen@10s /What data sources do you want to track/
@@ -50,19 +51,15 @@ Enter
 Wait+Screen@5s /Base URL for your feeds/
 
 # Wizard Step 3: Accept default base URL (https://example.com)
-Enter
-Wait+Screen@10s /Setup complete/
-
-# Step 3: Run govbot again — govbot.yml exists, so the pipeline runs
-# Pipeline: clone repos → tag bills → build RSS feeds
-Type "govbot"
+# After this Enter, the wizard writes config files and the pipeline starts
+# automatically (clone → tag → build). Hide the lengthy pipeline output.
 Enter
 Hide
 Wait+Screen@300s /Pipeline complete/
 Show
 Sleep 2s
 
-# Verify outputs
+# Verify outputs (govbot has exited, shell is back)
 Type "cat govbot.yml"
 Enter
 Wait+Screen@5s /output_dir/
