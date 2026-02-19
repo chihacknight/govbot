@@ -95,6 +95,22 @@ impl WizardSession {
         }
     }
 
+    /// Write the generated files (govbot.yml, .gitignore, workflow) to disk.
+    pub fn write_files(&self, dir: &std::path::Path) -> Result<()> {
+        // Write govbot.yml
+        let config_path = dir.join("govbot.yml");
+        fs::write(&config_path, &self.govbot_yml)?;
+        eprintln!("  ✓ Created govbot.yml");
+
+        // Write .gitignore
+        write_gitignore(dir)?;
+
+        // Write GitHub Actions workflow
+        write_github_workflow(dir)?;
+
+        Ok(())
+    }
+
     /// Render the full session as a single string for snapshot testing.
     /// Shows exactly what a user would experience for this set of choices.
     pub fn to_snapshot(&self) -> String {
@@ -134,6 +150,24 @@ pub fn ai_prompt_template() -> String {
     s
 }
 
+/// Generate default govbot.yml and supporting files without interactive prompts.
+/// Used when `govbot init` is run in a non-interactive terminal.
+pub fn write_default_files(dir: &Path) -> Result<()> {
+    let choices = WizardChoices {
+        repos: vec!["all".to_string()],
+        include_example_tag: true,
+        base_url: "https://example.com".to_string(),
+    };
+    let session = WizardSession::from_choices(&choices);
+    session.write_files(dir)?;
+
+    eprintln!();
+    eprintln!("Setup complete! Edit govbot.yml to customize, then run 'govbot' to start.");
+    eprintln!();
+
+    Ok(())
+}
+
 /// Run the interactive setup wizard to create govbot.yml and supporting files.
 pub fn run_wizard() -> Result<()> {
     // Check if stdin is a terminal - wizard requires interactive input
@@ -156,20 +190,15 @@ pub fn run_wizard() -> Result<()> {
     // Step 3: Publishing info
     let base_url = prompt_publishing()?;
 
-    // Generate files
+    // Generate and write files
     let cwd = std::env::current_dir()?;
-    let yml_content = generate_govbot_yml(&repos, include_example_tag, &base_url);
-
-    // Write govbot.yml
-    let config_path = cwd.join("govbot.yml");
-    fs::write(&config_path, &yml_content)?;
-    eprintln!("  ✓ Created govbot.yml");
-
-    // Write .gitignore
-    write_gitignore(&cwd)?;
-
-    // Write GitHub Actions workflow
-    write_github_workflow(&cwd)?;
+    let choices = WizardChoices {
+        repos,
+        include_example_tag,
+        base_url,
+    };
+    let session = WizardSession::from_choices(&choices);
+    session.write_files(&cwd)?;
 
     eprintln!();
     eprintln!("Setup complete! Run 'govbot' again to start the pipeline.");

@@ -165,14 +165,6 @@ enum Command {
     /// Downloads and installs the latest nightly build from GitHub releases
     Update,
 
-    /// Initialize a new govbot project
-    /// Creates govbot.yml, .gitignore, and GitHub Actions workflow
-    Init {
-        /// Force overwrite existing files
-        #[arg(long)]
-        force: bool,
-    },
-
     /// Build RSS feed and HTML index from govbot.yml configuration
     /// Generates a combined RSS feed and HTML index from logs filtered by tags in govbot.yml
     Build {
@@ -1929,22 +1921,6 @@ async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn run_init_command(cmd: Command) -> anyhow::Result<()> {
-    let Command::Init { force } = cmd else {
-        unreachable!()
-    };
-
-    let cwd = std::env::current_dir()?;
-    let config_path = cwd.join("govbot.yml");
-
-    if config_path.exists() && !force {
-        eprintln!("⚠️  govbot.yml already exists. Use --force to overwrite.");
-        return Ok(());
-    }
-
-    govbot::wizard::run_wizard()
-}
-
 async fn run_build_command(cmd: Command) -> anyhow::Result<()> {
     let Command::Build {
         tags,
@@ -2340,17 +2316,18 @@ async fn main() -> anyhow::Result<()> {
         Some(cmd @ Command::Build { .. }) => {
             run_build_command(cmd).await
         }
-        Some(cmd @ Command::Init { .. }) => {
-            run_init_command(cmd).await
-        }
         None => {
             let cwd = std::env::current_dir()?;
             let config_path = cwd.join("govbot.yml");
-            if config_path.exists() {
-                govbot::pipeline::run_pipeline(&config_path)
-            } else {
-                govbot::wizard::run_wizard()
+            if !config_path.exists() {
+                // Generate govbot.yml: interactive wizard or defaults
+                if std::io::IsTerminal::is_terminal(&std::io::stdin()) {
+                    govbot::wizard::run_wizard()?;
+                } else {
+                    govbot::wizard::write_default_files(&cwd)?;
+                }
             }
+            govbot::pipeline::run_pipeline(&config_path)
         }
     }
 }
