@@ -5,6 +5,9 @@
 #
 # The govbot binary is built from source and placed on PATH by the
 # synthetic-test.yml workflow before this tape runs.
+#
+# The pipeline step redirects stderr to a log file because git clone
+# progress output can overwhelm the VHS PTY buffer and cause a deadlock.
 
 Output "/tmp/govbot-synthetic-test.gif"
 
@@ -46,11 +49,18 @@ Enter
 Wait+Screen@10s /Setup complete/
 Sleep 1s
 
-# Step 2: Run the pipeline (govbot.yml exists, so wizard is skipped)
-Type "govbot"
+# Step 2: Run the pipeline (govbot.yml exists, so wizard is skipped).
+# Redirect stderr to a log file to avoid VHS PTY buffer deadlock from
+# git clone progress output. Show the result afterward.
+Type "govbot 2>/tmp/pipeline.log; echo PIPELINE_EXIT=$?"
 Enter
-Wait+Screen@300s /Pipeline complete/
-Sleep 2s
+Wait+Screen@300s /PIPELINE_EXIT=/
+Sleep 1s
+
+# Show pipeline result
+Type "tail -3 /tmp/pipeline.log"
+Enter
+Wait+Screen@5s /Pipeline complete/
 
 # Verify outputs
 Type "cat govbot.yml"
