@@ -1,0 +1,52 @@
+{
+  "id": "ocd-bill/87654321-4321-4321-4321-cba987654321",
+  "identifier": "SB1847",
+  "title": "Affordable Housing Development Act",
+  "from_organization": {
+    "id": "ocd-organization/87654321-4321-4321-4321-cba987654321",
+    "name": "Illinois Senate",
+    "classification": "upper"
+  },
+  "legislative_session": {
+    "identifier": "103",
+    "name": "103rd General Assembly"
+  },
+  "subject": ["Housing", "Affordable Housing", "Zoning"],
+  "abstracts": [
+    {
+      "abstract": "Creates the Affordable Housing Development Act.",
+      "note": "Bill Summary"
+    }
+  ],
+  "sponsorships": [
+    {
+      "name": "Sen. Robert Kim",
+      "entity_type": "person",
+      "primary": true,
+      "classification": "primary"
+    }
+  ],
+  "actions": [
+    {
+      "description": "Filed with Secretary by Sen. Robert Kim",
+      "date": "2026-02-01",
+      "organization": {
+        "name": "Illinois Senate"
+      },
+      "classification": ["filing"]
+    },
+    {
+      "description": "Scheduled for Hearing in Housing Committee - February 28, 2026 at 2:00 PM",
+      "date": "2026-02-28T14:00:00",
+      "organization": {
+        "name": "Senate Housing & Urban Development Committee"
+      },
+      "classification": ["committee-passage"]
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://www.ilga.gov/legislation/BillStatus.asp?DocTypeID=SB&DocNum=1847&GAID=17&SessionID=112&GA=103"
+    }
+  ]
+}

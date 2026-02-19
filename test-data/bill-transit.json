@@ -1,0 +1,52 @@
+{
+  "id": "ocd-bill/12345678-1234-1234-1234-123456789abc",
+  "identifier": "HB2024",
+  "title": "Chicago Transit Authority - Funding Increase",
+  "from_organization": {
+    "id": "ocd-organization/12345678-1234-1234-1234-123456789abc",
+    "name": "Illinois House of Representatives",
+    "classification": "lower"
+  },
+  "legislative_session": {
+    "identifier": "103",
+    "name": "103rd General Assembly"
+  },
+  "subject": ["Transportation", "Public Transit", "Municipal Government"],
+  "abstracts": [
+    {
+      "abstract": "Amends the Metropolitan Transit Authority Act. Increases the CTA funding formula.",
+      "note": "Bill Summary"
+    }
+  ],
+  "sponsorships": [
+    {
+      "name": "Rep. Maria Gonzalez",
+      "entity_type": "person",
+      "primary": true,
+      "classification": "primary"
+    }
+  ],
+  "actions": [
+    {
+      "description": "Filed with the Clerk by Rep. Maria Gonzalez",
+      "date": "2026-01-15",
+      "organization": {
+        "name": "Illinois House of Representatives"
+      },
+      "classification": ["filing"]
+    },
+    {
+      "description": "Scheduled for Hearing in Transportation Committee - March 5, 2026 at 10:00 AM",
+      "date": "2026-03-05T10:00:00",
+      "organization": {
+        "name": "House Transportation Committee"
+      },
+      "classification": ["committee-passage"]
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://www.ilga.gov/legislation/BillStatus.asp?DocTypeID=HB&DocNum=2024&GAID=17&SessionID=112&GA=103"
+    }
+  ]
+}

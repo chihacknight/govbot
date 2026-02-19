@@ -1,0 +1,52 @@
+{
+  "id": "ocd-bill/11223344-5566-7788-9900-aabbccddeeff",
+  "identifier": "HB3156",
+  "title": "Residential Parking Requirements - Removal",
+  "from_organization": {
+    "id": "ocd-organization/11223344-5566-7788-9900-aabbccddeeff",
+    "name": "Illinois House of Representatives",
+    "classification": "lower"
+  },
+  "legislative_session": {
+    "identifier": "103",
+    "name": "103rd General Assembly"
+  },
+  "subject": ["Zoning", "Land Use", "Transportation"],
+  "abstracts": [
+    {
+      "abstract": "Prohibits municipalities from imposing minimum parking requirements.",
+      "note": "Bill Summary"
+    }
+  ],
+  "sponsorships": [
+    {
+      "name": "Rep. David Chen",
+      "entity_type": "person",
+      "primary": true,
+      "classification": "primary"
+    }
+  ],
+  "actions": [
+    {
+      "description": "Filed with the Clerk by Rep. David Chen",
+      "date": "2026-02-10",
+      "organization": {
+        "name": "Illinois House of Representatives"
+      },
+      "classification": ["filing"]
+    },
+    {
+      "description": "Scheduled for Hearing in Urban Development Committee - March 10, 2026 at 9:00 AM",
+      "date": "2026-03-10T09:00:00",
+      "organization": {
+        "name": "House Urban Development & Local Government Committee"
+      },
+      "classification": ["committee-passage"]
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://ilga.gov/legislation/billstatus.asp"
+    }
+  ]
+}

@@ -14,6 +14,12 @@ from typing import List, Dict, Optional, Set
 from enum import Enum
 from pathlib import Path
 import argparse
+import requests
+import tempfile
+import smtplib
+from email.message import EmailMessage
+
+
 
 
 class BillReading(Enum):
@@ -98,7 +104,7 @@ class OpenStatesParser:
                     data = json.load(f)
                     
                     if isinstance(data, list):
-                        for bill_data in 
+                        for bill_data in data:
                             bill = OpenStatesParser._parse_bill(bill_data)
                             if bill:
                                 bills.append(bill)
@@ -122,7 +128,7 @@ class OpenStatesParser:
         return unique_bills
     
     @staticmethod
-    def _parse_bill(bill_ dict) -> Optional[Bill]:
+    def _parse_bill(bill_data: dict) -> Optional[Bill]:
         """Parse OpenStates JSON format"""
         try:
             identifier = bill_data.get('identifier') or bill_data.get('bill_id')
@@ -202,6 +208,48 @@ class OpenStatesParser:
             return None
 
 
+def fetch_sample_bills() -> str:
+    """Download 3-5 sample bills from GitHub for testing"""
+    print("📥 Fetching sample bills from GitHub...")
+    
+    # Create temp directory for samples
+    temp_dir = Path(tempfile.gettempdir()) / "witness-slip-test-data"
+    temp_dir.mkdir(exist_ok=True)
+    
+    # Real bill URLs from the actual GitHub repo
+    base_url = "https://raw.githubusercontent.com/govbot-openstates-scrapers/il-legislation/main/_data/il"
+    
+    # Sample bills - picking a few from the repo
+    sample_bills = [
+        f"{base_url}/bills/ocd-bill-1.json",
+        f"{base_url}/bills/ocd-bill-2.json", 
+        f"{base_url}/bills/ocd-bill-3.json",
+        f"{base_url}/bills/ocd-bill-4.json",
+        f"{base_url}/bills/ocd-bill-5.json",
+    ]
+    
+    downloaded = 0
+    for url in sample_bills:
+        filename = url.split('/')[-1]
+        try:
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                (temp_dir / filename).write_text(response.text)
+                print(f"  ✅ Downloaded {filename}")
+                downloaded += 1
+            else:
+                print(f"  ⚠️  Skipped {filename} (HTTP {response.status_code})")
+        except Exception as e:
+            print(f"  ⚠️  Failed to download {filename}: {e}")
+    
+    if downloaded == 0:
+        print("❌ No sample bills downloaded. Check GitHub repo URL.")
+        sys.exit(1)
+    
+    print(f"✅ Using {downloaded} sample bill(s) from: {temp_dir}")
+    return str(temp_dir)
+
+
 class EnvironmentConfig:
     """Load configuration from environment variables (GitHub Secrets)"""
     
@@ -231,6 +279,31 @@ class EnvironmentConfig:
                 'urgency_threshold_days': int(os.getenv('URGENCY_THRESHOLD_DAYS', '7'))
             }
         }
+
+def send_email(subject: str, plain_body: str, html_body: str, recipients: List[str]) -> None:
+    """Send email via SMTP (MailHog in local dev)."""
+    if not recipients:
+        return
+
+    host = os.getenv("SMTP_HOST", "localhost")
+    port = int(os.getenv("SMTP_PORT", "1025"))
+    username = os.getenv("SMTP_USER", "")
+    password = os.getenv("SMTP_PASSWORD", "")
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = os.getenv("USER_EMAIL", "[email protected]")
+    msg["To"] = ", ".join(recipients)
+    msg.set_content(plain_body)
+    msg.add_alternative(html_body, subtype="html")
+
+    with smtplib.SMTP(host, port) as server:
+        if username and password:
+            server.starttls()
+            server.login(username, password)
+        server.send_message(msg)
+
+    print(f"📧 Sent email to: {msg['To']}")
 
 
 class NotificationGenerator:
@@ -483,8 +556,22 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices=['github-action', 'local'], default='local')
+    parser.add_argument(
+    '--sample',
+    action='store_true',
+    help='Download sample bills from GitHub for testing (no local repo needed)'
+)
+
     parser.add_argument('--data-dir', default='data/il')
     args = parser.parse_args()
+
+    # Handle --sample flag
+    if args.sample:
+        args.data_dir = fetch_sample_bills()
+    elif not args.data_dir:
+        print("❌ Error: --data-dir required (or use --sample for testing)")
+        sys.exit(1)
+
     
     print("\n" + "="*70)
     print("🚇🏘️ IL URBANIST WITNESS SLIP NOTIFIER")
@@ -546,6 +633,19 @@ def main():
         print("✅ Generated notification files")
     else:
         print(plain)
+        # combine all configured recipients
+        all_recipients = (
+            config['subscriptions']['transportation']['recipients']
+            + config['subscriptions']['housing']['recipients']
+            + config['subscriptions']['all_recipients']
+        )
+        send_email(
+            subject="IL Witness Slip Alerts – Urbanist Bills",
+            plain_body=plain,
+            html_body=html,
+            recipients=all_recipients,
+        )
+
 
 
 if __name__ == "__main__":
