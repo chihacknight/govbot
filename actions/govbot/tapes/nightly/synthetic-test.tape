@@ -1,7 +1,7 @@
 # Nightly synthetic test: govbot wizard → clone flow
 # Exercises the production nightly binary end-to-end:
 #   1. Runs the interactive wizard to generate govbot.yml
-#   2. Clones all 47 jurisdictions to verify data download
+#   2. Clones Guam and Wyoming to verify data download
 #
 # This tape is run by the synthetic-test.yml workflow on a nightly schedule.
 # It lives in tapes/nightly/ to avoid being picked up by terminal-screenshots.yml.
@@ -24,7 +24,13 @@ Type "govbot"
 Enter
 Sleep 3s
 
-# Wizard Step 1: "All states (47 jurisdictions)" is the default — accept it
+# Wizard Step 1: Select "Select specific states" (move down from default)
+Down
+Enter
+Sleep 2s
+
+# Enter state codes: gu (Guam) and wy (Wyoming)
+Type "gu wy"
 Enter
 Sleep 2s
 
@@ -41,12 +47,12 @@ Type "cat govbot.yml"
 Enter
 Sleep 3s
 
-# Clone all jurisdictions from the config
-# Hide recording during the long clone to keep the GIF small
-Type "govbot clone all"
+# Clone the repos specified in the config
+# Hide recording during the clone to keep the GIF small
+Type "govbot clone gu wy"
 Enter
 Hide
-Sleep 600s
+Sleep 120s
 Show
 
 # Verify cloned content exists

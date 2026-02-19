@@ -9,7 +9,7 @@ jobs:
   synthetic-test:
     name: Govbot Wizard & Clone
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
