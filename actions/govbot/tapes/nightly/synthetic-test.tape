@@ -31,10 +31,8 @@ Enter
 Sleep 1s
 
 # Step 2: Launch govbot — no govbot.yml exists, so the wizard starts.
-# Note: bare `govbot` runs wizard then pipeline in the same process.
-# After the wizard, govbot's eprintln! calls deadlock on the VHS PTY
-# output buffer, so we Ctrl+C after the wizard and run the pipeline
-# as a separate invocation.
+# After the wizard generates config files, govbot exits and tells the
+# user to run `govbot` again to start the pipeline.
 Type "govbot"
 Enter
 Wait+Screen@10s /What data sources do you want to track/
@@ -54,19 +52,12 @@ Enter
 Wait+Screen@5s /Base URL for your feeds/
 
 # Wizard Step 3: Accept default base URL (https://example.com)
-# The wizard writes govbot.yml immediately, then the process deadlocks
-# on the VHS PTY buffer. Ctrl+C to recover, then run the pipeline separately.
+# The wizard writes govbot.yml and exits cleanly.
 Enter
-Sleep 5s
-Ctrl+C
-Sleep 2s
+Wait+Screen@10s /Setup complete/
+Sleep 1s
 
-# Verify wizard created govbot.yml
-Type "test -f govbot.yml && echo WIZARD_OK"
-Enter
-Wait+Screen@5s /WIZARD_OK/
-
-# Step 3: Run the pipeline separately (govbot.yml exists, so wizard is skipped)
+# Step 3: Run the pipeline (govbot.yml exists, so wizard is skipped)
 Type "govbot"
 Enter
 Wait+Screen@300s /Pipeline complete/

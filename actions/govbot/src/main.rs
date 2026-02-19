@@ -2326,6 +2326,9 @@ async fn main() -> anyhow::Result<()> {
                 } else {
                     govbot::wizard::write_default_files(&cwd)?;
                 }
+                // Exit after generating config; user runs `govbot` again
+                // to start the pipeline (matches the wizard's own message).
+                return Ok(());
             }
             govbot::pipeline::run_pipeline(&config_path)
         }
