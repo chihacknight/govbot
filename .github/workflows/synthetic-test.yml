@@ -31,13 +31,6 @@ jobs:
         with:
           ref: ${{ github.head_ref || '' }}
 
-      - name: Install govbot nightly
-        run: |
-          curl -fsSL "https://github.com/windy-civi/toolkit/releases/download/nightly/govbot-linux-x86_64" -o govbot
-          chmod +x govbot
-          sudo mv govbot /usr/local/bin/
-          govbot --help
-
       - name: Install VHS dependencies
         run: |
           sudo apt-get update

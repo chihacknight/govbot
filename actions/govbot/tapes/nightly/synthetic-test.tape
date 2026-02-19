@@ -1,7 +1,8 @@
-# Nightly real world end-to-end test: govbot wizard → clone flow
-# Exercises the production nightly binary end-to-end:
-#   1. Runs the interactive wizard to generate govbot.yml
-#   2. Clones Guam and Wyoming to verify data download
+# Nightly real world end-to-end test: govbot install → wizard → clone flow
+# Exercises the full user journey from scratch:
+#   1. Installs govbot via the 1-click installer
+#   2. Runs the interactive wizard to generate govbot.yml
+#   3. Clones Guam and Wyoming to verify data download
 #
 # This tape is run by the synthetic-test.yml workflow on a nightly schedule.
 # It lives in tapes/nightly/ to avoid being picked up by terminal-screenshots.yml.
@@ -14,12 +15,17 @@ Set Width 1200
 Set Height 800
 Set Padding 20
 
+# Step 1: Install govbot via the 1-click installer
+Type "sh -c \"$(curl -fsSL https://raw.githubusercontent.com/windy-civi/toolkit/main/actions/govbot/scripts/install-nightly.sh)\""
+Enter
+Sleep 15s
+
 # Work in a clean directory
 Type "mkdir -p /tmp/govbot-test && cd /tmp/govbot-test"
 Enter
 Sleep 1s
 
-# Launch govbot — no govbot.yml exists, so the wizard starts
+# Step 2: Launch govbot — no govbot.yml exists, so the wizard starts
 Type "govbot"
 Enter
 Sleep 3s
