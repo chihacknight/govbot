@@ -1,0 +1,62 @@
+name: Synthetic Test
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # 6 AM UTC daily
+  workflow_dispatch:
+
+jobs:
+  synthetic-test:
+    name: Govbot Wizard & Clone
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install govbot nightly
+        run: |
+          curl -fsSL "https://github.com/windy-civi/toolkit/releases/download/nightly/govbot-linux-x86_64" -o govbot
+          chmod +x govbot
+          sudo mv govbot /usr/local/bin/
+          govbot --help
+
+      - name: Install VHS dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          TTYD_VERSION="1.7.7"
+          curl -fsSL "https://github.com/tsl0922/ttyd/releases/download/${TTYD_VERSION}/ttyd.x86_64" -o ttyd
+          chmod +x ttyd
+          sudo mv ttyd /usr/local/bin/
+
+      - name: Install VHS
+        run: |
+          VHS_VERSION="0.8.0"
+          curl -fsSL "https://github.com/charmbracelet/vhs/releases/download/v${VHS_VERSION}/vhs_${VHS_VERSION}_amd64.deb" -o vhs.deb
+          sudo dpkg -i vhs.deb
+          rm vhs.deb
+
+      - name: Run synthetic test
+        run: |
+          rm -rf /tmp/govbot-test /tmp/govbot-synthetic-test.gif
+          vhs actions/govbot/tapes/nightly/synthetic-test.tape
+
+      - name: Verify results
+        run: |
+          echo "=== govbot.yml ==="
+          cat /tmp/govbot-test/govbot.yml
+          echo ""
+          echo "=== Cloned repos ==="
+          ls -la /tmp/govbot-test/.govbot/repos/
+          test -d /tmp/govbot-test/.govbot/repos/
+          echo "Synthetic test passed!"
+
+      - name: Upload recording
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-test-recording
+          path: /tmp/govbot-synthetic-test.gif
+          retention-days: 7
