@@ -307,8 +307,8 @@ pub fn generate_govbot_yml(repos: &[String], include_example_tag: bool, base_url
     let mut yml = String::new();
 
     yml.push_str("# Govbot Configuration\n");
-    yml.push_str("# Schema: https://raw.githubusercontent.com/windy-civi/toolkit/main/schemas/govbot.schema.json\n");
-    yml.push_str("$schema: https://raw.githubusercontent.com/windy-civi/toolkit/main/schemas/govbot.schema.json\n\n");
+    yml.push_str("# Schema: https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json\n");
+    yml.push_str("$schema: https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json\n\n");
 
     // Repos section
     yml.push_str("repos:\n");
@@ -417,7 +417,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Govbot
-        uses: windy-civi/toolkit/actions/govbot@main
+        uses: chihacknight/govbot/actions/govbot@main
         with:
           tags: ${{ inputs.tags }}
           limit: ${{ inputs.limit }}

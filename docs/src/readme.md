@@ -145,15 +145,15 @@ Our vision now has pivoted to building that data set, as well as building sample
 # FAQs
 
 ## Can I See The Repo?
-Yes! Our main repo can be found [here](https://github.com/windy-civi/windy-civi). The repo that is being used to run and store the data - the 'toolkit' repo - can be found [here](https://github.com/windy-civi/toolkit).
+Yes! Our main repo can be found [here](https://github.com/windy-civi/windy-civi). The repo that is being used to run and store the data - the 'toolkit' repo - can be found [here](https://github.com/chihacknight/govbot).
 
 ## How Is The Data Structured?
-You an find the file format structure and .json schema in the readme.md located [here](https://github.com/windy-civi/toolkit/blob/main/actions/format/docs/DATA_STRUCTURES.md).
+You an find the file format structure and .json schema in the readme.md located [here](https://github.com/chihacknight/govbot/blob/main/actions/format/docs/DATA_STRUCTURES.md).
 
 ## How Do I Clone This Data?
-Each locale is scaped using a GitHub Actions tempate that is defined and explained in detail [here](https://github.com/windy-civi/toolkit/blob/main/actions/format/docs/for-caller-repos/README_TEMPLATE.md). You can follow this template to create a new repository of locale data.
+Each locale is scaped using a GitHub Actions tempate that is defined and explained in detail [here](https://github.com/chihacknight/govbot/blob/main/actions/format/docs/for-caller-repos/README_TEMPLATE.md). You can follow this template to create a new repository of locale data.
 
-To help manage multiple pipelines or locales, look at our [pipeline manager documentation](https://github.com/windy-civi/toolkit/tree/main/actions/pipeline-manager)
+To help manage multiple pipelines or locales, look at our [pipeline manager documentation](https://github.com/chihacknight/govbot/tree/main/actions/pipeline-manager)
 
 ## How Can I Stay Updated, Or Get In Touch?
 You can stay updated by following our work at [Chi Hack Night](chihacknight.org), as well as on the related Slack (see below). You can also follow our commits and updates on [Github](https://github.com/windy-civi) and this [Docs page](https://docs.windycivi.com),
