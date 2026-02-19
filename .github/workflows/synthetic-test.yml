@@ -1,4 +1,4 @@
-name: Synthetic Test
+name: Nightly Real World End To End Test
 
 on:
   schedule:
@@ -54,7 +54,7 @@ jobs:
           sudo dpkg -i vhs.deb
           rm vhs.deb
 
-      - name: Run synthetic test (with retry)
+      - name: Run end-to-end test (with retry)
         run: |
           run_test() {
             rm -rf /tmp/govbot-test /tmp/govbot-synthetic-test.gif
@@ -68,14 +68,14 @@ jobs:
           }
 
           if run_test; then
-            echo "Synthetic test passed on attempt 1"
+            echo "E2E test passed on attempt 1"
           else
             echo "::warning::Attempt 1 failed, retrying..."
             sleep 10
             if run_test; then
-              echo "Synthetic test passed on attempt 2"
+              echo "E2E test passed on attempt 2"
             else
-              echo "::error::Synthetic test failed after 2 attempts"
+              echo "::error::E2E test failed after 2 attempts"
               exit 1
             fi
           fi
@@ -105,12 +105,12 @@ jobs:
       - name: Job summary
         if: always()
         run: |
-          echo "## Synthetic Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "## Nightly Real World End To End Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           GIF_URL="${{ steps.commit-gif.outputs.gif_url }}"
           if [ -n "$GIF_URL" ]; then
             echo "### Recording" >> $GITHUB_STEP_SUMMARY
-            echo "![Synthetic Test Recording]($GIF_URL)" >> $GITHUB_STEP_SUMMARY
+            echo "![E2E Test Recording]($GIF_URL)" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
           if [ -f /tmp/govbot-test/govbot.yml ]; then
@@ -139,9 +139,9 @@ jobs:
             const gifUrl = '${{ steps.commit-gif.outputs.gif_url }}';
             const sha = '${{ steps.commit-gif.outputs.sha }}';
 
-            let body = `## Synthetic Test Recording\n\n`;
+            let body = `## Nightly Real World End To End Test Recording\n\n`;
             body += `> Auto-generated at ${sha.slice(0, 7)}\n\n`;
-            body += `![Synthetic Test](${gifUrl})\n`;
+            body += `![E2E Test](${gifUrl})\n`;
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
@@ -149,7 +149,7 @@ jobs:
               issue_number: context.issue.number,
             });
 
-            const marker = '## Synthetic Test Recording';
+            const marker = '## Nightly Real World End To End Test Recording';
             const existing = comments.find(c => c.body && c.body.startsWith(marker));
 
             if (existing) {

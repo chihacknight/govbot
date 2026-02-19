@@ -1,4 +1,4 @@
-# Nightly synthetic test: govbot wizard → clone flow
+# Nightly real world end-to-end test: govbot wizard → clone flow
 # Exercises the production nightly binary end-to-end:
 #   1. Runs the interactive wizard to generate govbot.yml
 #   2. Clones Guam and Wyoming to verify data download
@@ -60,6 +60,6 @@ Type "ls .govbot/repos/"
 Enter
 Sleep 2s
 
-Type "echo 'Synthetic test complete'"
+Type "echo 'E2E test complete'"
 Enter
 Sleep 2s
