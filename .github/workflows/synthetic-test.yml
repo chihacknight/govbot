@@ -15,7 +15,7 @@ on:
 
 jobs:
   synthetic-test:
-    name: Govbot Wizard & Clone
+    name: Govbot Wizard & Pipeline
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -57,7 +57,11 @@ jobs:
             echo ""
             echo "=== Cloned repos ==="
             ls -la /tmp/govbot-test/.govbot/repos/
+            echo ""
+            echo "=== Build output ==="
+            ls -la /tmp/govbot-test/docs/
             test -d /tmp/govbot-test/.govbot/repos/
+            test -d /tmp/govbot-test/docs/
           }
 
           if run_test; then
@@ -122,6 +126,15 @@ jobs:
             echo '```' >> $GITHUB_STEP_SUMMARY
           else
             echo "> No repos were cloned" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Build output" >> $GITHUB_STEP_SUMMARY
+          if [ -d /tmp/govbot-test/docs ]; then
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            ls /tmp/govbot-test/docs/ >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "> No build output was generated" >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Post PR comment with recording

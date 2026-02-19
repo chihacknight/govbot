@@ -1,8 +1,8 @@
-# Nightly real world end-to-end test: govbot install → wizard → clone flow
+# Nightly real world end-to-end test: govbot install → wizard → pipeline
 # Exercises the full user journey from scratch:
 #   1. Installs govbot via the 1-click installer
 #   2. Runs the interactive wizard to generate govbot.yml
-#   3. Clones Guam and Wyoming to verify data download
+#   3. Runs govbot again to execute the full pipeline (clone → tag → build)
 #
 # This tape is run by the synthetic-test.yml workflow on a nightly schedule.
 # It lives in tapes/nightly/ to avoid being picked up by terminal-screenshots.yml.
@@ -48,21 +48,25 @@ Sleep 2s
 Enter
 Sleep 3s
 
-# Show the generated config
-Type "cat govbot.yml"
-Enter
-Sleep 3s
-
-# Clone the repos specified in the config
-# Hide recording during the clone to keep the GIF small
-Type "govbot clone gu wy"
+# Step 3: Run govbot again — govbot.yml exists, so the pipeline runs
+# Pipeline: clone repos → tag bills → build RSS feeds
+Type "govbot"
 Enter
 Hide
 Sleep 120s
 Show
+Sleep 5s
 
-# Verify cloned content exists
+# Verify outputs
+Type "cat govbot.yml"
+Enter
+Sleep 3s
+
 Type "ls .govbot/repos/"
+Enter
+Sleep 2s
+
+Type "ls docs/"
 Enter
 Sleep 2s
 
