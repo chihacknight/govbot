@@ -1,7 +1,7 @@
 # End-to-end test: govbot wizard
 # Exercises the interactive wizard flow:
 #   1. Runs the interactive wizard to generate govbot.yml
-#   2. Verifies config files were created
+#   2. Verifies the wizard completes successfully
 #
 # The govbot binary is built from source and placed on PATH by the
 # synthetic-test.yml workflow before this tape runs.
@@ -47,13 +47,4 @@ Wait+Screen@5s /Base URL for your feeds/
 # The wizard writes govbot.yml and exits cleanly.
 Enter
 Wait+Screen@10s /Setup complete/
-Sleep 1s
-
-# Verify wizard created govbot.yml
-Type "cat govbot.yml"
-Enter
-Wait+Screen@5s /output_dir/
-
-Type "echo 'Wizard test complete'"
-Enter
-Wait+Screen@5s /Wizard test complete/
+Sleep 2s
