@@ -64,6 +64,31 @@ jobs:
             fi
           fi
 
+      - name: Job summary
+        if: always()
+        run: |
+          echo "## Synthetic Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/govbot-test/govbot.yml ]; then
+            echo "### govbot.yml" >> $GITHUB_STEP_SUMMARY
+            echo '```yaml' >> $GITHUB_STEP_SUMMARY
+            cat /tmp/govbot-test/govbot.yml >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "> govbot.yml was not generated" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Cloned repos" >> $GITHUB_STEP_SUMMARY
+          if [ -d /tmp/govbot-test/.govbot/repos ]; then
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            ls /tmp/govbot-test/.govbot/repos/ >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "> No repos were cloned" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Recording available in the **synthetic-test-recording** artifact." >> $GITHUB_STEP_SUMMARY
+
       - name: Upload recording
         if: always()
         uses: actions/upload-artifact@v4
