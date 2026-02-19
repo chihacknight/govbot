@@ -1,11 +1,10 @@
-# Nightly real world end-to-end test: govbot install → wizard → pipeline
-# Exercises the full user journey from scratch:
-#   1. Installs govbot via the 1-click installer
-#   2. Runs the interactive wizard to generate govbot.yml
-#   3. Runs the pipeline (clone → tag → build)
+# End-to-end test: govbot wizard → pipeline
+# Exercises the full user journey:
+#   1. Runs the interactive wizard to generate govbot.yml
+#   2. Runs the pipeline (clone → tag → build)
 #
-# This tape is run by the synthetic-test.yml workflow on a nightly schedule.
-# It lives in tapes/nightly/ to avoid being picked up by terminal-screenshots.yml.
+# The govbot binary is built from source and placed on PATH by the
+# synthetic-test.yml workflow before this tape runs.
 
 Output "/tmp/govbot-synthetic-test.gif"
 
@@ -15,22 +14,12 @@ Set Width 1200
 Set Height 800
 Set Padding 20
 
-# Step 1: Install govbot via the 1-click installer
-Type "curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh | bash"
-Enter
-Wait+Screen@60s /govbot installed at/
-
-# Source profile so govbot is on PATH (installer updates profile in a subshell)
-Type "export PATH=$HOME/.govbot/bin:$PATH"
-Enter
-Sleep 1s
-
 # Work in a clean directory
 Type "mkdir -p /tmp/govbot-test && cd /tmp/govbot-test"
 Enter
 Sleep 1s
 
-# Step 2: Launch govbot — no govbot.yml exists, so the wizard starts.
+# Step 1: Launch govbot — no govbot.yml exists, so the wizard starts.
 # After the wizard generates config files, govbot exits and tells the
 # user to run `govbot` again to start the pipeline.
 Type "govbot"
@@ -57,13 +46,13 @@ Enter
 Wait+Screen@10s /Setup complete/
 Sleep 1s
 
-# Step 3: Run the pipeline (govbot.yml exists, so wizard is skipped)
+# Step 2: Run the pipeline (govbot.yml exists, so wizard is skipped)
 Type "govbot"
 Enter
 Wait+Screen@300s /Pipeline complete/
 Sleep 2s
 
-# Verify outputs (govbot has exited, shell is back)
+# Verify outputs
 Type "cat govbot.yml"
 Enter
 Wait+Screen@5s /output_dir/

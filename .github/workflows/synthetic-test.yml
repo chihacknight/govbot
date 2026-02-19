@@ -11,6 +11,7 @@ on:
     paths:
       - .github/workflows/synthetic-test.yml
       - actions/govbot/tapes/nightly/synthetic-test.tape
+      - actions/govbot/src/**
   workflow_dispatch:
 
 jobs:
@@ -29,6 +30,30 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref || '' }}
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            actions/govbot/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build govbot
+        run: |
+          cd actions/govbot
+          cargo build --release
+          mkdir -p "$HOME/.govbot/bin"
+          cp target/release/govbot "$HOME/.govbot/bin/govbot"
+          echo "$HOME/.govbot/bin" >> $GITHUB_PATH
 
       - name: Install VHS dependencies
         run: |
