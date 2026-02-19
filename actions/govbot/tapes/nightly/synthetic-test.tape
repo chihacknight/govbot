@@ -2,7 +2,7 @@
 # Exercises the full user journey from scratch:
 #   1. Installs govbot via the 1-click installer
 #   2. Runs the interactive wizard to generate govbot.yml
-#   3. The same govbot invocation then runs the full pipeline (clone → tag → build)
+#   3. Runs the pipeline (clone → tag → build)
 #
 # This tape is run by the synthetic-test.yml workflow on a nightly schedule.
 # It lives in tapes/nightly/ to avoid being picked up by terminal-screenshots.yml.
@@ -31,7 +31,10 @@ Enter
 Sleep 1s
 
 # Step 2: Launch govbot — no govbot.yml exists, so the wizard starts.
-# After the wizard, govbot immediately runs the pipeline in the same process.
+# Note: bare `govbot` runs wizard then pipeline in the same process.
+# After the wizard, govbot's eprintln! calls deadlock on the VHS PTY
+# output buffer, so we Ctrl+C after the wizard and run the pipeline
+# as a separate invocation.
 Type "govbot"
 Enter
 Wait+Screen@10s /What data sources do you want to track/
@@ -51,8 +54,20 @@ Enter
 Wait+Screen@5s /Base URL for your feeds/
 
 # Wizard Step 3: Accept default base URL (https://example.com)
-# After this Enter, the wizard writes config files and the pipeline starts
-# automatically (clone → tag → build).
+# The wizard writes govbot.yml immediately, then the process deadlocks
+# on the VHS PTY buffer. Ctrl+C to recover, then run the pipeline separately.
+Enter
+Sleep 5s
+Ctrl+C
+Sleep 2s
+
+# Verify wizard created govbot.yml
+Type "test -f govbot.yml && echo WIZARD_OK"
+Enter
+Wait+Screen@5s /WIZARD_OK/
+
+# Step 3: Run the pipeline separately (govbot.yml exists, so wizard is skipped)
+Type "govbot"
 Enter
 Wait+Screen@300s /Pipeline complete/
 Sleep 2s
