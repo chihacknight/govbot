@@ -1942,7 +1942,13 @@ async fn run_init_command(cmd: Command) -> anyhow::Result<()> {
         return Ok(());
     }
 
-    govbot::wizard::run_wizard()
+    // Try interactive wizard first; fall back to defaults if not in a terminal
+    if std::io::IsTerminal::is_terminal(&std::io::stdin()) {
+        govbot::wizard::run_wizard()
+    } else {
+        eprintln!("Non-interactive terminal detected. Generating default govbot.yml...");
+        govbot::wizard::write_default_files(&cwd)
+    }
 }
 
 async fn run_build_command(cmd: Command) -> anyhow::Result<()> {

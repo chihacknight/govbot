@@ -66,4 +66,5 @@ path = "src/bin/generate-locale-enum.rs"
 [dev-dependencies]
 tokio-test = "0.4"
 insta = { version = "1.39", features = ["json"] }
+tempfile = "3"
 
