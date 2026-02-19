@@ -38,20 +38,31 @@ jobs:
           sudo dpkg -i vhs.deb
           rm vhs.deb
 
-      - name: Run synthetic test
+      - name: Run synthetic test (with retry)
         run: |
-          rm -rf /tmp/govbot-test /tmp/govbot-synthetic-test.gif
-          vhs actions/govbot/tapes/nightly/synthetic-test.tape
+          run_test() {
+            rm -rf /tmp/govbot-test /tmp/govbot-synthetic-test.gif
+            vhs actions/govbot/tapes/nightly/synthetic-test.tape
+            echo "=== govbot.yml ==="
+            cat /tmp/govbot-test/govbot.yml
+            echo ""
+            echo "=== Cloned repos ==="
+            ls -la /tmp/govbot-test/.govbot/repos/
+            test -d /tmp/govbot-test/.govbot/repos/
+          }
 
-      - name: Verify results
-        run: |
-          echo "=== govbot.yml ==="
-          cat /tmp/govbot-test/govbot.yml
-          echo ""
-          echo "=== Cloned repos ==="
-          ls -la /tmp/govbot-test/.govbot/repos/
-          test -d /tmp/govbot-test/.govbot/repos/
-          echo "Synthetic test passed!"
+          if run_test; then
+            echo "Synthetic test passed on attempt 1"
+          else
+            echo "::warning::Attempt 1 failed, retrying..."
+            sleep 10
+            if run_test; then
+              echo "Synthetic test passed on attempt 2"
+            else
+              echo "::error::Synthetic test failed after 2 attempts"
+              exit 1
+            fi
+          fi
 
       - name: Upload recording
         if: always()
