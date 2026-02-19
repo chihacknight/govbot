@@ -50,7 +50,7 @@ jobs:
         run: |
           run_test() {
             rm -rf /tmp/govbot-test /tmp/govbot-synthetic-test.gif
-            vhs actions/govbot/tapes/nightly/synthetic-test.tape
+            vhs actions/govbot/tapes/nightly/synthetic-test.tape || return 1
             echo "=== govbot.yml ==="
             cat /tmp/govbot-test/govbot.yml
             echo ""
@@ -59,6 +59,7 @@ jobs:
             echo ""
             echo "=== Build output ==="
             ls -la /tmp/govbot-test/docs/
+            test -f /tmp/govbot-synthetic-test.gif
             test -d /tmp/govbot-test/.govbot/repos/
             test -d /tmp/govbot-test/docs/
           }
