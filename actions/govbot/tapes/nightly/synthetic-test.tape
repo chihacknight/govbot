@@ -42,9 +42,12 @@ Enter
 Sleep 3s
 
 # Clone all jurisdictions from the config
+# Hide recording during the long clone to keep the GIF small
 Type "govbot clone all"
 Enter
+Hide
 Sleep 600s
+Show
 
 # Verify cloned content exists
 Type "ls .govbot/repos/"
