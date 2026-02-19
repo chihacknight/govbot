@@ -1,0 +1,36 @@
+---
+source: tests/wizard_tests.rs
+expression: "&yml"
+---
+# Govbot Configuration
+# Schema: https://raw.githubusercontent.com/windy-civi/toolkit/main/schemas/govbot.schema.json
+$schema: https://raw.githubusercontent.com/windy-civi/toolkit/main/schemas/govbot.schema.json
+
+repos:
+  - wy
+
+tags:
+  education:
+    description: |
+      Legislation related to schools, education funding, curriculum standards, and educational policy, including:
+      - K-12 public school funding, budgets, and resource allocation
+      - Curriculum standards, content requirements, and academic programs
+      - Teacher certification, training, professional development, and compensation
+      - Higher education policy, tuition, financial aid, and student loans
+      - Charter schools, school choice, vouchers, and alternative education models
+      - Special education services, accommodations, and individualized education plans
+      - School safety, security measures, and student discipline policies
+      - Early childhood education, pre-K programs, and childcare
+      - Standardized testing, assessments, and accountability measures
+      - School district governance, administration, and oversight
+      - Educational technology, digital learning, and online education
+      - Career and technical education, vocational training, and workforce development
+    examples:
+      - "Increases per-pupil funding for public schools and establishes minimum teacher salary requirements"
+      - "Mandates comprehensive sex education curriculum in all public schools"
+      - "Expands eligibility for state financial aid programs to include part-time students"
+
+build:
+  base_url: "https://sartaj.me/govbot"
+  output_dir: "docs"
+  output_file: "feed.xml"

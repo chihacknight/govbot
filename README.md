@@ -7,22 +7,48 @@
 
 `govbot` enables distributed data anaylsis of government updates via a friendly terminal interface. Git repos function as datasets, including the legislation of all 47 states/jurisdictions.
 
-## 1 Line Install
+## Quick Start
+
+### 1. Install
 
 ```bash
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/windy-civi/toolkit/main/actions/govbot/scripts/install-nightly.sh)"
 ```
 
+### 2. Set up your project
+
 ```bash
-govbot # to see help
-govbot init # creates govbot.yml file
-govbot clone # to show
-govbot clone {{repo}} {{repo}} # to download specific items
-govbot delete {{repo}} # to delete specific items
-govbot delete all # to delete everything
-govbot logs | govbot tag # tag things based on what's inside govbot.yml
-govbot load # load bill metadata into DuckDB database
-govbot update # updates govbot
+govbot
+```
+
+Running `govbot` with no config file launches an interactive setup wizard that:
+1. Asks what data sources you want (all 47 states or specific ones)
+2. Guides you through creating tags for topics you care about
+3. Creates `govbot.yml`, `.gitignore`, and a GitHub Actions workflow
+
+### 3. Run the pipeline
+
+```bash
+govbot
+```
+
+With a `govbot.yml` in your directory, running `govbot` executes the full pipeline:
+1. Clones/updates legislation repositories
+2. Tags bills based on your tag definitions
+3. Generates RSS feeds in the `docs/` directory
+
+### Other Commands
+
+```bash
+govbot clone all           # download all state legislation datasets
+govbot clone il ca ny      # download specific states
+govbot logs                # stream legislative activity as JSON Lines
+govbot logs | govbot tag   # process and tag data
+govbot build               # generate RSS feeds
+govbot load                # load bill metadata into DuckDB
+govbot delete all          # remove all downloaded data
+govbot update              # update govbot to latest version
+govbot --help              # see all commands and options
 ```
 
 # 🏛️ Govbot Legislation Effort

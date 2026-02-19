@@ -220,17 +220,6 @@ enum Command {
     },
 }
 
-fn print_available_commands() {
-    println!("Available commands:");
-    println!("  init    Initialize a new govbot project (creates govbot.yml, .gitignore, and GitHub Actions workflow)");
-    println!("  clone   Clone or pull data pipeline repositories (default: updates existing repos, use 'clone all' to clone all)");
-    println!("  delete  Delete data pipeline repositories (use 'delete all' to delete all)");
-    println!("  logs    Process and display pipeline log files");
-    println!("  load    Load bill metadata into a DuckDB database file");
-    println!("  build   Generate RSS feed and HTML index from govbot.yml configuration");
-    println!("  tag     Tag bills using AI based on log entries");
-    println!("  update  Update govbot to the latest nightly version");
-}
 
 fn get_govbot_dir(govbot_dir: Option<String>) -> anyhow::Result<PathBuf> {
     // Check flag first, then environment variable, then default
@@ -1944,134 +1933,16 @@ async fn run_init_command(cmd: Command) -> anyhow::Result<()> {
     let Command::Init { force } = cmd else {
         unreachable!()
     };
-    
+
     let cwd = std::env::current_dir()?;
-    
-    // Create govbot.yml
-    let govbot_yml_path = cwd.join("govbot.yml");
-    if govbot_yml_path.exists() && !force {
+    let config_path = cwd.join("govbot.yml");
+
+    if config_path.exists() && !force {
         eprintln!("⚠️  govbot.yml already exists. Use --force to overwrite.");
-    } else {
-        let govbot_yml_content = r#"# Govbot Configuration
-# Schema: https://raw.githubusercontent.com/windy-civi/toolkit/main/schemas/govbot.schema.json
-$schema: https://raw.githubusercontent.com/windy-civi/toolkit/main/schemas/govbot.schema.json
-
-repos:
-  - all
-
-tags:
-  education:
-    description: |
-      Legislation related to schools, education funding, curriculum standards, and educational policy, including:
-      - K-12 public school funding, budgets, and resource allocation
-      - Curriculum standards, content requirements, and academic programs
-      - Teacher certification, training, professional development, and compensation
-      - Higher education policy, tuition, financial aid, and student loans
-      - Charter schools, school choice, vouchers, and alternative education models
-      - Special education services, accommodations, and individualized education plans
-      - School safety, security measures, and student discipline policies
-      - Early childhood education, pre-K programs, and childcare
-      - Standardized testing, assessments, and accountability measures
-      - School district governance, administration, and oversight
-      - Educational technology, digital learning, and online education
-      - Career and technical education, vocational training, and workforce development
-    examples:
-      - "Increases per-pupil funding for public schools and establishes minimum teacher salary requirements"
-      - "Mandates comprehensive sex education curriculum in all public schools"
-      - "Expands eligibility for state financial aid programs to include part-time students"
-
-build:
-  base_url: "https://yourusername.github.io/your-repo-name"
-  output_dir: "docs"
-  output_file: "feed.xml"
-  # Optional: limit number of entries (default: 100, use "none" for all)
-  # limit: 100
-"#;
-        fs::write(&govbot_yml_path, govbot_yml_content)?;
-        println!("✓ Created govbot.yml");
+        return Ok(());
     }
-    
-    // Create or update .gitignore
-    let gitignore_path = cwd.join(".gitignore");
-    let gitignore_entry = ".govbot\n";
-    
-    if gitignore_path.exists() {
-        let mut content = fs::read_to_string(&gitignore_path)?;
-        if content.contains(".govbot") {
-            println!("✓ .gitignore already contains .govbot");
-        } else {
-            // Add .govbot if not present
-            if !content.ends_with('\n') {
-                content.push('\n');
-            }
-            content.push_str(gitignore_entry);
-            fs::write(&gitignore_path, content)?;
-            println!("✓ Updated .gitignore to include .govbot");
-        }
-    } else {
-        fs::write(&gitignore_path, gitignore_entry)?;
-        println!("✓ Created .gitignore with .govbot");
-    }
-    
-    // Create GitHub Actions workflow
-    let workflows_dir = cwd.join(".github").join("workflows");
-    fs::create_dir_all(&workflows_dir)?;
-    
-    let workflow_path = workflows_dir.join("build.yml");
-    if workflow_path.exists() && !force {
-        eprintln!("⚠️  .github/workflows/build.yml already exists. Use --force to overwrite.");
-    } else {
-        let workflow_content = r#"# Run Govbot
-# Runs govbot to clone repos, tag bills, and build RSS feeds and HTML index.
 
-name: Build Govbot
-
-on:
-  push:
-    branches:
-      - main
-      - master
-  schedule:
-    - cron: '0 0 * * *'
-  workflow_dispatch:
-    inputs:
-      tags:
-        description: 'Comma-separated list of tags to include (leave empty for all tags)'
-        required: false
-        type: string
-      limit:
-        description: 'Limit number of entries per feed (default: 15, use "none" for all)'
-        required: false
-        type: string
-
-jobs:
-  govbot:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Run Govbot
-        uses: windy-civi/toolkit/actions/govbot@main
-        with:
-          tags: ${{ inputs.tags }}
-          limit: ${{ inputs.limit }}
-"#;
-        fs::write(&workflow_path, workflow_content)?;
-        println!("✓ Created .github/workflows/build.yml");
-    }
-    
-    println!("\n✅ Govbot project initialized!");
-    println!("\nNext steps:");
-    println!("  1. Edit govbot.yml to customize tags and build settings");
-    println!("  2. Update the base_url in govbot.yml to match your feed URL");
-    println!("  3. Run 'govbot clone' to download legislation repositories");
-    println!("  4. Push to GitHub - the workflow will automatically:");
-    println!("     - Clone repos and tag bills");
-    println!("     - Generate RSS feeds (files will be created in the repository)");
-    
-    Ok(())
+    govbot::wizard::run_wizard()
 }
 
 async fn run_build_command(cmd: Command) -> anyhow::Result<()> {
@@ -2473,8 +2344,13 @@ async fn main() -> anyhow::Result<()> {
             run_init_command(cmd).await
         }
         None => {
-            print_available_commands();
-            Ok(())
+            let cwd = std::env::current_dir()?;
+            let config_path = cwd.join("govbot.yml");
+            if config_path.exists() {
+                govbot::pipeline::run_pipeline(&config_path)
+            } else {
+                govbot::wizard::run_wizard()
+            }
         }
     }
 }

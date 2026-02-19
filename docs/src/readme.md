@@ -13,37 +13,54 @@ The Govbot team's goal is to bridge this gap - building the framework for the bu
 The main Govbot dataset currently includes legislative updates from bills in the U.S. House & Senate, all 50 states, territories like Guam, and the city of Chicago, as .json files organized using the [Project Open Data](https://project-open-data.cio.gov/) catalog format. The Govbot scrapers update regularly, appending new logs, and then running them through Claude to provide topic-based tagging and summaries. This data can then be analyzed using SQL, via an interface built with DuckDB, or plugged into applications like [our example website, WindyCivi](https://windycivi.com/), and a test BlueSky bot built in collaboration with U.S. Representative Hoan Huynh. (https://bsky.app/profile/test-hoan-huynh.bsky.social).
 
 # How Do I Use It?
-You can install govbot, and access the 47 currently existing datasets with a simple one-line install from our GitHub repository - the example below is done in Bash.
 
-## Installation
+## 1. Install
 
 ```bash
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/windy-civi/toolkit/main/actions/govbot/scripts/install-nightly.sh)"
 ```
 
-Once installed, you can call Govbot and be provided with options to:
-- clone the entire dataset, as it exists currently (this is 47 locales' worth of data!)
-- clone specific items (such as only items in a specific state, session, or for a specific bill)
-- delete specific items
-- delete everything
-- load metadata into a SQL-accessible DuckDB database
-
-An example of each of the above commands is provided below, as well as a key for dataset updates.
-
-Dataset Key:
-- 🆕: the locale's data recieved updates since your last cloning
-- ✅: the data you've cloned is up-to-date with the most current version
-- 🔄: the data is currently being updated
-- ❌: the data is not currently accessible  
+## 2. Run govbot
 
 ```bash
-govbot # to see help
-govbot clone # to show
-govbot clone {{locale}} {{locale}} # to download specific items
-govbot delete {{locale}} # to delete specific items
-govbot delete all # to delete everything
-govbot load # load bill metadata into DuckDB database
+govbot
 ```
+
+That's it. If no `govbot.yml` exists, an interactive wizard walks you through setup:
+
+1. **Sources** - Choose all 47 states or pick specific ones
+2. **Tags** - Start with an example tag, or get an AI prompt you can copy-paste to create your own
+3. **Publishing** - RSS feeds configured automatically
+
+The wizard creates `govbot.yml`, `.gitignore`, and a GitHub Actions workflow.
+
+## 3. Run the pipeline
+
+Once set up, running `govbot` again executes the full pipeline:
+
+1. Clones/updates legislation repositories
+2. Tags bills based on your tag definitions
+3. Generates RSS feeds in the `docs/` directory
+
+## Other Commands
+
+```bash
+govbot clone all           # download all state legislation datasets
+govbot clone il ca ny      # download specific states
+govbot logs                # stream legislative activity as JSON Lines
+govbot logs | govbot tag   # process and tag data
+govbot build               # generate RSS feeds
+govbot load                # load bill metadata into DuckDB database
+govbot delete all          # remove all downloaded data
+govbot update              # update govbot to latest version
+govbot --help              # see all commands and options
+```
+
+Dataset Key:
+- 🆕: the locale's data received updates since your last cloning
+- ✅: the data you've cloned is up-to-date with the most current version
+- 🔄: the data is currently being updated
+- ❌: the data is not currently accessible
 
 ## Querying in SQL using DuckDB
 
