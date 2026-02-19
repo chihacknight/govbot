@@ -71,36 +71,42 @@ jobs:
           sudo dpkg -i vhs.deb
           rm vhs.deb
 
-      - name: Run end-to-end test (with retry)
+      - name: Run wizard via VHS (with retry)
         run: |
-          run_test() {
+          run_wizard() {
             rm -rf /tmp/govbot-test /tmp/govbot-synthetic-test.gif
             vhs actions/govbot/tapes/nightly/synthetic-test.tape || return 1
-            echo "=== govbot.yml ==="
-            cat /tmp/govbot-test/govbot.yml
-            echo ""
-            echo "=== Cloned repos ==="
-            ls -la /tmp/govbot-test/.govbot/repos/
-            echo ""
-            echo "=== Build output ==="
-            ls -la /tmp/govbot-test/docs/
-            test -f /tmp/govbot-synthetic-test.gif
-            test -d /tmp/govbot-test/.govbot/repos/
-            test -d /tmp/govbot-test/docs/
+            test -f /tmp/govbot-synthetic-test.gif || return 1
+            test -f /tmp/govbot-test/govbot.yml || return 1
           }
 
-          if run_test; then
-            echo "E2E test passed on attempt 1"
+          if run_wizard; then
+            echo "Wizard test passed on attempt 1"
           else
-            echo "::warning::Attempt 1 failed, retrying..."
-            sleep 10
-            if run_test; then
-              echo "E2E test passed on attempt 2"
+            echo "::warning::Wizard attempt 1 failed, retrying..."
+            sleep 5
+            if run_wizard; then
+              echo "Wizard test passed on attempt 2"
             else
-              echo "::error::E2E test failed after 2 attempts"
+              echo "::error::Wizard test failed after 2 attempts"
               exit 1
             fi
           fi
+
+          echo "=== govbot.yml ==="
+          cat /tmp/govbot-test/govbot.yml
+
+      - name: Run pipeline
+        run: |
+          cd /tmp/govbot-test
+          govbot
+          echo "=== Cloned repos ==="
+          ls -la .govbot/repos/
+          echo ""
+          echo "=== Build output ==="
+          ls -la docs/
+          test -d .govbot/repos/
+          test -d docs/
 
       - name: Job summary
         if: always()

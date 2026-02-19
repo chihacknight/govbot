@@ -1,13 +1,13 @@
-# End-to-end test: govbot wizard → pipeline
-# Exercises the full user journey:
+# End-to-end test: govbot wizard
+# Exercises the interactive wizard flow:
 #   1. Runs the interactive wizard to generate govbot.yml
-#   2. Runs the pipeline (clone → tag → build)
+#   2. Verifies config files were created
 #
 # The govbot binary is built from source and placed on PATH by the
 # synthetic-test.yml workflow before this tape runs.
 #
-# The pipeline step redirects stderr to a log file because git clone
-# progress output can overwhelm the VHS PTY buffer and cause a deadlock.
+# The pipeline step (clone → tag → build) runs outside VHS in the
+# workflow because git clone progress output deadlocks the VHS PTY.
 
 Output "/tmp/govbot-synthetic-test.gif"
 
@@ -22,7 +22,7 @@ Type "mkdir -p /tmp/govbot-test && cd /tmp/govbot-test"
 Enter
 Sleep 1s
 
-# Step 1: Launch govbot — no govbot.yml exists, so the wizard starts.
+# Launch govbot — no govbot.yml exists, so the wizard starts.
 # After the wizard generates config files, govbot exits and tells the
 # user to run `govbot` again to start the pipeline.
 Type "govbot"
@@ -49,32 +49,11 @@ Enter
 Wait+Screen@10s /Setup complete/
 Sleep 1s
 
-# Step 2: Run the pipeline (govbot.yml exists, so wizard is skipped).
-# Redirect stderr to a log file to avoid VHS PTY buffer deadlock from
-# git clone progress output. Show the result afterward.
-Type "govbot 2>/tmp/pipeline.log; echo PIPELINE_EXIT=$?"
-Enter
-Wait+Screen@300s /PIPELINE_EXIT=/
-Sleep 1s
-
-# Show pipeline result
-Type "tail -3 /tmp/pipeline.log"
-Enter
-Wait+Screen@5s /Pipeline complete/
-
-# Verify outputs
+# Verify wizard created govbot.yml
 Type "cat govbot.yml"
 Enter
 Wait+Screen@5s /output_dir/
 
-Type "ls .govbot/repos/"
+Type "echo 'Wizard test complete'"
 Enter
-Wait+Screen@5s /gu/
-
-Type "ls docs/"
-Enter
-Wait+Screen@5s /feed.xml/
-
-Type "echo 'E2E test complete'"
-Enter
-Wait+Screen@5s /E2E test complete/
+Wait+Screen@5s /Wizard test complete/
