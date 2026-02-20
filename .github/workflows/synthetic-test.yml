@@ -75,11 +75,23 @@ jobs:
         run: |
           run_test() {
             rm -rf /tmp/govbot-test /tmp/govbot-synthetic-test.gif
-            vhs actions/govbot/tapes/nightly/synthetic-test.tape || return 1
-            test -f /tmp/govbot-synthetic-test.gif || return 1
-            test -f /tmp/govbot-test/govbot.yml || return 1
-            test -d /tmp/govbot-test/.govbot/repos/ || return 1
-            test -d /tmp/govbot-test/docs/ || return 1
+            echo "--- VHS output ---"
+            if ! vhs actions/govbot/tapes/nightly/synthetic-test.tape; then
+              echo "VHS exited with code $?"
+              echo "--- /tmp/govbot-test contents ---"
+              ls -la /tmp/govbot-test/ 2>/dev/null || echo "  (dir missing)"
+              echo "--- GIF exists? ---"
+              ls -la /tmp/govbot-synthetic-test.gif 2>/dev/null || echo "  (no GIF)"
+              echo "--- govbot.yml? ---"
+              cat /tmp/govbot-test/govbot.yml 2>/dev/null || echo "  (no govbot.yml)"
+              echo "--- pipeline log? ---"
+              cat /tmp/pipeline.log 2>/dev/null || echo "  (no pipeline.log)"
+              return 1
+            fi
+            test -f /tmp/govbot-synthetic-test.gif || { echo "FAIL: no GIF"; return 1; }
+            test -f /tmp/govbot-test/govbot.yml || { echo "FAIL: no govbot.yml"; return 1; }
+            test -d /tmp/govbot-test/.govbot/repos/ || { echo "FAIL: no repos dir"; return 1; }
+            test -d /tmp/govbot-test/docs/ || { echo "FAIL: no docs dir"; return 1; }
           }
 
           if run_test; then

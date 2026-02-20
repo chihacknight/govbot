@@ -7,8 +7,8 @@
 # The govbot binary is built from source and placed on PATH by the
 # synthetic-test.yml workflow before this tape runs.
 #
-# Pipeline stdout+stderr are redirected to a file to avoid VHS PTY
-# deadlock caused by git clone progress and govbot tag JSON output.
+# Pipeline stderr is redirected to a file to avoid VHS PTY deadlock
+# from git clone progress. Stdout stays on screen to prevent idle timeout.
 
 Output "/tmp/govbot-synthetic-test.gif"
 
@@ -50,13 +50,12 @@ Enter
 Wait+Screen@10s /Setup complete/
 Sleep 2s
 
-# Run pipeline with all output redirected to avoid PTY deadlock.
-# Both stdout (govbot tag JSON) and stderr (git clone progress) can
-# overwhelm the VHS PTY buffer.
+# Run pipeline with stderr redirected to avoid PTY deadlock from
+# git clone progress. Stdout (tag JSON lines) stays on screen to
+# keep VHS from idle-timing out.
 # Wait+Screen won't prematch the typed text because "rc:$?" (typed)
 # doesn't match regex /rc:0/ — only the output "rc:0" does.
-# Note: avoid printf with \n — VHS interprets \n in Type as Enter.
-Type "govbot &>/tmp/pipeline.log; echo rc:$?"
+Type "govbot 2>/tmp/pipeline.log; echo rc:$?"
 Enter
 Wait+Screen@300s /rc:0/
 Sleep 1s
