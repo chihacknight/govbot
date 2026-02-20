@@ -53,9 +53,10 @@ Sleep 2s
 # Run pipeline with all output redirected to avoid PTY deadlock.
 # Both stdout (govbot tag JSON) and stderr (git clone progress) can
 # overwhelm the VHS PTY buffer.
-# Trick: typed text has "rc:%d" but output has "rc:0", so Wait+Screen
-# won't match the typed command text prematurely.
-Type "govbot &>/tmp/pipeline.log; printf 'rc:%d\n' $?"
+# Wait+Screen won't prematch the typed text because "rc:$?" (typed)
+# doesn't match regex /rc:0/ — only the output "rc:0" does.
+# Note: avoid printf with \n — VHS interprets \n in Type as Enter.
+Type "govbot &>/tmp/pipeline.log; echo rc:$?"
 Enter
 Wait+Screen@300s /rc:0/
 Sleep 1s
