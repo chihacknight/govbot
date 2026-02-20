@@ -1,13 +1,14 @@
-# End-to-end test: govbot wizard
-# Exercises the interactive wizard flow:
+# End-to-end test: govbot wizard + pipeline
+# Exercises the full flow:
 #   1. Runs the interactive wizard to generate govbot.yml
-#   2. Verifies the wizard completes successfully
+#   2. Runs the pipeline (clone → tag → build) with stderr redirected
+#   3. Verifies outputs exist
 #
 # The govbot binary is built from source and placed on PATH by the
 # synthetic-test.yml workflow before this tape runs.
 #
-# The pipeline step (clone → tag → build) runs outside VHS in the
-# workflow because git clone progress output deadlocks the VHS PTY.
+# Pipeline stderr is redirected to a file to avoid VHS PTY deadlock
+# caused by git clone progress output.
 
 Output "/tmp/govbot-synthetic-test.gif"
 
@@ -47,4 +48,28 @@ Wait+Screen@5s /Base URL for your feeds/
 # The wizard writes govbot.yml and exits cleanly.
 Enter
 Wait+Screen@10s /Setup complete/
+Sleep 2s
+
+# Run pipeline with stderr redirected to avoid PTY deadlock.
+# Trick: typed text has "rc:%d" but output has "rc:0", so Wait+Screen
+# won't match the typed command text prematurely.
+Type "govbot 2>/tmp/pipeline.log; printf 'rc:%d\n' $?"
+Enter
+Wait+Screen@300s /rc:0/
+Sleep 1s
+
+# Show pipeline result
+Type "tail -5 /tmp/pipeline.log"
+Enter
+Wait+Screen@5s /Pipeline complete/
+Sleep 1s
+
+# Verify outputs
+Type "ls .govbot/repos/"
+Enter
+Wait+Screen@5s /gu/
+
+Type "ls docs/"
+Enter
+Wait+Screen@5s /feed.xml/
 Sleep 2s

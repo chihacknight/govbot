@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: read
+      contents: write
     if: >-
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
@@ -71,47 +71,53 @@ jobs:
           sudo dpkg -i vhs.deb
           rm vhs.deb
 
-      - name: Run wizard via VHS (with retry)
+      - name: Run end-to-end test via VHS (with retry)
         run: |
-          run_wizard() {
+          run_test() {
             rm -rf /tmp/govbot-test /tmp/govbot-synthetic-test.gif
             vhs actions/govbot/tapes/nightly/synthetic-test.tape || return 1
             test -f /tmp/govbot-synthetic-test.gif || return 1
             test -f /tmp/govbot-test/govbot.yml || return 1
+            test -d /tmp/govbot-test/.govbot/repos/ || return 1
+            test -d /tmp/govbot-test/docs/ || return 1
           }
 
-          if run_wizard; then
-            echo "Wizard test passed on attempt 1"
+          if run_test; then
+            echo "End-to-end test passed on attempt 1"
           else
-            echo "::warning::Wizard attempt 1 failed, retrying..."
+            echo "::warning::Attempt 1 failed, retrying..."
             sleep 5
-            if run_wizard; then
-              echo "Wizard test passed on attempt 2"
+            if run_test; then
+              echo "End-to-end test passed on attempt 2"
             else
-              echo "::error::Wizard test failed after 2 attempts"
+              echo "::error::End-to-end test failed after 2 attempts"
               exit 1
             fi
           fi
 
           echo "=== govbot.yml ==="
           cat /tmp/govbot-test/govbot.yml
-
-      - name: Run pipeline
-        run: |
-          cd /tmp/govbot-test
-          govbot
           echo "=== Cloned repos ==="
-          ls -la .govbot/repos/
-          echo ""
+          ls -la /tmp/govbot-test/.govbot/repos/
           echo "=== Build output ==="
-          ls -la docs/
-          test -d .govbot/repos/
-          test -d docs/
+          ls -la /tmp/govbot-test/docs/
+
+      - name: Upload GIF to nightly release
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f /tmp/govbot-synthetic-test.gif ]; then
+            gh release upload nightly /tmp/govbot-synthetic-test.gif --clobber || true
+          fi
 
       - name: Job summary
         if: always()
         run: |
           echo "## Nightly Real World End To End Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Recording" >> $GITHUB_STEP_SUMMARY
+          echo "![Synthetic Test](https://github.com/chihacknight/govbot/releases/download/nightly/synthetic-test.gif)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ -f /tmp/govbot-test/govbot.yml ]; then
             echo "### govbot.yml" >> $GITHUB_STEP_SUMMARY
