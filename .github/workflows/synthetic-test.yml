@@ -73,11 +73,15 @@ jobs:
 
       - name: Run end-to-end test via VHS (with retry)
         run: |
+          DIAG=/tmp/vhs-diagnostic.txt
           run_test() {
             rm -rf /tmp/govbot-test /tmp/govbot-synthetic-test.gif
-            echo "--- VHS output ---"
-            if ! vhs actions/govbot/tapes/nightly/synthetic-test.tape; then
-              echo "VHS exited with code $?"
+            vhs actions/govbot/tapes/nightly/synthetic-test.tape 2>&1 | tee /tmp/vhs-output.txt
+            local vhs_rc=${PIPESTATUS[0]}
+            {
+              echo "VHS exit code: $vhs_rc"
+              echo "--- VHS output ---"
+              cat /tmp/vhs-output.txt 2>/dev/null
               echo "--- /tmp/govbot-test contents ---"
               ls -la /tmp/govbot-test/ 2>/dev/null || echo "  (dir missing)"
               echo "--- GIF exists? ---"
@@ -86,12 +90,12 @@ jobs:
               cat /tmp/govbot-test/govbot.yml 2>/dev/null || echo "  (no govbot.yml)"
               echo "--- pipeline log? ---"
               cat /tmp/pipeline.log 2>/dev/null || echo "  (no pipeline.log)"
-              return 1
-            fi
-            test -f /tmp/govbot-synthetic-test.gif || { echo "FAIL: no GIF"; return 1; }
-            test -f /tmp/govbot-test/govbot.yml || { echo "FAIL: no govbot.yml"; return 1; }
-            test -d /tmp/govbot-test/.govbot/repos/ || { echo "FAIL: no repos dir"; return 1; }
-            test -d /tmp/govbot-test/docs/ || { echo "FAIL: no docs dir"; return 1; }
+            } >> "$DIAG"
+            [ "$vhs_rc" -eq 0 ] || return 1
+            test -f /tmp/govbot-synthetic-test.gif || { echo "FAIL: no GIF" >> "$DIAG"; return 1; }
+            test -f /tmp/govbot-test/govbot.yml || { echo "FAIL: no govbot.yml" >> "$DIAG"; return 1; }
+            test -d /tmp/govbot-test/.govbot/repos/ || { echo "FAIL: no repos dir" >> "$DIAG"; return 1; }
+            test -d /tmp/govbot-test/docs/ || { echo "FAIL: no docs dir" >> "$DIAG"; return 1; }
           }
 
           if run_test; then
@@ -156,6 +160,13 @@ jobs:
             echo '```' >> $GITHUB_STEP_SUMMARY
           else
             echo "> No build output was generated" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/vhs-diagnostic.txt ]; then
+            echo "### Diagnostics" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -100 /tmp/vhs-diagnostic.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Upload recording
