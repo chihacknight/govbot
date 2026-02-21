@@ -2,6 +2,9 @@
 # Dual-mode: TEST_MODE=mock asserts output matches expected file
 #            TEST_MODE=prod (default) just asserts non-empty output
 # GOVBOT_DIR: path to .govbot directory (default: mocks/.govbot)
+#
+# Note: logs output order depends on filesystem traversal (jwalk),
+# so we sort before comparing to handle macOS/Linux differences.
 Output tapes/logs-basic.gif
 
 Set Shell bash
@@ -10,8 +13,8 @@ Set Width 1200
 Set Height 600
 Set Padding 20
 
-# Define assertion helper
-Type "sk() { if [ ${TEST_MODE:-prod} = mock ]; then diff $1 $2 && echo SNAP_OK || echo SNAP_FAIL; else [ -s $1 ] && echo SNAP_OK || echo SNAP_FAIL; fi; }"
+# Define assertion helper (sorts both files for order-independent comparison)
+Type "sk() { if [ ${TEST_MODE:-prod} = mock ]; then diff <(sort $1) <(sort $2) && echo SNAP_OK || echo SNAP_FAIL; else [ -s $1 ] && echo SNAP_OK || echo SNAP_FAIL; fi; }"
 Enter
 Sleep 500ms
 
