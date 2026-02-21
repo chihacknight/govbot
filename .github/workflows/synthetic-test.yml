@@ -133,7 +133,7 @@ jobs:
           echo "## Nightly Real World End To End Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Recording" >> $GITHUB_STEP_SUMMARY
-          echo "![Synthetic Test](https://github.com/chihacknight/govbot/releases/download/nightly/synthetic-test.gif)" >> $GITHUB_STEP_SUMMARY
+          echo "![Synthetic Test](https://github.com/chihacknight/govbot/releases/download/nightly/govbot-synthetic-test.gif)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ -f /tmp/govbot-test/govbot.yml ]; then
             echo "### govbot.yml" >> $GITHUB_STEP_SUMMARY
