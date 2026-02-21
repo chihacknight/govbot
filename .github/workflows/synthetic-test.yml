@@ -118,13 +118,14 @@ jobs:
           echo "=== Build output ==="
           ls -la /tmp/govbot-test/docs/
 
-      - name: Upload GIF to nightly release
+      - name: Upload GIF to synthetic-test release
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ -f /tmp/govbot-synthetic-test.gif ]; then
-            gh release upload nightly /tmp/govbot-synthetic-test.gif --clobber || true
+            gh release create synthetic-test --title "Synthetic Test Recording" --notes "Latest end-to-end test recording. Updated automatically." 2>/dev/null || true
+            gh release upload synthetic-test /tmp/govbot-synthetic-test.gif --clobber || true
           fi
 
       - name: Job summary
@@ -133,7 +134,7 @@ jobs:
           echo "## Nightly Real World End To End Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Recording" >> $GITHUB_STEP_SUMMARY
-          echo "![Synthetic Test](https://github.com/chihacknight/govbot/releases/download/nightly/govbot-synthetic-test.gif)" >> $GITHUB_STEP_SUMMARY
+          echo "![Synthetic Test](https://github.com/chihacknight/govbot/releases/download/synthetic-test/govbot-synthetic-test.gif)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ -f /tmp/govbot-test/govbot.yml ]; then
             echo "### govbot.yml" >> $GITHUB_STEP_SUMMARY
