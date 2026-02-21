@@ -60,6 +60,12 @@ Enter
 Wait+Screen@300s /rc:0/
 Sleep 1s
 
+# Clear the screen so verification output is visible — the wizard
+# output fills the VHS screen buffer and pushes new lines off-screen.
+Type "clear"
+Enter
+Sleep 500ms
+
 # Show pipeline result
 Type "tail -5 /tmp/pipeline.log"
 Enter
