@@ -1,0 +1,190 @@
+name: Nightly Real World End To End Test
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # 6 AM UTC daily
+  workflow_run:
+    workflows: ["Govbot Nightly"]
+    types: [completed]
+    branches: [main]
+  pull_request:
+    paths:
+      - .github/workflows/synthetic-test.yml
+      - actions/govbot/tapes/nightly/synthetic-test.tape
+      - actions/govbot/src/**
+  workflow_dispatch:
+
+jobs:
+  synthetic-test:
+    name: Govbot Wizard & Pipeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || '' }}
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            actions/govbot/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build govbot
+        run: |
+          cd actions/govbot
+          cargo build --release
+          mkdir -p "$HOME/.govbot/bin"
+          cp target/release/govbot "$HOME/.govbot/bin/govbot"
+          echo "$HOME/.govbot/bin" >> $GITHUB_PATH
+
+      - name: Install VHS dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          TTYD_VERSION="1.7.7"
+          curl -fsSL "https://github.com/tsl0922/ttyd/releases/download/${TTYD_VERSION}/ttyd.x86_64" -o ttyd
+          chmod +x ttyd
+          sudo mv ttyd /usr/local/bin/
+
+      - name: Install VHS
+        run: |
+          VHS_VERSION="0.9.0"
+          curl -fsSL "https://github.com/charmbracelet/vhs/releases/download/v${VHS_VERSION}/vhs_${VHS_VERSION}_amd64.deb" -o vhs.deb
+          sudo dpkg -i vhs.deb
+          rm vhs.deb
+
+      - name: Run end-to-end test via VHS (with retry)
+        run: |
+          DIAG=/tmp/vhs-diagnostic.txt
+          run_test() {
+            rm -rf /tmp/govbot-test /tmp/govbot-synthetic-test.gif
+            vhs actions/govbot/tapes/nightly/synthetic-test.tape 2>&1 | tee /tmp/vhs-output.txt
+            local vhs_rc=${PIPESTATUS[0]}
+            {
+              echo "VHS exit code: $vhs_rc"
+              echo "--- VHS output ---"
+              cat /tmp/vhs-output.txt 2>/dev/null
+              echo "--- /tmp/govbot-test contents ---"
+              ls -la /tmp/govbot-test/ 2>/dev/null || echo "  (dir missing)"
+              echo "--- GIF exists? ---"
+              ls -la /tmp/govbot-synthetic-test.gif 2>/dev/null || echo "  (no GIF)"
+              echo "--- govbot.yml? ---"
+              cat /tmp/govbot-test/govbot.yml 2>/dev/null || echo "  (no govbot.yml)"
+              echo "--- pipeline log? ---"
+              cat /tmp/pipeline.log 2>/dev/null || echo "  (no pipeline.log)"
+            } >> "$DIAG"
+            [ "$vhs_rc" -eq 0 ] || return 1
+            test -f /tmp/govbot-synthetic-test.gif || { echo "FAIL: no GIF" >> "$DIAG"; return 1; }
+            test -f /tmp/govbot-test/govbot.yml || { echo "FAIL: no govbot.yml" >> "$DIAG"; return 1; }
+            test -d /tmp/govbot-test/.govbot/repos/ || { echo "FAIL: no repos dir" >> "$DIAG"; return 1; }
+            test -d /tmp/govbot-test/docs/ || { echo "FAIL: no docs dir" >> "$DIAG"; return 1; }
+          }
+
+          if run_test; then
+            echo "End-to-end test passed on attempt 1"
+          else
+            echo "::warning::Attempt 1 failed, retrying..."
+            sleep 5
+            if run_test; then
+              echo "End-to-end test passed on attempt 2"
+            else
+              echo "::error::End-to-end test failed after 2 attempts"
+              exit 1
+            fi
+          fi
+
+          echo "=== govbot.yml ==="
+          cat /tmp/govbot-test/govbot.yml
+          echo "=== Cloned repos ==="
+          ls -la /tmp/govbot-test/.govbot/repos/
+          echo "=== Build output ==="
+          ls -la /tmp/govbot-test/docs/
+
+      - name: Upload GIF to synthetic-test release
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f /tmp/govbot-synthetic-test.gif ]; then
+            gh release create synthetic-test --title "Synthetic Test Recording" --notes "Latest end-to-end test recording. Updated automatically." 2>/dev/null || true
+            gh release upload synthetic-test /tmp/govbot-synthetic-test.gif --clobber || true
+          fi
+
+      - name: Job summary
+        if: always()
+        run: |
+          echo "## Nightly Real World End To End Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Recording" >> $GITHUB_STEP_SUMMARY
+          echo "![Synthetic Test](https://github.com/chihacknight/govbot/releases/download/synthetic-test/govbot-synthetic-test.gif)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/govbot-test/govbot.yml ]; then
+            echo "### govbot.yml" >> $GITHUB_STEP_SUMMARY
+            echo '```yaml' >> $GITHUB_STEP_SUMMARY
+            cat /tmp/govbot-test/govbot.yml >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "> govbot.yml was not generated" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Cloned repos" >> $GITHUB_STEP_SUMMARY
+          if [ -d /tmp/govbot-test/.govbot/repos ]; then
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            ls /tmp/govbot-test/.govbot/repos/ >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "> No repos were cloned" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Build output" >> $GITHUB_STEP_SUMMARY
+          if [ -d /tmp/govbot-test/docs ]; then
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            ls /tmp/govbot-test/docs/ >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "> No build output was generated" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/vhs-diagnostic.txt ]; then
+            echo "### Diagnostics" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -100 /tmp/vhs-diagnostic.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload recording
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-test-recording
+          path: /tmp/govbot-synthetic-test.gif
+          retention-days: 7
+
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vhs-diagnostics
+          path: |
+            /tmp/vhs-diagnostic.txt
+            /tmp/vhs-output.txt
+          retention-days: 7
+          if-no-files-found: ignore
