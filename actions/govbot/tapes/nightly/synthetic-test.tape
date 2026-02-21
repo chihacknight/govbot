@@ -4,6 +4,13 @@
 #   2. Runs the pipeline (clone → tag → build) with stderr redirected
 #   3. Verifies outputs exist
 #
+# Dual-mode:
+#   TEST_MODE=mock  → Pre-populates repos from mocks, skips clone, snapshot assertions
+#   TEST_MODE=prod  → Clones live repos, smoke assertions (default)
+#
+# GOVBOT_SRC: path to the govbot source directory (for mock data)
+#             Only needed in mock mode. Default: current directory.
+#
 # The govbot binary is built from source and placed on PATH by the
 # synthetic-test.yml workflow before this tape runs.
 #
@@ -20,6 +27,11 @@ Set Padding 20
 
 # Work in a clean directory
 Type "mkdir -p /tmp/govbot-test && cd /tmp/govbot-test"
+Enter
+Sleep 1s
+
+# In mock mode: pre-populate repos from mock data so clone is unnecessary
+Type "TM=${TEST_MODE:-prod}; if [ $TM = mock ]; then SRC=${GOVBOT_SRC:-.}; mkdir -p .govbot/repos && cp -r $SRC/mocks/.govbot/repos/* .govbot/repos/ && echo MOCK_REPOS_READY; fi"
 Enter
 Sleep 1s
 
@@ -50,12 +62,10 @@ Enter
 Wait+Screen@10s /Setup complete/
 Sleep 2s
 
-# Run pipeline with stderr redirected to avoid PTY deadlock from
-# git clone progress. Stdout (tag JSON lines) stays on screen to
-# keep VHS from idle-timing out.
-# Wait+Screen won't prematch the typed text because "rc:$?" (typed)
-# doesn't match regex /rc:0/ — only the output "rc:0" does.
-Type "govbot 2>/tmp/pipeline.log; echo rc:$?"
+# Run pipeline: in mock mode run individual steps (skip clone),
+# in prod mode run the full pipeline.
+# In both modes stderr is redirected to avoid PTY deadlock.
+Type "TM=${TEST_MODE:-prod}; if [ $TM = mock ]; then govbot logs | govbot tag 2>/tmp/pipeline.log; govbot build 2>>/tmp/pipeline.log; echo rc:$?; else govbot 2>/tmp/pipeline.log; echo rc:$?; fi"
 Enter
 Wait+Screen@300s /rc:0/
 Sleep 1s
@@ -69,8 +79,7 @@ Sleep 500ms
 # Show pipeline result
 Type "tail -5 /tmp/pipeline.log"
 Enter
-Wait+Screen@5s /Pipeline complete/
-Sleep 1s
+Sleep 2s
 
 # Verify outputs
 Type "ls .govbot/repos/"
@@ -80,4 +89,9 @@ Wait+Screen@5s /gu/
 Type "ls docs/"
 Enter
 Wait+Screen@5s /feed.xml/
+
+# Final assertion
+Type "TM=${TEST_MODE:-prod}; if [ $TM = mock ]; then test -f govbot.yml && test -f docs/feed.xml && test -d .govbot/repos/gu-legislation && test -d .govbot/repos/wy-legislation && echo SNAP_OK || echo SNAP_FAIL; else test -f docs/feed.xml && echo SNAP_OK || echo SNAP_FAIL; fi"
+Enter
+Wait+Screen@5s /SNAP_OK/
 Sleep 2s
