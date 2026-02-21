@@ -1,1 +1,0 @@
-govbot --help
