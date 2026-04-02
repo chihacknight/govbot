@@ -1,14 +1,23 @@
 #!/usr/bin/env python3
 """
-IL Witness Slip Notifier - Transportation & Housing Focus
-Privacy-first: No config files, uses environment variables only
-Parses OpenStates data directly (not metadata.json)
+IL Witness Slip Notifier - Urbanist Focus
+  Topics: Housing, Transportation, Biking, Safe Streets, Transit, and more
+Privacy-first: No config files, uses environment variables only.
+
+Two input modes:
+  --feed <path>      Read the RSS feed produced by `govbot build` (preferred).
+                     Bills are already tagged by govbot; this script finds the
+                     ones with upcoming committee hearings, resolves witness
+                     slip URLs, and builds the activist email digest.
+  --data-dir <path>  Legacy mode: parse raw OpenStates JSON directly.
+  --sample           Download a small sample from GitHub for local testing.
 """
 
 import json
 import os
 import sys
 import urllib.parse
+import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Set
 from enum import Enum
@@ -67,14 +76,174 @@ class Bill:
         return False
     
     def get_witness_slip_url(self) -> str:
-        base_url = "https://ilga.gov"
+        """Return the most specific witness slip URL available.
+
+        Priority:
+          1. ilga_url from OpenStates sources (already points to the ILGA
+             BillStatus page which has a 'Witness Slips' tab).
+          2. Constructed BillStatus URL with #tab=witnessSlips anchor.
+          3. Generic chamber hearings page as a last resort.
+        """
+        if self.ilga_url and "ilga.gov" in self.ilga_url:
+            # Append the Witness Slips tab anchor if not already there
+            if "#" not in self.ilga_url:
+                return f"{self.ilga_url}#tab=witnessSlips"
+            return self.ilga_url
+        # Fallback: constructed BillStatus URL
+        bill_status = self.get_bill_status_url()
+        if bill_status:
+            return f"{bill_status}#tab=witnessSlips"
+        # Last resort: chamber hearings landing page
         chamber_path = self.chamber.value.lower()
-        return f"{base_url}/{chamber_path}/hearings"
-    
+        return f"https://ilga.gov/{chamber_path}/hearings"
+
     def get_bill_status_url(self) -> str:
         doc_type = "HB" if self.chamber == Chamber.HOUSE else "SB"
-        bill_num = self.bill_number.replace(doc_type, "").replace("SB", "").replace("HB", "")
-        return f"https://www.ilga.gov/legislation/BillStatus?DocTypeID={doc_type}&DocNum={bill_num}"
+        bill_num = self.bill_number.replace("HB", "").replace("SB", "").strip()
+        return f"https://www.ilga.gov/legislation/BillStatus.asp?DocTypeID={doc_type}&DocNum={bill_num}&GAID=18&SessionID=114"
+
+
+class GovbotFeedParser:
+    """Parse the RSS feed produced by `govbot build`.
+
+    govbot emits a standard RSS 2.0 feed where each <item> represents one
+    bill action log entry.  The tags applied by `govbot tag` are stored in
+    <category> elements, and the ILGA BillStatus URL lives in <link>.
+
+    We rebuild a minimal Bill object from each item so the rest of the
+    notifier pipeline (hearing detection, witness slip URL resolution,
+    email generation) is unchanged.
+    """
+
+    # RSS namespace govbot uses for extensions
+    _NS = {
+        'content': 'http://purl.org/rss/1.0/modules/content/',
+        'dc':      'http://purl.org/dc/elements/1.1/',
+        'atom':    'http://www.w3.org/2005/Atom',
+    }
+
+    @classmethod
+    def parse_feed(cls, feed_path: str) -> List["Bill"]:
+        """Return a deduplicated list of Bill objects from the govbot RSS feed."""
+        path = Path(feed_path)
+        if not path.exists():
+            print(f"❌ Feed file not found: {feed_path}")
+            return []
+
+        print(f"📡 Parsing govbot RSS feed: {feed_path}")
+        try:
+            tree = ET.parse(path)
+        except ET.ParseError as exc:
+            print(f"❌ Could not parse feed XML: {exc}")
+            return []
+
+        root = tree.getroot()
+        channel = root.find('channel')
+        if channel is None:
+            print("❌ No <channel> element in feed.")
+            return []
+
+        items = channel.findall('item')
+        print(f"📄 Found {len(items)} feed items")
+
+        # Deduplicate by bill identifier — one Bill object per bill.
+        seen: dict[str, "Bill"] = {}
+
+        for item in items:
+            bill = cls._item_to_bill(item)
+            if bill is None:
+                continue
+            if bill.bill_number not in seen:
+                seen[bill.bill_number] = bill
+            else:
+                # Merge: keep the earliest upcoming hearing date
+                existing = seen[bill.bill_number]
+                if (bill.committee_hearing_date and
+                        (existing.committee_hearing_date is None or
+                         bill.committee_hearing_date < existing.committee_hearing_date)):
+                    existing.committee_hearing_date = bill.committee_hearing_date
+                    existing.committee_name = bill.committee_name
+                # Merge subjects / govbot tags
+                for s in bill.subjects:
+                    if s not in existing.subjects:
+                        existing.subjects.append(s)
+
+        bills = list(seen.values())
+        print(f"✅ Parsed {len(bills)} unique bills from feed")
+        return bills
+
+    @classmethod
+    def _item_to_bill(cls, item: ET.Element) -> Optional["Bill"]:
+        """Convert a single RSS <item> to a Bill, or None if unparseable."""
+        def text(tag: str) -> str:
+            el = item.find(tag)
+            return el.text.strip() if el is not None and el.text else ""
+
+        title_raw = text('title')   # e.g. "HB1234 – Some Bill Title"
+        link      = text('link')    # ILGA BillStatus URL
+        pub_date  = text('pubDate') # action date, RFC 2822
+        description = text('description')
+
+        # Extract bill identifier from title ("HB1234" / "SB0056" etc.)
+        import re
+        m = re.match(r'([HS][BCR]\s*\d+)', title_raw)
+        if not m:
+            return None
+        bill_id = re.sub(r'\s+', '', m.group(1)).upper()  # "HB1234"
+
+        # Govbot <category> elements carry the tag names
+        categories = [c.text.strip() for c in item.findall('category') if c.text]
+
+        # Chamber from bill prefix
+        chamber = Chamber.HOUSE if bill_id.startswith('H') else Chamber.SENATE
+
+        # Sponsor from <dc:creator> if present
+        creator_el = item.find('dc:creator', cls._NS)
+        sponsor = creator_el.text.strip() if creator_el is not None and creator_el.text else "Unknown"
+
+        # Committee hearing date: look for a <govbot:hearingDate> extension or
+        # fall back to parsing the description for a date pattern.
+        hearing_date: Optional[datetime] = None
+        committee_name: Optional[str] = None
+
+        # govbot may emit hearing info in the description as plain text
+        if description:
+            # Pattern: "Committee: Finance | Hearing: 2026-04-15"
+            cm = re.search(r'Committee[:\s]+([^|\n<]+)', description, re.I)
+            hm = re.search(r'Hearing[:\s]+(\d{4}-\d{2}-\d{2})', description, re.I)
+            if cm:
+                committee_name = cm.group(1).strip()
+            if hm:
+                try:
+                    hearing_date = datetime.fromisoformat(hm.group(1))
+                except ValueError:
+                    pass
+
+        # Determine next reading heuristically from description keywords
+        desc_lower = description.lower()
+        if 'third reading' in desc_lower or '3rd reading' in desc_lower:
+            reading = BillReading.THIRD
+        elif 'second reading' in desc_lower or '2nd reading' in desc_lower:
+            reading = BillReading.SECOND
+        else:
+            reading = BillReading.FIRST
+
+        # Bill title: everything after the identifier in <title>
+        title_body = re.sub(r'^[HS][BCR]\s*\d+\s*[\u2013\u2014\-]+\s*', '', title_raw).strip()
+        if not title_body:
+            title_body = title_raw
+
+        return Bill(
+            bill_number=bill_id,
+            chamber=chamber,
+            title=title_body,
+            sponsor=sponsor,
+            next_reading=reading,
+            subjects=categories,          # govbot tags become subjects
+            committee_hearing_date=hearing_date,
+            committee_name=committee_name,
+            ilga_url=link or None,
+        )
 
 
 class OpenStatesParser:
@@ -209,43 +378,56 @@ class OpenStatesParser:
 
 
 def fetch_sample_bills() -> str:
-    """Download 3-5 sample bills from GitHub for testing"""
-    print("📥 Fetching sample bills from GitHub...")
-    
-    # Create temp directory for samples
+    """Download sample IL bills via the GitHub Contents API.
+
+    Uses the GitHub API (which returns JSON with download_url fields) rather
+    than trying to scrape a raw directory listing — raw.githubusercontent.com
+    does not serve HTML indexes.
+    """
+    print("📥 Fetching sample IL bills via GitHub Contents API...")
+
     temp_dir = Path(tempfile.gettempdir()) / "witness-slip-test-data"
     temp_dir.mkdir(exist_ok=True)
-    
-    # Real bill URLs from the actual GitHub repo
-    base_url = "https://raw.githubusercontent.com/govbot-openstates-scrapers/il-legislation/main/_data/il"
-    
-    # Sample bills - picking a few from the repo
-    sample_bills = [
-        f"{base_url}/bills/ocd-bill-1.json",
-        f"{base_url}/bills/ocd-bill-2.json", 
-        f"{base_url}/bills/ocd-bill-3.json",
-        f"{base_url}/bills/ocd-bill-4.json",
-        f"{base_url}/bills/ocd-bill-5.json",
-    ]
-    
+
+    # GitHub Contents API for the il-legislation data repo
+    api_url = (
+        "https://api.github.com/repos/govbot-openstates-scrapers/il-legislation/contents/"
+        "_data/il"
+    )
+    headers = {"Accept": "application/vnd.github+json"}
+    github_token = os.getenv("GITHUB_TOKEN", "")
+    if github_token:
+        headers["Authorization"] = f"Bearer {github_token}"
+
+    try:
+        resp = requests.get(api_url, headers=headers, timeout=15)
+        resp.raise_for_status()
+        entries = resp.json()
+    except Exception as e:
+        print(f"⚠️  GitHub API request failed: {e}")
+        entries = []
+
     downloaded = 0
-    for url in sample_bills:
-        filename = url.split('/')[-1]
+    for entry in entries[:10]:  # grab up to 10 sample bills
+        download_url = entry.get("download_url")
+        if not download_url:
+            continue
+        filename = entry.get("name", download_url.split("/")[-1])
         try:
-            response = requests.get(url, timeout=10)
-            if response.status_code == 200:
-                (temp_dir / filename).write_text(response.text)
+            file_resp = requests.get(download_url, timeout=15)
+            if file_resp.status_code == 200:
+                (temp_dir / filename).write_text(file_resp.text)
                 print(f"  ✅ Downloaded {filename}")
                 downloaded += 1
             else:
-                print(f"  ⚠️  Skipped {filename} (HTTP {response.status_code})")
+                print(f"  ⚠️  Skipped {filename} (HTTP {file_resp.status_code})")
         except Exception as e:
-            print(f"  ⚠️  Failed to download {filename}: {e}")
-    
+            print(f"  ⚠️  Failed {filename}: {e}")
+
     if downloaded == 0:
-        print("❌ No sample bills downloaded. Check GitHub repo URL.")
+        print("❌ No sample bills downloaded. Verify the repo name/path and try again.")
         sys.exit(1)
-    
+
     print(f"✅ Using {downloaded} sample bill(s) from: {temp_dir}")
     return str(temp_dir)
 
@@ -263,13 +445,28 @@ class EnvironmentConfig:
             },
             'subscriptions': {
                 'transportation': {
-                    'topics': [t.strip() for t in os.getenv('TOPICS_TRANSPORTATION', 
-                        'Transportation,Public Transit,Roads,Highways,Bicycle,Pedestrian,Traffic').split(',')],
+                    'topics': [t.strip() for t in os.getenv('TOPICS_TRANSPORTATION',
+                        'Transportation,Public Transit,Roads,Highways,Traffic,Commuter Rail,Metra,CTA,RTA').split(',')],
                     'recipients': [r.strip() for r in os.getenv('RECIPIENTS_TRANSPORTATION', '').split(',') if r.strip()]
+                },
+                'transit': {
+                    'topics': [t.strip() for t in os.getenv('TOPICS_TRANSIT',
+                        'Transit,Bus,Rail,Subway,Light Rail,Rapid Transit,Bus Rapid Transit,BRT,PACE,CTA,Metra,RTA').split(',')],
+                    'recipients': [r.strip() for r in os.getenv('RECIPIENTS_TRANSIT', '').split(',') if r.strip()]
+                },
+                'biking': {
+                    'topics': [t.strip() for t in os.getenv('TOPICS_BIKING',
+                        'Bicycle,Biking,Bike Lane,Cycling,Micromobility,E-Bike,Scooter,Active Transportation').split(',')],
+                    'recipients': [r.strip() for r in os.getenv('RECIPIENTS_BIKING', '').split(',') if r.strip()]
+                },
+                'safe_streets': {
+                    'topics': [t.strip() for t in os.getenv('TOPICS_SAFE_STREETS',
+                        'Pedestrian,Safe Streets,Vision Zero,Traffic Safety,Crosswalk,Speed Limit,Complete Streets,Sidewalk').split(',')],
+                    'recipients': [r.strip() for r in os.getenv('RECIPIENTS_SAFE_STREETS', '').split(',') if r.strip()]
                 },
                 'housing': {
                     'topics': [t.strip() for t in os.getenv('TOPICS_HOUSING',
-                        'Housing,Affordable Housing,Real Estate,Zoning,Land Use,Development').split(',')],
+                        'Housing,Affordable Housing,Real Estate,Zoning,Land Use,Development,TOD,Transit-Oriented,Upzoning,ADU').split(',')],
                     'recipients': [r.strip() for r in os.getenv('RECIPIENTS_HOUSING', '').split(',') if r.strip()]
                 },
                 'all_recipients': [r.strip() for r in os.getenv('RECIPIENTS_ALL', '').split(',') if r.strip()],
@@ -327,40 +524,42 @@ class NotificationGenerator:
         
         return plain, html
     
+    # Maps subscription key → (emoji label, env-var suffix)
+    SUBSCRIPTION_CATEGORIES = [
+        ('tracked_bills',  None,           None),          # handled separately
+        ('transportation', '🚗 Transportation', 'TRANSPORTATION'),
+        ('transit',        '🚇 Transit',        'TRANSIT'),
+        ('biking',         '🚲 Biking',          'BIKING'),
+        ('safe_streets',   '🚶 Safe Streets',    'SAFE_STREETS'),
+        ('housing',        '🏘️ Housing & Development', 'HOUSING'),
+    ]
+
     def _route_bills(self, bills: List[Bill]) -> Dict:
-        """Route bills to subscriptions"""
+        """Route bills into urbanist topic buckets.
+
+        A bill can appear in multiple categories (a transit-oriented housing
+        bill belongs in both Transit and Housing).  Tracked bills are always
+        listed first regardless of topic.
+        """
         subs = self.config['subscriptions']
         routed = {}
-        matched = set()
-        
-        # Specific bill tracking
+
+        # Specific bill tracking (pinned at the top)
         for bill in bills:
             if bill.bill_number in subs['tracked_bills']:
-                if '🎯 Tracked Bills' not in routed:
-                    routed['🎯 Tracked Bills'] = []
-                routed['🎯 Tracked Bills'].append(bill)
-                matched.add(bill.bill_number)
-        
-        # Transportation
-        trans_recipients = subs['transportation']['recipients']
-        if trans_recipients:
-            trans_bills = [b for b in bills if b.bill_number not in matched 
-                          and b.matches_topics(subs['transportation']['topics'])]
-            if trans_bills:
-                routed['🚇 Transportation & Transit'] = trans_bills
-                for b in trans_bills:
-                    matched.add(b.bill_number)
-        
-        # Housing
-        housing_recipients = subs['housing']['recipients']
-        if housing_recipients:
-            housing_bills = [b for b in bills if b.bill_number not in matched
-                            and b.matches_topics(subs['housing']['topics'])]
-            if housing_bills:
-                routed['🏘️ Housing & Development'] = housing_bills
-                for b in housing_bills:
-                    matched.add(b.bill_number)
-        
+                routed.setdefault('🎯 Tracked Bills', []).append(bill)
+
+        # Topic categories — a bill may appear in more than one
+        for key, label, _ in self.SUBSCRIPTION_CATEGORIES:
+            if label is None:
+                continue
+            sub = subs.get(key, {})
+            if not sub.get('recipients') and not subs.get('all_recipients'):
+                continue
+            matched = [b for b in bills if b.matches_topics(sub.get('topics', []))]
+            if matched:
+                routed[label] = matched
+
         return routed
     
     def _generate_plain(self, routed: Dict) -> str:
@@ -554,36 +753,53 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="IL Urbanist Witness Slip Notifier"
+    )
     parser.add_argument('--mode', choices=['github-action', 'local'], default='local')
-    parser.add_argument(
-    '--sample',
-    action='store_true',
-    help='Download sample bills from GitHub for testing (no local repo needed)'
-)
-
-    parser.add_argument('--data-dir', default='data/il')
+    # --- Input source (pick one) ---
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        '--feed',
+        metavar='PATH',
+        help='Path to the RSS feed produced by `govbot build` (preferred)'
+    )
+    group.add_argument(
+        '--data-dir',
+        metavar='PATH',
+        default='data/il',
+        help='Legacy: parse raw OpenStates JSON files directly'
+    )
+    group.add_argument(
+        '--sample',
+        action='store_true',
+        help='Download a small sample from GitHub for local smoke-testing'
+    )
     args = parser.parse_args()
 
-    # Handle --sample flag
-    if args.sample:
-        args.data_dir = fetch_sample_bills()
-    elif not args.data_dir:
-        print("❌ Error: --data-dir required (or use --sample for testing)")
-        sys.exit(1)
-
-    
     print("\n" + "="*70)
-    print("🚇🏘️ IL URBANIST WITNESS SLIP NOTIFIER")
+    print("🚲🚇🏘️ IL URBANIST WITNESS SLIP NOTIFIER")
     print("="*70 + "\n")
-    
+
     # Load config from environment
     config = EnvironmentConfig.load()
     print(f"👤 User: {config['user']['name']}")
     print(f"🏢 Organization: {config['user']['organization']}\n")
-    
-    # Parse bills
-    bills = OpenStatesParser.parse_data_directory(args.data_dir)
+
+    # --- Parse bills from the chosen source ---
+    if args.feed:
+        # PRIMARY PATH: govbot RSS feed (clone → tag → RSS already done)
+        print("📡 Input mode: govbot RSS feed")
+        bills = GovbotFeedParser.parse_feed(args.feed)
+    elif args.sample:
+        # TESTING PATH: pull a handful of bills from GitHub
+        print("🧪 Input mode: sample download")
+        sample_dir = fetch_sample_bills()
+        bills = OpenStatesParser.parse_data_directory(sample_dir)
+    else:
+        # LEGACY PATH: raw OpenStates JSON directory
+        print(f"📂 Input mode: raw data directory ({args.data_dir})")
+        bills = OpenStatesParser.parse_data_directory(args.data_dir)
     
     if not bills:
         print("✅ No bills found in data directory.")
@@ -633,12 +849,12 @@ def main():
         print("✅ Generated notification files")
     else:
         print(plain)
-        # combine all configured recipients
-        all_recipients = (
-            config['subscriptions']['transportation']['recipients']
-            + config['subscriptions']['housing']['recipients']
-            + config['subscriptions']['all_recipients']
-        )
+        # combine all configured recipients across every category
+        all_recipients = list({
+            r
+            for key in ('transportation', 'transit', 'biking', 'safe_streets', 'housing')
+            for r in config['subscriptions'].get(key, {}).get('recipients', [])
+        } | set(config['subscriptions'].get('all_recipients', [])))
         send_email(
             subject="IL Witness Slip Alerts – Urbanist Bills",
             plain_body=plain,

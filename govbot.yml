@@ -1,0 +1,123 @@
+# govbot.yml — IL Urbanist Witness Slip POC
+# This file drives the govbot clone → tag → RSS pipeline.
+# See: https://github.com/chihacknight/govbot
+
+# ── Jurisdiction ──────────────────────────────────────────────────────────────
+# Tells `govbot clone all` which OpenStates data repo to pull.
+jurisdictions:
+  - id: il
+    name: Illinois
+    repo: https://github.com/govbot-openstates-scrapers/il-legislation
+    # Path inside the cloned repo where bill metadata.json files live
+    data_path: _data/il
+
+# ── Urbanist Tags ─────────────────────────────────────────────────────────────
+# govbot logs | govbot tag  applies these against each bill's title, subject
+# array, and abstract. Bills can match multiple tags.
+tags:
+  - name: Housing
+    keywords:
+      - Housing
+      - Affordable Housing
+      - Real Estate
+      - Zoning
+      - Land Use
+      - Development
+      - Rent
+      - Eviction
+      - ADU
+      - Accessory Dwelling
+      - Upzoning
+      - Transit-Oriented Development
+      - TOD
+      - Mixed-Use
+      - Landlord
+      - Tenant
+      - Homelessness
+      - Shelter
+
+  - name: Transit
+    keywords:
+      - Transit
+      - Bus
+      - Rail
+      - CTA
+      - Metra
+      - Pace
+      - RTA
+      - Light Rail
+      - Commuter Rail
+      - Subway
+      - Public Transportation
+      - GTFS
+      - BRT
+      - Bus Rapid Transit
+      - Train
+      - Fare
+      - Ridership
+
+  - name: Biking
+    keywords:
+      - Bicycle
+      - Biking
+      - Bike Lane
+      - Bike Path
+      - Bike Share
+      - Divvy
+      - Cycling
+      - Cyclist
+      - Micromobility
+      - E-Bike
+      - Electric Bike
+      - Bike Infrastructure
+      - Bike Parking
+
+  - name: Safe Streets
+    keywords:
+      - Pedestrian
+      - Safe Streets
+      - Vision Zero
+      - Complete Streets
+      - Traffic Safety
+      - Crosswalk
+      - Sidewalk
+      - Speed Limit
+      - Road Safety
+      - Traffic Calming
+      - School Zone
+      - Distracted Driving
+      - Hit and Run
+      - Fatality
+      - Speeding
+
+  - name: Transportation
+    keywords:
+      - Transportation
+      - Highway
+      - Road
+      - Infrastructure
+      - IDOT
+      - Motor Vehicle
+      - Parking
+      - Tollway
+      - Expressway
+      - Bridge
+      - Traffic
+      - Congestion
+
+# ── RSS Feed Output ───────────────────────────────────────────────────────────
+# govbot build writes the tagged feed here; witness_slip_notifier.py reads it.
+build:
+  output_dir: docs
+  output_file: il-urbanist-feed.xml
+  title: "Illinois Urbanist Bills — Govbot Feed"
+  description: "IL legislative bills tagged for urbanist advocacy: Housing, Transit, Biking, Safe Streets, Transportation"
+  link: https://chihacknight.github.io/govbot/il-urbanist-feed.xml
+  # Emit one feed entry per tag so the notifier can filter by category
+  feed_per_tag: true
+  tags:
+    - Housing
+    - Transit
+    - Biking
+    - Safe Streets
+    - Transportation
