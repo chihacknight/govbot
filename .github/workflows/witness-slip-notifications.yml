@@ -154,24 +154,48 @@ jobs:
           html_body: file://notifications_output.html
           attachments: witness_slip_notifications.json
       
-      - name: Post summary
+            - name: Post summary
         if: always()
         run: |
           echo "## 📊 Witness Slip Notification Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ -f witness_slip_notifications.json ]; then
             BILL_COUNT=$(jq '. | length' witness_slip_notifications.json)
-            echo "**Bills Processed:** $BILL_COUNT" >> $GITHUB_STEP_SUMMARY
+            echo "**Bills in digest:** $BILL_COUNT" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
 
             if [ "$BILL_COUNT" -gt 0 ]; then
-              echo "### 🚲🚇🏘️🚶 Urbanist Bills Requiring Action:" >> $GITHUB_STEP_SUMMARY
-              jq -r '.[] | "- **\(.bill_number)** [\(.category)]: \(.title)"' witness_slip_notifications.json >> $GITHUB_STEP_SUMMARY
+              echo "### 🚲🚇🏘️🚶 Urbanist Bills" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "| Bill | Category | Stance | Title | Witness Slip |" >> $GITHUB_STEP_SUMMARY
+              echo "|------|----------|--------|-------|--------------|" >> $GITHUB_STEP_SUMMARY
+              jq -r '.[] | "| **\(.bill_number)** | \(.category) | \(.stance) | \(.title | .[0:60]) | [📋 File slip](\(.witness_slip_url)) |"' \
+                witness_slip_notifications.json >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+
+              echo "### 📧 Email Preview" >> $GITHUB_STEP_SUMMARY
+              echo "_This is what would be sent when MAIL\_SERVER is configured._" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              if [ -f notifications_output.html ]; then
+                echo "<details><summary>Show full email HTML</summary>" >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
+                cat notifications_output.html >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "</details>" >> $GITHUB_STEP_SUMMARY
+              fi
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Plain-text version:**" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              if [ -f notifications_output.txt ]; then
+                cat notifications_output.txt >> $GITHUB_STEP_SUMMARY
+              fi
+              echo '```' >> $GITHUB_STEP_SUMMARY
             fi
           else
-            echo "⚠️ No bills requiring action." >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ No output file found — check the notifier step logs." >> $GITHUB_STEP_SUMMARY
           fi
+
       
       - name: Upload artifacts
         if: always()
