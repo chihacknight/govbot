@@ -84,14 +84,29 @@ jobs:
           path: .govbot/repos
           key: govbot-il-v3-${{ runner.os }}-${{ steps.date.outputs.date }}
 
+      - name: Inspect IL legislation repo
+        run: |
+          echo "--- Repo disk usage ---"
+          du -sh .govbot/repos/il-legislation 2>/dev/null || echo "Repo not found"
+          echo "--- Latest 5 commits in il-legislation ---"
+          git -C .govbot/repos/il-legislation log --oneline -5 2>/dev/null || echo "No git log"
+          echo "--- Top-level directory structure ---"
+          ls .govbot/repos/il-legislation/ 2>/dev/null || echo "Empty"
+          echo "--- Sample bills paths (first 20) ---"
+          find .govbot/repos/il-legislation -name 'metadata.json' | head -20 || echo "No metadata files"
+          echo "--- Total metadata.json count ---"
+          find .govbot/repos/il-legislation -name 'metadata.json' | wc -l
+
       - name: Tag bills
         run: |
           echo "🏷️  Tagging bills..."
-          echo "--- govbot.yml being used ---"
-          head -20 govbot.yml
-          echo "--- end ---"
+          echo "--- Log entries from govbot logs ---"
+          govbot logs --repos il --govbot-dir .govbot | wc -l
+          echo "--- Running tag pipeline ---"
           govbot logs --repos il --govbot-dir .govbot \
             | govbot tag --output-dir . --govbot-dir .govbot
+          echo "--- Tagged files produced ---"
+          ls -la *.json 2>/dev/null || echo "No JSON tag files"
 
       - name: Build RSS feed
         id: govbot
@@ -110,10 +125,12 @@ jobs:
       # ─────────────────────────────────────────────────────────────────
       - name: Debug feed output
         run: |
-          echo "--- Feed file size ---"
-          wc -l docs/il-urbanist-feed.xml || echo "Feed not found"
-          echo "--- First 60 lines of feed ---"
-          head -60 docs/il-urbanist-feed.xml || echo "Feed not found"
+          echo "--- Feed item count ---"
+          grep -c '<item>' docs/il-urbanist-feed.xml 2>/dev/null || echo "Feed not found"
+          echo "--- All GUIDs in feed ---"
+          grep '<guid>' docs/il-urbanist-feed.xml | sed 's/.*<guid>//;s/<\/guid>.*//' | head -30 || echo "No GUIDs"
+          echo "--- All titles in feed ---"
+          grep '<title>' docs/il-urbanist-feed.xml | grep -v 'Illinois Urbanist' | head -30 || echo "No titles"
 
       - name: Generate witness slip notifications
         env:
