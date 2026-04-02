@@ -101,12 +101,26 @@ PYEOF
       # ─────────────────────────────────────────────────────────────────
       # STEP 2 — Read metadata.json directly from the cloned IL repo.
       #
-      # govbot logs only walks logs/ subdirs, which only exist for AM-type
-      # amendment bills. Real HB/SB bills store all actions in metadata.json.
-      # We skip govbot tag/build and run the notifier in --data-dir mode,
-      # pointing it at the sessions/104th/bills directory. The notifier's
-      # OpenStatesParser reads metadata.json for every bill, applies the
-      # same urbanist keyword matching, and builds the digest directly.
+      # Why not use `govbot logs | govbot tag | govbot build`?
+      #
+      # govbot's pipeline is designed around a logs/ subdirectory pattern:
+      # each bill action is stored as a separate JSON file under bills/<ID>/logs/.
+      # In practice, for Illinois, only AM-type (amendment/appointment) bills
+      # have a logs/ subdir. Real HB/SB bills store their entire legislative
+      # history inside a single metadata.json file with no logs/ directory.
+      # As a result, `govbot logs` finds only ~12 AM entries out of 8,600+
+      # bills — the HB/SB bills are invisible to it.
+      #
+      # This is a structural mismatch between how OpenStates formats IL data
+      # and what govbot's pipeline currently expects. The right long-term fix
+      # is a PR to govbot core to make `govbot logs` walk metadata.json actions
+      # when no logs/ subdir exists (benefiting all states with this pattern).
+      # See: https://github.com/chihacknight/govbot (upstream)
+      #
+      # In the meantime, we use the notifier's --data-dir mode which reads
+      # metadata.json directly — same underlying data source, one layer down.
+      # The govbot-openstates-scrapers/il-legislation repo (cloned above) is
+      # still the canonical data source; we're just reading it differently.
       # ─────────────────────────────────────────────────────────────────
       - name: Set data dir path
         id: datadir
