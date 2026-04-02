@@ -204,6 +204,43 @@ jobs:
           fi
 
       
+      # ──────────────────────────────────────────────────────────────────
+      # STEP 4 — Update GitHub Pages data file and commit
+      #
+      # Wraps witness_slip_notifications.json in a {generated_at, bills}
+      # envelope and commits it to docs/data/bills.json on this branch so
+      # the GitHub Pages site always serves fresh data without any extra
+      # deploy pipeline. GitHub Pages rebuilds automatically on push.
+      # ──────────────────────────────────────────────────────────────────
+      - name: Publish data to GitHub Pages
+        if: success() && hashFiles('witness_slip_notifications.json') != ''
+        run: |
+          python3 - <<'EOF'
+          import json, datetime, pathlib
+
+          src = pathlib.Path('witness_slip_notifications.json')
+          if not src.exists():
+              print('No JSON output — skipping pages update')
+              exit(0)
+
+          bills = json.loads(src.read_text())
+          envelope = {
+              'generated_at': datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+              'bills': bills
+          }
+          out = pathlib.Path('docs/data/bills.json')
+          out.parent.mkdir(parents=True, exist_ok=True)
+          out.write_text(json.dumps(envelope, indent=2, ensure_ascii=False))
+          print(f'Wrote docs/data/bills.json ({len(bills)} bills)')
+          EOF
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data/bills.json
+          # Only commit if the file actually changed
+          git diff --staged --quiet || git commit -m "chore: update witness slip data [skip ci]"
+          git push
+
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4

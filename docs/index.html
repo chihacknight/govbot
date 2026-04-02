@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IL Urbanist Witness Slip Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ── Design tokens ─────────────────────────────────────────────── */
+:root,[data-theme="light"]{
+  --bg:#f7f6f2;--surface:#f9f8f5;--surface-2:#fbfbf9;
+  --surface-offset:#f0ede8;--border:#d4d1ca;--divider:#dcd9d5;
+  --text:#28251d;--text-muted:#7a7974;--text-faint:#bab9b4;
+  --primary:#01696f;--primary-hover:#0c4e54;--primary-hl:#cedcd8;
+  --warning:#964219;--warning-hl:#ddcfc6;
+  --error:#a12c7b;--error-hl:#e0ced7;
+  --success:#437a22;--success-hl:#d4dfcc;
+  --shadow-sm:0 1px 3px oklch(0.2 0.01 80/.07);
+  --shadow-md:0 4px 14px oklch(0.2 0.01 80/.09);
+  --r-sm:.375rem;--r-md:.5rem;--r-lg:.75rem;--r-xl:1rem;--r-full:9999px;
+  --font-body:'Inter',sans-serif;
+  --font-display:'Instrument Serif',Georgia,serif;
+  --ease:180ms cubic-bezier(.16,1,.3,1);
+}
+[data-theme="dark"]{
+  --bg:#171614;--surface:#1c1b19;--surface-2:#201f1d;
+  --surface-offset:#1d1c1a;--border:#393836;--divider:#262523;
+  --text:#cdccca;--text-muted:#797876;--text-faint:#5a5957;
+  --primary:#4f98a3;--primary-hover:#227f8b;--primary-hl:#313b3b;
+  --warning:#bb653b;--warning-hl:#564942;
+  --error:#d163a7;--error-hl:#4c3d46;
+  --success:#6daa45;--success-hl:#3a4435;
+  --shadow-sm:0 1px 3px #0003;--shadow-md:0 4px 14px #0005;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth;scroll-padding-top:5rem}
+body{min-height:100dvh;font-family:var(--font-body);font-size:1rem;color:var(--text);background:var(--bg);line-height:1.6;transition:background var(--ease),color var(--ease)}
+img,svg{display:block;max-width:100%}
+button{cursor:pointer;border:none;background:none;font:inherit;color:inherit}
+a{color:var(--primary);text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--primary);outline-offset:3px;border-radius:var(--r-sm)}
+
+/* ── Layout ─────────────────────────────────────────────────────── */
+.site-header{
+  position:sticky;top:0;z-index:100;
+  background:color-mix(in oklch,var(--bg) 92%,transparent);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--divider);
+  padding:.75rem 1.25rem;
+  display:flex;align-items:center;gap:1rem;
+}
+.logo{display:flex;align-items:center;gap:.5rem;font-family:var(--font-display);font-size:1.2rem;color:var(--text);flex:1}
+.logo svg{flex-shrink:0}
+.header-actions{display:flex;align-items:center;gap:.5rem}
+.btn-icon{
+  width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+  border-radius:var(--r-md);color:var(--text-muted);
+  transition:background var(--ease),color var(--ease);
+}
+.btn-icon:hover{background:var(--surface-offset);color:var(--text)}
+.btn-notify{
+  display:flex;align-items:center;gap:.4rem;padding:.4rem .85rem;
+  background:var(--primary);color:#fff;border-radius:var(--r-full);
+  font-size:.8rem;font-weight:600;transition:background var(--ease);
+}
+.btn-notify:hover{background:var(--primary-hover)}
+.btn-notify.granted{background:var(--success)}
+.btn-notify.denied{background:var(--text-faint);cursor:default}
+
+.container{max-width:900px;margin:0 auto;padding:0 1.25rem}
+
+.hero{padding:2.5rem 0 1.5rem}
+.hero-kicker{font-size:.8rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);margin-bottom:.5rem}
+.hero h1{font-family:var(--font-display);font-size:clamp(1.8rem,4vw,2.8rem);line-height:1.15;color:var(--text);margin-bottom:.75rem}
+.hero p{font-size:.975rem;color:var(--text-muted);max-width:58ch}
+
+.status-bar{
+  display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+  margin:1.25rem 0;padding:.7rem 1rem;
+  background:var(--surface);border:1px solid var(--divider);
+  border-radius:var(--r-lg);font-size:.825rem;color:var(--text-muted);
+}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--text-faint);flex-shrink:0}
+.status-dot.live{background:var(--success);box-shadow:0 0 0 3px var(--success-hl)}
+.status-dot.stale{background:var(--warning);box-shadow:0 0 0 3px var(--warning-hl)}
+
+/* ── Banner ─────────────────────────────────────────────────────── */
+.banner{
+  display:none;align-items:flex-start;gap:.75rem;
+  padding:1rem 1.1rem;border-radius:var(--r-lg);margin-bottom:1.5rem;
+  border:1px solid;
+}
+.banner.action{background:var(--success-hl);border-color:color-mix(in oklch,var(--success) 30%,transparent);display:flex}
+.banner.watchonly{background:var(--surface);border-color:var(--divider);display:flex}
+.banner-icon{font-size:1.4rem;flex-shrink:0;margin-top:.05rem}
+.banner-body{flex:1}
+.banner-title{font-weight:700;font-size:.95rem;color:var(--text);margin-bottom:.2rem}
+.banner-sub{font-size:.825rem;color:var(--text-muted)}
+
+/* ── Search / add ───────────────────────────────────────────────── */
+.toolbar{
+  display:flex;gap:.6rem;margin-bottom:1.5rem;flex-wrap:wrap;
+}
+.search-wrap{position:relative;flex:1;min-width:200px}
+.search-wrap svg{position:absolute;left:.7rem;top:50%;transform:translateY(-50%);color:var(--text-faint);pointer-events:none}
+.search-input{
+  width:100%;padding:.5rem .75rem .5rem 2.25rem;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-md);font-size:.875rem;color:var(--text);
+  transition:border-color var(--ease),box-shadow var(--ease);
+}
+.search-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-hl);outline:none}
+.search-input::placeholder{color:var(--text-faint)}
+.add-wrap{display:flex;gap:.5rem}
+.add-input{
+  padding:.5rem .75rem;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-md);font-size:.875rem;color:var(--text);width:130px;
+  text-transform:uppercase;
+  transition:border-color var(--ease);
+}
+.add-input:focus{border-color:var(--primary);outline:none;box-shadow:0 0 0 3px var(--primary-hl)}
+.add-input::placeholder{text-transform:none;color:var(--text-faint)}
+.btn-add{
+  padding:.5rem 1rem;background:var(--primary);color:#fff;
+  border-radius:var(--r-md);font-size:.875rem;font-weight:600;
+  transition:background var(--ease);
+  white-space:nowrap;
+}
+.btn-add:hover{background:var(--primary-hover)}
+
+/* ── Category filters ───────────────────────────────────────────── */
+.cat-filters{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.cat-chip{
+  padding:.3rem .8rem;border-radius:var(--r-full);
+  border:1px solid var(--border);font-size:.78rem;font-weight:500;
+  background:var(--surface);color:var(--text-muted);
+  transition:all var(--ease);cursor:pointer;
+}
+.cat-chip:hover{border-color:var(--primary);color:var(--primary)}
+.cat-chip.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.cat-chip .count{opacity:.7;margin-left:.3rem}
+
+/* ── Section headers ─────────────────────────────────────────────── */
+.section-head{
+  display:flex;align-items:center;gap:.6rem;
+  padding:.5rem 0;margin-bottom:.75rem;
+  border-bottom:1px solid var(--divider);
+}
+.section-head h2{font-size:1rem;font-weight:700;color:var(--text)}
+.section-head .pill{
+  padding:.15rem .55rem;border-radius:var(--r-full);
+  font-size:.72rem;font-weight:600;
+  background:var(--primary-hl);color:var(--primary);
+}
+.section-toggle{
+  margin-left:auto;font-size:.78rem;color:var(--text-muted);
+  display:flex;align-items:center;gap:.3rem;
+  transition:color var(--ease);
+}
+.section-toggle:hover{color:var(--primary)}
+
+/* ── Bill cards ─────────────────────────────────────────────────── */
+.bill-list{display:flex;flex-direction:column;gap:.6rem;margin-bottom:2rem}
+.bill-card{
+  background:var(--surface);border:1px solid var(--divider);
+  border-radius:var(--r-lg);padding:.9rem 1.1rem;
+  transition:box-shadow var(--ease),border-color var(--ease);
+  display:grid;grid-template-columns:1fr auto;gap:.3rem .75rem;
+  align-items:start;
+}
+.bill-card:hover{box-shadow:var(--shadow-sm);border-color:var(--border)}
+.bill-card.urgent{
+  border-color:color-mix(in oklch,var(--success) 40%,transparent);
+  background:color-mix(in oklch,var(--success-hl) 60%,var(--surface));
+}
+.bill-card.personal{
+  border-color:color-mix(in oklch,var(--primary) 35%,transparent);
+  background:color-mix(in oklch,var(--primary-hl) 50%,var(--surface));
+}
+.bill-meta{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.25rem}
+.bill-id{font-size:.8rem;font-weight:700;color:var(--text);letter-spacing:.02em}
+.tag{
+  display:inline-flex;align-items:center;padding:.1rem .45rem;
+  border-radius:var(--r-full);font-size:.7rem;font-weight:600;
+  background:var(--surface-offset);color:var(--text-muted);
+}
+.tag.Housing{background:#dbeafe;color:#1e40af}
+.tag.Biking{background:#dcfce7;color:#166534}
+.tag[class*="Safe"]{background:#fef9c3;color:#854d0e}
+.tag.Transit{background:#ede9fe;color:#5b21b6}
+.tag.personal-tag{background:var(--primary-hl);color:var(--primary)}
+.tag.hearing{background:var(--success-hl);color:var(--success);font-weight:700}
+.tag.opponent{background:var(--error-hl);color:var(--error)}
+.bill-title{font-size:.9rem;color:var(--text);line-height:1.4;grid-column:1/-1}
+.bill-hearing{
+  font-size:.78rem;color:var(--success);font-weight:600;
+  display:flex;align-items:center;gap:.3rem;margin-top:.3rem;grid-column:1/-1;
+}
+.bill-hearing svg{flex-shrink:0}
+.bill-actions{display:flex;gap:.5rem;margin-top:.6rem;grid-column:1/-1;flex-wrap:wrap}
+.btn-slip{
+  display:inline-flex;align-items:center;gap:.35rem;
+  padding:.38rem .85rem;border-radius:var(--r-md);
+  font-size:.8rem;font-weight:600;
+  background:var(--primary);color:#fff;
+  transition:background var(--ease);text-decoration:none;
+}
+.btn-slip:hover{background:var(--primary-hover);text-decoration:none}
+.btn-slip.opponent-btn{background:var(--error);}
+.btn-slip.opponent-btn:hover{background:color-mix(in oklch,var(--error) 80%,black)}
+.btn-ilga{
+  display:inline-flex;align-items:center;gap:.35rem;
+  padding:.38rem .85rem;border-radius:var(--r-md);
+  font-size:.8rem;font-weight:500;
+  border:1px solid var(--border);background:var(--surface-2);color:var(--text-muted);
+  transition:all var(--ease);text-decoration:none;
+}
+.btn-ilga:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-hl);text-decoration:none}
+.btn-remove{
+  margin-left:auto;padding:.38rem .7rem;
+  border-radius:var(--r-md);font-size:.78rem;color:var(--text-faint);
+  border:1px solid transparent;
+  transition:all var(--ease);
+}
+.btn-remove:hover{color:var(--error);border-color:var(--error-hl);background:var(--error-hl)}
+
+/* card top-right: remove btn only shows on personal cards */
+.bill-card-corner{grid-row:1;grid-column:2;display:flex;justify-content:flex-end}
+
+/* ── Watchlist section (collapsible) ────────────────────────────── */
+.watchlist-toggle{
+  display:flex;align-items:center;gap:.6rem;
+  padding:.65rem 1rem;width:100%;
+  background:var(--surface);border:1px solid var(--divider);
+  border-radius:var(--r-lg);cursor:pointer;text-align:left;
+  font-size:.875rem;font-weight:600;color:var(--text);
+  transition:background var(--ease),border-color var(--ease);
+  margin-bottom:.6rem;
+}
+.watchlist-toggle:hover{background:var(--surface-offset);border-color:var(--border)}
+.watchlist-toggle .wl-count{
+  margin-left:.3rem;padding:.1rem .5rem;
+  background:var(--surface-offset);border-radius:var(--r-full);
+  font-size:.72rem;font-weight:600;color:var(--text-muted);
+}
+.watchlist-toggle .wl-caret{
+  margin-left:auto;transition:transform var(--ease);color:var(--text-faint)
+}
+.watchlist-toggle[aria-expanded="true"] .wl-caret{transform:rotate(180deg)}
+.watchlist-body{display:none}
+.watchlist-body.open{display:block}
+
+/* ── Empty / loading states ─────────────────────────────────────── */
+.empty{
+  text-align:center;padding:3rem 1rem;
+  color:var(--text-muted);font-size:.9rem;
+}
+.empty-icon{font-size:2.5rem;margin-bottom:.75rem}
+.skeleton{border-radius:var(--r-lg);background:linear-gradient(90deg,var(--surface-offset) 25%,var(--surface-2) 50%,var(--surface-offset) 75%);background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.skeleton-card{height:90px;margin-bottom:.6rem}
+
+/* ── Toast ──────────────────────────────────────────────────────── */
+#toast{
+  position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%) translateY(4rem);
+  background:var(--text);color:var(--bg);
+  padding:.55rem 1.1rem;border-radius:var(--r-full);
+  font-size:.825rem;font-weight:500;
+  box-shadow:var(--shadow-md);z-index:9999;
+  opacity:0;transition:opacity .2s,transform .25s;
+  pointer-events:none;white-space:nowrap;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── Footer ─────────────────────────────────────────────────────── */
+footer{
+  border-top:1px solid var(--divider);padding:1.5rem 0;
+  margin-top:3rem;font-size:.78rem;color:var(--text-faint);
+  display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;
+}
+footer a{color:var(--text-muted)}
+footer a:hover{color:var(--primary)}
+.footer-spacer{flex:1}
+
+/* ── Responsive ─────────────────────────────────────────────────── */
+@media(max-width:600px){
+  .add-wrap{width:100%;flex:none}
+  .add-input{flex:1}
+  .toolbar{flex-direction:column}
+  .search-wrap{min-width:0}
+}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────── -->
+<header class="site-header">
+  <div class="logo">
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+      <rect width="28" height="28" rx="7" fill="var(--primary)"/>
+      <circle cx="9" cy="19" r="3.5" stroke="#fff" stroke-width="1.8" fill="none"/>
+      <circle cx="19" cy="19" r="3.5" stroke="#fff" stroke-width="1.8" fill="none"/>
+      <path d="M9 19 L13 10 L16 15 L19 10" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M6 14 h5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    IL Urbanist Witness Slip Tracker
+  </div>
+  <div class="header-actions">
+    <button class="btn-notify" id="notifyBtn" title="Get browser notifications when new slips open">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      Notify me
+    </button>
+    <button class="btn-icon" id="themeBtn" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ── Main ────────────────────────────────────────────────────── -->
+<main class="container">
+  <section class="hero">
+    <p class="hero-kicker">Chicago / Illinois · 104th General Assembly</p>
+    <h1>Urbanist bills need<br><em>your</em> voice in committee.</h1>
+    <p>Track Illinois bills on Housing, Biking, Safe Streets &amp; Transit. Get notified the moment a committee hearing is scheduled — then file your witness slip in one click.</p>
+  </section>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusText">Loading bill data…</span>
+  </div>
+
+  <!-- Action banner -->
+  <div class="banner" id="banner">
+    <div class="banner-icon" id="bannerIcon">🔔</div>
+    <div class="banner-body">
+      <div class="banner-title" id="bannerTitle"></div>
+      <div class="banner-sub" id="bannerSub"></div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search-input" id="searchInput" type="search" placeholder="Search bills, titles, or topics…" aria-label="Search bills">
+    </div>
+    <div class="add-wrap">
+      <input class="add-input" id="addInput" type="text" placeholder="e.g. HB1234" maxlength="10" aria-label="Add a bill to track">
+      <button class="btn-add" id="addBtn">+ Track bill</button>
+    </div>
+  </div>
+
+  <!-- Category filter chips -->
+  <div class="cat-filters" id="catFilters" role="group" aria-label="Filter by category">
+    <button class="cat-chip active" data-cat="All">All</button>
+    <button class="cat-chip" data-cat="Housing">🏘️ Housing</button>
+    <button class="cat-chip" data-cat="Biking">🚲 Biking</button>
+    <button class="cat-chip" data-cat="Safe Streets">🚦 Safe Streets</button>
+    <button class="cat-chip" data-cat="Transit">🚇 Transit</button>
+    <button class="cat-chip" data-cat="My List">⭐ My List</button>
+  </div>
+
+  <!-- Bill sections -->
+  <div id="billSections"></div>
+
+  <!-- Loading skeletons -->
+  <div id="loadingState">
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card" style="height:75px"></div>
+    <div class="skeleton skeleton-card" style="height:110px"></div>
+    <div class="skeleton skeleton-card"></div>
+  </div>
+
+</main>
+
+<footer class="container">
+  <span>Data from <a href="https://ilga.gov" target="_blank" rel="noopener">ILGA.gov</a> &amp; <a href="https://openstates.org" target="_blank" rel="noopener">OpenStates</a> via <a href="https://github.com/chihacknight/govbot/tree/il-witness-slip-poc" target="_blank" rel="noopener">govbot</a></span>
+  <span class="footer-spacer"></span>
+  <span>Curated by <a href="https://www.strongtownschicago.org/witness-slips" target="_blank" rel="noopener">Strong Towns Chicago</a></span>
+</footer>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+
+// ── Constants ──────────────────────────────────────────────────────
+const DATA_URL = './data/bills.json';
+const COOKIE_KEY = 'il_urbanist_tracked';
+const NOTIF_COOKIE = 'il_urbanist_notif_seen';
+const CAT_ORDER = ['Housing','Biking','Safe Streets','Transit','Other'];
+const CAT_EMOJI = {Housing:'🏘️',Biking:'🚲','Safe Streets':'🚦',Transit:'🚇',Other:'📋'};
+
+// ── Cookie helpers (no localStorage — sandboxed iframes block it) ──
+function getCookie(k){
+  const m = document.cookie.match('(?:^|; )'+k+'=([^;]*)');
+  return m ? decodeURIComponent(m[1]) : null;
+}
+function setCookie(k,v,days){
+  const exp = new Date(Date.now()+days*864e5).toUTCString();
+  document.cookie = k+'='+encodeURIComponent(v)+';expires='+exp+';path=/;SameSite=Lax';
+}
+function getTracked(){
+  try{ return JSON.parse(getCookie(COOKIE_KEY)||'[]'); }catch(e){ return []; }
+}
+function setTracked(arr){ setCookie(COOKIE_KEY,JSON.stringify(arr),365); }
+
+// ── Theme ──────────────────────────────────────────────────────────
+const html = document.documentElement;
+const themeBtn = document.getElementById('themeBtn');
+const themeIcon = document.getElementById('themeIcon');
+let darkMode = window.matchMedia('(prefers-color-scheme:dark)').matches;
+function applyTheme(dark){
+  html.setAttribute('data-theme', dark ? 'dark' : 'light');
+  themeIcon.innerHTML = dark
+    ? '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>'
+    : '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>';
+}
+applyTheme(darkMode);
+themeBtn.addEventListener('click',()=>{ darkMode=!darkMode; applyTheme(darkMode); });
+
+// ── Toast ──────────────────────────────────────────────────────────
+function toast(msg,dur=3000){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.classList.remove('show'), dur);
+}
+
+// ── State ──────────────────────────────────────────────────────────
+let allBills = [];
+let generatedAt = null;
+let activeFilter = 'All';
+let searchQuery = '';
+let personalList = getTracked(); // array of bill numbers added by user
+
+// ── Data loading ──────────────────────────────────────────────────
+async function loadData(){
+  try{
+    const res = await fetch(DATA_URL+'?_='+Date.now());
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    allBills = data.bills || [];
+    generatedAt = data.generated_at || null;
+    updateStatusBar();
+    renderAll();
+    checkForNewUrgentBills();
+  }catch(err){
+    document.getElementById('loadingState').innerHTML =
+      '<div class="empty"><div class="empty-icon">⚠️</div>'+
+      '<p>Could not load bill data.<br>'+
+      '<a href="https://github.com/chihacknight/govbot/actions" target="_blank" rel="noopener">Check the latest Action run</a> to see if data was generated.</p></div>';
+    document.getElementById('statusText').textContent = 'Data unavailable';
+  }
+}
+
+function updateStatusBar(){
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  if(!generatedAt){ dot.className='status-dot stale'; txt.textContent='No data yet'; return; }
+  const age = (Date.now() - new Date(generatedAt).getTime()) / 36e5; // hours
+  const dateStr = new Date(generatedAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  if(age < 30){ dot.className='status-dot live'; }
+  else{ dot.className='status-dot stale'; }
+  const urgentCount = allBills.filter(b=>b.committee_hearing_date).length;
+  txt.textContent = `Updated ${dateStr}${urgentCount ? ' · ' + urgentCount + ' bill' + (urgentCount>1?'s':'') + ' with hearings' : ' · ' + allBills.length + ' bills tracked'}`;
+}
+
+// ── Rendering ─────────────────────────────────────────────────────
+function visibleBills(){
+  let bills = [...allBills];
+
+  // Add personal-only bills (not in STC list)
+  const stcNums = new Set(allBills.map(b=>b.bill_number.toUpperCase()));
+  personalList.forEach(num=>{
+    const n = num.toUpperCase();
+    if(!stcNums.has(n)){
+      bills.push({bill_number:n,title:'Manually tracked bill',category:'Other',
+        stance:'Proponent',witness_slip_url:slipUrl(n),committee_hearing_date:null,
+        committee_name:null,source:'personal'});
+    }
+  });
+
+  // Filter
+  if(activeFilter === 'My List'){
+    const tracked = new Set(personalList.map(x=>x.toUpperCase()));
+    bills = bills.filter(b=>tracked.has(b.bill_number.toUpperCase()));
+  } else if(activeFilter !== 'All'){
+    bills = bills.filter(b=>b.category === activeFilter);
+  }
+
+  // Search
+  if(searchQuery){
+    const q = searchQuery.toLowerCase();
+    bills = bills.filter(b=>
+      b.bill_number.toLowerCase().includes(q)||
+      (b.title||'').toLowerCase().includes(q)||
+      (b.category||'').toLowerCase().includes(q)||
+      (b.committee_name||'').toLowerCase().includes(q)
+    );
+  }
+  return bills;
+}
+
+function slipUrl(billNum){
+  // Build a best-guess ILGA BillStatus URL from the bill number
+  const m = billNum.match(/^([HS])([BJR])(\d+)$/i);
+  if(!m) return 'https://ilga.gov';
+  const chamber = m[1].toUpperCase()==='H' ? 'House' : 'Senate';
+  const typeMap = {B:'',J:'HJRB',R:'HR'};
+  return `https://ilga.gov/legislation/BillStatus.asp?DocNum=${m[3]}&GAID=18&DocTypeID=${m[1].toUpperCase()}B&LegID=&SessionID=114&GA=104`;
+}
+
+function renderBillCard(b){
+  const tracked = personalList.map(x=>x.toUpperCase()).includes(b.bill_number.toUpperCase());
+  const isPersonalOnly = b.source === 'personal';
+  const isOpponent = b.stance === 'Opponent';
+  const hasHearing = !!b.committee_hearing_date;
+
+  const cardClass = ['bill-card',
+    hasHearing ? 'urgent' : '',
+    tracked ? 'personal' : ''
+  ].filter(Boolean).join(' ');
+
+  const hearingHtml = hasHearing ? `
+    <div class="bill-hearing">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Hearing: ${new Date(b.committee_hearing_date).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}
+      ${b.committee_name ? '· <span style="font-weight:400;color:var(--text-muted)">' + b.committee_name.replace(/^(assigned|referred) to /i,'') + '</span>' : ''}
+    </div>` : '';
+
+  const slipBtnClass = isOpponent ? 'btn-slip opponent-btn' : 'btn-slip';
+  const slipLabel = isOpponent ? '🚫 Oppose via Witness Slip' : '📝 File Witness Slip';
+  const slipHref = b.witness_slip_url || slipUrl(b.bill_number);
+
+  const removeBtn = tracked
+    ? `<button class="btn-remove" data-remove="${b.bill_number}" aria-label="Remove ${b.bill_number} from my list" title="Remove from My List">✕ Remove</button>`
+    : '';
+  const addBtn = !tracked
+    ? `<button class="btn-ilga" data-addpersonal="${b.bill_number}" style="border-style:dashed">⭐ Track</button>`
+    : '';
+
+  return `
+  <article class="${cardClass}" data-bill="${b.bill_number}">
+    <div>
+      <div class="bill-meta">
+        <span class="bill-id">${b.bill_number}</span>
+        <span class="tag ${b.category}">${CAT_EMOJI[b.category]||''} ${b.category}</span>
+        ${hasHearing ? '<span class="tag hearing">🗓 Hearing scheduled</span>' : ''}
+        ${isOpponent ? '<span class="tag opponent">🚫 Oppose</span>' : ''}
+        ${tracked && !isPersonalOnly ? '<span class="tag personal-tag">⭐ My List</span>' : ''}
+      </div>
+      <div class="bill-title">${b.title||'No title available'}</div>
+      ${hearingHtml}
+      <div class="bill-actions">
+        <a class="${slipBtnClass}" href="${slipHref}" target="_blank" rel="noopener noreferrer">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          ${slipLabel}
+        </a>
+        <a class="btn-ilga" href="${b.witness_slip_url||slipUrl(b.bill_number)}" target="_blank" rel="noopener noreferrer">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          ILGA page
+        </a>
+        ${addBtn}
+        ${removeBtn}
+      </div>
+    </div>
+    <div class="bill-card-corner"></div>
+  </article>`;
+}
+
+function renderAll(){
+  document.getElementById('loadingState').style.display = 'none';
+  const sections = document.getElementById('billSections');
+  const bills = visibleBills();
+
+  // Update chip counts
+  document.querySelectorAll('.cat-chip[data-cat]').forEach(chip=>{
+    const cat = chip.dataset.cat;
+    let count;
+    if(cat==='All') count = allBills.length;
+    else if(cat==='My List') count = personalList.length;
+    else count = allBills.filter(b=>b.category===cat).length;
+    const countEl = chip.querySelector('.count') || document.createElement('span');
+    countEl.className='count'; countEl.textContent=count>0?count:'';
+    if(!chip.querySelector('.count')) chip.appendChild(countEl);
+  });
+
+  // Banner
+  const urgent = bills.filter(b=>b.committee_hearing_date);
+  const banner = document.getElementById('banner');
+  if(urgent.length){
+    banner.className='banner action';
+    document.getElementById('bannerIcon').textContent='🔔';
+    document.getElementById('bannerTitle').textContent=
+      `${urgent.length} bill${urgent.length>1?'s':''} ${urgent.length>1?'have':'has'} a committee hearing scheduled — file your witness slip now!`;
+    document.getElementById('bannerSub').textContent=
+      urgent.map(b=>b.bill_number).join(', ');
+  } else if(bills.length){
+    banner.className='banner watchonly';
+    document.getElementById('bannerIcon').textContent='👀';
+    document.getElementById('bannerTitle').textContent='No hearings scheduled right now';
+    document.getElementById('bannerSub').textContent=
+      `${bills.length} bill${bills.length>1?'s':''} on the watchlist. You'll be notified when a hearing is set.`;
+  } else {
+    banner.className='banner';
+  }
+
+  if(!bills.length){
+    sections.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><p>No bills match your search.</p></div>';
+    return;
+  }
+
+  const withHearing = bills.filter(b=>b.committee_hearing_date);
+  const noHearing   = bills.filter(b=>!b.committee_hearing_date);
+
+  let html = '';
+
+  // ── Urgent section ────────────────────────────────────────────
+  if(withHearing.length){
+    html += `<div class="section-head"><h2>🗓 Hearings Scheduled</h2><span class="pill">${withHearing.length}</span></div>`;
+    html += '<div class="bill-list">';
+    withHearing.sort((a,b)=>new Date(a.committee_hearing_date)-new Date(b.committee_hearing_date))
+      .forEach(b=>{ html+=renderBillCard(b); });
+    html += '</div>';
+  }
+
+  // ── Watchlist (collapsible when there are urgent bills) ────────
+  if(noHearing.length){
+    const isCollapsible = withHearing.length > 0;
+    if(isCollapsible){
+      html += `
+        <button class="watchlist-toggle" id="wlToggle" aria-expanded="false" aria-controls="wlBody">
+          <span>👀 Watchlist</span>
+          <span class="wl-count">${noHearing.length} bills</span>
+          <svg class="wl-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="watchlist-body" id="wlBody">`;
+    }
+    CAT_ORDER.forEach(cat=>{
+      const catBills = noHearing.filter(b=>b.category===cat);
+      if(!catBills.length) return;
+      html += `<div class="section-head"><h2>${CAT_EMOJI[cat]||''} ${cat}</h2><span class="pill">${catBills.length}</span></div>`;
+      html += '<div class="bill-list">';
+      catBills.sort((a,b2)=>a.bill_number.localeCompare(b2.bill_number))
+        .forEach(b=>{ html+=renderBillCard(b); });
+      html += '</div>';
+    });
+    if(isCollapsible) html += '</div>'; // close watchlist-body
+  }
+
+  sections.innerHTML = html;
+
+  // Bind watchlist toggle
+  const wlToggle = document.getElementById('wlToggle');
+  if(wlToggle){
+    wlToggle.addEventListener('click',()=>{
+      const expanded = wlToggle.getAttribute('aria-expanded')==='true';
+      wlToggle.setAttribute('aria-expanded', !expanded);
+      document.getElementById('wlBody').classList.toggle('open',!expanded);
+    });
+  }
+
+  // Bind remove buttons
+  sections.querySelectorAll('[data-remove]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      removeTracked(btn.dataset.remove);
+    });
+  });
+
+  // Bind add-to-personal buttons on cards
+  sections.querySelectorAll('[data-addpersonal]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      addTracked(btn.dataset.addpersonal);
+    });
+  });
+}
+
+// ── Personal list ─────────────────────────────────────────────────
+function addTracked(num){
+  num = num.toUpperCase().replace(/\s+/g,'');
+  if(!num) return;
+  if(personalList.map(x=>x.toUpperCase()).includes(num)){
+    toast(`${num} is already in your list`);
+    return;
+  }
+  personalList.push(num);
+  setTracked(personalList);
+  toast(`⭐ Added ${num} to My List`);
+  renderAll();
+}
+
+function removeTracked(num){
+  num = num.toUpperCase();
+  personalList = personalList.filter(x=>x.toUpperCase()!==num);
+  setTracked(personalList);
+  toast(`Removed ${num} from My List`);
+  renderAll();
+}
+
+// ── Add bill input ────────────────────────────────────────────────
+document.getElementById('addBtn').addEventListener('click',()=>{
+  const val = document.getElementById('addInput').value.trim();
+  if(!val){ toast('Enter a bill number like HB1234'); return; }
+  addTracked(val);
+  document.getElementById('addInput').value='';
+});
+document.getElementById('addInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){ document.getElementById('addBtn').click(); }
+});
+
+// ── Category filter ───────────────────────────────────────────────
+document.getElementById('catFilters').addEventListener('click',e=>{
+  const chip = e.target.closest('.cat-chip');
+  if(!chip) return;
+  activeFilter = chip.dataset.cat;
+  document.querySelectorAll('.cat-chip').forEach(c=>c.classList.toggle('active',c===chip));
+  renderAll();
+});
+
+// ── Search ────────────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input',e=>{
+  searchQuery = e.target.value.trim();
+  renderAll();
+});
+
+// ── Browser notifications ─────────────────────────────────────────
+const notifyBtn = document.getElementById('notifyBtn');
+
+function updateNotifyBtn(){
+  if(!('Notification' in window)){
+    notifyBtn.style.display='none'; return;
+  }
+  if(Notification.permission==='granted'){
+    notifyBtn.className='btn-notify granted';
+    notifyBtn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Notifications on';
+  } else if(Notification.permission==='denied'){
+    notifyBtn.className='btn-notify denied';
+    notifyBtn.textContent='Notifications blocked';
+  }
+}
+updateNotifyBtn();
+
+notifyBtn.addEventListener('click',async()=>{
+  if(!('Notification' in window)){ toast('Your browser does not support notifications'); return; }
+  if(Notification.permission==='denied'){ toast('Notifications are blocked — enable them in browser settings'); return; }
+  if(Notification.permission==='granted'){
+    toast('Notifications are already enabled ✓'); return;
+  }
+  const perm = await Notification.requestPermission();
+  updateNotifyBtn();
+  if(perm==='granted') toast('🔔 You\'ll be notified when a slip opens!');
+  else toast('Notifications not enabled');
+});
+
+function checkForNewUrgentBills(){
+  if(Notification.permission!=='granted') return;
+  const urgent = allBills.filter(b=>b.committee_hearing_date);
+  if(!urgent.length) return;
+  // Use cookie to avoid repeat-notifying for the same bills
+  const lastSeen = getCookie(NOTIF_COOKIE) || '';
+  const currentKey = urgent.map(b=>b.bill_number).sort().join(',');
+  if(currentKey === lastSeen) return;
+  setCookie(NOTIF_COOKIE, currentKey, 7);
+  const n = new Notification('🗓 IL Witness Slip Alert', {
+    body: `${urgent.length} bill${urgent.length>1?'s have':' has'} a hearing scheduled: ${urgent.map(b=>b.bill_number).join(', ')}`,
+    icon: 'https://ilga.gov/favicon.ico',
+    tag: 'il-urbanist-slips'
+  });
+  n.onclick = ()=>{ window.focus(); n.close(); };
+}
+
+// ── Boot ──────────────────────────────────────────────────────────
+loadData();
+
+})();
+</script>
+</body>
+</html>
