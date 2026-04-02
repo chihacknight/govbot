@@ -58,8 +58,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .govbot/repos
-          key: govbot-il-${{ runner.os }}-${{ hashFiles('govbot.yml') }}
-          restore-keys: govbot-il-${{ runner.os }}-
+          key: govbot-il-v2-${{ runner.os }}-${{ hashFiles('govbot.yml') }}
+          restore-keys: govbot-il-v2-${{ runner.os }}-
 
       - name: Clone IL legislation repo
         if: steps.cache-repos.outputs.cache-hit != 'true'
@@ -76,12 +76,16 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .govbot/repos
-          key: govbot-il-${{ runner.os }}-${{ hashFiles('govbot.yml') }}
+          key: govbot-il-v2-${{ runner.os }}-${{ hashFiles('govbot.yml') }}
 
       - name: Tag bills
         run: |
           echo "🏷️  Tagging bills..."
-          govbot logs --repos il --govbot-dir .govbot | govbot tag --govbot-dir .govbot
+          echo "--- govbot.yml being used ---"
+          head -20 govbot.yml
+          echo "--- end ---"
+          govbot logs --repos il --govbot-dir .govbot \
+            | govbot tag --output-dir . --govbot-dir .govbot
 
       - name: Build RSS feed
         id: govbot
