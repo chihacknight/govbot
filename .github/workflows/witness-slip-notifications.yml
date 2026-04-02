@@ -154,7 +154,7 @@ jobs:
           html_body: file://notifications_output.html
           attachments: witness_slip_notifications.json
       
-            - name: Post summary
+      - name: Post summary
         if: always()
         run: |
           echo "## 📊 Witness Slip Notification Summary" >> $GITHUB_STEP_SUMMARY
