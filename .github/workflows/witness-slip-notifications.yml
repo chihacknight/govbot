@@ -53,30 +53,36 @@ jobs:
           chmod +x .govbot/bin/govbot
           echo ".govbot/bin" >> $GITHUB_PATH
 
+      # Cache key includes today's date so the cache is busted once per day.
+      # Within the same day, re-runs reuse the cache and skip the slow clone.
+      - name: Get today's date for cache key
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
       - name: Restore repo cache
         id: cache-repos
         uses: actions/cache@v4
         with:
           path: .govbot/repos
-          key: govbot-il-v2-${{ runner.os }}-${{ hashFiles('govbot.yml') }}
-          restore-keys: govbot-il-v2-${{ runner.os }}-
+          key: govbot-il-v3-${{ runner.os }}-${{ steps.date.outputs.date }}
+          restore-keys: govbot-il-v3-${{ runner.os }}-
 
-      - name: Clone IL legislation repo
-        if: steps.cache-repos.outputs.cache-hit != 'true'
+      - name: Clone or update IL legislation repo
         run: |
-          govbot clone il --govbot-dir .govbot
-
-      - name: Update IL legislation repo
-        if: steps.cache-repos.outputs.cache-hit == 'true'
-        run: |
-          govbot clone --govbot-dir .govbot
+          if [ -d ".govbot/repos/il-legislation" ]; then
+            echo "📂 Repo exists, pulling latest..."
+            cd .govbot/repos/il-legislation && git pull --ff-only
+          else
+            echo "📥 Fresh clone..."
+            govbot clone il --govbot-dir .govbot
+          fi
 
       - name: Save repo cache
         if: steps.cache-repos.outputs.cache-hit != 'true'
         uses: actions/cache@v4
         with:
           path: .govbot/repos
-          key: govbot-il-v2-${{ runner.os }}-${{ hashFiles('govbot.yml') }}
+          key: govbot-il-v3-${{ runner.os }}-${{ steps.date.outputs.date }}
 
       - name: Tag bills
         run: |
