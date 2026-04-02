@@ -134,6 +134,10 @@ witness_slip_notifications.json
 data/il/
 data/
 
+# But always track the Pages data file
+!docs/data/
+!docs/data/bills.json
+
 # MailHog/Mailpit
 MailHog*
 mailpit*
