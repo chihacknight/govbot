@@ -339,14 +339,16 @@ class OpenStatesParser:
             return []
         
         bills = []
-        bill_files = list(data_path.glob("**/*.json"))
-        
-        print(f"📄 Found {len(bill_files)} JSON files")
-        
+        # Each bill lives in its own subdirectory with a metadata.json.
+        # That single file contains the bill's title, subjects, actions,
+        # sponsorships, and ILGA source URL — everything we need.
+        # The other JSON files under each bill dir are govbot log-event
+        # files; they contain no subject/category data and should be skipped.
+        bill_files = list(data_path.glob("*/metadata.json"))
+
+        print(f"📄 Found {len(bill_files)} bills (metadata.json files)")
+
         for bill_file in bill_files:
-            # Skip metadata.json - we want OpenStates source data
-            if bill_file.name == 'metadata.json':
-                continue
             
             try:
                 with open(bill_file, 'r') as f:
@@ -930,14 +932,18 @@ def main():
     # ── Build actionable list ─────────────────────────────────────────────────────────
     # In feed mode: include all bills with at least one tag (STC stubs always
     # have a tag so they're always included). In data-dir mode: use date window.
+    # Only include bills that matched an urbanist topic (have a subjects tag).
+    # STC stubs always have a subject set, so they're always included.
+    # In --data-dir mode, next_reading defaults to FIRST for every bill (no
+    # reliable hearing-date data in metadata.json), so we cannot use a date
+    # window — topic matching is the only meaningful filter.
+    URBANIST_TOPICS = {'Housing', 'Biking', 'Safe Streets', 'Transit', 'Transportation'}
     now = datetime.now()
     if args.feed:
         actionable = [b for b in bills if b.subjects]
     else:
-        future = now + timedelta(days=30)
         actionable = [b for b in bills if
-                      (b.committee_hearing_date and now <= b.committee_hearing_date <= future) or
-                      b.next_reading in [BillReading.FIRST, BillReading.SECOND]]
+                      b.subjects and set(b.subjects) & URBANIST_TOPICS]
 
     if not actionable:
         msg = "No actionable bills (no tagged bills in feed and STC list is empty)."
