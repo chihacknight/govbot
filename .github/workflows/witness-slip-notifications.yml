@@ -45,14 +45,53 @@ jobs:
       # emit a tagged RSS feed that the notifier can consume. No custom
       # scraping or keyword matching happens here — that’s govbot’s job.
       # ─────────────────────────────────────────────────────────────────
-      - name: Run govbot (clone → tag → RSS)
-        id: govbot
-        uses: chihacknight/govbot/actions/govbot@main
+      - name: Download govbot binary
+        run: |
+          mkdir -p .govbot/bin
+          curl -fsSL "https://github.com/chihacknight/govbot/releases/download/nightly/govbot-linux-x86_64" \
+            -o .govbot/bin/govbot
+          chmod +x .govbot/bin/govbot
+          echo ".govbot/bin" >> $GITHUB_PATH
+
+      - name: Restore repo cache
+        id: cache-repos
+        uses: actions/cache@v4
         with:
-          # Filter the feed to only the five urbanist tags defined in govbot.yml
-          tags: Housing,Transit,Biking,Safe Streets,Transportation
-          output-dir: docs
-          output-file: il-urbanist-feed.xml
+          path: .govbot/repos
+          key: govbot-il-${{ runner.os }}-${{ hashFiles('govbot.yml') }}
+          restore-keys: govbot-il-${{ runner.os }}-
+
+      - name: Clone IL legislation repo
+        if: steps.cache-repos.outputs.cache-hit != 'true'
+        run: |
+          govbot clone il --govbot-dir .govbot
+
+      - name: Update IL legislation repo
+        if: steps.cache-repos.outputs.cache-hit == 'true'
+        run: |
+          govbot clone --govbot-dir .govbot
+
+      - name: Save repo cache
+        if: steps.cache-repos.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: .govbot/repos
+          key: govbot-il-${{ runner.os }}-${{ hashFiles('govbot.yml') }}
+
+      - name: Tag bills
+        run: |
+          echo "🏷️  Tagging bills..."
+          govbot logs --repos il --govbot-dir .govbot | govbot tag --govbot-dir .govbot
+
+      - name: Build RSS feed
+        id: govbot
+        run: |
+          mkdir -p docs
+          govbot build \
+            --output-dir docs \
+            --output-file il-urbanist-feed.xml \
+            --govbot-dir .govbot
+          echo "feed-path=${{ github.workspace }}/docs/il-urbanist-feed.xml" >> $GITHUB_OUTPUT
 
       # ─────────────────────────────────────────────────────────────────
       # STEP 2 — Scan the tagged RSS feed for bills with upcoming committee
