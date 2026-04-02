@@ -102,6 +102,13 @@ jobs:
       #          hearings that have witness slips available, then build the
       #          activist email digest.
       # ─────────────────────────────────────────────────────────────────
+      - name: Debug feed output
+        run: |
+          echo "--- Feed file size ---"
+          wc -l docs/il-urbanist-feed.xml || echo "Feed not found"
+          echo "--- First 60 lines of feed ---"
+          head -60 docs/il-urbanist-feed.xml || echo "Feed not found"
+
       - name: Generate witness slip notifications
         env:
           # Path to the RSS feed govbot just produced
@@ -131,7 +138,11 @@ jobs:
             --feed docs/il-urbanist-feed.xml
       
       - name: Send email notifications
-        if: github.event.inputs.test_mode != 'true'
+        if: |
+          github.event.inputs.test_mode != 'true' &&
+          env.MAIL_SERVER != ''
+        env:
+          MAIL_SERVER: ${{ secrets.MAIL_SERVER }}
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.MAIL_SERVER }}
