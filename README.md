@@ -51,6 +51,42 @@ govbot update              # update govbot to latest version
 govbot --help              # see all commands and options
 ```
 
+### Docker
+
+* Build the image from source:
+
+```bash
+docker build -t govbot:latest -f actions/govbot/Dockerfile actions/govbot/
+```
+
+* Run the setup wizard (writes `govbot.yml` and other config files to the current directory):
+
+```bash
+docker run --rm -it -v $(pwd):/home/govbot govbot:latest
+```
+
+Mounting `$(pwd)` to `/home/govbot` ensures config files and downloaded data persist between runs.
+
+#### Common Docker Commands
+
+```bash
+# Run the full pipeline (clone, tag, build) using govbot.yml config
+docker run --rm -v $(pwd):/home/govbot govbot:latest
+
+# Clone a specific state (or use "all" for all states)
+docker run --rm -v $(pwd):/home/govbot govbot:latest clone il
+
+# Stream legislative activity logs
+docker run --rm -v $(pwd):/home/govbot govbot:latest logs
+
+# Build RSS feeds (requires tags defined in govbot.yml)
+docker run --rm -v $(pwd):/home/govbot govbot:latest build
+
+# Delete all cloned repos, then re-clone only the state in govbot.yml
+docker run --rm -v $(pwd):/home/govbot govbot:latest delete all
+docker run --rm -v $(pwd):/home/govbot govbot:latest
+```
+
 # 🏛️ Govbot Legislation Effort
 
 - Nearly all state governments
