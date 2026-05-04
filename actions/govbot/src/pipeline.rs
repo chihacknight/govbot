@@ -2,6 +2,14 @@ use anyhow::{Context, Result};
 use std::path::Path;
 use std::process::{Command, Stdio};
 
+/// Check if the config has non-empty tags defined.
+fn has_tags(config: &serde_json::Value) -> bool {
+    config.get("tags")
+        .and_then(|t| t.as_object())
+        .map(|o| !o.is_empty())
+        .unwrap_or(false)
+}
+
 /// Run the full govbot pipeline: clone/update → tag → build.
 ///
 /// Smart update behavior:
@@ -14,6 +22,9 @@ pub fn run_pipeline(config_path: &Path) -> Result<()> {
     let cwd = config_path
         .parent()
         .unwrap_or_else(|| Path::new("."));
+
+    // Load config once for reuse throughout the pipeline
+    let config = crate::publish::load_config(config_path)?;
 
     let repos_dir = cwd.join(".govbot").join("repos");
     let has_repos = repos_dir.exists()
@@ -37,7 +48,6 @@ pub fn run_pipeline(config_path: &Path) -> Result<()> {
             .status()
     } else {
         // First run: clone based on config
-        let config = crate::publish::load_config(config_path)?;
         let repos = crate::publish::get_repos_from_config(&config);
 
         let mut cmd = Command::new(&govbot_bin);
@@ -78,22 +88,28 @@ pub fn run_pipeline(config_path: &Path) -> Result<()> {
         _ => {}
     }
 
-    // Step 3: Build RSS feeds
-    eprintln!();
-    eprintln!("=== Step 3/3: Building RSS feeds ===");
-    eprintln!();
+    // Step 3: Build RSS feeds (only if tags are defined)
+    if has_tags(&config) {
+        eprintln!();
+        eprintln!("=== Step 3/3: Building RSS feeds ===");
+        eprintln!();
 
-    let build_status = Command::new(&govbot_bin)
-        .arg("build")
-        .current_dir(cwd)
-        .stdin(Stdio::inherit())
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .status()
-        .context("Failed to run govbot build")?;
+        let build_status = Command::new(&govbot_bin)
+            .arg("build")
+            .current_dir(cwd)
+            .stdin(Stdio::inherit())
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .status()
+            .context("Failed to run govbot build")?;
 
-    if !build_status.success() {
-        anyhow::bail!("Build step failed with exit code: {}", build_status.code().unwrap_or(-1));
+        if !build_status.success() {
+            anyhow::bail!("Build step failed with exit code: {}", build_status.code().unwrap_or(-1));
+        }
+    } else {
+        eprintln!();
+        eprintln!("=== Step 3/3: Skipping RSS feed build ===");
+        eprintln!("No tags defined in govbot.yml. Add tags, then run 'govbot build' to generate feeds.");
     }
 
     eprintln!();

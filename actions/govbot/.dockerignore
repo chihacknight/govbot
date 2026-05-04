@@ -1,0 +1,31 @@
+# Build artifacts
+target/
+# Keep Cargo.lock for reproducible builds
+# Cargo.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Docs
+docs/
+
+# Other actions
+../format/
+../scrape/
+../extract/
+../format/
+../pipeline-manager/
+../report-publisher/
+
+# Mocks
+mocks/
+
+# Snapshots
+__snapshots__/
