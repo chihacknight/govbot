@@ -5,7 +5,15 @@
 
 # 🏛️ govbot
 
+- Download the legislation of [47 states/jurisdicitions](github.com/govbot-data) in under 1 minute.
+- Tag/summarize bills with with private/local models optimized to run on free Github Actions.
+
 `govbot` enables distributed data anaylsis of government updates via a friendly terminal interface. Git repos function as datasets, including the legislation of all 47 states/jurisdictions.
+
+## Example Projects
+
+- [Transportation Legislation Bluesky Bot](https://bsky.app/profile/govbottransport.bsky.social)
+- [Data Center Legislation Bluesky Bot](https://bsky.app/profile/govbotaidatacenter.bsky.social)
 
 ## Quick Start
 
@@ -51,7 +59,9 @@ govbot update              # update govbot to latest version
 govbot --help              # see all commands and options
 ```
 
-# 🏛️ Govbot Legislation Effort
+# 🏛️ Govbot Legislation Data Catalogs
+
+See the data catalogs [here](github.com/govbot-data).
 
 - Nearly all state governments
 - Federal
