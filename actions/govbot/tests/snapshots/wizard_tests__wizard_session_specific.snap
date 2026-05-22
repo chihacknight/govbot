@@ -25,7 +25,7 @@ Your feed will be generated in the "docs" directory.
 ? Base URL for your feed: https://activist.github.io/legislation
 
   ✓ Created govbot.yml
-  ✓ Created .gitignore with .govbot
+  ✓ Created .gitignore
   ✓ Created .github/workflows/build.yml
 
 Setup complete! Run 'govbot' again to start the pipeline.

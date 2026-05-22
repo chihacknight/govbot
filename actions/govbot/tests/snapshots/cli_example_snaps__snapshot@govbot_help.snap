@@ -6,19 +6,19 @@ Command:
 govbot --help
 
 Output:
-Process pipeline log files with type-safe reactive streams
+Government-data tool: pull dataset repositories, run transforms over them, and publish artifacts (RSS / HTML / JSON / DuckDB / Bluesky). Configured by a `govbot.yml` manifest (datasets / transforms / publish / pipelines). See AGENT.md for the end-user playbook.
 
 Usage: govbot [COMMAND]
 
 Commands:
-  pull     Pull dataset repositories (default: updates existing datasets) Clones if the dataset repository doesn't exist, pulls if it does Use "govbot pull all" to pull all datasets, or "govbot pull <dataset>" for specific ones
-  source   Stream dataset records as JSON Lines (the govbot stream-protocol source)
-  delete   Delete data pipeline repositories Deletes local repository directories for specified locales
-  load     Load bill metadata into a DuckDB database file Loads all metadata.json files from cloned repos into a DuckDB database for analysis. The database file is saved in the base govbot directory (e.g., ./.govbot/govbot.duckdb)
-  update   Update govbot to the latest nightly version Downloads and installs the latest nightly build from GitHub releases
-  publish  Run a publisher: emit feeds/indexes/dumps from a govbot.yml publisher Reads the named publishers from govbot.yml `publish:` and emits their artifacts
+  pull     Pull (clone or update) dataset repositories into the shared cache and link them into the project. Use `govbot pull all` to pull every dataset, `govbot pull <id>...` for specific ones, or `govbot pull` with no args to refresh whatever's already linked into the project
+  source   Stream dataset records as JSON Lines — the govbot stream-protocol `source` stage. Pipe into a transform (`fastclass classify -`) or into `govbot apply` for the persistence sink. See `schemas/STREAM_PROTOCOL.md`
+  delete   Delete locally-linked dataset clones from the project's `.govbot/repos/`. Use `govbot delete all` to clear every linked dataset, or `govbot delete <id>...` for specific ones. The shared cache at `~/.govbot/cache/` is not touched — a subsequent `pull` re-links instantly
+  load     Load bill metadata into a DuckDB database for SQL analysis. Walks every linked dataset's `metadata.json` files, creates a `bills` table + a `bills_summary` view, and writes the database into the base govbot directory (default `./.govbot/govbot.duckdb`). Requires the `duckdb` CLI on PATH
+  update   Update the installed govbot binary to the latest nightly build from GitHub releases. Installs into `~/.govbot/bin/govbot` and prefers the platform-native `.tar.gz` asset
+  publish  Run one or more publishers from `govbot.yml: publish:`. A publisher consumes the tagged result stream and emits artifacts: `rss`/`html`/`json` write feed/index/dump files, `duckdb` loads records into a database, `bluesky` posts matches to a Bluesky account (always dry-run first with `--dry-run`)
   apply    Persist fastclass classification results into the dataset as tag files. Reads `fastclass classify` result JSON from stdin — the apply sink of `govbot source --select docs | fastclass classify - | govbot apply` — and writes per-tag `.tag.json` files under each bill's session directory, the files `govbot publish` turns into feeds. Classification itself is done by fastclass; `govbot apply` only stores the results
-  run      Run the full govbot pipeline against the current directory's `govbot.yml`: pull/update → `source --select docs | fastclass classify - | apply` → publish. Equivalent to running `govbot` with no arguments
+  run      Run the full pipeline against the current directory's `govbot.yml`: pull/update datasets → `source --select docs | fastclass classify - | apply` (the classify transform) → publish every configured publisher. `govbot` with no arguments is equivalent (and falls back to `init` if no `govbot.yml` is present)
   init     Scaffold a new govbot.yml in the current directory (the setup wizard). Interactive in a TTY; writes sensible defaults when non-interactive
   add      Add one or more datasets to the project's `govbot.yml` `datasets:` list. Each id is validated against the registry before it is added
   remove   Remove one or more datasets from the project's `govbot.yml`

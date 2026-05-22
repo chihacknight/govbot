@@ -76,7 +76,11 @@ pub fn cache_key(short_name: &str, git_url: &str, channel: Option<&str>) -> Stri
     hasher.update(b"@");
     hasher.update(channel.unwrap_or("").as_bytes());
     let digest = hasher.finalize();
-    let hex: String = digest.iter().take(6).map(|b| format!("{:02x}", b)).collect();
+    let hex: String = digest
+        .iter()
+        .take(6)
+        .map(|b| format!("{:02x}", b))
+        .collect();
     let safe_name = short_name.replace('/', "__");
     format!("{}-{}", safe_name, hex)
 }
@@ -91,7 +95,10 @@ pub fn cache_path(short_name: &str, git_url: &str, channel: Option<&str>) -> Res
 /// Prefers a symlink (cheap, shared); falls back to recording the cache path
 /// when symlinks are unavailable. Idempotent — an existing correct link is a
 /// no-op; a stale link is replaced.
-pub fn link_into_project(cache_entry: &std::path::Path, project_repo: &std::path::Path) -> Result<()> {
+pub fn link_into_project(
+    cache_entry: &std::path::Path,
+    project_repo: &std::path::Path,
+) -> Result<()> {
     if let Some(parent) = project_repo.parent() {
         std::fs::create_dir_all(parent)?;
     }
@@ -118,7 +125,7 @@ pub fn link_into_project(cache_entry: &std::path::Path, project_repo: &std::path
                 e
             ))
         })?;
-        return Ok(());
+        Ok(())
     }
 
     #[cfg(not(unix))]

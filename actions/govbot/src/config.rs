@@ -191,7 +191,7 @@ impl From<&str> for SortOrder {
     fn from(s: &str) -> Self {
         match s.to_uppercase().as_str() {
             "ASC" => SortOrder::Ascending,
-            "DESC" | _ => SortOrder::Descending,
+            _ => SortOrder::Descending,
         }
     }
 }

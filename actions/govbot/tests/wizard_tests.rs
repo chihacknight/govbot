@@ -106,10 +106,16 @@ fn test_generated_yml_is_valid_manifest() {
         .expect("should have a classify transform");
     assert_eq!(classify.reads, "docs");
     assert_eq!(classify.writes, "classification");
-    assert!(classify.classifier.is_some(), "classify should reference a bundle");
+    assert!(
+        classify.classifier.is_some(),
+        "classify should reference a bundle"
+    );
 
     // publish — the RSS feed publisher.
-    let feed = manifest.publish.get("feed").expect("should have a feed publisher");
+    let feed = manifest
+        .publish
+        .get("feed")
+        .expect("should have a feed publisher");
     assert_eq!(
         feed.base_url.as_deref(),
         Some("https://myuser.github.io/my-govbot")
@@ -154,7 +160,9 @@ fn test_write_files_creates_govbot_yml() {
     let session = WizardSession::from_choices(&choices);
     let dir = tempfile::tempdir().unwrap();
 
-    session.write_files(dir.path()).expect("write_files should succeed");
+    session
+        .write_files(dir.path())
+        .expect("write_files should succeed");
 
     // Verify govbot.yml was created and parses as a Manifest.
     let config_path = dir.path().join("govbot.yml");
@@ -166,7 +174,10 @@ fn test_write_files_creates_govbot_yml() {
     let gitignore_path = dir.path().join(".gitignore");
     assert!(gitignore_path.exists(), ".gitignore should exist");
     let gitignore = std::fs::read_to_string(&gitignore_path).unwrap();
-    assert!(gitignore.contains(".govbot"), ".gitignore should contain .govbot");
+    assert!(
+        gitignore.contains(".govbot"),
+        ".gitignore should contain .govbot"
+    );
 
     // Verify workflow was created.
     let workflow_path = dir.path().join(".github/workflows/build.yml");

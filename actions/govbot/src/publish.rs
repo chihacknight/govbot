@@ -51,9 +51,7 @@ pub fn run_publisher(job: &PublishJob) -> Result<()> {
     );
 
     match p.kind {
-        PublisherKind::Rss | PublisherKind::Html => {
-            emit_rss_html(job, &select, &output_dir)
-        }
+        PublisherKind::Rss | PublisherKind::Html => emit_rss_html(job, &select, &output_dir),
         PublisherKind::Json => emit_json(job, &output_dir),
         PublisherKind::Duckdb => emit_duckdb(job, &output_dir),
         PublisherKind::Bluesky => crate::bluesky::run_bluesky(job, job.dry_run),
@@ -94,7 +92,11 @@ fn emit_rss_html(job: &PublishJob, select: &[String], output_dir: &Path) -> Resu
         } else {
             format!(
                 "{} Legislation",
-                select.iter().map(|t| titlecase_tag(t)).collect::<Vec<_>>().join(" & ")
+                select
+                    .iter()
+                    .map(|t| titlecase_tag(t))
+                    .collect::<Vec<_>>()
+                    .join(" & ")
             )
         }
     });
@@ -108,7 +110,11 @@ fn emit_rss_html(job: &PublishJob, select: &[String], output_dir: &Path) -> Resu
         } else {
             format!(
                 "Legislative updates tagged {}",
-                select.iter().map(|t| titlecase_tag(t)).collect::<Vec<_>>().join(", ")
+                select
+                    .iter()
+                    .map(|t| titlecase_tag(t))
+                    .collect::<Vec<_>>()
+                    .join(", ")
             )
         }
     });
@@ -129,7 +135,10 @@ fn emit_rss_html(job: &PublishJob, select: &[String], output_dir: &Path) -> Resu
     fs::write(&rss_path, rss_xml)?;
     eprintln!("✓ Generated RSS feed: {}", rss_path.display());
 
-    eprintln!("Generating HTML index with {} entries...", job.entries.len());
+    eprintln!(
+        "Generating HTML index with {} entries...",
+        job.entries.len()
+    );
     // Only pass an explicit (configured) title to the HTML header.
     let html_title = p.title.as_deref().filter(|s| !s.trim().is_empty());
     let html = rss::json_to_html(job.entries.clone(), html_title, feed_link, Some(feed_link));

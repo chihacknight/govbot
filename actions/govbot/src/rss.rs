@@ -559,7 +559,6 @@ pub fn json_to_html(
         </div>
         <footer class="entry-footer">
           <time class="entry-date" datetime="{}">{}</time>
-          {}
         </footer>
       </article>
 "#,
@@ -572,7 +571,6 @@ pub fn json_to_html(
                 .and_then(|t| t.as_str())
                 .unwrap_or(""),
             date_html,
-            if !date_html.is_empty() { "" } else { "" }
         ));
     }
 

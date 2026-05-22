@@ -1,19 +1,18 @@
 use clap::{Parser, Subcommand};
+use futures::stream;
+use futures::StreamExt;
 use govbot::git;
 use govbot::lock::LockFile;
+use govbot::publish::{deduplicate_entries, filter_by_tags, load_manifest, sort_by_timestamp};
 use govbot::registry::Registry;
-use govbot::{hash_text, TagFile, TagFileMetadata, BillTagResult};
 use govbot::selectors::ocd_files_select_default;
-use govbot::publish::{load_manifest, filter_by_tags, deduplicate_entries, sort_by_timestamp};
-use futures::StreamExt;
-use futures::stream;
-use std::io::{self, Write, BufRead, BufReader};
-use std::path::PathBuf;
-use serde_json;
+use govbot::{hash_text, BillTagResult, TagFile, TagFileMetadata};
 use jwalk::WalkDir;
-use std::fs;
-use std::process::Command as ProcessCommand;
 use std::collections::HashMap;
+use std::fs;
+use std::io::{self, BufRead, BufReader, Write};
+use std::path::PathBuf;
+use std::process::Command as ProcessCommand;
 
 /// Write a line to stdout, gracefully handling broken pipe errors
 /// This is essential for piping to tools like yq, jq, etc.
@@ -41,7 +40,7 @@ fn write_json_line(line: &str) -> io::Result<()> {
 #[derive(Debug, Clone)]
 struct CloneResult {
     locale: String,
-    result: String, // emoji, or "failed"
+    result: String,   // emoji, or "failed"
     position: String, // "1/37"
     size: Option<String>,
     local_size: Option<String>,
@@ -63,10 +62,12 @@ struct DatasetPin {
     cache_key: String,
 }
 
-/// Type-safe, functional reactive processor for pipeline log files
+/// govbot — gov-data package manager and transform/publish orchestrator.
 #[derive(Parser, Debug)]
 #[command(name = "govbot")]
-#[command(about = "Process pipeline log files with type-safe reactive streams")]
+#[command(
+    about = "Government-data tool: pull dataset repositories, run transforms over them, and publish artifacts (RSS / HTML / JSON / DuckDB / Bluesky). Configured by a `govbot.yml` manifest (datasets / transforms / publish / pipelines). See AGENT.md for the end-user playbook."
+)]
 #[command(version)]
 struct Args {
     #[command(subcommand)]
@@ -75,11 +76,12 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Command {
-    /// Pull dataset repositories (default: updates existing datasets)
-    /// Clones if the dataset repository doesn't exist, pulls if it does
-    /// Use "govbot pull all" to pull all datasets, or "govbot pull <dataset>" for specific ones
+    /// Pull (clone or update) dataset repositories into the shared cache and
+    /// link them into the project. Use `govbot pull all` to pull every dataset,
+    /// `govbot pull <id>...` for specific ones, or `govbot pull` with no args
+    /// to refresh whatever's already linked into the project.
     Pull {
-        /// Dataset names to pull (e.g., usa, il, ca, or "all" for all datasets). If not specified, updates existing datasets.
+        /// Dataset identifiers to pull (e.g. `wy`, `il`, `us-legislation/ca`, or `all`). With no args, refreshes datasets already linked into the project.
         #[arg(num_args = 0..)]
         repos: Vec<String>,
 
@@ -104,12 +106,15 @@ enum Command {
         list: bool,
     },
 
-    /// Stream dataset records as JSON Lines (the govbot stream-protocol source)
+    /// Stream dataset records as JSON Lines — the govbot stream-protocol
+    /// `source` stage. Pipe into a transform (`fastclass classify -`) or into
+    /// `govbot apply` for the persistence sink. See `schemas/STREAM_PROTOCOL.md`.
     Source {
-        /// Datasets to output (default: `all`) `--repos="il,ca"`
-        #[arg(long, num_args = 0..)]
+        /// Datasets to emit (default: every linked dataset). Accepts the same
+        /// identifiers as `govbot pull` (`wy`, `il`, `us-legislation/ca`).
+        #[arg(long = "datasets", visible_alias = "repos", num_args = 0..)]
         repos: Vec<String>,
-    
+
         /// Per repo limit (default: 100) options: `none` | number
         #[arg(long, default_value = "100")]
         limit: String,
@@ -135,13 +140,15 @@ enum Command {
 
         /// Govbot directory (default: $CWD/.govbot/repos, or GOVBOT_DIR env var)
         #[arg(long = "govbot-dir")]
-        govbot_dir: Option<String>,        
+        govbot_dir: Option<String>,
     },
 
-    /// Delete data pipeline repositories
-    /// Deletes local repository directories for specified locales
+    /// Delete locally-linked dataset clones from the project's `.govbot/repos/`.
+    /// Use `govbot delete all` to clear every linked dataset, or
+    /// `govbot delete <id>...` for specific ones. The shared cache at
+    /// `~/.govbot/cache/` is not touched — a subsequent `pull` re-links instantly.
     Delete {
-        /// Locale names to delete (e.g., usa, il, ca, or "all" for all locales). Use "all" to delete all repositories.
+        /// Dataset identifiers to unlink (e.g. `wy`, `il`, `us-legislation/ca`, or `all`).
         #[arg(num_args = 0..)]
         locales: Vec<String>,
 
@@ -158,9 +165,11 @@ enum Command {
         verbose: bool,
     },
 
-    /// Load bill metadata into a DuckDB database file
-    /// Loads all metadata.json files from cloned repos into a DuckDB database for analysis.
-    /// The database file is saved in the base govbot directory (e.g., ./.govbot/govbot.duckdb)
+    /// Load bill metadata into a DuckDB database for SQL analysis. Walks every
+    /// linked dataset's `metadata.json` files, creates a `bills` table + a
+    /// `bills_summary` view, and writes the database into the base govbot
+    /// directory (default `./.govbot/govbot.duckdb`). Requires the `duckdb` CLI
+    /// on PATH.
     Load {
         /// Output database filename (default: govbot.duckdb). Saved in the base govbot directory.
         #[arg(long, default_value = "govbot.duckdb")]
@@ -179,12 +188,16 @@ enum Command {
         threads: Option<usize>,
     },
 
-    /// Update govbot to the latest nightly version
-    /// Downloads and installs the latest nightly build from GitHub releases
+    /// Update the installed govbot binary to the latest nightly build from
+    /// GitHub releases. Installs into `~/.govbot/bin/govbot` and prefers the
+    /// platform-native `.tar.gz` asset.
     Update,
 
-    /// Run a publisher: emit feeds/indexes/dumps from a govbot.yml publisher
-    /// Reads the named publishers from govbot.yml `publish:` and emits their artifacts.
+    /// Run one or more publishers from `govbot.yml: publish:`. A publisher
+    /// consumes the tagged result stream and emits artifacts: `rss`/`html`/`json`
+    /// write feed/index/dump files, `duckdb` loads records into a database,
+    /// `bluesky` posts matches to a Bluesky account (always dry-run first with
+    /// `--dry-run`).
     Publish {
         /// Publisher name(s) from govbot.yml `publish:` (default: every publisher)
         #[arg(long = "publisher", num_args = 0..)]
@@ -231,9 +244,11 @@ enum Command {
         overwrite: bool,
     },
 
-    /// Run the full govbot pipeline against the current directory's `govbot.yml`:
-    /// pull/update → `source --select docs | fastclass classify - | apply` → publish.
-    /// Equivalent to running `govbot` with no arguments.
+    /// Run the full pipeline against the current directory's `govbot.yml`:
+    /// pull/update datasets → `source --select docs | fastclass classify - | apply`
+    /// (the classify transform) → publish every configured publisher.
+    /// `govbot` with no arguments is equivalent (and falls back to `init` if no
+    /// `govbot.yml` is present).
     Run {
         /// Govbot directory (default: $CWD/.govbot, or GOVBOT_DIR env var)
         #[arg(long = "govbot-dir")]
@@ -282,7 +297,6 @@ enum Command {
         output: String,
     },
 }
-
 
 fn get_govbot_dir(govbot_dir: Option<String>) -> anyhow::Result<PathBuf> {
     // Check flag first, then environment variable, then default
@@ -400,15 +414,17 @@ fn print_result(result: &CloneResult) {
     } else {
         let size_str = if let Some(ref size) = result.size {
             size.clone()
-        } else if let (Some(ref local), Some(ref final_size)) = (&result.local_size, &result.final_size) {
+        } else if let (Some(ref local), Some(ref final_size)) =
+            (&result.local_size, &result.final_size)
+        {
             format!("{} -> {}", local, final_size)
         } else {
             String::new()
         };
-        
+
         // result.result now contains the emoji directly (🆕, ⬇️, ✅, 🔄)
         let action_emoji = &result.result;
-        
+
         if !size_str.is_empty() {
             eprintln!("{}  {:<6}  [{}]", action_emoji, result.locale, size_str);
         } else {
@@ -452,7 +468,12 @@ async fn perform_clone_operations(
                 let verbose_flag = verbose;
 
                 tokio::task::spawn_blocking(move || {
-                    let mut result = process_single_dataset(&dataset, &repos_dir, token.as_deref(), verbose_flag);
+                    let mut result = process_single_dataset(
+                        &dataset,
+                        &repos_dir,
+                        token.as_deref(),
+                        verbose_flag,
+                    );
                     let mut count = completed.lock().unwrap();
                     *count += 1;
                     result.position = format!("{}/{}", *count, total);
@@ -499,7 +520,10 @@ fn update_lockfile(project_dir: &std::path::Path, results: &[CloneResult]) {
     let mut lock = match LockFile::load_or_default(project_dir) {
         Ok(l) => l,
         Err(e) => {
-            eprintln!("⚠️  Could not read govbot.lock ({}); skipping pin update", e);
+            eprintln!(
+                "⚠️  Could not read govbot.lock ({}); skipping pin update",
+                e
+            );
             return;
         }
     };
@@ -525,7 +549,6 @@ fn update_lockfile(project_dir: &std::path::Path, results: &[CloneResult]) {
     }
 }
 
-
 async fn run_pull_command(cmd: Command) -> anyhow::Result<()> {
     let Command::Pull {
         repos,
@@ -534,7 +557,8 @@ async fn run_pull_command(cmd: Command) -> anyhow::Result<()> {
         parallel,
         verbose,
         list,
-    } = cmd else {
+    } = cmd
+    else {
         unreachable!()
     };
 
@@ -559,7 +583,11 @@ async fn run_pull_command(cmd: Command) -> anyhow::Result<()> {
 
     // Get parallelization setting
     let num_jobs = parallel
-        .or_else(|| std::env::var("GOVBOT_JOBS").ok().and_then(|s| s.parse().ok()))
+        .or_else(|| {
+            std::env::var("GOVBOT_JOBS")
+                .ok()
+                .and_then(|s| s.parse().ok())
+        })
         .unwrap_or(4);
 
     // Resolve which datasets to pull.
@@ -609,12 +637,14 @@ async fn run_pull_command(cmd: Command) -> anyhow::Result<()> {
     if !errors.is_empty() {
         eprintln!("\n❌ Errors occurred: {}/{}", errors.len(), results.len());
     } else if !results.is_empty() {
-        eprintln!("\n✅ Successfully processed all {} datasets!", results.len());
+        eprintln!(
+            "\n✅ Successfully processed all {} datasets!",
+            results.len()
+        );
     }
 
     Ok(())
 }
-
 
 async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
     let Command::Delete {
@@ -622,7 +652,8 @@ async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
         govbot_dir,
         parallel,
         verbose,
-    } = cmd else {
+    } = cmd
+    else {
         unreachable!()
     };
 
@@ -644,7 +675,11 @@ async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
 
     // Get parallelization setting
     let num_jobs = parallel
-        .or_else(|| std::env::var("GOVBOT_JOBS").ok().and_then(|s| s.parse().ok()))
+        .or_else(|| {
+            std::env::var("GOVBOT_JOBS")
+                .ok()
+                .and_then(|s| s.parse().ok())
+        })
         .unwrap_or(4);
 
     // Parse datasets and handle "all". `all` expands to whatever is cloned
@@ -680,7 +715,7 @@ async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
     let total = locales_to_delete.len();
     let mut deleted_count = 0;
     let mut failed_count = 0;
-    
+
     if total == 1 || num_jobs == 1 {
         // Sequential delete
         for (idx, locale) in locales_to_delete.iter().enumerate() {
@@ -712,7 +747,7 @@ async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
         use std::sync::{Arc, Mutex};
         let deleted = Arc::new(Mutex::new(0usize));
         let failed = Arc::new(Mutex::new(0usize));
-        
+
         let delete_futures = stream::iter(locales_to_delete.iter())
             .map(|locale| {
                 let locale = locale.clone();
@@ -721,7 +756,7 @@ async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
                 let failed = failed.clone();
                 let total = total;
                 let verbose_flag = verbose;
-                
+
                 tokio::task::spawn_blocking(move || {
                     let repo_name = git::repo_dir_name(&locale);
                     let target_dir = repos_dir.join(&repo_name);
@@ -733,7 +768,8 @@ async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
                         eprintln!("[{}/{}] Deleting {}...", current, total, locale);
                     }
 
-                    let existed = target_dir.exists() || std::fs::symlink_metadata(&target_dir).is_ok();
+                    let existed =
+                        target_dir.exists() || std::fs::symlink_metadata(&target_dir).is_ok();
                     match git::delete_dataset(&locale, &repos_dir) {
                         Ok(_) => {
                             if existed {
@@ -755,7 +791,7 @@ async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
             .buffer_unordered(num_jobs);
 
         let mut stream = delete_futures;
-        
+
         while let Some(result) = stream.next().await {
             match result {
                 Ok((locale, Ok(status))) => {
@@ -771,11 +807,11 @@ async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
                 }
             }
         }
-        
+
         deleted_count = *deleted.lock().unwrap();
         failed_count = *failed.lock().unwrap();
     }
-    
+
     // Show summary
     if failed_count > 0 {
         eprintln!("\n❌ Errors occurred: {}/{}", failed_count, total);
@@ -784,11 +820,11 @@ async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
     } else {
         eprintln!("\n✅ No repositories found to delete.");
     }
-    
+
     Ok(())
 }
 
-/// Collapse a fully-joined `govbot logs` entry into the
+/// Collapse a fully-joined `govbot source` entry into the
 /// `{"id","text","kind":"docs"}` document the govbot stream protocol defines
 /// (`STREAM_PROTOCOL.md` §1) — the record `fastclass classify -` consumes.
 ///
@@ -824,10 +860,11 @@ async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
         join,
         select,
         filter,
-    } = cmd else {
+    } = cmd
+    else {
         unreachable!()
     };
-    
+
     // Parse join options - now supports field paths like "bill.title" and special "tags"
     let mut join_specs: Vec<(String, Vec<String>)> = Vec::new();
     let mut join_tags = false;
@@ -847,7 +884,11 @@ async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
     let limit_parsed: Option<usize> = if limit.to_lowercase() == "none" {
         None
     } else {
-        Some(limit.parse().map_err(|e| anyhow::anyhow!("Invalid limit value '{}': {}", limit, e))?)
+        Some(
+            limit
+                .parse()
+                .map_err(|e| anyhow::anyhow!("Invalid limit value '{}': {}", limit, e))?,
+        )
     };
 
     // Parse comma-separated repos if provided as single string
@@ -913,7 +954,7 @@ async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
         // Walk the repo directory to find log files matching the pattern:
         // repo_name/country:{country}/state:{state}/sessions/{session_name}/logs/*.json
         let mut file_count = 0;
-        
+
         for entry_result in WalkDir::new(&repo_path)
             .process_read_dir(|_depth, _path, _read_dir_state, _children| {
                 // Optional: customize directory reading behavior
@@ -933,7 +974,7 @@ async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
             }
 
             let path = entry.path();
-            
+
             // Check if it's a JSON file in a logs directory
             if !path.is_file() {
                 continue;
@@ -946,7 +987,7 @@ async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
             // Check if path matches: country:{country}/state:{state}/sessions/{session_name}/logs/*.json
             let path_str = path.to_string_lossy();
             let repo_prefix = repo_path.to_string_lossy();
-            
+
             // Get relative path by stripping the repo prefix
             // Handle both absolute and relative paths
             let relative_path = if let Some(stripped) = path_str.strip_prefix(&*repo_prefix) {
@@ -956,11 +997,11 @@ async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
                 // If prefix doesn't match, skip this file
                 continue;
             };
-            
+
             // Match pattern: country:*/state:*/sessions/*/logs/*.json
             // Use a simple regex-like check: must have these components in order
-            if relative_path.starts_with("country:") 
-                && relative_path.contains("/state:") 
+            if relative_path.starts_with("country:")
+                && relative_path.contains("/state:")
                 && relative_path.contains("/sessions/")
                 && relative_path.contains("/logs/")
                 && relative_path.ends_with(".json")
@@ -970,12 +1011,12 @@ async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
                 let state_pos = relative_path.find("/state:").unwrap_or(usize::MAX);
                 let sessions_pos = relative_path.find("/sessions/").unwrap_or(usize::MAX);
                 let logs_pos = relative_path.find("/logs/").unwrap_or(usize::MAX);
-                
+
                 // Verify order: country < state < sessions < logs
                 if country_pos < state_pos && state_pos < sessions_pos && sessions_pos < logs_pos {
                     // Compute relative source path
                     let source_path_str = compute_relative_source_path(&path, &git_dir);
-                    
+
                     // Read JSON file, parse it, and build extensible output structure
                     match fs::read_to_string(&path) {
                         Ok(contents) => {
@@ -989,19 +1030,22 @@ async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
                                         .or_else(|| json_value.get("bill_identifier"))
                                         .and_then(|id| id.as_str())
                                         .map(|s| s.to_string());
-                                    
+
                                     // Build output with extensible structure:
                                     // - Data keys (log, bill, etc.) are singular entity names matching source keys
                                     // - sources object automatically tracks all data sources
                                     let mut output = serde_json::Map::new();
-                                    
+
                                     // Add the log data with key "log" (matching sources.log)
                                     output.insert("log".to_string(), json_value);
-                                    
+
                                     // Add sources with the log path
                                     let mut sources = serde_json::Map::new();
-                                    sources.insert("log".to_string(), serde_json::Value::String(source_path_str.clone()));
-                                    
+                                    sources.insert(
+                                        "log".to_string(),
+                                        serde_json::Value::String(source_path_str.clone()),
+                                    );
+
                                     // Join additional datasets if requested
                                     for (dataset_name, field_path) in &join_specs {
                                         match dataset_name.as_str() {
@@ -1013,36 +1057,59 @@ async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
                                                     Ok(p) => p,
                                                     Err(_) => path.clone(),
                                                 };
-                                                
-                                                let metadata_path = canonical_log_path.parent()
+
+                                                let metadata_path = canonical_log_path
+                                                    .parent()
                                                     .and_then(|logs_dir| {
                                                         logs_dir.parent().map(|bill_dir| {
                                                             bill_dir.join("metadata.json")
                                                         })
                                                     });
-                                                
+
                                                 if let Some(ref metadata_path) = metadata_path {
                                                     if metadata_path.exists() {
                                                         match fs::read_to_string(metadata_path) {
                                                             Ok(metadata_contents) => {
-                                                                match serde_json::from_str::<serde_json::Value>(&metadata_contents) {
+                                                                match serde_json::from_str::<
+                                                                    serde_json::Value,
+                                                                >(
+                                                                    &metadata_contents
+                                                                ) {
                                                                     Ok(metadata_value) => {
                                                                         // If field_path is specified, extract just that field
                                                                         // Otherwise, include the full bill data
                                                                         if field_path.is_empty() {
                                                                             // No field path specified, include full bill data
-                                                                            output.insert("bill".to_string(), metadata_value);
+                                                                            output.insert(
+                                                                                "bill".to_string(),
+                                                                                metadata_value,
+                                                                            );
                                                                         } else {
                                                                             // Extract specific field(s) from bill data
-                                                                            if let Some(field_value) = extract_json_field(&metadata_value, field_path) {
+                                                                            if let Some(
+                                                                                field_value,
+                                                                            ) =
+                                                                                extract_json_field(
+                                                                                    &metadata_value,
+                                                                                    field_path,
+                                                                                )
+                                                                            {
                                                                                 // Use the full join path as the key (e.g., "bill.title")
-                                                                                let output_key = format!("{}.{}", dataset_name, field_path.join("."));
-                                                                                output.insert(output_key, field_value);
+                                                                                let output_key = format!(
+                                                                                    "{}.{}",
+                                                                                    dataset_name,
+                                                                                    field_path
+                                                                                        .join(".")
+                                                                                );
+                                                                                output.insert(
+                                                                                    output_key,
+                                                                                    field_value,
+                                                                                );
                                                                             } else {
                                                                                 eprintln!("Warning: Field path {:?} not found in metadata from {}", field_path, metadata_path.display());
                                                                             }
                                                                         }
-                                                                        
+
                                                                         // Add bill source path
                                                                         let bill_source_path = compute_relative_source_path(metadata_path, &git_dir);
                                                                         sources.insert("bill".to_string(), serde_json::Value::String(bill_source_path));
@@ -1064,38 +1131,54 @@ async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
                                                 }
                                             }
                                             _ => {
-                                                eprintln!("Warning: Unknown join dataset: {}", dataset_name);
+                                                eprintln!(
+                                                    "Warning: Unknown join dataset: {}",
+                                                    dataset_name
+                                                );
                                             }
                                         }
                                     }
-                                    
+
                                     // Join tags if requested
                                     if join_tags {
                                         // Extract country, state, session_id from the path
-                                        if let Some((country, state, session_id)) = extract_path_info(&source_path_str) {
+                                        if let Some((country, state, session_id)) =
+                                            extract_path_info(&source_path_str)
+                                        {
                                             // Use bill_id extracted earlier
                                             if let Some(ref bill_id) = bill_id_opt {
                                                 // Look for tags in cwd/country:us/state:{state}/sessions/{session_id}/tags/
-                                                let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+                                                let cwd = std::env::current_dir()
+                                                    .unwrap_or_else(|_| PathBuf::from("."));
                                                 let tags_dir = cwd
                                                     .join(&format!("country:{}", country))
                                                     .join(&format!("state:{}", state))
                                                     .join("sessions")
                                                     .join(&session_id)
                                                     .join("tags");
-                                                
+
                                                 if tags_dir.exists() && tags_dir.is_dir() {
                                                     let mut matched_tags = serde_json::Map::new();
                                                     if let Ok(entries) = fs::read_dir(&tags_dir) {
                                                         for entry in entries.flatten() {
                                                             let path = entry.path();
                                                             // Check for both .tag.json and .json files
-                                                            if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
+                                                            if let Some(ext) = path
+                                                                .extension()
+                                                                .and_then(|s| s.to_str())
+                                                            {
                                                                 if ext == "json" {
-                                                                    if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                                                                    if let Some(stem) = path
+                                                                        .file_stem()
+                                                                        .and_then(|s| s.to_str())
+                                                                    {
                                                                         // Remove .tag suffix if present (e.g., "budget.tag" -> "budget")
-                                                                        let tag_name = stem.strip_suffix(".tag").unwrap_or(stem);
-                                                                        match fs::read_to_string(&path) {
+                                                                        let tag_name = stem
+                                                                            .strip_suffix(".tag")
+                                                                            .unwrap_or(stem);
+                                                                        match fs::read_to_string(
+                                                                            &path,
+                                                                        ) {
                                                                             Ok(contents) => {
                                                                                 if let Ok(tag_file) = serde_json::from_str::<govbot::TagFile>(&contents) {
                                                                                     // Check if bill_id exists in bills map
@@ -1113,24 +1196,33 @@ async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
                                                         }
                                                     }
                                                     if !matched_tags.is_empty() {
-                                                        output.insert("tags".to_string(), serde_json::Value::Object(matched_tags));
+                                                        output.insert(
+                                                            "tags".to_string(),
+                                                            serde_json::Value::Object(matched_tags),
+                                                        );
                                                     }
                                                 }
                                             }
                                         }
                                     }
-                                    
-                                    output.insert("sources".to_string(), serde_json::Value::Object(sources));
-                                    
+
+                                    output.insert(
+                                        "sources".to_string(),
+                                        serde_json::Value::Object(sources),
+                                    );
+
                                     // Extract timestamp from sources.log path (after "logs/" and before "_")
                                     // Do this after sources is inserted so we can use the final sources.log value
                                     let timestamp = extract_timestamp_from_path(&source_path_str);
                                     if let Some(ref ts) = timestamp {
-                                        output.insert("timestamp".to_string(), serde_json::Value::String(ts.clone()));
+                                        output.insert(
+                                            "timestamp".to_string(),
+                                            serde_json::Value::String(ts.clone()),
+                                        );
                                     }
-                                    
+
                                     let mut output_value = serde_json::Value::Object(output);
-                                    
+
                                     // Apply select transformation if requested.
                                     // `default` trims each entry to the familiar
                                     // title/abstracts/subject shape. `docs` deliberately
@@ -1142,26 +1234,44 @@ async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
                                     if select == "default" {
                                         // Select specific keys from nested objects, preserving structure
                                         let mut selected_output = serde_json::Map::new();
-                                        
+
                                         // Top: id (from log.bill_id), then log object with selected fields
-                                        if let Some(id) = output_value.get("log").and_then(|l| l.get("bill_id").or_else(|| l.get("bill_identifier"))).and_then(|v| v.as_str()) {
-                                            selected_output.insert("id".to_string(), serde_json::Value::String(id.to_string()));
+                                        if let Some(id) = output_value
+                                            .get("log")
+                                            .and_then(|l| {
+                                                l.get("bill_id")
+                                                    .or_else(|| l.get("bill_identifier"))
+                                            })
+                                            .and_then(|v| v.as_str())
+                                        {
+                                            selected_output.insert(
+                                                "id".to_string(),
+                                                serde_json::Value::String(id.to_string()),
+                                            );
                                         }
-                                        
+
                                         // Create log object with only action and bill_id
                                         if let Some(log) = output_value.get("log") {
                                             let mut log_obj = serde_json::Map::new();
                                             if let Some(action) = log.get("action") {
-                                                log_obj.insert("action".to_string(), action.clone());
+                                                log_obj
+                                                    .insert("action".to_string(), action.clone());
                                             }
-                                            if let Some(bill_id) = log.get("bill_id").or_else(|| log.get("bill_identifier")) {
-                                                log_obj.insert("bill_id".to_string(), bill_id.clone());
+                                            if let Some(bill_id) = log
+                                                .get("bill_id")
+                                                .or_else(|| log.get("bill_identifier"))
+                                            {
+                                                log_obj
+                                                    .insert("bill_id".to_string(), bill_id.clone());
                                             }
                                             if !log_obj.is_empty() {
-                                                selected_output.insert("log".to_string(), serde_json::Value::Object(log_obj));
+                                                selected_output.insert(
+                                                    "log".to_string(),
+                                                    serde_json::Value::Object(log_obj),
+                                                );
                                             }
                                         }
-                                        
+
                                         // Create bill object with only selected fields
                                         if let Some(bill) = output_value.get("bill") {
                                             let mut bill_obj = serde_json::Map::new();
@@ -1169,50 +1279,74 @@ async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
                                                 bill_obj.insert("title".to_string(), title.clone());
                                             }
                                             if let Some(abstracts) = bill.get("abstracts") {
-                                                bill_obj.insert("abstracts".to_string(), abstracts.clone());
+                                                bill_obj.insert(
+                                                    "abstracts".to_string(),
+                                                    abstracts.clone(),
+                                                );
                                             }
                                             if let Some(subject) = bill.get("subject") {
-                                                bill_obj.insert("subject".to_string(), subject.clone());
+                                                bill_obj
+                                                    .insert("subject".to_string(), subject.clone());
                                             }
                                             if let Some(identifier) = bill.get("identifier") {
-                                                bill_obj.insert("identifier".to_string(), identifier.clone());
+                                                bill_obj.insert(
+                                                    "identifier".to_string(),
+                                                    identifier.clone(),
+                                                );
                                             }
                                             if let Some(session) = bill.get("legislative_session") {
-                                                bill_obj.insert("legislative_session".to_string(), session.clone());
+                                                bill_obj.insert(
+                                                    "legislative_session".to_string(),
+                                                    session.clone(),
+                                                );
                                             }
                                             if let Some(org) = bill.get("from_organization") {
-                                                bill_obj.insert("from_organization".to_string(), org.clone());
+                                                bill_obj.insert(
+                                                    "from_organization".to_string(),
+                                                    org.clone(),
+                                                );
                                             }
                                             if !bill_obj.is_empty() {
-                                                selected_output.insert("bill".to_string(), serde_json::Value::Object(bill_obj));
+                                                selected_output.insert(
+                                                    "bill".to_string(),
+                                                    serde_json::Value::Object(bill_obj),
+                                                );
                                             }
                                         }
-                                        
+
                                         // Always include tags (even if empty/null) since it's part of the default selector
                                         if let Some(tags) = output_value.get("tags") {
-                                            selected_output.insert("tags".to_string(), tags.clone());
+                                            selected_output
+                                                .insert("tags".to_string(), tags.clone());
                                         } else {
                                             // Include empty tags object if not present
-                                            selected_output.insert("tags".to_string(), serde_json::Value::Null);
+                                            selected_output.insert(
+                                                "tags".to_string(),
+                                                serde_json::Value::Null,
+                                            );
                                         }
-                                        
+
                                         // Bottom: sources, timestamp
                                         if let Some(sources) = output_value.get("sources") {
-                                            selected_output.insert("sources".to_string(), sources.clone());
+                                            selected_output
+                                                .insert("sources".to_string(), sources.clone());
                                         }
                                         if let Some(timestamp) = output_value.get("timestamp") {
-                                            selected_output.insert("timestamp".to_string(), timestamp.clone());
+                                            selected_output
+                                                .insert("timestamp".to_string(), timestamp.clone());
                                         }
-                                        
+
                                         output_value = serde_json::Value::Object(selected_output);
                                     }
-                                    
+
                                     // Apply filter
-                                    let should_output = match filter_manager.should_keep(&output_value, &repo_name) {
+                                    let should_output = match filter_manager
+                                        .should_keep(&output_value, &repo_name)
+                                    {
                                         govbot::FilterResult::Keep => true,
                                         govbot::FilterResult::FilterOut => false,
                                     };
-                                    
+
                                     if should_output {
                                         // `docs` mode: collapse the surviving entry to the
                                         // {id,text} document shape fastclass consumes.
@@ -1223,7 +1357,7 @@ async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
                                         };
                                         // Deep prune empty/null values before serialization
                                         let pruned_value = deep_prune_json(output_value);
-                                        
+
                                         // Serialize as compact JSON (single line)
                                         match serde_json::to_string(&pruned_value) {
                                             Ok(json_line) => {
@@ -1233,7 +1367,11 @@ async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
                                                 }
                                             }
                                             Err(e) => {
-                                                eprintln!("Error serializing JSON from {}: {}", path.display(), e);
+                                                eprintln!(
+                                                    "Error serializing JSON from {}: {}",
+                                                    path.display(),
+                                                    e
+                                                );
                                             }
                                         }
                                     }
@@ -1255,28 +1393,30 @@ async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
     Ok(())
 }
 
-
 /// Parse a join string like "bill.title" into (dataset_name, field_path)
 fn parse_join_string(join_str: &str) -> Option<(String, Vec<String>)> {
     let parts: Vec<&str> = join_str.split('.').collect();
     if parts.is_empty() {
         return None;
     }
-    
+
     let dataset_name = parts[0].to_string();
     let field_path = if parts.len() > 1 {
         parts[1..].iter().map(|s| s.to_string()).collect()
     } else {
         Vec::new()
     };
-    
+
     Some((dataset_name, field_path))
 }
 
 /// Extract a value from JSON using a field path (e.g., ["title"] or ["bill", "title"])
-fn extract_json_field(value: &serde_json::Value, field_path: &[String]) -> Option<serde_json::Value> {
+fn extract_json_field(
+    value: &serde_json::Value,
+    field_path: &[String],
+) -> Option<serde_json::Value> {
     let mut current = value;
-    
+
     for field in field_path {
         match current {
             serde_json::Value::Object(map) => {
@@ -1292,7 +1432,7 @@ fn extract_json_field(value: &serde_json::Value, field_path: &[String]) -> Optio
             _ => return None,
         }
     }
-    
+
     Some(current.clone())
 }
 
@@ -1375,7 +1515,9 @@ fn compute_relative_source_path(file_path: &PathBuf, git_dir: &PathBuf) -> Strin
     }
 
     // Fallback: canonicalize both ends and diff.
-    let canonical_file = file_path.canonicalize().unwrap_or_else(|_| file_path.clone());
+    let canonical_file = file_path
+        .canonicalize()
+        .unwrap_or_else(|_| file_path.clone());
     let canonical_git_dir = git_dir.canonicalize().unwrap_or_else(|_| git_dir.clone());
     match pathdiff::diff_paths(&canonical_file, &canonical_git_dir) {
         Some(rel_path) => rel_path.to_string_lossy().replace('\\', "/"),
@@ -1391,7 +1533,8 @@ async fn run_load_command(cmd: Command) -> anyhow::Result<()> {
         govbot_dir,
         memory_limit,
         threads,
-    } = cmd else {
+    } = cmd
+    else {
         unreachable!()
     };
 
@@ -1399,23 +1542,25 @@ async fn run_load_command(cmd: Command) -> anyhow::Result<()> {
 
     // Check if directory exists
     if !repos_dir.exists() {
-        eprintln!("Error: Govbot repos directory not found: {}", repos_dir.display());
+        eprintln!(
+            "Error: Govbot repos directory not found: {}",
+            repos_dir.display()
+        );
         eprintln!("Run 'govbot pull all' first to pull datasets.");
         return Ok(());
     }
 
     // Get base govbot directory (parent of repos)
     // e.g., if repos_dir is ./.govbot/repos, base_dir is ./.govbot
-    let base_govbot_dir = repos_dir.parent()
+    let base_govbot_dir = repos_dir
+        .parent()
         .ok_or_else(|| anyhow::anyhow!("Could not determine base govbot directory"))?;
-    
+
     // Ensure base directory exists
     std::fs::create_dir_all(base_govbot_dir)?;
 
     // Check if duckdb is available
-    let duckdb_check = ProcessCommand::new("duckdb")
-        .arg("--version")
-        .output();
+    let duckdb_check = ProcessCommand::new("duckdb").arg("--version").output();
 
     if duckdb_check.is_err() {
         eprintln!("Error: 'duckdb' command not found.");
@@ -1425,7 +1570,8 @@ async fn run_load_command(cmd: Command) -> anyhow::Result<()> {
 
     // Database file goes in the base govbot directory
     // Resolve to absolute path to ensure it's created in the right location
-    let db_path = base_govbot_dir.canonicalize()
+    let db_path = base_govbot_dir
+        .canonicalize()
         .unwrap_or_else(|_| base_govbot_dir.to_path_buf())
         .join(&database);
     let db_path_str = db_path.to_string_lossy().to_string();
@@ -1468,7 +1614,10 @@ async fn run_load_command(cmd: Command) -> anyhow::Result<()> {
     sql_script.push_str("SELECT \n");
     sql_script.push_str("    *,\n");
     sql_script.push_str("    filename as source_file\n");
-    sql_script.push_str(&format!("FROM read_json_auto('{}/**/bills/*/metadata.json', \n", repos_dir_str));
+    sql_script.push_str(&format!(
+        "FROM read_json_auto('{}/**/bills/*/metadata.json', \n",
+        repos_dir_str
+    ));
     sql_script.push_str("    filename=true, \n");
     sql_script.push_str("    union_by_name=true);\n");
     sql_script.push_str("\n");
@@ -1500,7 +1649,7 @@ async fn run_load_command(cmd: Command) -> anyhow::Result<()> {
     duckdb_cmd.stderr(std::process::Stdio::piped());
 
     let mut child = duckdb_cmd.spawn()?;
-    
+
     // Write SQL to stdin
     if let Some(mut stdin) = child.stdin.take() {
         stdin.write_all(sql_script.as_bytes())?;
@@ -1539,19 +1688,25 @@ async fn run_load_command(cmd: Command) -> anyhow::Result<()> {
 fn extract_path_info(path: &str) -> Option<(String, String, String)> {
     // Find country: pattern
     let country_start = path.find("country:")?;
-    let country_end = path[country_start + 8..].find('/').unwrap_or(path.len() - country_start - 8);
+    let country_end = path[country_start + 8..]
+        .find('/')
+        .unwrap_or(path.len() - country_start - 8);
     let country = path[country_start + 8..country_start + 8 + country_end].to_string();
-    
+
     // Find state: pattern
     let state_start = path.find("/state:")?;
-    let state_end = path[state_start + 7..].find('/').unwrap_or(path.len() - state_start - 7);
+    let state_end = path[state_start + 7..]
+        .find('/')
+        .unwrap_or(path.len() - state_start - 7);
     let state = path[state_start + 7..state_start + 7 + state_end].to_string();
-    
+
     // Find sessions/ pattern
     let sessions_start = path.find("/sessions/")?;
-    let session_end = path[sessions_start + 10..].find('/').unwrap_or(path.len() - sessions_start - 10);
+    let session_end = path[sessions_start + 10..]
+        .find('/')
+        .unwrap_or(path.len() - sessions_start - 10);
     let session_id = path[sessions_start + 10..sessions_start + 10 + session_end].to_string();
-    
+
     Some((country, state, session_id))
 }
 
@@ -1789,7 +1944,8 @@ async fn run_publish_command(cmd: Command) -> anyhow::Result<()> {
         output_file,
         dry_run,
         govbot_dir,
-    } = cmd else {
+    } = cmd
+    else {
         unreachable!()
     };
 
@@ -1963,28 +2119,34 @@ async fn run_publish_command(cmd: Command) -> anyhow::Result<()> {
 
 async fn run_update_command() -> anyhow::Result<()> {
     let install_script_url = "https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh";
-    
+
     eprintln!("🔄 Updating govbot to latest nightly version...");
-    eprintln!("Downloading and running install script from: {}", install_script_url);
-    
+    eprintln!(
+        "Downloading and running install script from: {}",
+        install_script_url
+    );
+
     // Execute the install script by piping curl directly to sh
     // This avoids issues with shebang lines being interpreted as commands
     let mut cmd = ProcessCommand::new("sh");
     cmd.arg("-c");
     cmd.arg(&format!("curl -fsSL {} | sh", install_script_url));
-    
+
     // Inherit stdin/stdout/stderr so the install script can interact with the user
     cmd.stdin(std::process::Stdio::inherit());
     cmd.stdout(std::process::Stdio::inherit());
     cmd.stderr(std::process::Stdio::inherit());
-    
+
     let status = cmd.status()?;
-    
+
     if status.success() {
         eprintln!("\n✅ Update completed successfully!");
         eprintln!("You may need to restart your terminal or run 'source ~/.zshrc' (or your shell profile) to use the updated version.");
     } else {
-        return Err(anyhow::anyhow!("Update failed with exit code: {}", status.code().unwrap_or(-1)));
+        return Err(anyhow::anyhow!(
+            "Update failed with exit code: {}",
+            status.code().unwrap_or(-1)
+        ));
     }
 
     Ok(())
@@ -2021,9 +2183,7 @@ fn run_add_command(cmd: Command) -> anyhow::Result<()> {
             to_add.push("all".to_string());
             continue;
         }
-        let resolved = registry
-            .resolve(id)
-            .map_err(|e| anyhow::anyhow!("{}", e))?;
+        let resolved = registry.resolve(id).map_err(|e| anyhow::anyhow!("{}", e))?;
         // Add the identifier the user typed (keeps `wy` short and familiar);
         // resolution proved it valid.
         let _ = resolved;
@@ -2064,7 +2224,10 @@ fn run_add_command(cmd: Command) -> anyhow::Result<()> {
     for id in &added {
         eprintln!("  + added {}", id);
     }
-    eprintln!("✅ Updated {}. Run `govbot pull` to fetch.", manifest_path.display());
+    eprintln!(
+        "✅ Updated {}. Run `govbot pull` to fetch.",
+        manifest_path.display()
+    );
     Ok(())
 }
 
@@ -2165,6 +2328,17 @@ fn run_ls_command(cmd: Command) -> anyhow::Result<()> {
             println!("  {}", d);
         }
     }
+
+    // With no project manifest, list the registry — the help promises this so
+    // `govbot ls` in a bare directory is genuinely useful for discovery.
+    if manifest_datasets.is_empty() {
+        println!();
+        println!("Registry ({} dataset(s) — run `govbot search` to filter):", registry.datasets.len());
+        for d in registry.all() {
+            let name = d.entry.name.as_deref().unwrap_or("");
+            println!("  {:<28}  {}", d.id, name);
+        }
+    }
     Ok(())
 }
 
@@ -2211,27 +2385,13 @@ async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     match args.command {
-        Some(cmd @ Command::Pull { .. }) => {
-            run_pull_command(cmd).await
-        }
-        Some(cmd @ Command::Delete { .. }) => {
-            run_delete_command(cmd).await
-        }
-        Some(cmd @ Command::Source { .. }) => {
-            run_source_command(cmd).await
-        }
-        Some(cmd @ Command::Load { .. }) => {
-            run_load_command(cmd).await
-        }
-        Some(Command::Update) => {
-            run_update_command().await
-        }
-        Some(cmd @ Command::Apply { .. }) => {
-            run_apply_command(cmd).await
-        }
-        Some(cmd @ Command::Publish { .. }) => {
-            run_publish_command(cmd).await
-        }
+        Some(cmd @ Command::Pull { .. }) => run_pull_command(cmd).await,
+        Some(cmd @ Command::Delete { .. }) => run_delete_command(cmd).await,
+        Some(cmd @ Command::Source { .. }) => run_source_command(cmd).await,
+        Some(cmd @ Command::Load { .. }) => run_load_command(cmd).await,
+        Some(Command::Update) => run_update_command().await,
+        Some(cmd @ Command::Apply { .. }) => run_apply_command(cmd).await,
+        Some(cmd @ Command::Publish { .. }) => run_publish_command(cmd).await,
         Some(Command::Run { govbot_dir }) => {
             let cwd = std::env::current_dir()?;
             let config_path = cwd.join("govbot.yml");

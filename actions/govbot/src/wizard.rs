@@ -59,11 +59,14 @@ impl WizardSession {
         // Step 3: Publishing
         display.push_str("Publishing is configured for an RSS feed by default.\n");
         display.push_str("Your feed will be generated in the \"docs\" directory.\n\n");
-        display.push_str(&format!("? Base URL for your feed: {}\n\n", choices.base_url));
+        display.push_str(&format!(
+            "? Base URL for your feed: {}\n\n",
+            choices.base_url
+        ));
 
         // Summary
         display.push_str("  ✓ Created govbot.yml\n");
-        display.push_str("  ✓ Created .gitignore with .govbot\n");
+        display.push_str("  ✓ Created .gitignore\n");
         display.push_str("  ✓ Created .github/workflows/build.yml\n\n");
         display.push_str("Setup complete! Run 'govbot' again to start the pipeline.\n");
 
@@ -181,7 +184,11 @@ fn prompt_sources() -> Result<Vec<String>> {
     // List the registry's datasets so the user can pick from them.
     let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
     if let Ok(registry) = crate::registry::Registry::load(&cwd) {
-        let ids: Vec<String> = registry.all().iter().map(|d| d.short_name().to_string()).collect();
+        let ids: Vec<String> = registry
+            .all()
+            .iter()
+            .map(|d| d.short_name().to_string())
+            .collect();
         eprintln!();
         eprintln!("Available datasets ({}):", ids.len());
         for chunk in ids.chunks(10) {
@@ -273,26 +280,57 @@ pub fn generate_govbot_yml(datasets: &[String], base_url: &str) -> String {
     yml
 }
 
-/// Write .gitignore with .govbot entry
+/// Write .gitignore with govbot's generated dirs and secret-bearing files.
+///
+/// Everything under `.govbot/` (cloned datasets, ledgers, lockfile state),
+/// every publisher output dir (`dist/`, `docs/`), and any local `.env` is
+/// untracked. The userland repo is a few dozen text files plus tool artifacts;
+/// the artifacts never belong in git.
 pub fn write_gitignore(cwd: &Path) -> Result<()> {
     let gitignore_path = cwd.join(".gitignore");
-    let gitignore_entry = ".govbot\n";
+    // Single canonical block — easy to grep, easy to update.
+    let block = "\
+# govbot — generated, reconstructed on every run
+.govbot/
+dist/
+docs/
 
-    if gitignore_path.exists() {
-        let mut content = fs::read_to_string(&gitignore_path)?;
-        if content.contains(".govbot") {
-            eprintln!("  ✓ .gitignore already contains .govbot");
-        } else {
-            if !content.ends_with('\n') {
-                content.push('\n');
-            }
-            content.push_str(gitignore_entry);
-            fs::write(&gitignore_path, content)?;
-            eprintln!("  ✓ Updated .gitignore to include .govbot");
-        }
+# Secrets — never commit
+.env
+";
+
+    // Idempotency: only append entries that are not already present.
+    let existing = if gitignore_path.exists() {
+        fs::read_to_string(&gitignore_path)?
     } else {
-        fs::write(&gitignore_path, gitignore_entry)?;
-        eprintln!("  ✓ Created .gitignore with .govbot");
+        String::new()
+    };
+
+    let mut updated = existing.clone();
+    let mut added = Vec::new();
+    for line in block.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        if !existing.lines().any(|l| l.trim() == trimmed) {
+            if !updated.is_empty() && !updated.ends_with('\n') {
+                updated.push('\n');
+            }
+            updated.push_str(line);
+            updated.push('\n');
+            added.push(trimmed.to_string());
+        }
+    }
+
+    if existing.is_empty() {
+        fs::write(&gitignore_path, block)?;
+        eprintln!("  ✓ Created .gitignore");
+    } else if !added.is_empty() {
+        fs::write(&gitignore_path, &updated)?;
+        eprintln!("  ✓ Updated .gitignore ({} entries added)", added.len());
+    } else {
+        eprintln!("  ✓ .gitignore already covers govbot's generated dirs");
     }
 
     Ok(())
