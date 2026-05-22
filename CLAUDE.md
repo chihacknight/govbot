@@ -42,7 +42,7 @@ Use these meta-prompts to guide architectural decisions and code quality.
 
 ### Performance & Scale
 
-- **"What happens with 10x the data?"** - Current scale is ~47 jurisdictions. Consider: What if we add counties? Cities? Federal agencies?
+- **"What happens with 10x the data?"** - Current scale is ~55 dataset repos (all US state/territory legislatures + federal). The runtime registry (`registry.json`) is what makes 10x feasible — adding counties, cities, or agencies is a data change, not a recompile.
 
 - **"Can this be parallelized?"** - State-level operations are inherently parallel. Pipelines should support concurrent execution.
 
@@ -86,7 +86,7 @@ govbot pull wy il    # Download specific states
 govbot source        # Stream legislative activity as JSON Lines
 govbot source --select docs | fastclass classify - classifier=./classifier | govbot apply
 govbot load          # Load bill metadata into DuckDB
-govbot publish       # Run the manifest's publishers (RSS / HTML / JSON / DuckDB)
+govbot publish       # Run the manifest's publishers (RSS / HTML / JSON / DuckDB / Bluesky)
 govbot run           # Run the full pipeline: pull -> classify -> apply -> publish
 ```
 

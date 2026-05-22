@@ -21,7 +21,7 @@
 //! ## Where it lives / how it is fetched
 //!
 //! The default registry is the JSON file `data/registry.json`, **compiled into
-//! the binary** via `include_str!` — so a fresh install resolves the 52 seed
+//! the binary** via `include_str!` — so a fresh install resolves the seed
 //! jurisdictions with zero network access. A project can override it:
 //!   1. `GOVBOT_REGISTRY_URL` — an `http(s)://` URL or a local file path.
 //!   2. `<project>/.govbot/registry.json` — a project-local registry file.
@@ -272,9 +272,13 @@ mod tests {
     #[test]
     fn bundled_registry_parses_and_has_seed_jurisdictions() {
         let reg = Registry::bundled().expect("bundled registry must parse");
+        // The seed catalog covers every US state legislature + DC + the
+        // territories + federal Congress. Asserting the floor (not an exact
+        // count) keeps the test stable when datasets are added.
         assert!(
-            reg.datasets.len() >= 52,
-            "expected the 52-jurisdiction seed"
+            reg.datasets.len() >= 55,
+            "expected the seed catalog (>= 55 datasets); got {}",
+            reg.datasets.len()
         );
         assert!(reg.datasets.contains_key("us-legislation/wy"));
     }

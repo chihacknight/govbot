@@ -5,10 +5,10 @@
 
 # 🏛️ govbot
 
-- Download the legislation of [47 states/jurisdicitions](github.com/govbot-data) in under 1 minute.
-- Tag/summarize bills with with private/local models optimized to run on free Github Actions.
+- Download the legislation of [50+ states/jurisdictions](https://github.com/govbot-data) in under 1 minute.
+- Classify and summarize bills with private/local models — runs on free GitHub Actions.
 
-`govbot` enables distributed data anaylsis of government updates via a friendly terminal interface. Git repos function as datasets, including the legislation of all 47 states/jurisdictions.
+`govbot` is a CLI for distributed analysis of government data. Git repos function as datasets — the legislation of every US state, DC, the territories, and federal Congress. It composes with [`fastclass`](#classifying-with-fastclass) (the classifier) over a Unix pipe; together they pull, classify, and publish a tagged feed of legislation to RSS, HTML, JSON, DuckDB, or a Bluesky posting bot.
 
 ## 🤖 Build a newsbot with Claude Code
 
@@ -39,51 +39,78 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/a
 ### 2. Set up your project
 
 ```bash
-govbot
+govbot init     # or just `govbot` — the wizard runs when no govbot.yml is present
 ```
 
-Running `govbot` with no config file launches an interactive setup wizard that:
-1. Asks what data sources you want (all 47 states or specific ones)
-2. Guides you through creating tags for topics you care about
-3. Creates `govbot.yml`, `.gitignore`, and a GitHub Actions workflow
+Running `govbot init` (or `govbot` in an empty directory) launches an interactive setup wizard that:
+1. Asks which datasets you want — all jurisdictions or a hand-picked subset (browse with `govbot search`).
+2. Writes a `govbot.yml` manifest (`datasets` / `transforms` / `publish` / `pipelines`), a `.gitignore`, and a GitHub Actions workflow.
+
+Classification lives in a separate [`fastclass`](#classifying-with-fastclass) bundle — point `transforms.classify.classifier` at it.
 
 ### 3. Run the pipeline
 
 ```bash
-govbot
+govbot run      # or just `govbot` — runs the pipeline when a govbot.yml is present
 ```
 
-With a `govbot.yml` in your directory, running `govbot` executes the full pipeline:
-1. Clones/updates legislation repositories
-2. Tags bills based on your tag definitions
-3. Generates RSS feeds in the `docs/` directory
+With a `govbot.yml` in your directory, `govbot run` executes the full pipeline:
+1. Pulls/updates the declared dataset repositories.
+2. Classifies bills against your fastclass bundle (`source --select docs | fastclass classify - | apply`).
+3. Runs every publisher in `govbot.yml: publish:` — RSS / HTML / JSON / DuckDB / Bluesky.
 
 ### Other Commands
 
 ```bash
-govbot pull all            # download all state legislation datasets
-govbot pull il ca ny       # download specific states
-govbot source              # stream legislative activity as JSON Lines
+govbot search wyoming      # search the dataset registry
+govbot add wy il           # add datasets to govbot.yml (validated against the registry)
+govbot remove wy           # remove datasets from govbot.yml
+govbot ls                  # list the manifest's datasets + what is cached locally
+govbot pull all            # clone/update every dataset
+govbot pull il ca ny       # clone/update specific datasets
+govbot source              # stream dataset records as JSON Lines
 govbot source --select docs | fastclass classify - classifier=./classifier | govbot apply
-govbot publish             # run the manifest's publishers (RSS / HTML / JSON / DuckDB / Bluesky)
+govbot apply               # persist a fastclass result stream into the dataset
+govbot publish             # run every configured publisher (RSS / HTML / JSON / DuckDB / Bluesky)
+govbot publish --publisher bluesky --dry-run   # ALWAYS dry-run Bluesky first
 govbot run                 # the full pipeline: pull -> classify -> apply -> publish
 govbot load                # load bill metadata into DuckDB
-govbot delete all          # remove all downloaded data
-govbot update              # update govbot to latest version
+govbot delete all          # unlink all locally-linked datasets (the shared cache stays)
+govbot update              # update govbot to the latest nightly
 govbot --help              # see all commands and options
 ```
 
+## Classifying with fastclass
+
+govbot does not classify bills itself — it streams them to a separate
+[`fastclass`](#) CLI (a token-free, deterministic text classifier) and writes
+the result back. The pipe:
+
+```bash
+govbot source --select docs | fastclass classify - classifier=./classifier | govbot apply
+```
+
+`govbot run` wires this automatically. The classifier is a **bundle directory**
+(`classifier.yml` + `fusion.yml` + `eval/`) owned by fastclass; govbot only
+references its path. See [`AGENT.md`](AGENT.md) for the end-to-end newsbot
+playbook (make / manage / update) and the [stream protocol](schemas/STREAM_PROTOCOL.md)
+for the wire format.
+
 # 🏛️ Govbot Legislation Data Catalogs
 
-See the data catalogs [here](github.com/govbot-data).
+govbot pulls data from a registry of git-repo datasets. The bundled default
+registry (`actions/govbot/data/registry.json`) ships every US state, DC, the
+territories, and federal Congress — see [`actions/govbot/REGISTRY.md`](actions/govbot/REGISTRY.md)
+for the format, and the [govbot-data org](https://github.com/govbot-data) for
+the dataset repos themselves.
 
-- Nearly all state governments
-- Federal
+Coverage today:
+- Every US state legislature
+- US territories (DC, PR, GU, VI, MP)
+- US federal (Congress)
 
-WIP: Ideally, these scripts should be accessible via the following ways.
-
-- CLI / Unix pipe friendliness where possible. CLI is the most portable of solutions.
-- GitHub Actionable if possible
+Override the registry with `GOVBOT_REGISTRY_URL=<url-or-path>` or a project-local
+`.govbot/registry.json`.
 
 ## Contribute
 

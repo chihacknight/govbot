@@ -2333,7 +2333,10 @@ fn run_ls_command(cmd: Command) -> anyhow::Result<()> {
     // `govbot ls` in a bare directory is genuinely useful for discovery.
     if manifest_datasets.is_empty() {
         println!();
-        println!("Registry ({} dataset(s) — run `govbot search` to filter):", registry.datasets.len());
+        println!(
+            "Registry ({} dataset(s) — run `govbot search` to filter):",
+            registry.datasets.len()
+        );
         for d in registry.all() {
             let name = d.entry.name.as_deref().unwrap_or("");
             println!("  {:<28}  {}", d.id, name);

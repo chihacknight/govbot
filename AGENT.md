@@ -108,11 +108,20 @@ If `govbot` is missing, install the nightly:
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"
 ```
 
-If `fastclass` is missing, build it from source (it is a separate repo):
+If `fastclass` is missing, build it from source. `fastclass` is a separate
+repo; its public home is still being decided (architecture open question), so
+ask the user where their fastclass checkout lives and adapt:
 
 ```bash
-git clone <fastclass repo> && cd fastclass && just install   # -> ~/.cargo/bin/fastclass
+# In the user's fastclass checkout:
+just install     # -> ~/.cargo/bin/fastclass
+# or:
+cargo install --path .   # same effect, without `just`
 ```
+
+If the user has no checkout yet, ask them for a path; if they have neither, the
+classify stage cannot run — say so and stop here rather than scaffold a broken
+project.
 
 Ensure `~/.cargo/bin` and `~/.govbot/bin` are on `PATH`:
 
