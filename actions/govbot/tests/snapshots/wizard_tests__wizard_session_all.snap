@@ -7,12 +7,8 @@ expression: "&session.to_snapshot()"
 Welcome to govbot! Let's set up your project.
 
 ? What datasets do you want to track?
-  All jurisdictions in the registry
-> Select specific datasets
-
-Browse the registry with `govbot search`.
-
-? Enter dataset ids separated by spaces: wy
+> All jurisdictions in the registry
+  Select specific datasets
 
 Classification is done by fastclass against a classifier bundle.
 Point the manifest's `transforms.classify.classifier` at your
@@ -22,7 +18,7 @@ docs to build one.
 Publishing is configured for an RSS feed by default.
 Your feed will be generated in the "docs" directory.
 
-? Base URL for your feed: https://sartaj.me/govbot
+? Base URL for your feed: https://myuser.github.io/my-govbot
 
   ✓ Created govbot.yml
   ✓ Created .gitignore with .govbot
@@ -37,7 +33,7 @@ Setup complete! Run 'govbot' again to start the pipeline.
 $schema: https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json
 
 datasets:
-  - wy
+  - all
 
 transforms:
   classify:
@@ -50,7 +46,7 @@ transforms:
 publish:
   feed:
     type: rss
-    base_url: "https://sartaj.me/govbot"
+    base_url: "https://myuser.github.io/my-govbot"
     output_dir: "docs"
     output_file: "feed.xml"
 

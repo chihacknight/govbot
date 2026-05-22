@@ -18,11 +18,12 @@ govbot
 
 That's it. If no `govbot.yml` exists, an interactive wizard walks you through setup:
 
-1. **Sources** - Choose all 47 states or pick specific ones
-2. **Tags** - Start with an example tag, or get an AI prompt to create your own
-3. **Publishing** - RSS feeds configured automatically
+1. **Datasets** - Choose all 47 states or pick specific ones
+2. **Classification** - Point the manifest at a fastclass classifier bundle
+3. **Publishing** - An RSS feed publisher configured automatically
 
-The wizard creates `govbot.yml`, `.gitignore`, and a GitHub Actions workflow.
+The wizard creates `govbot.yml` (a project manifest: `datasets` / `transforms` /
+`publish` / `pipelines`), `.gitignore`, and a GitHub Actions workflow.
 
 ### 3. Run the pipeline
 
@@ -32,18 +33,19 @@ govbot
 
 With `govbot.yml` present, running `govbot` executes the full pipeline:
 
-1. Clones/updates legislation repositories (smart: only clones on first run, pulls after)
-2. Tags bills based on your tag definitions
-3. Generates RSS feeds in the `docs/` directory
+1. Pulls/updates legislation datasets (smart: only clones on first run, pulls after)
+2. Classifies bills with fastclass and applies the results into the dataset
+3. Runs the manifest's publishers (RSS feeds into the `docs/` directory)
 
 ### Other Commands
 
 ```bash
-govbot clone all           # download all state legislation datasets
-govbot clone il ca ny      # download specific states
-govbot logs                # stream legislative activity as JSON Lines
-govbot logs | govbot tag   # process and tag data
-govbot build               # generate RSS feeds
+govbot pull all            # download all state legislation datasets
+govbot pull il ca ny       # download specific states
+govbot source              # stream legislative activity as JSON Lines
+govbot source --select docs | fastclass classify - classifier=./classifier | govbot apply
+govbot publish             # run the manifest's publishers (RSS / HTML / JSON / DuckDB)
+govbot run                 # run the full pipeline
 govbot load                # load bill metadata into DuckDB
 govbot delete all          # remove all downloaded data
 govbot update              # update govbot to latest version
@@ -74,22 +76,30 @@ We build snapshots off `examples`. Add examples to make a test.
 
 ## Advanced
 
+Datasets are resolved at runtime through the **dataset registry** (see
+[`REGISTRY.md`](./REGISTRY.md)). To point govbot at a custom registry:
+
 ```bash
-GOVBOT_REPO_URL_TEMPLATE="https://gitsite.com/org/{locale}.git" govbot ...
+# An http(s):// URL or a local file path.
+GOVBOT_REGISTRY_URL="https://example.com/registry.json" govbot pull all
 ```
 
-## Working with Logs
+A project-local `.govbot/registry.json` is also honored. `govbot search`
+queries the registry; `govbot pull` clones datasets once into the shared
+`~/.govbot/cache/` and pins resolved commits in `govbot.lock`.
 
-The `govbot logs` command outputs JSON Lines (JSONL) format, making it easy to pipe to tools like `jq`, `yq`, and `jl` for filtering, transformation, and pretty-printing, and even sending to AI CLI tools like `claude`.
+## Working with the Record Stream
+
+The `govbot source` command outputs JSON Lines (JSONL) format, making it easy to pipe to tools like `jq`, `yq`, and `jl` for filtering, transformation, and pretty-printing, and even sending to AI CLI tools like `claude`.
 
 ### Basic Usage
 
 ```bash
 # Easiest way with smart defaults
-govbot logs
+govbot source
 
 # Get more args and their help
-govbot logs --help
+govbot source --help
 ```
 
 ### modular CLI Examples
@@ -100,10 +110,10 @@ Convert JSON Lines to prettified YAML:
 
 ```bash
 # Output prettified yaml
-just govbot logs | yq -p=json -o=yaml '.'
+just govbot source | yq -p=json -o=yaml '.'
 
 # Multiple documents (separated by ---)
-govbot logs --repos="il" --limit=10 --filter=default | yq -p json -P
+govbot source --repos="il" --limit=10 --filter=default | yq -p json -P
 ```
 
 #### Filtering with `jq`
@@ -112,16 +122,16 @@ Filter and transform JSON Lines:
 
 ```bash
 # Filter by specific fields
-govbot logs| jq 'select(.log.action.classification[] == "passage")'
+govbot source| jq 'select(.log.action.classification[] == "passage")'
 
 # Extract specific fields
-govbot logs | jq '{bill_id: .log.bill_id, date: .log.action.date, description: .log.action.description}'
+govbot source | jq '{bill_id: .log.bill_id, date: .log.action.date, description: .log.action.description}'
 
 # Count by bill
-govbot logs | jq -s 'group_by(.log.bill_id) | map({bill_id: .[0].log.bill_id, count: length})'
+govbot source | jq -s 'group_by(.log.bill_id) | map({bill_id: .[0].log.bill_id, count: length})'
 
 # Filter by date range
-govbot logs | jq 'select(.timestamp >= "20250301" and .timestamp <= "20250331")'
+govbot source | jq 'select(.timestamp >= "20250301" and .timestamp <= "20250331")'
 ```
 
 #### Using `jl` (JSON Lines processor)
@@ -130,10 +140,10 @@ govbot logs | jq 'select(.timestamp >= "20250301" and .timestamp <= "20250331")'
 
 ```bash
 # Pretty print JSON Lines
-govbot logs | jl
+govbot source | jl
 
 # Filter with jl
-govbot logs | jl 'select(.log.action.classification[] == "passage")'
+govbot source | jl 'select(.log.action.classification[] == "passage")'
 ```
 
 ### Combining Tools
@@ -142,17 +152,17 @@ Chain multiple tools for powerful data processing:
 
 ```bash
 # Filter with jq, then convert to YAML
-govbot logs --repos="il" --limit=100 | \
+govbot source --repos="il" --limit=100 | \
   jq 'select(.log.action.classification[] == "passage")' | \
   yq -p json -P
 
 # Extract and format specific fields, then output as YAML
-govbot logs --repos="il" --limit=10 | \
+govbot source --repos="il" --limit=10 | \
   jq '{bill: .log.bill_id, action: .log.action.description, date: .log.action.date}' | \
   yq -p json -P
 
 # Aggregate data with jq, then format as YAML array
-govbot logs --repos="il" --limit=100 | \
+govbot source --repos="il" --limit=100 | \
   jq -s 'group_by(.log.bill_id) | map({bill_id: .[0].log.bill_id, actions: length})' | \
   yq -P
 ```
@@ -161,16 +171,16 @@ govbot logs --repos="il" --limit=100 | \
 
 ```bash
 # Find all bills with multiple actions in a single day
-govbot logs --repos="il" --limit=1000 | \
+govbot source --repos="il" --limit=1000 | \
   jq -s 'group_by(.log.bill_id + .timestamp) | map(select(length > 1)) | flatten'
 
 # Extract action classifications and count them
-govbot logs --repos="il" --limit=1000 | \
+govbot source --repos="il" --limit=1000 | \
   jq -r '.log.action.classification[]?' | \
   sort | uniq -c | sort -rn
 
 # Join with bill metadata and filter by title
-govbot logs --repos="il" --limit=10 --join=bill | \
+govbot source --repos="il" --limit=10 --join=bill | \
   jq 'select(.bill.title | contains("Education"))' | \
   yq -p json -P
 ```
@@ -181,61 +191,69 @@ Generate RSS feeds using the `govbot publish` command, which reads from `govbot.
 
 **Note:** The Python scripts have been replaced by a Rust implementation. Use `govbot publish` instead.
 
-## Publishing RSS Feeds
+## Publishing
 
-Generate RSS feeds for each tag defined in `govbot.yml` using the declarative publishing system.
+Publishers consume the classified result stream and emit artifacts. RSS, HTML,
+JSON, and DuckDB are built-in publishers, declared in the manifest's `publish:`
+map.
 
 ### Quick Start
 
-1. **Configure `govbot.yml`** with your tags and publish settings:
+1. **Configure `govbot.yml`** with your datasets, transforms, and publishers.
+   The tag taxonomy is NOT in `govbot.yml` — it lives in a separate fastclass
+   classifier bundle that `transforms.classify.classifier` references by path:
 
    ```yaml
-   repos:
+   datasets:
      - all
-   tags:
-     lgbtq:
-       description: "Legislation related to LGBTQ+ issues..."
+   transforms:
+     classify:
+       command: [fastclass, classify, "-"]
+       reads: docs
+       writes: classification
+       classifier: ./classifier
    publish:
-     base_url: "https://yourusername.github.io/repo-name"
-     output_dir: "feeds"
+     lgbtq-feed:
+       type: rss
+       select: [lgbtq]                 # tag names from the classifier bundle
+       base_url: "https://yourusername.github.io/repo-name"
+       output_dir: "feeds"
+   pipelines:
+     default:
+       - classify
+       - lgbtq-feed
    ```
 
-2. **Generate RSS feed:**
+2. **Run all publishers:**
 
    ```bash
    govbot publish
    ```
 
-3. **Generate feed for specific tags:**
+3. **Run a specific publisher:**
 
    ```bash
-   govbot publish --tags lgbtq education
+   govbot publish --publisher lgbtq-feed
    ```
 
 4. **Customize output:**
+
    ```bash
    govbot publish --output-dir ./feeds --limit 100
    ```
 
-### Configuration
+### Publisher configuration
 
-The `publish:` section in `govbot.yml` supports:
+Each entry in `publish:` declares a `type` (`rss` / `html` / `json` / `duckdb`)
+plus type-specific keys:
 
-- `base_url`: Base URL for RSS feed links (required for GitHub Pages)
-- `output_dir`: Directory where RSS feeds are generated (default: `feeds`)
-- `limit`: Maximum entries per feed (optional)
-
-### Per-Tag Customization
-
-Tags can override default RSS feed settings:
-
-```yaml
-tags:
-  lgbtq:
-    description: "..."
-    rss_title: "LGBTQ+ Legislation Updates" # Optional
-    rss_description: "Custom description" # Optional
-```
+- `select`: tag names to include — only records carrying one of these tags are
+  published. Tag names must exist in the classifier bundle.
+- `base_url`: base URL for generated links (required for `rss`/`html`).
+- `output_dir`: directory the publisher writes into (default: `docs`).
+- `output_file`: the primary artifact filename.
+- `title` / `description`: custom feed/index metadata.
+- `limit`: maximum entries (`"none"` for unlimited).
 
 ## Using DuckDB
 

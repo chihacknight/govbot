@@ -1,61 +1,126 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Govbot Configuration Schema",
-  "description": "Schema for validating govbot.yml configuration files",
+  "$id": "https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json",
+  "title": "Govbot Manifest Schema",
+  "description": "Schema for validating govbot.yml manifest files. govbot.yml is a project manifest -- it declares the datasets a project consumes, the transforms it runs over them, the publishers that emit artifacts, and named pipelines that wire those stages together. It is NOT a classifier: the tag taxonomy lives in a separate fastclass classifier bundle (classifier.yml) which govbot only references by path.",
   "type": "object",
   "properties": {
-    "repos": {
-      "description": "List of repositories to clone and process. Use 'all' to include all available repositories.",
+    "$schema": {
+      "description": "Optional reference to this schema for editor autocomplete and validation.",
+      "type": "string"
+    },
+    "datasets": {
+      "description": "Government-data sources the project pulls and processes. Each entry is a dataset identifier -- a short code such as 'wy' today, or a 'namespace/name[@channel]' registry reference in a later wave. 'all' selects every dataset known to govbot. The schema is intentionally permissive (array of strings); structured registry references are validated by govbot at resolve time.",
       "type": "array",
       "items": {
-        "type": "string"
+        "type": "string",
+        "description": "A dataset identifier (e.g. 'wy', 'all', or a future 'namespace/name@channel' registry reference)."
       },
+      "minItems": 1,
       "default": ["all"]
     },
-    "tags": {
-      "description": "Tag definitions for categorizing legislation. Each tag should have a description and optional examples.",
+    "transforms": {
+      "description": "Named external-process transforms. A transform is a separate program that speaks the govbot stream protocol (newline-delimited JSON on stdio, stable 'id', typed 'kind'). govbot streams records of the transform's 'reads' kind into it and routes the records of its 'writes' kind back by 'id'. fastclass classification is one such transform; a future local-LLM summarizer is another.",
       "type": "object",
       "additionalProperties": {
-        "$ref": "#/definitions/tag"
+        "$ref": "#/definitions/transform"
       }
     },
     "publish": {
-      "description": "RSS feed publishing configuration",
+      "description": "Named publishers. A publisher consumes a result stream and emits artifacts (a feed, an HTML index, a JSON dump, a DuckDB database, or Bluesky posts). Each publisher declares a 'type' plus type-specific configuration.",
       "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/publisher"
+      }
+    },
+    "pipelines": {
+      "description": "Named 'govbot run' targets, npm-script style. Each pipeline is an ordered list of stage references -- names of entries in 'transforms' and 'publish' -- executed in sequence. 'govbot run <name>' runs the named pipeline.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/pipeline"
+      }
+    }
+  },
+  "required": ["datasets"],
+  "additionalProperties": false,
+  "definitions": {
+    "transform": {
+      "type": "object",
+      "description": "A single external-process transform stage.",
       "properties": {
-        "base_url": {
-          "description": "Base URL for RSS feed links (required for GitHub Pages). Should match your GitHub Pages URL.",
-          "type": "string",
-          "format": "uri",
-          "default": "https://example.com"
+        "command": {
+          "description": "The external process to run, given the govbot stream on stdin and emitting results on stdout. Either a single string (parsed as a shell-style command) or an argv array (first element is the executable, the rest are arguments).",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            }
+          ]
         },
-        "output_dir": {
-          "description": "Directory where RSS feeds are generated",
+        "reads": {
+          "description": "The stream record kind this transform consumes. govbot only feeds records of this kind into the transform; records of other kinds pass through untouched. 'docs' is the document-projection kind defined by the stream protocol.",
           "type": "string",
-          "default": "feeds"
+          "examples": ["docs", "classification", "summary"]
         },
-        "output_file": {
-          "description": "Output filename for the RSS feed",
+        "writes": {
+          "description": "The stream record kind this transform produces. govbot routes records of this kind back into the dataset (or onward to the next stage) by their 'id'. The classify transform writes 'classification'.",
           "type": "string",
-          "default": "feed.xml"
+          "examples": ["classification", "summary"]
         },
-        "tags": {
-          "description": "Specific tags to include in the combined RSS feed. If not specified, all tags are included.",
+        "classifier": {
+          "description": "For a classify-style transform: the path to the fastclass classifier bundle directory (containing classifier.yml). govbot passes this path to the transform unchanged and never reads the bundle's contents itself.",
+          "type": "string"
+        }
+      },
+      "required": ["command", "reads", "writes"],
+      "additionalProperties": true
+    },
+    "publisher": {
+      "type": "object",
+      "description": "A single publisher stage. The required fields depend on 'type'.",
+      "properties": {
+        "type": {
+          "description": "The publisher kind. 'rss' and 'html' emit feed/index files; 'json' emits a JSON dump; 'duckdb' loads results into a DuckDB database; 'bluesky' posts to a Bluesky account.",
+          "type": "string",
+          "enum": ["rss", "html", "json", "duckdb", "bluesky"]
+        },
+        "select": {
+          "description": "Tag names to include. Only records carrying at least one of these tags are published; if omitted, all tagged records are published. Tag names must exist in the classifier bundle (govbot validates them against 'fastclass describe').",
           "type": "array",
           "items": {
             "type": "string"
           }
         },
+        "base_url": {
+          "description": "Base URL for generated links (required for rss/html on GitHub Pages -- should match the GitHub Pages URL).",
+          "type": "string",
+          "format": "uri"
+        },
+        "output_dir": {
+          "description": "Directory where the publisher writes its artifacts (used by rss/html/json).",
+          "type": "string",
+          "default": "docs"
+        },
+        "output_file": {
+          "description": "Output filename for the primary artifact (e.g. the RSS feed file, the JSON dump, or the DuckDB database file).",
+          "type": "string"
+        },
         "title": {
-          "description": "Custom feed title. If not specified, defaults to combined tag names.",
+          "description": "Custom feed/index title. If omitted, defaults to a title derived from the selected tag names.",
           "type": "string"
         },
         "description": {
-          "description": "Custom feed description. If not specified, defaults to combined tag descriptions.",
+          "description": "Custom feed/index description. If omitted, defaults to a description derived from the selected tags.",
           "type": "string"
         },
         "limit": {
-          "description": "Limit number of entries per RSS feed. Use 'none' for no limit, or a number. Default is 15 (RSS standard).",
+          "description": "Maximum number of entries to include. Use the string 'none' for no limit, or a positive integer.",
           "oneOf": [
             {
               "type": "string",
@@ -66,30 +131,48 @@
               "minimum": 1
             }
           ]
-        }
-      },
-      "required": ["base_url", "output_dir", "output_file"]
-    }
-  },
-  "required": ["repos", "tags"],
-  "definitions": {
-    "tag": {
-      "type": "object",
-      "properties": {
-        "description": {
-          "description": "Detailed description of what legislation this tag covers. Use YAML multiline strings (|) for formatting.",
+        },
+        "min_score": {
+          "description": "Bluesky publisher only. The minimum calibrated 'final_score' a matched tag must reach for a record to be posted. 'final_score' is the calibrated probability in [0,1] guaranteed by the stream protocol, so it can be thresholded directly. Defaults to 0.6 -- a conservative value so a misconfigured manifest does not flood a feed with low-confidence matches.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.6
+        },
+        "ledger": {
+          "description": "Bluesky publisher only. Path to the append-only posted-state ledger that makes the publisher idempotent -- it records the id of every record posted so re-runs never double-post. Relative paths resolve against the project directory. Defaults to '.govbot/bluesky-<publisher>.ledger'.",
           "type": "string"
         },
-        "examples": {
-          "description": "Example bill descriptions that would match this tag",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+        "post_template": {
+          "description": "Bluesky publisher only. The post-text template. Supported placeholders, substituted per record: '{title}', '{tags}', '{link}', '{identifier}', '{session}', '{score}'. Rendered text is truncated to Bluesky's 300-character limit. If omitted, a sensible default template is used. Bluesky credentials are NEVER schema fields -- they are read from the environment (BLUESKY_HANDLE, BLUESKY_APP_PASSWORD, optional BLUESKY_SERVICE).",
+          "type": "string"
         }
       },
-      "required": ["description"]
+      "required": ["type"],
+      "additionalProperties": true,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": ["rss", "html"]
+              }
+            }
+          },
+          "then": {
+            "required": ["base_url"]
+          }
+        }
+      ]
+    },
+    "pipeline": {
+      "type": "array",
+      "description": "An ordered list of stage references. Each item names an entry in the manifest's 'transforms' or 'publish' map; govbot runs them in order.",
+      "items": {
+        "type": "string",
+        "description": "The name of a transform or publisher defined elsewhere in this manifest."
+      },
+      "minItems": 1
     }
   }
 }
-

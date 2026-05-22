@@ -56,9 +56,9 @@ build-release:
 # Usage: just govbot [COMMAND] [ARGS...]
 # Examples:
 #   just govbot --help
-#   just govbot clone usa il
-#   just govbot clone --govbot-dir custom-dir usa
-#   just govbot logs --repos usa
+#   just govbot pull usa il
+#   just govbot pull --govbot-dir custom-dir usa
+#   just govbot source --repos usa
 govbot *ARGS:
     #!/usr/bin/env bash
     set -e
@@ -140,37 +140,32 @@ run:
 run-args ARGS:
     cargo run -- {{ARGS}}
 
-# Tag bills using AI (reads JSON lines from stdin)
-# Usage: just govbot logs --repos il --limit 10 | just govbot tag --ai-tool "ollama run llama3"
-# Example: just govbot logs --repos il --limit 10 | just govbot tag --ai-tool "ollama"
-# Note: The tag command reads from stdin, so pipe the logs output to it
-tag *ARGS:
+# Apply fastclass classification results (reads result JSON from stdin)
+# Usage: just govbot source --select docs | fastclass classify - | just apply
+# Note: The apply command reads from stdin, so pipe the classify output to it
+apply *ARGS:
     #!/usr/bin/env bash
     set -e
-    
+
     DEV_DIR=".govbot"
-    
+
     # Build release binary if it doesn't exist or if any source files are newer
     if [ ! -f "target/release/govbot" ] || [ "src" -nt "target/release/govbot" ] || find src -name "*.rs" -newer "target/release/govbot" 2>/dev/null | grep -q .; then
         echo "🔨 Building release target..."
         cargo build --release
     fi
-    
+
     # Check if --govbot-dir is already in the arguments
     ARGS_STR="{{ARGS}}"
     if [[ "$ARGS_STR" =~ --govbot-dir ]]; then
-        ./target/release/govbot tag {{ARGS}}
+        ./target/release/govbot apply {{ARGS}}
     else
-        ./target/release/govbot tag {{ARGS}} --govbot-dir "$DEV_DIR"
+        ./target/release/govbot apply {{ARGS}} --govbot-dir "$DEV_DIR"
     fi
 
 # Run the release binary
 run-release:
     cargo run --release
-
-# Generate locale enum from pipeline-manager config
-generate:
-    cargo run --bin generate-locale-enum
 
 # Update mocks by cloning/pulling repos and cleaning them up
 # Usage: just mocks [LOCALES...]
@@ -199,10 +194,10 @@ mocks *LOCALES:
     # Ensure binary is built
     cargo build --bin govbot
     
-    # Clone/pull repositories using govbot
+    # Pull datasets using govbot
     echo ""
-    echo "📥 Cloning/pulling repositories..."
-    cargo run --bin govbot -- clone --govbot-dir "$MOCKS_DIR" $LOCALES
+    echo "📥 Pulling datasets..."
+    cargo run --bin govbot -- pull --govbot-dir "$MOCKS_DIR" $LOCALES
     
     # Cleanup functions
     function delete_files_dir {

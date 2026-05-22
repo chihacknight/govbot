@@ -1,0 +1,32 @@
+---
+source: tests/wizard_tests.rs
+expression: "&yml"
+---
+# Govbot Manifest
+# Schema: https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json
+$schema: https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json
+
+datasets:
+  - il
+  - ca
+  - ny
+
+transforms:
+  classify:
+    command: [fastclass, classify, "-"]
+    reads: docs
+    writes: classification
+    # Path to your fastclass classifier bundle (containing classifier.yml).
+    classifier: ./classifier
+
+publish:
+  feed:
+    type: rss
+    base_url: "https://example.com"
+    output_dir: "docs"
+    output_file: "feed.xml"
+
+pipelines:
+  default:
+    - classify
+    - feed

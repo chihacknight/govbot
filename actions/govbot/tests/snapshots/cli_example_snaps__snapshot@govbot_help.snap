@@ -11,14 +11,20 @@ Process pipeline log files with type-safe reactive streams
 Usage: govbot [COMMAND]
 
 Commands:
-  clone   Clone or pull data pipeline repositories (default: updates existing repos) Clones if repository doesn't exist, pulls if it does Use "govbot clone all" to clone all repos, or "govbot clone <repo>" for specific repos
-  logs    Process and display pipeline log files
-  delete  Delete data pipeline repositories Deletes local repository directories for specified locales
-  load    Load bill metadata into a DuckDB database file Loads all metadata.json files from cloned repos into a DuckDB database for analysis. The database file is saved in the base govbot directory (e.g., ./.govbot/govbot.duckdb)
-  update  Update govbot to the latest nightly version Downloads and installs the latest nightly build from GitHub releases
-  build   Build RSS feed and HTML index from govbot.yml configuration Generates a combined RSS feed and HTML index from logs filtered by tags in govbot.yml
-  tag     Tag bills using semantic or built-in similarity based on govbot.yml in the current directory. Reads JSON lines from stdin (from `govbot logs`), processes entries with bill identifiers, and writes per-tag files under the directory containing govbot.yml. By default, acts as a filter: only outputs lines that match tags. If a tag name is provided, only processes and outputs lines matching that specific tag
-  help    Print this message or the help of the given subcommand(s)
+  pull     Pull dataset repositories (default: updates existing datasets) Clones if the dataset repository doesn't exist, pulls if it does Use "govbot pull all" to pull all datasets, or "govbot pull <dataset>" for specific ones
+  source   Stream dataset records as JSON Lines (the govbot stream-protocol source)
+  delete   Delete data pipeline repositories Deletes local repository directories for specified locales
+  load     Load bill metadata into a DuckDB database file Loads all metadata.json files from cloned repos into a DuckDB database for analysis. The database file is saved in the base govbot directory (e.g., ./.govbot/govbot.duckdb)
+  update   Update govbot to the latest nightly version Downloads and installs the latest nightly build from GitHub releases
+  publish  Run a publisher: emit feeds/indexes/dumps from a govbot.yml publisher Reads the named publishers from govbot.yml `publish:` and emits their artifacts
+  apply    Persist fastclass classification results into the dataset as tag files. Reads `fastclass classify` result JSON from stdin — the apply sink of `govbot source --select docs | fastclass classify - | govbot apply` — and writes per-tag `.tag.json` files under each bill's session directory, the files `govbot publish` turns into feeds. Classification itself is done by fastclass; `govbot apply` only stores the results
+  run      Run the full govbot pipeline against the current directory's `govbot.yml`: pull/update → `source --select docs | fastclass classify - | apply` → publish. Equivalent to running `govbot` with no arguments
+  init     Scaffold a new govbot.yml in the current directory (the setup wizard). Interactive in a TTY; writes sensible defaults when non-interactive
+  add      Add one or more datasets to the project's `govbot.yml` `datasets:` list. Each id is validated against the registry before it is added
+  remove   Remove one or more datasets from the project's `govbot.yml`
+  ls       List datasets — the project's manifest datasets and the ones cached locally. With no manifest, lists every dataset in the registry
+  search   Search the dataset registry. A blank query lists every dataset
+  help     Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help     Print help

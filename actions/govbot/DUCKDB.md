@@ -22,8 +22,8 @@ duckdb --version
 ## Quick Start
 
 ```bash
-# 1. Clone repositories first
-govbot clone all
+# 1. Pull datasets first
+govbot pull all
 
 # 2. Load into DuckDB
 govbot load

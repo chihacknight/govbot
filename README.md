@@ -10,6 +10,19 @@
 
 `govbot` enables distributed data anaylsis of government updates via a friendly terminal interface. Git repos function as datasets, including the legislation of all 47 states/jurisdictions.
 
+## 🤖 Build a newsbot with Claude Code
+
+The fastest way to stand up a govbot project — a classified, auto-publishing
+legislation feed (e.g. a Bluesky bot) — is to let Claude Code drive it.
+Open a Claude Code session in an empty directory and paste:
+
+> **Read github.com/chihacknight/govbot/AGENT.md and follow it to set up a govbot project here.**
+
+[`AGENT.md`](AGENT.md) is a self-contained playbook: Claude verifies the
+tools, interviews you about the issue you want to track, scaffolds the
+`govbot.yml` manifest + a `fastclass` classifier bundle, and walks you through
+running and scheduling the bot. No plugin or marketplace install needed.
+
 ## Example Projects
 
 - [Transportation Legislation Bluesky Bot](https://bsky.app/profile/govbottransport.bsky.social)
@@ -48,11 +61,12 @@ With a `govbot.yml` in your directory, running `govbot` executes the full pipeli
 ### Other Commands
 
 ```bash
-govbot clone all           # download all state legislation datasets
-govbot clone il ca ny      # download specific states
-govbot logs                # stream legislative activity as JSON Lines
-govbot logs | govbot tag   # process and tag data
-govbot build               # generate RSS feeds
+govbot pull all            # download all state legislation datasets
+govbot pull il ca ny       # download specific states
+govbot source              # stream legislative activity as JSON Lines
+govbot source --select docs | fastclass classify - classifier=./classifier | govbot apply
+govbot publish             # run the manifest's publishers (RSS / HTML / JSON / DuckDB / Bluesky)
+govbot run                 # the full pipeline: pull -> classify -> apply -> publish
 govbot load                # load bill metadata into DuckDB
 govbot delete all          # remove all downloaded data
 govbot update              # update govbot to latest version

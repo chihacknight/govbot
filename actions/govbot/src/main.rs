@@ -1,9 +1,10 @@
 use clap::{Parser, Subcommand};
 use govbot::git;
-use govbot::{TagMatcher, hash_text, TagFile, TagFileMetadata, BillTagResult};
+use govbot::lock::LockFile;
+use govbot::registry::Registry;
+use govbot::{hash_text, TagFile, TagFileMetadata, BillTagResult};
 use govbot::selectors::ocd_files_select_default;
-use govbot::publish::{load_config, get_repos_from_config, filter_by_tags, deduplicate_entries, sort_by_timestamp};
-use govbot::rss;
+use govbot::publish::{load_manifest, filter_by_tags, deduplicate_entries, sort_by_timestamp};
 use futures::StreamExt;
 use futures::stream;
 use std::io::{self, Write, BufRead, BufReader};
@@ -40,12 +41,26 @@ fn write_json_line(line: &str) -> io::Result<()> {
 #[derive(Debug, Clone)]
 struct CloneResult {
     locale: String,
-    result: String, // "cloned", "pulled", "no_updates", "failed"
+    result: String, // emoji, or "failed"
     position: String, // "1/37"
     size: Option<String>,
     local_size: Option<String>,
     final_size: Option<String>,
     error: Option<String>,
+    /// On success: the canonical registry id, git URL, channel, resolved
+    /// commit SHA, and cache key — recorded into `govbot.lock`.
+    pin: Option<DatasetPin>,
+}
+
+/// A resolved dataset pin, captured during a successful clone/pull for the
+/// lockfile.
+#[derive(Debug, Clone)]
+struct DatasetPin {
+    canonical_id: String,
+    git_url: String,
+    channel: Option<String>,
+    commit: String,
+    cache_key: String,
 }
 
 /// Type-safe, functional reactive processor for pipeline log files
@@ -60,11 +75,11 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Command {
-    /// Clone or pull data pipeline repositories (default: updates existing repos)
-    /// Clones if repository doesn't exist, pulls if it does
-    /// Use "govbot clone all" to clone all repos, or "govbot clone <repo>" for specific repos
-    Clone {
-        /// Repository names to clone/pull (e.g., usa, il, ca, or "all" for all repos). If not specified, updates existing repos.
+    /// Pull dataset repositories (default: updates existing datasets)
+    /// Clones if the dataset repository doesn't exist, pulls if it does
+    /// Use "govbot pull all" to pull all datasets, or "govbot pull <dataset>" for specific ones
+    Pull {
+        /// Dataset names to pull (e.g., usa, il, ca, or "all" for all datasets). If not specified, updates existing datasets.
         #[arg(num_args = 0..)]
         repos: Vec<String>,
 
@@ -84,14 +99,14 @@ enum Command {
         #[arg(long)]
         verbose: bool,
 
-        /// List available repos instead of cloning/pulling
+        /// List available datasets instead of pulling
         #[arg(long)]
         list: bool,
     },
 
-    /// Process and display pipeline log files
-    Logs {
-        /// Repos to output (default: `all`) `--repos="il,ca"`
+    /// Stream dataset records as JSON Lines (the govbot stream-protocol source)
+    Source {
+        /// Datasets to output (default: `all`) `--repos="il,ca"`
         #[arg(long, num_args = 0..)]
         repos: Vec<String>,
     
@@ -103,8 +118,11 @@ enum Command {
         #[arg(long, default_value = "bill,tags")]
         join: String,
 
-        /// Select/transform fields (default: `default`) - applies extract_text_from_json transformation
-        #[arg(long, default_value = "default", value_parser = ["default"])]
+        /// Select/transform fields (default: `default`). `docs` emits one
+        /// `{"id","text","kind":"docs"}` JSON object per entry carrying the
+        /// FULL bill text — the stream-protocol document `fastclass classify -`
+        /// consumes.
+        #[arg(long, default_value = "default", value_parser = ["default", "docs"])]
         select: String,
 
         /// Filter log entries based on per-repo AI generated filters (default: `default`) options: `default` | `none`
@@ -165,50 +183,103 @@ enum Command {
     /// Downloads and installs the latest nightly build from GitHub releases
     Update,
 
-    /// Build RSS feed and HTML index from govbot.yml configuration
-    /// Generates a combined RSS feed and HTML index from logs filtered by tags in govbot.yml
-    Build {
-        /// Specific tags to include in feed (default: all tags from govbot.yml)
-        #[arg(long, num_args = 0..)]
-        tags: Vec<String>,
-        
-        /// Limit number of entries per feed (default: 100, use "none" for all entries)
+    /// Run a publisher: emit feeds/indexes/dumps from a govbot.yml publisher
+    /// Reads the named publishers from govbot.yml `publish:` and emits their artifacts.
+    Publish {
+        /// Publisher name(s) from govbot.yml `publish:` (default: every publisher)
+        #[arg(long = "publisher", num_args = 0..)]
+        publishers: Vec<String>,
+
+        /// Limit number of entries per artifact (default: 100, use "none" for all entries)
         #[arg(long)]
         limit: Option<String>,
-        
-        /// Output directory for RSS feed and HTML (default: from govbot.yml build.output_dir, or "docs")
+
+        /// Output directory override (default: from the publisher's output_dir, or "docs")
         #[arg(long)]
         output_dir: Option<String>,
-        
-        /// Output filename for RSS feed (default: from govbot.yml build.output_file, or "feed.xml")
+
+        /// Output filename override (default: from the publisher's output_file, or "feed.xml")
         #[arg(long)]
         output_file: Option<String>,
-        
+
+        /// Render but do not emit. The `bluesky` publisher honours this by
+        /// printing the posts it would send and touching no network/ledger.
+        #[arg(long = "dry-run")]
+        dry_run: bool,
+
         /// Govbot directory (default: $CWD/.govbot/repos, or GOVBOT_DIR env var)
         #[arg(long = "govbot-dir")]
         govbot_dir: Option<String>,
     },
 
-    /// Tag bills using semantic or built-in similarity based on govbot.yml in the current directory.
-    /// Reads JSON lines from stdin (from `govbot logs`), processes entries with bill identifiers,
-    /// and writes per-tag files under the directory containing govbot.yml.
-    /// By default, acts as a filter: only outputs lines that match tags.
-    /// If a tag name is provided, only processes and outputs lines matching that specific tag.
-    Tag {
-        /// Optional tag name to filter to a specific tag (e.g., "lgbtq", "budget")
+    /// Persist fastclass classification results into the dataset as tag files.
+    /// Reads `fastclass classify` result JSON from stdin — the apply sink of
+    /// `govbot source --select docs | fastclass classify - | govbot apply` —
+    /// and writes per-tag `.tag.json` files under each bill's session
+    /// directory, the files `govbot publish` turns into feeds. Classification
+    /// itself is done by fastclass; `govbot apply` only stores the results.
+    Apply {
+        /// Optional tag name: persist only this tag's matches
         tag_name: Option<String>,
 
         /// Output directory (defaults to the directory containing govbot.yml)
         #[arg(long = "output-dir")]
         output_dir: Option<String>,
 
+        /// Overwrite a bill's tag entry even if it is already present
+        #[arg(long)]
+        overwrite: bool,
+    },
+
+    /// Run the full govbot pipeline against the current directory's `govbot.yml`:
+    /// pull/update → `source --select docs | fastclass classify - | apply` → publish.
+    /// Equivalent to running `govbot` with no arguments.
+    Run {
+        /// Govbot directory (default: $CWD/.govbot, or GOVBOT_DIR env var)
+        #[arg(long = "govbot-dir")]
+        govbot_dir: Option<String>,
+    },
+
+    /// Scaffold a new govbot.yml in the current directory (the setup wizard).
+    /// Interactive in a TTY; writes sensible defaults when non-interactive.
+    Init,
+
+    /// Add one or more datasets to the project's `govbot.yml` `datasets:` list.
+    /// Each id is validated against the registry before it is added.
+    Add {
+        /// Dataset identifiers to add (e.g. `wy`, `il`, `us-legislation/ca`).
+        #[arg(num_args = 1..)]
+        datasets: Vec<String>,
+    },
+
+    /// Remove one or more datasets from the project's `govbot.yml`.
+    Remove {
+        /// Dataset identifiers to remove from `datasets:`.
+        #[arg(num_args = 1..)]
+        datasets: Vec<String>,
+    },
+
+    /// List datasets — the project's manifest datasets and the ones cached
+    /// locally. With no manifest, lists every dataset in the registry.
+    Ls {
         /// Govbot directory (default: $CWD/.govbot/repos, or GOVBOT_DIR env var)
         #[arg(long = "govbot-dir")]
         govbot_dir: Option<String>,
 
-        /// Force re-tagging even if bill already exists in tag files
-        #[arg(long)]
-        overwrite: bool,
+        /// Emit machine-readable JSON instead of a human table.
+        #[arg(long = "output", value_parser = ["text", "json"], default_value = "text")]
+        output: String,
+    },
+
+    /// Search the dataset registry. A blank query lists every dataset.
+    Search {
+        /// Query matched against dataset ids and names (case-insensitive).
+        #[arg(num_args = 0..)]
+        query: Vec<String>,
+
+        /// Emit machine-readable JSON instead of a human table.
+        #[arg(long = "output", value_parser = ["text", "json"], default_value = "text")]
+        output: String,
     },
 }
 
@@ -227,65 +298,92 @@ fn get_govbot_dir(govbot_dir: Option<String>) -> anyhow::Result<PathBuf> {
     }
 }
 
-/// Process a single locale clone/pull operation
-fn process_single_locale(
-    locale: &str,
+/// The directory holding the project's `govbot.yml` (and where `govbot.lock`
+/// is written) — the current working directory.
+fn project_dir() -> anyhow::Result<PathBuf> {
+    std::env::current_dir().map_err(|e| anyhow::anyhow!("Could not determine cwd: {}", e))
+}
+
+/// Load the active dataset registry for the current project.
+fn load_registry() -> anyhow::Result<Registry> {
+    let dir = project_dir()?;
+    Registry::load(&dir).map_err(|e| anyhow::anyhow!("{}", e))
+}
+
+/// Process a single dataset clone/pull operation.
+///
+/// Resolution is registry-driven: the dataset is cloned once into the shared
+/// `~/.govbot/cache/` and linked into the project's `repos/`. The resolved
+/// commit SHA is captured for `govbot.lock`.
+fn process_single_dataset(
+    dataset: &govbot::ResolvedDataset,
     repos_dir: &PathBuf,
     token_str: Option<&str>,
     verbose: bool,
 ) -> CloneResult {
-    let repo_name = git::build_repo_name(locale);
-    let target_dir = repos_dir.join(&repo_name);
-    
+    let short = dataset.short_name().to_string();
+    let target_dir = repos_dir.join(git::repo_dir_name(&short));
+
     let local_size = if target_dir.exists() {
         git::get_directory_size(&target_dir).unwrap_or(0)
     } else {
         0
     };
-    
-    match git::clone_or_pull_repo_quiet(locale, repos_dir, token_str, !verbose) {
-        Ok(action) => {
+
+    match git::clone_or_pull_dataset(dataset, repos_dir, token_str, !verbose) {
+        Ok(outcome) => {
             let final_size = if target_dir.exists() {
                 git::get_directory_size(&target_dir).unwrap_or(0)
             } else {
                 0
             };
-            
-            let result = match action {
+
+            let result = match outcome.action {
                 "clone" => "🆕",
                 "pulled" => "⬇️",
                 "no_updates" => "✅",
                 "recloned" => "🔄",
                 _ => "processed",
             };
-            
+
             let mut clone_result = CloneResult {
-                locale: locale.to_string(),
+                locale: short.clone(),
                 result: result.to_string(),
-                position: String::new(), // Will be set by caller
+                position: String::new(),
                 size: None,
                 local_size: None,
                 final_size: None,
                 error: None,
+                pin: Some(DatasetPin {
+                    canonical_id: dataset.id.clone(),
+                    git_url: dataset.entry.git_url.clone(),
+                    channel: dataset.channel.clone(),
+                    commit: outcome.commit.clone(),
+                    cache_key: outcome.cache_key.clone(),
+                }),
             };
-            
-            if action == "clone" || action == "recloned" || action == "no_updates" {
+
+            if outcome.action == "clone"
+                || outcome.action == "recloned"
+                || outcome.action == "no_updates"
+            {
                 clone_result.size = Some(git::format_size(final_size));
             } else {
                 clone_result.local_size = Some(git::format_size(local_size));
                 clone_result.final_size = Some(git::format_size(final_size));
             }
-            
+
             clone_result
         }
         Err(e) => CloneResult {
-            locale: locale.to_string(),
+            locale: short,
             result: "failed".to_string(),
-            position: String::new(), // Will be set by caller
+            position: String::new(),
             size: None,
             local_size: None,
             final_size: None,
             error: Some(e.to_string()),
+            pin: None,
         },
     }
 }
@@ -323,19 +421,19 @@ fn print_result(result: &CloneResult) {
 
 /// Perform clone/pull operations and print results as they complete
 async fn perform_clone_operations(
-    repos_to_clone: Vec<String>,
+    datasets: Vec<govbot::ResolvedDataset>,
     repos_dir: PathBuf,
     token_str: Option<&str>,
     num_jobs: usize,
     verbose: bool,
 ) -> anyhow::Result<Vec<CloneResult>> {
-    let total = repos_to_clone.len();
+    let total = datasets.len();
     let mut all_results = Vec::new();
-    
+
     if total == 1 || num_jobs == 1 {
         // Sequential clone/pull - print as we go
-        for (idx, locale) in repos_to_clone.iter().enumerate() {
-            let mut result = process_single_locale(locale, &repos_dir, token_str, verbose);
+        for (idx, dataset) in datasets.iter().enumerate() {
+            let mut result = process_single_dataset(dataset, &repos_dir, token_str, verbose);
             result.position = format!("{}/{}", idx + 1, total);
             print_result(&result);
             all_results.push(result);
@@ -344,18 +442,17 @@ async fn perform_clone_operations(
         // Parallel clone/pull - print as results come in
         use std::sync::{Arc, Mutex};
         let completed = Arc::new(Mutex::new(0usize));
-        
-        let clone_futures = stream::iter(repos_to_clone.iter())
-            .map(|locale| {
-                let locale = locale.clone();
+
+        let clone_futures = stream::iter(datasets.into_iter())
+            .map(|dataset| {
                 let repos_dir = repos_dir.clone();
                 let token = token_str.map(|s| s.to_string());
                 let completed = completed.clone();
                 let total = total;
                 let verbose_flag = verbose;
-                
+
                 tokio::task::spawn_blocking(move || {
-                    let mut result = process_single_locale(&locale, &repos_dir, token.as_deref(), verbose_flag);
+                    let mut result = process_single_dataset(&dataset, &repos_dir, token.as_deref(), verbose_flag);
                     let mut count = completed.lock().unwrap();
                     *count += 1;
                     result.position = format!("{}/{}", *count, total);
@@ -365,7 +462,7 @@ async fn perform_clone_operations(
             .buffer_unordered(num_jobs);
 
         let mut stream = clone_futures;
-        
+
         while let Some(result) = stream.next().await {
             match result {
                 Ok(data) => {
@@ -381,6 +478,7 @@ async fn perform_clone_operations(
                         local_size: None,
                         final_size: None,
                         error: Some(format!("Task error: {}", e)),
+                        pin: None,
                     };
                     print_result(&error_result);
                     all_results.push(error_result);
@@ -391,13 +489,45 @@ async fn perform_clone_operations(
             let _ = std::io::stderr().flush();
         }
     }
-    
+
     Ok(all_results)
 }
 
+/// Write/update `govbot.lock` from a batch of successful clone/pull results.
+/// Non-fatal: a lockfile-write failure prints a warning but does not abort.
+fn update_lockfile(project_dir: &std::path::Path, results: &[CloneResult]) {
+    let mut lock = match LockFile::load_or_default(project_dir) {
+        Ok(l) => l,
+        Err(e) => {
+            eprintln!("⚠️  Could not read govbot.lock ({}); skipping pin update", e);
+            return;
+        }
+    };
+    let mut pinned = 0usize;
+    for r in results {
+        if let Some(pin) = &r.pin {
+            lock.pin(
+                &pin.canonical_id,
+                &pin.git_url,
+                pin.channel.as_deref(),
+                &pin.commit,
+                &pin.cache_key,
+            );
+            pinned += 1;
+        }
+    }
+    if pinned == 0 {
+        return;
+    }
+    match lock.save(project_dir) {
+        Ok(()) => eprintln!("🔒 Updated govbot.lock ({} datasets pinned)", pinned),
+        Err(e) => eprintln!("⚠️  Could not write govbot.lock: {}", e),
+    }
+}
 
-async fn run_clone_command(cmd: Command) -> anyhow::Result<()> {
-    let Command::Clone {
+
+async fn run_pull_command(cmd: Command) -> anyhow::Result<()> {
+    let Command::Pull {
         repos,
         govbot_dir,
         token,
@@ -408,106 +538,80 @@ async fn run_clone_command(cmd: Command) -> anyhow::Result<()> {
         unreachable!()
     };
 
+    let registry = load_registry()?;
+
     // If --list flag is set, show the list
     if list {
-        println!("Available repos:");
-        let all_locales = govbot::locale::WorkingLocale::all();
-        for locale in all_locales {
-            println!("  {}", locale.as_lowercase());
+        println!("Available datasets:");
+        for d in registry.all() {
+            println!("  {}", d.short_name());
         }
-        println!("  all (clone all repos)");
+        println!("  all (pull every dataset)");
         return Ok(());
     }
 
     let repos_dir = get_govbot_dir(govbot_dir)?;
-    
+    let proj_dir = project_dir()?;
+
     // Get token from argument or environment variable
     let env_token = std::env::var("TOKEN").ok();
     let token_str = token.as_deref().or(env_token.as_deref());
-    
+
     // Get parallelization setting
     let num_jobs = parallel
         .or_else(|| std::env::var("GOVBOT_JOBS").ok().and_then(|s| s.parse().ok()))
         .unwrap_or(4);
 
-    // Parse repos and handle "all"
-    let mut repos_to_clone = Vec::new();
-    
-    if repos.is_empty() {
-        // No repos specified: find existing repos to update
-        // Check all known locales to see which repos exist
-        let all_locales = govbot::locale::WorkingLocale::all();
-        for locale in all_locales {
-            let locale_str = locale.as_lowercase();
-            let repo_name = git::build_repo_name(&locale_str);
-            let repo_path = repos_dir.join(&repo_name);
-            
-            // Check if this is a git repository
-            if repo_path.exists() && repo_path.join(".git").exists() {
-                repos_to_clone.push(locale_str.to_string());
-            }
-        }
-        
-        if repos_to_clone.is_empty() {
-            eprintln!("No repos downloaded yet in this directory");
-            eprintln!("to download all gov data, do `govbot clone all`. future syncs are just `govbot clone`");
+    // Resolve which datasets to pull.
+    let datasets_to_pull: Vec<govbot::ResolvedDataset> = if repos.is_empty() {
+        // No datasets specified: update whatever is already cloned locally.
+        // A locally-present dataset that is no longer in the registry is
+        // skipped with a warning rather than aborting the whole update.
+        let local = git::get_local_datasets(&repos_dir).unwrap_or_default();
+        if local.is_empty() {
+            eprintln!("No datasets downloaded yet in this directory");
+            eprintln!("to download all gov data, do `govbot pull all`. future syncs are just `govbot pull`");
             return Ok(());
         }
-        
-        // Create directory if it doesn't exist (needed for the clone operations)
         std::fs::create_dir_all(&repos_dir)?;
-    } else {
-        // Create directory if it doesn't exist (needed for the clone operations)
-        std::fs::create_dir_all(&repos_dir)?;
-        
-        // Parse specified repos
-        for repo in repos {
-            let repo = repo.trim().to_lowercase();
-            if repo.is_empty() {
-                continue;
-            }
-            
-            if repo == "all" {
-                // Add all working locales
-                let all_locales = govbot::locale::WorkingLocale::all();
-                for loc in all_locales {
-                    repos_to_clone.push(loc.as_lowercase().to_string());
-                }
-            } else {
-                // Validate locale
-                let _ = govbot::locale::WorkingLocale::from(repo.as_str());
-                repos_to_clone.push(repo);
+        let mut resolved = Vec::new();
+        for short in &local {
+            match registry.resolve(short) {
+                Ok(d) => resolved.push(d),
+                Err(_) => eprintln!("⚠️  Skipping '{}' — not in the registry", short),
             }
         }
+        resolved
+    } else {
+        std::fs::create_dir_all(&repos_dir)?;
+        registry
+            .resolve_all(&repos)
+            .map_err(|e| anyhow::anyhow!("{}", e))?
+    };
+
+    if datasets_to_pull.is_empty() {
+        return Ok(());
     }
 
-    if repos_to_clone.is_empty() {
-        return Ok(());
-}
-
     // Print initial message with count
-    eprintln!("🔁 Syncing {} repos\n", repos_to_clone.len());
+    eprintln!("🔁 Syncing {} datasets\n", datasets_to_pull.len());
 
     // Perform clone operations and print results as they complete
-    let results = perform_clone_operations(
-        repos_to_clone,
-        repos_dir,
-        token_str,
-        num_jobs,
-        verbose,
-    ).await?;
-    
+    let results =
+        perform_clone_operations(datasets_to_pull, repos_dir, token_str, num_jobs, verbose).await?;
+
+    // Pin resolved SHAs into govbot.lock for reproducibility.
+    update_lockfile(&proj_dir, &results);
+
     // Show summary
-    let errors: Vec<_> = results.iter()
-        .filter(|r| r.result == "failed")
-        .collect();
-    
+    let errors: Vec<_> = results.iter().filter(|r| r.result == "failed").collect();
+
     if !errors.is_empty() {
         eprintln!("\n❌ Errors occurred: {}/{}", errors.len(), results.len());
     } else if !results.is_empty() {
-        eprintln!("\n✅ Successfully processed all {} repos!", results.len());
+        eprintln!("\n✅ Successfully processed all {} datasets!", results.len());
     }
-    
+
     Ok(())
 }
 
@@ -537,30 +641,31 @@ async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
     }
 
     let repos_dir = get_govbot_dir(govbot_dir)?;
-    
+
     // Get parallelization setting
     let num_jobs = parallel
         .or_else(|| std::env::var("GOVBOT_JOBS").ok().and_then(|s| s.parse().ok()))
         .unwrap_or(4);
 
-    // Parse locales and handle "all"
+    // Parse datasets and handle "all". `all` expands to whatever is cloned
+    // locally — there is nothing to delete that is not on disk.
     let mut locales_to_delete = Vec::new();
     for locale in locales {
         let locale = locale.trim().to_lowercase();
         if locale.is_empty() {
             continue;
         }
-        
+
         if locale == "all" {
-            // Add all working locales
-            let all_locales = govbot::locale::WorkingLocale::all();
-            for loc in all_locales {
-                locales_to_delete.push(loc.as_lowercase().to_string());
+            for short in git::get_local_datasets(&repos_dir).unwrap_or_default() {
+                locales_to_delete.push(short);
             }
         } else {
-            // Validate locale
-            let _ = govbot::locale::WorkingLocale::from(locale.as_str());
-            locales_to_delete.push(locale);
+            // A dataset identifier may be namespaced; delete keys on the short
+            // (slash-free) name the clone directory uses.
+            let short = locale.rsplit('/').next().unwrap_or(&locale).to_string();
+            let short = short.split('@').next().unwrap_or(&short).to_string();
+            locales_to_delete.push(short);
         }
     }
 
@@ -579,15 +684,15 @@ async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
     if total == 1 || num_jobs == 1 {
         // Sequential delete
         for (idx, locale) in locales_to_delete.iter().enumerate() {
-            let repo_name = format!("{}-data-pipeline", locale);
+            let repo_name = git::repo_dir_name(locale);
             let target_dir = repos_dir.join(&repo_name);
-            let existed = target_dir.exists();
-            
+            let existed = target_dir.exists() || std::fs::symlink_metadata(&target_dir).is_ok();
+
             if verbose {
                 eprintln!("[{}/{}] Deleting {}...", idx + 1, total, locale);
             }
-            
-            match git::delete_repo(locale, &repos_dir) {
+
+            match git::delete_dataset(locale, &repos_dir) {
                 Ok(_) => {
                     if existed {
                         eprintln!("{:<4}  deleted", locale);
@@ -618,18 +723,18 @@ async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
                 let verbose_flag = verbose;
                 
                 tokio::task::spawn_blocking(move || {
-                    let repo_name = format!("{}-data-pipeline", locale);
+                    let repo_name = git::repo_dir_name(&locale);
                     let target_dir = repos_dir.join(&repo_name);
-                    
+
                     if verbose_flag {
                         let d = deleted.lock().unwrap();
                         let f = failed.lock().unwrap();
                         let current = *d + *f + 1;
                         eprintln!("[{}/{}] Deleting {}...", current, total, locale);
                     }
-                    
-                    let existed = target_dir.exists();
-                    match git::delete_repo(&locale, &repos_dir) {
+
+                    let existed = target_dir.exists() || std::fs::symlink_metadata(&target_dir).is_ok();
+                    match git::delete_dataset(&locale, &repos_dir) {
                         Ok(_) => {
                             if existed {
                                 let mut d = deleted.lock().unwrap();
@@ -683,8 +788,35 @@ async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn run_logs_command(cmd: Command) -> anyhow::Result<()> {
-    let Command::Logs {
+/// Collapse a fully-joined `govbot logs` entry into the
+/// `{"id","text","kind":"docs"}` document the govbot stream protocol defines
+/// (`STREAM_PROTOCOL.md` §1) — the record `fastclass classify -` consumes.
+///
+/// `id` is the bill's dataset-relative directory path (derived from
+/// `sources.log` by dropping the `/logs/<file>.json` tail), so a classified
+/// result can be routed back to the right place when `govbot apply` writes it.
+/// `text` is the **full** bill text assembled from `metadata.json` (not just
+/// titles) — the `docs` projection joins the complete bill so this is whole.
+fn ocd_entry_to_doc(entry: &serde_json::Value) -> serde_json::Value {
+    let id = entry
+        .get("sources")
+        .and_then(|s| s.get("log"))
+        .and_then(|v| v.as_str())
+        .and_then(|log_path| log_path.split("/logs/").next())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            entry
+                .get("log")
+                .and_then(|l| l.get("bill_id").or_else(|| l.get("bill_identifier")))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
+        .unwrap_or_default();
+    serde_json::json!({ "id": id, "text": ocd_files_select_default(entry), "kind": "docs" })
+}
+
+async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
+    let Command::Source {
         govbot_dir,
         repos,
         sort: _sort,
@@ -734,32 +866,29 @@ async fn run_logs_command(cmd: Command) -> anyhow::Result<()> {
         repo_list.push("all".to_string());
     }
 
-    // Expand "all" to existing repos in the directory, or convert locale names to repo names
+    // Expand "all" to the datasets cloned in the directory, or map dataset
+    // identifiers to their on-disk repo directory names.
     let mut repos_to_process = Vec::new();
     for locale in repo_list {
         let locale = locale.trim().to_lowercase();
         if locale.is_empty() {
             continue;
         }
-        
+
         if locale == "all" {
-            // Find all existing repos in the directory
+            // Every dataset cloned locally — registry membership is not
+            // required here, only on-disk presence.
             if git_dir.exists() {
-                let all_locales = govbot::locale::WorkingLocale::all();
-                for loc in all_locales {
-                    let locale_str = loc.as_lowercase();
-                    let repo_name = git::build_repo_name(&locale_str);
-                    let repo_path = git_dir.join(&repo_name);
-                    
-                    // Only add repos that actually exist (for logs, we don't need .git, just the directory)
-                    if repo_path.exists() && repo_path.is_dir() {
-                        repos_to_process.push(repo_name);
-                    }
+                for short in git::get_local_datasets(&git_dir).unwrap_or_default() {
+                    repos_to_process.push(git::repo_dir_name(&short));
                 }
             }
         } else {
-            // Convert locale name to repo name using build_repo_name
-            repos_to_process.push(git::build_repo_name(&locale));
+            // A dataset identifier may be namespaced; the clone directory is
+            // keyed on the short (slash-free) name.
+            let short = locale.rsplit('/').next().unwrap_or(&locale);
+            let short = short.split('@').next().unwrap_or(short);
+            repos_to_process.push(git::repo_dir_name(short));
         }
     }
 
@@ -771,8 +900,11 @@ async fn run_logs_command(cmd: Command) -> anyhow::Result<()> {
 
     // Process each repo (with optional filtering)
     for repo_name in repos_to_process {
+        // A project's repo entry may be a symlink into the shared dataset
+        // cache. The walker reads through it transparently and reports child
+        // paths under `git_dir`, so `sources.log` stays project-relative.
         let repo_path = git_dir.join(&repo_name);
-        
+
         if !repo_path.exists() {
             eprintln!("Warning: Repository not found: {}", repo_path.display());
             continue;
@@ -999,7 +1131,14 @@ async fn run_logs_command(cmd: Command) -> anyhow::Result<()> {
                                     
                                     let mut output_value = serde_json::Value::Object(output);
                                     
-                                    // Apply select transformation if requested
+                                    // Apply select transformation if requested.
+                                    // `default` trims each entry to the familiar
+                                    // title/abstracts/subject shape. `docs` deliberately
+                                    // does NOT trim — it keeps the full joined `bill`
+                                    // (the whole metadata.json) so the {id,text,kind}
+                                    // document carries the FULL bill text per
+                                    // STREAM_PROTOCOL §1. The collapse to {id,text,kind}
+                                    // happens after the entry survives the filter.
                                     if select == "default" {
                                         // Select specific keys from nested objects, preserving structure
                                         let mut selected_output = serde_json::Map::new();
@@ -1075,6 +1214,13 @@ async fn run_logs_command(cmd: Command) -> anyhow::Result<()> {
                                     };
                                     
                                     if should_output {
+                                        // `docs` mode: collapse the surviving entry to the
+                                        // {id,text} document shape fastclass consumes.
+                                        let output_value = if select == "docs" {
+                                            ocd_entry_to_doc(&output_value)
+                                        } else {
+                                            output_value
+                                        };
                                         // Deep prune empty/null values before serialization
                                         let pruned_value = deep_prune_json(output_value);
                                         
@@ -1213,29 +1359,29 @@ fn extract_timestamp_from_path(path: &str) -> Option<String> {
     None
 }
 
-/// Compute relative path from git_dir to a file, following symlinks
+/// Compute the relative path from `git_dir` to a walked file.
+///
+/// Files are walked as `git_dir/<repo>/...` — including through a `<repo>`
+/// symlink into the shared dataset cache — so the direct (non-canonicalized)
+/// diff is what keeps `sources.log` project-relative. Canonicalizing here
+/// would resolve a cached dataset to `~/.govbot/cache/...` and escape
+/// `git_dir`; it is used only as a last-resort fallback.
 fn compute_relative_source_path(file_path: &PathBuf, git_dir: &PathBuf) -> String {
-    // Canonicalize the file path to follow symlinks
-    let canonical_file = match file_path.canonicalize() {
-        Ok(p) => p,
-        Err(_) => file_path.clone(),
-    };
-    
-    // Canonicalize git_dir for proper relative path calculation
-    let canonical_git_dir = match git_dir.canonicalize() {
-        Ok(p) => p,
-        Err(_) => git_dir.clone(),
-    };
-    
-    // Get relative path from git_dir to the file
+    // Preferred: the path as walked, relative to git_dir.
+    if let Some(rel) = pathdiff::diff_paths(file_path, git_dir) {
+        if !rel.starts_with("..") {
+            return rel.to_string_lossy().replace('\\', "/");
+        }
+    }
+
+    // Fallback: canonicalize both ends and diff.
+    let canonical_file = file_path.canonicalize().unwrap_or_else(|_| file_path.clone());
+    let canonical_git_dir = git_dir.canonicalize().unwrap_or_else(|_| git_dir.clone());
     match pathdiff::diff_paths(&canonical_file, &canonical_git_dir) {
         Some(rel_path) => rel_path.to_string_lossy().replace('\\', "/"),
-        None => {
-            // Fallback: use path relative to git_dir directly
-            pathdiff::diff_paths(file_path, git_dir)
-                .map(|p| p.to_string_lossy().replace('\\', "/"))
-                .unwrap_or_else(|| file_path.to_string_lossy().replace('\\', "/"))
-        }
+        None => pathdiff::diff_paths(file_path, git_dir)
+            .map(|p| p.to_string_lossy().replace('\\', "/"))
+            .unwrap_or_else(|| file_path.to_string_lossy().replace('\\', "/")),
     }
 }
 
@@ -1254,7 +1400,7 @@ async fn run_load_command(cmd: Command) -> anyhow::Result<()> {
     // Check if directory exists
     if !repos_dir.exists() {
         eprintln!("Error: Govbot repos directory not found: {}", repos_dir.display());
-        eprintln!("Run 'govbot clone all' first to clone repositories.");
+        eprintln!("Run 'govbot pull all' first to pull datasets.");
         return Ok(());
     }
 
@@ -1409,719 +1555,298 @@ fn extract_path_info(path: &str) -> Option<(String, String, String)> {
     Some((country, state, session_id))
 }
 
-/// Download a file from a URL to a local path
-fn download_file(url: &str, path: &std::path::Path) -> anyhow::Result<()> {
-    eprintln!("Downloading {}...", url);
-    let response = reqwest::blocking::get(url)?;
-    if !response.status().is_success() {
-        return Err(anyhow::anyhow!("Failed to download {}: HTTP {}", url, response.status()));
-    }
-    let mut file = std::fs::File::create(path)?;
-    std::io::copy(&mut response.bytes()?.as_ref(), &mut file)?;
-    Ok(())
+/// The slice of a `fastclass classify` result that `govbot apply` consumes.
+/// Unknown fields are ignored, so fastclass may evolve its output freely.
+#[derive(serde::Deserialize)]
+struct FastclassResult {
+    doc: String,
+    #[serde(default)]
+    text_hash: String,
+    #[serde(default)]
+    tags: HashMap<String, FastclassTag>,
 }
 
-/// Ensure embedding model and tokenizer exist; if missing, download them from Hugging Face.
-/// Returns true if files are present/ready, false otherwise.
-fn ensure_embedding_files(model_dir: &std::path::Path) -> bool {
-    let model_path = model_dir.join("model.onnx");
-    let tokenizer_path = model_dir.join("tokenizer.json");
-    let _vocab_path = model_dir.join("vocab.txt");
-
-    if model_path.exists() && tokenizer_path.exists() {
-        return true;
-    }
-
-    eprintln!("Embedding files not found. Downloading all-MiniLM-L6-v2 (ONNX) to {}...", model_dir.display());
-
-    // Use Xenova ONNX exports
-    let onnx_url = "https://huggingface.co/Xenova/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx";
-    let tokenizer_url = "https://huggingface.co/Xenova/all-MiniLM-L6-v2/resolve/main/tokenizer.json";
-
-    // Download tokenizer.json
-    if !tokenizer_path.exists() {
-        if let Err(e) = download_file(tokenizer_url, &tokenizer_path) {
-            eprintln!("Failed to download tokenizer.json: {}", e);
-            return false;
-        }
-    }
-
-    // Download ONNX model
-    if !model_path.exists() {
-        if let Err(e) = download_file(onnx_url, &model_path) {
-            eprintln!("Failed to download ONNX model: {}", e);
-            return false;
-        }
-    }
-
-    if !model_path.exists() || !tokenizer_path.exists() {
-        eprintln!(
-            "Download completed but model.onnx or tokenizer.json not found in {}",
-            model_dir.display()
-        );
-        return false;
-    }
-
-    eprintln!("✅ Successfully downloaded embedding files!");
-    true
+#[derive(serde::Deserialize)]
+struct FastclassTag {
+    #[serde(default)]
+    matched: bool,
+    #[serde(default)]
+    fusion: FastclassFusion,
 }
 
-/// Tag result structure: (tag_key, score_breakdown)
-type TagResult = (String, govbot::ScoreBreakdown);
-
-/// Check if a bill is already tagged in tag file(s) for the given session
-/// If tag_name is Some, only checks that specific tag file
-/// Returns a list of tag names that contain this bill
-fn check_existing_tags(
-    tags_dir: &PathBuf,
-    bill_id: &str,
-    tag_name: Option<&str>,
-) -> anyhow::Result<Vec<String>> {
-    let mut matched_tags = Vec::new();
-    
-    if !tags_dir.exists() {
-        return Ok(matched_tags);
-    }
-    
-    // If a specific tag is requested, only check that tag file
-    if let Some(requested_tag) = tag_name {
-        let tag_path = tags_dir.join(format!("{}.tag.json", requested_tag));
-        if tag_path.exists() {
-            match fs::read_to_string(&tag_path) {
-                Ok(contents) => {
-                    if let Ok(tag_file) = serde_json::from_str::<TagFile>(&contents) {
-                        if tag_file.bills.contains_key(bill_id) {
-                            matched_tags.push(requested_tag.to_string());
-                        }
-                    }
-                }
-                Err(_) => {
-                    // Tag file exists but can't be read - return empty
-                }
-            }
-        }
-        return Ok(matched_tags);
-    }
-    
-    // Otherwise, scan all .tag.json files in the tags directory
-    for entry in fs::read_dir(tags_dir)? {
-        let entry = entry?;
-        let path = entry.path();
-        
-        if let Some(ext) = path.extension() {
-            if ext == "json" {
-                if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
-                    // Remove .tag suffix if present (e.g., "budget.tag" -> "budget")
-                    let tag_name = stem.strip_suffix(".tag").unwrap_or(stem);
-                    
-                    match fs::read_to_string(&path) {
-                        Ok(contents) => {
-                            if let Ok(tag_file) = serde_json::from_str::<TagFile>(&contents) {
-                                // Check if bill_id exists in bills map
-                                if tag_file.bills.contains_key(bill_id) {
-                                    matched_tags.push(tag_name.to_string());
-                                }
-                            }
-                        }
-                        Err(_) => {
-                            // Skip files that can't be read
-                            continue;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    Ok(matched_tags)
+#[derive(serde::Deserialize, Default)]
+struct FastclassFusion {
+    #[serde(default)]
+    final_score: f64,
 }
 
-async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
-    let Command::Tag {
+/// A bill's location in the dataset, parsed from a fastclass result's `doc`
+/// id — which `govbot source --select docs` set to the bill's directory path.
+struct BillRoute {
+    country: String,
+    state: String,
+    session: String,
+    bill_id: String,
+}
+
+/// Parse a `doc` id of the form
+/// `<repo>/country:<c>/state:<s>/sessions/<session>/bills/<bill_id>` into the
+/// pieces needed to place its `.tag.json` file. Returns `None` for any id that
+/// is not a dataset bill path (e.g. a document from a non-govbot source).
+fn parse_doc_route(doc: &str) -> Option<BillRoute> {
+    let segments: Vec<&str> = doc.split('/').collect();
+    let (mut country, mut state, mut session, mut bill_id) = (None, None, None, None);
+    for (i, seg) in segments.iter().enumerate() {
+        if let Some(c) = seg.strip_prefix("country:") {
+            country = Some(c.to_string());
+        } else if let Some(s) = seg.strip_prefix("state:") {
+            state = Some(s.to_string());
+        } else if *seg == "sessions" {
+            session = segments.get(i + 1).map(|s| s.to_string());
+        } else if *seg == "bills" {
+            bill_id = segments.get(i + 1).map(|s| s.to_string());
+        }
+    }
+    Some(BillRoute {
+        country: country?,
+        state: state?,
+        session: session?,
+        bill_id: bill_id?,
+    })
+}
+
+/// Build a fresh `TagFile` for `tag_key`. The taxonomy now lives in a fastclass
+/// classifier bundle, not in `govbot.yml`, so `tag_defs` is normally empty and
+/// each tag file gets a minimal stub `tag_config` derived from the tag name.
+fn new_tag_file(tag_key: &str, tag_defs: &[govbot::TagDefinition], now: &str) -> TagFile {
+    let tag_def = tag_defs
+        .iter()
+        .find(|td| td.name == tag_key)
+        .cloned()
+        .unwrap_or_else(|| govbot::TagDefinition {
+            name: tag_key.to_string(),
+            description: String::new(),
+            examples: Vec::new(),
+            include_keywords: Vec::new(),
+            exclude_keywords: Vec::new(),
+            negative_examples: Vec::new(),
+            threshold: 0.5,
+        });
+    let tag_config_hash = hash_text(&serde_json::to_string(&tag_def).unwrap_or_default());
+    TagFile {
+        metadata: TagFileMetadata {
+            last_run: now.to_string(),
+            model: "fastclass".to_string(),
+            tag_config_hash,
+        },
+        tag_config: tag_def,
+        text_cache: HashMap::new(),
+        bills: HashMap::new(),
+    }
+}
+
+/// `govbot apply` — the persistence sink of the tagging pipeline.
+///
+/// It classifies nothing. It reads `fastclass classify` result JSON from
+/// stdin — the apply sink of
+/// `govbot source --select docs | fastclass classify - | govbot apply` — and
+/// for every matched tag writes the bill into the per-tag `.tag.json` file
+/// under the dataset's `sessions/<session>/tags/` directory. Those are the
+/// files `govbot publish` later turns into feeds.
+async fn run_apply_command(cmd: Command) -> anyhow::Result<()> {
+    let Command::Apply {
         tag_name,
         output_dir,
-        govbot_dir,
         overwrite,
-    } = cmd else {
+    } = cmd
+    else {
         unreachable!()
     };
 
-    // Check if govbot.yml exists in current directory
     let current_dir = std::env::current_dir()?;
-    let default_tags_cfg = current_dir.join("govbot.yml");
+    // Tag files land under --output-dir when given, otherwise the current
+    // directory (which, for a govbot project, holds govbot.yml).
+    let base_output_dir = output_dir
+        .as_ref()
+        .map(PathBuf::from)
+        .unwrap_or_else(|| current_dir.clone());
 
-    // Model/tokenizer directory: prefer user-specified govbot-dir or env GOVBOT_DIR, else default .govbot
-    let model_dir: PathBuf = if let Some(ref dir) = govbot_dir {
-        PathBuf::from(dir)
-    } else if let Ok(dir) = std::env::var("GOVBOT_DIR") {
-        PathBuf::from(dir)
-    } else {
-        current_dir.join(".govbot")
-    };
-    fs::create_dir_all(&model_dir)?;
-    let model_path = model_dir.join("model.onnx");
-    let tokenizer_path = model_dir.join("tokenizer.json");
-    
-    // Require govbot.yml
-    if !default_tags_cfg.exists() {
-        return Err(anyhow::anyhow!(
-            "govbot.yml not found in current directory"
-        ));
-    }
+    // The taxonomy now lives in a fastclass classifier bundle, not in
+    // govbot.yml — each `.tag.json` is stamped with a stub `tag_config`
+    // derived only from the matched tag name.
+    let tag_defs: Vec<govbot::TagDefinition> = Vec::new();
 
-    // Load tag definitions (needed for both embedding and keyword fallback)
-    let tag_defs = govbot::embeddings::load_tags_config(&default_tags_cfg)
-        .map_err(|e| anyhow::anyhow!("Failed to parse govbot.yml: {}", e))?;
-
-    // Try embedding mode first
-    let embedding_matcher = if ensure_embedding_files(&model_dir) {
-        let tags_path = default_tags_cfg.clone();
-
-        eprintln!("Using embedding mode:");
-        eprintln!("  Model: {}", model_path.display());
-        eprintln!("  Tokenizer: {}", tokenizer_path.display());
-        eprintln!("  Tags config: {}", tags_path.display());
-
-        match TagMatcher::from_files(&model_path, &tokenizer_path, &tags_path) {
-            Ok(matcher) => Some(matcher),
-            Err(e) => {
-                eprintln!("Warning: Failed to initialize embedding matcher: {}", e);
-                eprintln!("Falling back to keyword-based matching.");
-                None
-            }
-        }
-    } else {
-        eprintln!("Embedding files not available; using keyword-based matching.");
-        eprintln!("  Tags config: {}", default_tags_cfg.display());
-        None
-    };
-    
-    // Determine output directory
-    // If govbot.yml exists, use its directory as the base output directory
-    let base_output_dir = if default_tags_cfg.exists() {
-        // Use the directory containing govbot.yml
-        default_tags_cfg.parent()
-            .unwrap_or(&current_dir)
-            .to_path_buf()
-    } else if let Some(ref dir) = output_dir {
-        PathBuf::from(dir)
-    } else if let Some(ref dir) = govbot_dir {
-        PathBuf::from(dir)
-    } else if let Ok(dir) = std::env::var("GOVBOT_DIR") {
-        PathBuf::from(dir)
-    } else {
-        // Default to current directory
-        current_dir
-    };
-    
-    // Read JSON lines from stdin
     let stdin = io::stdin();
     let reader = BufReader::new(stdin.lock());
-    
-    let mut processed_count = 0;
-    let mut skipped_count = 0;
-    let mut read_count: usize = 0;
-    
-    eprintln!("Reading JSON lines from stdin...");
-    
+    let now = chrono::Utc::now().to_rfc3339();
+    let mut written = 0usize;
+    let mut skipped = 0usize;
+
+    eprintln!("Reading fastclass classification results from stdin...");
     for line_result in reader.lines() {
         let line = line_result?;
         let line = line.trim();
         if line.is_empty() {
-            read_count += 1;
-            if read_count % 100 == 0 {
-                eprintln!("Read {} lines (processed {}, skipped {})...", read_count, processed_count, skipped_count);
-            }
             continue;
         }
-        
-        read_count += 1;
-        // Parse JSON line (assumes default selector format)
-        match serde_json::from_str::<serde_json::Value>(line) {
-            Ok(json_value) => {
-                // Extract bill_id from top-level "id" field (default selector format)
-                let bill_id_opt = json_value
-                    .get("id")
-                    .and_then(|id| id.as_str());
+        let result: FastclassResult = match serde_json::from_str(line) {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("Warning: skipping unparseable result line: {}", e);
+                skipped += 1;
+                continue;
+            }
+        };
+        let Some(route) = parse_doc_route(&result.doc) else {
+            eprintln!(
+                "Warning: skipping '{}' — its id is not a dataset bill path. \
+                 Stream documents in with `govbot source --select docs`.",
+                result.doc
+            );
+            skipped += 1;
+            continue;
+        };
 
-                // Extract text from JSON for embedding comparison
-                let bill_text = ocd_files_select_default(&json_value);
-                
-                // Extract path info from sources.log (default selector format)
-                let path_info = json_value
-                    .get("sources")
-                    .and_then(|sources| sources.get("log"))
-                    .and_then(|path| path.as_str())
-                    .and_then(|log_path| extract_path_info(log_path))
-                    .or_else(|| {
-                        // Fallback: use default values if we can't determine
-                        Some(("us".to_string(), "unknown".to_string(), "unknown".to_string()))
-                    });
-
-                // Process if we have path info (from sources.log in default selector format)
-                if let Some((country, state, session_id)) = path_info {
-                    // Get bill_id - use "id" from default selector, or generate from text hash if missing
-                    let bill_id = bill_id_opt.map(|s| s.to_string()).unwrap_or_else(|| {
-                        let text_hash = hash_text(&bill_text);
-                        format!("entry_{}", &text_hash[..8])
-                    });
-                    
-                    // Determine tags directory
-                    let tags_dir = base_output_dir
-                        .join(&format!("country:{}", country))
-                        .join(&format!("state:{}", state))
-                        .join("sessions")
-                        .join(&session_id)
-                        .join("tags");
-                    
-                    // Validate tag_name if provided
-                    if let Some(ref requested_tag) = tag_name {
-                        if !tag_defs.iter().any(|td| td.name == *requested_tag) {
-                            return Err(anyhow::anyhow!(
-                                "Tag '{}' not found in govbot.yml. Available tags: {}",
-                                requested_tag,
-                                tag_defs.iter().map(|td| td.name.clone()).collect::<Vec<_>>().join(", ")
-                            ));
-                        }
-                    }
-                    
-                    // Fast path: check if bill is already tagged (unless overwrite is set)
-                    let mut matched_tags: Vec<String> = Vec::new();
-                    let mut should_run_tagging = overwrite;
-                    
-                    if !overwrite {
-                        match check_existing_tags(&tags_dir, &bill_id, tag_name.as_deref()) {
-                            Ok(existing_tags) => {
-                                if !existing_tags.is_empty() {
-                                    // Bill is already tagged - output the line and skip tagging
-                                    matched_tags = existing_tags;
-                                    should_run_tagging = false;
-                                } else {
-                                    // Bill not found in tag file(s) - need to run tagging
-                                    should_run_tagging = true;
-                                }
-                            }
-                            Err(e) => {
-                                // Error checking tags - run tagging to be safe
-                                eprintln!("Warning: Error checking existing tags for {}: {}", bill_id, e);
-                                should_run_tagging = true;
-                            }
-                        }
-                    }
-                    
-                    // Run tagging logic if needed
-                    if should_run_tagging {
-                        // Choose strategy based on mode
-                        let mut tags: Vec<TagResult> = if let Some(matcher) = embedding_matcher.as_ref() {
-                            match matcher.match_json_value(&json_value) {
-                                Ok(results) => results,
-                                Err(e) => {
-                                    eprintln!("Error running embedding matcher for bill {}: {}", bill_id, e);
-                                    eprintln!("Falling back to keyword-based matching for this entry.");
-                                    // Fall back to keyword matching for this entry
-                                    govbot::embeddings::match_tags_keywords(&tag_defs, &json_value)
-                                }
-                            }
-                        } else {
-                            // Use keyword-based fallback matcher
-                            govbot::embeddings::match_tags_keywords(&tag_defs, &json_value)
-                        };
-                        
-                        // Filter to specific tag if requested
-                        if let Some(ref requested_tag) = tag_name {
-                            tags.retain(|(tag, _)| tag == requested_tag);
-                        }
-                        
-                        // Extract tag names from results
-                        matched_tags = tags.iter().map(|(tag_name, _)| tag_name.clone()).collect();
-                        
-                        // Save tags to files if we found matches
-                        if !tags.is_empty() {
-                            let text_hash = hash_text(&bill_text);
-                            
-                            // Write per-tag files immediately
-                            fs::create_dir_all(&tags_dir)?;
-
-                            // Get current timestamp for metadata
-                            let now = chrono::Utc::now().to_rfc3339();
-                            let model_path_str = if embedding_matcher.is_some() {
-                                model_path.to_string_lossy().to_string()
-                            } else {
-                                "keyword-fallback".to_string()
-                            };
-
-                            for (tag_key, score_breakdown) in tags {
-                                let tag_path = tags_dir.join(format!("{}.tag.json", tag_key));
-
-                                // Load or create TagFile structure
-                                let mut tag_file: TagFile = if tag_path.exists() {
-                                        match fs::read_to_string(&tag_path) {
-                                            Ok(contents) => {
-                                                serde_json::from_str(&contents).unwrap_or_else(|_| {
-                                                    // If parsing fails, create a new TagFile
-                                                    let tag_def = tag_defs
-                                                        .iter()
-                                                        .find(|td| td.name == tag_key)
-                                                        .cloned()
-                                                        .unwrap_or_else(|| govbot::TagDefinition {
-                                                            name: tag_key.clone(),
-                                                            description: String::new(),
-                                                            examples: Vec::new(),
-                                                            include_keywords: Vec::new(),
-                                                            exclude_keywords: Vec::new(),
-                                                            negative_examples: Vec::new(),
-                                                            threshold: 0.5,
-                                                        });
-                                                    
-                                                    let tag_config_hash = hash_text(&serde_json::to_string(&tag_def).unwrap_or_default());
-                                                    
-                                                    TagFile {
-                                                        metadata: TagFileMetadata {
-                                                            last_run: now.clone(),
-                                                            model: model_path_str.clone(),
-                                                            tag_config_hash,
-                                                        },
-                                                        tag_config: tag_def,
-                                                        text_cache: HashMap::new(),
-                                                        bills: HashMap::new(),
-                                                    }
-                                                })
-                                            }
-                                            Err(_) => {
-                                                // Create new TagFile
-                                                let tag_def = tag_defs
-                                                    .iter()
-                                                    .find(|td| td.name == tag_key)
-                                                    .cloned()
-                                                    .unwrap_or_else(|| govbot::TagDefinition {
-                                                        name: tag_key.clone(),
-                                                        description: String::new(),
-                                                        examples: Vec::new(),
-                                                        include_keywords: Vec::new(),
-                                                        exclude_keywords: Vec::new(),
-                                                        negative_examples: Vec::new(),
-                                                        threshold: 0.5,
-                                                    });
-                                                
-                                                let tag_config_hash = hash_text(&serde_json::to_string(&tag_def)?);
-                                                
-                                                TagFile {
-                                                    metadata: TagFileMetadata {
-                                                        last_run: now.clone(),
-                                                        model: model_path_str.clone(),
-                                                        tag_config_hash,
-                                                    },
-                                                    tag_config: tag_def,
-                                                    text_cache: HashMap::new(),
-                                                    bills: HashMap::new(),
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        // Create new TagFile
-                                        let tag_def = tag_defs
-                                            .iter()
-                                            .find(|td| td.name == tag_key)
-                                            .cloned()
-                                            .unwrap_or_else(|| govbot::TagDefinition {
-                                                name: tag_key.clone(),
-                                                description: String::new(),
-                                                examples: Vec::new(),
-                                                include_keywords: Vec::new(),
-                                                exclude_keywords: Vec::new(),
-                                                negative_examples: Vec::new(),
-                                                threshold: 0.5,
-                                            });
-                                        
-                                        let tag_config_hash = hash_text(&serde_json::to_string(&tag_def)?);
-                                        
-                                        TagFile {
-                                            metadata: TagFileMetadata {
-                                                last_run: now.clone(),
-                                                model: model_path_str.clone(),
-                                                tag_config_hash,
-                                            },
-                                            tag_config: tag_def,
-                                            text_cache: HashMap::new(),
-                                            bills: HashMap::new(),
-                                        }
-                                    };
-
-                                // Update metadata
-                                tag_file.metadata.last_run = now.clone();
-                                tag_file.metadata.model = model_path_str.clone();
-                                
-                                // Update tag config if it changed
-                                let current_tag_def = tag_defs
-                                    .iter()
-                                    .find(|td| td.name == tag_key)
-                                    .cloned()
-                                    .unwrap_or_else(|| tag_file.tag_config.clone());
-                                
-                                let current_config_hash = hash_text(&serde_json::to_string(&current_tag_def)?);
-                                if current_config_hash != tag_file.metadata.tag_config_hash {
-                                    tag_file.tag_config = current_tag_def;
-                                    tag_file.metadata.tag_config_hash = current_config_hash;
-                                }
-                                
-                                // Add text to cache if not present
-                                if !tag_file.text_cache.contains_key(&text_hash) {
-                                    tag_file.text_cache.insert(text_hash.clone(), bill_text.clone());
-                                }
-                                
-                                // Add/update bill result
-                                tag_file.bills.insert(bill_id.to_string(), BillTagResult {
-                                    text_hash: text_hash.clone(),
-                                    score: score_breakdown,
-                                });
-
-                                // Write updated TagFile
-                                let json_string = serde_json::to_string_pretty(&tag_file)?;
-                                fs::write(&tag_path, json_string)?;
-                            }
-                        }
-                    }
-                    
-                    // Output the line if it matches tags (filter mode)
-                    // If a specific tag was requested, only output if that tag matches
-                    // Otherwise, output if any tag matches
-                    let should_output = if let Some(ref requested_tag) = tag_name {
-                        matched_tags.contains(requested_tag)
-                    } else {
-                        !matched_tags.is_empty()
-                    };
-                    
-                    if should_output {
-                        write_json_line(line)?;
-                    }
-                    
-                    processed_count += 1;
-                    if processed_count % 50 == 0 {
-                        eprintln!("Processed {} entries (matched: {} tags)...", processed_count, matched_tags.len());
-                    }
-                } else {
-                    // No path info - skip this entry (default selector should always provide sources.log)
-                    skipped_count += 1;
+        // The tags this bill matched, optionally narrowed to one requested tag.
+        let mut matched: Vec<(String, f64)> = Vec::new();
+        for (name, tag) in &result.tags {
+            if !tag.matched {
+                continue;
+            }
+            if let Some(req) = &tag_name {
+                if req != name {
+                    continue;
                 }
             }
-            Err(_e) => {
-                // Skip malformed/empty lines quietly
-                skipped_count += 1;
-            }
+            matched.push((name.clone(), tag.fusion.final_score));
+        }
+        if matched.is_empty() {
+            continue;
         }
 
-        if read_count % 100 == 0 {
-            eprintln!("Read {} lines (processed {}, skipped {})...", read_count, processed_count, skipped_count);
+        let tags_dir = base_output_dir
+            .join(format!("country:{}", route.country))
+            .join(format!("state:{}", route.state))
+            .join("sessions")
+            .join(&route.session)
+            .join("tags");
+        fs::create_dir_all(&tags_dir)?;
+
+        for (tag_key, final_score) in matched {
+            let tag_path = tags_dir.join(format!("{}.tag.json", tag_key));
+
+            // Update the existing tag file, or start a fresh one.
+            let mut tag_file: TagFile = fs::read_to_string(&tag_path)
+                .ok()
+                .and_then(|c| serde_json::from_str(&c).ok())
+                .unwrap_or_else(|| new_tag_file(&tag_key, &tag_defs, &now));
+
+            // With --overwrite off, an already-tagged bill is left untouched.
+            if !overwrite && tag_file.bills.contains_key(&route.bill_id) {
+                continue;
+            }
+
+            tag_file.metadata.last_run = now.clone();
+            tag_file.metadata.model = "fastclass".to_string();
+            tag_file.bills.insert(
+                route.bill_id.clone(),
+                BillTagResult {
+                    text_hash: result.text_hash.clone(),
+                    score: govbot::ScoreBreakdown {
+                        final_score,
+                        base_embedding: None,
+                        example_similarity: None,
+                        keyword_match: Vec::new(),
+                        negative_penalty: 0.0,
+                    },
+                },
+            );
+            fs::write(&tag_path, serde_json::to_string_pretty(&tag_file)?)?;
         }
+        written += 1;
     }
-    
-    eprintln!("\nProcessed: {}, Skipped: {}", processed_count, skipped_count);
-    eprintln!("\n✅ Tagging complete!");
-    
+
+    eprintln!(
+        "\n✅ Persisted {} tagged bill(s) under {}; skipped {} entr(ies).",
+        written,
+        base_output_dir.display(),
+        skipped
+    );
     Ok(())
 }
 
-async fn run_build_command(cmd: Command) -> anyhow::Result<()> {
-    let Command::Build {
-        tags,
+/// `govbot publish` — run the manifest's publishers.
+///
+/// Reads `govbot.yml`'s typed `publish:` map, collects the tagged result
+/// stream from `govbot source`, and runs each named publisher (`rss`/`html`/
+/// `json`/`duckdb`) against it. The publisher's tag list comes from
+/// `publish.<name>.select`; the retired `tags:` manifest block is gone.
+async fn run_publish_command(cmd: Command) -> anyhow::Result<()> {
+    let Command::Publish {
+        publishers,
         limit,
         output_dir,
         output_file,
+        dry_run,
         govbot_dir,
     } = cmd else {
         unreachable!()
     };
-    
-    // Check if govbot.yml exists in current directory
+
     let current_dir = std::env::current_dir()?;
     let config_path = current_dir.join("govbot.yml");
-    
     if !config_path.exists() {
         return Err(anyhow::anyhow!("govbot.yml not found in current directory"));
     }
-    
-    // Load configuration
-    let config = load_config(&config_path)?;
-    
-    // Get tags configuration
-    let tags_config = config.get("tags")
-        .and_then(|t| t.as_object())
-        .ok_or_else(|| anyhow::anyhow!("No tags found in configuration"))?;
-    
-    // Determine which tags to use
-    let tags_to_use: Vec<String> = if tags.is_empty() {
-        // Use tags from build config, or all tags
-        if let Some(build_tags) = config.get("build")
-            .and_then(|p| p.get("tags"))
-            .and_then(|t| t.as_array())
-        {
-            build_tags
-                .iter()
-                .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                .collect()
-        } else {
-            tags_config.keys().cloned().collect()
-        }
-    } else {
-        tags
-    };
-    
-    // Validate tags exist
-    for tag in &tags_to_use {
-        if !tags_config.contains_key(tag) {
-            return Err(anyhow::anyhow!("Tag '{}' not found in configuration", tag));
-        }
+
+    // Typed manifest — `publish:` is the publisher map.
+    let manifest = load_manifest(&config_path)?;
+    if manifest.publish.is_empty() {
+        return Err(anyhow::anyhow!(
+            "govbot.yml has no `publish:` publishers to run"
+        ));
     }
-    
-    if tags_to_use.is_empty() {
-        return Err(anyhow::anyhow!("No valid tags to process"));
-    }
-    
-    // Get build configuration
-    let build_config = config.get("build").and_then(|p| p.as_object());
-    
-    // Get output directory
-    let output_dir_path = if let Some(dir) = output_dir {
-        PathBuf::from(dir)
+
+    // Which publishers to run: all of them, or the requested subset.
+    let names_to_run: Vec<String> = if publishers.is_empty() {
+        manifest.publish.keys().cloned().collect()
     } else {
-        let dir_str = build_config
-            .and_then(|p| p.get("output_dir"))
-            .and_then(|d| d.as_str())
-            .unwrap_or("docs");
-        PathBuf::from(dir_str)
-    };
-    
-    // Get output filename
-    let output_filename = if let Some(file) = output_file {
-        file
-    } else {
-        build_config
-            .and_then(|p| p.get("output_file"))
-            .and_then(|f| f.as_str())
-            .unwrap_or("feed.xml")
-            .to_string()
-    };
-    
-    // Get feed metadata
-    let feed_title = build_config
-        .and_then(|p| p.get("title"))
-        .and_then(|t| t.as_str())
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| {
-            format!("{} Legislation", tags_to_use.iter()
-                .map(|t| t.replace('_', " ").split_whitespace()
-                    .map(|w| {
-                        let mut chars = w.chars();
-                        match chars.next() {
-                            None => String::new(),
-                            Some(f) => f.to_uppercase().collect::<String>() + chars.as_str(),
-                        }
-                    })
-                    .collect::<Vec<_>>()
-                    .join(" "))
-                .collect::<Vec<_>>()
-                .join(" & "))
-        });
-    
-    let feed_description = build_config
-        .and_then(|p| p.get("description"))
-        .and_then(|d| d.as_str())
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| {
-            let mut descs = Vec::new();
-            for tag_name in &tags_to_use {
-                if let Some(tag_obj) = tags_config.get(tag_name).and_then(|t| t.as_object()) {
-                    if let Some(desc) = tag_obj.get("description").and_then(|d| d.as_str()) {
-                        let tag_title = tag_name.replace('_', " ").split_whitespace()
-                            .map(|w| {
-                                let mut chars = w.chars();
-                                match chars.next() {
-                                    None => String::new(),
-                                    Some(f) => f.to_uppercase().collect::<String>() + chars.as_str(),
-                                }
-                            })
-                            .collect::<Vec<_>>()
-                            .join(" ");
-                        descs.push(format!("{}: {}", tag_title, &desc[..desc.len().min(200)]));
-                    }
-                }
+        for name in &publishers {
+            if !manifest.publish.contains_key(name) {
+                return Err(anyhow::anyhow!(
+                    "publisher '{}' not found in govbot.yml `publish:`",
+                    name
+                ));
             }
-            if descs.is_empty() {
-                "Legislative updates".to_string()
-            } else {
-                descs.join(" | ")
-            }
-        });
-    
-    let feed_link = build_config
-        .and_then(|p| p.get("base_url"))
-        .and_then(|u| u.as_str())
-        .unwrap_or("https://example.com");
-    
-    let base_url = Some(feed_link);
-    
-    // Get repos
-    let repos = get_repos_from_config(&config);
-    
-    // Get repos to process
-    let repos_to_process: Vec<String> = if repos == vec!["all".to_string()] {
-        Vec::new() // Empty means all repos
-    } else {
-        repos
-    };
-    
-    // Get limit - parse "none" as no limit, otherwise parse as usize
-    // Default to 100 if not specified
-    let limit_str_opt = limit.or_else(|| {
-        build_config
-            .and_then(|p| p.get("limit"))
-            .and_then(|l| {
-                if let Some(s) = l.as_str() {
-                    Some(s.to_string())
-                } else if let Some(n) = l.as_u64() {
-                    Some(n.to_string())
-                } else {
-                    None
-                }
-            })
-    });
-    
-    let limit_value: Option<usize> = if let Some(limit_str) = limit_str_opt {
-        if limit_str.to_lowercase() == "none" {
-            None // No limit
-        } else {
-            limit_str.parse().ok()
         }
-    } else {
-        Some(100) // Default to 100 items
+        publishers
     };
-    
-    // Run logs command and collect entries
-    eprintln!("Collecting log entries for tags: {}", tags_to_use.join(", "));
-    let mut entries = Vec::new();
-    
-    // Get the base govbot directory (not the repos subdirectory)
-    // The logs command expects the base directory and will append /repos itself
+
+    // Resolve the base govbot directory for the `source` subprocess.
     let base_govbot_dir = if let Some(ref gd) = govbot_dir {
         gd.clone()
     } else if let Ok(gd) = std::env::var("GOVBOT_DIR") {
         gd
     } else {
-        // Default: $CWD/.govbot
         std::env::current_dir()
             .unwrap_or_else(|_| PathBuf::from("."))
             .join(".govbot")
             .to_string_lossy()
             .to_string()
     };
-    
-    // Call logs command as subprocess and parse JSON output
-    // Use current executable (govbot binary)
-    let exe = std::env::current_exe()
-        .unwrap_or_else(|_| PathBuf::from("govbot"));
-    
-    let mut cmd = ProcessCommand::new(exe);
-    cmd.arg("logs")
+
+    // Collect the dataset record stream once: `govbot source` over all
+    // datasets (an empty `--repos` means every dataset).
+    let datasets_to_process: Vec<String> = if manifest.datasets == vec!["all".to_string()] {
+        Vec::new()
+    } else {
+        manifest.datasets.clone()
+    };
+
+    let exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("govbot"));
+    let mut source_cmd = ProcessCommand::new(exe);
+    source_cmd
+        .arg("source")
         .arg("--join")
         .arg("bill,tags")
         .arg("--select")
@@ -2130,134 +1855,109 @@ async fn run_build_command(cmd: Command) -> anyhow::Result<()> {
         .arg("default")
         .arg("--sort")
         .arg("DESC");
-    
-    // Only add --govbot-dir if it's not the default
     if !base_govbot_dir.is_empty() && base_govbot_dir != ".govbot" {
-        cmd.arg("--govbot-dir").arg(&base_govbot_dir);
+        source_cmd.arg("--govbot-dir").arg(&base_govbot_dir);
     }
-    
-    if !repos_to_process.is_empty() {
-        cmd.arg("--repos");
-        for repo in &repos_to_process {
-            cmd.arg(repo);
+    if !datasets_to_process.is_empty() {
+        source_cmd.arg("--repos");
+        for d in &datasets_to_process {
+            source_cmd.arg(d);
         }
     }
-    
-    // Don't pass limit to logs command - we'll limit after filtering/sorting
-    // This ensures we get the best entries, not just the first N from each repo
-    
-    let output = cmd.output()?;
-    
-    // Check return code
+
+    let output = source_cmd.output()?;
     if !output.status.success() {
         let stderr_str = String::from_utf8_lossy(&output.stderr);
-        eprintln!("Error: logs command failed with exit code: {:?}", output.status.code());
+        eprintln!("Error: source command failed: {:?}", output.status.code());
         eprintln!("Stderr: {}", stderr_str);
-        return Err(anyhow::anyhow!("Failed to collect log entries"));
+        return Err(anyhow::anyhow!("Failed to collect dataset records"));
     }
-    
-    // Check if there were any errors in stderr (but compilation messages are OK)
-    if !output.stderr.is_empty() {
-        let stderr_str = String::from_utf8_lossy(&output.stderr);
-        // Filter out compilation messages
-        let filtered_stderr: Vec<&str> = stderr_str
-            .lines()
-            .filter(|line| !line.contains("Compiling") && !line.contains("Finished"))
-            .collect();
-        if !filtered_stderr.is_empty() {
-            eprintln!("Warning from logs command: {}", filtered_stderr.join("\n"));
-        }
-    }
-    
-    // Parse JSON lines from output
-    let mut total_entries = 0;
-    let mut filtered_entries = 0;
+
     let stdout_str = String::from_utf8_lossy(&output.stdout);
-    
     if stdout_str.trim().is_empty() {
-        eprintln!("Warning: logs command returned no output. Make sure repositories are cloned and contain log files.");
+        eprintln!(
+            "Warning: source returned no output. Make sure datasets are pulled \
+             and contain records."
+        );
     }
-    
+    let mut all_entries: Vec<serde_json::Value> = Vec::new();
     for line in stdout_str.lines() {
         let line = line.trim();
         if line.is_empty() {
             continue;
         }
         match serde_json::from_str::<serde_json::Value>(line) {
-            Ok(entry) => {
-                total_entries += 1;
-                if filter_by_tags(&entry, &tags_to_use) {
-                    entries.push(entry);
-                    filtered_entries += 1;
-                }
-            }
+            Ok(entry) => all_entries.push(entry),
             Err(e) => {
-                // Skip invalid JSON lines (might be compilation output that leaked through)
                 if !line.contains("Compiling") && !line.contains("Finished") {
                     eprintln!("Warning: Failed to parse JSON line: {}", e);
                 }
             }
         }
     }
-    
-    if total_entries == 0 {
-        eprintln!("Warning: No log entries found. Make sure repositories are cloned and contain log files.");
-    } else if filtered_entries == 0 && !tags_to_use.is_empty() {
-        eprintln!("Warning: Found {} entries but none matched the specified tags. Entries may not have tags yet - consider running 'govbot tag' first, or build without --tags to include all entries.", total_entries);
-    }
-    
-    // Deduplicate and sort
-    entries = deduplicate_entries(entries);
-    entries = sort_by_timestamp(entries);
-    
-    // Apply limit (default is 100)
-    let original_count = entries.len();
-    if let Some(lim) = limit_value {
-        entries.truncate(lim);
-        if original_count > lim {
-            eprintln!("Limited feed to {} entries (RSS standard). Use --limit none to include all {} entries.", lim, original_count);
+
+    // CLI `--limit` overrides every publisher's configured limit.
+    let cli_limit: Option<Option<usize>> = limit.map(|s| {
+        if s.eq_ignore_ascii_case("none") {
+            None
+        } else {
+            s.parse().ok()
         }
+    });
+
+    // Run each named publisher against its filtered/sorted/limited stream.
+    for name in &names_to_run {
+        let publisher = manifest.publish.get(name).expect("checked above");
+        let select = publisher.select.clone().unwrap_or_default();
+
+        eprintln!(
+            "\n=== Publisher '{}' ({:?}) — selecting tags: {} ===",
+            name,
+            publisher.kind,
+            if select.is_empty() {
+                "<all tagged>".to_string()
+            } else {
+                select.join(", ")
+            }
+        );
+
+        // Filter to the publisher's selected tags, dedup, sort.
+        let mut entries: Vec<serde_json::Value> = all_entries
+            .iter()
+            .filter(|e| filter_by_tags(e, &select))
+            .cloned()
+            .collect();
+        entries = deduplicate_entries(entries);
+        entries = sort_by_timestamp(entries);
+
+        // Apply the limit: CLI override, else the publisher's, else 100.
+        let limit_value: Option<usize> = match cli_limit {
+            Some(v) => v,
+            None => publisher.resolved_limit(Some(100)),
+        };
+        let original_count = entries.len();
+        if let Some(lim) = limit_value {
+            entries.truncate(lim);
+            if original_count > lim {
+                eprintln!(
+                    "Limited '{}' to {} entries. Use --limit none for all {}.",
+                    name, lim, original_count
+                );
+            }
+        }
+
+        let job = govbot::publish::PublishJob {
+            name,
+            publisher,
+            entries,
+            output_dir_override: output_dir.clone(),
+            output_file_override: output_file.clone(),
+            project_dir: current_dir.clone(),
+            dry_run,
+        };
+        govbot::publish::run_publisher(&job)?;
     }
-    
-    // Create output directory
-    fs::create_dir_all(&output_dir_path)?;
-    
-    // Generate RSS
-    eprintln!("Generating RSS feed with {} entries...", entries.len());
-    let rss_xml = rss::json_to_rss(
-        entries.clone(),
-        &feed_title,
-        &feed_description,
-        feed_link,
-        base_url.as_deref(),
-        "en-us",
-    );
-    
-    // Write RSS feed
-    let rss_output_path = output_dir_path.join(&output_filename);
-    fs::write(&rss_output_path, rss_xml)?;
-    eprintln!("✓ Generated RSS feed: {}", rss_output_path.display());
-    
-    // Generate HTML
-    eprintln!("Generating HTML index with {} entries...", entries.len());
-    // Only pass title if it was explicitly set in config (not auto-generated)
-    let html_title = build_config
-        .and_then(|p| p.get("title"))
-        .and_then(|t| t.as_str())
-        .filter(|s| !s.trim().is_empty());
-    let html_content = rss::json_to_html(
-        entries,
-        html_title,
-        feed_link,
-        base_url.as_deref(),
-    );
-    
-    // Write HTML index
-    let html_output_path = output_dir_path.join("index.html");
-    fs::write(&html_output_path, html_content)?;
-    eprintln!("✓ Generated HTML index: {}", html_output_path.display());
-    eprintln!("  Tags included: {}", tags_to_use.join(", "));
-    
+
     Ok(())
 }
 
@@ -2286,7 +1986,223 @@ async fn run_update_command() -> anyhow::Result<()> {
     } else {
         return Err(anyhow::anyhow!("Update failed with exit code: {}", status.code().unwrap_or(-1)));
     }
-    
+
+    Ok(())
+}
+
+/// Locate the project's `govbot.yml`, erroring if there is none.
+fn require_manifest_path() -> anyhow::Result<PathBuf> {
+    let path = project_dir()?.join("govbot.yml");
+    if !path.exists() {
+        anyhow::bail!(
+            "No govbot.yml in {}. Run `govbot init` to scaffold one.",
+            project_dir()?.display()
+        );
+    }
+    Ok(path)
+}
+
+/// `govbot add` — append validated dataset ids to `govbot.yml`'s `datasets:`.
+fn run_add_command(cmd: Command) -> anyhow::Result<()> {
+    let Command::Add { datasets } = cmd else {
+        unreachable!()
+    };
+    let manifest_path = require_manifest_path()?;
+    let registry = load_registry()?;
+
+    // Validate every id against the registry before touching the file.
+    let mut to_add = Vec::new();
+    for id in &datasets {
+        let id = id.trim();
+        if id.is_empty() {
+            continue;
+        }
+        if id.eq_ignore_ascii_case("all") {
+            to_add.push("all".to_string());
+            continue;
+        }
+        let resolved = registry
+            .resolve(id)
+            .map_err(|e| anyhow::anyhow!("{}", e))?;
+        // Add the identifier the user typed (keeps `wy` short and familiar);
+        // resolution proved it valid.
+        let _ = resolved;
+        to_add.push(id.to_string());
+    }
+
+    // Parse the manifest, mutate `datasets`, write it back.
+    let contents = std::fs::read_to_string(&manifest_path)?;
+    let mut doc: serde_yaml::Value = serde_yaml::from_str(&contents)
+        .map_err(|e| anyhow::anyhow!("Failed to parse govbot.yml: {}", e))?;
+
+    let datasets_node = doc
+        .get_mut("datasets")
+        .and_then(|v| v.as_sequence_mut())
+        .ok_or_else(|| anyhow::anyhow!("govbot.yml has no `datasets:` list"))?;
+
+    let mut added = Vec::new();
+    for id in to_add {
+        let already = datasets_node
+            .iter()
+            .any(|v| v.as_str() == Some(id.as_str()));
+        if already {
+            eprintln!("  · {} already in datasets", id);
+        } else {
+            datasets_node.push(serde_yaml::Value::String(id.clone()));
+            added.push(id);
+        }
+    }
+
+    if added.is_empty() {
+        eprintln!("Nothing to add.");
+        return Ok(());
+    }
+
+    let yaml = serde_yaml::to_string(&doc)
+        .map_err(|e| anyhow::anyhow!("Failed to serialize govbot.yml: {}", e))?;
+    std::fs::write(&manifest_path, yaml)?;
+    for id in &added {
+        eprintln!("  + added {}", id);
+    }
+    eprintln!("✅ Updated {}. Run `govbot pull` to fetch.", manifest_path.display());
+    Ok(())
+}
+
+/// `govbot remove` — drop dataset ids from `govbot.yml`'s `datasets:`.
+fn run_remove_command(cmd: Command) -> anyhow::Result<()> {
+    let Command::Remove { datasets } = cmd else {
+        unreachable!()
+    };
+    let manifest_path = require_manifest_path()?;
+
+    let contents = std::fs::read_to_string(&manifest_path)?;
+    let mut doc: serde_yaml::Value = serde_yaml::from_str(&contents)
+        .map_err(|e| anyhow::anyhow!("Failed to parse govbot.yml: {}", e))?;
+
+    let datasets_node = doc
+        .get_mut("datasets")
+        .and_then(|v| v.as_sequence_mut())
+        .ok_or_else(|| anyhow::anyhow!("govbot.yml has no `datasets:` list"))?;
+
+    let targets: Vec<String> = datasets
+        .iter()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+
+    let before = datasets_node.len();
+    let mut removed = Vec::new();
+    datasets_node.retain(|v| {
+        if let Some(s) = v.as_str() {
+            if targets.iter().any(|t| t == s) {
+                removed.push(s.to_string());
+                return false;
+            }
+        }
+        true
+    });
+
+    if datasets_node.len() == before {
+        eprintln!("No matching datasets found in govbot.yml.");
+        return Ok(());
+    }
+
+    let yaml = serde_yaml::to_string(&doc)
+        .map_err(|e| anyhow::anyhow!("Failed to serialize govbot.yml: {}", e))?;
+    std::fs::write(&manifest_path, yaml)?;
+    for id in &removed {
+        eprintln!("  - removed {}", id);
+    }
+    eprintln!("✅ Updated {}.", manifest_path.display());
+    Ok(())
+}
+
+/// `govbot ls` — list the project's manifest datasets and locally-cached ones.
+fn run_ls_command(cmd: Command) -> anyhow::Result<()> {
+    let Command::Ls { govbot_dir, output } = cmd else {
+        unreachable!()
+    };
+    let registry = load_registry()?;
+    let repos_dir = get_govbot_dir(govbot_dir)?;
+    let local: Vec<String> = git::get_local_datasets(&repos_dir).unwrap_or_default();
+
+    // The manifest's declared datasets, if a govbot.yml exists.
+    let manifest_path = project_dir()?.join("govbot.yml");
+    let manifest_datasets: Vec<String> = if manifest_path.exists() {
+        match govbot::Manifest::load(&manifest_path) {
+            Ok(m) => m.datasets,
+            Err(_) => Vec::new(),
+        }
+    } else {
+        Vec::new()
+    };
+
+    if output == "json" {
+        let out = serde_json::json!({
+            "manifest": manifest_datasets,
+            "cached": local,
+            "registry_total": registry.datasets.len(),
+        });
+        println!("{}", serde_json::to_string_pretty(&out)?);
+        return Ok(());
+    }
+
+    if !manifest_datasets.is_empty() {
+        println!("Manifest datasets (govbot.yml):");
+        for d in &manifest_datasets {
+            let cached = local.iter().any(|c| c == d) || d == "all";
+            let mark = if cached { "✓" } else { "·" };
+            println!("  {} {}", mark, d);
+        }
+        println!();
+    }
+
+    println!("Cached locally ({}):", local.len());
+    if local.is_empty() {
+        println!("  (none — run `govbot pull` to fetch)");
+    } else {
+        for d in &local {
+            println!("  {}", d);
+        }
+    }
+    Ok(())
+}
+
+/// `govbot search` — query the dataset registry.
+fn run_search_command(cmd: Command) -> anyhow::Result<()> {
+    let Command::Search { query, output } = cmd else {
+        unreachable!()
+    };
+    let registry = load_registry()?;
+    let query_str = query.join(" ");
+    let hits = registry.search(&query_str);
+
+    if output == "json" {
+        let rows: Vec<_> = hits
+            .iter()
+            .map(|d| {
+                serde_json::json!({
+                    "id": d.id,
+                    "name": d.entry.name,
+                    "git_url": d.entry.git_url,
+                    "schema": d.entry.schema,
+                    "path_pattern": d.entry.path_pattern,
+                })
+            })
+            .collect();
+        println!("{}", serde_json::to_string_pretty(&rows)?);
+        return Ok(());
+    }
+
+    if hits.is_empty() {
+        eprintln!("No datasets match '{}'.", query_str);
+        return Ok(());
+    }
+    println!("{} dataset(s):", hits.len());
+    for d in &hits {
+        let name = d.entry.name.as_deref().unwrap_or("");
+        println!("  {:<28}  {}", d.id, name);
+    }
     Ok(())
 }
 
@@ -2295,14 +2211,14 @@ async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     match args.command {
-        Some(cmd @ Command::Clone { .. }) => {
-            run_clone_command(cmd).await
+        Some(cmd @ Command::Pull { .. }) => {
+            run_pull_command(cmd).await
         }
         Some(cmd @ Command::Delete { .. }) => {
             run_delete_command(cmd).await
         }
-        Some(cmd @ Command::Logs { .. }) => {
-            run_logs_command(cmd).await
+        Some(cmd @ Command::Source { .. }) => {
+            run_source_command(cmd).await
         }
         Some(cmd @ Command::Load { .. }) => {
             run_load_command(cmd).await
@@ -2310,12 +2226,40 @@ async fn main() -> anyhow::Result<()> {
         Some(Command::Update) => {
             run_update_command().await
         }
-        Some(cmd @ Command::Tag { .. }) => {
-            run_tag_command(cmd).await
+        Some(cmd @ Command::Apply { .. }) => {
+            run_apply_command(cmd).await
         }
-        Some(cmd @ Command::Build { .. }) => {
-            run_build_command(cmd).await
+        Some(cmd @ Command::Publish { .. }) => {
+            run_publish_command(cmd).await
         }
+        Some(Command::Run { govbot_dir }) => {
+            let cwd = std::env::current_dir()?;
+            let config_path = cwd.join("govbot.yml");
+            if !config_path.exists() {
+                anyhow::bail!(
+                    "No govbot.yml in {}. Run `govbot init` to scaffold one, then `govbot run`.",
+                    cwd.display()
+                );
+            }
+            govbot::pipeline::run_pipeline(&config_path, govbot_dir.as_deref())
+        }
+        Some(Command::Init) => {
+            let cwd = std::env::current_dir()?;
+            let config_path = cwd.join("govbot.yml");
+            if config_path.exists() {
+                eprintln!("govbot.yml already exists in {}.", cwd.display());
+                return Ok(());
+            }
+            if std::io::IsTerminal::is_terminal(&std::io::stdin()) {
+                govbot::wizard::run_wizard()
+            } else {
+                govbot::wizard::write_default_files(&cwd)
+            }
+        }
+        Some(cmd @ Command::Add { .. }) => run_add_command(cmd),
+        Some(cmd @ Command::Remove { .. }) => run_remove_command(cmd),
+        Some(cmd @ Command::Ls { .. }) => run_ls_command(cmd),
+        Some(cmd @ Command::Search { .. }) => run_search_command(cmd),
         None => {
             let cwd = std::env::current_dir()?;
             let config_path = cwd.join("govbot.yml");
@@ -2330,7 +2274,7 @@ async fn main() -> anyhow::Result<()> {
                 // to start the pipeline (matches the wizard's own message).
                 return Ok(());
             }
-            govbot::pipeline::run_pipeline(&config_path)
+            govbot::pipeline::run_pipeline(&config_path, None)
         }
     }
 }

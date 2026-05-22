@@ -80,13 +80,14 @@ scripts/        # Repository-level utility scripts
 ## Common Commands
 
 ```bash
-govbot init          # Create govbot.yml config
-govbot clone all     # Download all state legislation datasets
-govbot clone wy il   # Download specific states
-govbot logs          # Stream legislative activity as JSON Lines
-govbot logs | govbot tag  # Process and tag data
+govbot               # Scaffold govbot.yml (interactive wizard), then run the pipeline
+govbot pull all      # Download all state legislation datasets
+govbot pull wy il    # Download specific states
+govbot source        # Stream legislative activity as JSON Lines
+govbot source --select docs | fastclass classify - classifier=./classifier | govbot apply
 govbot load          # Load bill metadata into DuckDB
-govbot build         # Generate RSS feeds
+govbot publish       # Run the manifest's publishers (RSS / HTML / JSON / DuckDB)
+govbot run           # Run the full pipeline: pull -> classify -> apply -> publish
 ```
 
 ## DuckDB Integration
@@ -103,7 +104,7 @@ The `govbot load` command loads bill metadata into a DuckDB database for SQL ana
 
 **Usage**:
 ```bash
-govbot clone all                    # First, get the data
+govbot pull all                     # First, get the data
 govbot load                         # Load into DuckDB
 govbot load --memory-limit 32GB     # For large datasets
 duckdb --ui ~/.govbot/govbot.duckdb # Open in browser UI
@@ -111,12 +112,54 @@ duckdb --ui ~/.govbot/govbot.duckdb # Open in browser UI
 
 See `actions/govbot/DUCKDB.md` for query examples and schema documentation.
 
+## Classifying with fastclass
+
+Classification is a **pipe** of two composable tools that compose over a
+process boundary — govbot streams the data, **fastclass** (a standalone,
+self-improving text classifier) classifies it, govbot persists the result:
+
+```bash
+govbot source --select docs | fastclass classify - classifier=./classifier | govbot apply
+```
+
+- **`govbot source --select docs`** emits one `{"id","text","kind":"docs"}`
+  document per bill carrying the **full bill text** from `metadata.json`; the
+  `id` is the bill's dataset path, which routes the result back.
+- **`fastclass classify -`** scores each document against a **classifier
+  bundle** — a fastclass-native directory (`classifier.yml` + `fusion.yml` +
+  `eval/`). govbot passes only the bundle path; it never reads the bundle.
+- **`govbot apply`** reads fastclass's result JSON from stdin and writes per-tag
+  `.tag.json` files into the dataset — the files `govbot publish` turns into
+  feeds. It classifies nothing itself; it is purely the persistence sink.
+
+**`govbot.yml` is NOT the classifier — it is a manifest.** It declares
+`datasets`, `transforms`, `publish`, and `pipelines`; it has **no `tags:`
+block**. The tag taxonomy lives in a separate **fastclass classifier bundle**
+that the manifest's `transforms.<name>.classifier` field references by path.
+The two configs change at different cadences and are read by different tools:
+`govbot.yml` answers *"what data, what transforms, what publishers"*; the
+classifier bundle's `classifier.yml` answers *"what's relevant"*.
+
+To run the self-improving loop, work inside the classifier bundle directory and
+use the fastclass Claude Code plugin (`/fastclass:improve`, `/fastclass:ratify`)
+and the fastclass `classify --eval` / `--backtest` / `--promote` primitives. The
+retired `fastclass --propose` flag no longer exists.
+
+**Prerequisite**: the `fastclass` binary must be resolvable on `PATH`,
+`~/.cargo/bin`, or `~/.govbot/bin` (`cargo install --path <fastclass repo>`).
+`govbot run`'s transform stage resolves transform binaries the same way.
+
+To improve tag quality, read **`AGENTS.md` in the fastclass repo** — the
+operational playbook for the classify → eval → propose → backtest → promote
+loop. Its one hard rule: never show the frozen `eval/constitution.yml` gold set
+to an LLM.
+
 ## Testing with Mock Data
 
 Mock legislative data is available for offline development:
 - Location: `actions/govbot/mocks/.govbot/repos/`
 - Contains: Wyoming (wy) and Guam (gu) sample data
-- Usage: `govbot logs --govbot-dir ./actions/govbot/mocks/.govbot`
+- Usage: `govbot source --govbot-dir ./actions/govbot/mocks/.govbot`
 
 ## govbot Development
 
@@ -125,7 +168,7 @@ cd actions/govbot
 just setup           # Install Rust toolchain and dependencies
 just test            # Run snapshot tests
 just review          # Review snapshot changes (insta)
-just govbot logs     # Run CLI in dev mode (uses mocks/.govbot)
+just govbot source   # Run CLI in dev mode (uses mocks/.govbot)
 just mocks wy il     # Update mock data for testing
 ```
 

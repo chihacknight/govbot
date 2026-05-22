@@ -6,8 +6,9 @@ use std::path::Path;
 /// Represents the user's choices during the wizard.
 /// Used both by the interactive wizard and by tests to simulate different paths.
 pub struct WizardChoices {
-    pub repos: Vec<String>,
-    pub include_example_tag: bool,
+    /// The datasets the project consumes (`govbot.yml: datasets:`).
+    pub datasets: Vec<String>,
+    /// Base URL for the RSS/HTML publisher.
     pub base_url: String,
 }
 
@@ -31,53 +32,34 @@ impl WizardSession {
         // Welcome
         display.push_str("Welcome to govbot! Let's set up your project.\n\n");
 
-        // Step 1: Sources
-        display.push_str("? What data sources do you want to track?\n");
-        if choices.repos == ["all"] {
-            display.push_str("> All states (47 jurisdictions)\n");
-            display.push_str("  Select specific states\n");
+        // Step 1: Datasets
+        display.push_str("? What datasets do you want to track?\n");
+        if choices.datasets == ["all"] {
+            display.push_str("> All jurisdictions in the registry\n");
+            display.push_str("  Select specific datasets\n");
         } else {
-            display.push_str("  All states (47 jurisdictions)\n");
-            display.push_str("> Select specific states\n");
+            display.push_str("  All jurisdictions in the registry\n");
+            display.push_str("> Select specific datasets\n");
             display.push('\n');
-            display.push_str("Available states/jurisdictions:\n");
-            let all_locales = crate::locale::WorkingLocale::all();
-            let locale_strs: Vec<String> = all_locales.iter().map(|l| l.as_str().to_string()).collect();
-            for chunk in locale_strs.chunks(10) {
-                display.push_str(&format!("  {}\n", chunk.join(", ")));
-            }
+            display.push_str("Browse the registry with `govbot search`.\n");
             display.push('\n');
-            display.push_str(&format!("? Enter state codes separated by spaces: {}\n", choices.repos.join(" ")));
+            display.push_str(&format!(
+                "? Enter dataset ids separated by spaces: {}\n",
+                choices.datasets.join(" ")
+            ));
         }
         display.push('\n');
 
-        // Step 2: Tags
-        display.push_str("Tags let govbot categorize legislation by topics you care about.\n");
-        display.push_str("Here's an example tag definition:\n\n");
-        display.push_str("  education:\n");
-        display.push_str("    description: |\n");
-        display.push_str("      Legislation related to schools, education funding,\n");
-        display.push_str("      curriculum standards, and educational policy.\n");
-        display.push_str("    examples:\n");
-        display.push_str("      - \"Increases per-pupil funding for public schools\"\n");
-        display.push_str("      - \"Mandates comprehensive sex education curriculum\"\n\n");
-
-        display.push_str("? How would you like to set up tags?\n");
-        if choices.include_example_tag {
-            display.push_str("> Use the example \"education\" tag to start\n");
-            display.push_str("  I'll create my own tags later\n");
-        } else {
-            display.push_str("  Use the example \"education\" tag to start\n");
-            display.push_str("> I'll create my own tags later\n");
-            display.push('\n');
-            display.push_str(&ai_prompt_template());
-        }
-        display.push('\n');
+        // Step 2: Classification (a separate fastclass bundle, not govbot.yml)
+        display.push_str("Classification is done by fastclass against a classifier bundle.\n");
+        display.push_str("Point the manifest's `transforms.classify.classifier` at your\n");
+        display.push_str("bundle directory (containing classifier.yml). See the fastclass\n");
+        display.push_str("docs to build one.\n\n");
 
         // Step 3: Publishing
-        display.push_str("Publishing is configured for RSS feeds by default.\n");
-        display.push_str("Your feeds will be generated in the \"docs\" directory.\n\n");
-        display.push_str(&format!("? Base URL for your feeds: {}\n\n", choices.base_url));
+        display.push_str("Publishing is configured for an RSS feed by default.\n");
+        display.push_str("Your feed will be generated in the \"docs\" directory.\n\n");
+        display.push_str(&format!("? Base URL for your feed: {}\n\n", choices.base_url));
 
         // Summary
         display.push_str("  ✓ Created govbot.yml\n");
@@ -85,7 +67,7 @@ impl WizardSession {
         display.push_str("  ✓ Created .github/workflows/build.yml\n\n");
         display.push_str("Setup complete! Run 'govbot' again to start the pipeline.\n");
 
-        let govbot_yml = generate_govbot_yml(&choices.repos, choices.include_example_tag, &choices.base_url);
+        let govbot_yml = generate_govbot_yml(&choices.datasets, &choices.base_url);
         let workflow_yml = github_workflow_content().to_string();
 
         WizardSession {
@@ -125,37 +107,11 @@ impl WizardSession {
     }
 }
 
-/// The AI prompt template shown when users choose to create their own tags.
-pub fn ai_prompt_template() -> String {
-    let mut s = String::new();
-    s.push_str("To create a tag, copy this prompt into your preferred AI tool:\n\n");
-    s.push_str("---\n");
-    s.push_str("Create a govbot tag definition in YAML for tracking [YOUR TOPIC] legislation.\n");
-    s.push_str("The tag should have:\n");
-    s.push_str("- A description (multiline, covering subtopics)\n");
-    s.push_str("- 2-3 example bill descriptions that would match\n");
-    s.push_str("- Optional: include_keywords and exclude_keywords lists\n\n");
-    s.push_str("Format:\n");
-    s.push_str("  tag_name:\n");
-    s.push_str("    description: |\n");
-    s.push_str("      ...\n");
-    s.push_str("    examples:\n");
-    s.push_str("      - \"...\"\n");
-    s.push_str("    include_keywords:\n");
-    s.push_str("      - keyword1\n");
-    s.push_str("    exclude_keywords:\n");
-    s.push_str("      - keyword1\n");
-    s.push_str("---\n\n");
-    s.push_str("Paste the result into your govbot.yml under the 'tags:' section.\n");
-    s
-}
-
 /// Generate default govbot.yml and supporting files without interactive prompts.
 /// Used when `govbot init` is run in a non-interactive terminal.
 pub fn write_default_files(dir: &Path) -> Result<()> {
     let choices = WizardChoices {
-        repos: vec!["all".to_string()],
-        include_example_tag: true,
+        datasets: vec!["all".to_string()],
         base_url: "https://example.com".to_string(),
     };
     let session = WizardSession::from_choices(&choices);
@@ -181,22 +137,21 @@ pub fn run_wizard() -> Result<()> {
     eprintln!("Welcome to govbot! Let's set up your project.");
     eprintln!();
 
-    // Step 1: Sources
-    let repos = prompt_sources()?;
+    // Step 1: Datasets
+    let datasets = prompt_sources()?;
 
-    // Step 2: Tags
-    let include_example_tag = prompt_tags()?;
+    // Step 2: Classification — handled by a separate fastclass bundle.
+    eprintln!();
+    eprintln!("Classification is done by fastclass against a classifier bundle.");
+    eprintln!("Point the manifest's `transforms.classify.classifier` at your");
+    eprintln!("bundle directory (containing classifier.yml).");
 
     // Step 3: Publishing info
     let base_url = prompt_publishing()?;
 
     // Generate and write files
     let cwd = std::env::current_dir()?;
-    let choices = WizardChoices {
-        repos,
-        include_example_tag,
-        base_url,
-    };
+    let choices = WizardChoices { datasets, base_url };
     let session = WizardSession::from_choices(&choices);
     session.write_files(&cwd)?;
 
@@ -209,8 +164,8 @@ pub fn run_wizard() -> Result<()> {
 
 fn prompt_sources() -> Result<Vec<String>> {
     let options = vec![
-        "All states (47 jurisdictions)",
-        "Select specific states",
+        "All jurisdictions in the registry",
+        "Select specific datasets",
     ];
 
     let selection = Select::new()
@@ -223,19 +178,22 @@ fn prompt_sources() -> Result<Vec<String>> {
         return Ok(vec!["all".to_string()]);
     }
 
-    // Show available states and let user type them
-    let all_locales = crate::locale::WorkingLocale::all();
-    let locale_strs: Vec<String> = all_locales.iter().map(|l| l.as_str().to_string()).collect();
-
-    eprintln!();
-    eprintln!("Available states/jurisdictions:");
-    for chunk in locale_strs.chunks(10) {
-        eprintln!("  {}", chunk.join(", "));
+    // List the registry's datasets so the user can pick from them.
+    let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+    if let Ok(registry) = crate::registry::Registry::load(&cwd) {
+        let ids: Vec<String> = registry.all().iter().map(|d| d.short_name().to_string()).collect();
+        eprintln!();
+        eprintln!("Available datasets ({}):", ids.len());
+        for chunk in ids.chunks(10) {
+            eprintln!("  {}", chunk.join(", "));
+        }
+        eprintln!();
+        eprintln!("Tip: `govbot search <query>` searches the registry.");
+        eprintln!();
     }
-    eprintln!();
 
     let input: String = Input::new()
-        .with_prompt("Enter state codes separated by spaces (e.g., il ca ny)")
+        .with_prompt("Enter dataset ids separated by spaces (e.g., il ca ny)")
         .interact_text()?;
 
     let repos: Vec<String> = input
@@ -249,42 +207,6 @@ fn prompt_sources() -> Result<Vec<String>> {
     } else {
         Ok(repos)
     }
-}
-
-fn prompt_tags() -> Result<bool> {
-    eprintln!();
-    eprintln!("Tags let govbot categorize legislation by topics you care about.");
-    eprintln!("Here's an example tag definition:");
-    eprintln!();
-    eprintln!("  education:");
-    eprintln!("    description: |");
-    eprintln!("      Legislation related to schools, education funding,");
-    eprintln!("      curriculum standards, and educational policy.");
-    eprintln!("    examples:");
-    eprintln!("      - \"Increases per-pupil funding for public schools\"");
-    eprintln!("      - \"Mandates comprehensive sex education curriculum\"");
-    eprintln!();
-
-    let options = vec![
-        "Use the example \"education\" tag to start",
-        "I'll create my own tags later",
-    ];
-
-    let selection = Select::new()
-        .with_prompt("How would you like to set up tags?")
-        .items(&options)
-        .default(0)
-        .interact()?;
-
-    if selection == 1 {
-        let template = ai_prompt_template();
-        for line in template.lines() {
-            eprintln!("{}", line);
-        }
-        eprintln!();
-    }
-
-    Ok(selection == 0)
 }
 
 fn prompt_publishing() -> Result<String> {
@@ -301,60 +223,52 @@ fn prompt_publishing() -> Result<String> {
     Ok(base_url)
 }
 
-/// Generate govbot.yml content from wizard answers.
+/// Generate a `govbot.yml` manifest from wizard answers.
+///
+/// The manifest declares `datasets` + `transforms` + `publish` + `pipelines` —
+/// it is NOT a classifier. The tag taxonomy lives in a separate fastclass
+/// classifier bundle that `transforms.classify.classifier` references by path.
 /// This is a pure function for easy testing.
-pub fn generate_govbot_yml(repos: &[String], include_example_tag: bool, base_url: &str) -> String {
+pub fn generate_govbot_yml(datasets: &[String], base_url: &str) -> String {
     let mut yml = String::new();
 
-    yml.push_str("# Govbot Configuration\n");
+    yml.push_str("# Govbot Manifest\n");
     yml.push_str("# Schema: https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json\n");
     yml.push_str("$schema: https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json\n\n");
 
-    // Repos section
-    yml.push_str("repos:\n");
-    for repo in repos {
-        yml.push_str(&format!("  - {}\n", repo));
+    // datasets — the government-data sources this project consumes.
+    yml.push_str("datasets:\n");
+    for dataset in datasets {
+        yml.push_str(&format!("  - {}\n", dataset));
     }
     yml.push('\n');
 
-    // Tags section
-    yml.push_str("tags:\n");
-    if include_example_tag {
-        yml.push_str("  education:\n");
-        yml.push_str("    description: |\n");
-        yml.push_str("      Legislation related to schools, education funding, curriculum standards, and educational policy, including:\n");
-        yml.push_str("      - K-12 public school funding, budgets, and resource allocation\n");
-        yml.push_str("      - Curriculum standards, content requirements, and academic programs\n");
-        yml.push_str("      - Teacher certification, training, professional development, and compensation\n");
-        yml.push_str("      - Higher education policy, tuition, financial aid, and student loans\n");
-        yml.push_str("      - Charter schools, school choice, vouchers, and alternative education models\n");
-        yml.push_str("      - Special education services, accommodations, and individualized education plans\n");
-        yml.push_str("      - School safety, security measures, and student discipline policies\n");
-        yml.push_str("      - Early childhood education, pre-K programs, and childcare\n");
-        yml.push_str("      - Standardized testing, assessments, and accountability measures\n");
-        yml.push_str("      - School district governance, administration, and oversight\n");
-        yml.push_str("      - Educational technology, digital learning, and online education\n");
-        yml.push_str("      - Career and technical education, vocational training, and workforce development\n");
-        yml.push_str("    examples:\n");
-        yml.push_str("      - \"Increases per-pupil funding for public schools and establishes minimum teacher salary requirements\"\n");
-        yml.push_str("      - \"Mandates comprehensive sex education curriculum in all public schools\"\n");
-        yml.push_str("      - \"Expands eligibility for state financial aid programs to include part-time students\"\n");
-    } else {
-        yml.push_str("  # Add your tags here. Example:\n");
-        yml.push_str("  # my_topic:\n");
-        yml.push_str("  #   description: |\n");
-        yml.push_str("  #     Legislation related to ...\n");
-        yml.push_str("  #   examples:\n");
-        yml.push_str("  #     - \"Example bill description\"\n");
-        yml.push_str("  {}\n");
-    }
+    // transforms — external processes speaking the govbot stream protocol.
+    // The classify transform shells out to fastclass; point `classifier:` at
+    // your fastclass classifier bundle directory (containing classifier.yml).
+    yml.push_str("transforms:\n");
+    yml.push_str("  classify:\n");
+    yml.push_str("    command: [fastclass, classify, \"-\"]\n");
+    yml.push_str("    reads: docs\n");
+    yml.push_str("    writes: classification\n");
+    yml.push_str("    # Path to your fastclass classifier bundle (containing classifier.yml).\n");
+    yml.push_str("    classifier: ./classifier\n");
     yml.push('\n');
 
-    // Build section
-    yml.push_str("build:\n");
-    yml.push_str(&format!("  base_url: \"{}\"\n", base_url));
-    yml.push_str("  output_dir: \"docs\"\n");
-    yml.push_str("  output_file: \"feed.xml\"\n");
+    // publish — a publisher consumes the result stream and emits artifacts.
+    yml.push_str("publish:\n");
+    yml.push_str("  feed:\n");
+    yml.push_str("    type: rss\n");
+    yml.push_str(&format!("    base_url: \"{}\"\n", base_url));
+    yml.push_str("    output_dir: \"docs\"\n");
+    yml.push_str("    output_file: \"feed.xml\"\n");
+    yml.push('\n');
+
+    // pipelines — named `govbot run` targets, npm-script style.
+    yml.push_str("pipelines:\n");
+    yml.push_str("  default:\n");
+    yml.push_str("    - classify\n");
+    yml.push_str("    - feed\n");
 
     yml
 }
@@ -386,7 +300,7 @@ pub fn write_gitignore(cwd: &Path) -> Result<()> {
 
 fn github_workflow_content() -> &'static str {
     r#"# Run Govbot
-# Runs govbot to clone repos, tag bills, and build RSS feeds and HTML index.
+# Runs govbot to pull datasets, apply classifications, and publish feeds.
 
 name: Build Govbot
 
@@ -399,12 +313,8 @@ on:
     - cron: '0 0 * * *'
   workflow_dispatch:
     inputs:
-      tags:
-        description: 'Comma-separated list of tags to include (leave empty for all tags)'
-        required: false
-        type: string
       limit:
-        description: 'Limit number of entries per feed (default: 15, use "none" for all)'
+        description: 'Limit number of entries per artifact (default: 100, use "none" for all)'
         required: false
         type: string
 
@@ -419,7 +329,6 @@ jobs:
       - name: Run Govbot
         uses: chihacknight/govbot/actions/govbot@main
         with:
-          tags: ${{ inputs.tags }}
           limit: ${{ inputs.limit }}
 "#
 }

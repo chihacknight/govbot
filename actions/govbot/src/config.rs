@@ -1,5 +1,184 @@
 use crate::error::{Error, Result};
-use std::path::PathBuf;
+use serde::Deserialize;
+use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
+
+// ============================================================
+// govbot.yml — the project manifest (datasets / transforms /
+// publish / pipelines). This is the typed view of the schema in
+// `schemas/govbot.schema.json`. It is the layer-2 contract config
+// and is distinct from the pipeline-processor `Config` below
+// (whose `repos` is CLI-arg state, not manifest state).
+// ============================================================
+
+/// A `govbot.yml` manifest. `additionalProperties: false` in the schema —
+/// an unknown top-level key (notably the retired `tags:`) fails to parse.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Manifest {
+    /// Optional `$schema` reference for editor autocomplete; ignored at runtime.
+    #[serde(default, rename = "$schema")]
+    pub schema: Option<String>,
+
+    /// Government-data sources the project pulls and processes.
+    pub datasets: Vec<String>,
+
+    /// Named external-process transforms, keyed by name.
+    #[serde(default)]
+    pub transforms: BTreeMap<String, Transform>,
+
+    /// Named publishers, keyed by name.
+    #[serde(default)]
+    pub publish: BTreeMap<String, Publisher>,
+
+    /// Named `govbot run` targets — ordered lists of transform/publisher names.
+    #[serde(default)]
+    pub pipelines: BTreeMap<String, Vec<String>>,
+}
+
+/// A single external-process transform stage.
+#[derive(Debug, Clone, Deserialize)]
+pub struct Transform {
+    /// The external process to run. Either a shell-style string or an argv array.
+    pub command: Command_,
+
+    /// The stream record kind this transform consumes (e.g. `docs`).
+    pub reads: String,
+
+    /// The stream record kind this transform produces (e.g. `classification`).
+    pub writes: String,
+
+    /// For a classify-style transform: the path to the fastclass classifier
+    /// bundle directory. govbot passes this path through unchanged.
+    #[serde(default)]
+    pub classifier: Option<String>,
+}
+
+/// A transform `command`: either a single shell-style string or an argv array.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum Command_ {
+    /// A single string, split on whitespace into argv.
+    Shell(String),
+    /// An explicit argv array (first element is the executable).
+    Argv(Vec<String>),
+}
+
+impl Command_ {
+    /// Resolve to an argv vector. A `Shell` string is whitespace-split.
+    pub fn argv(&self) -> Vec<String> {
+        match self {
+            Command_::Shell(s) => s.split_whitespace().map(|s| s.to_string()).collect(),
+            Command_::Argv(v) => v.clone(),
+        }
+    }
+}
+
+/// The publisher kind. Mirrors `govbot.schema.json`'s `publisher.type` enum.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PublisherKind {
+    Rss,
+    Html,
+    Json,
+    Duckdb,
+    /// Bluesky publisher — the extension point for Wave 3 (not yet implemented).
+    Bluesky,
+}
+
+/// A single publisher stage. Required fields depend on `type`.
+#[derive(Debug, Clone, Deserialize)]
+pub struct Publisher {
+    /// The publisher kind (`rss` / `html` / `json` / `duckdb` / `bluesky`).
+    #[serde(rename = "type")]
+    pub kind: PublisherKind,
+
+    /// Tag names to include. Only records carrying one of these tags are
+    /// published; if omitted, all tagged records are published.
+    #[serde(default)]
+    pub select: Option<Vec<String>>,
+
+    /// Base URL for generated links (required for `rss`/`html`).
+    #[serde(default)]
+    pub base_url: Option<String>,
+
+    /// Directory the publisher writes artifacts into (used by rss/html/json).
+    #[serde(default)]
+    pub output_dir: Option<String>,
+
+    /// Output filename for the primary artifact.
+    #[serde(default)]
+    pub output_file: Option<String>,
+
+    /// Custom feed/index title.
+    #[serde(default)]
+    pub title: Option<String>,
+
+    /// Custom feed/index description.
+    #[serde(default)]
+    pub description: Option<String>,
+
+    /// Maximum number of entries. The string `"none"` means no limit.
+    #[serde(default)]
+    pub limit: Option<serde_yaml::Value>,
+
+    // ---- bluesky-publisher fields ----------------------------------------
+    // These configure the `bluesky` publisher only; other kinds ignore them.
+    // Credentials are NOT here — they are read from the environment
+    // (`BLUESKY_HANDLE` / `BLUESKY_APP_PASSWORD` / `BLUESKY_SERVICE`).
+    /// Minimum calibrated `final_score` a matched tag must reach for a record
+    /// to be posted. `final_score` is the contractually calibrated probability
+    /// from the fastclass result (STREAM_PROTOCOL §5).
+    #[serde(default)]
+    pub min_score: Option<f64>,
+
+    /// Path to the append-only posted-state ledger that makes the publisher
+    /// idempotent — re-runs never double-post. Relative to the project
+    /// directory; defaults to `.govbot/bluesky-<publisher>.ledger`.
+    #[serde(default)]
+    pub ledger: Option<String>,
+
+    /// Post-text template. `{placeholders}` are substituted per record:
+    /// `{title}`, `{tags}`, `{link}`, `{identifier}`, `{session}`, `{score}`.
+    /// If omitted, a sensible default template is used.
+    #[serde(default)]
+    pub post_template: Option<String>,
+}
+
+impl Publisher {
+    /// Resolve the calibrated-score threshold for the `bluesky` publisher.
+    /// Falls back to a conservative default so a misconfigured manifest does
+    /// not flood a feed with low-confidence matches.
+    pub fn resolved_min_score(&self) -> f64 {
+        self.min_score.unwrap_or(0.6)
+    }
+
+    /// Resolve `limit` to an `Option<usize>`: `None` means unlimited, the
+    /// string `"none"` also means unlimited, an integer is the cap.
+    pub fn resolved_limit(&self, default: Option<usize>) -> Option<usize> {
+        match &self.limit {
+            None => default,
+            Some(serde_yaml::Value::String(s)) if s.eq_ignore_ascii_case("none") => None,
+            Some(serde_yaml::Value::String(s)) => s.parse().ok().or(default),
+            Some(serde_yaml::Value::Number(n)) => n.as_u64().map(|n| n as usize).or(default),
+            Some(_) => default,
+        }
+    }
+}
+
+impl Manifest {
+    /// Load and parse a `govbot.yml` manifest. A manifest carrying the retired
+    /// `tags:` block (or any other unknown key) fails here via
+    /// `deny_unknown_fields`.
+    pub fn load(path: &Path) -> anyhow::Result<Manifest> {
+        use anyhow::Context;
+        let contents = std::fs::read_to_string(path)
+            .with_context(|| format!("Failed to read manifest: {}", path.display()))?;
+        let manifest: Manifest = serde_yaml::from_str(&contents)
+            .with_context(|| format!("Failed to parse govbot.yml manifest: {}", path.display()))?;
+        Ok(manifest)
+    }
+}
 
 /// Sort order for log entries
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

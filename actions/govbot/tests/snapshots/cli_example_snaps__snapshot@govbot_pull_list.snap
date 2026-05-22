@@ -3,15 +3,17 @@ source: tests/cli_example_snaps.rs
 expression: "&formatted_stdout"
 ---
 Command:
-govbot clone --list
+govbot pull --list
 
 Output:
-Available repos:
+Available datasets:
   ak
   al
   ar
+  az
   ca
   co
+  ct
   de
   fl
   ga
@@ -50,12 +52,14 @@ Available repos:
   sc
   sd
   tn
+  tx
   usa
   ut
+  va
   vi
   vt
   wa
   wi
   wv
   wy
-  all (clone all repos)
+  all (pull every dataset)

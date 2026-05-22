@@ -78,7 +78,13 @@ impl PipelineProcessor {
             config
                 .repos
                 .iter()
-                .map(|repo| search_dir.join(git::build_repo_name(repo)))
+                .map(|repo| {
+                    // A dataset identifier may be namespaced; the clone
+                    // directory is keyed on the short (slash-free) name.
+                    let short = repo.rsplit('/').next().unwrap_or(repo);
+                    let short = short.split('@').next().unwrap_or(short);
+                    search_dir.join(git::repo_dir_name(short))
+                })
                 .collect()
         };
 
@@ -87,6 +93,9 @@ impl PipelineProcessor {
                 eprintln!("Warning: Expected repository directory does not exist: {}", search_path.display());
                 continue;
             }
+            // A project's repo entry may be a symlink into the shared dataset
+            // cache; jwalk reads through the root symlink transparently and
+            // reports child paths under `search_dir`, keeping them relative.
 
             // Use jwalk for fast parallel traversal
             // jwalk uses rayon internally for parallel processing

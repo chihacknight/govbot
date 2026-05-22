@@ -8,7 +8,7 @@ The `*.schema.json` files are JSON Schema definitions that validate the structur
 
 ### Configuration Schemas
 
-- **`govbot.schema.json`** - Schema for `govbot.yml` configuration files used by the govbot CLI tool. Defines the structure for repositories, tags, and RSS publishing configuration.
+- **`govbot.schema.json`** - Schema for `govbot.yml` manifest files used by the govbot CLI tool. A `govbot.yml` is a project manifest: it declares the `datasets` a project consumes, the `transforms` it runs over them, the `publish` publishers that emit artifacts, and named `pipelines` that wire those stages together. It is **not** a classifier — the tag taxonomy lives in a separate fastclass classifier bundle (`classifier.yml`) that govbot only references by path.
 
 ### Data Schemas
 
@@ -102,12 +102,24 @@ Schemas can be referenced in YAML files using the `$schema` key:
 
 ```yaml
 # govbot.yml
-$schema: https://raw.githubusercontent.com/windy-civi/toolkit/main/schemas/govbot.schema.json
+$schema: https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json
 
-repos:
+datasets:
   - all
-tags:
-  # ... tag definitions
+transforms:
+  classify:
+    command: [fastclass, classify, "-"]
+    reads: docs
+    writes: classification
+    classifier: ./classifier   # path to the fastclass classifier bundle
+publish:
+  feed:
+    type: rss
+    base_url: "https://example.github.io/my-govbot"
+pipelines:
+  default:
+    - classify
+    - feed
 ```
 
 This enables:

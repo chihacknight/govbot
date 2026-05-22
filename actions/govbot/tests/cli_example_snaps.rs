@@ -119,14 +119,12 @@ fn run_example_script(script_path: &Path) -> (String, String, i32) {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let govbot_dir = manifest_dir.join("mocks").join(".govbot");
 
-    // Set URL template to match existing mock data (uses -data-pipeline suffix)
-    let repo_url_template = "https://github.com/chn-openstates-files/{locale}-data-pipeline.git";
-
+    // The mock data's clone directories use the default `-legislation` suffix,
+    // so no `GOVBOT_REPO_SUFFIX` override is needed.
     let output = Command::new(&binary)
         .args(&args)
         .current_dir(&manifest_dir)
         .env("GOVBOT_DIR", govbot_dir.to_string_lossy().as_ref())
-        .env("GOVBOT_REPO_URL_TEMPLATE", repo_url_template)
         .output()
         .expect("Failed to execute command");
 
@@ -179,8 +177,8 @@ fn format_snapshot_with_script(script_path: &Path, output: &str) -> String {
 /// Check if a script requires test data to run
 fn script_requires_test_data(script_path: &Path) -> bool {
     if let Ok(content) = fs::read_to_string(script_path) {
-        // Commands that need test data (repos directory)
-        content.contains("govbot logs")
+        // Commands that need test data (datasets directory)
+        content.contains("govbot source")
     } else {
         false
     }
