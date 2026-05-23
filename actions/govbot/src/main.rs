@@ -11,7 +11,7 @@ use jwalk::WalkDir;
 use std::collections::HashMap;
 use std::fs;
 use std::io::{self, BufRead, BufReader, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command as ProcessCommand;
 
 /// Write a line to stdout, gracefully handling broken pipe errors
@@ -1159,69 +1159,62 @@ async fn run_source_command(cmd: Command) -> anyhow::Result<()> {
                                         }
                                     }
 
-                                    // Join tags if requested
+                                    // Join tags if requested.
+                                    //
+                                    // Wave 6 (`80617ac`) moved tag files from
+                                    // the project root *into* the dataset, so
+                                    // the primary lookup walks up from the log
+                                    // file's actual path to find the dataset's
+                                    // own `tags/` dir. The cwd-rooted layout is
+                                    // kept as a fallback so any pre-existing
+                                    // project-root layouts (and any explicit
+                                    // `--output-dir` overrides that landed
+                                    // there) still resolve.
                                     if join_tags {
-                                        // Extract country, state, session_id from the path
-                                        if let Some((country, state, session_id)) =
-                                            extract_path_info(&source_path_str)
-                                        {
-                                            // Use bill_id extracted earlier
-                                            if let Some(ref bill_id) = bill_id_opt {
-                                                // Look for tags in cwd/country:us/state:{state}/sessions/{session_id}/tags/
-                                                let cwd = std::env::current_dir()
-                                                    .unwrap_or_else(|_| PathBuf::from("."));
-                                                let tags_dir = cwd
-                                                    .join(&format!("country:{}", country))
-                                                    .join(&format!("state:{}", state))
-                                                    .join("sessions")
-                                                    .join(&session_id)
-                                                    .join("tags");
+                                        if let Some(ref bill_id) = bill_id_opt {
+                                            let mut matched_tags: serde_json::Map<
+                                                String,
+                                                serde_json::Value,
+                                            > = serde_json::Map::new();
 
-                                                if tags_dir.exists() && tags_dir.is_dir() {
-                                                    let mut matched_tags = serde_json::Map::new();
-                                                    if let Ok(entries) = fs::read_dir(&tags_dir) {
-                                                        for entry in entries.flatten() {
-                                                            let path = entry.path();
-                                                            // Check for both .tag.json and .json files
-                                                            if let Some(ext) = path
-                                                                .extension()
-                                                                .and_then(|s| s.to_str())
-                                                            {
-                                                                if ext == "json" {
-                                                                    if let Some(stem) = path
-                                                                        .file_stem()
-                                                                        .and_then(|s| s.to_str())
-                                                                    {
-                                                                        // Remove .tag suffix if present (e.g., "budget.tag" -> "budget")
-                                                                        let tag_name = stem
-                                                                            .strip_suffix(".tag")
-                                                                            .unwrap_or(stem);
-                                                                        match fs::read_to_string(
-                                                                            &path,
-                                                                        ) {
-                                                                            Ok(contents) => {
-                                                                                if let Ok(tag_file) = serde_json::from_str::<govbot::TagFile>(&contents) {
-                                                                                    // Check if bill_id exists in bills map
-                                                                                    if let Some(bill_result) = tag_file.bills.get(bill_id) {
-                                                                                        // Return the score breakdown
-                                                                                        matched_tags.insert(tag_name.to_string(), serde_json::to_value(&bill_result.score).unwrap_or(serde_json::Value::Null));
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                            Err(_) => {}
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                    if !matched_tags.is_empty() {
-                                                        output.insert(
-                                                            "tags".to_string(),
-                                                            serde_json::Value::Object(matched_tags),
-                                                        );
-                                                    }
+                                            // Primary: dataset-rooted tags dir
+                                            // sibling of the bills/ dir the log
+                                            // file lives under.
+                                            if let Some(dataset_tags_dir) = resolve_tags_dir(&path)
+                                            {
+                                                matched_tags =
+                                                    match_tags_in_dir(&dataset_tags_dir, bill_id);
+                                            }
+
+                                            // Fallback: legacy project-root
+                                            // layout (`cwd/country:.../state:.../
+                                            // sessions/<id>/tags/`). Only
+                                            // consulted when the dataset-rooted
+                                            // lookup found nothing.
+                                            if matched_tags.is_empty() {
+                                                if let Some((country, state, session_id)) =
+                                                    extract_path_info(&source_path_str)
+                                                {
+                                                    let cwd = std::env::current_dir()
+                                                        .unwrap_or_else(|_| PathBuf::from("."));
+                                                    let legacy_tags_dir = cwd
+                                                        .join(format!("country:{}", country))
+                                                        .join(format!("state:{}", state))
+                                                        .join("sessions")
+                                                        .join(&session_id)
+                                                        .join("tags");
+                                                    matched_tags = match_tags_in_dir(
+                                                        &legacy_tags_dir,
+                                                        bill_id,
+                                                    );
                                                 }
+                                            }
+
+                                            if !matched_tags.is_empty() {
+                                                output.insert(
+                                                    "tags".to_string(),
+                                                    serde_json::Value::Object(matched_tags),
+                                                );
                                             }
                                         }
                                     }
@@ -1728,6 +1721,71 @@ fn extract_path_info(path: &str) -> Option<(String, String, String)> {
     let session_id = path[sessions_start + 10..sessions_start + 10 + session_end].to_string();
 
     Some((country, state, session_id))
+}
+
+/// Resolve the dataset-rooted `tags/` directory for a given log file path.
+///
+/// Wave 6 (`80617ac`) moved tag files from the project root into the dataset
+/// (`<dataset>/country:.../state:.../sessions/<id>/tags/`). This walks **up**
+/// from the log file path until it finds a directory whose immediate child is
+/// `bills/` — that ancestor is the session dir, and `tags/` is its sibling of
+/// `bills/`. Returns `None` if no such ancestor exists (e.g. a path outside
+/// the canonical dataset layout).
+fn resolve_tags_dir(log_path: &Path) -> Option<PathBuf> {
+    let mut cursor = log_path.parent();
+    while let Some(dir) = cursor {
+        let bills_child = dir.join("bills");
+        if bills_child.is_dir() {
+            return Some(dir.join("tags"));
+        }
+        cursor = dir.parent();
+    }
+    None
+}
+
+/// Read every `*.json` / `*.tag.json` file in `tags_dir`, parse each as a
+/// `TagFile`, and return the subset whose `bills` map contains `bill_id`,
+/// keyed by tag name (file stem with any `.tag` suffix stripped). Returns an
+/// empty map if `tags_dir` does not exist or contains no matching tags.
+///
+/// Pulled out so the same logic serves the dataset-rooted lookup *and* the
+/// project-root fallback below without duplication.
+fn match_tags_in_dir(tags_dir: &Path, bill_id: &str) -> serde_json::Map<String, serde_json::Value> {
+    let mut matched = serde_json::Map::new();
+    if !tags_dir.is_dir() {
+        return matched;
+    }
+    let entries = match fs::read_dir(tags_dir) {
+        Ok(e) => e,
+        Err(_) => return matched,
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|s| s.to_str()) != Some("json") {
+            continue;
+        }
+        let stem = match path.file_stem().and_then(|s| s.to_str()) {
+            Some(s) => s,
+            None => continue,
+        };
+        // `budget.tag.json` -> `budget`; plain `budget.json` -> `budget`.
+        let tag_name = stem.strip_suffix(".tag").unwrap_or(stem);
+        let contents = match fs::read_to_string(&path) {
+            Ok(c) => c,
+            Err(_) => continue,
+        };
+        let tag_file: govbot::TagFile = match serde_json::from_str(&contents) {
+            Ok(t) => t,
+            Err(_) => continue,
+        };
+        if let Some(bill_result) = tag_file.bills.get(bill_id) {
+            matched.insert(
+                tag_name.to_string(),
+                serde_json::to_value(&bill_result.score).unwrap_or(serde_json::Value::Null),
+            );
+        }
+    }
+    matched
 }
 
 /// The slice of a `fastclass classify` result that `govbot apply` consumes.
@@ -2556,5 +2614,92 @@ mod tests {
     fn parse_doc_route_rejects_non_bill_ids() {
         assert!(parse_doc_route("just-some-other-id").is_none());
         assert!(parse_doc_route("wy-legislation/country:us").is_none());
+    }
+
+    /// Regression for the Wave 6 follow-up: `source --join tags` must read
+    /// from the dataset-rooted `tags/` dir (sibling of the `bills/` the log
+    /// lives under), not from a cwd-rooted layout. After `80617ac` moved
+    /// `govbot apply` to write tag files into the dataset, the consumer side
+    /// stayed pointed at the old project-root path and the publishers saw 0
+    /// entries. `resolve_tags_dir` is what closes that loop.
+    #[test]
+    fn resolve_tags_dir_finds_sibling_of_bills() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let session = tmp
+            .path()
+            .join("wy-legislation")
+            .join("country:us")
+            .join("state:wy")
+            .join("sessions")
+            .join("2025");
+        let log_path = session
+            .join("bills")
+            .join("HB0001")
+            .join("logs")
+            .join("2025-01-15T12:00:00Z.json");
+        fs::create_dir_all(log_path.parent().unwrap()).unwrap();
+        fs::write(&log_path, "{}").unwrap();
+        // The `bills/` sibling must exist for the resolver to find this
+        // ancestor — that is the whole signal that says "this is a session
+        // dir". Creating the log under `bills/HB0001/logs/` already does it.
+
+        let resolved = resolve_tags_dir(&log_path).expect("resolver should find a tags dir");
+        assert_eq!(resolved, session.join("tags"));
+    }
+
+    /// A log file outside any dataset layout (no `bills/` ancestor) yields
+    /// `None`, letting the caller fall back to the legacy cwd-rooted lookup.
+    #[test]
+    fn resolve_tags_dir_returns_none_outside_dataset_layout() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let stray = tmp.path().join("loose").join("file.json");
+        fs::create_dir_all(stray.parent().unwrap()).unwrap();
+        fs::write(&stray, "{}").unwrap();
+        assert!(resolve_tags_dir(&stray).is_none());
+    }
+
+    /// End-to-end of the helper: a tag file in the dataset-rooted `tags/`
+    /// dir produces a `{tag_name: score}` map for the bill it lists, and an
+    /// empty map for a bill it does not list.
+    #[test]
+    fn match_tags_in_dir_returns_scores_for_matching_bill() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let tags_dir = tmp.path().join("tags");
+        fs::create_dir_all(&tags_dir).unwrap();
+        let tag_file = serde_json::json!({
+            "metadata": {
+                "last_run": "2025-01-15T12:00:00Z",
+                "model": "fastclass-test",
+                "tag_config_hash": "abc123"
+            },
+            "tag_config": {
+                "name": "clean_energy"
+            },
+            "bills": {
+                "HB0001": {
+                    "text_hash": "deadbeef",
+                    "score": {
+                        "final_score": 0.92,
+                        "base_embedding": null,
+                        "example_similarity": null,
+                        "keyword_match": [],
+                        "negative_penalty": 0.0
+                    }
+                }
+            }
+        });
+        fs::write(tags_dir.join("clean_energy.tag.json"), tag_file.to_string()).unwrap();
+
+        let matched = match_tags_in_dir(&tags_dir, "HB0001");
+        assert_eq!(matched.len(), 1);
+        assert!(matched.contains_key("clean_energy"));
+
+        let missing = match_tags_in_dir(&tags_dir, "HB9999");
+        assert!(missing.is_empty());
+
+        // Missing dir is not an error — callers chain dataset-rooted then
+        // cwd-rooted lookups, and a non-existent dir is the common case.
+        let absent = match_tags_in_dir(&tmp.path().join("no-such-dir"), "HB0001");
+        assert!(absent.is_empty());
     }
 }
