@@ -395,6 +395,37 @@ Confirm the exact plugin-source syntax against the fastclass repo's README
 (`plugins/fastclass/`); adjust if the user's fastclass checkout lives
 elsewhere.
 
+#### Install the semantic Tier-2 model
+
+A scaffolded classifier bundle has the taxonomy and fusion config — but no
+embedding model. Without one, the cascade in `fusion.yml`'s
+`uncertainty_band` silently degrades to lexical-only matchers, which means
+the bot will **miss paraphrases and euphemisms** (real-data audits typically
+show this as a 10–15 point recall gap on issue-flavored language: "energy
+diversity" never matches `clean_energy`, etc.).
+
+Fix this once, at scaffold time, by running the install-model plugin
+command:
+
+```
+/fastclass:install-model
+```
+
+The command shows the vetted-model list, defaults to the recommended small
+encoder (sentence-transformers/all-MiniLM-L6-v2, ~22 MB), downloads it into
+the project-shared cache at `~/.govbot/models/<sha-prefix>/`, and links it
+into `classifier/model/` so `govbot run` picks up Tier-2 automatically on
+the next pipeline pass. Verify with:
+
+```bash
+fastclass describe classifier=./classifier
+# JSON output should include a `model: {…}` block.
+```
+
+If the download fails (offline laptop, HuggingFace rate-limit), the CLI
+prints a `curl` recipe the user can run themselves and re-invoke the
+plugin command — the install path is idempotent.
+
 ### 1.4 First run
 
 ```bash
