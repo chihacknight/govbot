@@ -42,10 +42,19 @@ pub struct PublishJob<'a> {
 
 /// Run a single publisher against its result stream and emit artifacts.
 ///
-/// govbot's built-in publishers each consume the result stream and emit
-/// artifacts: `rss`/`html` write a feed + HTML index, `json` writes a JSON
-/// dump, `duckdb` loads the records into a DuckDB database, and `bluesky`
-/// posts matched bills to a Bluesky account (see `crate::bluesky`).
+/// **One publisher type, one artifact.** Each built-in publisher writes
+/// exactly one kind of file:
+///
+/// - `type: rss` writes the RSS feed (default `feed.xml`);
+/// - `type: html` writes the HTML index (default `index.html`);
+/// - `type: json` writes a JSON dump;
+/// - `type: duckdb` loads records into a DuckDB database;
+/// - `type: bluesky` posts matched bills to a Bluesky account.
+///
+/// Before this split, `rss` and `html` each emitted *both* a feed.xml and
+/// an index.html — declaring both in one manifest produced a silent
+/// last-writer-wins collision on `index.html`. Declare both explicitly to
+/// get both artifacts.
 pub fn run_publisher(job: &PublishJob) -> Result<()> {
     let p = job.publisher;
     let select = p.select.clone().unwrap_or_default();
@@ -58,7 +67,8 @@ pub fn run_publisher(job: &PublishJob) -> Result<()> {
     );
 
     match p.kind {
-        PublisherKind::Rss | PublisherKind::Html => emit_rss_html(job, &select, &output_dir),
+        PublisherKind::Rss => emit_rss(job, &select, &output_dir),
+        PublisherKind::Html => emit_html(job, &output_dir),
         PublisherKind::Json => emit_json(job, &output_dir),
         PublisherKind::Duckdb => emit_duckdb(job, &output_dir),
         PublisherKind::Bluesky => crate::bluesky::run_bluesky(job, job.dry_run),
@@ -80,8 +90,13 @@ fn titlecase_tag(tag: &str) -> String {
         .join(" ")
 }
 
-/// The `rss`/`html` publisher: a combined RSS feed + HTML index.
-fn emit_rss_html(job: &PublishJob, select: &[String], output_dir: &Path) -> Result<()> {
+/// The `rss` publisher: emits the RSS feed (and *only* the RSS feed).
+///
+/// Default output: `<output_dir>/feed.xml`. Pair with a peer `type: html`
+/// publisher to also get an `index.html`. Before this split, `rss` also
+/// wrote `index.html` — which collided with the `html` publisher's
+/// `index.html` and made the rendering last-writer-wins.
+fn emit_rss(job: &PublishJob, select: &[String], output_dir: &Path) -> Result<()> {
     let p = job.publisher;
 
     let output_file = job
@@ -141,15 +156,36 @@ fn emit_rss_html(job: &PublishJob, select: &[String], output_dir: &Path) -> Resu
     let rss_path = output_dir.join(&output_file);
     fs::write(&rss_path, rss_xml)?;
     eprintln!("✓ Generated RSS feed: {}", rss_path.display());
+    Ok(())
+}
+
+/// The `html` publisher: emits the HTML index (and *only* the HTML index).
+///
+/// Default output: `<output_dir>/index.html`. Pair with a peer `type: rss`
+/// publisher to also get an RSS feed. Before this split, `html` also wrote
+/// a `feed.xml` — which collided with the `rss` publisher's `feed.xml`.
+fn emit_html(job: &PublishJob, output_dir: &Path) -> Result<()> {
+    let p = job.publisher;
+
+    let feed_link = p.base_url.as_deref().unwrap_or("https://example.com");
+
+    fs::create_dir_all(output_dir)
+        .with_context(|| format!("Failed to create output dir: {}", output_dir.display()))?;
 
     eprintln!(
         "Generating HTML index with {} entries...",
         job.entries.len()
     );
+    let output_file = job
+        .output_file_override
+        .clone()
+        .or_else(|| p.output_file.clone())
+        .unwrap_or_else(|| "index.html".to_string());
+
     // Only pass an explicit (configured) title to the HTML header.
     let html_title = p.title.as_deref().filter(|s| !s.trim().is_empty());
     let html = rss::json_to_html(job.entries.clone(), html_title, feed_link, Some(feed_link));
-    let html_path = output_dir.join("index.html");
+    let html_path = output_dir.join(&output_file);
     fs::write(&html_path, html)?;
     eprintln!("✓ Generated HTML index: {}", html_path.display());
     Ok(())
@@ -272,4 +308,150 @@ pub fn sort_by_timestamp(mut entries: Vec<Value>) -> Vec<Value> {
         ts_b.cmp(ts_a) // Reverse order (newest first)
     });
     entries
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use tempfile::tempdir;
+
+    /// Build a `PublishJob` over a tempdir for the given publisher kind.
+    fn job_for_kind<'a>(
+        name: &'a str,
+        publisher: &'a Publisher,
+        project_dir: PathBuf,
+    ) -> PublishJob<'a> {
+        PublishJob {
+            name,
+            publisher,
+            entries: vec![json!({
+                "id": "wy-legislation/.../HB0001",
+                "timestamp": "20250101T000000Z",
+                "bill": { "title": "Sample bill", "identifier": "HB0001" },
+                "sources": { "bill": "wy-legislation/.../HB0001/metadata.json" },
+                "tags": { "clean_energy": { "final_score": 0.9 } },
+            })],
+            output_dir_override: None,
+            output_file_override: None,
+            project_dir,
+            dry_run: false,
+            html_entry_url: None,
+        }
+    }
+
+    /// Bug 8 regression: `type: rss` writes ONLY the RSS feed, not an
+    /// HTML index. Before the split, this publisher kind also produced
+    /// `index.html`, colliding with the html publisher's `index.html`.
+    #[test]
+    fn rss_publisher_writes_only_feed_xml() {
+        let dir = tempdir().unwrap();
+        let p = Publisher {
+            kind: PublisherKind::Rss,
+            select: None,
+            base_url: Some("https://example.org/test".to_string()),
+            output_dir: Some(dir.path().join("out").to_string_lossy().to_string()),
+            output_file: None,
+            title: None,
+            description: None,
+            limit: None,
+            min_score: None,
+            ledger: None,
+            post_template: None,
+        };
+        let job = job_for_kind("feed", &p, dir.path().to_path_buf());
+        run_publisher(&job).expect("rss publisher should run");
+
+        let out = dir.path().join("out");
+        assert!(out.join("feed.xml").exists(), "expected feed.xml");
+        assert!(
+            !out.join("index.html").exists(),
+            "rss publisher must NOT emit index.html — that's the html publisher's job"
+        );
+    }
+
+    /// Bug 8 regression: `type: html` writes ONLY the HTML index, not an
+    /// RSS feed. Before the split, this publisher kind also produced
+    /// `feed.xml`, colliding with the rss publisher's `feed.xml`.
+    #[test]
+    fn html_publisher_writes_only_index_html() {
+        let dir = tempdir().unwrap();
+        let p = Publisher {
+            kind: PublisherKind::Html,
+            select: None,
+            base_url: Some("https://example.org/test".to_string()),
+            output_dir: Some(dir.path().join("out").to_string_lossy().to_string()),
+            output_file: None,
+            title: None,
+            description: None,
+            limit: None,
+            min_score: None,
+            ledger: None,
+            post_template: None,
+        };
+        let job = job_for_kind("site", &p, dir.path().to_path_buf());
+        run_publisher(&job).expect("html publisher should run");
+
+        let out = dir.path().join("out");
+        assert!(out.join("index.html").exists(), "expected index.html");
+        assert!(
+            !out.join("feed.xml").exists(),
+            "html publisher must NOT emit feed.xml — that's the rss publisher's job"
+        );
+    }
+
+    /// Declaring both `rss` and `html` publishers into the SAME output_dir
+    /// produces both artifacts side-by-side. Before the split, running
+    /// `rss` then `html` (or vice versa) produced a silent
+    /// last-writer-wins collision on `index.html`.
+    #[test]
+    fn rss_and_html_publishers_coexist_in_one_output_dir() {
+        let dir = tempdir().unwrap();
+        let out_dir = dir.path().join("out");
+
+        let rss = Publisher {
+            kind: PublisherKind::Rss,
+            select: None,
+            base_url: Some("https://example.org/test".to_string()),
+            output_dir: Some(out_dir.to_string_lossy().to_string()),
+            output_file: None,
+            title: Some("RSS publisher title".to_string()),
+            description: None,
+            limit: None,
+            min_score: None,
+            ledger: None,
+            post_template: None,
+        };
+        let html = Publisher {
+            kind: PublisherKind::Html,
+            select: None,
+            base_url: Some("https://example.org/test".to_string()),
+            output_dir: Some(out_dir.to_string_lossy().to_string()),
+            output_file: None,
+            title: Some("HTML publisher title".to_string()),
+            description: None,
+            limit: None,
+            min_score: None,
+            ledger: None,
+            post_template: None,
+        };
+
+        let job_rss = job_for_kind("feed", &rss, dir.path().to_path_buf());
+        run_publisher(&job_rss).unwrap();
+        let job_html = job_for_kind("site", &html, dir.path().to_path_buf());
+        run_publisher(&job_html).unwrap();
+
+        let feed_xml = std::fs::read_to_string(out_dir.join("feed.xml")).unwrap();
+        let index_html = std::fs::read_to_string(out_dir.join("index.html")).unwrap();
+        // Each publisher's own title must be in its own artifact — proves
+        // neither publisher overwrote the other's output.
+        assert!(
+            feed_xml.contains("RSS publisher title"),
+            "feed.xml should carry the rss publisher's title"
+        );
+        assert!(
+            index_html.contains("HTML publisher title"),
+            "index.html should carry the html publisher's title (not the rss publisher's)"
+        );
+    }
 }

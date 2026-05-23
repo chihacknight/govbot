@@ -27,7 +27,7 @@
       }
     },
     "publish": {
-      "description": "Named publishers. A publisher consumes a result stream and emits artifacts (a feed, an HTML index, a JSON dump, a DuckDB database, or Bluesky posts). Each publisher declares a 'type' plus type-specific configuration.",
+      "description": "Named publishers. A publisher consumes a result stream and emits one artifact: an RSS feed, an HTML index, a JSON dump, a DuckDB database, or Bluesky posts. Each publisher declares a 'type' plus type-specific configuration. To emit multiple artifact kinds (e.g. both an RSS feed and an HTML index), declare one publisher per kind.",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/publisher"
@@ -83,10 +83,10 @@
     },
     "publisher": {
       "type": "object",
-      "description": "A single publisher stage. The required fields depend on 'type'.",
+      "description": "A single publisher stage. The required fields depend on 'type'. Each publisher kind emits exactly ONE artifact: 'rss' writes the RSS feed (default feed.xml), 'html' writes the HTML index (default index.html), 'json' writes a JSON dump, 'duckdb' loads records into a DuckDB database, 'bluesky' posts to a Bluesky account. To get both a feed and an HTML index, declare both an 'rss' and an 'html' publisher.",
       "properties": {
         "type": {
-          "description": "The publisher kind. 'rss' and 'html' emit feed/index files; 'json' emits a JSON dump; 'duckdb' loads results into a DuckDB database; 'bluesky' posts to a Bluesky account.",
+          "description": "The publisher kind. 'rss' writes the RSS feed only; 'html' writes the HTML index only; 'json' emits a JSON dump; 'duckdb' loads results into a DuckDB database; 'bluesky' posts to a Bluesky account.",
           "type": "string",
           "enum": ["rss", "html", "json", "duckdb", "bluesky"]
         },
@@ -108,7 +108,7 @@
           "default": "docs"
         },
         "output_file": {
-          "description": "Output filename for the primary artifact (e.g. the RSS feed file, the JSON dump, or the DuckDB database file).",
+          "description": "Output filename for the publisher's single artifact. Defaults by 'type': 'rss' -> 'feed.xml', 'html' -> 'index.html', 'json' -> 'feed.json', 'duckdb' -> 'feed.duckdb'.",
           "type": "string"
         },
         "title": {

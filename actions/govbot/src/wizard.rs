@@ -57,10 +57,10 @@ impl WizardSession {
         display.push_str("docs to build one.\n\n");
 
         // Step 3: Publishing
-        display.push_str("Publishing is configured for an RSS feed by default.\n");
-        display.push_str("Your feed will be generated in the \"docs\" directory.\n\n");
+        display.push_str("Publishing is configured for an RSS feed + HTML index by default.\n");
+        display.push_str("Both land in the \"docs\" directory (feed.xml + index.html).\n\n");
         display.push_str(&format!(
-            "? Base URL for your feed: {}\n\n",
+            "? Base URL for your feeds: {}\n\n",
             choices.base_url
         ));
 
@@ -218,8 +218,8 @@ fn prompt_sources() -> Result<Vec<String>> {
 
 fn prompt_publishing() -> Result<String> {
     eprintln!();
-    eprintln!("Publishing is configured for RSS feeds by default.");
-    eprintln!("Your feeds will be generated in the \"docs\" directory.");
+    eprintln!("Publishing is configured for an RSS feed + HTML index by default.");
+    eprintln!("Both land in the \"docs\" directory (feed.xml + index.html).");
     eprintln!();
 
     let base_url: String = Input::new()
@@ -262,13 +262,20 @@ pub fn generate_govbot_yml(datasets: &[String], base_url: &str) -> String {
     yml.push_str("    classifier: ./classifier\n");
     yml.push('\n');
 
-    // publish — a publisher consumes the result stream and emits artifacts.
+    // publish — one publisher type, one artifact.
+    //   - `feed` (type: rss)  writes <output_dir>/feed.xml
+    //   - `site` (type: html) writes <output_dir>/index.html
     yml.push_str("publish:\n");
     yml.push_str("  feed:\n");
     yml.push_str("    type: rss\n");
     yml.push_str(&format!("    base_url: \"{}\"\n", base_url));
     yml.push_str("    output_dir: \"docs\"\n");
     yml.push_str("    output_file: \"feed.xml\"\n");
+    yml.push_str("  site:\n");
+    yml.push_str("    type: html\n");
+    yml.push_str(&format!("    base_url: \"{}\"\n", base_url));
+    yml.push_str("    output_dir: \"docs\"\n");
+    yml.push_str("    output_file: \"index.html\"\n");
     yml.push('\n');
 
     // pipelines — named `govbot run` targets, npm-script style.
@@ -276,6 +283,7 @@ pub fn generate_govbot_yml(datasets: &[String], base_url: &str) -> String {
     yml.push_str("  default:\n");
     yml.push_str("    - classify\n");
     yml.push_str("    - feed\n");
+    yml.push_str("    - site\n");
 
     yml
 }

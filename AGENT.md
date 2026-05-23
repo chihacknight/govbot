@@ -186,20 +186,31 @@ publish:
     # ledger: .govbot/bluesky-bluesky.ledger   # default; tracks posted bills
 
   feed:
-    type: rss
+    type: rss             # writes <output_dir>/feed.xml (only)
+    select: [transit_funding, transit_safety]
+    base_url: "https://<user>.github.io/<repo>"
+    output_dir: docs
+
+  site:
+    type: html            # writes <output_dir>/index.html (only)
     select: [transit_funding, transit_safety]
     base_url: "https://<user>.github.io/<repo>"
     output_dir: docs
 
 pipelines:
-  default: [classify, bluesky, feed]
+  default: [classify, bluesky, feed, site]
 ```
 
 Notes:
 - **No `tags:` key.** It is retired; a manifest carrying it fails to parse.
+- **One publisher type, one artifact.** `type: rss` writes only the RSS
+  feed; `type: html` writes only the HTML index. Declare both to get both
+  (an earlier release wrote both files from each — a silent
+  last-writer-wins collision on `index.html`).
 - `publish.<name>.select` lists tag names — they must exist in the classifier
   bundle. Validate later with `fastclass describe`.
-- Drop the `feed` publisher if the user only wants Bluesky, and vice versa.
+- Drop the `feed` / `site` publishers if the user only wants Bluesky, and
+  vice versa.
 - Prefer `govbot add <dataset>` over hand-editing the `datasets:` list — it
   validates each id against the registry first. Use `govbot init` to scaffold
   the whole `govbot.yml` interactively.

@@ -1,5 +1,6 @@
 ---
 source: tests/wizard_tests.rs
+assertion_line: 44
 expression: "&session.to_snapshot()"
 ---
 === Wizard Session ===
@@ -19,10 +20,10 @@ Point the manifest's `transforms.classify.classifier` at your
 bundle directory (containing classifier.yml). See the fastclass
 docs to build one.
 
-Publishing is configured for an RSS feed by default.
-Your feed will be generated in the "docs" directory.
+Publishing is configured for an RSS feed + HTML index by default.
+Both land in the "docs" directory (feed.xml + index.html).
 
-? Base URL for your feed: https://sartaj.me/govbot
+? Base URL for your feeds: https://sartaj.me/govbot
 
   ✓ Created govbot.yml
   ✓ Created .gitignore
@@ -53,11 +54,17 @@ publish:
     base_url: "https://sartaj.me/govbot"
     output_dir: "docs"
     output_file: "feed.xml"
+  site:
+    type: html
+    base_url: "https://sartaj.me/govbot"
+    output_dir: "docs"
+    output_file: "index.html"
 
 pipelines:
   default:
     - classify
     - feed
+    - site
 
 === Generated: .github/workflows/build.yml ===
 

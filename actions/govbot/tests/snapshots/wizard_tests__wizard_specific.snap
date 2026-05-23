@@ -1,5 +1,6 @@
 ---
 source: tests/wizard_tests.rs
+assertion_line: 71
 expression: "&yml"
 ---
 # Govbot Manifest
@@ -25,8 +26,14 @@ publish:
     base_url: "https://example.com"
     output_dir: "docs"
     output_file: "feed.xml"
+  site:
+    type: html
+    base_url: "https://example.com"
+    output_dir: "docs"
+    output_file: "index.html"
 
 pipelines:
   default:
     - classify
     - feed
+    - site
