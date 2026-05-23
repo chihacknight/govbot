@@ -854,26 +854,60 @@ async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
 /// `{"id","text","kind":"docs"}` document the govbot stream protocol defines
 /// (`STREAM_PROTOCOL.md` §1) — the record `fastclass classify -` consumes.
 ///
-/// `id` is the bill's dataset-relative directory path (derived from
-/// `sources.log` by dropping the `/logs/<file>.json` tail), so a classified
-/// result can be routed back to the right place when `govbot apply` writes it.
+/// `id` is the bill's dataset-relative directory path of the form
+/// `<dataset>/country:<c>/state:<s>/sessions/<id>/bills/<bill_id>` so the
+/// classified result can be routed back to the right *bill* (not session)
+/// when `govbot apply` writes it. Two real-world dataset layouts feed into
+/// this:
+///
+///   1. **Per-bill log directory** — `sources.log` is already
+///      `<dataset>/.../sessions/<id>/bills/<bill_id>/logs/<file>.json`.
+///      Stripping the `/logs/...` tail yields the bill path directly.
+///   2. **Session-level log directory** (the common case for OCD-files
+///      datasets cloned from windycivi) — the on-disk log lives at
+///      `<dataset>/.../sessions/<id>/logs/<file>.json` and is a *symlink*
+///      to `.../sessions/<id>/bills/<bill_id>/logs/<file>.json`. The walker
+///      reports the symlink path, so stripping `/logs/...` would stop at
+///      the *session* and collide every bill in that session onto one id
+///      (real bug surfaced by `govbot pull all` over the 55-state corpus:
+///      4916 records collapsed to 97 ids). The fix appends the bill_id
+///      from `log.bill_id` whenever the stripped path doesn't already end
+///      in `/bills/<id>`.
+///
 /// `text` is the **full** bill text assembled from `metadata.json` (not just
 /// titles) — the `docs` projection joins the complete bill so this is whole.
 fn ocd_entry_to_doc(entry: &serde_json::Value) -> serde_json::Value {
-    let id = entry
+    let bill_id = entry
+        .get("log")
+        .and_then(|l| l.get("bill_id").or_else(|| l.get("bill_identifier")))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
+    let stripped = entry
         .get("sources")
         .and_then(|s| s.get("log"))
         .and_then(|v| v.as_str())
         .and_then(|log_path| log_path.split("/logs/").next())
-        .map(|s| s.to_string())
-        .or_else(|| {
-            entry
-                .get("log")
-                .and_then(|l| l.get("bill_id").or_else(|| l.get("bill_identifier")))
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string())
-        })
-        .unwrap_or_default();
+        .map(|s| s.to_string());
+
+    let id = match (stripped, bill_id.as_deref()) {
+        (Some(path), Some(bid)) => {
+            let suffix = format!("/bills/{}", bid);
+            if path.ends_with(&suffix) {
+                // Layout 1: log already lived under bills/<id>/logs/.
+                path
+            } else {
+                // Layout 2: session-level log (symlink to per-bill log).
+                // The stripped path stops at `.../sessions/<session>`;
+                // append the bill_id from the log entry to identify the
+                // bill, not the session.
+                format!("{}/bills/{}", path, bid)
+            }
+        }
+        (Some(path), None) => path,
+        (None, Some(bid)) => bid.to_string(),
+        (None, None) => String::new(),
+    };
     serde_json::json!({ "id": id, "text": ocd_files_select_default(entry), "kind": "docs" })
 }
 
@@ -2757,6 +2791,122 @@ mod tests {
     fn parse_doc_route_rejects_non_bill_ids() {
         assert!(parse_doc_route("just-some-other-id").is_none());
         assert!(parse_doc_route("wy-legislation/country:us").is_none());
+    }
+
+    /// The mock layout — logs already live under `bills/<id>/logs/` — so
+    /// stripping `/logs/...` from `sources.log` directly yields the bill
+    /// path. The `id` must be that full dataset-rooted bill path, ready
+    /// for `parse_doc_route` to find a `bills` segment and route the
+    /// `.tag.json` back to the correct bill.
+    #[test]
+    fn ocd_entry_to_doc_per_bill_log_layout_keeps_bill_suffix() {
+        let entry = serde_json::json!({
+            "log": { "bill_id": "HB0001", "action": { "description": "ANY" } },
+            "bill": { "title": "Mock bill", "identifier": "HB0001" },
+            "sources": {
+                "log": "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0001/logs/20250101T000000Z_foo.json",
+                "bill": "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0001/metadata.json"
+            }
+        });
+        let doc = ocd_entry_to_doc(&entry);
+        assert_eq!(
+            doc.get("id").and_then(|v| v.as_str()),
+            Some("wy-legislation/country:us/state:wy/sessions/2025/bills/HB0001")
+        );
+        // And it must round-trip through `parse_doc_route` — the contract
+        // `govbot apply` depends on.
+        assert_eq!(
+            parse_doc_route(doc.get("id").unwrap().as_str().unwrap())
+                .expect("route")
+                .bill_id,
+            "HB0001"
+        );
+    }
+
+    /// REGRESSION (real-data bug): `govbot pull all` clones OCD-files-shaped
+    /// datasets whose on-disk logs live at `sessions/<id>/logs/<file>.json`
+    /// as *symlinks* into per-bill `bills/<id>/logs/<file>.json`. The walker
+    /// reports the symlink path, so `sources.log` does NOT contain `/bills/
+    /// <id>/` and the old `log_path.split("/logs/").next()` builder dropped
+    /// the bill_id, collapsing every bill in a session onto one id. Over the
+    /// 55-state corpus that compressed 4916 distinct bill records into 97
+    /// session ids; `apply` then overwrote every tag file's `bills` map
+    /// repeatedly and the bluesky ledger silently marked one bill per
+    /// session as "done." The id must carry `/bills/<bill_id>` so each bill
+    /// hashes to a distinct slot.
+    #[test]
+    fn ocd_entry_to_doc_session_level_log_layout_appends_bill_id() {
+        let entry = serde_json::json!({
+            "log": { "bill_id": "SB50", "action": { "description": "PASSED" } },
+            "bill": { "title": "Mock bill", "identifier": "SB50" },
+            "sources": {
+                // Realistic shape from `govbot pull ak`: session-level log
+                // path, no `/bills/<id>/` segment because the walker
+                // followed the symlink-source view, not the canonical
+                // target.
+                "log": "ak-legislation/country:us/state:ak/sessions/34/logs/20250317T000000Z.vote_event.pass.upper_SB50.json",
+                "bill": "../../../../.govbot/cache/ak-abc123/country:us/state:ak/sessions/34/bills/SB50/metadata.json"
+            }
+        });
+        let doc = ocd_entry_to_doc(&entry);
+        assert_eq!(
+            doc.get("id").and_then(|v| v.as_str()),
+            Some("ak-legislation/country:us/state:ak/sessions/34/bills/SB50"),
+            "id must include /bills/<bill_id> for session-level log layouts"
+        );
+        // The whole point: this id must round-trip through `parse_doc_route`
+        // so `govbot apply` keys per-bill, not per-session.
+        let route = parse_doc_route(doc.get("id").unwrap().as_str().unwrap())
+            .expect("session-level layout must still produce a routable doc id");
+        assert_eq!(route.bill_id, "SB50");
+        assert_eq!(route.session, "34");
+    }
+
+    /// Two distinct bills from the same session must yield two distinct ids —
+    /// the precondition the apply layer and the bluesky publisher's ledger
+    /// rely on. This is the unit-level expression of the corpus check
+    /// `len(ids) == len(set(ids))`.
+    #[test]
+    fn ocd_entry_to_doc_distinct_bills_same_session_get_distinct_ids() {
+        let make = |bill_id: &str, log_file: &str| {
+            serde_json::json!({
+                "log": { "bill_id": bill_id, "action": { "description": "PASSED" } },
+                "bill": { "title": "Mock", "identifier": bill_id },
+                "sources": {
+                    "log": format!(
+                        "ak-legislation/country:us/state:ak/sessions/34/logs/{}",
+                        log_file
+                    ),
+                    "bill": format!(
+                        "../../../../.govbot/cache/ak-x/country:us/state:ak/sessions/34/bills/{}/metadata.json",
+                        bill_id
+                    )
+                }
+            })
+        };
+        let entries = vec![
+            make("SB50", "20250317T000000Z.vote_event.pass.upper_SB50.json"),
+            make("HR2", "20250121T000000Z.vote_event.pass.lower_HR2.json"),
+            make("HJR20", "20250514T000000Z_h_fn1_zeroleg_HJR20.json"),
+            make("HB55", "20250306T000000Z_h_heard_held_HB55.json"),
+        ];
+        let ids: Vec<String> = entries
+            .iter()
+            .map(|e| {
+                ocd_entry_to_doc(e)
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .unwrap()
+                    .to_string()
+            })
+            .collect();
+        let unique: std::collections::HashSet<&String> = ids.iter().collect();
+        assert_eq!(
+            ids.len(),
+            unique.len(),
+            "4 bills under one session must produce 4 distinct ids; got: {:?}",
+            ids
+        );
     }
 
     /// `.govbot/` is the cache; tag files belong outside it in the project-
