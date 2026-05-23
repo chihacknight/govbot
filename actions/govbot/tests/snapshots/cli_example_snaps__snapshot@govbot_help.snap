@@ -24,6 +24,7 @@ Commands:
   remove   Remove one or more datasets from the project's `govbot.yml`
   ls       List datasets — the project's manifest datasets and the ones cached locally. With no manifest, lists every dataset in the registry
   search   Search the dataset registry. A blank query lists every dataset
+  doctor   Check that the project's pulled datasets are coherent. A data-integrity smoke test, runnable after `govbot pull all` or before `govbot run` in production. Walks every linked dataset and verifies that the `govbot source --select docs` stream is well-formed: every linked dataset entry resolves to a real directory, per-dataset ids don't collapse onto a handful (the bug-7592418 signature), every sampled `id` resolves to a present and parseable `metadata.json`, and every sampled `text` is non-trivial. Zero-record datasets are surfaced as warnings rather than errors — `--filter default` can legitimately drop every routine log. Exits non-zero on any failure so it can drop straight into a CI step. Skips cleanly when the cache is empty — this is a smoke test, not a unit test
   help     Print this message or the help of the given subcommand(s)
 
 Options:

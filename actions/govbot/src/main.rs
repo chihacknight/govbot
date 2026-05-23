@@ -322,6 +322,31 @@ enum Command {
         #[arg(long = "output", value_parser = ["text", "json"], default_value = "text")]
         output: String,
     },
+
+    /// Check that the project's pulled datasets are coherent. A data-integrity smoke test, runnable after `govbot pull all` or before `govbot run` in production. Walks every linked dataset and verifies that the `govbot source --select docs` stream is well-formed: every linked dataset entry resolves to a real directory, per-dataset ids don't collapse onto a handful (the bug-7592418 signature), every sampled `id` resolves to a present and parseable `metadata.json`, and every sampled `text` is non-trivial. Zero-record datasets are surfaced as warnings rather than errors — `--filter default` can legitimately drop every routine log. Exits non-zero on any failure so it can drop straight into a CI step. Skips cleanly when the cache is empty — this is a smoke test, not a unit test.
+    Doctor {
+        /// Govbot directory (default: $CWD/.govbot, or GOVBOT_DIR env var)
+        #[arg(long = "govbot-dir")]
+        govbot_dir: Option<String>,
+
+        /// Records to sample per dataset for the metadata.json and
+        /// text-length checks (default: 20). The id-distinctness and
+        /// coverage checks always cover every emitted record.
+        #[arg(long = "sample", default_value_t = 20)]
+        sample: usize,
+
+        /// Per-dataset emit limit fed through to `govbot source --limit`
+        /// (default: 100, matching the source default — the smoke-test
+        /// sweet spot for a typical 55-state pull in <60s). Use "none"
+        /// for an exhaustive sweep at the cost of runtime.
+        #[arg(long = "limit", default_value = "100")]
+        limit: String,
+
+        /// Emit a machine-readable JSON report instead of the human summary.
+        /// Suitable for piping into a CI step.
+        #[arg(long = "output", value_parser = ["text", "json"], default_value = "text")]
+        output: String,
+    },
 }
 
 fn get_govbot_dir(govbot_dir: Option<String>) -> anyhow::Result<PathBuf> {
@@ -2768,6 +2793,644 @@ fn run_search_command(cmd: Command) -> anyhow::Result<()> {
     Ok(())
 }
 
+// ---------------------------------------------------------------------------
+// `govbot doctor` — corpus-level data-integrity smoke test.
+//
+// Why this exists: two real-data bugs (7592418, 5ab6d3c) shipped because the
+// only test harness was the mock dataset, which happened to fit a single
+// happy-path layout. Both bugs would have been caught by a five-line check —
+// "every emitted doc id is unique" and "every id resolves to a present
+// metadata.json" — over a real pulled cache. `doctor` is that check, wired
+// to a CLI verb activists can run after `pull all` to confirm the project
+// is coherent before flipping `bluesky` off `--dry-run`.
+//
+// This is a smoke test, not a unit test. It assumes pulled data and skips
+// cleanly when the cache is empty.
+// ---------------------------------------------------------------------------
+
+/// Per-record sample, captured during the source walk so the metadata.json
+/// and text checks can run after the stream is fully drained.
+#[derive(Debug, Clone)]
+struct DoctorSample {
+    id: String,
+    text_len: usize,
+}
+
+/// Per-dataset rollup used to build the doctor report.
+#[derive(Debug, Default)]
+struct DatasetSummary {
+    record_count: usize,
+    distinct_ids: std::collections::HashSet<String>,
+    samples: Vec<DoctorSample>,
+}
+
+/// Outcome of one assertion bucket for one dataset — a short label, a
+/// pass flag, an optional warn flag, and the detail lines (capped so a
+/// broken dataset doesn't drown the report). A `warned` check still
+/// counts as passing for the overall exit code — it surfaces noteworthy
+/// state (e.g. zero records under `--filter default`) without failing CI.
+#[derive(Debug, Clone)]
+struct DoctorCheck {
+    name: &'static str,
+    passed: bool,
+    warned: bool,
+    detail: Vec<String>,
+}
+
+#[derive(Debug)]
+struct DatasetReport {
+    dataset: String,
+    record_count: usize,
+    distinct_ids: usize,
+    sampled: usize,
+    checks: Vec<DoctorCheck>,
+}
+
+impl DatasetReport {
+    fn passed(&self) -> bool {
+        self.checks.iter().all(|c| c.passed)
+    }
+    fn warned(&self) -> bool {
+        self.checks.iter().any(|c| c.warned)
+    }
+}
+
+/// Cap how many failing ids we print per check — keeps the report scannable
+/// when an entire dataset is broken.
+const MAX_FAIL_DETAIL: usize = 5;
+
+/// Default minimum acceptable `text` length per record. Anything shorter
+/// is almost certainly a join failure (metadata.json missing or empty), not
+/// a legitimate short bill.
+const MIN_TEXT_LEN: usize = 50;
+
+/// Per-dataset distinct-id / record-count ratio floor. Bug 7592418
+/// collapsed 4916 records onto 97 ids (ratio 0.02). The floor is set
+/// at 0.03 — high enough to flag a 100x collision, low enough to
+/// accept a dataset where a handful of active bills emit many
+/// substantive log records each (e.g. a state with sustained voting
+/// activity on the same few bills). Drop it further if a clean cache
+/// shows legitimate sub-0.03 ratios.
+const MIN_DISTINCT_RATIO: f64 = 0.03;
+
+/// Map a parsed `parse_doc_route` dataset prefix (e.g. `nj-legislation`)
+/// to the bare short_name (`nj`) that `git::get_local_datasets` returns.
+/// This is the only place where doc-id prefixes and on-disk dataset
+/// short names meet; getting it wrong silently breaks the per-dataset
+/// bucketing.
+fn dataset_short_name(prefix: &str, suffix: &str) -> String {
+    if let Some(s) = prefix.strip_suffix(suffix) {
+        s.to_string()
+    } else if let Some(s) = prefix.strip_suffix("-data-pipeline") {
+        s.to_string()
+    } else {
+        prefix.to_string()
+    }
+}
+
+fn run_doctor_command(cmd: Command) -> anyhow::Result<()> {
+    let Command::Doctor {
+        govbot_dir,
+        sample,
+        limit,
+        output,
+    } = cmd
+    else {
+        unreachable!()
+    };
+
+    let repos_dir = get_govbot_dir(govbot_dir.clone())?;
+
+    // Skip-cleanly contract: an empty or absent cache is not a failure.
+    // `doctor` is a smoke test, not a unit test — it has nothing to check
+    // until data is pulled. Exit 0 with a clear note.
+    if !repos_dir.exists() {
+        let note = format!(
+            "doctor: no cache at {} — run `govbot pull all` first. Skipping.",
+            repos_dir.display()
+        );
+        if output == "json" {
+            println!(
+                "{}",
+                serde_json::json!({ "status": "skipped", "reason": note })
+            );
+        } else {
+            eprintln!("{}", note);
+        }
+        return Ok(());
+    }
+
+    let datasets = match git::get_local_datasets(&repos_dir) {
+        Ok(d) => d,
+        Err(e) => anyhow::bail!("doctor: failed to enumerate cached datasets: {}", e),
+    };
+
+    // Stale or broken entries in `repos/` — names that look like dataset
+    // links (matching the configured suffix) but don't resolve to a real
+    // directory. A broken symlink is the canonical case; the entry sits
+    // in `repos/` but `get_local_datasets` filtered it out because
+    // `is_dir()` follows the link and returns false. Surface these so
+    // they're not invisible — they break `govbot source` for that state
+    // without any other signal.
+    let broken_dataset_entries = enumerate_broken_dataset_entries(&repos_dir);
+
+    if datasets.is_empty() {
+        let note = format!(
+            "doctor: {} is empty — run `govbot pull all` first. Skipping.",
+            repos_dir.display()
+        );
+        if output == "json" {
+            println!(
+                "{}",
+                serde_json::json!({ "status": "skipped", "reason": note })
+            );
+        } else {
+            eprintln!("{}", note);
+        }
+        return Ok(());
+    }
+
+    // Resolve the parent govbot-dir for the subprocess `--govbot-dir` arg.
+    // `get_govbot_dir` appends `/repos`; we pass the parent so the child
+    // appends its own `/repos` and lands on the same path.
+    let govbot_dir_arg = repos_dir
+        .parent()
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_else(|| ".govbot".to_string());
+
+    let started = std::time::Instant::now();
+
+    // Stream every record once, in --select docs --limit none mode. We use a
+    // subprocess so we exercise the same code path activists hit; doctor is
+    // a "what does `govbot source` actually emit?" check, not a re-derivation.
+    let stream = collect_doc_stream(&govbot_dir_arg, &limit)
+        .map_err(|e| anyhow::anyhow!("doctor: source stream failed: {}", e))?;
+
+    // Bucket records by dataset short_name. The doc id carries the full
+    // `<short>-legislation` (or legacy `<short>-data-pipeline`) repo dir
+    // prefix; `get_local_datasets` returns the bare short_name, so we
+    // normalise both to the short form before keying.
+    let mut per_dataset: HashMap<String, DatasetSummary> = HashMap::new();
+    let mut unrouted: Vec<String> = Vec::new();
+
+    let suffix = std::env::var("GOVBOT_REPO_SUFFIX").unwrap_or_else(|_| "-legislation".to_string());
+
+    for rec in &stream {
+        let id = rec.id.clone();
+
+        // Route to a dataset via the `<dataset>/country:...` prefix in the
+        // id. A record we can't route is recorded for the global report; it
+        // can't contribute to per-dataset coverage.
+        let dataset_short = parse_doc_route(&id)
+            .and_then(|r| r.dataset)
+            .map(|d| dataset_short_name(&d, &suffix));
+        match dataset_short {
+            Some(d) => {
+                let entry = per_dataset.entry(d).or_default();
+                entry.record_count += 1;
+                entry.distinct_ids.insert(id.clone());
+                if entry.samples.len() < sample {
+                    entry.samples.push(DoctorSample {
+                        id,
+                        text_len: rec.text_len,
+                    });
+                }
+            }
+            None => {
+                if unrouted.len() < MAX_FAIL_DETAIL {
+                    unrouted.push(id);
+                }
+            }
+        }
+    }
+
+    // Build per-dataset reports. The four per-dataset checks are: coverage
+    // (≥1 record), id-distinctness (the bug 7592418 signature — many
+    // records collapsing onto one id), sampled-metadata-json-resolves,
+    // and sampled-text-length.
+    let mut dataset_reports: Vec<DatasetReport> = Vec::with_capacity(datasets.len());
+    for dataset in &datasets {
+        let prefix = git::repo_dir_name(dataset);
+        let dataset_repo_dir = repos_dir.join(&prefix);
+        let summary = per_dataset.remove(dataset.as_str()).unwrap_or_default();
+
+        let mut checks = Vec::new();
+
+        // Coverage — a zero-record dataset is reported as a warning,
+        // not a failure: `--filter default` legitimately drops every
+        // record in a dataset whose only recent logs are routine
+        // (introductions, committee referrals). That state is normal
+        // for a freshly-cloned session early in its calendar. Doctor
+        // surfaces it so the activist can notice — pulled but silent —
+        // without failing the overall smoke test.
+        let coverage_warned = summary.record_count == 0;
+        let coverage_detail = if coverage_warned {
+            vec![format!(
+                "{} is linked but produced 0 records (likely an empty session or `--filter default` dropping every log — not necessarily broken)",
+                prefix
+            )]
+        } else {
+            Vec::new()
+        };
+        checks.push(DoctorCheck {
+            name: "coverage",
+            passed: true,
+            warned: coverage_warned,
+            detail: coverage_detail,
+        });
+
+        // ID distinctness — bug 7592418 collapsed 4916 records onto 97
+        // ids (ratio 0.02). After the fix it's ~0.81. A per-log emission
+        // pattern legitimately produces some duplicate ids (the same
+        // bill emitting multiple substantive log events), so we don't
+        // demand uniqueness — but we do demand the ratio stay well
+        // above the bug-case floor. Below MIN_DISTINCT_RATIO is the
+        // smoking gun.
+        let distinct = summary.distinct_ids.len();
+        let total = summary.record_count;
+        let ratio = if total == 0 {
+            1.0
+        } else {
+            distinct as f64 / total as f64
+        };
+        let distinctness_passed = total == 0 || ratio >= MIN_DISTINCT_RATIO;
+        let distinctness_detail = if distinctness_passed {
+            Vec::new()
+        } else {
+            vec![format!(
+                "{}/{} distinct ids (ratio {:.2}) — below the {:.2} floor; ids are likely collapsing across distinct bills (the bug-7592418 signature)",
+                distinct, total, ratio, MIN_DISTINCT_RATIO
+            )]
+        };
+        checks.push(DoctorCheck {
+            name: "id_distinctness",
+            passed: distinctness_passed,
+            warned: false,
+            detail: distinctness_detail,
+        });
+
+        // Metadata.json resolves
+        let mut metadata_failures: Vec<String> = Vec::new();
+        for s in &summary.samples {
+            if let Err(reason) = check_metadata_json(&s.id, &dataset_repo_dir) {
+                if metadata_failures.len() < MAX_FAIL_DETAIL {
+                    metadata_failures.push(format!("{} :: {}", s.id, reason));
+                }
+            }
+        }
+        checks.push(DoctorCheck {
+            name: "metadata_sampleable",
+            passed: metadata_failures.is_empty(),
+            warned: false,
+            detail: metadata_failures,
+        });
+
+        // Text length
+        let mut text_failures: Vec<String> = Vec::new();
+        for s in &summary.samples {
+            if s.text_len < MIN_TEXT_LEN && text_failures.len() < MAX_FAIL_DETAIL {
+                text_failures.push(format!(
+                    "{} :: text length {} < {}",
+                    s.id, s.text_len, MIN_TEXT_LEN
+                ));
+            }
+        }
+        checks.push(DoctorCheck {
+            name: "text_non_empty",
+            passed: text_failures.is_empty(),
+            warned: false,
+            detail: text_failures,
+        });
+
+        dataset_reports.push(DatasetReport {
+            dataset: dataset.clone(),
+            record_count: summary.record_count,
+            distinct_ids: summary.distinct_ids.len(),
+            sampled: summary.samples.len(),
+            checks,
+        });
+    }
+
+    // Build the global report. Global "duplicate ids" check is gone —
+    // per-log emission legitimately produces some duplicates. The id
+    // collapse bug (7592418) is caught per-dataset by id_distinctness.
+    let elapsed = started.elapsed();
+    let total_records: usize = dataset_reports.iter().map(|r| r.record_count).sum();
+    let total_distinct: usize = dataset_reports.iter().map(|r| r.distinct_ids).sum();
+    let all_passed = unrouted.is_empty()
+        && broken_dataset_entries.is_empty()
+        && dataset_reports.iter().all(|r| r.passed());
+
+    if output == "json" {
+        emit_doctor_json(
+            &dataset_reports,
+            total_records,
+            total_distinct,
+            &unrouted,
+            &broken_dataset_entries,
+            elapsed,
+            all_passed,
+        );
+    } else {
+        emit_doctor_text(
+            &dataset_reports,
+            total_records,
+            total_distinct,
+            &unrouted,
+            &broken_dataset_entries,
+            elapsed,
+            all_passed,
+        );
+    }
+
+    if !all_passed {
+        // Non-zero exit so a CI step `govbot doctor` fails the pipeline.
+        std::process::exit(1);
+    }
+    Ok(())
+}
+
+/// Names sitting in `<repos_dir>/` that look like dataset entries (matching
+/// the configured suffix) but don't resolve to a real directory — e.g. a
+/// dangling symlink left over from a hand-edited cache, or a broken
+/// pull. `get_local_datasets` silently filters these out; doctor surfaces
+/// them as a global failure so they don't go unnoticed.
+fn enumerate_broken_dataset_entries(repos_dir: &Path) -> Vec<String> {
+    let suffix = std::env::var("GOVBOT_REPO_SUFFIX").unwrap_or_else(|_| "-legislation".to_string());
+    let mut broken = Vec::new();
+    let read = match std::fs::read_dir(repos_dir) {
+        Ok(r) => r,
+        Err(_) => return broken,
+    };
+    for entry in read.flatten() {
+        let path = entry.path();
+        let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+            continue;
+        };
+        let looks_like_dataset = name.ends_with(&suffix) || name.ends_with("-data-pipeline");
+        if !looks_like_dataset {
+            continue;
+        }
+        // `is_dir()` follows symlinks, so a dangling symlink reads false.
+        if !path.is_dir() {
+            broken.push(name.to_string());
+        }
+    }
+    broken.sort();
+    broken
+}
+
+/// Minimal `{id,text,kind}` record drained from `govbot source --select docs`.
+#[derive(Debug)]
+struct DocRecord {
+    id: String,
+    text_len: usize,
+}
+
+/// Invoke `govbot source --select docs --limit <limit>` against the given
+/// cache and return one `DocRecord` per emitted JSON line. We materialise
+/// fully rather than streaming — the assertion set needs the whole corpus
+/// before per-dataset ratios mean anything, and at the smoke-test limit
+/// (default 100/repo, ~5000 records total) memory is a non-issue.
+fn collect_doc_stream(govbot_dir: &str, limit: &str) -> std::io::Result<Vec<DocRecord>> {
+    let exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("govbot"));
+    let mut source_cmd = ProcessCommand::new(&exe);
+    source_cmd
+        .arg("source")
+        .arg("--select")
+        .arg("docs")
+        .arg("--limit")
+        .arg(limit)
+        .arg("--filter")
+        .arg("default")
+        .arg("--join")
+        .arg("bill")
+        .arg("--sort")
+        .arg("DESC")
+        .arg("--govbot-dir")
+        .arg(govbot_dir);
+
+    let output = source_cmd.output()?;
+    if !output.status.success() {
+        let stderr_str = String::from_utf8_lossy(&output.stderr);
+        return Err(std::io::Error::other(format!(
+            "source exited with status {:?}: {}",
+            output.status.code(),
+            stderr_str
+        )));
+    }
+
+    let mut records = Vec::new();
+    for line in output.stdout.split(|b| *b == b'\n') {
+        if line.is_empty() {
+            continue;
+        }
+        let v: serde_json::Value = match serde_json::from_slice(line) {
+            Ok(v) => v,
+            Err(_) => continue, // Best-effort — source itself logs the parse failure.
+        };
+        let id = v
+            .get("id")
+            .and_then(|x| x.as_str())
+            .unwrap_or("")
+            .to_string();
+        let text_len = v
+            .get("text")
+            .and_then(|x| x.as_str())
+            .map(|s| s.len())
+            .unwrap_or(0);
+        // A record without an id will fail the per-dataset `unrouted`
+        // bucket (`parse_doc_route` returns None for the empty string),
+        // surfacing as a global routability failure.
+        records.push(DocRecord { id, text_len });
+    }
+    Ok(records)
+}
+
+/// Translate a doc id back to its on-disk `metadata.json` and confirm it
+/// (a) exists, (b) parses as JSON, (c) has at least a `title` or `identifier`
+/// field. The third leg is what would have caught 5ab6d3c — a dir-name vs
+/// `log.bill_id` whitespace mismatch produces an id whose metadata.json
+/// path simply doesn't exist on disk.
+fn check_metadata_json(doc_id: &str, dataset_repo_dir: &Path) -> Result<(), String> {
+    let route = parse_doc_route(doc_id).ok_or_else(|| {
+        "id does not match expected `country:.../bills/<bill_id>` shape".to_string()
+    })?;
+    // Path: <dataset_repo_dir>/country:<c>/state:<s>/sessions/<session>/bills/<bill_id>/metadata.json
+    let metadata_path = dataset_repo_dir
+        .join(format!("country:{}", route.country))
+        .join(format!("state:{}", route.state))
+        .join("sessions")
+        .join(&route.session)
+        .join("bills")
+        .join(&route.bill_id)
+        .join("metadata.json");
+
+    if !metadata_path.exists() {
+        return Err(format!(
+            "metadata.json not found at {}",
+            metadata_path.display()
+        ));
+    }
+    let contents = fs::read_to_string(&metadata_path)
+        .map_err(|e| format!("cannot read {}: {}", metadata_path.display(), e))?;
+    let value: serde_json::Value = serde_json::from_str(&contents)
+        .map_err(|e| format!("invalid JSON in {}: {}", metadata_path.display(), e))?;
+    let has_title = value
+        .get("title")
+        .and_then(|v| v.as_str())
+        .map(|s| !s.is_empty())
+        .unwrap_or(false);
+    let has_identifier = value
+        .get("identifier")
+        .and_then(|v| v.as_str())
+        .map(|s| !s.is_empty())
+        .unwrap_or(false);
+    if !has_title && !has_identifier {
+        return Err(format!(
+            "metadata.json at {} has neither `title` nor `identifier`",
+            metadata_path.display()
+        ));
+    }
+    Ok(())
+}
+
+/// Human-readable doctor report. Per-dataset one-liners followed by the
+/// global summary; failures get an indented detail block.
+fn emit_doctor_text(
+    dataset_reports: &[DatasetReport],
+    total_records: usize,
+    total_distinct: usize,
+    unrouted: &[String],
+    broken_entries: &[String],
+    elapsed: std::time::Duration,
+    all_passed: bool,
+) {
+    println!(
+        "govbot doctor — {} dataset(s), {} record(s), {} distinct id(s), {:.2}s",
+        dataset_reports.len(),
+        total_records,
+        total_distinct,
+        elapsed.as_secs_f64()
+    );
+    println!();
+
+    for r in dataset_reports {
+        let status = if !r.passed() {
+            "FAIL"
+        } else if r.warned() {
+            "WARN"
+        } else {
+            "PASS"
+        };
+        println!(
+            "  [{}] {:<22}  records={:<5} distinct={:<5} sampled={}",
+            status, r.dataset, r.record_count, r.distinct_ids, r.sampled
+        );
+        for c in &r.checks {
+            if !c.passed {
+                println!("        - {}: FAIL", c.name);
+                for d in &c.detail {
+                    println!("            • {}", d);
+                }
+            } else if c.warned {
+                println!("        - {}: WARN", c.name);
+                for d in &c.detail {
+                    println!("            • {}", d);
+                }
+            }
+        }
+    }
+
+    println!();
+    if !broken_entries.is_empty() {
+        println!(
+            "  [FAIL] global.dataset_links  {} broken or non-dir entry/entries in repos/:",
+            broken_entries.len()
+        );
+        for name in broken_entries.iter().take(MAX_FAIL_DETAIL) {
+            println!(
+                "            • {} (likely a dangling symlink or non-directory)",
+                name
+            );
+        }
+        if broken_entries.len() > MAX_FAIL_DETAIL {
+            println!(
+                "            • ...and {} more",
+                broken_entries.len() - MAX_FAIL_DETAIL
+            );
+        }
+    } else {
+        println!("  [PASS] global.dataset_links");
+    }
+
+    if !unrouted.is_empty() {
+        println!(
+            "  [FAIL] global.routable_ids  {} id(s) without a `<dataset>/country:...` prefix:",
+            unrouted.len()
+        );
+        for id in unrouted.iter().take(MAX_FAIL_DETAIL) {
+            println!("            • {}", id);
+        }
+    } else {
+        println!("  [PASS] global.routable_ids");
+    }
+
+    println!();
+    if all_passed {
+        println!("doctor: PASS");
+    } else {
+        println!("doctor: FAIL");
+    }
+}
+
+/// Machine-readable doctor report. Stable enough to pipe into CI.
+fn emit_doctor_json(
+    dataset_reports: &[DatasetReport],
+    total_records: usize,
+    total_distinct: usize,
+    unrouted: &[String],
+    broken_entries: &[String],
+    elapsed: std::time::Duration,
+    all_passed: bool,
+) {
+    let datasets: Vec<serde_json::Value> = dataset_reports
+        .iter()
+        .map(|r| {
+            let checks: Vec<serde_json::Value> = r
+                .checks
+                .iter()
+                .map(|c| {
+                    serde_json::json!({
+                        "name": c.name,
+                        "passed": c.passed,
+                        "warned": c.warned,
+                        "detail": c.detail,
+                    })
+                })
+                .collect();
+            serde_json::json!({
+                "dataset": r.dataset,
+                "passed": r.passed(),
+                "record_count": r.record_count,
+                "distinct_ids": r.distinct_ids,
+                "sampled": r.sampled,
+                "checks": checks,
+            })
+        })
+        .collect();
+    let report = serde_json::json!({
+        "status": if all_passed { "pass" } else { "fail" },
+        "elapsed_secs": elapsed.as_secs_f64(),
+        "total_records": total_records,
+        "total_distinct_ids": total_distinct,
+        "unrouted_ids": unrouted,
+        "broken_dataset_entries": broken_entries,
+        "datasets": datasets,
+    });
+    println!("{}", serde_json::to_string_pretty(&report).unwrap());
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
@@ -2811,6 +3474,7 @@ async fn main() -> anyhow::Result<()> {
         Some(cmd @ Command::Remove { .. }) => run_remove_command(cmd),
         Some(cmd @ Command::Ls { .. }) => run_ls_command(cmd),
         Some(cmd @ Command::Search { .. }) => run_search_command(cmd),
+        Some(cmd @ Command::Doctor { .. }) => run_doctor_command(cmd),
         None => {
             let cwd = std::env::current_dir()?;
             let config_path = cwd.join("govbot.yml");
@@ -3375,5 +4039,120 @@ mod tests {
         // cwd-rooted lookups, and a non-existent dir is the common case.
         let absent = match_tags_in_dir(&tmp.path().join("no-such-dir"), "HB0001");
         assert!(absent.is_empty());
+    }
+
+    // -----------------------------------------------------------------
+    // `govbot doctor` — the corpus-level smoke test. The full end-to-end
+    // path is exercised against real pulled data (see commit message for
+    // run details); these unit tests pin the failure-detection legs that
+    // would have caught bugs 7592418 and 5ab6d3c.
+    // -----------------------------------------------------------------
+
+    /// The metadata.json check is the leg that would have flagged 5ab6d3c
+    /// — a doc id whose dir-name was wrong (display form, with whitespace)
+    /// resolves to a non-existent metadata.json path.
+    #[test]
+    fn doctor_check_metadata_json_flags_missing_file() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        let dataset_dir = tmp.path().join("mi-legislation");
+        let bill_dir = dataset_dir
+            .join("country:us")
+            .join("state:mi")
+            .join("sessions")
+            .join("2025-2026_103rd_Legislature")
+            .join("bills")
+            .join("HB4027");
+        fs::create_dir_all(&bill_dir).unwrap();
+        // Write a well-formed metadata.json — happy path.
+        fs::write(
+            bill_dir.join("metadata.json"),
+            serde_json::to_string(&serde_json::json!({
+                "title": "An Act…",
+                "identifier": "HB 4027",
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+
+        // A clean id resolves.
+        let good_id =
+            "mi-legislation/country:us/state:mi/sessions/2025-2026_103rd_Legislature/bills/HB4027";
+        assert!(check_metadata_json(good_id, &dataset_dir).is_ok());
+
+        // The exact pre-5ab6d3c failure: log.bill_id `"HB 4027"` (with
+        // whitespace) bleeds into the doc id, and the on-disk dir is
+        // `HB4027` — so the metadata.json path doesn't exist.
+        let broken_id =
+            "mi-legislation/country:us/state:mi/sessions/2025-2026_103rd_Legislature/bills/HB 4027";
+        let err = check_metadata_json(broken_id, &dataset_dir).unwrap_err();
+        assert!(
+            err.contains("not found"),
+            "expected 'not found' in error, got: {}",
+            err
+        );
+    }
+
+    /// metadata.json present but lacking both `title` and `identifier` —
+    /// counts as a fail. This catches stub/empty-bill clones where the
+    /// scraper landed but populated nothing usable.
+    #[test]
+    fn doctor_check_metadata_json_requires_title_or_identifier() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        let dataset_dir = tmp.path().join("wy-legislation");
+        let bill_dir = dataset_dir
+            .join("country:us")
+            .join("state:wy")
+            .join("sessions")
+            .join("2025")
+            .join("bills")
+            .join("HB0001");
+        fs::create_dir_all(&bill_dir).unwrap();
+        fs::write(
+            bill_dir.join("metadata.json"),
+            // Neither title nor identifier — both empty / absent.
+            serde_json::to_string(&serde_json::json!({"description": "..."})).unwrap(),
+        )
+        .unwrap();
+
+        let id = "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0001";
+        let err = check_metadata_json(id, &dataset_dir).unwrap_err();
+        assert!(err.contains("neither `title` nor `identifier`"));
+    }
+
+    /// `dataset_short_name` is the only place where the dataset prefix
+    /// in a doc id (`<short>-legislation`) and the short_name returned by
+    /// `get_local_datasets` (`<short>`) meet. Getting this wrong silently
+    /// breaks per-dataset bucketing — every dataset shows zero coverage
+    /// even though records were emitted. Pin both common suffixes.
+    #[test]
+    fn doctor_dataset_short_name_strips_known_suffixes() {
+        assert_eq!(dataset_short_name("nj-legislation", "-legislation"), "nj");
+        assert_eq!(dataset_short_name("usa-legislation", "-legislation"), "usa");
+        // Legacy `<short>-data-pipeline` layout — strip it too.
+        assert_eq!(dataset_short_name("wy-data-pipeline", "-legislation"), "wy");
+        // Custom suffix from GOVBOT_REPO_SUFFIX is honoured.
+        assert_eq!(dataset_short_name("nj-pkg", "-pkg"), "nj");
+        // Bare short_name (no suffix at all) passes through.
+        assert_eq!(dataset_short_name("wy", "-legislation"), "wy");
+    }
+
+    /// metadata.json is unreadable JSON — that's still a fail (we can't
+    /// trust a record whose bill metadata won't even parse).
+    #[test]
+    fn doctor_check_metadata_json_flags_unparseable() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        let dataset_dir = tmp.path().join("ca-legislation");
+        let bill_dir = dataset_dir
+            .join("country:us")
+            .join("state:ca")
+            .join("sessions")
+            .join("2025-2026")
+            .join("bills")
+            .join("AB100");
+        fs::create_dir_all(&bill_dir).unwrap();
+        fs::write(bill_dir.join("metadata.json"), b"{ this is not json").unwrap();
+        let id = "ca-legislation/country:us/state:ca/sessions/2025-2026/bills/AB100";
+        let err = check_metadata_json(id, &dataset_dir).unwrap_err();
+        assert!(err.contains("invalid JSON"));
     }
 }
