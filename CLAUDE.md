@@ -247,7 +247,12 @@ classifier bundle's `classifier.yml` answers *"what's relevant"*.
 To run the self-improving loop, work inside the classifier bundle directory and
 use the fastclass Claude Code plugin (`/fastclass:improve`, `/fastclass:ratify`)
 and the fastclass `classify --eval` / `--backtest` / `--promote` primitives. The
-retired `fastclass --propose` flag no longer exists.
+retired `fastclass --propose` flag no longer exists. For activists who have
+ratified one proposal end-to-end, `/fastclass:improve autonomous` becomes the
+ongoing default — constitution-passing proposals apply as usual, coverage-gap
+proposals re-test against the rolling eval set and land only if rolling proves
+them safe (`generated_by: autonomous-coverage-gap` in `fastclass.lock`).
+AGENT.md §2 carries the activist-facing framing.
 
 **Prerequisite**: the `fastclass` binary must be resolvable on `PATH`,
 `~/.cargo/bin`, or `~/.govbot/bin` (`cargo install --path <fastclass repo>`).

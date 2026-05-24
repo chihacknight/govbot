@@ -54,9 +54,9 @@ A user comes to you for one of three things. Identify which, then jump to
 that section. Each job exercises the 4-tool stack from a different angle:
 **make** scaffolds the pull+filter+publish chain (today's MVP — does NOT
 yet scaffold a summarize transform or a receipts page, neither of which
-exists); **manage** keeps the loop running and introduces fastclass's
-`--autonomous` mode after first ratification (the activist-default for
-hands-off improvement); **update** evolves the stack.
+exists); **manage** keeps the loop running and introduces
+`/fastclass:improve autonomous` after first ratification (the
+activist-default for hands-off improvement); **update** evolves the stack.
 
 | Job | The user says… | Section |
 |---|---|---|
@@ -491,22 +491,37 @@ The `bluesky` publisher is a **posting bot**: it posts to a normal Bluesky
 account via the AT Protocol and runs to completion (no server). It is
 idempotent — a posted-state ledger keeps re-runs from double-posting.
 
-**Activist default after first ratification: `--autonomous`.** Once the
+**Activist default after first ratification: autonomous mode.** Once the
 activist has ratified one classifier proposal end-to-end (so they have
-felt the loop once) — the `--autonomous` flag on
-`fastclass classify --promote` becomes the recommended ongoing posture.
-With `--autonomous`, proposals that pass the frozen constitution gate
-apply as usual, and proposals where the constitution is silent
-(coverage gap) re-test against the rolling eval set and land if rolling
-proves them safe (flips at least one rolling failure to passing,
-regresses nothing, no per-tag precision loss). The `fastclass.lock`
-file marks autonomously-applied proposals with
-`generated_by: autonomous-coverage-gap`, so the audit trail is
-preserved — the receipt story extends into the classifier. This is the
-mode that lets the activist crew run the bot **hands-off between
-ratifications** without giving up provenance, which is the whole reason
-the cost story is "nearly free to operate". See §3 for the per-proposal
-flow you walked through first.
+felt the loop once and seen what the constitution gate does) — the
+beginner-default ongoing posture is the **autonomous** form of the
+improvement loop, invoked as:
+
+```
+/fastclass:improve autonomous
+```
+
+Under the hood this runs `fastclass classify --promote <prop>.yml
+--autonomous`. The constitution stays sovereign: proposals that pass the
+frozen constitution gate apply as usual, and proposals where the
+constitution is silent (a **coverage gap** — the gate cannot prove the
+change good or bad) re-test against the rolling eval set and land only
+if rolling proves them safe (flips at least one rolling failure to
+passing, regresses no rolling case, no per-tag precision loss). A
+bad-fix reject (counts moved on the constitution but F1 did not improve)
+or any rolling regression always refuses — the rolling gate is strictly
+weaker than the constitution and cannot overrule a precision-regression
+reject. The `fastclass.lock` file marks autonomously-applied proposals
+with `generated_by: autonomous-coverage-gap`, so the audit trail is
+preserved — the receipt story extends into the classifier.
+
+This is the mode that lets the activist crew run the bot **hands-off
+between ratifications** without giving up provenance, which is the whole
+reason the cost story is "nearly free to operate". Use it as the
+ongoing-improvement default; drop back to the reviewed
+`/fastclass:improve` path (§3) when you want to see and ratify a
+specific proposal — e.g. when widening scope with a new tag, or after a
+flurry of autonomous coverage-gap lands you want to read through.
 
 ### 2.1 Create the app password
 
@@ -668,8 +683,14 @@ each change against the frozen gold set.
    drafts a proposal under `classifier/proposals/`, and is the supported way
    to tune the bundle:
    ```
-   /fastclass:improve
+   /fastclass:improve            # reviewed: you ratify each proposal
+   /fastclass:improve autonomous # hands-off: constitution-passing applies,
+                                 # coverage-gap re-tests against rolling
    ```
+   Use the reviewed form for the first pass (so you see what the gate does)
+   and when widening scope with a new tag; switch to `autonomous` as the
+   ongoing default once you've felt the loop — see §2's autonomous-mode
+   callout for the gate semantics.
 4. **Backtest** the proposal — proves it against the frozen constitution:
    ```bash
    fastclass classify --backtest classifier/proposals/prop-0001.yml classifier=./classifier
