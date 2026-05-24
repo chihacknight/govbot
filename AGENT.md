@@ -1,9 +1,32 @@
 # AGENT.md — build a government-news bot with govbot
 
-You are a Claude Code session helping a user stand up, operate, or evolve a
-**govbot newsbot** — a project that pulls government legislation, classifies
-the bills relevant to an issue the user cares about, and publishes the matches
-(today, to a Bluesky account).
+You are a Claude Code session helping an activist stand up, operate, or
+evolve a **govbot newsbot** — a project that pulls real legislative data,
+filters it down to the issue the activist cares about, and publishes the
+matches (today, to a Bluesky account) at **nearly-free** running cost.
+
+govbot is a **4-tool stack** and the playbook below follows that shape:
+
+1. **Select real gov data** — `govbot pull` clones the legislation of all
+   50 states, DC, the territories, and federal Congress from a content-
+   addressed registry of git repos. Scrapers thanks to OpenStates.
+2. **Filter / transform** — fastclass tags each bill against an issue
+   taxonomy the activist owns; the publishers filter on those tags. The
+   planned `summarize` transform (local-LLM digests of grouped bills with
+   a trace of model + source data) is not yet built — userland keeps a
+   `summarizer/prompt.md` stub for when it lands.
+3. **Publish with receipts** — RSS, HTML, JSON, DuckDB, and a Bluesky
+   posting bot today; X and a "receipts" GitHub Pages artifact (the
+   deterministic provenance behind every AI digest: model id, source
+   bills, fastclass reasoning, regen recipe) are roadmap.
+4. **Coding-agent-native dev experience** — *this file is tool #4*. A
+   fresh Claude Code session reads it and can make / manage / update a
+   project end-to-end with no other onboarding.
+
+The cost bar is climate-activist's: **nearly free to run, worth reading**.
+If a choice in the playbook would push the activist toward a paid API
+when a local model would do, push back; if a choice would make a post less
+trustworthy, prefer the choice that ships the receipt.
 
 This file is the **end-user playbook**. A fresh session loads it by URL:
 
@@ -27,8 +50,13 @@ assume climate.
 
 ## The three jobs
 
-A user comes to you for one of three things. Identify which, then jump to that
-section.
+A user comes to you for one of three things. Identify which, then jump to
+that section. Each job exercises the 4-tool stack from a different angle:
+**make** scaffolds the pull+filter+publish chain (today's MVP — does NOT
+yet scaffold a summarize transform or a receipts page, neither of which
+exists); **manage** keeps the loop running and introduces fastclass's
+`--autonomous` mode after first ratification (the activist-default for
+hands-off improvement); **update** evolves the stack.
 
 | Job | The user says… | Section |
 |---|---|---|
@@ -456,6 +484,23 @@ RSS / HTML feeds.
 The `bluesky` publisher is a **posting bot**: it posts to a normal Bluesky
 account via the AT Protocol and runs to completion (no server). It is
 idempotent — a posted-state ledger keeps re-runs from double-posting.
+
+**Activist default after first ratification: `--autonomous`.** Once the
+activist has ratified one classifier proposal end-to-end (so they have
+felt the loop once) — the `--autonomous` flag on
+`fastclass classify --promote` becomes the recommended ongoing posture.
+With `--autonomous`, proposals that pass the frozen constitution gate
+apply as usual, and proposals where the constitution is silent
+(coverage gap) re-test against the rolling eval set and land if rolling
+proves them safe (flips at least one rolling failure to passing,
+regresses nothing, no per-tag precision loss). The `fastclass.lock`
+file marks autonomously-applied proposals with
+`generated_by: autonomous-coverage-gap`, so the audit trail is
+preserved — the receipt story extends into the classifier. This is the
+mode that lets the activist crew run the bot **hands-off between
+ratifications** without giving up provenance, which is the whole reason
+the cost story is "nearly free to operate". See §3 for the per-proposal
+flow you walked through first.
 
 ### 2.1 Create the app password
 

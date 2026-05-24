@@ -1,3 +1,49 @@
+//! # govbot — a 4-tool civic-data publishing stack
+//!
+//! govbot exists so a small activist crew can run a credible legislative
+//! news bot at **nearly-free** cost on commodity infrastructure (GitHub
+//! Actions + a laptop with local models). The first user is the
+//! `climate-activist` userland repo; the success bar is "Bluesky posts
+//! worth reading, nearly free to run/improve".
+//!
+//! The stack is four composable tools:
+//!
+//! 1. **Select real gov data** — `govbot pull` clones the legislation of
+//!    all 50 states, DC, the territories, and federal Congress from a
+//!    content-addressed registry of git repos (scrapers thanks to
+//!    OpenStates). Today `govbot source --select docs` projects bill
+//!    text + subjects; sponsors and voting records are captured in the
+//!    underlying metadata but not yet in the docs projection.
+//! 2. **Filter / transform** — fastclass tagging is the shipped
+//!    transform: a low-token, high-quality classifier the activist
+//!    tunes against their own issue taxonomy, piped over the stream
+//!    protocol (see `schemas/STREAM_PROTOCOL.md`). The planned
+//!    `summarize` transform — a local-LLM digest of grouped bills
+//!    emitted with a deterministic trace (model id + source bill ids +
+//!    prompt revision) — is not yet built.
+//! 3. **Publish with receipts** — RSS, HTML, JSON, DuckDB, and a
+//!    Bluesky posting bot ship today. The defining roadmap idea is the
+//!    **receipt**: a GitHub Pages artifact that carries the
+//!    deterministic provenance behind every AI digest (model used,
+//!    source bills, fastclass reasoning, regen command) so the short
+//!    Bluesky post can link to a trustworthy long form. The AI digest
+//!    publisher and the receipt artifact are not yet built; the X
+//!    publisher is not yet built.
+//! 4. **Coding-agent-native dev experience** — `AGENT.md` is a self-
+//!    contained playbook a fresh Claude Code session can follow to
+//!    make / manage / update a govbot project. The fastclass plugin
+//!    (`/fastclass:from-intent`, `/fastclass:improve`,
+//!    `/fastclass:ratify`, `/fastclass:install-model`) handles the
+//!    classifier loop; `govbot doctor` validates installations. The
+//!    "build your own govbot" path is the one tool already shipping
+//!    its vision.
+//!
+//! This binary is the gov-data CLI piece of the stack. It owns dataset
+//! pull/cache/lock, the stream-protocol `source` and `apply` stages,
+//! the manifest-driven `run` orchestrator, and the publisher set above.
+//! Classification is intentionally a separate binary (`fastclass`) so
+//! the activist can tune the taxonomy without touching this code.
+
 use clap::{Parser, Subcommand};
 use futures::stream;
 use futures::StreamExt;
@@ -66,7 +112,7 @@ struct DatasetPin {
 #[derive(Parser, Debug)]
 #[command(name = "govbot")]
 #[command(
-    about = "Government-data tool: pull dataset repositories, run transforms over them, and publish artifacts (RSS / HTML / JSON / DuckDB / Bluesky). Configured by a `govbot.yml` manifest (datasets / transforms / publish / pipelines). See AGENT.md for the end-user playbook."
+    about = "govbot — a 4-tool civic-data publishing stack. (1) Select real gov data: pull the legislation of all 50 states, DC, territories, and federal Congress from a content-addressed dataset registry. (2) Filter/transform: run transforms over the stream — fastclass tagging today, local-LLM summarize on the roadmap. (3) Publish with receipts: RSS / HTML / JSON / DuckDB / Bluesky today, plus a roadmap GitHub Pages 'receipts' artifact that carries deterministic provenance behind every AI digest. (4) Coding-agent-native dev experience: AGENT.md walks Claude Code through make / manage / update of a project. Configured by a govbot.yml manifest (datasets / transforms / publish / pipelines). See AGENT.md for the end-user playbook, README for the honest gap map."
 )]
 #[command(version)]
 struct Args {

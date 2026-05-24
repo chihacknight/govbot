@@ -2,7 +2,7 @@
 name = "govbot"
 version = "0.1.0"
 edition = "2021"
-description = "Streaming pipeline log government events from distributed government data"
+description = "4-tool civic-data stack: pull real legislative data, filter by what you care about (fastclass tagging), publish with receipts (RSS/HTML/JSON/DuckDB/Bluesky), all from a coding-agent-native dev experience designed to run at nearly-free cost on commodity infrastructure."
 authors = ["sartaj"]
 
 [lib]

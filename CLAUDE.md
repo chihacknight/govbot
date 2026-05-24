@@ -4,6 +4,48 @@ This file provides senior engineering-level guidance for Claude Code when workin
 
 ## Project Overview
 
+**govbot is a 4-tool stack for civic-data publishing**, built so an
+activist crew can run a credible news-bot at nearly-free cost on commodity
+infrastructure (GitHub Actions + a laptop with local models). The stack
+exists to clear one bar: the first user, the **climate-activist** userland
+repo, must be able to ship Bluesky posts that are "worth reading" at
+"nearly free to run/improve". Every architectural choice in this repo
+should be checked against that.
+
+The 4 tools, with the honest state of each:
+
+1. **Select real gov data** — `govbot pull` over 55 OCD dataset git repos
+   (every US state + DC + territories + federal Congress), content-
+   addressed in `~/.govbot/cache/`. `govbot doctor` validates. Today
+   `govbot source --select docs` ships bill text + subjects; **sponsors
+   and voting records are captured in metadata but not yet projected
+   into `--select docs`** — a recall gap for sponsor-pattern signals.
+2. **Filter / transform** — fastclass tagging is the shipped transform
+   (Wave A). The planned **`summarize` transform** (local-LLM digests
+   of grouped bills, emitted with model id + source bill ids + prompt
+   revision so the digest is reproducible) **does not exist** —
+   userland holds a `summarizer/prompt.md` stub.
+3. **Publish with receipts** — RSS, HTML, JSON, DuckDB, and a Bluesky
+   posting bot ship today. **X is not built. AI digest publishing is
+   not built.** **"Receipts" as defined in the vision** — a GitHub
+   Pages artifact carrying the deterministic provenance behind every
+   AI digest (model used, source bill ids, fastclass scores +
+   reasoning, regen command) — **is a new capability that does not yet
+   exist**. The current classification evidence chains carry most of
+   the data a receipt would need; they are not yet packaged into a
+   public artifact.
+4. **Coding-agent-native dev experience** — `AGENT.md` provides the
+   make/manage/update flow that a fresh Claude Code session can follow
+   without other onboarding. The fastclass plugin
+   (`/fastclass:from-intent`, `/fastclass:improve`, `/fastclass:ratify`,
+   `/fastclass:install-model`) handles the classifier loop. `govbot
+   doctor` validates installations. This is the one tool that is
+   already shipping its vision.
+
+Operators: keep the gap map above honest as features land. The README's
+Roadmap section is the public version of this list; this CLAUDE.md is the
+internal version, biased toward what the code actually does today.
+
 This is **govbot** - a monorepo for distributed data analysis of government updates. Git repos function as datasets, including legislation from 47+ states/jurisdictions. The `actions/` folder contains self-contained modules that can run as shell scripts or GitHub Actions.
 
 ## Senior Engineering Prompts

@@ -1,12 +1,13 @@
 ---
 source: tests/cli_example_snaps.rs
+assertion_line: 221
 expression: "&formatted_stdout"
 ---
 Command:
 govbot --help
 
 Output:
-Government-data tool: pull dataset repositories, run transforms over them, and publish artifacts (RSS / HTML / JSON / DuckDB / Bluesky). Configured by a `govbot.yml` manifest (datasets / transforms / publish / pipelines). See AGENT.md for the end-user playbook.
+govbot — a 4-tool civic-data publishing stack. (1) Select real gov data: pull the legislation of all 50 states, DC, territories, and federal Congress from a content-addressed dataset registry. (2) Filter/transform: run transforms over the stream — fastclass tagging today, local-LLM summarize on the roadmap. (3) Publish with receipts: RSS / HTML / JSON / DuckDB / Bluesky today, plus a roadmap GitHub Pages 'receipts' artifact that carries deterministic provenance behind every AI digest. (4) Coding-agent-native dev experience: AGENT.md walks Claude Code through make / manage / update of a project. Configured by a govbot.yml manifest (datasets / transforms / publish / pipelines). See AGENT.md for the end-user playbook, README for the honest gap map.
 
 Usage: govbot [COMMAND]
 

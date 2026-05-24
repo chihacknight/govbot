@@ -5,10 +5,85 @@
 
 # 🏛️ govbot
 
-- Download the legislation of [50+ states/jurisdictions](https://github.com/govbot-data) in under 1 minute.
-- Classify and summarize bills with private/local models — runs on free GitHub Actions.
+**govbot is a 4-tool stack for civic-data publishing** — pull real legislative
+data, filter by what you care about, publish with receipts, all from a
+coding-agent-native dev experience. The whole stack is designed to run on
+free GitHub Actions and a local laptop with local models, so a small
+volunteer crew can stand up a credible bot and **keep it running for
+~nothing**.
 
-`govbot` is a CLI for distributed analysis of government data. Git repos function as datasets — the legislation of every US state, DC, the territories, and federal Congress. It composes with [`fastclass`](#classifying-with-fastclass) (the classifier) over a Unix pipe; together they pull, classify, and publish a tagged feed of legislation to RSS, HTML, JSON, DuckDB, or a Bluesky posting bot.
+The first user is **climate-activist**, a userland repo that turns the
+country's legislative activity into a Bluesky feed worth reading at
+nearly-free cost. Everything in this README is in service of that bar: if
+climate-activist cannot ship a "worth reading, nearly free to run" post,
+govbot has not earned the framing.
+
+### The 4 tools
+
+1. **Select real gov data** — pull the legislative activity of all 50
+   states, DC, the territories, and federal Congress from a registry of git
+   repos (`govbot pull`, scrapers thanks to [OpenStates](https://openstates.org)).
+   Repos are content-addressed; a second pull (here or in another project)
+   is a cache hit, not a re-clone. `govbot doctor` validates the cache.
+   *Today:* bill text + subjects ship via `govbot source --select docs`.
+   *Honest gap:* sponsors and voting records exist in the underlying
+   metadata but are not yet in the `--select docs` projection; the "under
+   1 minute" headline is the warm-cache case (a cold clone of all 55
+   datasets is closer to 3 minutes).
+
+2. **Filter / transform** (map / filter / reduce — *find the relevant
+   bills*) — any transform over the stream. The shipped transform today is
+   **fastclass tagging**: a low-token, high-quality text classifier that
+   tags bills against an issue taxonomy the user owns, then filters to
+   what crosses a confidence threshold. *Honest gap:* the planned
+   **`summarize` transform** — a local-LLM digest of 1–n grouped bills
+   that emits the summary alongside its data-source trace and model
+   identity — is not yet built. Userland holds a `summarizer/prompt.md`
+   stub; the code does not exist.
+
+3. **Publish with receipts** — many surfaces (RSS, HTML, JSON, DuckDB,
+   Bluesky today; X planned). The defining idea: every AI-generated
+   digest links back to **deterministic provenance** — the model used,
+   the source data, the fastclass reasoning chain, and the recipe to
+   regenerate it — published as a GitHub Pages "receipt" page next to the
+   short Bluesky post. *Honest gap:* the AI digest publisher and the
+   receipt artifact are not yet built. Today's publishers carry
+   classification evidence chains internally but do not yet package them
+   into a public, auditable receipt page.
+
+4. **Coding-agent-native dev experience** — `AGENT.md` is a self-contained
+   playbook a fresh Claude Code session can follow to **make, manage, and
+   update** a govbot project. The fastclass plugin
+   (`/fastclass:from-intent`, `/fastclass:improve`, `/fastclass:ratify`,
+   `/fastclass:install-model`) handles the classifier loop end-to-end.
+   `govbot doctor` validates an installation. The "build your own
+   high-quality, low-cost govbot" path is the one tool that is already
+   working today.
+
+### Roadmap (honest gap map)
+
+Things named in the vision that **do not exist yet**, in priority order:
+
+- **Sponsors + voting records in `--select docs`.** The underlying scrapers
+  capture them; the source projection does not yet expose them to
+  classifiers and digesters. Closes a known recall gap on
+  sponsor-pattern signals.
+- **The `summarize` transform.** A local-LLM digest of grouped bills that
+  emits the summary plus a structured trace (model id, source bill ids,
+  prompt revision) so the digest is reproducible.
+- **Receipts.** A GitHub Pages artifact published alongside every AI
+  digest post: human-readable on top, full deterministic provenance
+  (source bills, model, fastclass scores + reasoning, regen command)
+  underneath. The short post links to the receipt; the receipt is the
+  source of trust.
+- **X publisher.** Same idempotent posting pattern as the Bluesky
+  publisher.
+- **The "under 1 minute" cold-pull headline.** Today's cold pull of all 55
+  datasets is ~3 min. Caching and partial-clone improvements get it
+  closer to the headline.
+
+These are tracked as gaps so the rest of the document can be specific
+about what *does* work today.
 
 ## 🤖 Build a newsbot with Claude Code
 
