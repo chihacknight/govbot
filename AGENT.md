@@ -96,7 +96,7 @@ govbot publish              # run the manifest's publishers
 govbot run                  # the full pipeline: pull -> source|classify|apply -> publish
 fastclass classify -        # score a JSON-Lines doc stream from stdin
 fastclass describe classifier=<bundle>   # print a bundle's tags + interface
-fastclass classify --eval / --backtest / --promote   # the tuning primitives
+fastclass compile evaluate / backtest / ratify        # the tuning primitives
 ```
 
 Datasets are resolved at runtime through a **dataset registry** — an
@@ -501,7 +501,7 @@ improvement loop, invoked as:
 /fastclass:improve autonomous
 ```
 
-Under the hood this runs `fastclass classify --promote <prop>.yml
+Under the hood this runs `fastclass compile ratify <prop>.yml
 --autonomous`. The constitution stays sovereign: proposals that pass the
 frozen constitution gate apply as usual, and proposals where the
 constitution is silent (a **coverage gap** — the gate cannot prove the
@@ -672,8 +672,8 @@ each change against the frozen gold set.
 
 1. **Measure** where the classifier stands:
    ```bash
-   fastclass classify --eval constitution classifier=./classifier
-   fastclass classify --eval rolling      classifier=./classifier
+   fastclass compile evaluate --eval constitution classifier=./classifier
+   fastclass compile evaluate --eval rolling      classifier=./classifier
    ```
 2. **Find misses.** Add bills the classifier gets wrong to
    `classifier/eval/rolling.yml` with their correct `expected_tags`. To widen
@@ -693,11 +693,11 @@ each change against the frozen gold set.
    callout for the gate semantics.
 4. **Backtest** the proposal — proves it against the frozen constitution:
    ```bash
-   fastclass classify --backtest classifier/proposals/prop-0001.yml classifier=./classifier
+   fastclass compile backtest classifier/proposals/prop-0001.yml classifier=./classifier
    ```
 5. **Promote** a passing proposal into the bundle:
    ```bash
-   fastclass classify --promote classifier/proposals/prop-0001.yml classifier=./classifier
+   fastclass compile ratify classifier/proposals/prop-0001.yml classifier=./classifier
    ```
 6. **Re-run** the bot: `govbot run`.
 

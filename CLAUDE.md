@@ -246,7 +246,7 @@ classifier bundle's `classifier.yml` answers *"what's relevant"*.
 
 To run the self-improving loop, work inside the classifier bundle directory and
 use the fastclass Claude Code plugin (`/fastclass:improve`, `/fastclass:ratify`)
-and the fastclass `classify --eval` / `--backtest` / `--promote` primitives. The
+and the fastclass `compile evaluate` / `compile backtest` / `compile ratify` primitives. The
 retired `fastclass --propose` flag no longer exists. For activists who have
 ratified one proposal end-to-end, `/fastclass:improve autonomous` becomes the
 ongoing default — constitution-passing proposals apply as usual, coverage-gap
