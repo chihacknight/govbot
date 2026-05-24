@@ -84,12 +84,25 @@ type-check a transform DAG and validate that `publish.*.select:` tag names exist
   "writes": ["classification"],
   "tags": ["clean_energy", "conservation", "emissions_and_climate", "fossil_fuels"],
   "classifier_version": "sha256:<12-hex>",
-  "fusion_version": "fusion-v1"
+  "fusion_version": "fusion-v1",
+  "model": {"name": "sentence-transformers/all-MiniLM-L6-v2", "sha256_prefix": "<12-hex>"}
 }
 ```
 
 - `tags` is the sorted list of active tag names from the bundle.
 - `describe` is a **subcommand** (not a `classify` flag).
+- **`model`** — **optional**. Present iff an embedding model is installed at
+  `<bundle>/model/` (the Tier-2 semantic matcher; installed via
+  `fastclass model fetch` or the `/fastclass:install-model` plugin command).
+  Shape is `{name?: string, sha256_prefix: string}`: `sha256_prefix` is the
+  first 12 hex chars of the model file's SHA-256; `name` is the
+  `KNOWN_MODELS` identifier (e.g. `sentence-transformers/all-MiniLM-L6-v2`)
+  when the prefix matches a vetted entry, and is **omitted** for a
+  user-staged custom model whose SHA isn't on the vetted list. The block is
+  **omitted entirely** for a lexical-only bundle — like `subjects` in §1,
+  this is additive: consumers that don't know about `model` ignore it, and
+  the lexical-only describe output is byte-identical to the pre-Tier-2
+  contract.
 
 ## 4. The classifier-bundle layout
 
