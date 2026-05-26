@@ -212,6 +212,20 @@ Coverage today:
 Override the registry with `GOVBOT_REGISTRY_URL=<url-or-path>` or a project-local
 `.govbot/registry.json`.
 
+## Lineage
+
+Govbot's civic-tech application — feeding state legislative data into
+per-topic Bluesky bots — was first proven by Frankie Vegliante's
+**CHN-Bluesky-Govbot-Main** framework
+([github.com/frankies2727/CHN-Bluesky-Govbot-Main](https://github.com/frankies2727/CHN-Bluesky-Govbot-Main)).
+That framework's design — per-topic configs, GitHub Actions cron, per-topic
+state ledger, and a shared posting pipeline across 13 issue-area Bluesky
+bots (transportation, housing, education, immigration, …) — is the pattern
+that govbot's 4-tool architecture and the climate-activist deployment both
+build on. Govbot's planned `govbot init --from-frankie-config` flag (Phase
+1b, in flight) lets a CHN topic migrate to this stack with its keywords,
+emoji map, and posted-state history intact.
+
 ## Contribute
 
 ### Folder Structure

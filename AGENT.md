@@ -64,6 +64,11 @@ activist-default for hands-off improvement); **update** evolves the stack.
 | **manage** | "set up / run the Bluesky bot", "schedule it" | [§2](#2-manage--operate-the-bluesky-bot) |
 | **update** | "add a dataset", "the classifier misses bills" | [§3](#3-update--evolve-an-existing-project) |
 
+Govbot's per-topic-bot pattern is owed to Frankie Vegliante's
+[CHN-Bluesky-Govbot-Main](https://github.com/frankies2727/CHN-Bluesky-Govbot-Main)
+framework — the framework that first ran 13 civic-issue Bluesky bots on the
+same legislative-data pipeline.
+
 ---
 
 ## The model — read this before doing anything
