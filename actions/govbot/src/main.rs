@@ -2262,32 +2262,47 @@ async fn run_build_command(cmd: Command) -> anyhow::Result<()> {
 }
 
 async fn run_update_command() -> anyhow::Result<()> {
-    let install_script_url = "https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh";
-    
-    eprintln!("🔄 Updating govbot to latest nightly version...");
-    eprintln!("Downloading and running install script from: {}", install_script_url);
-    
-    // Execute the install script by piping curl directly to sh
-    // This avoids issues with shebang lines being interpreted as commands
-    let mut cmd = ProcessCommand::new("sh");
-    cmd.arg("-c");
-    cmd.arg(&format!("curl -fsSL {} | sh", install_script_url));
-    
-    // Inherit stdin/stdout/stderr so the install script can interact with the user
-    cmd.stdin(std::process::Stdio::inherit());
-    cmd.stdout(std::process::Stdio::inherit());
-    cmd.stderr(std::process::Stdio::inherit());
-    
-    let status = cmd.status()?;
-    
-    if status.success() {
-        eprintln!("\n✅ Update completed successfully!");
-        eprintln!("You may need to restart your terminal or run 'source ~/.zshrc' (or your shell profile) to use the updated version.");
-    } else {
-        return Err(anyhow::anyhow!("Update failed with exit code: {}", status.code().unwrap_or(-1)));
+    #[cfg(windows)]
+    {
+        eprintln!("🔄 Automatic update via `govbot update` is not yet supported on Windows.");
+        eprintln!();
+        eprintln!("To update, either:");
+        eprintln!("  • Download the latest release from:");
+        eprintln!("      https://github.com/chihacknight/govbot/releases");
+        eprintln!("  • Or build from source:");
+        eprintln!("      cargo install --git https://github.com/chihacknight/govbot --bin govbot");
+        return Ok(());
     }
-    
-    Ok(())
+
+    #[cfg(not(windows))]
+    {
+        let install_script_url = "https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh";
+
+        eprintln!("🔄 Updating govbot to latest nightly version...");
+        eprintln!("Downloading and running install script from: {}", install_script_url);
+
+        // Execute the install script by piping curl directly to sh
+        // This avoids issues with shebang lines being interpreted as commands
+        let mut cmd = ProcessCommand::new("sh");
+        cmd.arg("-c");
+        cmd.arg(format!("curl -fsSL {} | sh", install_script_url));
+
+        // Inherit stdin/stdout/stderr so the install script can interact with the user
+        cmd.stdin(std::process::Stdio::inherit());
+        cmd.stdout(std::process::Stdio::inherit());
+        cmd.stderr(std::process::Stdio::inherit());
+
+        let status = cmd.status()?;
+
+        if status.success() {
+            eprintln!("\n✅ Update completed successfully!");
+            eprintln!("You may need to restart your terminal or run 'source ~/.zshrc' (or your shell profile) to use the updated version.");
+        } else {
+            return Err(anyhow::anyhow!("Update failed with exit code: {}", status.code().unwrap_or(-1)));
+        }
+
+        Ok(())
+    }
 }
 
 #[tokio::main]

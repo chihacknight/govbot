@@ -24,10 +24,17 @@ jobs:
             arch: x86_64
             target: x86_64-unknown-linux-gnu
             artifact_name: govbot-linux-x86_64
+            binary: govbot
           - os: macos-latest
             arch: arm64
             target: aarch64-apple-darwin
             artifact_name: govbot-macos-arm64
+            binary: govbot
+          - os: windows-latest
+            arch: x86_64
+            target: x86_64-pc-windows-msvc
+            artifact_name: govbot-windows-x86_64.exe
+            binary: govbot.exe
 
     steps:
       - name: Checkout repository
@@ -63,7 +70,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: actions/govbot/target/${{ matrix.target }}/release/govbot
+          path: actions/govbot/target/${{ matrix.target }}/release/${{ matrix.binary }}
           retention-days: 1
 
   create-nightly-release:
