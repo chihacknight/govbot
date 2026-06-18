@@ -3,15 +3,16 @@ name: Terminal Screenshots
 on:
   pull_request:
     paths:
-      - "actions/govbot/src/**"
       - "actions/govbot/tapes/*.tape"
+      - "actions/govbot/tapes/expected/**"
+      - "actions/govbot/src/**"
       - "actions/govbot/Cargo.toml"
       - "actions/govbot/Cargo.lock"
       - ".github/workflows/terminal-screenshots.yml"
 
 jobs:
   terminal-screenshots:
-    name: Generate Terminal GIFs
+    name: Generate Terminal GIFs (Mock Mode)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -59,19 +60,41 @@ jobs:
           rm vhs.deb
           vhs --version
 
-      - name: Record terminal GIFs
+      - name: Record demo tapes (mock mode with snapshot assertions)
         run: |
           cd actions/govbot
+          export TEST_MODE=mock
+          FAILED=0
           for tape in tapes/*.tape; do
             [ -f "$tape" ] || continue
             echo "::group::Recording $tape"
-            vhs "$tape"
-            echo "::endgroup::"
+            if vhs "$tape"; then
+              echo "::endgroup::"
+            else
+              echo "::endgroup::"
+              echo "::error::Tape failed: $tape"
+              FAILED=1
+            fi
           done
+          if [ "$FAILED" -eq 1 ]; then
+            echo "::error::One or more tapes failed snapshot assertions"
+            exit 1
+          fi
+
+      - name: Record synthetic test (mock mode)
+        run: |
+          cd actions/govbot
+          export TEST_MODE=mock
+          export GOVBOT_SRC="$PWD"
+          rm -rf /tmp/govbot-test
+          vhs tapes/nightly/synthetic-test.tape
 
       - name: Upload GIFs as artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: terminal-screenshots
-          path: actions/govbot/tapes/*.gif
+          path: |
+            actions/govbot/tapes/*.gif
+            /tmp/govbot-synthetic-test.gif
           retention-days: 30

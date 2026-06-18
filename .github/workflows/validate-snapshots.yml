@@ -144,11 +144,87 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-
       - name: Run tests
         run: |
           cd actions/govbot
           cargo test
+
+  govbot-mock-schema-validation:
+    name: Validate Govbot Mock Data
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.govbot == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install jsonschema
+        run: pip install jsonschema
+
+      - name: Validate govbot mock data against schemas
+        run: |
+          python3 << 'PYEOF'
+          import json
+          import sys
+          from pathlib import Path
+          from jsonschema import validate, ValidationError
+
+          schemas_dir = Path("actions/format/schemas")
+          mocks_dir = Path("actions/govbot/mocks/.govbot/repos")
+
+          # Load schemas
+          metadata_schema = json.load(open(schemas_dir / "metadata.schema.json"))
+          action_log_schema = json.load(open(schemas_dir / "action_log.schema.json"))
+          vote_event_log_schema = json.load(open(schemas_dir / "vote_event_log.schema.json"))
+
+          errors = []
+          validated = 0
+
+          # Validate all metadata.json files in mock repos
+          for metadata_file in mocks_dir.rglob("metadata.json"):
+              # Skip data.json (DCAT descriptor, different schema)
+              if metadata_file.name == "data.json":
+                  continue
+              try:
+                  data = json.load(open(metadata_file))
+                  validate(instance=data, schema=metadata_schema)
+                  print(f"  {metadata_file}")
+                  validated += 1
+              except ValidationError as e:
+                  errors.append(f"{metadata_file}: {e.message}")
+                  print(f"  {metadata_file}: {e.message}")
+
+          # Validate all log files in mock repos
+          for log_file in mocks_dir.rglob("logs/*.json"):
+              try:
+                  data = json.load(open(log_file))
+                  if "action" in data and "bill_id" in data:
+                      validate(instance=data, schema=action_log_schema)
+                  elif "votes" in data and "counts" in data:
+                      validate(instance=data, schema=vote_event_log_schema)
+                  else:
+                      print(f"  {log_file}: unknown log type, skipping")
+                      continue
+                  print(f"  {log_file}")
+                  validated += 1
+              except ValidationError as e:
+                  errors.append(f"{log_file}: {e.message}")
+                  print(f"  {log_file}: {e.message}")
+
+          print(f"\nValidated {validated} file(s)")
+          if errors:
+              print(f"{len(errors)} error(s):")
+              for err in errors:
+                  print(f"  - {err}")
+              sys.exit(1)
+          else:
+              print("All mock data validates against schemas")
+          PYEOF
 
   format-snapshots:
     runs-on: ubuntu-latest

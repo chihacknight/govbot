@@ -1,11 +1,3 @@
----
-source: tests/cli_example_snaps.rs
-expression: "&formatted_stdout"
----
-Command:
-govbot --help
-
-Output:
 Process pipeline log files with type-safe reactive streams
 
 Usage: govbot [COMMAND]

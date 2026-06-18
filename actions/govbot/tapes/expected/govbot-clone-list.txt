@@ -1,11 +1,3 @@
----
-source: tests/cli_example_snaps.rs
-expression: "&formatted_stdout"
----
-Command:
-govbot clone --list
-
-Output:
 Available repos:
   ak
   al

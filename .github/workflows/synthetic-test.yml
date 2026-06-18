@@ -118,6 +118,18 @@ jobs:
           echo "=== Build output ==="
           ls -la /tmp/govbot-test/docs/
 
+      - name: Run demo tapes in prod mode
+        if: github.event_name != 'pull_request'
+        run: |
+          cd actions/govbot
+          export TEST_MODE=prod
+          for tape in tapes/*.tape; do
+            [ -f "$tape" ] || continue
+            echo "::group::Recording $tape (prod mode)"
+            vhs "$tape" || true
+            echo "::endgroup::"
+          done
+
       - name: Upload GIF to synthetic-test release
         if: always()
         env:
@@ -175,7 +187,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: synthetic-test-recording
-          path: /tmp/govbot-synthetic-test.gif
+          path: |
+            /tmp/govbot-synthetic-test.gif
+            actions/govbot/tapes/*.gif
           retention-days: 7
 
       - name: Upload diagnostics
