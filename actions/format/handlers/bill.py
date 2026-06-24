@@ -73,7 +73,9 @@ def handle_bill(
 
         # Only write logs for new actions
         if new_actions:
-            write_action_logs(new_actions, bill_identifier, save_path / "logs")
+            write_action_logs(
+                new_actions, bill_identifier, sources, session_id, save_path / "logs"
+            )
 
             # Add processing timestamps to new actions
             for action in new_actions:
@@ -95,7 +97,9 @@ def handle_bill(
     else:
         # New bill: process all actions
         if actions:
-            write_action_logs(actions, bill_identifier, sources, session_id, save_path / "logs")
+            write_action_logs(
+                actions, bill_identifier, sources, session_id, save_path / "logs"
+            )
 
             # Add processing timestamps to all actions
             for action in actions:
