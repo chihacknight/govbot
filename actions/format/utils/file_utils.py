@@ -230,6 +230,7 @@ def write_action_logs(
         {timestamp}_{slugified_description}.json
     """
     for action in actions:
+        written_action = {}
         date = action.get("date")
         desc = action.get("description", "no_description")
         timestamp = format_timestamp(date) if date else "unknown"
@@ -254,8 +255,22 @@ def write_action_logs(
             filename = f"{timestamp}_{slug}.json"
 
         output_file = Path(log_folder) / filename
+        written_action.add({
+            "action": {
+                "description": action.get("description", "no_description"),
+                "occurred_at": action.get("date", "no_date"),
+                "jurisdiction_id": action.get("organization_id", "no_jurisdiction"),
+                "session_id": session_id,
+                "entity_type": "bill",
+                "classifications": action.get("classifications", []),
+                "related_entities": action.get("related_entities", []),
+                "sources": sources,
+            },
+            "bill_id": bill_identifier
+        })
+
         with open(output_file, "w", encoding="utf-8") as f:
-            json.dump({"action": action, "bill_id": bill_identifier, "sources": sources}, f, indent=2)
+            json.dump({"action": action, "bill_id": bill_identifier, "session_id": session_id, "sources": sources}, f, indent=2)
 
 
 def write_vote_event_log(vote_event: dict[str, Any], log_folder: Union[str, Path]) -> None:
