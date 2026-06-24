@@ -219,7 +219,7 @@ def slugify(text: str, max_length=100):
 
 
 def write_action_logs(
-    actions: list[dict[str, Any]], bill_identifier: str, log_folder: Union[str, Path]
+    actions: list[dict[str, Any]], bill_identifier: str, sources: list[dict[str, Any]], session_id: str, log_folder: Union[str, Path]
 ) -> None:
     """
     Writes one JSON file per action for a bill.
@@ -255,7 +255,7 @@ def write_action_logs(
 
         output_file = Path(log_folder) / filename
         with open(output_file, "w", encoding="utf-8") as f:
-            json.dump({"action": action, "bill_id": bill_identifier}, f, indent=2)
+            json.dump({"action": action, "bill_id": bill_identifier, "sources": sources}, f, indent=2)
 
 
 def write_vote_event_log(vote_event: dict[str, Any], log_folder: Union[str, Path]) -> None:

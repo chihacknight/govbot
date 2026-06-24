@@ -64,6 +64,7 @@ def handle_bill(
     existing_metadata = load_existing_metadata(DATA_PROCESSED_FOLDER, STATE_ABBR, data)
 
     actions = data.get("actions", [])
+    sources = data.get("sources", [])
 
     # Determine which actions are new and need processing
     if existing_metadata:
@@ -94,7 +95,7 @@ def handle_bill(
     else:
         # New bill: process all actions
         if actions:
-            write_action_logs(actions, bill_identifier, save_path / "logs")
+            write_action_logs(actions, bill_identifier, sources, session_id, save_path / "logs")
 
             # Add processing timestamps to all actions
             for action in actions:
