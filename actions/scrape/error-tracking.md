@@ -9,16 +9,35 @@ Last updated: 2026-06-26
 ## Summary of Failures
 
 ### A — Out of Session (scraper finds no data, legislature not meeting)
-These should not be hard failures. `ct`, `nm`, `tx`
+These should not be hard failures. `ct`, `nm`
 
 **Fix in progress:** Branch `fix/scrape-no-new-data` updates `action.yml` to treat a non-zero
 scraper exit code as a soft failure when fallback data is available. The workflow yml files in
-`ct-legislation`, `nm-legislation`, and `tx-legislation` repos have been temporarily pointed
+`ct-legislation` and `nm-legislation` repos have been temporarily pointed
 to `chihacknight/govbot/actions/scrape@fix/scrape-no-new-data` for testing.
 
-⚠️ **TODO on merge to main:** Update those 3 state repos back to `@main`:
+⚠️ **TODO on merge to main:** Update those 2 state repos back to `@main`:
 - `govbot-openstates-scrapers/ct-legislation` — `.github/workflows/*.yml`
 - `govbot-openstates-scrapers/nm-legislation` — `.github/workflows/*.yml`
+
+### F — Active Scraper Blocking (state is deliberately preventing automated access to public data)
+`tx`
+
+Texas returns `ConnectionRefusedError [Errno 111]` — the server is actively refusing TCP
+connections from GitHub Actions IP ranges before any HTTP request is even made. This is not
+an out-of-session issue: the Texas legislature actively meets and produces data, but access
+is being blocked. This is a transparency problem and a priority to fix.
+
+Unlike a timeout or a site being down, connection refused is an intentional firewall-level
+decision. The `fix/scrape-no-new-data` branch will prevent daily hard failures for TX by
+falling back to prior data, but that is a stopgap — TX data will go stale without a real fix.
+
+**Options to investigate:**
+- Route TX scrapes through a non-GitHub-Actions IP (self-hosted runner, proxy, or VPS)
+- Check if OpenStates has an alternative data source for TX that doesn't hit capitol.texas.gov directly
+- Monitor whether other civic tech orgs (e.g., Plural Policy, LegiScan) have TX data available
+
+⚠️ **TODO on merge to main:** Update tx-legislation back to `@main`:
 - `govbot-openstates-scrapers/tx-legislation` — `.github/workflows/*.yml`
 
 ### B — Government Site Structure Changed (need OpenStates scraper fixes)
