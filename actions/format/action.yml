@@ -59,13 +59,56 @@ runs:
 
         echo "✅ Scrape data ready"
 
+    - name: Check for new scraper data
+      id: check-new-data
+      shell: bash
+      run: |
+        set -euo pipefail
+        STATE="${{ inputs.state }}"
+
+        # Get the last commit SHA that touched _data/{state}/ in the scraper repo
+        SCRAPER_DATA_SHA=$(git -C scraper-data log -1 --format="%H" -- "_data/${STATE}/" 2>/dev/null || echo "")
+
+        if [ -z "$SCRAPER_DATA_SHA" ]; then
+          echo "⚠️ Could not determine scraper data SHA, proceeding anyway"
+          echo "data-is-new=true" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        echo "🔍 Scraper data SHA: ${SCRAPER_DATA_SHA:0:8}"
+
+        # Force update bypasses the staleness check
+        if [ "${{ inputs.force-update }}" = "true" ]; then
+          echo "⚡ Force update — skipping staleness check"
+          echo "SCRAPER_DATA_SHA=${SCRAPER_DATA_SHA}" >> "$GITHUB_ENV"
+          echo "data-is-new=true" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        MARKER_FILE="${{ github.workspace }}/.windycivi/last-processed-sha"
+        LAST_PROCESSED_SHA=$(cat "$MARKER_FILE" 2>/dev/null || echo "")
+
+        if [ -n "$LAST_PROCESSED_SHA" ] && [ "$SCRAPER_DATA_SHA" = "$LAST_PROCESSED_SHA" ]; then
+          echo "ℹ️ Scraper data unchanged (${SCRAPER_DATA_SHA:0:8}) — nothing to format"
+          echo "## 📊 Format Summary for ${STATE}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "ℹ️ **No new scraper data** — skipped (SHA unchanged)." >> "$GITHUB_STEP_SUMMARY"
+          echo "data-is-new=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "✅ New scraper data (${SCRAPER_DATA_SHA:0:8})"
+          echo "SCRAPER_DATA_SHA=${SCRAPER_DATA_SHA}" >> "$GITHUB_ENV"
+          echo "data-is-new=true" >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Ensure jq present
+      if: steps.check-new-data.outputs.data-is-new == 'true'
       shell: bash
       run: |
         set -euo pipefail
         command -v jq >/dev/null 2>&1 || sudo apt-get update && sudo apt-get install -y jq
 
     - name: Install formatter deps (pipenv)
+      if: steps.check-new-data.outputs.data-is-new == 'true'
       shell: bash
       working-directory: ${{ github.action_path }}
       env:
@@ -97,6 +140,7 @@ runs:
         pipenv install --deploy --dev --python "$(which python)"
 
     - name: Run formatter
+      if: steps.check-new-data.outputs.data-is-new == 'true'
       shell: bash
       working-directory: ${{ github.action_path }}
       env:
@@ -139,6 +183,7 @@ runs:
         echo "✅ **Status:** Complete" >> $GITHUB_STEP_SUMMARY
 
     - name: Create session-level log symlinks
+      if: steps.check-new-data.outputs.data-is-new == 'true'
       shell: bash
       working-directory: ${{ github.action_path }}
       run: |
@@ -217,6 +262,7 @@ runs:
         fi
 
     - name: Generate DCAT data.json
+      if: steps.check-new-data.outputs.data-is-new == 'true'
       shell: bash
       working-directory: ${{ github.action_path }}
       run: |
@@ -239,17 +285,25 @@ runs:
         echo "✅ DCAT data.json generated at ${{ github.workspace }}/data.json"
 
     - name: Clean ephemeral build dirs
+      if: steps.check-new-data.outputs.data-is-new == 'true'
       shell: bash
       run: |
         set -euo pipefail
         rm -rf bill_session_mapping sessions || true
 
     - name: Commit & push to caller repo
+      if: steps.check-new-data.outputs.data-is-new == 'true'
       shell: bash
       run: |
         set -euo pipefail
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
+
+        # Record which scraper commit we just processed so future runs can skip if unchanged
+        if [ -n "${SCRAPER_DATA_SHA:-}" ]; then
+          mkdir -p ".windycivi"
+          echo "$SCRAPER_DATA_SHA" > ".windycivi/last-processed-sha"
+        fi
 
         # Commit the actual deliverables: legislative data, pipeline metadata, and DCAT catalog
         # Add files only if they exist (suppress errors for missing paths)
