@@ -62,6 +62,12 @@ locales:
     template: openstates-to-ocd-files
     toolkit_branch: main
     name: Connecticut
+  dc:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: District of Columbia
   de:
     disabled_jobs:
       - extract-text
