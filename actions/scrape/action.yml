@@ -292,15 +292,23 @@ runs:
         set -euo pipefail
 
         SUMMARY_FILE="${GITHUB_WORKSPACE}/scrape-summary.json"
+        TARBALL="${GITHUB_WORKSPACE}/scrape-snapshot-nightly.tgz"
 
         # Check if scrape failed by reading exit code from summary
         if [ -f "$SUMMARY_FILE" ]; then
           EXIT_CODE=$(jq -r '.exit_code // 0' "$SUMMARY_FILE")
 
           if [ "$EXIT_CODE" != "0" ]; then
-            echo "❌ Scrape failed with exit code $EXIT_CODE"
-            echo "::error::Scrape failed for ${{ inputs.state }}. Check the summary above for details."
-            exit 1
+            # If a tarball is available (fresh or fallback), treat as a soft failure.
+            # This covers out-of-session states where the scraper finds 0 results
+            # but there is valid prior data to hand off to the formatter.
+            if [ -f "$TARBALL" ]; then
+              echo "⚠️ Scrape exited non-zero ($EXIT_CODE) but fallback data is available — continuing"
+            else
+              echo "❌ Scrape failed with exit code $EXIT_CODE and no data available"
+              echo "::error::Scrape failed for ${{ inputs.state }}. Check the summary above for details."
+              exit 1
+            fi
           else
             echo "✅ Scrape succeeded"
           fi
