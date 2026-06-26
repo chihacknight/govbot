@@ -3,7 +3,7 @@ template_markers:
   open: "✏️{"
   close: "}✏️"
 org:
-  username: chn-openstates-files
+  username: govbot-data
 templates:
   openstates-to-ocd-files:
     folder-name: ✏️{ locale.key }✏️-legislation
