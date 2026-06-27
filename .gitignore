@@ -54,6 +54,7 @@ sample_data/*
 project_docs/*
 WORKFLOW_PREFERENCES.md
 actions/scrape/session-notes-*.md
+actions/scrape/combined-status-*.md
 
 # Temporary files
 *.tmp

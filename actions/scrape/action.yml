@@ -223,7 +223,12 @@ runs:
           STATUS="❌ Failed"
         fi
 
-        # Read parsed data from summary JSON if available
+        # failure_type and exit_code come from GITHUB_ENV (set by scrape.sh directly)
+        # so they are always available even if the summary JSON path doesn't resolve.
+        FAILURE_TYPE="${SCRAPE_FAILURE_TYPE:-NONE}"
+        IS_ACTIVE_BLOCK="${SCRAPE_IS_ACTIVE_BLOCK:-false}"
+
+        # Read counts/duration from summary JSON if available
         if [ -f "$SUMMARY_FILE" ]; then
           # Main data objects
           BILL_COUNT=$(jq -r '.objects.bill // 0' "$SUMMARY_FILE")
@@ -236,8 +241,6 @@ runs:
           DURATION=$(jq -r '.duration // "unknown"' "$SUMMARY_FILE")
           ERROR_COUNT=$(jq -r '.error_count // 0' "$SUMMARY_FILE")
           ERRORS=$(jq -r '.errors | if length > 0 then .[] else empty end' "$SUMMARY_FILE" 2>/dev/null || echo "")
-          FAILURE_TYPE=$(jq -r '.failure_type // "NONE"' "$SUMMARY_FILE")
-          IS_ACTIVE_BLOCK=$(jq -r '.is_active_block // false' "$SUMMARY_FILE")
         else
           BILL_COUNT="N/A"
           VOTE_EVENT_COUNT="N/A"
@@ -247,8 +250,6 @@ runs:
           DURATION="N/A"
           ERROR_COUNT=0
           ERRORS=""
-          FAILURE_TYPE="NONE"
-          IS_ACTIVE_BLOCK="false"
         fi
 
         # Calculate metadata total
@@ -317,9 +318,9 @@ runs:
           exit 0
         fi
 
-        EXIT_CODE=$(jq -r '.exit_code // 0' "$SUMMARY_FILE")
-        FAILURE_TYPE=$(jq -r '.failure_type // "UNKNOWN"' "$SUMMARY_FILE")
-        IS_ACTIVE_BLOCK=$(jq -r '.is_active_block // false' "$SUMMARY_FILE")
+        EXIT_CODE="${SCRAPE_EXIT_CODE:-$(jq -r '.exit_code // 0' "$SUMMARY_FILE" 2>/dev/null || echo "0")}"
+        FAILURE_TYPE="${SCRAPE_FAILURE_TYPE:-$(jq -r '.failure_type // "UNKNOWN"' "$SUMMARY_FILE" 2>/dev/null || echo "UNKNOWN")}"
+        IS_ACTIVE_BLOCK="${SCRAPE_IS_ACTIVE_BLOCK:-$(jq -r '.is_active_block // false' "$SUMMARY_FILE" 2>/dev/null || echo "false")}"
 
         if [ "$EXIT_CODE" = "0" ]; then
           echo "✅ Scrape succeeded (failure_type: $FAILURE_TYPE)"

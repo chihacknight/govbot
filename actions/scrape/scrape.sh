@@ -256,5 +256,12 @@ EOF
 
 echo "📊 Scrape summary written to $SUMMARY_FILE"
 
+# Export to GITHUB_ENV so downstream steps can read these without re-parsing the JSON file
+if [ -n "${GITHUB_ENV:-}" ]; then
+  echo "SCRAPE_FAILURE_TYPE=${FAILURE_TYPE}" >> "$GITHUB_ENV"
+  echo "SCRAPE_IS_ACTIVE_BLOCK=${IS_ACTIVE_BLOCK}" >> "$GITHUB_ENV"
+  echo "SCRAPE_EXIT_CODE=${exit_code}" >> "$GITHUB_ENV"
+fi
+
 exit $exit_code
 
