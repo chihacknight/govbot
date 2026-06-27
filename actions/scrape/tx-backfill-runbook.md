@@ -134,6 +134,14 @@ gh auth refresh -h github.com -s delete_repo
 gh repo delete govbot-openstates-scrapers/openstates-scrapers --yes
 ```
 
+## Session history
+
+| Session | Name | Bills scraped | Date | Notes |
+|---------|------|--------------|------|-------|
+| 89R | 89th Legislature, Regular Session (2025) | 12,195 | 2026-06-27 | ~3.5 hr run; job died but Docker kept going — salvaged manually |
+| 891 | 89th Legislature, 1st Called Session (2025) | 592 | 2026-06-27 | ~45 min run; completed cleanly |
+| 892 | 89th Legislature, 2nd Called Session (2025) | 696 | 2026-06-26 | Included in 89R run |
+
 ## Notes
 
 - TX scrapes ONLY work from the self-hosted runner (laptop) due to IP blocking
