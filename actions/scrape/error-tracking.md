@@ -16,9 +16,7 @@ scraper exit code as a soft failure when fallback data is available. The workflo
 `ct-legislation` and `nm-legislation` repos have been temporarily pointed
 to `chihacknight/govbot/actions/scrape@fix/scrape-no-new-data` for testing.
 
-⚠️ **TODO on merge to main:** Update those 2 state repos back to `@main`:
-- `govbot-openstates-scrapers/ct-legislation` — `.github/workflows/*.yml`
-- `govbot-openstates-scrapers/nm-legislation` — `.github/workflows/*.yml`
+✅ All test repos updated back to `@main` on 2026-06-27.
 
 ### F — Active Scraper Blocking (state is deliberately preventing automated access to public data)
 `tx`
@@ -37,8 +35,7 @@ falling back to prior data, but that is a stopgap — TX data will go stale with
 - Check if OpenStates has an alternative data source for TX that doesn't hit capitol.texas.gov directly
 - Monitor whether other civic tech orgs (e.g., Plural Policy, LegiScan) have TX data available
 
-⚠️ **TODO on merge to main:** Update tx-legislation back to `@main`:
-- `govbot-openstates-scrapers/tx-legislation` — `.github/workflows/*.yml`
+✅ tx-legislation updated back to `@main` on 2026-06-27.
 
 ### B — Government Site Structure Changed (need OpenStates scraper fixes)
 The source website changed its HTML/API; the OpenStates scraper is broken until updated upstream.
