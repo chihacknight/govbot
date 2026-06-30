@@ -1,0 +1,79 @@
+name: Check Legislative Sessions
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # Daily at 6:00 AM UTC (1:00 AM Chicago time)
+  workflow_dispatch:
+    inputs:
+      full-reconcile:
+        type: boolean
+        description: "Apply all 56 state repos regardless of changes (Sunday reconciliation)"
+        default: false
+
+jobs:
+  check-sessions:
+    name: "📅 Check OpenStates Session Status"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout govbot
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Determine run mode
+        id: mode
+        run: |
+          # Sunday (0 in date's %w) triggers full reconciliation across all state repos.
+          # On weekdays, apply.py only targets locales whose template actually changed.
+          DOW=$(date -u +%w)
+          if [ "$DOW" = "0" ] || [ "${{ inputs.full-reconcile }}" = "true" ]; then
+            echo "full-reconcile=true" >> $GITHUB_OUTPUT
+            echo "🔁 Full reconciliation mode (Sunday or manual trigger)"
+          else
+            echo "full-reconcile=false" >> $GITHUB_OUTPUT
+            echo "⚡ Targeted mode (weekday — apply only changed locales)"
+          fi
+
+      - name: Check sessions and update config
+        id: check
+        env:
+          OPENSTATES_API_KEY: ${{ secrets.OPENSTATES_API_KEY }}
+        run: |
+          cd actions/pipeline-manager
+          python3 check-sessions.py
+
+      - name: Commit updated config
+        run: |
+          if git diff --quiet actions/pipeline-manager/chn-openstates-scrape.yml; then
+            echo "✅ No config changes to commit"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add actions/pipeline-manager/chn-openstates-scrape.yml
+            git commit -m "chore: update session status from OpenStates API"
+            git push
+          fi
+
+      - name: Apply template changes to state repos
+        env:
+          GH_TOKEN: ${{ secrets.APPLY_TOKEN }}
+        run: |
+          cd actions/pipeline-manager
+          if [ "${{ steps.mode.outputs.full-reconcile }}" = "true" ]; then
+            echo "🌍 Applying all 56 state repos..."
+            python3 apply.py --config chn-openstates-scrape.yml --all-states --no-delete
+          elif [ -n "${{ steps.check.outputs.changed_locales }}" ]; then
+            echo "🎯 Applying changed locales: ${{ steps.check.outputs.changed_locales }}"
+            python3 apply.py --config chn-openstates-scrape.yml --test-states "${{ steps.check.outputs.changed_locales }}" --no-delete
+          else
+            echo "✅ No template changes to apply"
+          fi
