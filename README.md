@@ -5,10 +5,10 @@
 
 # 🏛️ govbot
 
-- Download the legislation of [47 states/jurisdicitions](github.com/govbot-data) in under 1 minute.
-- Tag/summarize bills with with private/local models optimized to run on free Github Actions.
+- Download the legislation of [56 states/jurisdictions](https://github.com/orgs/govbot-data/repositories) in under 1 minute.
+- Tag/summarize bills with private/local models optimized to run on free Github Actions.
 
-`govbot` enables distributed data anaylsis of government updates via a friendly terminal interface. Git repos function as datasets, including the legislation of all 47 states/jurisdictions.
+`govbot` enables distributed data analysis of government updates via a friendly terminal interface. Git repos function as datasets, including the legislation of all 56 states/jurisdictions.
 
 ## Example Projects
 
@@ -61,15 +61,11 @@ govbot --help              # see all commands and options
 
 # 🏛️ Govbot Legislation Data Catalogs
 
-See the data catalogs [here](//github.com/govbot-data).
+Formatted legislation data for all 56 jurisdictions is available at [github.com/govbot-data](https://github.com/orgs/govbot-data/repositories).
 
-- Nearly all state governments
-- Federal
-
-WIP: Ideally, these scripts should be accessible via the following ways.
-
-- CLI / Unix pipe friendliness where possible. CLI is the most portable of solutions.
-- GitHub Actionable if possible
+- All 50 US states
+- Federal (USA)
+- DC, Puerto Rico, Guam, US Virgin Islands, Northern Mariana Islands
 
 ## Contribute
 

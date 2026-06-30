@@ -4,38 +4,19 @@ Track the status of the scrape action across all 57 jurisdictions.
 
 **Statuses:** `✅ OK` | `❌ Broken` | `⚠️ Intermittent` | `⏸️ Unknown`
 
-Last updated: 2026-06-27
+Last updated: 2026-06-30
+
+## Session Pause Automation
+
+Out-of-session states are now automatically paused via `check-sessions.py` (`.github/workflows/check-sessions.yml`). States where the scraper returns no data because the legislature is not in session will have their workflow flipped to `openstates-scrape-paused` (dispatch-only). This runs daily and reconciles all repos every Sunday.
 
 ## Summary of Failures
 
 ### A — Out of Session (scraper finds no data, legislature not meeting)
-These should not be hard failures. `ct`, `nm`
-
-**Fix in progress:** Branch `fix/scrape-no-new-data` updates `action.yml` to treat a non-zero
-scraper exit code as a soft failure when fallback data is available. The workflow yml files in
-`ct-legislation` and `nm-legislation` repos have been temporarily pointed
-to `chihacknight/govbot/actions/scrape@fix/scrape-no-new-data` for testing.
-
-✅ All test repos updated back to `@main` on 2026-06-27.
+These are soft failures — `action.yml` treats a non-zero exit code as a warning when fallback data is available (merged in PR #42). Out-of-session states are automatically paused by the session-check automation above.
 
 ### F — Active Scraper Blocking (state is deliberately preventing automated access to public data)
-`tx`
-
-Texas returns `ConnectionRefusedError [Errno 111]` — the server is actively refusing TCP
-connections from GitHub Actions IP ranges before any HTTP request is even made. This is not
-an out-of-session issue: the Texas legislature actively meets and produces data, but access
-is being blocked. This is a transparency problem and a priority to fix.
-
-Unlike a timeout or a site being down, connection refused is an intentional firewall-level
-decision. The `fix/scrape-no-new-data` branch will prevent daily hard failures for TX by
-falling back to prior data, but that is a stopgap — TX data will go stale without a real fix.
-
-**Options to investigate:**
-- Route TX scrapes through a non-GitHub-Actions IP (self-hosted runner, proxy, or VPS)
-- Check if OpenStates has an alternative data source for TX that doesn't hit capitol.texas.gov directly
-- Monitor whether other civic tech orgs (e.g., Plural Policy, LegiScan) have TX data available
-
-✅ tx-legislation updated back to `@main` on 2026-06-27.
+`tx` — **Resolved.** Texas blocks GitHub Actions IP ranges at the firewall level. Fixed by routing all TX scrapes through a self-hosted runner on Tamara's laptop (`~/actions-runner/`). See `tx-backfill-runbook.md` for backfill procedures.
 
 ### B — Government Site Structure Changed (need OpenStates scraper fixes)
 The source website changed its HTML/API; the OpenStates scraper is broken until updated upstream.
@@ -84,7 +65,7 @@ Files to update: `actions/scrape/action.yml`, `actions/format/action.yml`, `acti
 | California | ca | ✅ OK | | |
 | Colorado | co | ✅ OK | | |
 | Connecticut | ct | ❌ Broken | `ScrapeError: no objects returned from CTBillScraper scrape` | Category A — Legislature likely out of session |
-| District of Columbia | dc | ❌ Broken | `S6_VALIDATION` (or `H3_RATE_LIMITED` intermittently) | Category C — Non-PDF attachments in `leg_details["actions"]` set `mimetype=None`, failing OCD schema validation on `media_type`. Scraper crashes mid-run; bills after the failing record are dropped. DC_API_KEY is working fine. PR submitted to openstates/openstates-scrapers: fix/dc-media-type-null. 2026-06-27 run showed H3_RATE_LIMITED — may have gotten further before dying; validation error is the root cause. |
+| District of Columbia | dc | ✅ OK | | PRs #5706 and #5711 merged — mimetype=None and PDF query string issues both fixed. |
 | Delaware | de | ✅ OK | | |
 | Florida | fl | ✅ OK | | |
 | Georgia | ga | ✅ OK | | |
@@ -110,7 +91,7 @@ Files to update: `actions/scrape/action.yml`, `actions/format/action.yml`, `acti
 | North Dakota | nd | ✅ OK | | |
 | Nebraska | ne | ✅ OK | | |
 | New Hampshire | nh | ❌ Broken | `H3_RATE_LIMITED` (was `ConnectTimeoutError`) | Category D — Session ended 2026-03-14; site returning rate limit errors. Timeout observed previously; may rotate between the two. |
-| New Jersey | nj | ❌ Broken | `KeyError: 'A4029'` | Category B — Bill lookup dict missing expected key; site format changed |
+| New Jersey | nj | ✅ OK | | PR #5707 merged — vote bill_id guard added. |
 | New Mexico | nm | ❌ Broken | `ValueError: ftp://www.nmlegis.gov/other/ contains no matching files` | Category A — NM FTP has no files; likely out of session |
 | Nevada | nv | ✅ OK | | |
 | New York | ny | ✅ OK | | Requires `NEW_YORK_API_KEY` secret (confirmed present). |
@@ -123,7 +104,7 @@ Files to update: `actions/scrape/action.yml`, `actions/format/action.yml`, `acti
 | South Carolina | sc | ✅ OK | | |
 | South Dakota | sd | ✅ OK | | |
 | Tennessee | tn | ❌ Broken | `H4_SERVER_DOWN` (was `IndexError`) | Category B — Session ended 2026-04-15; server returning 503. IndexError (site structure bug) is the real issue to fix when 2027 session opens. |
-| Texas | tx | ❌ Broken | `ConnectionError: capitol.texas.gov connection refused` | Category F — Active IP block; TX rotates between connection refused (N1) and 503 (H4) depending on the run |
+| Texas | tx | ✅ OK | | Self-hosted runner on Tamara's laptop bypasses IP block. Backfill complete (89R, 891, 892). See `tx-backfill-runbook.md`. |
 | USA | usa | ✅ OK | | |
 | Utah | ut | ✅ OK | | |
 | Virginia | va | ❌ Broken | Workflows disabled | Category E — No runs since 2026-04-01; scheduled runs appear disabled. Requires `USER_AGENT` secret (confirmed present). Uses `csv_bills` scraper, not standard bills scraper. |
