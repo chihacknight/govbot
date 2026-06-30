@@ -54,6 +54,9 @@ sample_data/*
 project_docs/*
 WORKFLOW_PREFERENCES.md
 actions/scrape/session-notes-*.md
+actions/scrape/combined-status-*.md
+actions/scrape/session-calendar-*.md
+actions/scrape/2026_Session_Calendar.pdf
 
 # Temporary files
 *.tmp
