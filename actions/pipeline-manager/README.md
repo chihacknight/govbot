@@ -1,56 +1,50 @@
-Tools to manage the potentially 100s or 10s of 1000s of repos inside `windy-civi-pipelines`.
+# Pipeline Manager
 
-## Template System
+Manages all 57 scraper repos and 57 format repos via a declarative config + template system.
 
-This directory includes a template rendering system that generates files for each locale based on a config YAML file. Uses bash and standard tools - no pip installs required!
+## Config files
 
-### Usage
+- `chn-openstates-scrape.yml` — scraper repos (`govbot-openstates-scrapers/{state}-legislation`)
+- `chn-openstates-files.yml` — format repos (`chn-openstates-files/{state}-legislation`)
 
-Render templates for all managed locales:
+## Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `render.py` | Renders templates for all locales into `generated/` |
+| `apply.py` | Pushes generated files to GitHub repos via `gh` CLI |
+| `check-sessions.py` | Queries OpenStates API, flips scraper repos between active and paused templates |
+
+## Templates
+
+Templates live in `templates/` and use `✏️{ variable }✏️` substitution syntax:
+
+- `openstates-scrape/` — active scraper (daily cron at 8 AM UTC)
+- `openstates-scrape-paused/` — paused scraper (workflow_dispatch only, for out-of-session states)
+- `openstates-to-ocd-files/` — format/transform pipeline
+
+## Session management
+
+`check-sessions.py` runs daily via `.github/workflows/check-sessions.yml`. It queries the OpenStates v3 API for each of the 56 jurisdictions and flips `chn-openstates-scrape.yml` between `openstates-scrape` and `openstates-scrape-paused` based on whether a legislative session is currently active.
+
+- **Weekdays**: applies changes only for locales whose template actually changed
+- **Sundays**: applies all 56 repos as a full reconciliation pass
+
+## Common commands
 
 ```bash
-./render.sh [output_directory]
+# Render templates without pushing
+python3 render.py -c chn-openstates-scrape.yml
+
+# Push template changes for specific test states
+python3 apply.py --config chn-openstates-scrape.yml --test-states al,ak,wy
+
+# Push to all 56 scraper repos
+python3 apply.py --config chn-openstates-scrape.yml --all-states --no-delete
+
+# Check session status (dry run — no writes)
+OPENSTATES_API_KEY=your_key python3 check-sessions.py --dry-run
+
+# Check specific states only
+OPENSTATES_API_KEY=your_key python3 check-sessions.py --dry-run --only nc,pa,dc
 ```
-
-By default, rendered files are written to `generated/` directory, organized by locale:
-
-```
-generated/
-  al/
-    workflow.yml
-    ...
-  ak/
-    workflow.yml
-    ...
-```
-
-### Template Variables
-
-In your template files, you can use the following variables:
-
-- **Variables**: `✏️{ variable }✏️` - Replaced with the actual value from the config YAML file
-
-Example:
-
-```yaml
-name: Scrape and Format Data For ✏️{ locale }✏️
-env:
-  STATE_CODE: ✏️{ locale }✏️
-  TOOLKIT_BRANCH: ✏️{ toolkit_branch }✏️
-```
-
-**Note**:
-
-- GitHub Actions syntax like `${{ env.STATE_CODE }}` will be left untouched and work correctly in the rendered output.
-- This is a simple variable substitution system - for complex logic, use shell scripting or other tools.
-
-### Directory Structure
-
-The template system maintains the exact directory structure from `templates/`:
-
-- `templates/workflow.yml.j2` → `generated/{locale}/workflow.yml`
-- `templates/subdir/file.txt.j2` → `generated/{locale}/subdir/file.txt`
-
-### Example
-
-See `templates/openstates-to-ocd-decentralized/workflow.yml.j2` for a complete example template that includes both template variables and GitHub Actions syntax.

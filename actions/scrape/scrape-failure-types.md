@@ -44,22 +44,22 @@ fallback data exists, so stale data doesn't quietly accumulate unnoticed.
 
 ---
 
-## Known State Examples (as of 2026-06-26)
+## Known State Examples (as of 2026-06-30)
 
 | State | Error Type | Notes |
 |---|---|---|
-| tx | `N1` — Active block | `capitol.texas.gov` refusing all connections from GitHub Actions IPs. Priority to fix — TX actively tries to obscure legislative activity. |
-| nh | `N2` — Persistent timeout | `gc.nh.gov` timing out consistently. |
-| wi | `N2` — Transient timeout | `docs.legis.wisconsin.gov` timed out 2026-06-26 only; intermittent. |
-| ct | `S1` — Out of session | `CTBillScraper` returns 0 objects. Legislature not in session. |
-| nm | `S2` — Out of session | NM FTP has no files. Legislature not in session. |
-| az | `S3` — Session config | `AssertionError: Session ID not in bill list`. Scraper session mapping stale. |
-| dc | `S6` — Validation | `ScrapeValueError: validation of Bill failed`. OCD schema mismatch. Requires `DC_API_KEY`. |
-| mp | `S6` — Validation | `ScrapeValueError: validation of Bill failed`. OCD schema mismatch. |
-| hi | `S4` — Site structure | `KeyError: 'Report Title'`. Hawaii site changed structure. |
-| nj | `S4` — Site structure | `KeyError: 'A4029'`. Bill lookup key missing; site format changed. |
-| la | `S5` — Site structure | `ValueError: not enough values to unpack (expected 5, got 4)`. |
-| tn | `S5` — Site structure | `IndexError: list index out of range`. TN site structure changed. |
+| tx | ✅ Resolved | Was `N1` — self-hosted runner on Tamara's laptop bypasses IP block. |
+| nh | `N2` — Persistent timeout | `gc.nh.gov` timing out. Out of session — paused by automation. |
+| wi | `N2` — Transient timeout | `docs.legis.wisconsin.gov` intermittent; not consistent. |
+| ct | `S1` — Out of session | `CTBillScraper` returns 0 objects. Paused by session automation. |
+| nm | `S2` — Out of session | NM FTP has no files. Paused by session automation. |
+| az | `S3` — Session config | `AssertionError: Session ID not in bill list`. Stale session mapping — re-check when 2027 session opens. |
+| dc | ✅ Resolved | Was `S6` — PRs #5706 and #5711 merged upstream. |
+| mp | `S6` — Validation | `ScrapeValueError: validation of Bill failed`. OCD schema mismatch. No session data in OpenStates. |
+| hi | `S4` — Site structure | `KeyError: 'Report Title'`. Hawaii site changed structure. Out of session — paused by automation. |
+| nj | ✅ Resolved | Was `S4` — PR #5707 merged upstream. |
+| la | `S5` — Site structure | `ValueError: not enough values to unpack (expected 5, got 4)`. Out of session — paused by automation. |
+| tn | `S5` — Site structure | `IndexError: list index out of range`. TN site structure changed. Out of session — paused by automation. |
 
 ---
 
@@ -81,4 +81,4 @@ S3, S4, S5, S6  →  SCRAPER BROKEN — warn; use stale fallback; needs upstream
 - [x] Encode `failure_type` and `is_active_block` fields in `scrape-summary.json` — done in `scrape.sh`
 - [x] Surface stale-data age in GitHub Actions summary when fallback is used — done in `action.yml`
 - [x] For active blocks (N1, N3, N4, H1): post a visible `::error::` annotation even when fallback succeeds — done in `action.yml`
-- [ ] Investigate TX specifically — route scrape through non-GitHub-Actions IP to confirm IP block vs. all-traffic block
+- [x] Investigate TX specifically — confirmed GitHub Actions IP block; resolved via self-hosted runner
