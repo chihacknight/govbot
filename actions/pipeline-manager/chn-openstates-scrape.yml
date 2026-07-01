@@ -1,17 +1,16 @@
-# yaml-language-server: $schema=./config.schema.json
 template_markers:
-  open: "✏️{"
-  close: "}✏️"
+  open: ✏️{
+  close: '}✏️'
 org:
   username: govbot-openstates-scrapers
 templates:
   openstates-scrape:
     folder-name: ✏️{ locale.key }✏️-legislation
     fully_override_dirs:
-      - .github
+    - .github
 locales:
   al:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Alabama
     toolkit_branch: main
   ak:
@@ -19,7 +18,7 @@ locales:
     name: Alaska
     toolkit_branch: main
   az:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Arizona
     toolkit_branch: main
   ar:
@@ -27,17 +26,17 @@ locales:
     name: Arkansas
     toolkit_branch: main
     labels:
-      - working
+    - working
   ca:
     template: openstates-scrape
     name: California
     toolkit_branch: main
   co:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Colorado
     toolkit_branch: main
   ct:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Connecticut
     toolkit_branch: main
   dc:
@@ -45,39 +44,39 @@ locales:
     name: District of Columbia
     toolkit_branch: main
   de:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Delaware
     toolkit_branch: main
     labels:
-      - working
+    - working
   fl:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Florida
     toolkit_branch: main
     labels:
-      - working
+    - working
   ga:
     template: openstates-scrape
     name: Georgia
     toolkit_branch: main
     labels:
-      - working
+    - working
   hi:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Hawaii
     toolkit_branch: main
   id:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Idaho
     toolkit_branch: main
   il:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Illinois
     toolkit_branch: main
     labels:
-      - working
+    - working
   in:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Indiana
     toolkit_branch: main
   ia:
@@ -85,31 +84,31 @@ locales:
     name: Iowa
     toolkit_branch: main
     labels:
-      - working
+    - working
   ks:
     template: openstates-scrape
     name: Kansas
     toolkit_branch: main
     labels:
-      - working
+    - working
   ky:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Kentucky
     toolkit_branch: main
     labels:
-      - working
+    - working
   la:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Louisiana
     toolkit_branch: main
     labels:
-      - working
+    - working
   me:
     template: openstates-scrape
     name: Maine
     toolkit_branch: main
   md:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Maryland
     toolkit_branch: main
   ma:
@@ -121,57 +120,57 @@ locales:
     name: Michigan
     toolkit_branch: main
   mn:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Minnesota
     toolkit_branch: main
     labels:
-      - working
+    - working
   ms:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Mississippi
     toolkit_branch: main
   mo:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Missouri
     toolkit_branch: main
     labels:
-      - working
+    - working
   mt:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Montana
     toolkit_branch: main
     labels:
-      - working
+    - working
   ne:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Nebraska
     toolkit_branch: main
     labels:
-      - working
+    - working
   nv:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Nevada
     toolkit_branch: main
     labels:
-      - working
+    - working
   nh:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: New Hampshire
     toolkit_branch: main
     labels:
-      - working
+    - working
   nj:
     template: openstates-scrape
     name: New Jersey
     toolkit_branch: main
     labels:
-      - working
+    - working
   nm:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: New Mexico
     toolkit_branch: main
     labels:
-      - working
+    - working
   ny:
     template: openstates-scrape
     name: New York
@@ -181,130 +180,130 @@ locales:
     name: North Carolina
     toolkit_branch: main
     labels:
-      - working
+    - working
   nd:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: North Dakota
     toolkit_branch: main
     labels:
-      - working
+    - working
   oh:
     template: openstates-scrape
     name: Ohio
     toolkit_branch: main
   ok:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Oklahoma
     toolkit_branch: main
     labels:
-      - working
+    - working
   or:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Oregon
     toolkit_branch: main
     labels:
-      - working
+    - working
   pa:
     template: openstates-scrape
     name: Pennsylvania
     toolkit_branch: main
     labels:
-      - working
+    - working
   ri:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Rhode Island
     toolkit_branch: main
     labels:
-      - working
+    - working
   sc:
     template: openstates-scrape
     name: South Carolina
     toolkit_branch: main
     labels:
-      - working
+    - working
   sd:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: South Dakota
     toolkit_branch: main
   tn:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Tennessee
     toolkit_branch: main
     labels:
-      - working
+    - working
   tx:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Texas
     toolkit_branch: main
     labels:
-      - working
+    - working
   ut:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Utah
     toolkit_branch: main
     labels:
-      - working
+    - working
   vt:
     template: openstates-scrape
     name: Vermont
     toolkit_branch: main
     labels:
-      - working
+    - working
   va:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Virginia
     toolkit_branch: main
   wa:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Washington
     toolkit_branch: main
     labels:
-      - working
+    - working
   wv:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: West Virginia
     toolkit_branch: main
     labels:
-      - working
+    - working
   wi:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Wisconsin
     toolkit_branch: main
     labels:
-      - working
+    - working
   wy:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Wyoming
     toolkit_branch: main
     labels:
-      - working
+    - working
   pr:
     template: openstates-scrape
     name: Puerto Rico
     toolkit_branch: main
     labels:
-      - working
+    - working
   mp:
     template: openstates-scrape
     name: Northern Mariana Islands
     toolkit_branch: main
     labels:
-      - working
+    - working
   vi:
     template: openstates-scrape
     name: U.S. Virgin Islands
     toolkit_branch: main
     labels:
-      - working
+    - working
   gu:
     template: openstates-scrape
     name: Guam
     toolkit_branch: main
     labels:
-      - working
+    - working
   usa:
     template: openstates-scrape
     name: United States
     toolkit_branch: main
     labels:
-      - working
+    - working
