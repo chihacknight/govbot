@@ -64,6 +64,11 @@ jobs:
             git push
           fi
 
+      - name: Configure git authentication
+        env:
+          GH_TOKEN: ${{ secrets.APPLY_TOKEN }}
+        run: gh auth setup-git
+
       - name: Apply template changes to state repos
         env:
           GH_TOKEN: ${{ secrets.APPLY_TOKEN }}

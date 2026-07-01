@@ -258,17 +258,12 @@ def create_repo(
                     check=True,
                 )
 
-            # Try to push to main, fallback to master if needed
+            # Push to main
             try:
                 run_shell(f"cd '{repo_dir}' && git push origin main", check=True)
             except subprocess.CalledProcessError:
-                # Try master branch
-                try:
-                    run_shell(f"cd '{repo_dir}' && git push origin master", check=True)
-                except subprocess.CalledProcessError:
-                    # Create and push to main
-                    run_shell(f"cd '{repo_dir}' && git branch -M main", check=True)
-                    run_shell(f"cd '{repo_dir}' && git push -u origin main", check=True)
+                run_shell(f"cd '{repo_dir}' && git branch -M main", check=True)
+                run_shell(f"cd '{repo_dir}' && git push -u origin main", check=True)
 
             print(f"     ✅ Created and initialized repository")
             return True
@@ -464,11 +459,7 @@ def update_repo(
             check=True,
         )
 
-        # Try main branch first, fallback to master
-        try:
-            run_shell(f"cd '{repo_dir}' && git push origin main", check=True)
-        except subprocess.CalledProcessError:
-            run_shell(f"cd '{repo_dir}' && git push origin master", check=True)
+        run_shell(f"cd '{repo_dir}' && git push origin main", check=True)
 
         print(f"     ✅ Updated repository")
         return True
