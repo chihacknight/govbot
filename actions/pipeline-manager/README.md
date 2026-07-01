@@ -5,7 +5,7 @@ Manages all 57 scraper repos and 57 format repos via a declarative config + temp
 ## Config files
 
 - `chn-openstates-scrape.yml` — scraper repos (`govbot-openstates-scrapers/{state}-legislation`)
-- `chn-openstates-files.yml` — format repos (`chn-openstates-files/{state}-legislation`)
+- `chn-openstates-files.yml` — format repos (`govbot-data/{state}-legislation`)
 
 ## Scripts
 
