@@ -1,0 +1,67 @@
+# Manual recovery workflow — applies pipeline-manager templates to state repos
+# without re-running the OpenStates API check.
+# Use when apply.py failed mid-run or needs to be re-applied after a config change.
+name: Apply Templates to State Repos
+
+on:
+  workflow_dispatch:
+    inputs:
+      config:
+        type: choice
+        description: "Which config to apply"
+        required: true
+        default: scrape
+        options:
+          - scrape
+          - files
+          - both
+      states:
+        type: string
+        description: "Comma-separated states to apply (leave blank for all)"
+        required: false
+        default: ""
+
+jobs:
+  apply:
+    name: "🚀 Apply Templates"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout govbot
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Apply scrape templates
+        if: inputs.config == 'scrape' || inputs.config == 'both'
+        env:
+          GH_TOKEN: ${{ secrets.APPLY_TOKEN }}
+        run: |
+          cd actions/pipeline-manager
+          if [ -n "${{ inputs.states }}" ]; then
+            echo "🎯 Applying scrape templates for: ${{ inputs.states }}"
+            python3 apply.py --config chn-openstates-scrape.yml --test-states "${{ inputs.states }}" --no-delete
+          else
+            echo "🌍 Applying scrape templates for all states..."
+            python3 apply.py --config chn-openstates-scrape.yml --all-states --no-delete
+          fi
+
+      - name: Apply files templates
+        if: inputs.config == 'files' || inputs.config == 'both'
+        env:
+          GH_TOKEN: ${{ secrets.APPLY_TOKEN }}
+        run: |
+          cd actions/pipeline-manager
+          if [ -n "${{ inputs.states }}" ]; then
+            echo "🎯 Applying files templates for: ${{ inputs.states }}"
+            python3 apply.py --config chn-openstates-files.yml --test-states "${{ inputs.states }}" --no-delete
+          else
+            echo "🌍 Applying files templates for all states..."
+            python3 apply.py --config chn-openstates-files.yml --all-states --no-delete
+          fi
