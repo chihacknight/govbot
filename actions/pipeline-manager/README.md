@@ -5,7 +5,7 @@ Manages all 57 scraper repos and 57 format repos via a declarative config + temp
 ## Config files
 
 - `chn-openstates-scrape.yml` — scraper repos (`govbot-openstates-scrapers/{state}-legislation`)
-- `chn-openstates-files.yml` — format repos (`chn-openstates-files/{state}-legislation`)
+- `chn-openstates-files.yml` — format repos (`govbot-data/{state}-legislation`)
 
 ## Scripts
 
@@ -48,3 +48,17 @@ OPENSTATES_API_KEY=your_key python3 check-sessions.py --dry-run
 # Check specific states only
 OPENSTATES_API_KEY=your_key python3 check-sessions.py --dry-run --only nc,pa,dc
 ```
+
+## apply.py — Flags reference
+
+| Flag | Description |
+|------|-------------|
+| `-c CONFIG` / `--config CONFIG` | Required. Config file (`chn-openstates-scrape.yml` for scraper repos, `chn-openstates-files.yml` for format/data repos) |
+| `--all-states` | Process all states in the config |
+| `--test-states wy,nv` | Comma-separated list of states to process (no spaces). Default test states: al, ak, de, wy, sd |
+| `--no-delete` | Skip deletion of repos not in config. **Always use this unless you intend to delete repos.** |
+| `--dry-run` | Show what would change without making any changes |
+
+### ⚠️ Watch out for the delete prompt
+
+When running in test mode, apply.py sees only N expected repos vs 56 actual repos and will offer to delete the other 54. **Always pass `--no-delete` when testing on a subset of states.**
