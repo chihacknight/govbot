@@ -21,12 +21,29 @@ from typing import Dict, Set, List, Tuple, Optional
 
 def run_shell(cmd: str, check: bool = True, capture_output: bool = True) -> str:
     """Run a shell command and return the result."""
-    result = subprocess.run(
-        cmd, shell=True, check=check, capture_output=capture_output, text=True
-    )
+    try:
+        result = subprocess.run(
+            cmd, shell=True, check=check, capture_output=capture_output, text=True
+        )
+    except subprocess.CalledProcessError as e:
+        if capture_output and e.stderr and e.stderr.strip():
+            print(f"     stderr: {e.stderr.strip()}", file=sys.stderr)
+        raise
     if capture_output:
         return result.stdout.strip()
     return ""
+
+
+def setup_git_auth():
+    """Configure git to use GH_TOKEN for HTTPS pushes to github.com."""
+    token = os.environ.get("GH_TOKEN")
+    if not token:
+        return
+    subprocess.run(
+        f'git config --global url."https://x-access-token:{token}@github.com/".insteadOf "https://github.com/"',
+        shell=True,
+        check=True,
+    )
 
 
 def check_requirements():
@@ -516,6 +533,7 @@ def main():
 
     # Check requirements
     check_requirements()
+    setup_git_auth()
 
     # Get script directory
     script_dir = Path(__file__).parent
