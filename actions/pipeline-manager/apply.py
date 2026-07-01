@@ -26,8 +26,11 @@ def run_shell(cmd: str, check: bool = True, capture_output: bool = True) -> str:
             cmd, shell=True, check=check, capture_output=capture_output, text=True
         )
     except subprocess.CalledProcessError as e:
-        if capture_output and e.stderr and e.stderr.strip():
-            print(f"     stderr: {e.stderr.strip()}", file=sys.stderr)
+        if capture_output:
+            if e.stdout and e.stdout.strip():
+                print(f"     stdout: {e.stdout.strip()}", file=sys.stderr)
+            if e.stderr and e.stderr.strip():
+                print(f"     stderr: {e.stderr.strip()}", file=sys.stderr)
         raise
     if capture_output:
         return result.stdout.strip()
