@@ -235,6 +235,7 @@ locales:
     template: openstates-scrape-paused
     name: Tennessee
     toolkit_branch: main
+    runner: self-hosted
     labels:
     - working
   tx:
