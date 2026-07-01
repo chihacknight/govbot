@@ -38,6 +38,11 @@ jobs:
       - name: Install dependencies
         run: pip install pyyaml
 
+      - name: Configure git authentication
+        env:
+          GH_TOKEN: ${{ secrets.APPLY_TOKEN }}
+        run: gh auth setup-git
+
       - name: Apply scrape templates
         if: inputs.config == 'scrape' || inputs.config == 'both'
         env:
