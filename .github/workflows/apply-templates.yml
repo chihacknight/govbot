@@ -41,7 +41,8 @@ jobs:
       - name: Configure git authentication
         env:
           GH_TOKEN: ${{ secrets.APPLY_TOKEN }}
-        run: gh auth setup-git
+        run: |
+          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
 
       - name: Apply scrape templates
         if: inputs.config == 'scrape' || inputs.config == 'both'

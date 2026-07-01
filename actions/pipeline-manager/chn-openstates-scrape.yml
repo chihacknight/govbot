@@ -8,6 +8,10 @@ templates:
     folder-name: ✏️{ locale.key }✏️-legislation
     fully_override_dirs:
     - .github
+  openstates-scrape-paused:
+    folder-name: ✏️{ locale.key }✏️-legislation
+    fully_override_dirs:
+    - .github
 locales:
   al:
     template: openstates-scrape-paused
