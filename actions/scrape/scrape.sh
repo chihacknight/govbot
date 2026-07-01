@@ -140,16 +140,16 @@ SUMMARY_FILE="${OUTPUT_DIR}/scrape-summary.json"
 
 # Extract object counts from "object_type: N" patterns
 # Main data objects
-BILL_COUNT=$(grep -oP '^\s*bill:\s*\K\d+' "$SCRAPE_LOG" 2>/dev/null | tail -1 || echo "0")
-VOTE_EVENT_COUNT=$(grep -oP '^\s*vote_event:\s*\K\d+' "$SCRAPE_LOG" 2>/dev/null | tail -1 || echo "0")
-EVENT_COUNT=$(grep -oP '^\s*event:\s*\K\d+' "$SCRAPE_LOG" 2>/dev/null | tail -1 || echo "0")
+BILL_COUNT=$(grep -E '^\s*bill:\s*[0-9]+' "$SCRAPE_LOG" 2>/dev/null | grep -oE '[0-9]+$' | tail -1 || echo "0")
+VOTE_EVENT_COUNT=$(grep -E '^\s*vote_event:\s*[0-9]+' "$SCRAPE_LOG" 2>/dev/null | grep -oE '[0-9]+$' | tail -1 || echo "0")
+EVENT_COUNT=$(grep -E '^\s*event:\s*[0-9]+' "$SCRAPE_LOG" 2>/dev/null | grep -oE '[0-9]+$' | tail -1 || echo "0")
 
 # Metadata objects
-JURISDICTION_COUNT=$(grep -oP '^\s*jurisdiction:\s*\K\d+' "$SCRAPE_LOG" 2>/dev/null | tail -1 || echo "0")
-ORG_COUNT=$(grep -oP '^\s*organization:\s*\K\d+' "$SCRAPE_LOG" 2>/dev/null | tail -1 || echo "0")
+JURISDICTION_COUNT=$(grep -E '^\s*jurisdiction:\s*[0-9]+' "$SCRAPE_LOG" 2>/dev/null | grep -oE '[0-9]+$' | tail -1 || echo "0")
+ORG_COUNT=$(grep -E '^\s*organization:\s*[0-9]+' "$SCRAPE_LOG" 2>/dev/null | grep -oE '[0-9]+$' | tail -1 || echo "0")
 
 # Extract duration from "duration: H:MM:SS" pattern (bills scrape)
-DURATION=$(grep -A2 'bills scrape:' "$SCRAPE_LOG" 2>/dev/null | grep -oP 'duration:\s*\K[\d:\.]+' || echo "unknown")
+DURATION=$(grep -A2 'bills scrape:' "$SCRAPE_LOG" 2>/dev/null | grep -oE 'duration:\s*[0-9:.]+' | grep -oE '[0-9:.]+$' | head -1 || echo "unknown")
 
 # Extract errors - look for Python tracebacks and exceptions
 # First, find traceback blocks (multi-line)
