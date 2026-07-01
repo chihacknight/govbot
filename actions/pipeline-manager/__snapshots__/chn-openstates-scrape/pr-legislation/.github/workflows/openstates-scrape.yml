@@ -17,6 +17,7 @@ jobs:
   scrape:
     name: "🕷️ Scrape Data"
     runs-on: ubuntu-latest
+    timeout-minutes: 720
     permissions:
       contents: write
 

@@ -14,7 +14,8 @@ env:
 jobs:
   scrape:
     name: "🕷️ Scrape Data"
-    runs-on: ubuntu-latest
+    runs-on: ✏️{ locale.runner }✏️
+    timeout-minutes: 720
     permissions:
       contents: write
 

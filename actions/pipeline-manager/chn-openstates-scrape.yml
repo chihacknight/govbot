@@ -57,6 +57,7 @@ locales:
     template: openstates-scrape-paused
     name: Florida
     toolkit_branch: main
+    runner: self-hosted
     labels:
     - working
   ga:
@@ -119,6 +120,7 @@ locales:
     template: openstates-scrape
     name: Massachusetts
     toolkit_branch: main
+    runner: self-hosted
   mi:
     template: openstates-scrape
     name: Michigan

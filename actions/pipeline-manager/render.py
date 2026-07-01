@@ -27,7 +27,7 @@ def run_shell(cmd, check=True, capture_output=True):
     return result
 
 
-def render_template(template_file, output_file, locale, toolkit_branch="main", managed="true", extra_vars=None, marker_open="✏️✏️", marker_close="✏️✏️"):
+def render_template(template_file, output_file, locale, toolkit_branch="main", managed="true", runner="ubuntu-latest", extra_vars=None, marker_open="✏️✏️", marker_close="✏️✏️"):
     """Render a template file using sed for replacements."""
     if extra_vars is None:
         extra_vars = []
@@ -57,6 +57,7 @@ def render_template(template_file, output_file, locale, toolkit_branch="main", m
 
     sed_script = f"sed 's|{raw_open}[[:space:]]*locale\\.key[[:space:]]*{raw_close}|{locale}|g'"
     sed_script += f" | sed 's|{raw_open}[[:space:]]*locale\\.toolkit_branch[[:space:]]*{raw_close}|{toolkit_branch}|g'"
+    sed_script += f" | sed 's|{raw_open}[[:space:]]*locale\\.runner[[:space:]]*{raw_close}|{runner}|g'"
     sed_script += f" | sed 's|{raw_open}[[:space:]]*managed[[:space:]]*{raw_close}|{managed}|g'"
 
     # Add extra variable replacements with locale. prefix
@@ -317,6 +318,9 @@ def process_locale(locale, config_str, templates_dir, output_dir, marker_open, m
     # Extract toolkit_branch
     toolkit_branch = get_config_value(config_str, "toolkit_branch", "main")
 
+    # Extract runner (self-hosted for states that block GitHub-hosted IPs or need longer timeouts)
+    runner = get_config_value(config_str, "runner", "ubuntu-latest")
+
     # Get folder-name from templates config, fallback to locale if not found
     folder_name = locale  # default fallback
     if template in templates and 'folder-name' in templates[template]:
@@ -336,7 +340,7 @@ def process_locale(locale, config_str, templates_dir, output_dir, marker_open, m
     for pair in config_str.split("|"):
         if "=" in pair:
             key, value = pair.split("=", 1)
-            if key not in ("managed", "toolkit_branch", "template", "disabled_jobs"):
+            if key not in ("managed", "toolkit_branch", "runner", "template", "disabled_jobs"):
                 extra_vars.append(f"{key}={value}")
 
     # Find all template files in the specific template directory
@@ -372,6 +376,7 @@ def process_locale(locale, config_str, templates_dir, output_dir, marker_open, m
             locale,
             toolkit_branch,
             managed,
+            runner,
             extra_vars,
             marker_open,
             marker_close
