@@ -1,8 +1,6 @@
-name: OpenStates Scrape for pr
+name: OpenStates Scrape for wy
 
 on:
-  schedule:
-    - cron: "0 8 * * *" # Daily at 8:00 AM UTC (2:00 AM Chicago time)
   workflow_dispatch:
     inputs:
       force-update:
@@ -11,7 +9,7 @@ on:
         default: false
 
 env:
-  STATE_CODE: pr
+  STATE_CODE: wy
 
 jobs:
   scrape:
