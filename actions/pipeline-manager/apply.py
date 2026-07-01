@@ -46,6 +46,14 @@ def setup_git_auth():
     )
 
 
+def get_clone_url(full_repo: str) -> str:
+    """Return an HTTPS clone URL with embedded GH_TOKEN credentials when available."""
+    token = os.environ.get("GH_TOKEN")
+    if token:
+        return f"https://x-access-token:{token}@github.com/{full_repo}.git"
+    return f"https://github.com/{full_repo}.git"
+
+
 def check_requirements():
     """Check if required tools are installed and authenticated."""
     # Check if gh CLI is installed
@@ -236,7 +244,7 @@ def create_repo(
 
         try:
             run_shell(
-                f"gh repo clone '{full_repo}' '{repo_dir}' -- --depth 1 --quiet",
+                f"git clone '{get_clone_url(full_repo)}' '{repo_dir}' --depth 1 --quiet",
                 check=True,
             )
 
@@ -354,7 +362,7 @@ def update_repo(
     try:
         # Clone repo
         run_shell(
-            f"gh repo clone '{full_repo}' '{repo_dir}' -- --depth 1 --quiet", check=True
+            f"git clone '{get_clone_url(full_repo)}' '{repo_dir}' --depth 1 --quiet", check=True
         )
 
         changes_made = False
