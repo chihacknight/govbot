@@ -72,6 +72,7 @@ locales:
     template: openstates-scrape-paused
     name: Hawaii
     toolkit_branch: main
+    runner: self-hosted
   id:
     template: openstates-scrape-paused
     name: Idaho
