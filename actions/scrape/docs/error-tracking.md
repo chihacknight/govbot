@@ -70,7 +70,7 @@ Files to update: `actions/scrape/action.yml`, `actions/format/action.yml`, `acti
 | Florida | fl | ✅ OK | ❌ | | |
 | Georgia | ga | ✅ OK | ❌ | | |
 | Guam | gu | ✅ OK | ❌ | | |
-| Hawaii | hi | ❌ Broken | ❌ | `KeyError: 'Report Title'` | Cloudflare WAF blocks scraper. Maintainer closed [#1383](https://github.com/openstates/issues/issues/1383) — anti-WAF out of scope for OSS. Workaround: use `HTTPS_PROXY` env var. |
+| Hawaii | hi | ✅ OK | ❌ | | Cloudflare WAF blocks GitHub IPs. Self-hosted runner confirmed working 2026-07-02: 6,640 bills + 8,895 vote events in 31 min. |
 | Iowa | ia | ✅ OK | ❌ | | |
 | Idaho | id | ✅ OK | ❌ | | |
 | Illinois | il | ✅ OK | ✅ | | |
@@ -103,11 +103,11 @@ Files to update: `actions/scrape/action.yml`, `actions/format/action.yml`, `acti
 | Rhode Island | ri | ✅ OK | ❌ | | |
 | South Carolina | sc | ✅ OK | ✅ | | |
 | South Dakota | sd | ✅ OK | ✅ | | |
-| Tennessee | tn | ❌ Broken | ❌ | `H4_SERVER_DOWN` (was `IndexError`) | Category B — Session ended 2026-04-15; server returning 503. IndexError (site structure bug) is the real issue to fix when 2027 session opens. |
+| Tennessee | tn | ✅ OK | ❌ | | Self-hosted runner backfill complete 2026-07-02. All bills captured. Out of session until 2027. |
 | Texas | tx | ✅ OK | ✅ | | Self-hosted runner on Tamara's laptop bypasses IP block. Backfill complete (89R, 891, 892). See `tx-backfill-runbook.md`. |
 | USA | usa | ✅ OK | ✅ | | XML format available |
 | Utah | ut | ✅ OK | ✅ | | XML format available |
-| Virginia | va | ❌ Broken | ❌ | `KeyError: ' '` in csv_bills | OpenStates PR [#5717](https://github.com/openstates/openstates-scrapers/pull/5717) ✅ merged. govbot PR [#58](https://github.com/chihacknight/govbot/pull/58) open (session kwarg fix). PR [#5723](https://github.com/openstates/openstates-scrapers/pull/5723) open (chamber KeyError fix). Needs verification run after Docker rebuild. |
+| Virginia | va | ❌ Broken | ❌ | `KeyError: ' '` in csv_bills | PR [#5717](https://github.com/openstates/openstates-scrapers/pull/5717) ✅ merged. govbot PR [#58](https://github.com/chihacknight/govbot/pull/58) ✅ merged. Issue [#1385](https://github.com/openstates/issues/issues/1385) filed + PR [#5723](https://github.com/openstates/openstates-scrapers/pull/5723) open (chamber KeyError fix). Needs verification run after Docker rebuild. |
 | Virgin Islands | vi | ❌ Broken | ❌ | Workflows disabled | Category E — No runs since 2026-04-01; scheduled runs appear disabled |
 | Vermont | vt | ✅ OK | ❌ | | |
 | Washington | wa | ✅ OK | ❌ | | No version links in scraped bills |
