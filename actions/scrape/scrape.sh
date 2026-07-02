@@ -59,36 +59,66 @@ fi
 
 echo "🕷️ Scraping ${STATE} (with retries + DNS override)..."
 exit_code=1
-for i in 1 2 3; do
-  docker pull ${DOCKER_IMAGE} || true
-  # Capture output to log file while still displaying it
-  # Virginia uses csv_bills scraper (no API key needed)
-  if [ "${STATE}" = "va" ]; then
+
+if [ "${STATE}" = "va" ]; then
+  # Virginia uses csv_bills scraper for two sessions; run each independently with retries
+  va_regular_exit=1
+  for i in 1 2 3; do
+    docker pull ${DOCKER_IMAGE} || true
     if docker run \
         --dns 8.8.8.8 --dns 1.1.1.1 \
         -v "$(pwd)/_working/_data":/opt/openstates/openstates/_data \
         -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
         "${DOCKER_ENV_FLAGS[@]+"${DOCKER_ENV_FLAGS[@]}"}" \
         ${DOCKER_IMAGE} \
-        ${STATE} --session=2026 csv_bills --scrape --fastmode 2>&1 | tee -a "$SCRAPE_LOG"
+        ${STATE} csv_bills --scrape session=2026 --fastmode 2>&1 | tee -a "$SCRAPE_LOG"
+    then
+      va_regular_exit=0
+      break
+    fi
+    echo "⚠️ VA 2026 scrape attempt $i failed; sleeping 20s..." | tee -a "$SCRAPE_LOG"
+    sleep 20
+  done
+
+  va_special_exit=1
+  for i in 1 2 3; do
+    docker pull ${DOCKER_IMAGE} || true
+    if docker run \
+        --dns 8.8.8.8 --dns 1.1.1.1 \
+        -v "$(pwd)/_working/_data":/opt/openstates/openstates/_data \
+        -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
+        "${DOCKER_ENV_FLAGS[@]+"${DOCKER_ENV_FLAGS[@]}"}" \
+        ${DOCKER_IMAGE} \
+        ${STATE} csv_bills --scrape session=2026S1 --fastmode 2>&1 | tee -a "$SCRAPE_LOG"
+    then
+      va_special_exit=0
+      break
+    fi
+    echo "⚠️ VA 2026S1 scrape attempt $i failed; sleeping 20s..." | tee -a "$SCRAPE_LOG"
+    sleep 20
+  done
+
+  if [ $va_regular_exit -eq 0 ] && [ $va_special_exit -eq 0 ]; then
+    exit_code=0
+  fi
+else
+  for i in 1 2 3; do
+    docker pull ${DOCKER_IMAGE} || true
+    if docker run \
+        --dns 8.8.8.8 --dns 1.1.1.1 \
+        -v "$(pwd)/_working/_data":/opt/openstates/openstates/_data \
+        -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
+        "${DOCKER_ENV_FLAGS[@]+"${DOCKER_ENV_FLAGS[@]}"}" \
+        ${DOCKER_IMAGE} \
+        ${STATE} bills --scrape --fastmode 2>&1 | tee -a "$SCRAPE_LOG"
     then
       exit_code=0
       break
     fi
-  elif docker run \
-      --dns 8.8.8.8 --dns 1.1.1.1 \
-      -v "$(pwd)/_working/_data":/opt/openstates/openstates/_data \
-      -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
-      "${DOCKER_ENV_FLAGS[@]+"${DOCKER_ENV_FLAGS[@]}"}" \
-      ${DOCKER_IMAGE} \
-      ${STATE} bills --scrape --fastmode 2>&1 | tee -a "$SCRAPE_LOG"
-  then
-    exit_code=0
-    break
-  fi
-  echo "⚠️ scrape attempt $i failed; sleeping 20s..." | tee -a "$SCRAPE_LOG"
-  sleep 20
-done
+    echo "⚠️ scrape attempt $i failed; sleeping 20s..." | tee -a "$SCRAPE_LOG"
+    sleep 20
+  done
+fi
 
 # If anything was scraped, stage a tarball; otherwise fall back later
 JSON_DIR="_working/_data/${STATE}"
