@@ -82,7 +82,7 @@ All other states ran successfully. Notable counts:
 | mp    | 139    |                                             |
 | in    | 47     |                                             |
 | nh    | 437    |                                             |
-| ar    | 4      | Out of session (stale metadata only)        |
+| ar    | 4      | Active special session `2026S1` (May 4–Aug 15). FTP source has 2 bills (SB1, HB1001) but scraper produces 0 with EXIT_CODE=0. Root cause unclear — likely stale scrapelib cache or silent pupa validation failure. Needs Docker-level investigation. |
 | az    | 4      | Out of session — ended Apr 17               |
 | ct    | 4      | Out of session                              |
 | hi    | 4      | Out of session — ended May 8                |
