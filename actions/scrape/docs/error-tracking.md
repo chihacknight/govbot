@@ -56,61 +56,61 @@ Files to update: `actions/scrape/action.yml`, `actions/format/action.yml`, `acti
 
 ## Full Status Table
 
-| Jurisdiction | Code | Status | Error | Notes |
-|---|---|---|---|---|
-| Alaska | ak | ✅ OK | | |
-| Alabama | al | ✅ OK | | |
-| Arkansas | ar | ✅ OK | | |
-| Arizona | az | ❌ Broken | `S3_SESSION_CONFIG` | Category B — Session ended 2026-04-17; scraper asserting on stale session ID. Will need re-check when 2027 session opens. |
-| California | ca | ✅ OK | | |
-| Colorado | co | ✅ OK | | |
-| Connecticut | ct | ❌ Broken | `ScrapeError: no objects returned from CTBillScraper scrape` | Category A — Legislature likely out of session |
-| District of Columbia | dc | ✅ OK | | PRs #5706 and #5711 merged — mimetype=None and PDF query string issues both fixed. |
-| Delaware | de | ✅ OK | | |
-| Florida | fl | ✅ OK | | |
-| Georgia | ga | ✅ OK | | |
-| Guam | gu | ✅ OK | | |
-| Hawaii | hi | ❌ Broken | `KeyError: 'Report Title'` | Category B — Hawaii site changed structure; scraper expects field that no longer exists |
-| Iowa | ia | ✅ OK | | |
-| Idaho | id | ✅ OK | | |
-| Illinois | il | ✅ OK | | |
-| Indiana | in | ✅ OK | | Requires `INDIANA_API_KEY` secret (confirmed present). |
-| Kansas | ks | ✅ OK | | |
-| Kentucky | ky | ✅ OK | | |
-| Louisiana | la | ❌ Broken | `ValueError: not enough values to unpack (expected 5, got 4)` | Category B — Louisiana site changed data format |
-| Massachusetts | ma | ✅ OK | | |
-| Maryland | md | ✅ OK | | |
-| Maine | me | ✅ OK | | |
-| Michigan | mi | ✅ OK | | |
-| Minnesota | mn | ✅ OK | | |
-| Missouri | mo | ✅ OK | | |
-| Northern Mariana Islands | mp | ❌ Broken | `ScrapeValueError: validation of Bill failed` | Category C — OCD validation error on bill data |
-| Mississippi | ms | ✅ OK | | |
-| Montana | mt | ✅ OK | | |
-| North Carolina | nc | ✅ OK | | |
-| North Dakota | nd | ✅ OK | | |
-| Nebraska | ne | ✅ OK | | |
-| New Hampshire | nh | ❌ Broken | `H3_RATE_LIMITED` (was `ConnectTimeoutError`) | Category D — Session ended 2026-03-14; site returning rate limit errors. Timeout observed previously; may rotate between the two. |
-| New Jersey | nj | ✅ OK | | PR #5707 merged — vote bill_id guard added. |
-| New Mexico | nm | ❌ Broken | `ValueError: ftp://www.nmlegis.gov/other/ contains no matching files` | Category A — NM FTP has no files; likely out of session |
-| Nevada | nv | ✅ OK | | |
-| New York | ny | ✅ OK | | Requires `NEW_YORK_API_KEY` secret (confirmed present). |
-| Ohio | oh | ✅ OK | | |
-| Oklahoma | ok | ✅ OK | | |
-| Oregon | or | ✅ OK | | |
-| Pennsylvania | pa | ✅ OK | | |
-| Puerto Rico | pr | ✅ OK | | |
-| Rhode Island | ri | ✅ OK | | |
-| South Carolina | sc | ✅ OK | | |
-| South Dakota | sd | ✅ OK | | |
-| Tennessee | tn | ❌ Broken | `H4_SERVER_DOWN` (was `IndexError`) | Category B — Session ended 2026-04-15; server returning 503. IndexError (site structure bug) is the real issue to fix when 2027 session opens. |
-| Texas | tx | ✅ OK | | Self-hosted runner on Tamara's laptop bypasses IP block. Backfill complete (89R, 891, 892). See `tx-backfill-runbook.md`. |
-| USA | usa | ✅ OK | | |
-| Utah | ut | ✅ OK | | |
-| Virginia | va | ❌ Broken | Workflows disabled | Category E — No runs since 2026-04-01; scheduled runs appear disabled. Requires `USER_AGENT` secret (confirmed present). Uses `csv_bills` scraper, not standard bills scraper. |
-| Virgin Islands | vi | ❌ Broken | Workflows disabled | Category E — No runs since 2026-04-01; scheduled runs appear disabled |
-| Vermont | vt | ✅ OK | | |
-| Washington | wa | ✅ OK | | |
-| Wisconsin | wi | ⚠️ Intermittent | `TimeoutError: docs.legis.wisconsin.gov timed out` | Category D — Failed 2026-06-26 only; OK prior 4 days |
-| West Virginia | wv | ✅ OK | | |
-| Wyoming | wy | ✅ OK | | |
+| Jurisdiction | Code | Status | Machine Readable? | Error | Notes |
+|---|---|---|:-:|---|---|
+| Alaska | ak | ✅ OK | ✅ | | |
+| Alabama | al | ✅ OK | ❌ | | |
+| Arkansas | ar | ✅ OK | ❌ | | |
+| Arizona | az | ❌ Broken | ❌ | `AssertionError: Session ID not in bill list` | Cookie not persisted through `setsession.php` POST — confirmed from home network, not a WAF issue. PR [#5722](https://github.com/openstates/openstates-scrapers/pull/5722) open awaiting review. |
+| California | ca | ✅ OK | ✅ | | |
+| Colorado | co | ✅ OK | ❌ | | |
+| Connecticut | ct | ✅ OK | ❌ | | Azure IPs blocked by `ftp.cga.ct.gov` — confirmed self-hosted runner fix 2026-07-02: 1,283 bills in 17 min. Moved to self-hosted runner. Issue [#1384](https://github.com/openstates/issues/issues/1384) open for awareness. |
+| District of Columbia | dc | ✅ OK | ❌ | | PRs #5706 and #5711 merged — mimetype=None and PDF query string issues both fixed. |
+| Delaware | de | ✅ OK | ✅ | | |
+| Florida | fl | ✅ OK | ❌ | | |
+| Georgia | ga | ✅ OK | ❌ | | |
+| Guam | gu | ✅ OK | ❌ | | |
+| Hawaii | hi | ❌ Broken | ❌ | `KeyError: 'Report Title'` | Cloudflare WAF blocks scraper. Maintainer closed [#1383](https://github.com/openstates/issues/issues/1383) — anti-WAF out of scope for OSS. Workaround: use `HTTPS_PROXY` env var. |
+| Iowa | ia | ✅ OK | ❌ | | |
+| Idaho | id | ✅ OK | ❌ | | |
+| Illinois | il | ✅ OK | ✅ | | |
+| Indiana | in | ✅ OK | ❌ | | Requires `INDIANA_API_KEY` secret (confirmed present). |
+| Kansas | ks | ✅ OK | ✅ | | |
+| Kentucky | ky | ✅ OK | ❌ | | |
+| Louisiana | la | ⚠️ Intermittent | ❌ | ~7 of 525 bills returned | Action table fix merged (PR [#5716](https://github.com/openstates/openstates-scrapers/pull/5716)) but bill search still only returns ~7 results. Issue [#1379](https://github.com/openstates/issues/issues/1379) open — awaiting maintainer response. |
+| Massachusetts | ma | ✅ OK | ❌ | | |
+| Maryland | md | ✅ OK | ❌ | | |
+| Maine | me | ✅ OK | ❌ | | |
+| Michigan | mi | ✅ OK | ✅ | | |
+| Minnesota | mn | ✅ OK | ✅ | | |
+| Missouri | mo | ✅ OK | ❌ | | |
+| Northern Mariana Islands | mp | ❌ Broken | ❌ | `ScrapeValueError: validation of Bill failed` | Category C — OCD validation error on bill data |
+| Mississippi | ms | ✅ OK | ✅ | | |
+| Montana | mt | ✅ OK | ❌ | | No version links in scraped bills |
+| North Carolina | nc | ✅ OK | ❌ | | |
+| North Dakota | nd | ✅ OK | ❌ | | |
+| Nebraska | ne | ✅ OK | ❌ | | |
+| New Hampshire | nh | ❌ Broken | ❌ | `H3_RATE_LIMITED` (was `ConnectTimeoutError`) | Category D — Session ended 2026-03-14; site returning rate limit errors. Timeout observed previously; may rotate between the two. |
+| New Jersey | nj | ✅ OK | ✅ | | PR #5707 merged — vote bill_id guard added. |
+| New Mexico | nm | ❌ Broken | ❌ | `ValueError: ftp://www.nmlegis.gov/other/ contains no matching files` | Category A — NM FTP has no files; likely out of session |
+| Nevada | nv | ✅ OK | ❌ | | |
+| New York | ny | ✅ OK | ✅ | | Requires `NEW_YORK_API_KEY` secret (confirmed present). |
+| Ohio | oh | ✅ OK | ✅ | | |
+| Oklahoma | ok | ✅ OK | ❌ | | |
+| Oregon | or | ✅ OK | ❌ | | |
+| Pennsylvania | pa | ✅ OK | ✅ | | |
+| Puerto Rico | pr | ✅ OK | ✅ | | Word doc format only |
+| Rhode Island | ri | ✅ OK | ❌ | | |
+| South Carolina | sc | ✅ OK | ✅ | | |
+| South Dakota | sd | ✅ OK | ✅ | | |
+| Tennessee | tn | ❌ Broken | ❌ | `H4_SERVER_DOWN` (was `IndexError`) | Category B — Session ended 2026-04-15; server returning 503. IndexError (site structure bug) is the real issue to fix when 2027 session opens. |
+| Texas | tx | ✅ OK | ✅ | | Self-hosted runner on Tamara's laptop bypasses IP block. Backfill complete (89R, 891, 892). See `tx-backfill-runbook.md`. |
+| USA | usa | ✅ OK | ✅ | | XML format available |
+| Utah | ut | ✅ OK | ✅ | | XML format available |
+| Virginia | va | ❌ Broken | ❌ | `KeyError: ' '` in csv_bills | OpenStates PR [#5717](https://github.com/openstates/openstates-scrapers/pull/5717) ✅ merged. govbot PR [#58](https://github.com/chihacknight/govbot/pull/58) open (session kwarg fix). PR [#5723](https://github.com/openstates/openstates-scrapers/pull/5723) open (chamber KeyError fix). Needs verification run after Docker rebuild. |
+| Virgin Islands | vi | ❌ Broken | ❌ | Workflows disabled | Category E — No runs since 2026-04-01; scheduled runs appear disabled |
+| Vermont | vt | ✅ OK | ❌ | | |
+| Washington | wa | ✅ OK | ❌ | | No version links in scraped bills |
+| Wisconsin | wi | ⚠️ Intermittent | ✅ | `TimeoutError: docs.legis.wisconsin.gov timed out` | Category D — Failed 2026-06-26 only; OK prior 4 days |
+| West Virginia | wv | ❌ Broken | ✅ | 39 bills vs expected 2975 | Only House Joint Resolutions returned, regular HB/SB bills missing. PR [#5719](https://github.com/openstates/openstates-scrapers/pull/5719) open — maintainer disputes (gets 2975 locally). Sent scrape log 2026-07-02, awaiting reply. |
+| Wyoming | wy | ✅ OK | ❌ | | |

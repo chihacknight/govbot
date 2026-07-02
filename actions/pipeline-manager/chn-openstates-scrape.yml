@@ -25,6 +25,7 @@ locales:
     template: openstates-scrape-paused
     name: Arizona
     toolkit_branch: main
+    runner: self-hosted
   ar:
     template: openstates-scrape
     name: Arkansas
@@ -43,6 +44,7 @@ locales:
     template: openstates-scrape-paused
     name: Connecticut
     toolkit_branch: main
+    runner: self-hosted
   dc:
     template: openstates-scrape
     name: District of Columbia
