@@ -70,7 +70,7 @@ for i in 1 2 3; do
         -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
         "${DOCKER_ENV_FLAGS[@]+"${DOCKER_ENV_FLAGS[@]}"}" \
         ${DOCKER_IMAGE} \
-        ${STATE} csv_bills --session=2026 --scrape --fastmode 2>&1 | tee -a "$SCRAPE_LOG"
+        ${STATE} --session=2026 csv_bills --scrape --fastmode 2>&1 | tee -a "$SCRAPE_LOG"
     then
       exit_code=0
       break
