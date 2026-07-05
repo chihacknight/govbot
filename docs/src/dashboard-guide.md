@@ -24,6 +24,13 @@ The page reads a single `data.json` produced by
 which scans every `metadata.json` in cloned govbot dataset repos and joins topic
 tags from `govbot tag` output (`tags/*.tag.json`).
 
+On every Pages deploy (and on a daily 8am UTC schedule), the workflow shallow-clones
+every `*-legislation` repo from the
+[govbot-openstates-scrapers](https://github.com/govbot-openstates-scrapers)
+organization and rebuilds `data.json` from all of them, so the published dashboard
+covers every tracked jurisdiction. If that step fails, the deploy falls back to the
+committed sample data rather than breaking the docs site.
+
 The committed sample data is built from the offline mocks
 (`actions/govbot/mocks/.govbot` — Wyoming and Guam), with demo topics derived from
 the keyword definitions in `scripts/dashboard_tags.json` (the same shape as the
@@ -36,7 +43,7 @@ python3 scripts/build_dashboard_data.py \
   --output docs/src/dashboard/data.json
 ```
 
-## Regenerating with real data
+## Regenerating locally with real data
 
 ```bash
 govbot clone all        # clone the dataset repos (~/.govbot/repos)

@@ -119,6 +119,9 @@ def main():
     parser.add_argument("--tags-config", default=None,
                         help="JSON file of keyword tag definitions used when a "
                              "session has no tags/*.tag.json files")
+    parser.add_argument("--source-label", default=None,
+                        help="Human-readable data source shown in the dashboard "
+                             "footer (default: the repos directory path)")
     parser.add_argument("--output", "-o", default="-",
                         help="Output path (default: stdout)")
     args = parser.parse_args()
@@ -161,7 +164,7 @@ def main():
     tag_names = sorted({t for b in bills for t in b["tags"]})
     output = {
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "source": str(repos_dir),
+        "source": args.source_label or str(repos_dir),
         "states": [{"code": code, "name": name} for code, name in states],
         "tags": [{"name": name, "description": tag_descriptions.get(name, "")}
                  for name in tag_names],
