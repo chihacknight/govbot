@@ -62,6 +62,14 @@
   header.top h1 { font-size: 22px; font-weight: 650; margin: 0 0 4px; }
   header.top p  { margin: 0; color: var(--text-secondary); }
   header.top .docs-link { font-size: 13px; }
+  .asof {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 10px; padding: 3px 10px;
+    border: 1px solid var(--border); border-radius: 999px;
+    font-size: 12.5px; color: var(--text-secondary);
+  }
+  .asof .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--series-2); flex: none; }
+  .asof b { color: var(--text-primary); font-weight: 600; }
 
   /* ---------- filter row ---------- */
   .filters {
@@ -198,6 +206,7 @@
     <h1>Legislation Dashboard</h1>
     <p>Bills across states and territories, filterable by jurisdiction, session, chamber, and topic tags.
        <a class="docs-link" href="../index.html">govbot docs</a></p>
+    <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
   </header>
 
   <div class="card" id="loading">
@@ -328,8 +337,21 @@
       if (e.key === "Escape") document.querySelectorAll(".msel.open").forEach((m) => m.classList.remove("open"));
     });
 
+    // "Data as of" badge — generated_at is when this snapshot was built
+    // (the daily deploy re-clones the source repos), so it is the honest
+    // freshness marker for the whole dashboard.
+    const asof = formatAsOf(data.generated_at);
+    if (asof) {
+      $("asof-text").innerHTML = "";
+      $("asof-text").append(document.createTextNode("Data as of "));
+      const b = document.createElement("b");
+      b.textContent = asof;
+      $("asof-text").append(b);
+      $("asof").hidden = false;
+    }
+
     const footer = $("footer");
-    footer.textContent = "Generated " + (data.generated_at || "n/a") + " from " +
+    footer.textContent = "Snapshot built " + (data.generated_at || "n/a") + " from " +
       (data.source || "govbot repos") + ". Regenerate with ";
     const code = document.createElement("code");
     code.textContent = "python3 scripts/build_dashboard_data.py";
@@ -769,6 +791,21 @@
     const [y, m] = key.split("-");
     const names = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     return names[Number(m) - 1] + " " + y;
+  }
+  // ISO "2026-07-05T21:02:28Z" -> "July 5, 2026, 21:02 UTC"; robust to a
+  // bare date or a bad value (falls back to the raw string, then null).
+  function formatAsOf(iso) {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d)) return typeof iso === "string" ? iso : null;
+    const months = ["January","February","March","April","May","June",
+                    "July","August","September","October","November","December"];
+    let s = months[d.getUTCMonth()] + " " + d.getUTCDate() + ", " + d.getUTCFullYear();
+    if (/T\d/.test(iso)) {
+      s += ", " + String(d.getUTCHours()).padStart(2, "0") +
+           ":" + String(d.getUTCMinutes()).padStart(2, "0") + " UTC";
+    }
+    return s;
   }
   function mkSvg(tag, attrs) {
     const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
