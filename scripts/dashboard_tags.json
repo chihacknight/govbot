@@ -1,0 +1,25 @@
+{
+  "description": "Demo keyword tag definitions for the Pages dashboard sample data. Mirrors the shape of the `tags:` section in govbot.yml (keyword-only mode). Real deployments should run `govbot tag` and let build_dashboard_data.py read the resulting tags/*.tag.json files instead.",
+  "tags": {
+    "health care": {
+      "description": "Health care, public health, and insurance coverage",
+      "include_keywords": ["health", "medicaid", "medicare", "insurance", "birthing", "pregnancy", "hospital", "medical"]
+    },
+    "budget & taxes": {
+      "description": "Appropriations, taxation, fees, and public funds",
+      "include_keywords": ["appropriation", "appropriations", "tax", "fees", "revenue", "bonding", "budget", "funds"]
+    },
+    "environment & wildlife": {
+      "description": "Natural resources, wildlife, hunting, fishing, and energy",
+      "include_keywords": ["animal", "animals", "hunting", "fishing", "wildlife", "oil and gas", "snowmobile", "water", "energy", "environment"]
+    },
+    "education": {
+      "description": "Schools, universities, and education policy",
+      "include_keywords": ["education", "school", "schools", "university", "student", "teacher"]
+    },
+    "government operations": {
+      "description": "Permitting, licensing, elections, and agency administration",
+      "include_keywords": ["permit", "permits", "license", "licenses", "registration", "election", "agency", "department"]
+    }
+  }
+}

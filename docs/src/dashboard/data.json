@@ -1,0 +1,362 @@
+{
+ "generated_at": "2026-07-05T18:57:36Z",
+ "source": "actions/govbot/mocks/.govbot/repos",
+ "states": [
+  {
+   "code": "gu",
+   "name": "Guam"
+  },
+  {
+   "code": "wy",
+   "name": "Wyoming"
+  }
+ ],
+ "tags": [
+  {
+   "name": "budget & taxes",
+   "description": "Appropriations, taxation, fees, and public funds"
+  },
+  {
+   "name": "education",
+   "description": "Schools, universities, and education policy"
+  },
+  {
+   "name": "environment & wildlife",
+   "description": "Natural resources, wildlife, hunting, fishing, and energy"
+  },
+  {
+   "name": "government operations",
+   "description": "Permitting, licensing, elections, and agency administration"
+  },
+  {
+   "name": "health care",
+   "description": "Health care, public health, and insurance coverage"
+  }
+ ],
+ "bills": [
+  {
+   "state": "gu",
+   "state_name": "Guam",
+   "session": "38th",
+   "id": "B 1-38",
+   "title": "AN ACT TO AMEND § 26603(d)(5)(B) OF ARTICLE 2, CHAPTER 26, TITLE 11 GUAM CODE ANNOTATED, RELATIVE TO THE ANNUAL APPROPRIATION LEVEL TO THE GUAM CANCER TRUST FUND.",
+   "chamber": "legislature",
+   "classification": [
+    "bill"
+   ],
+   "first_action": null,
+   "latest_action": null,
+   "latest_action_desc": null,
+   "sponsors": [
+    "Telo T. Taitague"
+   ],
+   "url": "https://guamlegislature.gov/bills/",
+   "tags": [
+    "budget & taxes"
+   ]
+  },
+  {
+   "state": "gu",
+   "state_name": "Guam",
+   "session": "38th",
+   "id": "B 10-38",
+   "title": "AN ACT TO ADD NEW §§ 4131 AND 4131.1 TO ARTICLE 1 OF CHAPTER 4, TITLE 4, GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING THE GOVERNMENT OF GUAM PUBLIC SAFETY AND LAW ENFORCEMENT OFFICERS’ LINE OF DUTY DEATH BENEFIT, AND TO REQUIRE THE DEVELOPMENT OF ADMINISTRATIVE RULES AND REGULATIONS.",
+   "chamber": "legislature",
+   "classification": [
+    "bill"
+   ],
+   "first_action": null,
+   "latest_action": null,
+   "latest_action_desc": null,
+   "sponsors": [
+    "Eulogio Shawn Gumataotao"
+   ],
+   "url": "https://guamlegislature.gov/bills/",
+   "tags": []
+  },
+  {
+   "state": "gu",
+   "state_name": "Guam",
+   "session": "38th",
+   "id": "B 100-38",
+   "title": "AN ACT TO AMEND § 1102, CHAPTER 1, DIVISION 1; TO AMEND § 2407(f) OF ARTICLE 4, CHAPTER 2, DIVISION 1; AMEND ARTICLE 1, CHAPTER 12; ADD A NEW § 12101.1 OF ARTICLE 1, CHAPTER 12; ADD A NEW § 80110 (c)(11) TO CHAPTER 80, DIVISION 4; ADD A NEW § 86105 (e) TO CHAPTER 86, ALL OF TITLE 10, GUAM CODE ANNOTATED; ADD A NEW § 3102.1 (t) TO CHAPTER 3; AMEND § 16104.1 TO CHAPTER 16; ADD A NEW § 31108 (h) TO CHAPTER 31, ALL OF TITLE 17, GUAM CODE ANNOTATED; AND TO AMEND § 2102 TO CHAPTER 2, TITLE 7, GUAM CODE ANNOTATED, RELATIVE TO INCREASING AWARENESS OF AND STRENGTHENING EARLY CHILDHOOD DEVELOPMENT BY EXPANDING GUAM’S EARLY CHILD CARE AND EDUCATION SYSTEM.",
+   "chamber": "legislature",
+   "classification": [
+    "bill"
+   ],
+   "first_action": null,
+   "latest_action": null,
+   "latest_action_desc": null,
+   "sponsors": [
+    "Sabina Flores Perez"
+   ],
+   "url": "https://guamlegislature.gov/bills/",
+   "tags": [
+    "education"
+   ]
+  },
+  {
+   "state": "gu",
+   "state_name": "Guam",
+   "session": "38th",
+   "id": "B 11-38",
+   "title": "AN ACT TO AMEND § 26202(a), § 26202(c), § 26202(d), § 26202(e), § 26202(f), § 26202(g), § 26202(h), § 26202(i), AND § 26202(j), ALL OF ARTICLE 2, CHAPTER 26, TITLE 11, GUAM CODE ANNOTATED, RELATIVE TO DELIVERING FINANCIAL RELIEF TO GUAM FAMILIES AND BUSINESSES IN THE FACE OF HIGHER COSTS OF LIVING, BY RESTORING THE BUSINESS PRIVILEGE TAX RATE TO FOUR PERCENT (4%).",
+   "chamber": "legislature",
+   "classification": [
+    "bill"
+   ],
+   "first_action": null,
+   "latest_action": null,
+   "latest_action_desc": null,
+   "sponsors": [
+    "Eulogio Shawn Gumataotao"
+   ],
+   "url": "https://guamlegislature.gov/bills/",
+   "tags": [
+    "budget & taxes"
+   ]
+  },
+  {
+   "state": "gu",
+   "state_name": "Guam",
+   "session": "38th",
+   "id": "B 12-38",
+   "title": "AN ACT TO RESERVE LOT NO. 2417-1-R7, THE FORMER DEPARTMENT OF PUBLIC HEALTH AND SOCIAL SERVICES MAIN BUILDING IN MANGILAO, FOR IMMEDIATE USE BY THE DEPARTMENT OF PUBLIC HEALTH AND SOCIAL SERVICES AND TO AUTHORIZE ITS USE FOR THE GUAM COMMUNITY COLLEGE NURSING PROGRAM.",
+   "chamber": "legislature",
+   "classification": [
+    "bill"
+   ],
+   "first_action": null,
+   "latest_action": null,
+   "latest_action_desc": null,
+   "sponsors": [
+    "Therese M. Terlaje"
+   ],
+   "url": "https://guamlegislature.gov/bills/",
+   "tags": [
+    "government operations",
+    "health care"
+   ]
+  },
+  {
+   "state": "wy",
+   "state_name": "Wyoming",
+   "session": "2025",
+   "id": "HB0001",
+   "title": "General government appropriations-2.",
+   "chamber": "lower",
+   "classification": [
+    "bill"
+   ],
+   "first_action": "2025-01-29",
+   "latest_action": "2025-03-06",
+   "latest_action_desc": "H See Mirror Bill SF0001",
+   "sponsors": [
+    "Appropriations"
+   ],
+   "url": "https://wyoleg.gov/Legislation/2025/HB0001",
+   "tags": [
+    "budget & taxes"
+   ]
+  },
+  {
+   "state": "wy",
+   "state_name": "Wyoming",
+   "session": "2025",
+   "id": "HB0002",
+   "title": "Hunting license application fees increase.",
+   "chamber": "lower",
+   "classification": [
+    "bill"
+   ],
+   "first_action": "2024-12-03",
+   "latest_action": "2025-02-11",
+   "latest_action_desc": "H COW:H Did not consider for COW",
+   "sponsors": [
+    "Travel, Recreation, Wildlife and Cultural Resource"
+   ],
+   "url": "https://wyoleg.gov/Legislation/2025/HB0002",
+   "tags": [
+    "budget & taxes",
+    "environment & wildlife",
+    "government operations"
+   ]
+  },
+  {
+   "state": "wy",
+   "state_name": "Wyoming",
+   "session": "2025",
+   "id": "HB0003",
+   "title": "Animal abuse-predatory animals.",
+   "chamber": "lower",
+   "classification": [
+    "bill"
+   ],
+   "first_action": "2024-12-03",
+   "latest_action": "2025-03-03",
+   "latest_action_desc": "H:Died in Committee Returned Bill Pursuant to HR 5-4",
+   "sponsors": [
+    "Travel, Recreation, Wildlife and Cultural Resource"
+   ],
+   "url": "https://wyoleg.gov/Legislation/2025/HB0003",
+   "tags": [
+    "environment & wildlife"
+   ]
+  },
+  {
+   "state": "wy",
+   "state_name": "Wyoming",
+   "session": "2025",
+   "id": "HB0004",
+   "title": "Snowmobile registration and user fees.",
+   "chamber": "lower",
+   "classification": [
+    "bill"
+   ],
+   "first_action": "2024-12-03",
+   "latest_action": "2025-02-25",
+   "latest_action_desc": "Assigned Chapter Number 38",
+   "sponsors": [
+    "Travel, Recreation, Wildlife and Cultural Resource"
+   ],
+   "url": "https://wyoleg.gov/Legislation/2025/HB0004",
+   "tags": [
+    "budget & taxes",
+    "environment & wildlife",
+    "government operations"
+   ]
+  },
+  {
+   "state": "wy",
+   "state_name": "Wyoming",
+   "session": "2025",
+   "id": "HB0005",
+   "title": "Fishing outfitters and guides-registration of fishing boats.",
+   "chamber": "lower",
+   "classification": [
+    "bill"
+   ],
+   "first_action": "2024-12-03",
+   "latest_action": "2025-02-27",
+   "latest_action_desc": "Assigned Chapter Number 50",
+   "sponsors": [
+    "Travel, Recreation, Wildlife and Cultural Resource"
+   ],
+   "url": "https://wyoleg.gov/Legislation/2025/HB0005",
+   "tags": [
+    "environment & wildlife",
+    "government operations"
+   ]
+  },
+  {
+   "state": "wy",
+   "state_name": "Wyoming",
+   "session": "2026",
+   "id": "HB0002",
+   "title": "Fast Track Permits Act.",
+   "chamber": "lower",
+   "classification": [
+    "bill"
+   ],
+   "first_action": "2025-12-01",
+   "latest_action": "2025-12-01",
+   "latest_action_desc": "Bill Number Assigned",
+   "sponsors": [
+    "Filer",
+    "Geringer",
+    "Love",
+    "Nethercott"
+   ],
+   "url": "https://wyoleg.gov/Legislation/2026/HB0002",
+   "tags": [
+    "government operations"
+   ]
+  },
+  {
+   "state": "wy",
+   "state_name": "Wyoming",
+   "session": "2026",
+   "id": "HB0003",
+   "title": "Wyoming pregnancy centers-autonomy and rights.",
+   "chamber": "lower",
+   "classification": [
+    "bill"
+   ],
+   "first_action": "2025-12-01",
+   "latest_action": "2025-12-01",
+   "latest_action_desc": "Bill Number Assigned",
+   "sponsors": [
+    "Labor, Health and Social Services"
+   ],
+   "url": "https://wyoleg.gov/Legislation/2026/HB0003",
+   "tags": [
+    "health care"
+   ]
+  },
+  {
+   "state": "wy",
+   "state_name": "Wyoming",
+   "session": "2026",
+   "id": "HB0004",
+   "title": "Birthing centers-Medicaid coverage.",
+   "chamber": "lower",
+   "classification": [
+    "bill"
+   ],
+   "first_action": "2025-12-01",
+   "latest_action": "2025-12-01",
+   "latest_action_desc": "Bill Number Assigned",
+   "sponsors": [
+    "Labor, Health and Social Services"
+   ],
+   "url": "https://wyoleg.gov/Legislation/2026/HB0004",
+   "tags": [
+    "health care"
+   ]
+  },
+  {
+   "state": "wy",
+   "state_name": "Wyoming",
+   "session": "2026",
+   "id": "HB0005",
+   "title": "Oil and gas bonding pool-investment and earnings.",
+   "chamber": "lower",
+   "classification": [
+    "bill"
+   ],
+   "first_action": "2025-12-01",
+   "latest_action": "2025-12-01",
+   "latest_action_desc": "Bill Number Assigned",
+   "sponsors": [
+    "Minerals, Business and Economic Development"
+   ],
+   "url": "https://wyoleg.gov/Legislation/2026/HB0005",
+   "tags": [
+    "budget & taxes",
+    "environment & wildlife"
+   ]
+  },
+  {
+   "state": "wy",
+   "state_name": "Wyoming",
+   "session": "2026",
+   "id": "HB0006",
+   "title": "Unemployment insurance coverage-period and reporting.",
+   "chamber": "lower",
+   "classification": [
+    "bill"
+   ],
+   "first_action": "2025-12-01",
+   "latest_action": "2025-12-01",
+   "latest_action_desc": "Bill Number Assigned",
+   "sponsors": [
+    "Labor, Health and Social Services"
+   ],
+   "url": "https://wyoleg.gov/Legislation/2026/HB0006",
+   "tags": [
+    "budget & taxes",
+    "health care"
+   ]
+  }
+ ]
+}
