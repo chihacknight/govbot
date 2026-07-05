@@ -2,6 +2,10 @@
 
 [Introduction](./readme.md)
 
+# Dashboard
+
+- [Legislation Dashboard](./dashboard-guide.md)
+
 # Current Effort
 
 - [2025 - Decentralize](./2025-Decentralize/readme.md)
