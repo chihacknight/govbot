@@ -59,12 +59,16 @@
   .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 20px 48px; }
 
   header.top { margin-bottom: 20px; }
-  header.top h1 { font-size: 22px; font-weight: 650; margin: 0 0 4px; }
+  header.top .title-row {
+    display: flex; align-items: center; gap: 12px;
+    flex-wrap: wrap; margin: 0 0 4px;
+  }
+  header.top h1 { font-size: 22px; font-weight: 650; margin: 0; }
   header.top p  { margin: 0; color: var(--text-secondary); }
   header.top .docs-link { font-size: 13px; }
   .asof {
     display: inline-flex; align-items: center; gap: 6px;
-    margin-top: 10px; padding: 3px 10px;
+    padding: 3px 10px;
     border: 1px solid var(--border); border-radius: 999px;
     font-size: 12.5px; color: var(--text-secondary);
   }
@@ -209,10 +213,12 @@
 <body>
 <div class="wrap">
   <header class="top">
-    <h1>Legislation Dashboard</h1>
+    <div class="title-row">
+      <h1>Legislation Dashboard</h1>
+      <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
+    </div>
     <p>Bills across states and territories, filterable by jurisdiction, session, chamber, and topic tags.
        <a class="docs-link" href="../index.html">govbot docs</a></p>
-    <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
   </header>
 
   <div class="card" id="loading">
