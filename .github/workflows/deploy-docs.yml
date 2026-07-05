@@ -1,4 +1,4 @@
-name: Deploy docs to GitHub Pages
+name: Deploy docs & dashboard to GitHub Pages
 
 on:
   push:
@@ -7,6 +7,9 @@ on:
     paths:
       - "docs/**"
       - ".github/workflows/deploy-docs.yml"
+  schedule:
+    # Refresh dashboard data daily, after the 6am UTC scrapes
+    - cron: "0 8 * * *"
   workflow_dispatch:
 
 permissions:
@@ -28,6 +31,40 @@ jobs:
         uses: peaceiris/actions-mdbook@v2
         with:
           mdbook-version: 'latest'
+
+      # Fetch live legislation data and rebuild the dashboard's data.json
+      # before mdbook runs, so the fresh file is copied into the book.
+      # Failures fall back to the committed sample data instead of
+      # breaking the docs deploy.
+      - name: Build dashboard data from legislation repos
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DATA_ORG: govbot-openstates-scrapers
+        run: |
+          set -uo pipefail
+          mkdir -p /tmp/govbot-data/repos
+          repos=$(gh repo list "$DATA_ORG" --limit 200 --json name --jq '.[].name' | grep -- '-legislation$') || true
+          if [ -z "${repos:-}" ]; then
+            echo "::warning::no *-legislation repos found in $DATA_ORG; keeping committed sample data"
+          else
+            echo "cloning $(echo "$repos" | wc -l) repos from $DATA_ORG"
+            for r in $repos; do
+              git clone --quiet --depth 1 "https://github.com/$DATA_ORG/$r.git" "/tmp/govbot-data/repos/$r" \
+                || echo "::warning::failed to clone $DATA_ORG/$r"
+            done
+            python3 scripts/build_dashboard_data.py \
+              --govbot-dir /tmp/govbot-data \
+              --tags-config scripts/dashboard_tags.json \
+              --source-label "github.com/$DATA_ORG" \
+              --output docs/src/dashboard/data.json \
+              || {
+                echo "::warning::dashboard data build failed; keeping committed sample data"
+                echo "::group::repo layout sample (for debugging)"
+                find /tmp/govbot-data/repos -mindepth 1 -maxdepth 5 -not -path '*/.git*' | sort | head -300 || true
+                echo "::endgroup::"
+              }
+          fi
+          ls -lh docs/src/dashboard/data.json
 
       - name: Build docs
         run: mdbook build docs
