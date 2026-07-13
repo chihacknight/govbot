@@ -219,7 +219,6 @@ runs:
         (cd "$ACTION_DIR" && pipenv run python main.py \
           --state "${{ inputs.state }}" \
           --data-folder "${{ github.workspace }}" \
-          --output-folder "${{ github.workspace }}" \
           --incremental 2>&1) | tee "$EXTRACTION_LOG"
         EXIT_CODE=${PIPESTATUS[0]}
         set -e
@@ -242,6 +241,10 @@ runs:
         SUCCESSFUL=$(echo "$EXTRACTION_OUTPUT" | grep -oP 'Successful: \K\d+' | tail -1 || echo "0")
         ERRORS=$(echo "$EXTRACTION_OUTPUT" | grep -oP 'Errors: \K\d+' | tail -1 || echo "0")
         SKIPPED=$(echo "$EXTRACTION_OUTPUT" | grep -oP 'Skipped \(already processed\): \K\d+' | tail -1 || echo "0")
+        # Bill IDs that failed, printed by main.py under a "Failed bills:" header --
+        # not written anywhere in the repo (see actions/extract/utils/common.py),
+        # so the run summary is the only place these are visible.
+        FAILED_BILLS=$(echo "$EXTRACTION_OUTPUT" | sed -n '/^Failed bills:$/,$p' | tail -n +2)
 
         # Save stats to a file for easy display in caller workflow
         echo "📊 Text Extraction Summary for ${{ inputs.state }}" > "${{ github.workspace }}/.extraction_summary.txt"
@@ -266,6 +269,18 @@ runs:
           echo "| Skipped | $SKIPPED |"
           echo ""
         } >> $GITHUB_STEP_SUMMARY
+
+        if [ -n "$FAILED_BILLS" ]; then
+          {
+            echo "<details><summary>Failed bills ($ERRORS)</summary>"
+            echo ""
+            echo '```'
+            echo "$FAILED_BILLS"
+            echo '```'
+            echo "</details>"
+            echo ""
+          } >> $GITHUB_STEP_SUMMARY
+        fi
 
         if [ $EXIT_CODE -eq 0 ]; then
           echo "✅ **Status:** Complete" >> $GITHUB_STEP_SUMMARY

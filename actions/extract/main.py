@@ -21,19 +21,11 @@ from utils.text_extraction import process_bills_in_batch
     help="Path to the repo root containing bill data (with country:us/ structure).",
 )
 @click.option(
-    "--output-folder",
-    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
-    required=False,
-    help="Path to the calling repo's root folder for error reports (optional).",
-)
-@click.option(
     "--incremental",
     is_flag=True,
     help="Enable incremental processing - only extract text for bills that haven't been processed or have been updated.",
 )
-def main(
-    state: str, data_folder: Path, output_folder: Path = None, incremental: bool = False
-):
+def main(state: str, data_folder: Path, incremental: bool = False):
     """
     Extract text from PDFs and XMLs in processed bill data.
 
@@ -61,7 +53,6 @@ def main(
     try:
         stats = process_bills_in_batch(
             data_folder,
-            output_folder=output_folder,
             state=state,
             incremental=incremental,
         )
@@ -76,6 +67,9 @@ def main(
 
         if stats["errors"] > 0:
             print(f"⚠️ {stats['errors']} bills had errors during processing")
+            print("Failed bills:")
+            for f in stats.get("failed_bills", []):
+                print(f"  - {f['bill_id']} ({f['error_type']}): {f['error_message']}")
             return 1
         else:
             print("✅ All bills processed successfully!")
