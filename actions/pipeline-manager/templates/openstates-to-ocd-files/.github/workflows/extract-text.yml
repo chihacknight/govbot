@@ -19,7 +19,12 @@ concurrency:
 jobs:
   extract-text:
     name: Text Extraction
-    runs-on: ubuntu-latest
+    # Same runner-override mechanism the scrape template already uses (see
+    # openstates-scrape.yml) -- set locales.<code>.runner: self-hosted in
+    # config for states whose bill-text host blocks GitHub-hosted (Azure) IPs,
+    # e.g. MA (malegislature.gov), same reason its scrape step needs it.
+    # Defaults to ubuntu-latest when unset.
+    runs-on: ✏️{ locale.runner }✏️
     timeout-minutes: 355 # ~5.9 hours (close to GitHub's 6-hour limit)
     permissions:
       contents: write
