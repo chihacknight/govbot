@@ -8,6 +8,14 @@ on:
     - cron: "0 8 * * *" # Daily at 8 AM UTC (~3 AM ET, ~12 AM PT)
   workflow_dispatch:
 
+# A run against a large state can take hours. Without this, a scheduled
+# trigger landing mid-run cancels the in-progress run outright ("runner
+# received a shutdown signal") instead of queuing behind it -- discovered
+# live when the daily cron fired on top of an overnight manual run.
+concurrency:
+  group: extract-text
+  cancel-in-progress: false
+
 jobs:
   extract-text:
     name: Text Extraction
