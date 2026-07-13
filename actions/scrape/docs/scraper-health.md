@@ -13,10 +13,12 @@ Tracks the status of all 56 `govbot-openstates-scrapers` repos. Updated manually
 | State | Status               | Notes                                                                                                                                                                                         |
 | ----- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | tx    | ⏸️ out of session    | `capitol.texas.gov` blocks Azure IPs. Runner ready. Resumes ~Jan 2027.                                                                                                                        |
-| ma    | ✅ running daily     | First self-hosted run completed 2026-07-02 in 7h 43m. PR [#53](https://github.com/chihacknight/govbot/pull/53) ✅ merged. Running daily going forward.                                        |
+| ma    | ⚠️ needs runner uptime | First self-hosted run completed 2026-07-02 in 7h 43m. PR [#53](https://github.com/chihacknight/govbot/pull/53) ✅ merged. But 6 straight nightly runs (07-07 → 07-12) show `cancelled` — no runner was online to pick up the schedule. See "MA" under Known Ongoing Issues.                                        |
 | ct    | ✅ confirmed working | Azure IP blocks CT FTP server. Self-hosted run 2026-07-02: 1,283 bills in 17 min. Issue [#1384](https://github.com/openstates/issues/issues/1384) 🔄 following up.                            |
 | fl    | 🔄 backfill running  | End-of-session capture in progress on self-hosted runner. PRs [#53](https://github.com/chihacknight/govbot/pull/53) + [#55](https://github.com/chihacknight/govbot/pull/55) ✅ merged.        |
 | tn    | ✅ backfill complete | 114th GA + 114S1 special session data landed 2026-07-02 (~25,800 raw files, ~9,092 bills in session 114). Self-hosted runner via PR [#56](https://github.com/chihacknight/govbot/pull/56) ✅. |
+| il    | ✅ confirmed working | Two real upstream markup fixes landed (#5721, #5730 — `h5`→`h2` selector changes), but a third "IndexError" crash persisted on GitHub-hosted runners even after both merged. Confirmed 2026-07-13 by running locally: same code, same site, clean run — Azure/GitHub-hosted IPs get served different content that breaks the title xpath on the first bill. Not a scraper bug. `runner: self-hosted` added to pipeline-manager config. |
+| wv    | 🔄 confirmed working, backfill in progress | Same Azure-block pattern as IL/CT/HI/MA/TN — not a scraper bug. See "WV" under Known Ongoing Issues. `runner: self-hosted` added to pipeline-manager config 2026-07-13. **TODO: check final bill count once the local run finishes** — should land near 2,975 (jessemortenson's reported count) / ~2,777 confirmed from a direct fetch of the live bill-list page. |
 
 ### Fix Pending
 
@@ -76,9 +78,37 @@ TN's 114th General Assembly (2025-2026) ended ~2026-04-25. The scraper was block
 
 **Fix applied 2026-07-02**: `runner: self-hosted` added to TN (PR [#56](https://github.com/chihacknight/govbot/pull/56)), apply-templates run, full backfill dispatch triggered. Next session: 115th GA ~January 2027.
 
+### IL — Azure IP Block Masquerading as Site-Structure Break
+
+`ilga.gov` changed its bill-detail markup twice in July, breaking two different xpath selectors in `scrapers/il/bills.py`: the bill title (`h5`→`h2`, fixed upstream in [#5721](https://github.com/openstates/openstates-scrapers/pull/5721), merged 2026-07-02) and the actions table (`h5`→`h2`, fixed in [#5730](https://github.com/openstates/openstates-scrapers/pull/5730), merged 2026-07-10). `openstates/scrapers:latest` was rebuilt automatically after both merges.
+
+Despite that, a manual dispatch on 2026-07-13 still failed with `IndexError: list index out of range` at the same title-xpath line — on the very first bill (`HB1`), before any session-matching logic even runs. GitHub's own annotation classified it as `S5_SITE_STRUCTURE` (pattern-matched on "IndexError").
+
+That diagnosis was wrong. Running the identical scraper code against the identical URL from a home network succeeded cleanly (bills saving one after another, e.g. `save bill HB22 in 104th`). The `h2` xpath matches fine outside CI. This is the same failure shape as CT and HI: GitHub-hosted (Azure) runner IPs get served different/incomplete content by the state site, which then reads as a "site structure changed" parsing error when it's actually IP-based blocking or bot detection.
+
+**Fix**: `runner: self-hosted` added to IL's entry in `actions/pipeline-manager/chn-openstates-scrape.yml` (2026-07-13), matching CT/HI/MA/AZ/TN. No OpenStates PR needed — the upstream code is already correct.
+
+### WV — Azure IP Block, Not a Broken Selector (Our PR Was Wrong)
+
+We filed PR [#5719](https://github.com/openstates/openstates-scrapers/pull/5719) theorizing the bill-listing xpath broke after a site redesign (`bill: 39` vs jessemortenson's reported `bill: 2975`). Maintainer rejected it 2026-07-08: our PR unknowingly reverted his own intentional fix from PR [#5703](https://github.com/openstates/openstates-scrapers/pull/5703) (`//a[contains(@href, 'Bills_history')]` → `//table[@id='results']//tr/td[1]/a`), which had fixed a real accuracy bug (the old broad selector picked up "Incorporated into Com. Sub. for SBxxx" cross-references, not just this chamber's own bills). Reverting it would have made WV's data *worse*, not better — he was not going to merge it, full stop.
+
+To find the real cause, we tested the **current** (post-#5703, already-correct) selector directly against the live site from a home network: `Bills_all_bills.cfm?year=2026&sessiontype=RS&btype=bill&orig=h` returned 1,693 links, `orig=s` returned 1,084 — 2,777 combined, in the neighborhood of jessemortenson's 2,975 (resolutions would close the rest of the gap). The code is correct and works fine outside CI. Confirmed live 2026-07-13 with a local scraper run (bills saving cleanly one after another, e.g. `save bill SB 7 in 2026`).
+
+Same failure shape as IL/CT/HI/MA/TN: GitHub-hosted (Azure) runner IPs get served a near-empty results table by `wvlegislature.gov`, which reads as a "site structure changed" bug when it's actually IP-based blocking. One hint from the maintainer: OpenStates routes WV scrapes through `tinyproxy` on a GCP VM — they may have needed to route around the same problem without framing it that way.
+
+**Fix**: `runner: self-hosted` added to WV's entry in `actions/pipeline-manager/chn-openstates-scrape.yml` (2026-07-13), matching IL/CT/HI/MA/AZ/TN. No new OpenStates PR — the upstream code is already correct; do not resubmit a variant of #5719.
+
+**⏳ TODO**: local backfill run in progress as of 2026-07-13 — check the final bill count once it finishes and confirm it lands near ~2,975 (jessemortenson's number) / ~2,777 (our direct list-page count, pre-resolutions).
+
 ### MA — Active Throttling by malegislature.gov
 
 `malegislature.gov` throttles Azure-originating requests progressively: 36s → 72s → 300s → connection drop. Fixed by moving to self-hosted runner. First successful run 2026-07-02 completed in 7h 43m. Now runs daily on MacBook runner.
+
+**"4 files" scare (2026-07-13), false alarm**: A 9h43m overnight run ([28783093789](https://github.com/govbot-openstates-scrapers/ma-legislation/actions/runs/28783093789), 2026-07-06) looked like it failed with only 4 files pushed. It didn't — it succeeded, scraped 11,026 bills, and pushed a real commit. The "4 files" reading came from the job summary step, which does `⚠️ No summary file found, assuming success` and falls back to a default file count on self-hosted runs — `scrape-summary.json` isn't being found/read the same way it is on GitHub-hosted runners. The step summary is unreliable for self-hosted MA runs; check the actual commit history instead of trusting the Action's summary annotation.
+
+**Real problem found while checking**: every scheduled MA run from 2026-07-07 through 2026-07-12 (six in a row) shows `cancelled`, not `success` or `failure` — the nightly cron queued each day but no self-hosted runner was online to pick it up. The 2026-07-13 run only started because a runner happened to be started manually that day. MA's self-hosted runner needs to be running continuously (or the schedule/runner-uptime needs rethinking) or the nightly cron will keep silently queuing and cancelling instead of actually scraping.
+
+**Extraction is very likely hitting the same Azure-block wall.** `extract-text` for MA currently runs from a GitHub-hosted runner in a separate pilot org (`govbot-test`, e.g. [run 29279441540](https://github.com/govbot-test/ma-legislation/actions/runs/29279441540), using `chihacknight/govbot/actions/extract@feat/session-scoped-repo-lifecycle`) — same site, same IP-blocking problem as the scrape step already has. Needs the same self-hosted-runner treatment; TODO for a follow-up session, tracked in [[project-govbot-state-specific-followups]].
 
 ### FL — Serial Per-Bill Scraping
 

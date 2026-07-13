@@ -81,6 +81,7 @@ locales:
     template: openstates-scrape-paused
     name: Illinois
     toolkit_branch: main
+    runner: self-hosted
     labels:
     - working
   in:
@@ -273,6 +274,7 @@ locales:
     template: openstates-scrape-paused
     name: West Virginia
     toolkit_branch: main
+    runner: self-hosted
     labels:
     - working
   wi:
