@@ -155,10 +155,9 @@ locales:
     toolkit_branch: main
     name: Maryland
   ma:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    # TEMP for pilot testing -- see wy's comment.
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Massachusetts
   mi:
     disabled_jobs:
@@ -330,7 +329,10 @@ locales:
     name: Wisconsin
   wy:
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    # TEMP for pilot testing -- points at the unmerged fix branch so real
+    # extract-text.yml runs can pick up the per-version-skip + Pipfile.lock
+    # fixes before they land on main. Revert to `main` once merged.
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Wyoming
   pr:
     disabled_jobs:
