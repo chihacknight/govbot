@@ -46,10 +46,10 @@ runs:
         pipenv --rm 2>/dev/null || true
         # Verify Python version before creating venv
         python --version
-        pipenv install --deploy --python "$(which python)"
+        pipenv install --deploy --python "$(which python)" -v
         echo "--- DEBUG: post-install venv state ---"
         pipenv --venv || echo "pipenv --venv failed"
-        ls -la "$(pipenv --venv 2>/dev/null)/lib/"*/site-packages 2>&1 | grep -i click || echo "click NOT found in site-packages"
+        pipenv run pip list 2>&1
         pipenv run python -c "import click; print('DEBUG: click importable via pipenv run, at', click.__file__)" || echo "DEBUG: click NOT importable via pipenv run"
 
     - name: Extract Text from PDFs and XMLs
