@@ -16,6 +16,16 @@ inputs:
     description: "Force push even if upstream changed"
     required: false
     default: "false"
+  session:
+    description: >-
+      Expected legislative session identifier for this repo (e.g. "2025-2026").
+      When set, bills/events/votes whose legislative_session doesn't match are
+      routed to .windycivi/errors/wrong_session/ instead of being processed.
+      Leave blank to process any session found in the input (pre-session-sharding
+      behavior). Should match locales.<state>.session in the caller's
+      pipeline-manager config once the repo is session-scoped.
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -148,6 +158,7 @@ runs:
         GIT_REPO_FOLDER: ${{ github.workspace }}
         STATE: ${{ inputs.state }}
         PIPENV_PIPFILE: ${{ github.action_path }}/Pipfile
+        OSDF_EXPECTED_SESSION: ${{ inputs.session }}
       run: |
         set -euo pipefail
         ACTION_DIR="${{ github.action_path }}"
