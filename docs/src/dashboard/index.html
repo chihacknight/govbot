@@ -259,6 +259,11 @@
   td .action-desc { color: var(--text-muted); font-size: 12px; }
   .empty { color: var(--text-muted); padding: 24px; text-align: center; }
   .show-more { margin: 12px auto 0; display: block; }
+  /* The `hidden` attribute must win over the display:block above (author CSS
+     otherwise overrides the UA stylesheet's [hidden]{display:none}), or the
+     "Show more" button stays visible with stale text once a filter narrows
+     the results below one page. */
+  .show-more[hidden] { display: none; }
   .show-more, .show-more:hover { cursor: pointer; }
 
   footer { margin-top: 28px; color: var(--text-muted); font-size: 12.5px; }
@@ -301,7 +306,8 @@
       <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
     </div>
     <p>Bills across states and territories, filterable by jurisdiction, session, chamber, and topic tags.
-       <a class="docs-link" href="../index.html">govbot docs</a></p>
+       <a class="docs-link" href="../index.html">govbot docs</a> ·
+       <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
   </header>
 
   <div class="card" id="loading">
@@ -957,8 +963,25 @@
     if (/T\d/.test(iso)) {
       s += ", " + String(d.getUTCHours()).padStart(2, "0") +
            ":" + String(d.getUTCMinutes()).padStart(2, "0") + " UTC";
+      // Central Time equivalent for this Chicago-based project. Using the
+      // America/Chicago zone (rather than a fixed -6 offset) makes the label
+      // self-correct across daylight saving, so it renders CST or CDT honestly.
+      const central = centralTime(d);
+      if (central) s += " (" + central + ")";
     }
     return s;
+  }
+  // "16:15 CDT" for the given Date in America/Chicago, or null if Intl can't
+  // resolve the zone (very old engines) — the UTC label still stands alone.
+  function centralTime(d) {
+    try {
+      return new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/Chicago", hour: "2-digit", minute: "2-digit",
+        hour12: false, timeZoneName: "short",
+      }).format(d);
+    } catch (e) {
+      return null;
+    }
   }
   function mkSvg(tag, attrs) {
     const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
