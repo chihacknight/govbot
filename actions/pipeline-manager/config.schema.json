@@ -92,6 +92,10 @@
                 "type": "string"
               },
               "description": "Labels for the locale (e.g., 'working')"
+            },
+            "session": {
+              "type": "string",
+              "description": "Identifier for the legislative session this locale's repo currently holds (e.g. '2025-2026', '2026-ss1' for a special session). Set by close_session.py when rotating repos; used to name the archived repo on transfer. Informational only — does not affect the active repo's name."
             }
           },
           "additionalProperties": false

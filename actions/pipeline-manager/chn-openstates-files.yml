@@ -1,4 +1,11 @@
 # yaml-language-server: $schema=./config.schema.json
+#
+# `session` (optional, per-locale): identifier for the legislative session this
+# locale's repo currently holds, e.g. `session: "2025-2026"` or `session: "2026-ss1"`
+# for a special session. Set/updated by close_session.py when rotating a repo to
+# the archive org — see actions/pipeline-manager/close_session.py. Mirrored from
+# chn-openstates-scrape.yml's locale entry for the same state. Not backfilled for
+# existing locales; filled in as each one goes through its first session close.
 template_markers:
   open: "✏️{"
   close: "}✏️"
