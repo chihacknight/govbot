@@ -329,8 +329,6 @@ locales:
     toolkit_branch: main
     name: Wisconsin
   wy:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
     toolkit_branch: main
     name: Wyoming
