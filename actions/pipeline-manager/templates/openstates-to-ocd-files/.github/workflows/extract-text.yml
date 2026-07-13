@@ -13,7 +13,6 @@ jobs:
     name: Text Extraction
     runs-on: ubuntu-latest
     timeout-minutes: 355 # ~5.9 hours (close to GitHub's 6-hour limit)
-    continue-on-error: true # Don't fail workflow on timeout - let restart job handle it
     permissions:
       contents: write
 
