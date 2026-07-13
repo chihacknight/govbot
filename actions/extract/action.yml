@@ -46,11 +46,7 @@ runs:
         pipenv --rm 2>/dev/null || true
         # Verify Python version before creating venv
         python --version
-        pipenv install --deploy --python "$(which python)" -v
-        echo "--- DEBUG: post-install venv state ---"
-        pipenv --venv || echo "pipenv --venv failed"
-        pipenv run pip list 2>&1
-        pipenv run python -c "import click; print('DEBUG: click importable via pipenv run, at', click.__file__)" || echo "DEBUG: click NOT importable via pipenv run"
+        pipenv install --deploy --python "$(which python)"
 
     - name: Extract Text from PDFs and XMLs
       id: extract
@@ -213,10 +209,6 @@ runs:
         # Run text extraction using the colocated main.py
         # Explicitly set Pipfile location for pipenv
         export PIPENV_PIPFILE="$ACTION_DIR/Pipfile"
-        echo "--- DEBUG: pre-run venv state (step 2) ---"
-        echo "ACTION_DIR=$ACTION_DIR"
-        ls -la "$ACTION_DIR/.venv" 2>&1 | head -5 || echo ".venv dir missing"
-        (cd "$ACTION_DIR" && pipenv --venv) || echo "pipenv --venv failed in step 2"
         EXIT_CODE=0
         EXTRACTION_OUTPUT=$(cd "$ACTION_DIR" && pipenv run python main.py \
           --state "${{ inputs.state }}" \
