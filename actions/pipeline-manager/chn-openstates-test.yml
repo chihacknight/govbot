@@ -89,10 +89,9 @@ locales:
     toolkit_branch: main
     name: Florida
   ga:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    # TEMP for pilot testing -- see wy's comment.
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Georgia
   hi:
     disabled_jobs:
