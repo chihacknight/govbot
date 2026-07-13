@@ -38,14 +38,14 @@ def main(state: str, data_folder: Path, incremental: bool = False):
     # Verify the data folder exists and has the expected structure
     if not data_folder.exists():
         print(f"❌ Data folder does not exist: {data_folder}")
-        return 1
+        sys.exit(1)
 
     # Check if we have any bill data
     bill_folders = list(data_folder.glob("country:us/state:*/sessions/*/bills/*"))
     if not bill_folders:
         print(f"❌ No bill folders found in: {data_folder}")
         print("Expected structure: country:us/state:*/sessions/*/bills/*")
-        return 1
+        sys.exit(1)
 
     print(f"📄 Found {len(bill_folders)} bill folders to process")
 
@@ -70,14 +70,14 @@ def main(state: str, data_folder: Path, incremental: bool = False):
             print("Failed bills:")
             for f in stats.get("failed_bills", []):
                 print(f"  - {f['bill_id']} ({f['error_type']}): {f['error_message']}")
-            return 1
+            sys.exit(1)
         else:
             print("✅ All bills processed successfully!")
-            return 0
+            sys.exit(0)
 
     except Exception as e:
         print(f"❌ Error during text extraction: {e}")
-        return 1
+        sys.exit(1)
 
 
 if __name__ == "__main__":
