@@ -255,6 +255,52 @@ def extract_bill_text_from_metadata(
                 url = best_link.get("url")
                 media_type = best_link.get("media_type", "")
 
+                # Compute where this specific version/document would be saved
+                # *before* touching the network. Each versions[]/documents[]
+                # entry has its own URL, so an existing file here is a direct,
+                # correct signal that we already have this exact document --
+                # unlike inferring "did anything change" from the bill's
+                # actions[] (e.g. a vote), which says nothing about whether a
+                # new document actually exists.
+                file_extension = (
+                    "xml"
+                    if "xml" in media_type.lower()
+                    else "html" if "html" in media_type.lower() else "pdf"
+                )
+                filename = create_safe_filename(url, item_note, file_extension)
+                # Handle both lowercase and uppercase extensions (e.g., .html vs .HTM)
+                if filename.endswith(f".{file_extension}"):
+                    text_filename = filename.replace(
+                        f".{file_extension}", "_extracted.txt"
+                    )
+                elif filename.endswith(f".{file_extension.upper()}"):
+                    text_filename = filename.replace(
+                        f".{file_extension.upper()}", "_extracted.txt"
+                    )
+                else:
+                    # Fallback: just append _extracted.txt
+                    text_filename = filename.rsplit(".", 1)[0] + "_extracted.txt"
+
+                # Determine target directory
+                if array_name == "documents":
+                    # Documents (e.g. amendments) live in a separate subfolder
+                    target_dir = files_dir / "documents"
+                else:
+                    # Versions live in the main files directory
+                    target_dir = files_dir
+
+                content_file = target_dir / filename
+                text_file = target_dir / text_filename
+
+                if content_file.exists() and text_file.exists():
+                    print(
+                        f"   ⏭️  Already have {array_name} '{item_note}' "
+                        f"({filename}) — skipping"
+                    )
+                    success_count += 1
+                    continue
+
+                target_dir.mkdir(parents=True, exist_ok=True)
                 print(f"   📥 Downloading: {url} (type: {media_type})")
 
                 # Download content based on media type
@@ -343,40 +389,7 @@ def extract_bill_text_from_metadata(
                     )
                     continue
 
-                # Create filenames
-                file_extension = (
-                    "xml"
-                    if "xml" in media_type.lower()
-                    else "html" if "html" in media_type.lower() else "pdf"
-                )
-                filename = create_safe_filename(url, item_note, file_extension)
-                # Handle both lowercase and uppercase extensions (e.g., .html vs .HTM)
-                if filename.endswith(f".{file_extension}"):
-                    text_filename = filename.replace(
-                        f".{file_extension}", "_extracted.txt"
-                    )
-                elif filename.endswith(f".{file_extension.upper()}"):
-                    text_filename = filename.replace(
-                        f".{file_extension.upper()}", "_extracted.txt"
-                    )
-                else:
-                    # Fallback: just append _extracted.txt
-                    text_filename = filename.rsplit(".", 1)[0] + "_extracted.txt"
-
-                # Create appropriate directory structure
-                if array_name == "documents":
-                    # Put documents in a separate subfolder
-                    target_dir = files_dir / "documents"
-                    target_dir.mkdir(parents=True, exist_ok=True)
-                    print(f"   📁 Created documents directory: {target_dir}")
-                else:
-                    # Put versions in the main files directory
-                    target_dir = files_dir
-                    target_dir.mkdir(parents=True, exist_ok=True)
-                    print(f"   📁 Created directory: {target_dir}")
-
                 # Save original content
-                content_file = target_dir / filename
                 print(f"   💾 Saving {file_extension.upper()} to: {content_file}")
                 try:
                     with open(content_file, "w", encoding="utf-8") as f:
@@ -387,7 +400,6 @@ def extract_bill_text_from_metadata(
                     continue
 
                 # Save extracted text
-                text_file = target_dir / text_filename
                 print(f"   💾 Saving extracted text to: {text_file}")
                 try:
                     with open(text_file, "w", encoding="utf-8") as f:
