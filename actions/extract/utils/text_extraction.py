@@ -18,6 +18,7 @@ from .common import (
     download_bill_text,
     record_failed_bill,
     get_failed_bills_summary,
+    get_last_download_error,
     reset_error_tracking,
     rotate_session,
     get_congress_gov_headers,
@@ -338,10 +339,14 @@ def extract_bill_text_from_metadata(metadata_file: Path, files_dir: Path) -> boo
 
                 if not content:
                     print(f"   ❌ Failed to download: {url}")
+                    error_message = (
+                        get_last_download_error()
+                        or f"Failed to download content from {media_type}"
+                    )
                     record_failed_bill(
                         bill_id=bill_id,
                         error_type="download",
-                        error_message=f"Failed to download content from {media_type}",
+                        error_message=error_message,
                         url=url,
                         metadata_file=str(metadata_file),
                         additional_info={

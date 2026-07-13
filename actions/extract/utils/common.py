@@ -38,6 +38,18 @@ failed_bills_tracker = {
     "total_failed": 0,
 }
 
+# The real underlying exception from the most recent download_with_retry() call
+# that exhausted its retries -- download_with_retry only ever returns None on
+# failure, discarding the actual requests.exceptions.RequestException string
+# (e.g. "403 Client Error: Forbidden for url: ..."), so callers that only see
+# None have no way to report anything more specific than "download failed".
+_last_download_error: Optional[str] = None
+
+
+def get_last_download_error() -> Optional[str]:
+    """Real error from the most recent failed download_with_retry() call, if any."""
+    return _last_download_error
+
 
 def get_realistic_headers() -> dict:
     """Get realistic browser headers."""
@@ -120,6 +132,8 @@ def download_with_retry(
     use_aggressive_mode: bool = False,
 ) -> Optional[requests.Response]:
     """Download with basic retry logic and exponential backoff."""
+    global _last_download_error
+    _last_download_error = None
 
     for attempt in range(max_retries):
         try:
@@ -143,6 +157,7 @@ def download_with_retry(
 
         except requests.exceptions.RequestException as e:
             print(f"   ⚠️ Attempt {attempt + 1} failed: {e}")
+            _last_download_error = str(e)
             if attempt < max_retries - 1:
                 # Exponential backoff with jitter
                 wait_time = delay * (2**attempt) + random.uniform(1, 3)
