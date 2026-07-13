@@ -1,0 +1,366 @@
+# yaml-language-server: $schema=./config.schema.json
+#
+# TEST config — mirrors chn-openstates-files.yml but targets the govbot-test
+# org instead of govbot-data. Used to re-run the formatter (with its log
+# format fix) and the extract-text pipeline against real scraper data before
+# cutting the real govbot-data repos over. See close_session.py's docstring
+# and project notes for the retirement plan once this is validated.
+#
+# `session` (optional, per-locale): identifier for the legislative session this
+# locale's repo currently holds, e.g. `session: "2025-2026"` or `session: "2026-ss1"`
+# for a special session. Set/updated by close_session.py when rotating a repo to
+# the archive org — see actions/pipeline-manager/close_session.py. Not backfilled
+# for existing locales; filled in per-locale as the pilot progresses.
+#
+# extract-text is disabled for every locale below, matching the real
+# chn-openstates-files.yml default. Enable it only for pilot states first
+# (remove the `disabled_jobs: [extract-text]` entry) — see project notes on
+# staggering the extraction rollout rather than flipping it on for all 57 at
+# once.
+template_markers:
+  open: "✏️{"
+  close: "}✏️"
+org:
+  username: govbot-test
+templates:
+  openstates-to-ocd-files:
+    folder-name: ✏️{ locale.key }✏️-legislation
+    fully_override_dirs:
+      - .github
+locales:
+  al:
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Alabama
+    disabled_jobs:
+      - extract-text
+  ak:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Alaska
+  az:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Arizona
+  ar:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Arkansas
+  ca:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: California
+  co:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Colorado
+  ct:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Connecticut
+  dc:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: District of Columbia
+  de:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Delaware
+  fl:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Florida
+  ga:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Georgia
+  hi:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Hawaii
+  id:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Idaho
+  il:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Illinois
+  in:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Indiana
+  ia:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Iowa
+  ks:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Kansas
+  ky:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Kentucky
+  la:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Louisiana
+  me:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Maine
+  md:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Maryland
+  ma:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Massachusetts
+  mi:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Michigan
+  mn:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Minnesota
+  ms:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Mississippi
+  mo:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Missouri
+  mt:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Montana
+  ne:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Nebraska
+  nv:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Nevada
+  nh:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: New Hampshire
+  nj:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: New Jersey
+  nm:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: New Mexico
+  ny:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: New York
+  nc:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: North Carolina
+  nd:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: North Dakota
+  oh:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Ohio
+  ok:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Oklahoma
+  or:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Oregon
+  pa:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Pennsylvania
+  ri:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Rhode Island
+  sc:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: South Carolina
+  sd:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: South Dakota
+  tn:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Tennessee
+  tx:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Texas
+  ut:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Utah
+  vt:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Vermont
+  va:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Virginia
+  wa:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Washington
+  wv:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: West Virginia
+  wi:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Wisconsin
+  wy:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Wyoming
+  pr:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Puerto Rico
+  mp:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Northern Mariana Islands
+  vi:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: U.S. Virgin Islands
+  gu:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Guam
+  usa:
+    disabled_jobs:
+      - extract-text
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: United States
