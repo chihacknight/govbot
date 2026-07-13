@@ -1,364 +1,249 @@
 # yaml-language-server: $schema=./config.schema.json
 #
-# TEST config — mirrors chn-openstates-files.yml but targets the govbot-test
+# TEST config -- mirrors chn-openstates-files.yml but targets the govbot-test
 # org instead of govbot-data. Used to re-run the formatter (with its log
 # format fix) and the extract-text pipeline against real scraper data before
-# cutting the real govbot-data repos over. See close_session.py's docstring
+# cutting the real govbot-data repos over. See close_session.py docstring
 # and project notes for the retirement plan once this is validated.
 #
-# `session` (optional, per-locale): identifier for the legislative session this
-# locale's repo currently holds, e.g. `session: "2025-2026"` or `session: "2026-ss1"`
-# for a special session. Set/updated by close_session.py when rotating a repo to
-# the archive org — see actions/pipeline-manager/close_session.py. Not backfilled
-# for existing locales; filled in per-locale as the pilot progresses.
+# extract-text is enabled for ALL locales here (full pilot rollout). Some
+# will fail fast (no country:us data, e.g. paused/broken scrapers like il) --
+# expected, not alarming, tracked separately.
 #
-# extract-text is disabled for every locale below, matching the real
-# chn-openstates-files.yml default. Enable it only for pilot states first
-# (remove the `disabled_jobs: [extract-text]` entry) — see project notes on
-# staggering the extraction rollout rather than flipping it on for all 57 at
-# once.
+# toolkit_branch pinned to feat/session-scoped-repo-lifecycle for every
+# locale -- TEMP until fixes merge to main.
 template_markers:
-  open: "✏️{"
-  close: "}✏️"
+  open: ✏️{
+  close: '}✏️'
 org:
   username: govbot-test
 templates:
   openstates-to-ocd-files:
     folder-name: ✏️{ locale.key }✏️-legislation
     fully_override_dirs:
-      - .github
+    - .github
 locales:
   al:
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Alabama
-    disabled_jobs:
-      - extract-text
   ak:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Alaska
   az:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Arizona
   ar:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Arkansas
   ca:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: California
   co:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Colorado
   ct:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Connecticut
   dc:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: District of Columbia
   de:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Delaware
   fl:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Florida
   ga:
     template: openstates-to-ocd-files
-    # TEMP for pilot testing -- see wy's comment.
     toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Georgia
   hi:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Hawaii
   id:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Idaho
   il:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Illinois
   in:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Indiana
   ia:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Iowa
   ks:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Kansas
   ky:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Kentucky
   la:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Louisiana
   me:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Maine
   md:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Maryland
   ma:
     template: openstates-to-ocd-files
-    # TEMP for pilot testing -- see wy's comment.
     toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Massachusetts
   mi:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Michigan
   mn:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Minnesota
   ms:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Mississippi
   mo:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Missouri
   mt:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Montana
   ne:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Nebraska
   nv:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Nevada
   nh:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: New Hampshire
   nj:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: New Jersey
   nm:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: New Mexico
   ny:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: New York
   nc:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: North Carolina
   nd:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: North Dakota
   oh:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Ohio
   ok:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Oklahoma
   or:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Oregon
   pa:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Pennsylvania
   ri:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Rhode Island
   sc:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: South Carolina
   sd:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: South Dakota
   tn:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Tennessee
   tx:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Texas
   ut:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Utah
   vt:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Vermont
   va:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Virginia
   wa:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Washington
   wv:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: West Virginia
   wi:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Wisconsin
   wy:
     template: openstates-to-ocd-files
-    # TEMP for pilot testing -- points at the unmerged fix branch so real
-    # extract-text.yml runs can pick up the per-version-skip + Pipfile.lock
-    # fixes before they land on main. Revert to `main` once merged.
     toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Wyoming
   pr:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Puerto Rico
   mp:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Northern Mariana Islands
   vi:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: U.S. Virgin Islands
   gu:
-    disabled_jobs:
-      - extract-text
     template: openstates-to-ocd-files
-    toolkit_branch: main
+    toolkit_branch: feat/session-scoped-repo-lifecycle
     name: Guam
   usa:
     template: openstates-to-ocd-files
-    # TEMP for pilot testing -- see wy's comment.
     toolkit_branch: feat/session-scoped-repo-lifecycle
     name: United States
