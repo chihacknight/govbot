@@ -221,7 +221,8 @@
   svg .col { fill: var(--series-1); }
   svg .col-hit { fill: transparent; cursor: default; }
   svg .col-hit:hover + .col, svg .col.lift { filter: brightness(1.12); }
-  svg .peak-lbl { fill: var(--text-secondary); font-size: 11px; }
+  svg .peak-lbl { fill: var(--text-secondary); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  svg .col-lbl { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 
   .tooltip {
     position: fixed; z-index: 50; pointer-events: none;
@@ -697,6 +698,9 @@
 
     const peak = months.reduce((a, b) => (b.count > a.count ? b : a));
     const labelEvery = Math.max(1, Math.ceil(months.length / 14));
+    // Only place a value atop every bar when the columns are wide enough that
+    // the numbers won't collide; otherwise fall back to labelling just the peak.
+    const valueEvery = band >= 30 ? 1 : labelEvery;
     months.forEach((m, i) => {
       const x = padL + i * band + (band - barW) / 2;
       const h = (m.count / yMax) * innerH;
@@ -708,8 +712,9 @@
           `M${x},${baseY} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + barW - r},${y} ` +
           `Q${x + barW},${y} ${x + barW},${y + r} L${x + barW},${baseY} Z` });
         svg.append(col);
-        if (m === peak) {
-          const pl = mkSvg("text", { class: "peak-lbl", x: x + barW / 2, y: y - 5, "text-anchor": "middle" });
+        if (m === peak || i % valueEvery === 0) {
+          const cls = m === peak ? "peak-lbl" : "col-lbl";
+          const pl = mkSvg("text", { class: cls, x: x + barW / 2, y: y - 5, "text-anchor": "middle" });
           pl.textContent = fmt(m.count);
           svg.append(pl);
         }
