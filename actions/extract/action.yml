@@ -209,14 +209,22 @@ runs:
         # Run text extraction using the colocated main.py
         # Explicitly set Pipfile location for pipenv
         export PIPENV_PIPFILE="$ACTION_DIR/Pipfile"
-        EXIT_CODE=0
-        EXTRACTION_OUTPUT=$(cd "$ACTION_DIR" && pipenv run python main.py \
+        # Stream output live via tee instead of buffering it all into a shell
+        # variable -- a run across thousands of bills would otherwise show
+        # zero progress in the log until the entire thing finished (or hung),
+        # making a slow-but-working run indistinguishable from a stuck one.
+        export PYTHONUNBUFFERED=1
+        EXTRACTION_LOG="$(mktemp)"
+        set +e
+        (cd "$ACTION_DIR" && pipenv run python main.py \
           --state "${{ inputs.state }}" \
           --data-folder "${{ github.workspace }}" \
           --output-folder "${{ github.workspace }}" \
-          --incremental 2>&1) || EXIT_CODE=$?
-
-        echo "$EXTRACTION_OUTPUT"
+          --incremental 2>&1) | tee "$EXTRACTION_LOG"
+        EXIT_CODE=${PIPESTATUS[0]}
+        set -e
+        EXTRACTION_OUTPUT=$(cat "$EXTRACTION_LOG")
+        rm -f "$EXTRACTION_LOG"
 
         # Stop the auto-commit background process
         echo "🛑 Stopping auto-commit background process..."
