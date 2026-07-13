@@ -12,6 +12,13 @@ inputs:
     description: "Force push changes even if there are upstream changes"
     required: false
     default: "false"
+  slack-webhook-url:
+    description: >-
+      Slack Incoming Webhook URL to notify when a run has errors. Optional --
+      leave unset/empty to skip Slack notification entirely (e.g. before the
+      webhook has been provisioned).
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -280,6 +287,20 @@ runs:
             echo "</details>"
             echo ""
           } >> $GITHUB_STEP_SUMMARY
+        fi
+
+        # Notify Slack on errors, if a webhook has been configured. Silently
+        # does nothing if slack-webhook-url is empty (e.g. not provisioned
+        # yet) -- never blocks or fails the run either way.
+        if [ -n "${{ inputs.slack-webhook-url }}" ] && [ "$ERRORS" -gt 0 ]; then
+          SLACK_FAILED_BILLS=$(echo "$FAILED_BILLS" | head -20)
+          SLACK_TEXT=$(printf '⚠️ *Text extraction errors for %s*: %s error(s) out of %s bills.\n```\n%s\n```\n<%s/%s/actions/runs/%s|View run>' \
+            "${{ inputs.state }}" "$ERRORS" "$TOTAL_BILLS" "$SLACK_FAILED_BILLS" \
+            "${{ github.server_url }}" "${{ github.repository }}" "${{ github.run_id }}")
+          SLACK_PAYLOAD=$(jq -n --arg text "$SLACK_TEXT" '{text: $text}')
+          curl -s -X POST -H 'Content-Type: application/json' -d "$SLACK_PAYLOAD" \
+            "${{ inputs.slack-webhook-url }}" > /dev/null \
+            || echo "⚠️ Slack notification failed (non-fatal, continuing)"
         fi
 
         if [ $EXIT_CODE -eq 0 ]; then

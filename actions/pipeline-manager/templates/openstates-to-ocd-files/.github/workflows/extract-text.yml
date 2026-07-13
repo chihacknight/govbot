@@ -37,6 +37,9 @@ jobs:
           state: ✏️{ locale.key }✏️
           github-token: ${{ secrets.GITHUB_TOKEN }}
           force-update: "false"
+          # Org-level secret, not yet provisioned -- action skips notifying
+          # silently while this is unset/empty. See project notes.
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Display extraction summary
         if: always()
