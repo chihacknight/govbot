@@ -1,140 +1,90 @@
 # 🏛️ Montana legislation file tree
 
-Download a copy of your states legislation.
+Formatted, versioned legislative data for Montana. Part of the [govbot](https://github.com/chihacknight/govbot) civic data project.
 
-This [Chi Hack Night](https://chihacknight.com) project leverages **Open States** scrapers and transforms the data to one better for filesystem storage/viewing.
+This [Chi Hack Night](https://chihacknight.com) project transforms **Open States** scraper output into a git-native, filesystem-friendly structure.
 
 This enables a few things:
 
 - **Free Unlimited Git Powered Legislative Data Analysis**: The raw data is as simple as a `git pull`.
-- **Event Source Data Analysis**: Can enable things replaying a session. Create projections from our immutable event logs, making for a paper-trail.
-- **Easier AI Analysis**: By having plain text legislation with files/folders, AI works with a number of different tools.
+- **Event Source Data Analysis**: Replay a session from our immutable event logs, making for a paper-trail.
+- **Easier AI Analysis**: Plain text legislation with files/folders works with a number of different tools.
 - **Decentralize Government Data**: Because We the People
-
---
 
 ## How to use
 
-Just `git clone` this project, and now you have all the
+Just `git clone` this repo — everything under `country:us/` is the dataset.
 
 ---
 
-## ⚙️ What This Pipeline Does
+## ⚙️ Where This Repo Fits
 
-Each state pipeline provides a self-contained automation workflow to:
+This is the **formatted data repo** for Montana — one of two repos per jurisdiction:
 
-1. 🧹 **Scrape** data for a single U.S. state from the [OpenStates](https://github.com/openstates/openstates-scrapers) project
-2. 🧼 **Sanitize** the data by removing ephemeral fields (`_id`, `scraped_at`) for deterministic output
-3. 🧠 **Format** it into a blockchain-style, versioned structure with incremental processing
-4. 🔗 **Link** events to bills and sessions automatically
-5. 🩺 **Monitor** data quality by tracking orphaned bills
-6. 📄 **Extract** full text from bills, amendments, and supporting documents (PDFs, XMLs, HTMLs)
-7. 📂 **Commit** the formatted output and extracted text nightly (or manually) with auto-save
+1. **Scraper repo** (`govbot-openstates-scrapers/mt-legislation`) — runs [OpenStates](https://github.com/openstates/openstates-scrapers) scrapers, produces raw scraped JSON
+2. **This repo** (`mt-legislation`) — reads the scraper repo's output and:
+   1. 🧼 **Sanitizes** the data by removing ephemeral fields (`_id`, `scraped_at`) for deterministic output
+   2. 🧠 **Formats** it into a blockchain-style, versioned structure with incremental processing
+   3. 🔗 **Links** events to bills and sessions automatically
+   4. 🩺 **Monitors** data quality by tracking orphaned bills
+   5. 📄 **Extracts** full text from bills, amendments, and supporting documents (PDFs, XMLs, HTMLs)
+   6. 📂 **Commits** the formatted output and extracted text nightly (or manually), with auto-save
 
-This approach keeps every state repository consistent, auditable, and easy to maintain.
+This split keeps scraping (which can be blocked/rate-limited per state) independent from formatting/extraction, and keeps every jurisdiction's repo consistent, auditable, and easy to maintain.
 
 ---
 
 ## ✨ Key Features
 
 - **🔄 Incremental Processing** - Only processes new or updated bills (no duplicate work!)
-- **💾 Auto-Save Failsafe** - Commits progress every 30 minutes during text extraction
+- **💾 Auto-Save Failsafe** - Commits progress during long text-extraction runs, and auto-restarts if a run times out
 - **🩺 Data Quality Monitoring** - Tracks orphaned bills (votes/events without bill data)
 - **🔗 Bill-Event Linking** - Automatically connects committee hearings and events to bills
 - **⏱️ Timestamp Tracking** - Two-level timestamps for logs and text extraction
 - **🎯 Multi-Format Text Extraction** - XML → HTML → PDF with fallbacks
-- **🔀 Concurrent Job Support** - Multiple runs can safely update the same repository
 - **📊 Detailed Error Logging** - Categorized errors for easy debugging
 
 ---
 
-## 🔧 Setup Instructions
+## 🔧 Setup & Configuration
 
-1. **Click the green "Use this template" button** on this repository page to create a new repository from this template.
+This repo is generated and kept up to date by [`actions/pipeline-manager`](https://github.com/chihacknight/govbot/tree/main/actions/pipeline-manager) in the main `chihacknight/govbot` repo — it is not set up by hand.
 
-2. **Name your new repository** using the convention: `Puerto Rico Data Pipeline` (e.g., `il-data-pipeline`, `tx-data-pipeline`).
+To change Montana's configuration (branch pinning, runner, enabled jobs, labels), edit its entry in [`chn-openstates-files.yml`](https://github.com/chihacknight/govbot/blob/main/actions/pipeline-manager/chn-openstates-files.yml) and re-run `apply.py` — don't hand-edit the workflow files in this repo directly, since the next `apply.py` run will overwrite them.
 
-3. **Update the state abbreviation** in both workflow files:
+Current settings for Montana:
 
-   **In `.github/workflows/scrape-and-format-data.yml`:**
-
-   ```yaml
-   env:
-     STATE_CODE: pr # CHANGE THIS to your state abbreviation
-
-   jobs:
-     scrape:
-       - name: Scrape data
-         uses: windy-civi/toolkit/actions/scrape@main
-         with:
-           state: ${{ env.STATE_CODE }}
-
-     format:
-       - name: Format data
-         uses: windy-civi/toolkit/actions/format@main
-         with:
-           state: ${{ env.STATE_CODE }}
-   ```
-
-   **In `.github/workflows/extract-text.yml`:**
-
-   ```yaml
-   - name: Extract text
-     uses: windy-civi/toolkit/actions/extract@main
-     with:
-       state: pr # CHANGE THIS to your state abbreviation
-   ```
-
-   Make sure the state abbreviation matches the folder name used in [Open States scrapers](https://github.com/openstates/openstates-scrapers/tree/main/scrapers).
-
-4. **Enable GitHub Actions** in your repo (if not already enabled).
-
-5. (Optional) Enable nightly runs by ensuring the schedule blocks are uncommented in both workflow files:
-
-   ```yaml
-   on:
-     workflow_dispatch:
-     schedule:
-       - cron: "0 1 * * *" # For scrape-and-format-data.yml
-       # or
-       - cron: "0 3 * * *" # For extract-text.yml (runs later to avoid overlap)
-   ```
+- **State code**: `mt`
+- **Toolkit branch**: `main`
+- **Scraper repo**: `govbot-openstates-scrapers/mt-legislation`
 
 ---
 
 ## 📅 Workflow Schedule
 
-The pipeline runs in two stages:
+Two independent workflows:
 
-### **Stage 1: Scrape & Format** (1am UTC)
+### `format.yml` — Format Data (12:00 PM UTC daily)
 
-Two separate jobs that run sequentially:
+Pulls the latest scraped data from the scraper repo, sanitizes it, formats it into `country:us/state:mt/sessions/...`, links events, and updates orphan tracking.
 
-1. **Scrape Job** - Downloads legislative data using OpenStates scrapers
-2. **Format Job** - Processes scraped data, links events, and monitors quality
+### `extract-text.yml` — Text Extraction (8:00 AM UTC daily)
 
-### **Stage 2: Text Extraction** (3am UTC)
+Downloads and extracts full bill text into each bill's `files/` folder. Runs independently of formatting since it can take hours on large states. If a run times out or fails, a follow-up job automatically re-triggers it — incremental processing means it resumes rather than starting over.
 
-Independent workflow that extracts full bill text from documents.
-
-This separation allows:
-
-- ✅ Faster metadata updates
-- ✅ Independent monitoring and debugging
-- ✅ Text extraction can timeout and restart without affecting scraping
-- ✅ Better resource management (text extraction can take hours)
+Both can also be run manually via **Actions → [workflow] → Run workflow**.
 
 ---
 
 ## 📁 Folder Structure
 
 ```
-Puerto Rico Data Pipeline/
+mt-legislation/
 ├── .github/workflows/
-│   ├── scrape-and-format-data.yml  # Metadata scraping + formatting
-│   └── extract-text.yml             # Text extraction (independent)
+│   ├── format.yml            # Format scraped data + link events/orphans
+│   └── extract-text.yml      # Text extraction (independent, longer-running)
 ├── country:us/
-│   └── state:xx/                    # state:usa for federal, state:il for Illinois, etc.
+│   └── state:mt/            # state:usa for federal, state:il for Illinois, etc.
 │       └── sessions/
 │           └── {session_id}/
 │               ├── bills/
@@ -143,6 +93,7 @@ Puerto Rico Data Pipeline/
 │               │       ├── files/             # Extracted text & documents
 │               │       │   ├── *.pdf          # Original PDFs
 │               │       │   ├── *.xml          # Original XMLs
+│               │       │   ├── *.html         # Original HTML
 │               │       │   └── *_extracted.txt # Extracted text
 │               │       └── logs/              # Action/event/vote logs
 │               └── events/                    # Committee hearings
@@ -156,11 +107,11 @@ Puerto Rico Data Pipeline/
 │   │   ├── missing_session/         # Bills without session info
 │   │   ├── event_archive/           # Archived event data
 │   │   └── orphaned_placeholders_tracking.json  # Data quality monitoring
-│   ├── bill_session_mapping.json    # Bill-to-session mappings (flattened)
-│   ├── sessions.json                # Session metadata (flattened)
-│   └── latest_timestamp_seen.txt    # Last processed timestamp
-├── Pipfile, Pipfile.lock
-└── README.md
+│   ├── bill_session_mapping.json    # Bill-to-session mappings
+│   ├── sessions.json                # Session metadata
+│   ├── latest_timestamp_seen.txt    # Last processed timestamp
+│   └── last-processed-sha           # Last scraper-repo commit this repo formatted
+└── data.json                        # DCAT dataset descriptor
 ```
 
 ---
@@ -169,7 +120,7 @@ Puerto Rico Data Pipeline/
 
 ### Metadata Output (`country:us/state:*/`)
 
-Formatted metadata is saved to `country:us/state:xx/sessions/`, organized by session and bill.
+Formatted metadata is saved to `country:us/state:mt/sessions/`, organized by session and bill.
 
 Each bill directory contains:
 
@@ -201,7 +152,7 @@ Each bill directory contains:
 
 ### Text Extraction Output (`files/`)
 
-When text extraction is enabled, each bill directory also includes:
+When text extraction runs, each bill directory also includes:
 
 - `files/` – original documents and extracted text
   - `*.pdf` – Original PDF documents
@@ -220,7 +171,7 @@ Failed items are logged separately:
 
 ### Data Quality Monitoring (`orphaned_placeholders_tracking.json`)
 
-The pipeline automatically tracks **orphaned bills** - bills that have vote events or hearings but no actual bill data. Check this file periodically to identify data quality issues:
+Tracks **orphaned bills** - bills that have vote events or hearings but no actual bill data. Check this file periodically to identify data quality issues:
 
 ```json
 {
@@ -231,7 +182,7 @@ The pipeline automatically tracks **orphaned bills** - bills that have vote even
     "session": "103",
     "vote_count": 2,
     "event_count": 0,
-    "path": "country:us/state:il/sessions/103/bills/HB999"
+    "path": "country:us/state:mt/sessions/103/bills/HB999"
   }
 }
 ```
@@ -242,15 +193,13 @@ The pipeline automatically tracks **orphaned bills** - bills that have vote even
 - Check for typos in bill identifiers or scraper configuration
 - Orphans automatically resolve when the bill data arrives! 🎉
 
-📖 See [orphan tracking documentation](https://github.com/windy-civi/toolkit/blob/main/docs/orphan_tracking.md) for more details.
+📖 See [orphan tracking documentation](https://github.com/chihacknight/govbot/blob/main/actions/format/docs/orphan_tracking.md) for more details.
 
 ---
 
 ## 🪵 Logging & Error Handling
 
-Each run includes detailed logs to track progress and capture failures:
-
-### Scraping & Formatting Logs
+### Formatting Logs
 
 - Logs are saved per bill under `logs/`
 - Processing summary shows total bills, events, and votes processed
@@ -261,21 +210,14 @@ Each run includes detailed logs to track progress and capture failures:
 
 - Download attempts with success/failure status
 - Extraction method used (XML, HTML, PDF)
-- Error details saved to `text_extraction_errors/`
-- **Auto-save commits** every 30 minutes prevent data loss
-- Summary reports include:
-  - Total documents processed
-  - Successful extractions by type
-  - Skipped (already extracted) documents
-  - Failed downloads/extractions with reasons
+- Error details saved to `.windycivi/errors/text_extraction_errors/`
+- Summary reports include total documents processed, successful extractions by type, skipped (already extracted) documents, and failed downloads/extractions with reasons
 
-Pipelines are fault-tolerant — if a bill fails, the workflow continues for all others.
+Both workflows are fault-tolerant — if a single bill fails, the run continues for all others.
 
 ---
 
 ## 📄 Supported Document Types
-
-The text extraction workflow supports:
 
 | Type           | Format   | Extraction Method   | Notes                          |
 | -------------- | -------- | ------------------- | ------------------------------ |
@@ -286,122 +228,6 @@ The text extraction workflow supports:
 | **Documents**  | PDF/HTML | Auto-detect         | CBO reports, committee reports |
 
 **Note**: Federal `congress.gov` HTML amendments are currently skipped due to blocking issues. XML bill versions from `govinfo.gov` work perfectly.
-
----
-
-## 🔧 Workflow Configuration Options
-
-### Scrape Action Inputs
-
-```yaml
-uses: windy-civi/toolkit/actions/scrape@main
-with:
-  state: pr # State abbreviation (required)
-  github-token: ${{ secrets.GITHUB_TOKEN }}
-  use-scrape-cache: "false" # Skip scraping, use cached data
-```
-
-### Format Action Inputs
-
-```yaml
-uses: windy-civi/toolkit/actions/format@main
-with:
-  state: pr # State abbreviation (required)
-  github-token: ${{ secrets.GITHUB_TOKEN }}
-```
-
-### Text Extraction Action Inputs
-
-```yaml
-uses: windy-civi/toolkit/actions/extract@main
-with:
-  state: pr # State abbreviation (required)
-  github-token: ${{ secrets.GITHUB_TOKEN }}
-```
-
----
-
-## 🧩 Optional: Enabling Raw Scraped Data Storage
-
-By default, raw scraped data (`_data/`) is not stored to keep the repository lightweight.
-
-### ✅ To Enable `_data` Saving:
-
-Uncomment the copy and commit steps in your workflow file:
-
-```yaml
-- name: Copy Scraped Data to Repo
-  run: |
-    mkdir -p "$GITHUB_WORKSPACE/_data/$STATE"
-    cp -r "${RUNNER_TEMP}/_working/_data/$STATE"/* "$GITHUB_WORKSPACE/_data/$STATE/"
-```
-
-And include `_data` in the commit:
-
-```bash
-git add _data country:us/ .windycivi/
-```
-
-### 🚫 To Disable `_data` Saving (Default):
-
-Comment out the copy step and exclude `_data` from the commit command:
-
-```bash
-git add country:us/ .windycivi/
-```
-
----
-
-## 🚀 Running the Pipeline
-
-### Automatic (Scheduled)
-
-Once enabled, workflows run automatically:
-
-- **Scrape & Format**: 1am UTC daily
-- **Text Extraction**: 3am UTC daily (runs independently)
-
-### Manual Trigger
-
-1. Go to **Actions** tab in GitHub
-2. Select the workflow (Scrape & Format or Extract Text)
-3. Click **Run workflow**
-4. Choose the branch and click **Run**
-
-### Testing Locally
-
-```bash
-# Clone the repository
-git clone https://github.com/YOUR-ORG/Puerto Rico Data Pipeline
-cd Puerto Rico Data Pipeline
-
-# Install dependencies
-pipenv install
-
-# Run scraping and formatting
-pipenv run python scrape_and_format/main.py \
-  --state il \
-  --openstates-data-folder /path/to/scraped/data \
-  --git-repo-folder /path/to/output
-
-# Run text extraction (with incremental flag)
-pipenv run python text_extraction/main.py \
-  --state il \
-  --data-folder /path/to/output \
-  --output-folder /path/to/output \
-  --incremental
-```
-
----
-
-## 🔍 Known Issues
-
-See the [known_problems/](https://github.com/windy-civi/toolkit/tree/main/known_problems) directory in the main repository for:
-
-- State-specific scraper issues
-- Formatter validation issues
-- Text extraction limitations
-- Status of all 56 jurisdictions
 
 ---
 
@@ -418,65 +244,42 @@ See the [known_problems/](https://github.com/windy-civi/toolkit/tree/main/known_
 1. Review `.windycivi/errors/orphaned_placeholders_tracking.json` for data issues
 2. Look for chronic orphans (occurrence_count >= 3)
 3. Check `.windycivi/errors/` for formatting/extraction errors
-4. Monitor auto-save commits during text extraction runs
 
 ### Common Issues
 
-**Scraping fails**:
+**No new data showing up**:
 
-- Check if OpenStates scraper for your state is working
-- Verify state abbreviation matches OpenStates format
-- Check for new legislative sessions not yet configured
+- Check the scraper repo (`govbot-openstates-scrapers/mt-legislation`) actually got fresh data first — this repo only formats what that repo has already scraped
+- Check `.windycivi/last-processed-sha` against the scraper repo's latest commit
 
 **Text extraction fails or times out**:
 
 - Check `.windycivi/errors/text_extraction_errors/` for details
-- Look for auto-save commits (pipeline saves progress every 30 minutes)
-- Re-run the workflow - it will resume from where it left off (incremental)
+- A timed-out/failed run auto-restarts and resumes (incremental) — no manual re-run needed
 - Review error logs for specific bills
 
 **Orphaned bills appear**:
 
 - Check `orphaned_placeholders_tracking.json` for details
 - Verify bill identifiers match between scraper and vote/event data
-- Bills may auto-resolve on next scrape if it's a timing issue
-
-**Push conflicts**:
-
-- The pipeline auto-handles conflicts with `git pull --rebase`
-- If manual resolution needed, check logs for specific conflicts
+- Bills may auto-resolve on the next format run if it's a timing issue
 
 ---
 
 ## 🤝 Contributions & Support
 
-This template is part of the [Windy Civi](https://github.com/windy-civi) project. If you're onboarding a new state or improving the automation, feel free to open an issue or PR.
+This repo is generated from a template in the [`chihacknight/govbot`](https://github.com/chihacknight/govbot) monorepo (`actions/pipeline-manager/templates/openstates-to-ocd-files/`). If you're fixing a bug in the pipeline itself (not this jurisdiction's data), open an issue or PR there — changes to this repo's workflow files will be overwritten on the next `apply.py` run.
 
-**Main Repository**: https://github.com/windy-civi/toolkit
-
-For discussions, join our community on Slack or GitHub Discussions.
-
----
-
-## 🎯 Next Steps After Setup
-
-1. ✅ Verify both workflows are enabled
-2. ✅ Test with manual trigger first (start with Scrape & Format)
-3. ✅ Check output in `country:us/state:xx/sessions/`
-4. ✅ Review `.windycivi/errors/orphaned_placeholders_tracking.json` for data quality
-5. ✅ Check any errors in `.windycivi/errors/`
-6. ✅ Test text extraction workflow independently
-7. ✅ Enable scheduled runs once testing is successful
-8. ✅ Monitor first few automated runs for issues
+For discussions, join the Chi Hack Night community on Slack or GitHub Discussions.
 
 ---
 
 ## 📚 Additional Documentation
 
-- **[Incremental Processing Guide](https://github.com/windy-civi/toolkit/blob/main/docs/incremental_processing/)** - How incremental updates work
-- **[Orphan Tracking Guide](https://github.com/windy-civi/toolkit/blob/main/docs/orphan_tracking.md)** - Understanding data quality monitoring
-- **[Main Repository README](https://github.com/windy-civi/toolkit)** - Full technical documentation
+- **[Data Structures Reference](https://github.com/chihacknight/govbot/blob/main/actions/format/docs/DATA_STRUCTURES.md)** - Full schema for bills, logs, events, errors
+- **[Orphan Tracking Guide](https://github.com/chihacknight/govbot/blob/main/actions/format/docs/orphan_tracking.md)** - Understanding data quality monitoring
+- **[Main Repository](https://github.com/chihacknight/govbot)** - Full technical documentation
 
 ---
 
-**Part of the [Windy Civi](https://windycivi.com) ecosystem — building a transparent, verifiable civic data archive for all 50 states.**
+**Part of the [Windy Civi](https://windycivi.com) ecosystem — building a transparent, verifiable civic data archive for all 56 US jurisdictions.**
