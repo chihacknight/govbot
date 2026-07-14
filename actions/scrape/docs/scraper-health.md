@@ -130,7 +130,18 @@ TN's 114th General Assembly (2025-2026) ended ~2026-04-25. The scraper was block
 
 ### FL — Serial Per-Bill Scraping
 
-FL scraper fetches each bill individually (BillDetail + HouseSearchPage + N vote PDFs). One bill (HJR 1F) took ~34s with 7 vote PDF fetches. Across two sessions (`2026` + `2026F`), this exceeds the 6-hour GitHub Actions cap. No IP blocking — it's just slow. Fixed by moving to self-hosted runner (no time cap). End-of-session backfill running 2026-07-02.
+FL scraper fetches each bill individually (BillDetail + HouseSearchPage + N vote PDFs). One bill (HJR 1F) took ~34s with 7 vote PDF fetches. Across two sessions (`2026` + `2026F`), this exceeds the 6-hour GitHub Actions cap. No IP blocking — it's just slow. Fixed by moving to self-hosted runner (no GitHub-imposed time cap).
+
+**Update 2026-07-14**: moving to self-hosted wasn't the full fix — we then hit our *own*
+self-imposed `timeout-minutes: 720` (12h) ceiling on a 2026-07-13 run, which got past bill
+250+ with zero bot-detection errors before being killed by the timeout. Since `scrape.sh`
+only commits after the full run completes, that entire 12 hours of real progress was lost
+when the job got cancelled — nothing to recover, the runner's workspace was reused by later
+jobs before anyone checked. Raised `timeout-minutes` to 1440 (24h) on FL's live workflow;
+longer run in progress as of 2026-07-14. Real long-term fix is committing progress
+incrementally during the run rather than only at the end, so a timeout (whatever the limit)
+stops being catastrophic — see PR [#5724](https://github.com/openstates/openstates-scrapers/pull/5724)
+and `fl-incremental-scraping-proposal.md`, both still open.
 
 ### VA — Scrape Argument Bug (Waiting on OpenStates)
 

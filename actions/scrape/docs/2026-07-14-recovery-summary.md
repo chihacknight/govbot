@@ -54,9 +54,7 @@ scrapers themselves were already correct; GitHub-hosted runner IPs were the prob
 via outright blocking or the state site quietly serving degraded content to Azure IP ranges.
 
 **Text extraction** was audited separately across all these states — clean across the board.
-The only two hiccups (Arkansas, New Mexico) were a timing issue (extraction ran before
-formatting had caught up with the freshly-scraped data), not a network or blocking problem.
-Fixed by re-running formatting first.
+See the "Text extraction results" section at the bottom of this doc for the full breakdown.
 
 ## New capability: routing around IP blocks without a laptop
 
@@ -74,7 +72,7 @@ These are pre-existing, already-diagnosed problems, unaffected by the December f
 | State | Issue | Status |
 |---|---|---|
 | Arizona | Session cookie not persisting through a login POST | PR open upstream ([#5722](https://github.com/openstates/openstates-scrapers/pull/5722)); maintainer can't reproduce, waiting on us for exact repro steps |
-| Florida | Site's bot detection blocks even from a home network | Unresolved; incremental-scraping approach proposed as a workaround |
+| Florida | Not actually a blocking issue — re-diagnosed 2026-07-14 | A self-hosted run got no bot-detection errors at all, just ran out of its 12-hour time limit partway through (FL is a very large, slow-to-scrape session). Timeout raised to 24h and a longer run is in progress; real long-term fix is committing progress incrementally instead of only at the end, so a timeout doesn't lose everything gathered |
 | Louisiana | Bill search only returns ~7 of ~525 bills | Issue open upstream, awaiting maintainer response |
 | New Hampshire | Site blocks scraping during business hours | Schedule shifted to run overnight; still borderline, being watched |
 | N. Mariana Islands | Crashes on one specific bill with a blank title | Root cause identified, fix not yet filed upstream |
@@ -91,3 +89,31 @@ These are pre-existing, already-diagnosed problems, unaffected by the December f
 - Fixed a macOS-specific bug (`tar --mode=755`) that made every self-hosted run's summary
   falsely report "nightly fallback" / no data, even on runs that fully succeeded — purely
   cosmetic, but it was actively confusing to anyone checking run results.
+
+## Text extraction results (govbot-test org)
+
+Full audit of `extract-text.yml` across all 18 recovered states, run against the `govbot-test`
+pilot org (which will eventually become the real `govbot-data` once cut over). Format ran
+clean everywhere with zero failures. Extraction:
+
+| State | Result | Notes |
+|---|---|---|
+| Alaska, Illinois, Indiana, Michigan, Nebraska, Nevada, New York, Ohio, Pennsylvania, South Carolina, USA, Virginia, Vermont, North Carolina, West Virginia | ✅ Clean | Zero errors, first pass |
+| Arkansas | ✅ Clean | 2/2 bills extracted successfully, after a re-run (see below) |
+| New Mexico | ✅ 809/812 (99.6%) | 3 dead-link 404s on the source site, same minor category as Hawaii's known issue — not a real problem |
+| U.S. Virgin Islands | ✅ Clean | |
+
+**One real (and reassuring) finding along the way**: Arkansas and New Mexico both showed a
+hard `failure` on the *first* extraction attempt — but it turned out to be a sequencing
+issue, not a data problem. Extraction ran before formatting had caught up with the
+freshly-scraped data, so there was nothing there yet to extract from. Re-running formatting
+first, then re-running extraction, resolved both cleanly. **No state in this whole 18-state
+recovery needed a proxy, a code fix, or any further investigation on the extraction side** —
+every single issue found was either already-known-and-minor (dead links) or a one-time
+sequencing gap, not a new problem.
+
+**Workflow design note worth knowing**: `extract-text.yml` currently treats *any* single
+failed bill as a hard job failure (exit code 1), which is why New Mexico's 809/812 — a great
+result — initially looked identical to a fully broken run in the GitHub Actions UI. A design
+note for fixing this (separating "did the job complete" from "how many bills had errors") is
+written up at `actions/extract/docs/error-log-design-note.md`, not yet built.
