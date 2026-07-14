@@ -115,6 +115,7 @@ clean everywhere with zero failures. Extraction:
 | Arkansas | ✅ Clean | 2/2 bills extracted successfully, after a re-run (see below) |
 | New Mexico | ✅ 809/812 (99.6%) | 3 dead-link 404s on the source site, same minor category as Hawaii's known issue — not a real problem |
 | U.S. Virgin Islands | ✅ Clean | |
+| New Hampshire | ✅ Clean | 334/334 bills, 0 errors — run after the `scrape.sh` fallback-bug fix and full data restore (see above); confirms the restored data is fully extractable |
 
 **One real (and reassuring) finding along the way**: Arkansas and New Mexico both showed a
 hard `failure` on the *first* extraction attempt — but it turned out to be a sequencing
