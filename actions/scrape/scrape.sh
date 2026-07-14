@@ -153,7 +153,11 @@ if [ "$COUNT_JSON" -gt 0 ]; then
   fi
 
   # Also create tarball for artifacts/releases
-  tar zcf scrape-snapshot-nightly.tgz --mode=755 -C "$JSON_DIR" .
+  # Normalize permissions before archiving instead of using GNU tar's --mode
+  # flag, which macOS's built-in BSD tar (used on self-hosted Mac runners)
+  # doesn't support and fails on silently.
+  chmod -R 755 "$JSON_DIR"
+  tar zcf scrape-snapshot-nightly.tgz -C "$JSON_DIR" .
   cp scrape-snapshot-nightly.tgz "${OUTPUT_DIR}/scrape-snapshot-nightly.tgz"
   echo "✅ Created local scrape tarball"
 else
