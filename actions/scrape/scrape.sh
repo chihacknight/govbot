@@ -122,7 +122,13 @@ else
   done
 fi
 
-# If anything was scraped, stage a tarball; otherwise fall back later
+# Only replace existing data + rebuild the fallback tarball when the scrape
+# actually succeeded (exit_code 0). A retry-exhausted failure (e.g. rate
+# limiting, a block) can still leave a handful of jurisdiction/organization
+# files on disk from before it died — COUNT_JSON alone can't tell that apart
+# from a real successful scrape, and treating it as "good" wholesale-deletes
+# real historical data and overwrites the nightly fallback release with the
+# same partial output, destroying the safety net for future failed runs too.
 JSON_DIR="_working/_data/${STATE}"
 if [ -d "$JSON_DIR" ]; then
   COUNT_JSON=$(find "$JSON_DIR" -type f -name '*.json' | wc -l | tr -d ' ')
@@ -130,7 +136,7 @@ else
   COUNT_JSON=0
 fi
 echo "Found ${COUNT_JSON} JSON files in $JSON_DIR"
-if [ "$COUNT_JSON" -gt 0 ]; then
+if [ "$exit_code" -eq 0 ] && [ "$COUNT_JSON" -gt 0 ]; then
   # Copy files directly to workspace _data directory
   # Clean the directory first to avoid accumulating stale files with different UUIDs
   mkdir -p "${OUTPUT_DIR}/_data/${STATE}"
@@ -155,9 +161,15 @@ if [ "$COUNT_JSON" -gt 0 ]; then
   fi
 
   # Also create tarball for artifacts/releases
-  tar zcf scrape-snapshot-nightly.tgz --mode=755 -C "$JSON_DIR" .
+  # Normalize permissions before archiving instead of using GNU tar's --mode
+  # flag, which macOS's built-in BSD tar (used on self-hosted Mac runners)
+  # doesn't support and fails on silently.
+  chmod -R 755 "$JSON_DIR"
+  tar zcf scrape-snapshot-nightly.tgz -C "$JSON_DIR" .
   cp scrape-snapshot-nightly.tgz "${OUTPUT_DIR}/scrape-snapshot-nightly.tgz"
   echo "✅ Created local scrape tarball"
+elif [ "$COUNT_JSON" -gt 0 ]; then
+  echo "⚠️ Scrape failed (exit code ${exit_code}) despite ${COUNT_JSON} partial JSON file(s) on disk; discarding partial output and using nightly fallback."
 else
   echo "ℹ️ No new files found; will use nightly fallback."
 fi

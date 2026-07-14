@@ -16,7 +16,7 @@ env:
 jobs:
   scrape:
     name: "🕷️ Scrape Data"
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 720
     permissions:
       contents: write

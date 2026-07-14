@@ -21,6 +21,7 @@ locales:
     template: openstates-scrape
     name: Alaska
     toolkit_branch: main
+    runner: self-hosted
   az:
     template: openstates-scrape-paused
     name: Arizona
@@ -30,6 +31,7 @@ locales:
     template: openstates-scrape
     name: Arkansas
     toolkit_branch: main
+    runner: self-hosted
     labels:
     - working
   ca:
@@ -78,16 +80,17 @@ locales:
     name: Idaho
     toolkit_branch: main
   il:
-    template: openstates-scrape-paused
+    template: openstates-scrape
     name: Illinois
     toolkit_branch: main
     runner: self-hosted
     labels:
     - working
   in:
-    template: openstates-scrape-paused
+    template: openstates-scrape
     name: Indiana
     toolkit_branch: main
+    runner: self-hosted
   ia:
     template: openstates-scrape
     name: Iowa
@@ -129,6 +132,7 @@ locales:
     template: openstates-scrape
     name: Michigan
     toolkit_branch: main
+    runner: self-hosted
   mn:
     template: openstates-scrape-paused
     name: Minnesota
@@ -152,15 +156,17 @@ locales:
     labels:
     - working
   ne:
-    template: openstates-scrape-paused
+    template: openstates-scrape
     name: Nebraska
     toolkit_branch: main
+    runner: self-hosted
     labels:
     - working
   nv:
-    template: openstates-scrape-paused
+    template: openstates-scrape
     name: Nevada
     toolkit_branch: main
+    runner: self-hosted
     labels:
     - working
   nh:
@@ -176,19 +182,22 @@ locales:
     labels:
     - working
   nm:
-    template: openstates-scrape-paused
+    template: openstates-scrape
     name: New Mexico
     toolkit_branch: main
+    runner: self-hosted
     labels:
     - working
   ny:
     template: openstates-scrape
     name: New York
     toolkit_branch: main
+    runner: self-hosted
   nc:
-    template: openstates-scrape-paused
+    template: openstates-scrape
     name: North Carolina
     toolkit_branch: main
+    runner: self-hosted
     labels:
     - working
   nd:
@@ -201,6 +210,7 @@ locales:
     template: openstates-scrape
     name: Ohio
     toolkit_branch: main
+    runner: self-hosted
   ok:
     template: openstates-scrape-paused
     name: Oklahoma
@@ -217,6 +227,7 @@ locales:
     template: openstates-scrape
     name: Pennsylvania
     toolkit_branch: main
+    runner: self-hosted
     labels:
     - working
   ri:
@@ -229,6 +240,7 @@ locales:
     template: openstates-scrape
     name: South Carolina
     toolkit_branch: main
+    runner: self-hosted
     labels:
     - working
   sd:
@@ -258,12 +270,14 @@ locales:
     template: openstates-scrape
     name: Vermont
     toolkit_branch: main
+    runner: self-hosted
     labels:
     - working
   va:
-    template: openstates-scrape-paused
+    template: openstates-scrape
     name: Virginia
     toolkit_branch: main
+    runner: self-hosted
   wa:
     template: openstates-scrape-paused
     name: Washington
@@ -271,7 +285,7 @@ locales:
     labels:
     - working
   wv:
-    template: openstates-scrape-paused
+    template: openstates-scrape
     name: West Virginia
     toolkit_branch: main
     runner: self-hosted
@@ -305,6 +319,7 @@ locales:
     template: openstates-scrape
     name: U.S. Virgin Islands
     toolkit_branch: main
+    runner: self-hosted
     labels:
     - working
   gu:
@@ -317,5 +332,6 @@ locales:
     template: openstates-scrape
     name: United States
     toolkit_branch: main
+    runner: self-hosted
     labels:
     - working

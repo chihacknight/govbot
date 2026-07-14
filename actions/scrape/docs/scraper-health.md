@@ -18,7 +18,8 @@ Tracks the status of all 56 `govbot-openstates-scrapers` repos. Updated manually
 | fl    | 🔄 backfill running  | End-of-session capture in progress on self-hosted runner. PRs [#53](https://github.com/chihacknight/govbot/pull/53) + [#55](https://github.com/chihacknight/govbot/pull/55) ✅ merged.        |
 | tn    | ✅ backfill complete | 114th GA + 114S1 special session data landed 2026-07-02 (~25,800 raw files, ~9,092 bills in session 114). Self-hosted runner via PR [#56](https://github.com/chihacknight/govbot/pull/56) ✅. |
 | il    | ✅ confirmed working | Two real upstream markup fixes landed (#5721, #5730 — `h5`→`h2` selector changes), but a third "IndexError" crash persisted on GitHub-hosted runners even after both merged. Confirmed 2026-07-13 by running locally: same code, same site, clean run — Azure/GitHub-hosted IPs get served different content that breaks the title xpath on the first bill. Not a scraper bug. `runner: self-hosted` added to pipeline-manager config. |
-| wv    | 🔄 confirmed working, backfill in progress | Same Azure-block pattern as IL/CT/HI/MA/TN — not a scraper bug. See "WV" under Known Ongoing Issues. `runner: self-hosted` added to pipeline-manager config 2026-07-13. **TODO: check final bill count once the local run finishes** — should land near 2,975 (jessemortenson's reported count) / ~2,777 confirmed from a direct fetch of the live bill-list page. |
+| wv    | ✅ confirmed working | Same Azure-block pattern as IL/CT/HI/MA/TN — not a scraper bug. See "WV" under Known Ongoing Issues. `runner: self-hosted` added to pipeline-manager config 2026-07-13. Backfill run 2026-07-14: landed at exactly 2,975 bills, matching jessemortenson's reported count. |
+| nc    | ✅ confirmed working | Frozen at Dec 2025 data for ~7 months; **not** an IP block (unlike most others in this table) — see "NC" under Known Ongoing Issues. Self-hosted run 2026-07-14: 2,334 bills in 12.5 min, matching the live site's current feed count exactly. |
 
 ### Fix Pending
 
@@ -70,6 +71,53 @@ These states have accessible APIs but were scraped with partial data due to Dock
 
 ## Known Ongoing Issues
 
+### NC — Not an IP Block, Just Never Ran on a Runner That Was Online
+
+A full 56-repo audit (2026-07-14) of `govbot-data` — comparing the last commit that actually
+touched a `sessions/` path (not the daily tracking-file commit that fires regardless of new
+data) against the corrected session calendar — found **16 states plus the USA/federal repo**
+all frozen at the exact same 10-minute window: **2025-12-14, 23:31–23:41 UTC**. That's not a
+gradual per-state legislative slowdown (which shows up as a staircase, and most of the other
+40 states do show one); it's a hard cliff, all at once. NC, a currently-in-session state per
+the LegiScan calendar (convened 2026-04-21), was in that frozen list.
+
+Investigated like IL/WV: pulled NC's actual bill-discovery feed
+(`ncleg.gov/Legislation/Bills/FiledBillsFeed/2025/{S,H}`) directly and confirmed it's fully
+accessible and current — 1,090 Senate + 1,244 House bills live today, no blocking, no
+different content served. Ruled out an Azure IP block. GitHub Actions log retention is 90
+days, so the actual December logs were already gone (`HTTP 410`) by the time this was
+investigated — the original failure mode couldn't be reconstructed after the fact.
+
+**Real explanation, found by actually running it**: NC's `runner` was never set to
+`self-hosted` — it was quietly stuck on `ubuntu-latest` this whole time, structurally no
+different from the many other "frozen" states discovered in this same audit that likely never
+had the self-hosted fix applied to them either. Once switched to self-hosted and dispatched,
+it picked up the current 2,334 bills (1,090 + 1,244, matching the live feed exactly) cleanly
+in 12.5 minutes — no code changes needed. **Important: don't assume "frozen since Dec 14" ==
+Azure IP block for the other 15 states in this cohort** — NC turned out to be a config gap,
+not a network problem. Each of the other 15 (`usa, ak, ar, il, in, mi, ne, nm, nv, ny, oh,
+pa, sc, vi, vt`) needs the same live verification before assuming a cause.
+
+**Bonus find while debugging this**: the self-hosted run's job summary showed `📦 Nightly
+fallback` / all metrics `N/A` — looked like the fresh scrape got discarded. It didn't; this
+was the `tar --mode=755` macOS-BSD-tar-incompatibility bug (see fix below), a cosmetic
+reporting bug, not data loss. Confirmed by checking the actual git commit on
+`govbot-openstates-scrapers/nc-legislation` directly — the real 2,334-bill commit landed
+fine despite the misleading summary.
+
+### tar --mode=755 macOS Incompatibility (Fixed 2026-07-14)
+
+`actions/scrape/scrape.sh` built its release tarball with `tar zcf ... --mode=755`, a
+GNU-tar-only flag. macOS's built-in BSD tar doesn't support it and fails silently at that
+step — but by then the real scraped files were already copied into `_data/{state}/`, so the
+actual data commit was unaffected. The failure only broke the job summary (forced it into
+"nightly fallback" mode, reporting `N/A` for every metric and a stale file count) — actively
+misleading anyone checking a self-hosted Mac run's results. Confirmed this cosmetic-only
+via IL (real commit had all 12,753 files despite summary saying `4`) and NC (real commit had
+all 2,334 bills despite summary saying `2432`, the old Dec 2025 count). **Fix**: replaced
+`--mode=755` with a `chmod -R 755` before a plain `tar` call — works identically on GNU and
+BSD tar.
+
 ### TN — IP Block by wapp.capitol.tn.gov
 
 TN's 114th General Assembly (2025-2026) ended ~2026-04-25. The scraper was blocked by `wapp.capitol.tn.gov` early in the run — only 37 of an estimated ~5,400+ bills were captured before the block hit. Site is accessible from non-cloud IPs; block is specific to GitHub-hosted runner IPs (N1_ACTIVE_BLOCK), same pattern as TX.
@@ -98,7 +146,7 @@ Same failure shape as IL/CT/HI/MA/TN: GitHub-hosted (Azure) runner IPs get serve
 
 **Fix**: `runner: self-hosted` added to WV's entry in `actions/pipeline-manager/chn-openstates-scrape.yml` (2026-07-13), matching IL/CT/HI/MA/AZ/TN. No new OpenStates PR — the upstream code is already correct; do not resubmit a variant of #5719.
 
-**⏳ TODO**: local backfill run in progress as of 2026-07-13 — check the final bill count once it finishes and confirm it lands near ~2,975 (jessemortenson's number) / ~2,777 (our direct list-page count, pre-resolutions).
+**Confirmed 2026-07-14**: backfill landed at exactly 2,975 bills, matching jessemortenson's reported count.
 
 ### MA — Active Throttling by malegislature.gov
 
@@ -112,7 +160,18 @@ Same failure shape as IL/CT/HI/MA/TN: GitHub-hosted (Azure) runner IPs get serve
 
 ### FL — Serial Per-Bill Scraping
 
-FL scraper fetches each bill individually (BillDetail + HouseSearchPage + N vote PDFs). One bill (HJR 1F) took ~34s with 7 vote PDF fetches. Across two sessions (`2026` + `2026F`), this exceeds the 6-hour GitHub Actions cap. No IP blocking — it's just slow. Fixed by moving to self-hosted runner (no time cap). End-of-session backfill running 2026-07-02.
+FL scraper fetches each bill individually (BillDetail + HouseSearchPage + N vote PDFs). One bill (HJR 1F) took ~34s with 7 vote PDF fetches. Across two sessions (`2026` + `2026F`), this exceeds the 6-hour GitHub Actions cap. No IP blocking — it's just slow. Fixed by moving to self-hosted runner (no GitHub-imposed time cap).
+
+**Update 2026-07-14**: moving to self-hosted wasn't the full fix — we then hit our *own*
+self-imposed `timeout-minutes: 720` (12h) ceiling on a 2026-07-13 run, which got past bill
+250+ with zero bot-detection errors before being killed by the timeout. Since `scrape.sh`
+only commits after the full run completes, that entire 12 hours of real progress was lost
+when the job got cancelled — nothing to recover, the runner's workspace was reused by later
+jobs before anyone checked. Raised `timeout-minutes` to 1440 (24h) on FL's live workflow;
+longer run in progress as of 2026-07-14. Real long-term fix is committing progress
+incrementally during the run rather than only at the end, so a timeout (whatever the limit)
+stops being catastrophic — see PR [#5724](https://github.com/openstates/openstates-scrapers/pull/5724)
+and `fl-incremental-scraping-proposal.md`, both still open.
 
 ### VA — Scrape Argument Bug (Waiting on OpenStates)
 
