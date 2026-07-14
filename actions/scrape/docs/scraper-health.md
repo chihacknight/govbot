@@ -17,6 +17,7 @@ Tracks the status of all 56 `govbot-openstates-scrapers` repos. Updated manually
 | ct    | ✅ confirmed working | Azure IP blocks CT FTP server. Self-hosted run 2026-07-02: 1,283 bills in 17 min. Issue [#1384](https://github.com/openstates/issues/issues/1384) 🔄 following up.                            |
 | fl    | 🔄 backfill running  | End-of-session capture in progress on self-hosted runner. PRs [#53](https://github.com/chihacknight/govbot/pull/53) + [#55](https://github.com/chihacknight/govbot/pull/55) ✅ merged.        |
 | tn    | ✅ backfill complete | 114th GA + 114S1 special session data landed 2026-07-02 (~25,800 raw files, ~9,092 bills in session 114). Self-hosted runner via PR [#56](https://github.com/chihacknight/govbot/pull/56) ✅. |
+| nc    | ✅ confirmed working | Frozen at Dec 2025 data for ~7 months; **not** an IP block (unlike most others in this table) — see "NC" under Known Ongoing Issues. Self-hosted run 2026-07-14: 2,334 bills in 12.5 min, matching the live site's current feed count exactly. |
 
 ### Fix Pending
 
@@ -67,6 +68,53 @@ These states have accessible APIs but were scraped with partial data due to Dock
 ---
 
 ## Known Ongoing Issues
+
+### NC — Not an IP Block, Just Never Ran on a Runner That Was Online
+
+A full 56-repo audit (2026-07-14) of `govbot-data` — comparing the last commit that actually
+touched a `sessions/` path (not the daily tracking-file commit that fires regardless of new
+data) against the corrected session calendar — found **16 states plus the USA/federal repo**
+all frozen at the exact same 10-minute window: **2025-12-14, 23:31–23:41 UTC**. That's not a
+gradual per-state legislative slowdown (which shows up as a staircase, and most of the other
+40 states do show one); it's a hard cliff, all at once. NC, a currently-in-session state per
+the LegiScan calendar (convened 2026-04-21), was in that frozen list.
+
+Investigated like IL/WV: pulled NC's actual bill-discovery feed
+(`ncleg.gov/Legislation/Bills/FiledBillsFeed/2025/{S,H}`) directly and confirmed it's fully
+accessible and current — 1,090 Senate + 1,244 House bills live today, no blocking, no
+different content served. Ruled out an Azure IP block. GitHub Actions log retention is 90
+days, so the actual December logs were already gone (`HTTP 410`) by the time this was
+investigated — the original failure mode couldn't be reconstructed after the fact.
+
+**Real explanation, found by actually running it**: NC's `runner` was never set to
+`self-hosted` — it was quietly stuck on `ubuntu-latest` this whole time, structurally no
+different from the many other "frozen" states discovered in this same audit that likely never
+had the self-hosted fix applied to them either. Once switched to self-hosted and dispatched,
+it picked up the current 2,334 bills (1,090 + 1,244, matching the live feed exactly) cleanly
+in 12.5 minutes — no code changes needed. **Important: don't assume "frozen since Dec 14" ==
+Azure IP block for the other 15 states in this cohort** — NC turned out to be a config gap,
+not a network problem. Each of the other 15 (`usa, ak, ar, il, in, mi, ne, nm, nv, ny, oh,
+pa, sc, vi, vt`) needs the same live verification before assuming a cause.
+
+**Bonus find while debugging this**: the self-hosted run's job summary showed `📦 Nightly
+fallback` / all metrics `N/A` — looked like the fresh scrape got discarded. It didn't; this
+was the `tar --mode=755` macOS-BSD-tar-incompatibility bug (see fix below), a cosmetic
+reporting bug, not data loss. Confirmed by checking the actual git commit on
+`govbot-openstates-scrapers/nc-legislation` directly — the real 2,334-bill commit landed
+fine despite the misleading summary.
+
+### tar --mode=755 macOS Incompatibility (Fixed 2026-07-14)
+
+`actions/scrape/scrape.sh` built its release tarball with `tar zcf ... --mode=755`, a
+GNU-tar-only flag. macOS's built-in BSD tar doesn't support it and fails silently at that
+step — but by then the real scraped files were already copied into `_data/{state}/`, so the
+actual data commit was unaffected. The failure only broke the job summary (forced it into
+"nightly fallback" mode, reporting `N/A` for every metric and a stale file count) — actively
+misleading anyone checking a self-hosted Mac run's results. Confirmed this cosmetic-only
+via IL (real commit had all 12,753 files despite summary saying `4`) and NC (real commit had
+all 2,334 bills despite summary saying `2432`, the old Dec 2025 count). **Fix**: replaced
+`--mode=755` with a `chmod -R 755` before a plain `tar` call — works identically on GNU and
+BSD tar.
 
 ### TN — IP Block by wapp.capitol.tn.gov
 
