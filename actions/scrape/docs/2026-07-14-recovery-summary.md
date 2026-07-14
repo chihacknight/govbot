@@ -20,15 +20,21 @@ exist as a capability until 2026-07-13, and the project runs on a part-time, sea
 It's fixed now, and we built a tool (`audit-data-staleness.sh`) to catch this pattern early
 next time instead of finding it by accident again.
 
-## States fixed, with real before/after bill counts
+## States fixed, with before/after JSON file counts
 
-All verified by checking actual git commits and bill counts, not just workflow status —
-several of the "old" numbers below already looked fine in our prior tracking doc despite
-being months stale, which is exactly the trap this recovery effort uncovered.
+**A note on what this table actually measures**: these numbers are counts of raw JSON files
+(scraped bills + vote events + events combined) in each state's data folder, not a count of
+distinct bills — a single bill can have several files (its own record, plus one per vote
+event, plus one per action/event). We caught this because the USA row didn't match the
+formatter's own authoritative bill count (see below), the same way the GitHub UI's "truncated
+directory" display didn't reflect the real number earlier. Treat the "Change" column as a
+reliable signal that real new data landed (all of it was frozen at zero before), but not as a
+literal bill count. Only the USA row below has been cross-checked against the formatter's own
+count; the other 17 were built the same way and haven't been re-verified yet.
 
-| State | Bills before | Bills now | Change |
+| State | Files before | Files now | Change |
 |---|---:|---:|---|
-| USA (Congress) | ~8,250 | **34,658** | +26,408 |
+| USA (Congress) | ~8,250 | 34,658 (**14,474 distinct bills**, per formatter's own count) | data unfrozen |
 | New York | ~9,584 | **25,321** | +15,737 |
 | Illinois | ~2,944 | **12,753** | +9,809 |
 | West Virginia | ~2,709 | **5,950** | +3,241 |
@@ -71,10 +77,10 @@ These are pre-existing, already-diagnosed problems, unaffected by the December f
 
 | State | Issue | Status |
 |---|---|---|
-| Arizona | Session cookie not persisting through a login POST | PR open upstream ([#5722](https://github.com/openstates/openstates-scrapers/pull/5722)); maintainer can't reproduce, waiting on us for exact repro steps |
-| Florida | Not actually a blocking issue — re-diagnosed 2026-07-14 | A self-hosted run got no bot-detection errors at all, just ran out of its 12-hour time limit partway through (FL is a very large, slow-to-scrape session). Timeout raised to 24h and a longer run is in progress; real long-term fix is committing progress incrementally instead of only at the end, so a timeout doesn't lose everything gathered |
-| Louisiana | Bill search only returns ~7 of ~525 bills | Issue open upstream, awaiting maintainer response |
-| New Hampshire | Site blocks scraping during business hours | Schedule shifted to run overnight; still borderline, being watched |
+| Arizona | Session cookie not persisting through a login POST | PR open upstream ([#5722](https://github.com/openstates/openstates-scrapers/pull/5722)); confirmed 2026-07-14 with a fresh self-hosted run (non-Azure IP) — 100% repro rate, identical failure across all 3 retries, so it's not an IP-blocking issue. Posted the run log + exact repro command [as a comment](https://github.com/openstates/openstates-scrapers/pull/5722#issuecomment-4972662364); maintainer still couldn't reproduce it themselves, waiting on their response |
+| Florida | Not actually a blocking issue — re-diagnosed 2026-07-14 | ⏳ **Currently waiting on scraper to finish.** A self-hosted run got no bot-detection errors at all, just ran out of its 12-hour time limit partway through (FL is a very large, slow-to-scrape session). Timeout raised to 24h and a longer self-hosted run is in progress; real long-term fix is committing progress incrementally instead of only at the end, so a timeout doesn't lose everything gathered |
+| Louisiana | Bill search only returns ~7 of ~525 bills | ⏳ **Currently waiting on scraper to finish.** Switched to self-hosted 2026-07-14 and it's running now — may turn out to be another IP-blocking case rather than a real scraper bug, same pattern as IL/WV/NC. Will confirm once the run completes and we can check the actual bill count against the ~525 total |
+| New Hampshire | Not just a business-hours block — a real data-loss bug found 2026-07-14 | A self-hosted run got rate-limited (`H3_RATE_LIMITED`) after scraping only jurisdiction/org metadata (zero bills). `scrape.sh` treated those 4 leftover files as "the scrape," wholesale-deleted 436 real bill/vote files from `_data/nh/` and overwrote the nightly fallback release with the same near-empty data — so the fallback safety net was gone too. **Fixed** (not yet pushed → pushing now): the wipe/rebuild step now requires the scrape to have actually succeeded (`exit_code == 0`), not just "some JSON files exist." NH's 436 deleted files still need to be restored from git history separately. Overnight-only scheduling stays in place as a real, separate mitigation for the business-hours block |
 | N. Mariana Islands | Crashes on one specific bill with a blank title | Root cause identified, fix not yet filed upstream |
 | Guam | Each bill gets saved ~3x per run (wasted requests, no data loss) | Root cause identified, fix not yet filed upstream |
 | Idaho, Maryland, Utah, Wyoming | Only "active" bills returned — completed sessions undercounted | Root cause confirmed for Wyoming (API filters out signed/enrolled bills); same pattern suspected for the others |
@@ -89,6 +95,12 @@ These are pre-existing, already-diagnosed problems, unaffected by the December f
 - Fixed a macOS-specific bug (`tar --mode=755`) that made every self-hosted run's summary
   falsely report "nightly fallback" / no data, even on runs that fully succeeded — purely
   cosmetic, but it was actively confusing to anyone checking run results.
+- Fixed a real data-loss bug in `scrape.sh`, found via the New Hampshire investigation above:
+  a failed scrape that still left a few partial files on disk (e.g. rate-limited right after
+  metadata but before any bills) was being treated as a successful scrape, wiping real
+  historical data from the git repo *and* corrupting the nightly fallback release with the
+  same partial output. Now gated on the scrape having actually succeeded, not just "some JSON
+  files exist on disk." Applies to every state, not just NH.
 
 ## Text extraction results (govbot-test org)
 
