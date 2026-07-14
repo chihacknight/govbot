@@ -67,6 +67,31 @@ Formatted legislation data for all 56 jurisdictions is available at [github.com/
 - Federal (USA)
 - DC, Puerto Rico, Guam, US Virgin Islands, Northern Mariana Islands
 
+### Data Structure
+
+Each jurisdiction has its own repo. The root of that repo IS the dataset — no wrapper folders:
+
+```
+{state}-legislation/
+├── country:us/
+│   └── state:{code}/                  # state:usa (federal), state:il, state:tx, etc.
+│       └── sessions/{session_id}/
+│           ├── bills/{bill_id}/
+│           │   ├── metadata.json      # Bill metadata + _processing timestamps
+│           │   ├── logs/              # Action/vote-event logs
+│           │   └── files/             # Bill text: original .pdf/.xml/.html + *_extracted.txt
+│           └── events/                # Committee hearings, etc.
+└── .windycivi/                        # Pipeline metadata (committed & reused)
+    ├── sessions.json                  # Session id -> name/dates
+    ├── bill_session_mapping.json      # Bill-to-session mappings
+    ├── latest_timestamp_seen.txt      # Incremental-processing cursor
+    └── errors/                        # Text-extraction failures, missing-session bills, orphan tracking
+```
+
+Federal and state jurisdictions share one path pattern (`state:usa` for federal), so downstream tooling doesn't need special-casing.
+
+See [`actions/format/docs/DATA_STRUCTURES.md`](actions/format/docs/DATA_STRUCTURES.md) for the full schema reference (bill metadata, logs, events, error tracking).
+
 ## Contribute
 
 ### Folder Structure
