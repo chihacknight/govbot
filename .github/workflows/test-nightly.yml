@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Build govbot
         run: |
@@ -38,8 +38,9 @@ jobs:
           # Clone all repositories
           govbot clone all --verbose
 
-          # Verify at least one repository was cloned
-          REPO_COUNT=$(ls -1 "${HOME}/.govbot/repos" 2>/dev/null | wc -l)
+          # Verify at least one repository was cloned.
+          # clone runs in the workspace, so data lands in $CWD/govbot_data/repos.
+          REPO_COUNT=$(ls -1 "${GITHUB_WORKSPACE}/govbot_data/repos" 2>/dev/null | wc -l)
           if [ "$REPO_COUNT" -eq 0 ]; then
             echo "::error::govbot clone all failed - no repositories were cloned"
             exit 1

@@ -94,7 +94,7 @@ jobs:
             [ "$vhs_rc" -eq 0 ] || return 1
             test -f /tmp/govbot-synthetic-test.gif || { echo "FAIL: no GIF" >> "$DIAG"; return 1; }
             test -f /tmp/govbot-test/govbot.yml || { echo "FAIL: no govbot.yml" >> "$DIAG"; return 1; }
-            test -d /tmp/govbot-test/.govbot/repos/ || { echo "FAIL: no repos dir" >> "$DIAG"; return 1; }
+            test -d /tmp/govbot-test/govbot_data/repos/ || { echo "FAIL: no repos dir" >> "$DIAG"; return 1; }
             test -d /tmp/govbot-test/docs/ || { echo "FAIL: no docs dir" >> "$DIAG"; return 1; }
           }
 
@@ -114,7 +114,7 @@ jobs:
           echo "=== govbot.yml ==="
           cat /tmp/govbot-test/govbot.yml
           echo "=== Cloned repos ==="
-          ls -la /tmp/govbot-test/.govbot/repos/
+          ls -la /tmp/govbot-test/govbot_data/repos/
           echo "=== Build output ==="
           ls -la /tmp/govbot-test/docs/
 
@@ -146,9 +146,9 @@ jobs:
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Cloned repos" >> $GITHUB_STEP_SUMMARY
-          if [ -d /tmp/govbot-test/.govbot/repos ]; then
+          if [ -d /tmp/govbot-test/govbot_data/repos ]; then
             echo '```' >> $GITHUB_STEP_SUMMARY
-            ls /tmp/govbot-test/.govbot/repos/ >> $GITHUB_STEP_SUMMARY
+            ls /tmp/govbot-test/govbot_data/repos/ >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           else
             echo "> No repos were cloned" >> $GITHUB_STEP_SUMMARY

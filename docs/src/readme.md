@@ -75,7 +75,7 @@ LOAD json;
 
 -- Query all bill metadata
 SELECT * 
-FROM read_json_auto('~/.govbot/repos/**/bills/*/metadata.json')
+FROM read_json_auto('~/govbot_data/repos/**/bills/*/metadata.json')
 LIMIT 10;
 ```
 

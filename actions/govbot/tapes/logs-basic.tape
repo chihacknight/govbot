@@ -7,6 +7,6 @@ Set Width 1200
 Set Height 600
 Set Padding 20
 
-Type "govbot logs --govbot-dir mocks/.govbot"
+Type "govbot logs --govbot-dir mocks/govbot_data"
 Enter
 Sleep 3s

@@ -29,10 +29,10 @@ govbot clone all
 govbot load
 
 # 3. Open in DuckDB UI (browser-based)
-duckdb --ui ~/.govbot/govbot.duckdb
+duckdb --ui ~/govbot_data/govbot.duckdb
 
 # Or query from command line
-duckdb ~/.govbot/govbot.duckdb
+duckdb ~/govbot_data/govbot.duckdb
 ```
 
 ## Command Options
@@ -60,7 +60,7 @@ govbot load --database my-analysis.duckdb
 govbot load --memory-limit 32GB --threads 8
 
 # Use custom data directory
-govbot load --govbot-dir /path/to/.govbot
+govbot load --govbot-dir /path/to/govbot_data
 ```
 
 ## Database Schema
@@ -218,7 +218,7 @@ COPY (
 The DuckDB UI provides a browser-based interface for exploring data:
 
 ```bash
-duckdb --ui ~/.govbot/govbot.duckdb
+duckdb --ui ~/govbot_data/govbot.duckdb
 ```
 
 Features:
@@ -241,12 +241,12 @@ LOAD json;
 
 -- Query metadata files directly
 SELECT *
-FROM read_json_auto('~/.govbot/repos/**/bills/*/metadata.json')
+FROM read_json_auto('~/govbot_data/repos/**/bills/*/metadata.json')
 LIMIT 10;
 
 -- Query with filtering
 SELECT identifier, title, jurisdiction->>'name' as state
-FROM read_json_auto('~/.govbot/repos/**/bills/*/metadata.json')
+FROM read_json_auto('~/govbot_data/repos/**/bills/*/metadata.json')
 WHERE title ILIKE '%health%';
 ```
 

@@ -1,5 +1,5 @@
-.govbot/
-!mocks/**/.govbot/
+govbot_data/
+!mocks/**/govbot_data/
 country:us/
 govbot.yml
 feeds/

@@ -39,13 +39,13 @@ covers every tracked jurisdiction. If that step fails, the deploy falls back to 
 committed sample data rather than breaking the docs site.
 
 The committed sample data is built from the offline mocks
-(`actions/govbot/mocks/.govbot` — Wyoming and Guam), with demo topics derived from
+(`actions/govbot/mocks/govbot_data` — Wyoming and Guam), with demo topics derived from
 the keyword definitions in `scripts/dashboard_tags.json` (the same shape as the
 `tags:` section of `govbot.yml`, keyword-only mode):
 
 ```bash
 python3 scripts/build_dashboard_data.py \
-  --govbot-dir actions/govbot/mocks/.govbot \
+  --govbot-dir actions/govbot/mocks/govbot_data \
   --tags-config scripts/dashboard_tags.json \
   --output docs/src/dashboard/data.json
 ```
@@ -53,7 +53,7 @@ python3 scripts/build_dashboard_data.py \
 ## Regenerating locally with real data
 
 ```bash
-govbot clone all        # clone the dataset repos (~/.govbot/repos)
+govbot clone all        # clone the dataset repos (~/govbot_data/repos)
 govbot tag              # optional: score bills against your govbot.yml tags
 python3 scripts/build_dashboard_data.py --output docs/src/dashboard/data.json
 ```

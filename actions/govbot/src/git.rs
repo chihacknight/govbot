@@ -88,12 +88,12 @@ pub fn build_repo_path(locale: &str) -> String {
     format!("{}/{}", org, repo_name)
 }
 
-/// Get the default repos directory: $CWD/.govbot/repos
+/// Get the default repos directory: $CWD/govbot_data/repos
 pub fn default_repos_dir() -> Result<PathBuf> {
     let cwd = std::env::current_dir()
         .map_err(|_| Error::Config("Could not determine current working directory.".to_string()))?;
 
-    Ok(cwd.join(".govbot").join("repos"))
+    Ok(cwd.join("govbot_data").join("repos"))
 }
 
 /// Build callbacks for git operations with optional token authentication

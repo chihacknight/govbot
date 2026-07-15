@@ -41,7 +41,7 @@ Your feeds will be generated in the "docs" directory.
 ? Base URL for your feeds: https://sartaj.me/govbot
 
   ✓ Created govbot.yml
-  ✓ Created .gitignore with .govbot
+  ✓ Created .gitignore with govbot_data
   ✓ Created .github/workflows/build.yml
 
 Setup complete! Run 'govbot' again to start the pipeline.

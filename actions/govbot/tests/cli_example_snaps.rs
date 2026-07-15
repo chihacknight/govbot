@@ -41,7 +41,7 @@ fn get_binary_path() -> PathBuf {
 fn test_data_exists() -> bool {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("mocks")
-        .join(".govbot")
+        .join("govbot_data")
         .join("repos")
         .exists()
 }
@@ -117,7 +117,7 @@ fn run_example_script(script_path: &Path) -> (String, String, i32) {
     let args = parse_shell_script(&script_content);
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let govbot_dir = manifest_dir.join("mocks").join(".govbot");
+    let govbot_dir = manifest_dir.join("mocks").join("govbot_data");
 
     // Set URL template to match existing mock data (uses -data-pipeline suffix)
     let repo_url_template = "https://github.com/chn-openstates-files/{locale}-data-pipeline.git";
