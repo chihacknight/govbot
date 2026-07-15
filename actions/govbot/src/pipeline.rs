@@ -5,8 +5,8 @@ use std::process::{Command, Stdio};
 /// Run the full govbot pipeline: clone/update → tag → build.
 ///
 /// Smart update behavior:
-/// - If `.govbot/repos/` exists with repos: just update existing repos (git pull)
-/// - If `.govbot/repos/` does not exist: clone repos based on govbot.yml config
+/// - If `govbot_data/repos/` exists with repos: just update existing repos (git pull)
+/// - If `govbot_data/repos/` does not exist: clone repos based on govbot.yml config
 pub fn run_pipeline(config_path: &Path) -> Result<()> {
     let govbot_bin = std::env::current_exe()
         .context("Failed to determine govbot binary path")?;
@@ -15,7 +15,7 @@ pub fn run_pipeline(config_path: &Path) -> Result<()> {
         .parent()
         .unwrap_or_else(|| Path::new("."));
 
-    let repos_dir = cwd.join(".govbot").join("repos");
+    let repos_dir = cwd.join("govbot_data").join("repos");
     let has_repos = repos_dir.exists()
         && std::fs::read_dir(&repos_dir)
             .map(|mut d| d.next().is_some())

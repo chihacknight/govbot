@@ -18,7 +18,7 @@ inputs:
     description: 'Output filename for RSS feed (default: from govbot.yml build.output_file)'
     required: false
   govbot-dir:
-    description: 'Govbot directory (default: $CWD/.govbot/repos, or GOVBOT_DIR env var)'
+    description: 'Govbot directory (default: $CWD/govbot_data/repos, or GOVBOT_DIR env var)'
     required: false
 
 outputs:
@@ -48,7 +48,7 @@ runs:
         if [ -n "${{ inputs.govbot-dir }}" ]; then
           export GOVBOT_DIR="${{ inputs.govbot-dir }}"
         else
-          export GOVBOT_DIR="${{ github.workspace }}/.govbot"
+          export GOVBOT_DIR="${{ github.workspace }}/govbot_data"
         fi
         echo "GOVBOT_DIR=$GOVBOT_DIR" >> $GITHUB_ENV
         echo "repos-dir=$GOVBOT_DIR/repos" >> $GITHUB_OUTPUT

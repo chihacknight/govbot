@@ -81,7 +81,7 @@ impl WizardSession {
 
         // Summary
         display.push_str("  ✓ Created govbot.yml\n");
-        display.push_str("  ✓ Created .gitignore with .govbot\n");
+        display.push_str("  ✓ Created .gitignore with govbot_data\n");
         display.push_str("  ✓ Created .github/workflows/build.yml\n\n");
         display.push_str("Setup complete! Run 'govbot' again to start the pipeline.\n");
 
@@ -359,26 +359,26 @@ pub fn generate_govbot_yml(repos: &[String], include_example_tag: bool, base_url
     yml
 }
 
-/// Write .gitignore with .govbot entry
+/// Write .gitignore with govbot_data entry
 pub fn write_gitignore(cwd: &Path) -> Result<()> {
     let gitignore_path = cwd.join(".gitignore");
-    let gitignore_entry = ".govbot\n";
+    let gitignore_entry = "govbot_data\n";
 
     if gitignore_path.exists() {
         let mut content = fs::read_to_string(&gitignore_path)?;
-        if content.contains(".govbot") {
-            eprintln!("  ✓ .gitignore already contains .govbot");
+        if content.contains("govbot_data") {
+            eprintln!("  ✓ .gitignore already contains govbot_data");
         } else {
             if !content.ends_with('\n') {
                 content.push('\n');
             }
             content.push_str(gitignore_entry);
             fs::write(&gitignore_path, content)?;
-            eprintln!("  ✓ Updated .gitignore to include .govbot");
+            eprintln!("  ✓ Updated .gitignore to include govbot_data");
         }
     } else {
         fs::write(&gitignore_path, gitignore_entry)?;
-        eprintln!("  ✓ Created .gitignore with .govbot");
+        eprintln!("  ✓ Created .gitignore with govbot_data");
     }
 
     Ok(())

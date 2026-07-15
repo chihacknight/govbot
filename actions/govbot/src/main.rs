@@ -68,7 +68,7 @@ enum Command {
         #[arg(num_args = 0..)]
         repos: Vec<String>,
 
-        /// Directory containing repositories (default: $CWD/.govbot/repos, or GOVBOT_DIR env var)
+        /// Directory containing repositories (default: $CWD/govbot_data/repos, or GOVBOT_DIR env var)
         #[arg(long = "govbot-dir")]
         govbot_dir: Option<String>,
 
@@ -115,7 +115,7 @@ enum Command {
         #[arg(long, default_value = "DESC", value_parser = ["ASC", "DESC"])]
         sort: String,
 
-        /// Govbot directory (default: $CWD/.govbot/repos, or GOVBOT_DIR env var)
+        /// Govbot directory (default: $CWD/govbot_data/repos, or GOVBOT_DIR env var)
         #[arg(long = "govbot-dir")]
         govbot_dir: Option<String>,        
     },
@@ -127,7 +127,7 @@ enum Command {
         #[arg(num_args = 0..)]
         locales: Vec<String>,
 
-        /// Directory containing repositories (default: $CWD/.govbot/repos, or GOVBOT_DIR env var)
+        /// Directory containing repositories (default: $CWD/govbot_data/repos, or GOVBOT_DIR env var)
         #[arg(long = "govbot-dir")]
         govbot_dir: Option<String>,
 
@@ -142,13 +142,13 @@ enum Command {
 
     /// Load bill metadata into a DuckDB database file
     /// Loads all metadata.json files from cloned repos into a DuckDB database for analysis.
-    /// The database file is saved in the base govbot directory (e.g., ./.govbot/govbot.duckdb)
+    /// The database file is saved in the base govbot directory (e.g., ./govbot_data/govbot.duckdb)
     Load {
         /// Output database filename (default: govbot.duckdb). Saved in the base govbot directory.
         #[arg(long, default_value = "govbot.duckdb")]
         database: String,
 
-        /// Directory containing repositories (default: $CWD/.govbot/repos, or GOVBOT_DIR env var)
+        /// Directory containing repositories (default: $CWD/govbot_data/repos, or GOVBOT_DIR env var)
         #[arg(long = "govbot-dir")]
         govbot_dir: Option<String>,
 
@@ -184,7 +184,7 @@ enum Command {
         #[arg(long)]
         output_file: Option<String>,
         
-        /// Govbot directory (default: $CWD/.govbot/repos, or GOVBOT_DIR env var)
+        /// Govbot directory (default: $CWD/govbot_data/repos, or GOVBOT_DIR env var)
         #[arg(long = "govbot-dir")]
         govbot_dir: Option<String>,
     },
@@ -202,7 +202,7 @@ enum Command {
         #[arg(long = "output-dir")]
         output_dir: Option<String>,
 
-        /// Govbot directory (default: $CWD/.govbot/repos, or GOVBOT_DIR env var)
+        /// Govbot directory (default: $CWD/govbot_data/repos, or GOVBOT_DIR env var)
         #[arg(long = "govbot-dir")]
         govbot_dir: Option<String>,
 
@@ -222,7 +222,7 @@ fn get_govbot_dir(govbot_dir: Option<String>) -> anyhow::Result<PathBuf> {
         // Append /repos to custom govbot-dir from env var
         Ok(PathBuf::from(govbot_dir).join("repos"))
     } else {
-        // Fall back to default: $CWD/.govbot/repos
+        // Fall back to default: $CWD/govbot_data/repos
         git::default_repos_dir().map_err(|e| anyhow::anyhow!("{}", e))
     }
 }
@@ -1259,7 +1259,7 @@ async fn run_load_command(cmd: Command) -> anyhow::Result<()> {
     }
 
     // Get base govbot directory (parent of repos)
-    // e.g., if repos_dir is ./.govbot/repos, base_dir is ./.govbot
+    // e.g., if repos_dir is ./govbot_data/repos, base_dir is ./govbot_data
     let base_govbot_dir = repos_dir.parent()
         .ok_or_else(|| anyhow::anyhow!("Could not determine base govbot directory"))?;
     
@@ -1550,13 +1550,13 @@ async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
     let current_dir = std::env::current_dir()?;
     let default_tags_cfg = current_dir.join("govbot.yml");
 
-    // Model/tokenizer directory: prefer user-specified govbot-dir or env GOVBOT_DIR, else default .govbot
+    // Model/tokenizer directory: prefer user-specified govbot-dir or env GOVBOT_DIR, else default govbot_data
     let model_dir: PathBuf = if let Some(ref dir) = govbot_dir {
         PathBuf::from(dir)
     } else if let Ok(dir) = std::env::var("GOVBOT_DIR") {
         PathBuf::from(dir)
     } else {
-        current_dir.join(".govbot")
+        current_dir.join("govbot_data")
     };
     fs::create_dir_all(&model_dir)?;
     let model_path = model_dir.join("model.onnx");
@@ -2107,10 +2107,10 @@ async fn run_build_command(cmd: Command) -> anyhow::Result<()> {
     } else if let Ok(gd) = std::env::var("GOVBOT_DIR") {
         gd
     } else {
-        // Default: $CWD/.govbot
+        // Default: $CWD/govbot_data
         std::env::current_dir()
             .unwrap_or_else(|_| PathBuf::from("."))
-            .join(".govbot")
+            .join("govbot_data")
             .to_string_lossy()
             .to_string()
     };
@@ -2132,7 +2132,7 @@ async fn run_build_command(cmd: Command) -> anyhow::Result<()> {
         .arg("DESC");
     
     // Only add --govbot-dir if it's not the default
-    if !base_govbot_dir.is_empty() && base_govbot_dir != ".govbot" {
+    if !base_govbot_dir.is_empty() && base_govbot_dir != "govbot_data" {
         cmd.arg("--govbot-dir").arg(&base_govbot_dir);
     }
     

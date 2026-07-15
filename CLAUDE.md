@@ -99,14 +99,14 @@ The `govbot load` command loads bill metadata into a DuckDB database for SQL ana
 - Shells out to `duckdb` binary (not a Rust library dependency)
 - Reads all `metadata.json` files from cloned repos
 - Creates `bills` table and `bills_summary` view
-- Database saved to `~/.govbot/govbot.duckdb`
+- Database saved to `~/govbot_data/govbot.duckdb`
 
 **Usage**:
 ```bash
 govbot clone all                    # First, get the data
 govbot load                         # Load into DuckDB
 govbot load --memory-limit 32GB     # For large datasets
-duckdb --ui ~/.govbot/govbot.duckdb # Open in browser UI
+duckdb --ui ~/govbot_data/govbot.duckdb # Open in browser UI
 ```
 
 See `actions/govbot/DUCKDB.md` for query examples and schema documentation.
@@ -114,9 +114,9 @@ See `actions/govbot/DUCKDB.md` for query examples and schema documentation.
 ## Testing with Mock Data
 
 Mock legislative data is available for offline development:
-- Location: `actions/govbot/mocks/.govbot/repos/`
+- Location: `actions/govbot/mocks/govbot_data/repos/`
 - Contains: Wyoming (wy) and Guam (gu) sample data
-- Usage: `govbot logs --govbot-dir ./actions/govbot/mocks/.govbot`
+- Usage: `govbot logs --govbot-dir ./actions/govbot/mocks/govbot_data`
 
 ## govbot Development
 
@@ -125,7 +125,7 @@ cd actions/govbot
 just setup           # Install Rust toolchain and dependencies
 just test            # Run snapshot tests
 just review          # Review snapshot changes (insta)
-just govbot logs     # Run CLI in dev mode (uses mocks/.govbot)
+just govbot logs     # Run CLI in dev mode (uses mocks/govbot_data)
 just mocks wy il     # Update mock data for testing
 ```
 

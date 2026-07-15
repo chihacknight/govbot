@@ -14,7 +14,7 @@ Commands:
   clone   Clone or pull data pipeline repositories (default: updates existing repos) Clones if repository doesn't exist, pulls if it does Use "govbot clone all" to clone all repos, or "govbot clone <repo>" for specific repos
   logs    Process and display pipeline log files
   delete  Delete data pipeline repositories Deletes local repository directories for specified locales
-  load    Load bill metadata into a DuckDB database file Loads all metadata.json files from cloned repos into a DuckDB database for analysis. The database file is saved in the base govbot directory (e.g., ./.govbot/govbot.duckdb)
+  load    Load bill metadata into a DuckDB database file Loads all metadata.json files from cloned repos into a DuckDB database for analysis. The database file is saved in the base govbot directory (e.g., ./govbot_data/govbot.duckdb)
   update  Update govbot to the latest nightly version Downloads and installs the latest nightly build from GitHub releases
   build   Build RSS feed and HTML index from govbot.yml configuration Generates a combined RSS feed and HTML index from logs filtered by tags in govbot.yml
   tag     Tag bills using semantic or built-in similarity based on govbot.yml in the current directory. Reads JSON lines from stdin (from `govbot logs`), processes entries with bill identifiers, and writes per-tag files under the directory containing govbot.yml. By default, acts as a filter: only outputs lines that match tags. If a tag name is provided, only processes and outputs lines matching that specific tag

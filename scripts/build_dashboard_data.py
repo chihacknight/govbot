@@ -20,7 +20,7 @@ committed demo data built from ``actions/govbot/mocks``.
 Usage:
     # Demo data from the in-repo mocks (what is committed):
     python3 scripts/build_dashboard_data.py \
-        --govbot-dir actions/govbot/mocks/.govbot \
+        --govbot-dir actions/govbot/mocks/govbot_data \
         --tags-config scripts/dashboard_tags.json \
         --output docs/src/dashboard/data.json
 
@@ -196,8 +196,8 @@ def summarize_bill(metadata, session_id, tags, code):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--govbot-dir", default=str(Path.home() / ".govbot"),
-                        help="Directory containing repos/ (default: ~/.govbot)")
+    parser.add_argument("--govbot-dir", default=str(Path.home() / "govbot_data"),
+                        help="Directory containing repos/ (default: ~/govbot_data)")
     parser.add_argument("--tags-config", default=None,
                         help="JSON file of keyword tag definitions used when a "
                              "session has no tags/*.tag.json files")

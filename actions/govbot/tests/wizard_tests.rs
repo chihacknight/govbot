@@ -209,7 +209,7 @@ fn test_write_files_creates_govbot_yml() {
     let gitignore_path = dir.path().join(".gitignore");
     assert!(gitignore_path.exists(), ".gitignore should exist");
     let gitignore = std::fs::read_to_string(&gitignore_path).unwrap();
-    assert!(gitignore.contains(".govbot"), ".gitignore should contain .govbot");
+    assert!(gitignore.contains("govbot_data"), ".gitignore should contain govbot_data");
 
     // Verify workflow was created
     let workflow_path = dir.path().join(".github/workflows/build.yml");
