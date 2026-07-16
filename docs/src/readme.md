@@ -1,16 +1,39 @@
 ![Govbot icon](https://manband.one/assets/govbot-logo-transparent.png)
 
-# Mission
+# govbot
+
+**Every U.S. legislature, as data you can clone.** govbot turns government updates into git repositories you can analyze, query, and build on — no scraper to maintain, no data platform to pay for.
+
+- 📥 **Clone the legislation of 56 jurisdictions in under a minute** — every dataset is just a git repo.
+- 🔒 **Tag and summarize bills with private, local models** — optimized to run for free on GitHub Actions. No API keys, no per-token bill.
+- 🔎 **Analyze it your way** — stream it as JSON Lines through Unix pipes, or load it into DuckDB for SQL across every state at once.
+
+## By the numbers
+
+| | |
+|---|---|
+| **56** | jurisdictions covered — all 50 states + Federal + DC + 4 territories |
+| **14,474** | distinct federal (Congress) bills, and counting |
+| **< 1 min** | to clone every dataset |
+| **$0** | cost to tag bills — models run locally on free CI |
+
+## What We Offer
+
+The main Govbot dataset covers **56 jurisdictions** — all 50 states, the U.S. House & Senate (Federal), DC, and the territories of Puerto Rico, Guam, the U.S. Virgin Islands, and the Northern Mariana Islands — as `.json` files organized using the [Project Open Data](https://project-open-data.cio.gov/) catalog format.
+
+The Govbot scrapers update regularly, appending new logs. New bills are then tagged and scored **on-device by a private sentence-transformer model (ONNX) with a keyword fallback** — small enough to run for free on GitHub Actions, so no bill text ever leaves your pipeline and there's no per-token cost. From there, the data can be analyzed with SQL via a [DuckDB](https://duckdb.org/) interface, browsed on our [live legislation dashboard](https://docs.windycivi.com), or plugged into applications like:
+
+- [**Transportation Legislation** Bluesky bot](https://bsky.app/profile/govbottransport.bsky.social) — transportation bills nationwide, posted as they move.
+- [**Data Center & AI Legislation** Bluesky bot](https://bsky.app/profile/govbotaidatacenter.bsky.social) — AI and data-center bills across every jurisdiction.
+- [**WindyCivi**](https://windycivi.com/), our example website, and an early BlueSky bot built in collaboration with U.S. Representative Hoan Huynh.
+
+# Why govbot?
 
 > Why don't we pay attention to our representatives between elections?
 
 Legislative data is hard to parse, track, and organize. Activists, concerned citizens, and the curious may not have the time, resources, or expertise to build out duplicative tech stacks. Existing solutions may be limited by the willingness of organizations and companies to continue to run and host them - such as in the case of [Google's Civic Information API](https://developers.google.com/civic-information/), which was shut down earlier this year. What would a decentralized, open-source legislative data solution look like?
 
-The Govbot team's goal is to bridge this gap - building the framework for the building and use of federated, open-source, non-profit legislative data. Built as a [Chi Hack Night](https://chihacknight.org) [Breakout Group](https://github.com/chihacknight/breakout-groups/issues/219), the project includes an open-source, simplified, and expanded version of [OpenStates'](https://open.pluralpolicy.com/data/) data on state and federal legislation, as well as example applications. 
-
-# What We Offer
-
-The main Govbot dataset currently includes legislative updates from bills in the U.S. House & Senate, all 50 states, territories like Guam, and the city of Chicago, as .json files organized using the [Project Open Data](https://project-open-data.cio.gov/) catalog format. The Govbot scrapers update regularly, appending new logs, and then running them through Claude to provide topic-based tagging and summaries. This data can then be analyzed using SQL, via an interface built with DuckDB, or plugged into applications like [our example website, WindyCivi](https://windycivi.com/), and a test BlueSky bot built in collaboration with U.S. Representative Hoan Huynh. (https://bsky.app/profile/test-hoan-huynh.bsky.social).
+The Govbot team's goal is to bridge this gap - building the framework for the building and use of federated, open-source, non-profit legislative data. Built as a [Chi Hack Night](https://chihacknight.org) [Breakout Group](https://github.com/chihacknight/breakout-groups/issues/219), the project includes an open-source, simplified, and expanded version of [OpenStates'](https://open.pluralpolicy.com/data/) data on state and federal legislation, as well as example applications.
 
 # How Do I Use It?
 
@@ -28,7 +51,7 @@ govbot
 
 That's it. If no `govbot.yml` exists, an interactive wizard walks you through setup:
 
-1. **Sources** - Choose all 47 states or pick specific ones
+1. **Sources** - Choose all 56 jurisdictions or pick specific ones
 2. **Tags** - Start with an example tag, or get an AI prompt you can copy-paste to create your own
 3. **Publishing** - RSS feeds configured automatically
 

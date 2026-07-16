@@ -5,15 +5,27 @@
 
 # 🏛️ govbot
 
-- Download the legislation of [56 states/jurisdictions](https://github.com/orgs/govbot-data/repositories) in under 1 minute.
-- Tag/summarize bills with private/local models optimized to run on free Github Actions.
+**Every U.S. legislature, as data you can clone.** `govbot` is a terminal-native toolkit that turns government updates into git repositories you can analyze, query, and build on — no scraper to maintain, no data platform to pay for.
 
-`govbot` enables distributed data analysis of government updates via a friendly terminal interface. Git repos function as datasets, including the legislation of all 56 states/jurisdictions.
+- 📥 **Clone the legislation of [56 jurisdictions](https://github.com/orgs/govbot-data/repositories) in under a minute** — every dataset is just a git repo.
+- 🔒 **Tag and summarize bills with private, local models** — optimized to run for free on GitHub Actions. No API keys, no per-token bill.
+- 🔎 **Analyze it your way** — stream it as JSON Lines through Unix pipes, or load it into DuckDB for SQL across every state at once.
+
+### By the numbers
+
+| | |
+|---|---|
+| **56** | jurisdictions covered — all 50 states + Federal + DC + 4 territories |
+| **14,474** | distinct federal (Congress) bills, and counting |
+| **< 1 min** | to clone every dataset |
+| **$0** | cost to tag bills — models run locally on free CI |
 
 ## Example Projects
 
-- [Transportation Legislation Bluesky Bot](https://bsky.app/profile/govbottransport.bsky.social)
-- [Data Center Legislation Bluesky Bot](https://bsky.app/profile/govbotaidatacenter.bsky.social)
+Point govbot at a topic and it publishes a live feed for it. Two running today:
+
+- [**Transportation Legislation** Bluesky bot](https://bsky.app/profile/govbottransport.bsky.social) — transportation bills across all jurisdictions, posted as they move.
+- [**Data Center & AI Legislation** Bluesky bot](https://bsky.app/profile/govbotaidatacenter.bsky.social) — tracks AI and data-center bills nationwide.
 
 ## Quick Start
 
@@ -30,7 +42,7 @@ govbot
 ```
 
 Running `govbot` with no config file launches an interactive setup wizard that:
-1. Asks what data sources you want (all 47 states or specific ones)
+1. Asks what data sources you want (all 56 jurisdictions or specific ones)
 2. Guides you through creating tags for topics you care about
 3. Creates `govbot.yml`, `.gitignore`, and a GitHub Actions workflow
 
