@@ -1,5 +1,6 @@
 ---
 source: tests/wizard_tests.rs
+assertion_line: 33
 expression: "&session.to_snapshot()"
 ---
 === Wizard Session ===
@@ -65,7 +66,7 @@ Setup complete! Run 'govbot' again to start the pipeline.
 # Schema: https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json
 $schema: https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json
 
-repos:
+datasets:
   - all
 
 tags:
@@ -76,6 +77,16 @@ tags:
   #   examples:
   #     - "Example bill description"
   {}
+
+transforms:
+  classify:
+    command: govbot classify
+    reads: docs
+    writes: classification
+
+pipelines:
+  default:
+    - classify
 
 build:
   base_url: "https://example.com"

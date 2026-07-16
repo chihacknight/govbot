@@ -1,12 +1,13 @@
 ---
 source: tests/wizard_tests.rs
+assertion_line: 123
 expression: "&yml"
 ---
 # Govbot Configuration
 # Schema: https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json
 $schema: https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json
 
-repos:
+datasets:
   - wy
 
 tags:
@@ -29,6 +30,16 @@ tags:
       - "Increases per-pupil funding for public schools and establishes minimum teacher salary requirements"
       - "Mandates comprehensive sex education curriculum in all public schools"
       - "Expands eligibility for state financial aid programs to include part-time students"
+
+transforms:
+  classify:
+    command: govbot classify
+    reads: docs
+    writes: classification
+
+pipelines:
+  default:
+    - classify
 
 build:
   base_url: "https://sartaj.me/govbot"

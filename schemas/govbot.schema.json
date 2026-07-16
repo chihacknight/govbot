@@ -1,77 +1,55 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Govbot Configuration Schema",
-  "description": "Schema for validating govbot.yml configuration files",
+  "title": "Govbot Manifest Schema",
+  "description": "Schema for validating govbot.yml manifest files. govbot.yml declares the datasets a project consumes, the transforms it runs over them, the publishers that emit artifacts, and named pipelines that wire those stages into a DAG. A transform node is a uniform { command, reads, writes }: the built-in tagger fills the classify role as an ordinary transform whose command is 'govbot classify', and swapping in an external classifier (e.g. 'fastclass classify -') is only a command change. The legacy 'repos' and 'tags' keys are still accepted for backwards compatibility.",
   "type": "object",
   "properties": {
-    "repos": {
-      "description": "List of repositories to clone and process. Use 'all' to include all available repositories.",
+    "$schema": {
+      "type": "string"
+    },
+    "datasets": {
+      "description": "Datasets the project consumes (git repos / registry names). Use 'all' to include every available dataset. Additive superset of the legacy 'repos'.",
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "default": ["all"]
+      }
+    },
+    "repos": {
+      "description": "Legacy dataset list, still honored. Prefer 'datasets'.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
     "tags": {
-      "description": "Tag definitions for categorizing legislation. Each tag should have a description and optional examples.",
+      "description": "Tag taxonomy consumed by the built-in 'govbot classify' transform. Each tag has a description and optional examples/keywords. An external classifier transform (e.g. fastclass) carries its own taxonomy instead.",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/tag"
       }
     },
-    "publish": {
-      "description": "RSS feed publishing configuration",
+    "transforms": {
+      "description": "Named external-process transform nodes. A transform is a separate program that speaks the govbot stream protocol (newline-delimited JSON on stdio, stable 'id', typed 'kind'). govbot streams records of the transform's 'reads' kind into it and routes records of its 'writes' kind back by 'id'. 'govbot classify' (the built-in tagger) and 'fastclass classify -' are interchangeable transform nodes.",
       "type": "object",
-      "properties": {
-        "base_url": {
-          "description": "Base URL for RSS feed links (required for GitHub Pages). Should match your GitHub Pages URL.",
-          "type": "string",
-          "format": "uri",
-          "default": "https://example.com"
-        },
-        "output_dir": {
-          "description": "Directory where RSS feeds are generated",
-          "type": "string",
-          "default": "feeds"
-        },
-        "output_file": {
-          "description": "Output filename for the RSS feed",
-          "type": "string",
-          "default": "feed.xml"
-        },
-        "tags": {
-          "description": "Specific tags to include in the combined RSS feed. If not specified, all tags are included.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "title": {
-          "description": "Custom feed title. If not specified, defaults to combined tag names.",
-          "type": "string"
-        },
-        "description": {
-          "description": "Custom feed description. If not specified, defaults to combined tag descriptions.",
-          "type": "string"
-        },
-        "limit": {
-          "description": "Limit number of entries per RSS feed. Use 'none' for no limit, or a number. Default is 15 (RSS standard).",
-          "oneOf": [
-            {
-              "type": "string",
-              "enum": ["none"]
-            },
-            {
-              "type": "integer",
-              "minimum": 1
-            }
-          ]
-        }
-      },
-      "required": ["base_url", "output_dir", "output_file"]
+      "additionalProperties": {
+        "$ref": "#/definitions/transform"
+      }
+    },
+    "publish": {
+      "description": "Named publisher nodes. Each publisher consumes the result stream and emits exactly one artifact. Declare one publisher per artifact kind (e.g. both an 'rss' and an 'html' publisher to emit both a feed and an index).",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/publisher"
+      }
+    },
+    "pipelines": {
+      "description": "Named 'govbot run' targets, npm-script style. Each pipeline is an ordered list of stage references -- names of entries in 'transforms' and 'publish' -- executed in sequence. 'govbot run <name>' runs the named pipeline.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/pipeline"
+      }
     }
   },
-  "required": ["repos", "tags"],
   "definitions": {
     "tag": {
       "type": "object",
@@ -89,7 +67,96 @@
         }
       },
       "required": ["description"]
+    },
+    "transform": {
+      "description": "A single external-process transform stage (a DAG node). Uniform shape -- no classify-specific fields; a classifier bundle path, if any, is part of 'command'.",
+      "type": "object",
+      "properties": {
+        "command": {
+          "description": "The stage command: a shell string ('govbot classify') or an explicit argv array (['govbot', 'classify']).",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "reads": {
+          "description": "The stream record kind this transform consumes. 'docs' is the document-projection kind defined by the stream protocol.",
+          "type": "string",
+          "examples": ["docs", "classification", "summary"]
+        },
+        "writes": {
+          "description": "The stream record kind this transform produces. govbot routes records of this kind back into the stream by their 'id'. The classify transform writes 'classification'.",
+          "type": "string",
+          "examples": ["classification", "summary"]
+        }
+      },
+      "required": ["command", "reads", "writes"]
+    },
+    "publisher": {
+      "description": "A single publisher stage. Each publisher kind emits exactly one artifact: 'rss' writes the RSS feed (default feed.xml), 'html' writes the HTML index (default index.html).",
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "The publisher kind. 'rss' writes the RSS feed only; 'html' writes the HTML index only.",
+          "type": "string",
+          "enum": ["rss", "html"]
+        },
+        "select": {
+          "description": "Tag names to include. Only records carrying at least one of these tags are published; if omitted, all tagged records are published.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "base_url": {
+          "description": "Base URL for generated links (e.g. the GitHub Pages URL).",
+          "type": "string"
+        },
+        "output_dir": {
+          "description": "Directory where the publisher writes its artifact.",
+          "type": "string"
+        },
+        "output_file": {
+          "description": "Output filename for the publisher's single artifact. Defaults by 'type': 'rss' -> 'feed.xml', 'html' -> 'index.html'.",
+          "type": "string"
+        },
+        "title": {
+          "description": "Custom feed/page title.",
+          "type": "string"
+        },
+        "description": {
+          "description": "Custom feed/page description.",
+          "type": "string"
+        },
+        "limit": {
+          "description": "Limit number of entries. Use 'none' for no limit, or a number.",
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": ["none"]
+            },
+            {
+              "type": "integer",
+              "minimum": 1
+            }
+          ]
+        }
+      },
+      "required": ["type"]
+    },
+    "pipeline": {
+      "description": "An ordered list of stage references (names of 'transforms' and 'publish' entries) executed in sequence.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   }
 }
-

@@ -1,5 +1,6 @@
 ---
 source: tests/cli_example_snaps.rs
+assertion_line: 223
 expression: "&formatted_stdout"
 ---
 Command:
@@ -11,14 +12,16 @@ Process pipeline log files with type-safe reactive streams
 Usage: govbot [COMMAND]
 
 Commands:
-  clone   Clone or pull data pipeline repositories (default: updates existing repos) Clones if repository doesn't exist, pulls if it does Use "govbot clone all" to clone all repos, or "govbot clone <repo>" for specific repos
-  logs    Process and display pipeline log files
-  delete  Delete data pipeline repositories Deletes local repository directories for specified locales
-  load    Load bill metadata into a DuckDB database file Loads all metadata.json files from cloned repos into a DuckDB database for analysis. The database file is saved in the base govbot directory (e.g., ./.govbot/govbot.duckdb)
-  update  Update govbot to the latest nightly version Downloads and installs the latest nightly build from GitHub releases
-  build   Build RSS feed and HTML index from govbot.yml configuration Generates a combined RSS feed and HTML index from logs filtered by tags in govbot.yml
-  tag     Tag bills using semantic or built-in similarity based on govbot.yml in the current directory. Reads JSON lines from stdin (from `govbot logs`), processes entries with bill identifiers, and writes per-tag files under the directory containing govbot.yml. By default, acts as a filter: only outputs lines that match tags. If a tag name is provided, only processes and outputs lines matching that specific tag
-  help    Print this message or the help of the given subcommand(s)
+  pull      Pull data pipeline datasets (default: updates existing datasets) Clones if a dataset doesn't exist, pulls if it does. Use "govbot pull all" for all datasets, or "govbot pull <name>" for specific ones [aliases: clone]
+  source    Emit the activity stream (the DAG's `source` stage) [aliases: logs]
+  delete    Delete data pipeline repositories Deletes local repository directories for specified locales
+  load      Load bill metadata into a DuckDB database file Loads all metadata.json files from cloned repos into a DuckDB database for analysis. The database file is saved in the base govbot directory (e.g., ./.govbot/govbot.duckdb)
+  update    Update govbot to the latest nightly version Downloads and installs the latest nightly build from GitHub releases
+  publish   Publish RSS feed and HTML index from govbot.yml (the DAG's publish stage) Generates a combined RSS feed and HTML index from the stream filtered by tags [aliases: build]
+  classify  Classify records from stdin with the built-in tagger (a DAG transform)
+  apply     Apply classification records from stdin, persisting per-tag .tag.json files
+  run       Run a manifest pipeline: source | transforms | apply, then publishers
+  help      Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help     Print help

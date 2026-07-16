@@ -83,18 +83,18 @@ runs:
           exit 1
         fi
         
-        # If cache was hit, govbot clone will just update existing repos (git pull)
-        # If cache was missed, govbot clone will do fresh clones
-        # When no repos are specified, govbot clone updates existing repos only
+        # If cache was hit, govbot pull will just update existing repos (git pull)
+        # If cache was missed, govbot pull will do fresh clones
+        # When no repos are specified, govbot pull updates existing repos only
         if [ "${{ steps.cache-repos.outputs.cache-hit }}" == "true" ]; then
           echo "📥 Cache hit - updating existing repositories..."
           # Update existing repos (no args = update existing only)
-          ${{ github.action_path }}/bin/govbot clone \
+          ${{ github.action_path }}/bin/govbot pull \
             --govbot-dir "$GOVBOT_DIR" || true
         else
           echo "📥 Cache miss - cloning all repositories..."
           # Clone all repos
-          ${{ github.action_path }}/bin/govbot clone all \
+          ${{ github.action_path }}/bin/govbot pull all \
             --govbot-dir "$GOVBOT_DIR" || true
         fi
     
@@ -105,12 +105,16 @@ runs:
         path: ${{ steps.set-govbot-dir.outputs.repos-dir }}
         key: govbot-repos-${{ runner.os }}-${{ hashFiles('govbot.yml') }}
     
-    - name: Tag bills
+    - name: Classify bills
       shell: bash
       working-directory: ${{ github.workspace }}
       run: |
-        echo "🏷️  Tagging bills..."
-        ${{ github.action_path }}/bin/govbot logs | ${{ github.action_path }}/bin/govbot tag || true
+        echo "🏷️  Classifying bills..."
+        BIN="${{ github.action_path }}/bin/govbot"
+        # The classify stage of the DAG: source -> classify -> apply.
+        # Swap `govbot classify` for any stream-protocol classifier (e.g.
+        # `fastclass classify -`) via the `transforms:` block in govbot.yml.
+        "$BIN" source --select docs | "$BIN" classify | "$BIN" apply || true
     
     - name: Generate RSS feed
       id: publish
@@ -147,9 +151,9 @@ runs:
           ARGS="$ARGS --govbot-dir ${{ inputs.govbot-dir }}"
         fi
         
-        # Run build command
+        # Run publish command
         # govbot.yml is automatically found in workspace root
-        ${{ github.action_path }}/bin/govbot build $ARGS
+        ${{ github.action_path }}/bin/govbot publish $ARGS
         
         # Determine output path (read from govbot.yml or use defaults)
         if [ -n "${{ inputs.output-dir }}" ]; then

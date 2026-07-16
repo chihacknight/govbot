@@ -404,15 +404,25 @@ impl TagMatcher {
         &self,
         value: &serde_json::Value,
     ) -> anyhow::Result<Vec<(String, ScoreBreakdown)>> {
-        let text = ocd_files_select_default(value);
+        self.match_text(&ocd_files_select_default(value))
+    }
+
+    /// Score already-extracted text against the loaded tags.
+    ///
+    /// This is the stream-native scoring entry point: a `docs` record carries
+    /// its text pre-projected, and the `govbot classify` transform scores that
+    /// text directly (as an external classifier like fastclass would).
+    /// `match_json_value` is the convenience wrapper that projects an OCD value
+    /// to text first.
+    pub fn match_text(&self, text: &str) -> anyhow::Result<Vec<(String, ScoreBreakdown)>> {
         let mut embeddings = self.embeddings.lock().unwrap();
-        let log_embedding = embeddings.embed(&text)?;
+        let log_embedding = embeddings.embed(text)?;
 
         let mut results = Vec::new();
         for (name, tag_def) in &self.tags {
             let score_breakdown = self.calculate_composite_score(
                 &log_embedding,
-                &text,
+                text,
                 name,
                 tag_def,
                 &mut *embeddings,
@@ -443,7 +453,18 @@ pub fn match_tags_keywords(
     tag_defs: &[TagDefinition],
     json_entry: &serde_json::Value,
 ) -> Vec<(String, ScoreBreakdown)> {
-    let text = ocd_files_select_default(json_entry);
+    match_tags_keywords_text(tag_defs, &ocd_files_select_default(json_entry))
+}
+
+/// Keyword-based fallback matcher scoring already-extracted text.
+///
+/// The stream-native counterpart to [`match_tags_keywords`]: the `govbot
+/// classify` transform passes a `docs` record's pre-projected `text` here when
+/// the embedding model is unavailable.
+pub fn match_tags_keywords_text(
+    tag_defs: &[TagDefinition],
+    text: &str,
+) -> Vec<(String, ScoreBreakdown)> {
     let text_lower = text.to_lowercase();
 
     let mut results = Vec::new();

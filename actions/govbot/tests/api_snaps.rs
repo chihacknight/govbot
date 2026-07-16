@@ -1,10 +1,10 @@
-use govbot::prelude::*;
 use futures::StreamExt;
+use govbot::prelude::*;
 
 use insta;
 
 /// Snapshot test for the pipeline processor
-/// 
+///
 /// This test processes log files and compares the output against stored snapshots.
 /// To update snapshots after making changes, run:
 ///   cargo insta review
@@ -12,7 +12,7 @@ use insta;
 async fn test_pipeline_processor_snapshot() {
     // Use the same test data directory as the example
     let git_dir = "tmp/git/repos";
-    
+
     // Build configuration matching the render-snapshots.sh script
     let config = ConfigBuilder::new(git_dir)
         .sort_order_str("DESC")
@@ -21,7 +21,7 @@ async fn test_pipeline_processor_snapshot() {
         .join_options_str("bill")
         .unwrap()
         .build();
-    
+
     // Skip test if git_dir doesn't exist (e.g., in CI without test data)
     let config = match config {
         Ok(c) => c,
@@ -37,7 +37,7 @@ async fn test_pipeline_processor_snapshot() {
     // Collect all entries from the stream
     let mut stream = processor.process();
     let mut entries = Vec::new();
-    
+
     while let Some(result) = stream.next().await {
         match result {
             Ok(entry) => entries.push(entry),
@@ -49,8 +49,8 @@ async fn test_pipeline_processor_snapshot() {
     }
 
     // Serialize to JSON for snapshot comparison
-    let json_output = serde_json::to_string_pretty(&entries)
-        .expect("Failed to serialize entries to JSON");
+    let json_output =
+        serde_json::to_string_pretty(&entries).expect("Failed to serialize entries to JSON");
 
     // Use insta's assert_snapshot! macro for string comparison
     // The snapshot will be stored in tests/snapshots/api_snapshot_tests__test_pipeline_processor_snapshot.snap
@@ -88,4 +88,3 @@ async fn test_vote_event_processing() {
     // Test vote event result serialization
     insta::assert_json_snapshot!("vote_event_results", &results);
 }
-

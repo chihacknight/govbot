@@ -42,12 +42,16 @@ impl WizardSession {
             display.push('\n');
             display.push_str("Available states/jurisdictions:\n");
             let all_locales = crate::locale::WorkingLocale::all();
-            let locale_strs: Vec<String> = all_locales.iter().map(|l| l.as_str().to_string()).collect();
+            let locale_strs: Vec<String> =
+                all_locales.iter().map(|l| l.as_str().to_string()).collect();
             for chunk in locale_strs.chunks(10) {
                 display.push_str(&format!("  {}\n", chunk.join(", ")));
             }
             display.push('\n');
-            display.push_str(&format!("? Enter state codes separated by spaces: {}\n", choices.repos.join(" ")));
+            display.push_str(&format!(
+                "? Enter state codes separated by spaces: {}\n",
+                choices.repos.join(" ")
+            ));
         }
         display.push('\n');
 
@@ -77,7 +81,10 @@ impl WizardSession {
         // Step 3: Publishing
         display.push_str("Publishing is configured for RSS feeds by default.\n");
         display.push_str("Your feeds will be generated in the \"docs\" directory.\n\n");
-        display.push_str(&format!("? Base URL for your feeds: {}\n\n", choices.base_url));
+        display.push_str(&format!(
+            "? Base URL for your feeds: {}\n\n",
+            choices.base_url
+        ));
 
         // Summary
         display.push_str("  ✓ Created govbot.yml\n");
@@ -85,7 +92,11 @@ impl WizardSession {
         display.push_str("  ✓ Created .github/workflows/build.yml\n\n");
         display.push_str("Setup complete! Run 'govbot' again to start the pipeline.\n");
 
-        let govbot_yml = generate_govbot_yml(&choices.repos, choices.include_example_tag, &choices.base_url);
+        let govbot_yml = generate_govbot_yml(
+            &choices.repos,
+            choices.include_example_tag,
+            &choices.base_url,
+        );
         let workflow_yml = github_workflow_content().to_string();
 
         WizardSession {
@@ -208,10 +219,7 @@ pub fn run_wizard() -> Result<()> {
 }
 
 fn prompt_sources() -> Result<Vec<String>> {
-    let options = vec![
-        "All states (47 jurisdictions)",
-        "Select specific states",
-    ];
+    let options = vec!["All states (47 jurisdictions)", "Select specific states"];
 
     let selection = Select::new()
         .with_prompt("What data sources do you want to track?")
@@ -310,8 +318,8 @@ pub fn generate_govbot_yml(repos: &[String], include_example_tag: bool, base_url
     yml.push_str("# Schema: https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json\n");
     yml.push_str("$schema: https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json\n\n");
 
-    // Repos section
-    yml.push_str("repos:\n");
+    // Datasets section (the DAG's inputs)
+    yml.push_str("datasets:\n");
     for repo in repos {
         yml.push_str(&format!("  - {}\n", repo));
     }
@@ -325,9 +333,15 @@ pub fn generate_govbot_yml(repos: &[String], include_example_tag: bool, base_url
         yml.push_str("      Legislation related to schools, education funding, curriculum standards, and educational policy, including:\n");
         yml.push_str("      - K-12 public school funding, budgets, and resource allocation\n");
         yml.push_str("      - Curriculum standards, content requirements, and academic programs\n");
-        yml.push_str("      - Teacher certification, training, professional development, and compensation\n");
-        yml.push_str("      - Higher education policy, tuition, financial aid, and student loans\n");
-        yml.push_str("      - Charter schools, school choice, vouchers, and alternative education models\n");
+        yml.push_str(
+            "      - Teacher certification, training, professional development, and compensation\n",
+        );
+        yml.push_str(
+            "      - Higher education policy, tuition, financial aid, and student loans\n",
+        );
+        yml.push_str(
+            "      - Charter schools, school choice, vouchers, and alternative education models\n",
+        );
         yml.push_str("      - Special education services, accommodations, and individualized education plans\n");
         yml.push_str("      - School safety, security measures, and student discipline policies\n");
         yml.push_str("      - Early childhood education, pre-K programs, and childcare\n");
@@ -337,7 +351,9 @@ pub fn generate_govbot_yml(repos: &[String], include_example_tag: bool, base_url
         yml.push_str("      - Career and technical education, vocational training, and workforce development\n");
         yml.push_str("    examples:\n");
         yml.push_str("      - \"Increases per-pupil funding for public schools and establishes minimum teacher salary requirements\"\n");
-        yml.push_str("      - \"Mandates comprehensive sex education curriculum in all public schools\"\n");
+        yml.push_str(
+            "      - \"Mandates comprehensive sex education curriculum in all public schools\"\n",
+        );
         yml.push_str("      - \"Expands eligibility for state financial aid programs to include part-time students\"\n");
     } else {
         yml.push_str("  # Add your tags here. Example:\n");
@@ -350,7 +366,23 @@ pub fn generate_govbot_yml(repos: &[String], include_example_tag: bool, base_url
     }
     yml.push('\n');
 
-    // Build section
+    // Transforms section — the DAG's classify stage. The built-in tagger runs
+    // as an ordinary transform node; swap `command` to `fastclass classify -`
+    // (or any stream-protocol program) to change classifiers, no code change.
+    yml.push_str("transforms:\n");
+    yml.push_str("  classify:\n");
+    yml.push_str("    command: govbot classify\n");
+    yml.push_str("    reads: docs\n");
+    yml.push_str("    writes: classification\n");
+    yml.push('\n');
+
+    // Pipelines section — `govbot run` (and bare `govbot`) walks `default`.
+    yml.push_str("pipelines:\n");
+    yml.push_str("  default:\n");
+    yml.push_str("    - classify\n");
+    yml.push('\n');
+
+    // Build section (publisher output)
     yml.push_str("build:\n");
     yml.push_str(&format!("  base_url: \"{}\"\n", base_url));
     yml.push_str("  output_dir: \"docs\"\n");

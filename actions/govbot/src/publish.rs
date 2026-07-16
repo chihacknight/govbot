@@ -15,14 +15,17 @@ pub fn load_config(config_path: &Path) -> Result<Value> {
 
 /// Get repos list from config, handling 'all' special case
 pub fn get_repos_from_config(config: &Value) -> Vec<String> {
-    if let Some(repos) = config.get("repos") {
-        if let Some(arr) = repos.as_array() {
-            return arr
-                .iter()
-                .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                .collect();
-        } else if let Some(s) = repos.as_str() {
-            return vec![s.to_string()];
+    // Prefer the modern `datasets:` key, falling back to the legacy `repos:`.
+    for key in ["datasets", "repos"] {
+        if let Some(value) = config.get(key) {
+            if let Some(arr) = value.as_array() {
+                return arr
+                    .iter()
+                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                    .collect();
+            } else if let Some(s) = value.as_str() {
+                return vec![s.to_string()];
+            }
         }
     }
     vec!["all".to_string()]
