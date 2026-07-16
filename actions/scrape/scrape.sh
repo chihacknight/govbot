@@ -1,18 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: scrape.sh <state> [DOCKER_IMAGE] [working_dir] [output_dir] [api_keys_json]
+# Usage: scrape.sh <state> [DOCKER_IMAGE] [working_dir] [output_dir] [api_keys_json] [branch]
 #   state: State abbreviation (e.g., "id", "il", "tx", "ny", or "usa")
 #   DOCKER_IMAGE: Full Docker image reference (defaults to "openstates/scrapers:latest")
 #   working_dir: Optional working directory (defaults to current directory)
 #   output_dir: Optional output directory for tarball (defaults to current directory)
 #   api_keys_json: Optional JSON object with API keys (defaults to "{}")
+#   branch: Git branch the incremental auto-save should push to (defaults to "main",
+#           should match whatever branch the caller's later "Commit and push" step uses)
 
 STATE="${1:-}"
 DOCKER_IMAGE="${2:-openstates/scrapers:latest}"
 WORKING_DIR="${3:-$(pwd)}"
 OUTPUT_DIR="${4:-$(pwd)}"
 API_KEYS_JSON="${5:-{}}"
+BRANCH="${6:-main}"
 
 if [ -z "$STATE" ]; then
   echo "Error: State argument is required" >&2
@@ -25,6 +28,71 @@ mkdir -p _working/_data _working/_cache
 # Log file to capture Docker output for summary
 SCRAPE_LOG="${OUTPUT_DIR}/scrape-output.log"
 > "$SCRAPE_LOG"  # Clear/create log file
+
+# --- Incremental auto-commit, mirroring actions/extract's 30-minute auto-save ---
+#
+# The scraper writes into $WORKING_DIR/_working/_data/${STATE}, a Docker-mounted
+# temp directory outside the git checkout -- nothing lands in $OUTPUT_DIR (the
+# git repo) or gets committed until the whole scrape finishes and the wipe/copy
+# block below runs. For a state that can take many hours (e.g. FL), that means
+# a runner crash or lost-connection mid-scrape loses everything, not just the
+# most recent bit of progress -- discovered the hard way after a 21-hour FL
+# run died to "runner lost communication" with nothing to show for it.
+#
+# This loop periodically copies whatever's landed so far into $OUTPUT_DIR and
+# commits it, same spirit as extract's background loop. Unlike the final
+# wipe-then-replace block below, this is additive only (rsync without
+# --delete) -- the scrape is still in progress, so the full/correct file set
+# doesn't exist yet, and deleting anything here could discard real data still
+# mid-write. The final block still does the authoritative wipe + rebuild once
+# the scrape actually completes, which naturally cleans up anything stale left
+# behind by these incremental saves (e.g. a bill whose UUID changed between an
+# auto-save and the final commit).
+AUTOSAVE_INTERVAL="${SCRAPE_AUTOSAVE_INTERVAL:-1800}"  # 30 minutes, overridable for tests
+AUTOSAVE_FLAG="$(mktemp -d)/scrape_running_${STATE}"
+touch "$AUTOSAVE_FLAG"
+
+(
+  while [ -f "$AUTOSAVE_FLAG" ]; do
+    sleep "$AUTOSAVE_INTERVAL"
+    [ -f "$AUTOSAVE_FLAG" ] || break
+
+    SRC_DIR="${WORKING_DIR}/_working/_data/${STATE}"
+    [ -d "$SRC_DIR" ] || continue
+    SRC_COUNT=$(find "$SRC_DIR" -type f -name '*.json' 2>/dev/null | wc -l | tr -d ' ')
+    [ "$SRC_COUNT" -gt 0 ] || continue
+
+    echo "⏰ [$(date -u +%Y-%m-%dT%H:%M:%SZ)] Auto-saving ${SRC_COUNT} in-progress ${STATE} files..."
+
+    mkdir -p "${OUTPUT_DIR}/_data/${STATE}"
+    if command -v rsync >/dev/null 2>&1; then
+      rsync -a "$SRC_DIR/" "${OUTPUT_DIR}/_data/${STATE}/"
+    else
+      cp -rn "$SRC_DIR"/* "${OUTPUT_DIR}/_data/${STATE}/" 2>/dev/null || true
+    fi
+
+    (
+      cd "$OUTPUT_DIR"
+      git config --local user.email "action@github.com" 2>/dev/null || true
+      git config --local user.name "GitHub Action" 2>/dev/null || true
+      git add "_data/${STATE}/" 2>/dev/null || true
+      if ! git diff --staged --quiet; then
+        git commit -m "🔄 Auto-save in-progress scrape for ${STATE} - $(date -u +%Y-%m-%dT%H:%M:%SZ)" || true
+        for i in 1 2 3; do
+          if git pull --no-rebase origin "${BRANCH}" 2>&1 && \
+             git push origin "${BRANCH}" 2>&1; then
+            echo "✅ Auto-saved progress (attempt $i)"
+            break
+          fi
+          echo "⚠️ Auto-save push failed (attempt $i), retrying..."
+          sleep 5
+        done
+      fi
+    )
+  done
+) &
+AUTOSAVE_PID=$!
+echo "🔄 Incremental auto-save started (PID: $AUTOSAVE_PID, every ${AUTOSAVE_INTERVAL}s)"
 
 # Parse API keys from JSON and build Docker env flags
 # Use array to properly handle values with spaces/special chars
@@ -122,6 +190,17 @@ else
   done
 fi
 
+# Stop the incremental auto-save now that the scrape itself is done (success
+# or not) -- the final wipe/rebuild block below is the authoritative save from
+# here on, and shouldn't race with a background auto-save mid-commit.
+echo "🛑 Stopping incremental auto-save..."
+rm -f "$AUTOSAVE_FLAG"
+kill "$AUTOSAVE_PID" 2>/dev/null || true
+sleep 1
+kill -9 "$AUTOSAVE_PID" 2>/dev/null || true
+wait "$AUTOSAVE_PID" 2>/dev/null || true
+echo "✅ Incremental auto-save stopped"
+
 # Only replace existing data + rebuild the fallback tarball when the scrape
 # actually succeeded (exit_code 0). A retry-exhausted failure (e.g. rate
 # limiting, a block) can still leave a handful of jurisdiction/organization
@@ -160,12 +239,17 @@ if [ "$exit_code" -eq 0 ] && [ "$COUNT_JSON" -gt 0 ]; then
     echo "✅ ${COPIED_COUNT} scraped files in ${OUTPUT_DIR}/_data/${STATE}/"
   fi
 
-  # Also create tarball for artifacts/releases
-  # Normalize permissions before archiving instead of using GNU tar's --mode
-  # flag, which macOS's built-in BSD tar (used on self-hosted Mac runners)
-  # doesn't support and fails on silently.
-  chmod -R 755 "$JSON_DIR"
-  tar zcf scrape-snapshot-nightly.tgz -C "$JSON_DIR" .
+  # Also create tarball for artifacts/releases, built from the already-copied
+  # output directory rather than $JSON_DIR. Two reasons: (1) $JSON_DIR is
+  # written by the scraper Docker container as root, so chmod-ing it as the
+  # non-root runner user fails with "Operation not permitted" and (under
+  # set -e) silently kills the rest of the script -- the tarball, and every
+  # downstream stat that depends on it, just vanishes even though the real
+  # data already copied out fine. (2) Building from the copy also sidesteps
+  # GNU tar's --mode flag, which macOS's built-in BSD tar (self-hosted Mac
+  # runners) doesn't support and fails on silently -- same fix, one place.
+  chmod -R 755 "${OUTPUT_DIR}/_data/${STATE}"
+  tar zcf scrape-snapshot-nightly.tgz -C "${OUTPUT_DIR}/_data/${STATE}" .
   cp scrape-snapshot-nightly.tgz "${OUTPUT_DIR}/scrape-snapshot-nightly.tgz"
   echo "✅ Created local scrape tarball"
 elif [ "$COUNT_JSON" -gt 0 ]; then

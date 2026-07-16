@@ -91,7 +91,7 @@ runs:
           echo "🏛️ Using California-specific MySQL scraper..."
           bash "${{ github.action_path }}/scrape-ca.sh" "$(pwd)" "${{ github.workspace }}" "${DOCKER_IMAGE_TAG}" || true
         else
-          bash "${{ github.action_path }}/scrape.sh" "${{ inputs.state }}" "${DOCKER_IMAGE}" "$(pwd)" "${{ github.workspace }}" "${API_KEYS_JSON}" || true
+          bash "${{ github.action_path }}/scrape.sh" "${{ inputs.state }}" "${DOCKER_IMAGE}" "$(pwd)" "${{ github.workspace }}" "${API_KEYS_JSON}" "${{ inputs.branch }}" || true
         fi
 
         # Check if tarball was created
@@ -414,6 +414,42 @@ runs:
 
         # Add scraped files
         git add "_data/${{ inputs.state }}/"
+
+        # Every scrape run regenerates a fresh random UUID per bill/vote-event
+        # file (that's how OpenStates names them), so a full delete-old/add-new
+        # diff happens on every commit regardless of whether the underlying
+        # legislative content actually changed. Insertions == deletions is the
+        # signature of "same data, re-scraped" (e.g. an out-of-session state
+        # with nothing new to report) rather than real new activity -- surface
+        # that distinction in the job summary so it doesn't have to be
+        # reverse-engineered from commit stats after the fact.
+        DIFF_STAT=$(git diff --staged --shortstat)
+        INSERTIONS=$(echo "$DIFF_STAT" | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo 0)
+        DELETIONS=$(echo "$DIFF_STAT" | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo 0)
+        INSERTIONS=${INSERTIONS:-0}
+        DELETIONS=${DELETIONS:-0}
+
+        if [ "$INSERTIONS" -eq 0 ] && [ "$DELETIONS" -eq 0 ]; then
+          CONTENT_CHANGE="⏸️ No changes (nothing staged)"
+        elif [ "$INSERTIONS" -eq "$DELETIONS" ]; then
+          CONTENT_CHANGE="🔁 Re-scraped, no net new content ($INSERTIONS files replaced with fresh UUIDs, same count) — likely an out-of-session or otherwise unchanged state"
+        elif [ "$INSERTIONS" -gt "$DELETIONS" ]; then
+          CONTENT_CHANGE="✨ Net new content (+$((INSERTIONS - DELETIONS)) files vs. last commit)"
+        else
+          CONTENT_CHANGE="⚠️ Net fewer files than last commit (-$((DELETIONS - INSERTIONS)) files) — worth a look"
+        fi
+
+        echo "$CONTENT_CHANGE"
+        {
+          echo ""
+          echo "### 📝 Commit Content"
+          echo ""
+          echo "| Metric | Value |"
+          echo "|--------|-------|"
+          echo "| Result | $CONTENT_CHANGE |"
+          echo "| Insertions | $INSERTIONS |"
+          echo "| Deletions | $DELETIONS |"
+        } >> "$GITHUB_STEP_SUMMARY"
 
         # Commit if there are changes
         if git diff --staged --quiet; then
