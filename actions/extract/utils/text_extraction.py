@@ -221,224 +221,254 @@ def extract_bill_text_from_metadata(metadata_file: Path, files_dir: Path) -> boo
                 if not links:
                     continue  # Skip items without links
 
-                # Find best available link based on preference order
-                best_link = None
-                best_media_type = None
-
-                for link in links:
-                    media_type = link.get("media_type", "")
-                    url = link.get("url")
-
-                    if not url:
-                        continue
-
-                    # Check if this media type is better than current best
-                    for preferred_type in MEDIA_TYPE_PREFERENCE:
+                # Build the ordered list of candidates to try, best media
+                # type first (one candidate per type -- first link seen of
+                # each type wins, matching the old single-best selection).
+                candidates = []
+                seen_types = set()
+                for preferred_type in MEDIA_TYPE_PREFERENCE:
+                    for link in links:
+                        media_type = link.get("media_type", "")
+                        url = link.get("url")
+                        if not url or preferred_type in seen_types:
+                            continue
                         if preferred_type in media_type.lower():
-                            if best_link is None or MEDIA_TYPE_PREFERENCE.index(
-                                preferred_type
-                            ) < MEDIA_TYPE_PREFERENCE.index(best_media_type):
-                                best_link = link
-                                best_media_type = preferred_type
+                            candidates.append((url, media_type))
+                            seen_types.add(preferred_type)
                             break
 
-                if not best_link:
+                if not candidates:
                     continue  # Skip if no suitable link found
 
-                url = best_link.get("url")
-                media_type = best_link.get("media_type", "")
+                extracted_successfully = False
+                saw_placeholder_html = False
 
-                # Compute where this specific version/document would be saved
-                # *before* touching the network. Each versions[]/documents[]
-                # entry has its own URL, so an existing file here is a direct,
-                # correct signal that we already have this exact document --
-                # unlike inferring "did anything change" from the bill's
-                # actions[] (e.g. a vote), which says nothing about whether a
-                # new document actually exists.
-                file_extension = (
-                    "xml"
-                    if "xml" in media_type.lower()
-                    else "html" if "html" in media_type.lower() else "pdf"
-                )
-                filename = create_safe_filename(url, item_note, file_extension)
-                # Handle both lowercase and uppercase extensions (e.g., .html vs .HTM)
-                if filename.endswith(f".{file_extension}"):
-                    text_filename = filename.replace(
-                        f".{file_extension}", "_extracted.txt"
+                for url, media_type in candidates:
+                    # Compute where this specific version/document would be
+                    # saved *before* touching the network. Each
+                    # versions[]/documents[] entry has its own URL, so an
+                    # existing file here is a direct, correct signal that we
+                    # already have this exact document -- unlike inferring
+                    # "did anything change" from the bill's actions[] (e.g. a
+                    # vote), which says nothing about whether a new document
+                    # actually exists.
+                    file_extension = (
+                        "xml"
+                        if "xml" in media_type.lower()
+                        else "html" if "html" in media_type.lower() else "pdf"
                     )
-                elif filename.endswith(f".{file_extension.upper()}"):
-                    text_filename = filename.replace(
-                        f".{file_extension.upper()}", "_extracted.txt"
-                    )
-                else:
-                    # Fallback: just append _extracted.txt
-                    text_filename = filename.rsplit(".", 1)[0] + "_extracted.txt"
-
-                # Determine target directory
-                if array_name == "documents":
-                    # Documents (e.g. amendments) live in a separate subfolder
-                    target_dir = files_dir / "documents"
-                else:
-                    # Versions live in the main files directory
-                    target_dir = files_dir
-
-                content_file = target_dir / filename
-                text_file = target_dir / text_filename
-
-                if content_file.exists() and text_file.exists():
-                    print(
-                        f"   ⏭️  Already have {array_name} '{item_note}' "
-                        f"({filename}) — skipping"
-                    )
-                    success_count += 1
-                    continue
-
-                target_dir.mkdir(parents=True, exist_ok=True)
-                print(f"   📥 Downloading: {url} (type: {media_type})")
-
-                # Download content based on media type
-                content = None
-                is_binary_content = False
-                has_visual_markup = False
-
-                if "xml" in media_type.lower():
-                    content = download_bill_text(url)
-                elif "html" in media_type.lower():
-                    content = download_html_content(
-                        url, download_with_retry, download_congress_gov_content
-                    )
-                elif "pdf" in media_type.lower():
-                    pdf_result = extract_pdf(url, download_with_retry)
-                    if pdf_result:
-                        content = pdf_result["raw_bytes"]
-                        is_binary_content = True
-                        has_visual_markup = pdf_result["has_visual_markup"]
-                        if has_visual_markup:
-                            print(
-                                f"   🔍 Detected likely redline/strikethrough markup -- "
-                                f"flagged for full-fidelity review"
-                            )
-                        extracted_text = pdf_result["text"]
-                else:
-                    print(f"   ⚠️ Unsupported media type: {media_type}")
-                    continue
-
-                if not content:
-                    print(f"   ❌ Failed to download: {url}")
-                    error_message = (
-                        get_last_download_error()
-                        or f"Failed to download content from {media_type}"
-                    )
-                    record_failed_bill(
-                        bill_id=bill_id,
-                        error_type="download",
-                        error_message=error_message,
-                        url=url,
-                        metadata_file=str(metadata_file),
-                        additional_info={
-                            "media_type": media_type,
-                            "item_note": item_note,
-                        },
-                    )
-                    continue
-
-                print(f"   📄 Downloaded {len(content)} {'bytes' if is_binary_content else 'characters'}")
-
-                # Extract text based on content type. One clean read per
-                # document -- no section-splitting, since arbitrary
-                # formatting-based splits don't reliably capture anything
-                # meaningful across 56 states' differing bill formats, and
-                # duplicating the full text under both a "sections" and a
-                # "raw text" view was actively confusing for anything
-                # reading the output (human or AI).
-                extracted_data = None
-                if "xml" in media_type.lower():
-                    extracted_data = extract_text_from_xml(content)
-                elif "html" in media_type.lower():
-                    extracted_data = extract_text_from_html(content)
-                elif "pdf" in media_type.lower():
-                    extracted_data = {
-                        "title": "",
-                        "official_title": "",
-                        "raw_text": extracted_text,
-                    }
-                else:
-                    extracted_data = {
-                        "raw_text": content,
-                        "title": "",
-                        "official_title": "",
-                    }
-
-                if "error" in extracted_data:
-                    print(f"   ❌ Failed to parse content: {extracted_data['error']}")
-                    record_failed_bill(
-                        bill_id=bill_id,
-                        error_type="parsing",
-                        error_message=extracted_data["error"],
-                        url=url,
-                        metadata_file=str(metadata_file),
-                        additional_info={
-                            "media_type": media_type,
-                            "item_note": item_note,
-                        },
-                    )
-                    continue
-
-                # Save original content -- genuine bytes for PDFs (needed to
-                # hand off the real document later, e.g. to a vision-capable
-                # model for redline-heavy bills), plain text for XML/HTML.
-                print(f"   💾 Saving {file_extension.upper()} to: {content_file}")
-                try:
-                    if is_binary_content:
-                        with open(content_file, "wb") as f:
-                            f.write(content)
-                    else:
-                        with open(content_file, "w", encoding="utf-8") as f:
-                            f.write(content)
-                    print(f"   ✅ {file_extension.upper()} saved successfully")
-                except Exception as e:
-                    print(f"   ❌ Error saving {file_extension.upper()}: {e}")
-                    continue
-
-                # Save extracted text -- a single clean read, no artificial
-                # section-splitting.
-                print(f"   💾 Saving extracted text to: {text_file}")
-                try:
-                    with open(text_file, "w", encoding="utf-8") as f:
-                        f.write(f"Title: {extracted_data.get('title', 'N/A')}\n")
-                        f.write(
-                            f"Official Title: {extracted_data.get('official_title', 'N/A')}\n"
+                    filename = create_safe_filename(url, item_note, file_extension)
+                    # Handle both lowercase and uppercase extensions (e.g., .html vs .HTM)
+                    if filename.endswith(f".{file_extension}"):
+                        text_filename = filename.replace(
+                            f".{file_extension}", "_extracted.txt"
                         )
-                        f.write(f"Source: {array_name} - {item_note}\n")
-                        f.write(f"Media Type: {media_type}\n")
-                        if has_visual_markup:
+                    elif filename.endswith(f".{file_extension.upper()}"):
+                        text_filename = filename.replace(
+                            f".{file_extension.upper()}", "_extracted.txt"
+                        )
+                    else:
+                        # Fallback: just append _extracted.txt
+                        text_filename = filename.rsplit(".", 1)[0] + "_extracted.txt"
+
+                    # Determine target directory
+                    if array_name == "documents":
+                        # Documents (e.g. amendments) live in a separate subfolder
+                        target_dir = files_dir / "documents"
+                    else:
+                        # Versions live in the main files directory
+                        target_dir = files_dir
+
+                    content_file = target_dir / filename
+                    text_file = target_dir / text_filename
+
+                    if content_file.exists() and text_file.exists():
+                        print(
+                            f"   ⏭️  Already have {array_name} '{item_note}' "
+                            f"({filename}) — skipping"
+                        )
+                        success_count += 1
+                        extracted_successfully = True
+                        break
+
+                    target_dir.mkdir(parents=True, exist_ok=True)
+                    print(f"   📥 Downloading: {url} (type: {media_type})")
+
+                    # Download content based on media type
+                    content = None
+                    is_binary_content = False
+                    has_visual_markup = False
+
+                    if "xml" in media_type.lower():
+                        content = download_bill_text(url)
+                    elif "html" in media_type.lower():
+                        content = download_html_content(
+                            url, download_with_retry, download_congress_gov_content
+                        )
+                    elif "pdf" in media_type.lower():
+                        pdf_result = extract_pdf(url, download_with_retry)
+                        if pdf_result:
+                            content = pdf_result["raw_bytes"]
+                            is_binary_content = True
+                            has_visual_markup = pdf_result["has_visual_markup"]
+                            if has_visual_markup:
+                                print(
+                                    f"   🔍 Detected likely redline/strikethrough markup -- "
+                                    f"flagged for full-fidelity review"
+                                )
+                            extracted_text = pdf_result["text"]
+                    else:
+                        print(f"   ⚠️ Unsupported media type: {media_type}")
+                        continue
+
+                    if not content:
+                        print(f"   ❌ Failed to download: {url}")
+                        error_message = (
+                            get_last_download_error()
+                            or f"Failed to download content from {media_type}"
+                        )
+                        record_failed_bill(
+                            bill_id=bill_id,
+                            error_type="download",
+                            error_message=error_message,
+                            url=url,
+                            metadata_file=str(metadata_file),
+                            additional_info={
+                                "media_type": media_type,
+                                "item_note": item_note,
+                            },
+                        )
+                        continue
+
+                    print(f"   📄 Downloaded {len(content)} {'bytes' if is_binary_content else 'characters'}")
+
+                    # Extract text based on content type. One clean read per
+                    # document -- no section-splitting, since arbitrary
+                    # formatting-based splits don't reliably capture anything
+                    # meaningful across 56 states' differing bill formats, and
+                    # duplicating the full text under both a "sections" and a
+                    # "raw text" view was actively confusing for anything
+                    # reading the output (human or AI).
+                    extracted_data = None
+                    if "xml" in media_type.lower():
+                        extracted_data = extract_text_from_xml(content)
+                    elif "html" in media_type.lower():
+                        extracted_data = extract_text_from_html(content)
+                    elif "pdf" in media_type.lower():
+                        extracted_data = {
+                            "title": "",
+                            "official_title": "",
+                            "raw_text": extracted_text,
+                        }
+                    else:
+                        extracted_data = {
+                            "raw_text": content,
+                            "title": "",
+                            "official_title": "",
+                        }
+
+                    if "error" in extracted_data:
+                        print(f"   ❌ Failed to parse content: {extracted_data['error']}")
+                        record_failed_bill(
+                            bill_id=bill_id,
+                            error_type="parsing",
+                            error_message=extracted_data["error"],
+                            url=url,
+                            metadata_file=str(metadata_file),
+                            additional_info={
+                                "media_type": media_type,
+                                "item_note": item_note,
+                            },
+                        )
+                        continue
+
+                    if "html" in media_type.lower() and extracted_data.get(
+                        "is_placeholder"
+                    ):
+                        # A client-side-rendering loading shell, not real
+                        # bill content (see is_placeholder_html) -- try the
+                        # next-preferred media type instead of trusting it.
+                        print(
+                            f"   ⚠️ HTML looks like a JS-rendered placeholder "
+                            f"(no real content) -- falling back to next media type"
+                        )
+                        saw_placeholder_html = True
+                        continue
+
+                    # Save original content -- genuine bytes for PDFs (needed to
+                    # hand off the real document later, e.g. to a vision-capable
+                    # model for redline-heavy bills), plain text for XML/HTML.
+                    print(f"   💾 Saving {file_extension.upper()} to: {content_file}")
+                    try:
+                        if is_binary_content:
+                            with open(content_file, "wb") as f:
+                                f.write(content)
+                        else:
+                            with open(content_file, "w", encoding="utf-8") as f:
+                                f.write(content)
+                        print(f"   ✅ {file_extension.upper()} saved successfully")
+                    except Exception as e:
+                        print(f"   ❌ Error saving {file_extension.upper()}: {e}")
+                        continue
+
+                    # Save extracted text -- a single clean read, no artificial
+                    # section-splitting.
+                    print(f"   💾 Saving extracted text to: {text_file}")
+                    try:
+                        with open(text_file, "w", encoding="utf-8") as f:
+                            f.write(f"Title: {extracted_data.get('title', 'N/A')}\n")
                             f.write(
-                                "Visual Markup Detected: true -- this document likely "
-                                "contains redline (strikethrough/underline) formatting; "
-                                "plain text extraction may not faithfully represent what "
-                                "the bill changes. See the saved original file.\n"
+                                f"Official Title: {extracted_data.get('official_title', 'N/A')}\n"
                             )
-                        f.write("\n" + "=" * 80 + "\n\n")
-                        f.write(extracted_data.get("raw_text", ""))
-                    print(f"   ✅ Text saved successfully")
-                except Exception as e:
-                    print(f"   ❌ Error saving text: {e}")
+                            f.write(f"Source: {array_name} - {item_note}\n")
+                            f.write(f"Media Type: {media_type}\n")
+                            if has_visual_markup:
+                                f.write(
+                                    "Visual Markup Detected: true -- this document likely "
+                                    "contains redline (strikethrough/underline) formatting; "
+                                    "plain text extraction may not faithfully represent what "
+                                    "the bill changes. See the saved original file.\n"
+                                )
+                            f.write("\n" + "=" * 80 + "\n\n")
+                            f.write(extracted_data.get("raw_text", ""))
+                        print(f"   ✅ Text saved successfully")
+                    except Exception as e:
+                        print(f"   ❌ Error saving text: {e}")
+                        record_failed_bill(
+                            bill_id=bill_id,
+                            error_type="save",
+                            error_message=f"Failed to save extracted text: {e}",
+                            url=url,
+                            metadata_file=str(metadata_file),
+                            additional_info={
+                                "media_type": media_type,
+                                "item_note": item_note,
+                                "text_filename": text_filename,
+                            },
+                        )
+                        continue
+
+                    success_count += 1
+                    extracted_successfully = True
+                    print(f"   ✅ Extracted text for {array_name}: {item_note}")
+                    break
+
+                if not extracted_successfully and saw_placeholder_html:
+                    # Every candidate either was a placeholder shell or
+                    # failed outright, and at least one placeholder was
+                    # seen -- record this distinctly so it doesn't look
+                    # like an ordinary download/parse failure.
                     record_failed_bill(
                         bill_id=bill_id,
-                        error_type="save",
-                        error_message=f"Failed to save extracted text: {e}",
-                        url=url,
+                        error_type="placeholder_html",
+                        error_message=(
+                            "All HTML candidates were JS-rendered placeholder "
+                            "shells with no usable fallback media type"
+                        ),
+                        url=candidates[0][0],
                         metadata_file=str(metadata_file),
-                        additional_info={
-                            "media_type": media_type,
-                            "item_note": item_note,
-                            "text_filename": text_filename,
-                        },
+                        additional_info={"item_note": item_note},
                     )
-                    continue
-
-                success_count += 1
-                print(f"   ✅ Extracted text for {array_name}: {item_note}")
 
         return success_count > 0
 
