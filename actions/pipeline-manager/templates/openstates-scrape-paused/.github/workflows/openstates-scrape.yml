@@ -7,14 +7,22 @@ on:
         type: boolean
         description: "Force push even if upstream changed (use with caution)"
         default: false
+      use-self-hosted:
+        type: boolean
+        description: "Force self-hosted for this manual run instead of the default tinyproxy + GitHub-hosted path (only meaningful for locales configured runner: self-hosted; e.g. to test without the proxy)"
+        default: false
 
 env:
   STATE_CODE: ✏️{ locale.key }✏️
+  # See the active (non-paused) template for the full explanation -- same
+  # logic here, just no schedule trigger, since "paused" means dispatch-only
+  # by design.
+  USE_PROXY: ${{ '✏️{ locale.runner }✏️' == 'self-hosted' && !(github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) }}
 
 jobs:
   scrape:
     name: "🕷️ Scrape Data"
-    runs-on: ✏️{ locale.runner }✏️
+    runs-on: ${{ (github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) && 'self-hosted' || ('✏️{ locale.runner }✏️' == 'self-hosted' && 'ubuntu-latest' || '✏️{ locale.runner }✏️') }}
     timeout-minutes: 720
     permissions:
       contents: write
@@ -39,5 +47,7 @@ jobs:
               "DC_API_KEY": "${{ secrets.DC_API_KEY }}",
               "NEW_YORK_API_KEY": "${{ secrets.NEW_YORK_API_KEY }}",
               "INDIANA_API_KEY": "${{ secrets.INDIANA_API_KEY }}",
-              "USER_AGENT": "${{ secrets.USER_AGENT }}"
+              "USER_AGENT": "${{ secrets.USER_AGENT }}",
+              "HTTPS_PROXY": "${{ env.USE_PROXY == 'true' && secrets.PROXY_URL || '' }}",
+              "HTTP_PROXY": "${{ env.USE_PROXY == 'true' && secrets.PROXY_URL || '' }}"
             }

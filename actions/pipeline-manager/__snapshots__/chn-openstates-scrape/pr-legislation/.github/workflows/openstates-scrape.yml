@@ -9,14 +9,33 @@ on:
         type: boolean
         description: "Force push even if upstream changed (use with caution)"
         default: false
+      use-self-hosted:
+        type: boolean
+        description: "Force self-hosted for this manual run instead of the default tinyproxy + GitHub-hosted path (only meaningful for locales configured runner: self-hosted; e.g. to test without the proxy)"
+        default: false
 
 env:
   STATE_CODE: pr
+  # locale.runner is a render-time literal ("self-hosted" or "ubuntu-latest"),
+  # not a runtime value -- runs-on: and this env: block can't read each other
+  # or their own sibling keys, so the literal gets inlined directly wherever
+  # it's needed below instead of routed through a shared variable.
+  #
+  # inputs.use-self-hosted only ever populates on a workflow_dispatch event --
+  # it's simply unset (falsy) on the nightly `schedule` trigger regardless of
+  # its declared default, so a plain `inputs.use-self-hosted` check would only
+  # ever fire on a manual run. For a self-hosted-flagged locale, route through
+  # tinyproxy on a GitHub-hosted runner by default and treat self-hosted as an
+  # explicit manual opt-out -- proxy running unattended was the whole point;
+  # self-hosted alone silently depended on a laptop being on and connected for
+  # every single automatic run. Locales that were never self-hosted (the
+  # literal below is "ubuntu-latest") are untouched by any of this.
+  USE_PROXY: ${{ 'ubuntu-latest' == 'self-hosted' && !(github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) }}
 
 jobs:
   scrape:
     name: "🕷️ Scrape Data"
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) && 'self-hosted' || ('ubuntu-latest' == 'self-hosted' && 'ubuntu-latest' || 'ubuntu-latest') }}
     timeout-minutes: 720
     permissions:
       contents: write
@@ -41,5 +60,7 @@ jobs:
               "DC_API_KEY": "${{ secrets.DC_API_KEY }}",
               "NEW_YORK_API_KEY": "${{ secrets.NEW_YORK_API_KEY }}",
               "INDIANA_API_KEY": "${{ secrets.INDIANA_API_KEY }}",
-              "USER_AGENT": "${{ secrets.USER_AGENT }}"
+              "USER_AGENT": "${{ secrets.USER_AGENT }}",
+              "HTTPS_PROXY": "${{ env.USE_PROXY == 'true' && secrets.PROXY_URL || '' }}",
+              "HTTP_PROXY": "${{ env.USE_PROXY == 'true' && secrets.PROXY_URL || '' }}"
             }
