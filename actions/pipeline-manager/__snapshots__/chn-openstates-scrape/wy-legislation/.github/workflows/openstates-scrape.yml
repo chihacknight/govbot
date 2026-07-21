@@ -52,6 +52,13 @@ jobs:
   scrape:
     name: "🕷️ Scrape Data"
     runs-on: ${{ (github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) && 'self-hosted' || ('ubuntu-latest' == 'self-hosted' && 'ubuntu-latest' || 'ubuntu-latest') }}
+    # Per-locale override (locale.scrape_timeout_minutes in
+    # chn-openstates-scrape.yml) -- this used to be a one-off hand-edit
+    # directly on FL's live workflow file (raised to 24h after its default
+    # 12h was hit mid-scrape), which meant it silently reverted back to the
+    # template default the next time apply.py's fully_override_dirs pushed
+    # the shared template out. Routing it through config instead means a
+    # rollout can't quietly undo it again.
     timeout-minutes: 720
     permissions:
       contents: write

@@ -104,6 +104,10 @@
             "scrape_cron": {
               "type": "string",
               "description": "Cron schedule (UTC) for this locale's scrape workflow, staggered by the state capital's timezone so scrapes run shortly after each state's own legislative day ends rather than all firing at once. E.g. '0 4 * * *' for Eastern, '0 7 * * *' for Pacific. See openstates-scrape.yml template."
+            },
+            "scrape_timeout_minutes": {
+              "type": "string",
+              "description": "GitHub Actions timeout-minutes for this locale's scrape job. Defaults to 720 (12h); raised for slow states (e.g. FL, 2520 = 42h). Routed through config rather than hand-edited on the live workflow file so a template rollout (apply.py's fully_override_dirs) can't silently revert it."
             }
           },
           "additionalProperties": false
