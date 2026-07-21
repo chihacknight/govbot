@@ -18,7 +18,7 @@ jobs:
   synthetic-test:
     name: Govbot Wizard & Pipeline
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
       contents: write
     if: >-
@@ -71,11 +71,44 @@ jobs:
           sudo dpkg -i vhs.deb
           rm vhs.deb
 
+      # The tag step downloads an 87MB ONNX embedding model from HuggingFace.
+      # Anonymous downloads from GitHub's shared runner-IP pool get throttled by
+      # HF's per-IP rate limits, which was pushing the download past the tape's
+      # VHS wait window and failing the test. Cache the model across runs and seed
+      # it into the test dir before the pipeline runs, so the timed pipeline never
+      # re-downloads it. Bump the trailing version (v1) manually if the model or
+      # tokenizer URLs below ever change (HF 'resolve/main' is unpinned).
+      - name: Cache embedding model
+        id: cache-model
+        uses: actions/cache@v4
+        with:
+          path: ~/govbot-model
+          key: govbot-embedding-model-all-MiniLM-L6-v2-onnx-v1
+
+      - name: Download embedding model (cache miss only)
+        if: steps.cache-model.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p "$HOME/govbot-model"
+          curl -fSL --retry 5 --retry-delay 5 --retry-connrefused \
+            "https://huggingface.co/Xenova/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx" \
+            -o "$HOME/govbot-model/model.onnx"
+          curl -fSL --retry 5 --retry-delay 5 --retry-connrefused \
+            "https://huggingface.co/Xenova/all-MiniLM-L6-v2/resolve/main/tokenizer.json" \
+            -o "$HOME/govbot-model/tokenizer.json"
+          # Guard against HF returning an HTML/error body with a 200 status.
+          test "$(stat -c%s "$HOME/govbot-model/model.onnx")" -gt 1000000
+
       - name: Run end-to-end test via VHS (with retry)
         run: |
           DIAG=/tmp/vhs-diagnostic.txt
           run_test() {
             rm -rf /tmp/govbot-test /tmp/govbot-synthetic-test.gif
+            # Seed the cached embedding model so the pipeline's tag step finds it
+            # already present (govbot skips the download when model.onnx +
+            # tokenizer.json exist) and does not re-download inside the VHS window.
+            mkdir -p /tmp/govbot-test/govbot_data
+            cp "$HOME/govbot-model/model.onnx" "$HOME/govbot-model/tokenizer.json" \
+              /tmp/govbot-test/govbot_data/
             vhs actions/govbot/tapes/nightly/synthetic-test.tape 2>&1 | tee /tmp/vhs-output.txt
             local vhs_rc=${PIPESTATUS[0]}
             {

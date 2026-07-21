@@ -50,12 +50,17 @@ Enter
 Wait+Screen@10s /Setup complete/
 Sleep 2s
 
-# Run pipeline with stderr redirected to avoid PTY deadlock from
-# git clone progress. Stdout (tag JSON lines) stays on screen to
-# keep VHS from idle-timing out.
-# Wait+Screen won't prematch the typed text because "rc:$?" (typed)
-# doesn't match regex /rc:0/ — only the output "rc:0" does.
-Type "govbot 2>/tmp/pipeline.log; echo rc:$?"
+# Run the pipeline with BOTH stdout and stderr redirected to files.
+# - stderr carries git-clone progress (carriage returns) that can PTY-deadlock VHS.
+# - stdout carries raw bill JSON; a burst of it (e.g. a long/awkward bill record)
+#   wedges the ttyd terminal so later output never renders — which meant the rc:0
+#   completion sentinel was silently lost and this test hung until timeout.
+# So we run the pipeline in the background, print a '.' heartbeat every 2s so the
+# VHS screen keeps updating (no idle timeout, no JSON on screen), then echo a
+# clean rc:0 sentinel once it exits.
+# Wait+Screen won't prematch the typed text because "rc:$?" (typed) doesn't match
+# regex /rc:0/ — only the output "rc:0" does.
+Type "govbot >/tmp/pipeline.out 2>/tmp/pipeline.log & BGPID=$!; while kill -0 $BGPID 2>/dev/null; do printf '.'; sleep 2; done; wait $BGPID; echo rc:$?"
 Enter
 Wait+Screen@300s /rc:0/
 Sleep 1s
