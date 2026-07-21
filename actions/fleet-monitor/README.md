@@ -15,7 +15,8 @@ up without code changes.
 The record shape is the module's contract, declared in
 [schemas/fleet-record.schema.json](../../schemas/fleet-record.schema.json) and validated on
 every snapshot render: `fleet`,
-`state`, `name`, `org`, `repo`, `template`, `paused`, `runner`, `expected_workflows`.
+`config` (lineage: the source config file name), `state`, `name`, `org`, `repo`,
+`template`, `paused`, `runner`, `expected_workflows`.
 A locale is paused when its `template` ends in `-paused`. `expected_workflows` lists the
 template's workflow files as they exist in rendered repos (`.j2` stripped), minus the
 locale's `disabled_jobs`. A config that references an unknown template, or a template

@@ -1,7 +1,5 @@
 # yaml-language-server: $schema=../../pipeline-manager/config.schema.json
-template_markers:
-  open: ✏️{
-  close: '}✏️'
+# No template_markers block: exercises the ✏️{ }✏️ defaults in the reader.
 org:
   username: govbot-openstates-scrapers
 templates:

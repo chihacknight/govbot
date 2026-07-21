@@ -21,23 +21,35 @@ def read_fleet(config_dir):
 
     A fleet config is any top-level *.yml/*.yaml file with a `locales` mapping;
     the fleet name is the file's stem. Records are sorted by (fleet, state) so
-    output is deterministic. Raises ValueError when a locale references a
-    template the config doesn't define, or when a referenced template has no
-    workflow files on disk.
+    output is deterministic. Raises ValueError on two fleet configs sharing a
+    stem, a config without org.username, a locale that isn't a mapping or that
+    references a template the config doesn't define, or a referenced template
+    with no workflow files on disk.
     """
     config_dir = Path(config_dir)
     records = []
+    fleets_seen = {}
     for config_path in sorted(config_dir.glob("*.yml")) + sorted(config_dir.glob("*.yaml")):
         with open(config_path) as f:
             config = yaml.safe_load(f)
         if not isinstance(config, dict) or "locales" not in config:
             continue
-        records.extend(_read_one_config(config_path.stem, config, config_dir))
+        if config_path.stem in fleets_seen:
+            raise ValueError(
+                f"duplicate fleet '{config_path.stem}': "
+                f"{fleets_seen[config_path.stem]} and {config_path.name}"
+            )
+        fleets_seen[config_path.stem] = config_path.name
+        records.extend(_read_one_config(config_path, config, config_dir))
     return sorted(records, key=lambda r: (r["fleet"], r["state"]))
 
 
-def _read_one_config(fleet, config, config_dir):
-    org = (config.get("org") or {}).get("username", "")
+def _read_one_config(config_path, config, config_dir):
+    fleet = config_path.stem
+    org = (config.get("org") or {}).get("username") or ""
+    if not org:
+        # org is required by pipeline-manager's config.schema.json
+        raise ValueError(f"{fleet}: config has no org.username")
     markers = config.get("template_markers") or {}
     marker_open = markers.get("open", DEFAULT_MARKER_OPEN)
     marker_close = markers.get("close", DEFAULT_MARKER_CLOSE)
@@ -49,6 +61,12 @@ def _read_one_config(fleet, config, config_dir):
 
     for code, locale in sorted((config.get("locales") or {}).items()):
         locale = locale or {}  # a bare `xx:` line parses to None
+        if not isinstance(locale, dict):
+            raise ValueError(
+                f"{fleet}: locale '{code}' must be a mapping, not {type(locale).__name__}"
+            )
+        if locale.get("managed") is False:
+            continue  # render.py skips unmanaged locales entirely (process_locale)
         template = locale.get("template", "")
         if template not in templates:
             raise ValueError(
@@ -59,13 +77,16 @@ def _read_one_config(fleet, config, config_dir):
         disabled = set(locale.get("disabled_jobs") or [])
         yield {
             "fleet": fleet,
+            "config": config_path.name,
             "state": code,
-            "name": locale.get("name", ""),
+            # `or`-coercions: a key present with a blank value parses to None,
+            # and render.py treats those as absent
+            "name": locale.get("name") or "",
             "org": org,
             "repo": _repo_name(templates, template, code, marker_open, marker_close),
             "template": template,
             "paused": template.endswith("-paused"),
-            "runner": locale.get("runner", DEFAULT_RUNNER),
+            "runner": locale.get("runner") or DEFAULT_RUNNER,
             "expected_workflows": [
                 name
                 for name, disable_key in workflows_cache[template]

@@ -1,5 +1,6 @@
 # Invalid fixture: locale `nm` has an empty body (no template), which must fail loudly
-# instead of emitting an empty record. Locked by the invalid-config-error.txt snapshot.
+# instead of emitting an empty record. Locked by
+# __snapshots__/invalid-unknown-template-error.txt.
 org:
   username: broken-org
 templates:

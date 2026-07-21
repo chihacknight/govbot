@@ -8,6 +8,10 @@
       "type": "string",
       "description": "Fleet name: the stem of the config file the locale came from"
     },
+    "config": {
+      "type": "string",
+      "description": "Lineage: file name of the fleet config the record was derived from"
+    },
     "state": {
       "type": "string",
       "description": "Locale code, e.g. wy"
@@ -44,6 +48,7 @@
   },
   "required": [
     "fleet",
+    "config",
     "state",
     "name",
     "org",

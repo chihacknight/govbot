@@ -12,6 +12,7 @@ The `*.schema.json` files are JSON Schema definitions that validate the structur
 
 ### Data Schemas
 
+- **`fleet-record.schema.json`** - Schema for the jurisdiction records emitted by the fleet-monitor action's `list-fleet` command (one JSON Lines record per locale per fleet)
 - **`openstates.*.schema.json`** - Schemas for OpenStates scraped data structures
 - **`ocdfiles.*.schema.json`** - Schemas for OCD (Open Civic Data) formatted files
 
