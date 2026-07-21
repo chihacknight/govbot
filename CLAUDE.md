@@ -6,6 +6,10 @@ This file provides senior engineering-level guidance for Claude Code when workin
 
 This is **govbot** - a monorepo for distributed data analysis of government updates. Git repos function as datasets, including legislation from 47+ states/jurisdictions. The `actions/` folder contains self-contained modules that can run as shell scripts or GitHub Actions.
 
+## Active plan
+
+The project's master plan is [plans/master-plan.md](plans/master-plan.md). Task files live in `plans/tasks/`; finished tasks move to `plans/tasks/done/`. New work is added via the `to-plan` skill and implemented via `implement-next-task`.
+
 ## Senior Engineering Prompts
 
 Use these meta-prompts to guide architectural decisions and code quality.
