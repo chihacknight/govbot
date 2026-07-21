@@ -83,6 +83,14 @@ def _poll_workflow(jurisdiction, workflow, fetch_json, now):
     ).get("workflow_runs", [])
     completed = next((run for run in latest_runs if run.get("status") == "completed"), {})
     success = success_runs[0] if success_runs else None
+    if success is None:
+        # The status=success filtered index can flake empty with HTTP 200 (same
+        # index class as status=completed, observed live); fall back to a
+        # success visible in the unfiltered page. If neither shows one, null
+        # stands: a never-succeeded workflow and a flaked old success are
+        # indistinguishable without extra requests, and recording an error
+        # would false-alarm every legitimately never-succeeded workflow.
+        success = next((run for run in latest_runs if run.get("conclusion") == "success"), None)
     return {
         "workflow": workflow,
         "latest_conclusion": completed.get("conclusion"),

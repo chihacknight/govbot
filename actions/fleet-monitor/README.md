@@ -48,8 +48,8 @@ steps, each its own module:
 
 ### Budgets
 
-- **GitHub API**: only `per_page=1` queries — 2 per workflow (latest run, latest success)
-  + 1 per repo for the data-path commit. Current fleet: 112 repos × 1 workflow → **336
+- **GitHub API**: only single-page queries (`per_page` ≤ 2) — 2 per workflow (two most
+  recent runs, latest success) + 1 per repo for the data-path commit. Current fleet: 112 repos × 1 workflow → **336
   requests per sweep**, well inside the default `GITHUB_TOKEN` limit of 1000/hour;
   `render-snapshots.sh` asserts the real-fleet count stays under 400.
 - **Series cardinality**: 2 series per repo/workflow + 1 per repo → **~336 series** for

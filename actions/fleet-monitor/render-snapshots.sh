@@ -94,33 +94,48 @@ FLEET = [
     {"fleet": "f", "config": "f.yml", "state": "wy", "org": "good-org",
      "repo": "wy-legislation", "paused": False, "template": "openstates-scrape",
      "expected_workflows": ["openstates-scrape.yml"]},
+    {"fleet": "f", "config": "f.yml", "state": "ak", "org": "flaky-org",
+     "repo": "ak-legislation", "paused": False, "template": "openstates-scrape",
+     "expected_workflows": ["openstates-scrape.yml"]},
     {"fleet": "f", "config": "f.yml", "state": "zz", "org": "bad-org",
      "repo": "zz-legislation", "paused": False, "template": "openstates-to-ocd-files",
      "expected_workflows": ["format.yml"]},
 ]
 
+# flaky-org models the observed GitHub quirk: the status=success filtered
+# index returns an empty page with HTTP 200 while the unfiltered listing
+# shows the success — hours_since_success must fall back to the latter.
 def fake_fetch(url):
     if "bad-org" in url:
         raise RuntimeError(f"GET {url}: HTTP 404")
-    if "/actions/workflows/" in url:
+    if "status=success" in url:
+        if "flaky-org" in url:
+            return {"workflow_runs": []}
         return {"workflow_runs": [{"status": "completed", "conclusion": "success",
                                    "updated_at": "2026-07-21T00:00:00Z"}]}
+    if "/actions/workflows/" in url:
+        return {"workflow_runs": [{"status": "completed", "conclusion": "success",
+                                   "updated_at": "2026-07-21T06:00:00Z"}]}
     return [{"commit": {"committer": {"date": "2026-07-21T00:00:00Z"}}}]
 
 records = poll_fleet(FLEET, fetch_json=fake_fetch,
                      now="2026-07-21T12:00:00Z")
-assert len(records) == 2, records
+assert len(records) == 3, records
 for record in records:
     validate(instance=record, schema=SCHEMA)
-good, bad = records
+good, flaky, bad = records
 assert good["errors"] == [], good
 assert good["workflows"][0]["latest_conclusion"] == "success", good
 assert good["workflows"][0]["hours_since_success"] == 12.0, good
 assert good["data_commit_age_hours"] == 12.0, good
 assert good["polled_at"] == "2026-07-21T12:00:00+00:00", good
+assert flaky["errors"] == [], flaky
+assert flaky["workflows"][0]["hours_since_success"] == 6.0, \
+    f"empty status=success page must fall back to the unfiltered listing: {flaky}"
 assert bad["errors"] and "HTTP 404" in bad["errors"][0], bad
 assert bad["workflows"] == [] and bad["data_commit_age_hours"] is None, bad
 print("✓ poller: unreachable repo yields a schema-valid error record, run continues")
+print("✓ poller: flaked status=success page falls back to the unfiltered listing")
 
 # Unknown template = config gap = fatal before any request is made.
 try:
