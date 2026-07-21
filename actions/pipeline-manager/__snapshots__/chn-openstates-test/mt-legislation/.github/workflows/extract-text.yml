@@ -4,8 +4,14 @@
 name: Text Extraction from Bills
 
 on:
+  # Backup only -- the real trigger is workflow_run below, firing right after
+  # this repo's own "Format Data" workflow completes. Same-repo, so no
+  # cross-org token needed (unlike scrape -> format, see openstates-scrape.yml).
   schedule:
     - cron: "0 8 * * *" # Daily at 8 AM UTC (~3 AM ET, ~12 AM PT)
+  workflow_run:
+    workflows: ["Format Data for mt"]
+    types: [completed]
   workflow_dispatch:
 
 # A run against a large state can take hours. Without this, a scheduled
@@ -19,6 +25,10 @@ concurrency:
 jobs:
   extract-text:
     name: Text Extraction
+    # Only proceed on a workflow_run if format actually succeeded -- otherwise
+    # extraction would run against a format pass that didn't finish (same
+    # guard synthetic-test.yml uses for its own workflow_run trigger).
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     # Same runner-override mechanism the scrape template already uses (see
     # openstates-scrape.yml) -- set locales.<code>.runner: self-hosted in
     # config for states whose bill-text host blocks GitHub-hosted (Azure) IPs,

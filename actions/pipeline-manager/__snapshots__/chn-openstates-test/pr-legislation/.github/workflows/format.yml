@@ -1,8 +1,14 @@
 name: Format Data for pr
 
 on:
+  # Backup only -- the real trigger is repository_dispatch from scrape
+  # finishing (cross-org, see openstates-scrape.yml's "Trigger format
+  # workflow" step). Cheap to leave running since the SHA-staleness check
+  # below skips in ~10s when the dispatch already handled it.
   schedule:
     - cron: "0 12 * * *"  # Daily at 12:00 PM UTC (6:00 AM Chicago time)
+  repository_dispatch:
+    types: [scrape-complete]
   workflow_dispatch:
     inputs:
       force-update:

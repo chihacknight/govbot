@@ -64,3 +64,34 @@ jobs:
               "HTTPS_PROXY": "${{ env.USE_PROXY == 'true' && secrets.PROXY_URL || '' }}",
               "HTTP_PROXY": "${{ env.USE_PROXY == 'true' && secrets.PROXY_URL || '' }}"
             }
+
+      # Cross-org trigger: scrape and format live in different orgs
+      # (govbot-openstates-scrapers / govbot-data), so workflow_run can't
+      # chain them -- it only works within a single repo. repository_dispatch
+      # is the primitive for this, authenticated via a short-lived GitHub App
+      # installation token instead of a long-lived PAT (the previous version
+      # of this dispatch died silently when its PAT expired -- see project
+      # notes). Always runs, even if the scrape step above failed: format's
+      # own SHA-staleness check already makes a no-op trigger cheap (~10s),
+      # so there's no cost to triggering unconditionally, and states that
+      # degrade gracefully (out-of-session, partial data) still deserve a
+      # fresh format pass over whatever did land.
+      - name: Generate GitHub App token for cross-org dispatch
+        id: app-token
+        if: always()
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: govbot-data
+          repositories: ${{ env.STATE_CODE }}-legislation
+
+      - name: Trigger format workflow in govbot-data
+        if: always()
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          echo "🚀 Triggering format workflow for ${{ env.STATE_CODE }} in govbot-data..."
+          gh api "repos/govbot-data/${{ env.STATE_CODE }}-legislation/dispatches" \
+            -f event_type='scrape-complete' \
+            -F "client_payload[state]=${{ env.STATE_CODE }}"
