@@ -1,0 +1,30 @@
+template_markers:
+  open: ✏️{
+  close: '}✏️'
+org:
+  username: govbot-openstates-scrapers
+templates:
+  openstates-scrape:
+    folder-name: ✏️{ locale.key }✏️-legislation
+    fully_override_dirs:
+    - .github
+  openstates-scrape-paused:
+    folder-name: ✏️{ locale.key }✏️-legislation
+    fully_override_dirs:
+    - .github
+locales:
+  ak:
+    template: openstates-scrape
+    name: Alaska
+    toolkit_branch: main
+  az:
+    template: openstates-scrape-paused
+    name: Arizona
+    toolkit_branch: main
+  wy:
+    template: openstates-scrape
+    name: Wyoming
+    toolkit_branch: main
+    runner: self-hosted
+    labels:
+    - working

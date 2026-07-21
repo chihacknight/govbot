@@ -16,6 +16,7 @@ jobs:
       pipeline-manager: ${{ steps.changes.outputs.pipeline-manager }}
       govbot: ${{ steps.changes.outputs.govbot }}
       format: ${{ steps.changes.outputs.format }}
+      fleet-monitor: ${{ steps.changes.outputs.fleet-monitor }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -31,6 +32,7 @@ jobs:
             "pipeline-manager:actions/pipeline-manager"
             "govbot:actions/govbot"
             "format:actions/format"
+            "fleet-monitor:actions/fleet-monitor"
           )
 
           # Always run all tests on main branch or workflow_dispatch
@@ -92,6 +94,34 @@ jobs:
       - name: Run test runner
         run: |
           cd actions/pipeline-manager
+          ../../scripts/before-snapshots.sh __snapshots__
+          ./render-snapshots.sh
+          ../../scripts/verify-snapshots.sh __snapshots__
+
+  fleet-monitor-snapshots:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.fleet-monitor == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install pipenv
+          cd actions/fleet-monitor
+          pipenv install --deploy
+
+      - name: Run test runner
+        run: |
+          cd actions/fleet-monitor
           ../../scripts/before-snapshots.sh __snapshots__
           ./render-snapshots.sh
           ../../scripts/verify-snapshots.sh __snapshots__
