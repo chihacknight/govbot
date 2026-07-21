@@ -66,12 +66,20 @@ jobs:
             echo "⚠️  Summary file not found"
           fi
 
-  # Auto-restart job if extraction was cancelled (timeout) or failed
+  # Auto-restart job if extraction was cancelled (timeout) or failed.
+  #
+  # The `always() &&` is load-bearing, not decoration: GitHub Actions
+  # implicitly ANDs a job's `if:` with success() unless the condition
+  # explicitly calls a status-check function (always/success/failure/
+  # cancelled). Without it, this job silently skipped every single time --
+  # confirmed across every real failure/cancellation this repo has hit so
+  # far (it never once ran) -- because the needed job having failed made
+  # the implicit success() false regardless of the explicit check below.
   check-and-restart:
     name: Check Status & Restart if Needed
     needs: extract-text
     runs-on: ubuntu-latest
-    if: needs.extract-text.result == 'cancelled' || needs.extract-text.result == 'failure'
+    if: always() && (needs.extract-text.result == 'cancelled' || needs.extract-text.result == 'failure')
     permissions:
       actions: write
       contents: read
