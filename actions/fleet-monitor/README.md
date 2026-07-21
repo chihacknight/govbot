@@ -13,7 +13,8 @@ fleet. **Discovery convention**: any top-level `*.yml`/`*.yaml` in `--config-dir
 up without code changes.
 
 The record shape is the module's contract, declared in
-[record.schema.json](record.schema.json) and validated on every snapshot render: `fleet`,
+[schemas/fleet-record.schema.json](../../schemas/fleet-record.schema.json) and validated on
+every snapshot render: `fleet`,
 `state`, `name`, `org`, `repo`, `template`, `paused`, `runner`, `expected_workflows`.
 A locale is paused when its `template` ends in `-paused`. `expected_workflows` lists the
 template's workflow files as they exist in rendered repos (`.j2` stripped), minus the
@@ -42,7 +43,10 @@ See [action.yml](action.yml). Optional `config-dir` input, default `actions/pipe
 ## Testing
 
 Snapshot tests: fixture configs in [fixtures/](fixtures/) go in, jurisdiction records in
-[__snapshots__/](__snapshots__/) come out.
+[__snapshots__/](__snapshots__/) come out. Each subdirectory of
+[fixtures-invalid/](fixtures-invalid/) is a broken config whose error message is
+snapshotted; the render fails if any of them exits 0. The render also validates every
+record against the schema and smoke-tests the real `../pipeline-manager` config.
 
 ```bash
 ../../scripts/before-snapshots.sh __snapshots__

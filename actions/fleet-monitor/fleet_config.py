@@ -2,7 +2,7 @@
 
 This module is the only place that knows the pipeline-manager config format or
 the paused-template convention; everything downstream of it consumes records.
-The record shape is locked by record.schema.json.
+The record shape is locked by schemas/fleet-record.schema.json.
 """
 
 import re
@@ -21,8 +21,9 @@ def read_fleet(config_dir):
 
     A fleet config is any top-level *.yml/*.yaml file with a `locales` mapping;
     the fleet name is the file's stem. Records are sorted by (fleet, state) so
-    output is deterministic. Raises ValueError on a config that references a
-    template it doesn't define or that has no workflow files on disk.
+    output is deterministic. Raises ValueError when a locale references a
+    template the config doesn't define, or when a referenced template has no
+    workflow files on disk.
     """
     config_dir = Path(config_dir)
     records = []
@@ -36,14 +37,15 @@ def read_fleet(config_dir):
 
 
 def _read_one_config(fleet, config, config_dir):
-    org = config.get("org", {}).get("username", "")
-    markers = config.get("template_markers", {})
+    org = (config.get("org") or {}).get("username", "")
+    markers = config.get("template_markers") or {}
     marker_open = markers.get("open", DEFAULT_MARKER_OPEN)
     marker_close = markers.get("close", DEFAULT_MARKER_CLOSE)
     templates = config.get("templates") or {}
-    workflows_by_template = {
-        name: _template_workflows(fleet, name, config_dir) for name in templates
-    }
+    # Resolved lazily, per referenced template: a defined-but-unreferenced
+    # template without workflow files must not fail the listing (render.py
+    # tolerates those too).
+    workflows_cache = {}
 
     for code, locale in sorted((config.get("locales") or {}).items()):
         locale = locale or {}  # a bare `xx:` line parses to None
@@ -52,6 +54,8 @@ def _read_one_config(fleet, config, config_dir):
             raise ValueError(
                 f"{fleet}: locale '{code}' references unknown template '{template}'"
             )
+        if template not in workflows_cache:
+            workflows_cache[template] = _template_workflows(fleet, template, config_dir)
         disabled = set(locale.get("disabled_jobs") or [])
         yield {
             "fleet": fleet,
@@ -63,10 +67,9 @@ def _read_one_config(fleet, config, config_dir):
             "paused": template.endswith("-paused"),
             "runner": locale.get("runner", DEFAULT_RUNNER),
             "expected_workflows": [
-                w for w in workflows_by_template[template]
-                # disabled_jobs entries are basenames without the extension,
-                # matching pipeline-manager's render.py
-                if Path(w).stem not in disabled
+                name
+                for name, disable_key in workflows_cache[template]
+                if disable_key not in disabled
             ],
         }
 
@@ -81,19 +84,21 @@ def _repo_name(templates, template, code, marker_open, marker_close):
 
 
 def _template_workflows(fleet, template, config_dir):
-    """Workflow files the template ships, as they will exist in rendered repos.
+    """Workflow files the template ships, as (rendered name, disable key) pairs.
 
-    render.py strips a trailing .j2 when rendering, so `scrape.yml.j2` runs as
-    `scrape.yml`; mirror that here before filtering to workflow extensions.
+    render.py strips a trailing .j2 when rendering, so `nightly.yml.j2` runs as
+    `nightly.yml` in real repos — but its disabled_jobs key is splitext of the
+    on-disk name (`nightly.yml`), matching render.py's process_locale().
     """
     workflows_dir = Path(config_dir) / "templates" / template / ".github" / "workflows"
-    if not workflows_dir.is_dir():
+    pairs = {}
+    if workflows_dir.is_dir():
+        for path in sorted(workflows_dir.iterdir()):
+            rendered = path.name[: -len(".j2")] if path.name.endswith(".j2") else path.name
+            if rendered.endswith((".yml", ".yaml")):
+                pairs[rendered] = path.stem  # one suffix stripped: nightly.yml.j2 -> nightly.yml
+    if not pairs:
         raise ValueError(
-            f"{fleet}: template '{template}' has no workflows directory at {workflows_dir}"
+            f"{fleet}: template '{template}' has no workflow files under {workflows_dir}"
         )
-    names = set()
-    for path in workflows_dir.iterdir():
-        name = path.name[: -len(".j2")] if path.name.endswith(".j2") else path.name
-        if name.endswith((".yml", ".yaml")):
-            names.add(name)
-    return sorted(names)
+    return sorted(pairs.items())

@@ -11,20 +11,24 @@ mkdir -p "$output_dir"
 
 pipenv run python3 main.py list-fleet --config-dir fixtures > "$output_dir/fleet.jsonl"
 
-# A broken config must fail loudly (nonzero exit, clear error), never emit empty records.
-if pipenv run python3 main.py list-fleet --config-dir fixtures-invalid \
-    > /dev/null 2> "$output_dir/invalid-config-error.txt"; then
-  echo "✗ fixtures-invalid should have failed but exited 0"
-  exit 1
-fi
+# Broken configs must fail loudly (nonzero exit, clear error), never emit empty
+# records. One subdirectory per failure mode; each error message is snapshotted.
+for invalid in fixtures-invalid/*/; do
+  mode=$(basename "$invalid")
+  if pipenv run python3 main.py list-fleet --config-dir "$invalid" \
+      > /dev/null 2> "$output_dir/invalid-${mode}-error.txt"; then
+    echo "✗ $invalid should have failed but exited 0"
+    exit 1
+  fi
+done
 
-# Every record must validate against the module's declared contract.
+# Every record must validate against the module's declared contract in /schemas.
 pipenv run python3 - <<'EOF'
 import json
 from pathlib import Path
 from jsonschema import validate
 
-schema = json.load(open("record.schema.json"))
+schema = json.load(open("../../schemas/fleet-record.schema.json"))
 lines = Path("__snapshots__/fleet.jsonl").read_text().splitlines()
 for line in lines:
     validate(instance=json.loads(line), schema=schema)

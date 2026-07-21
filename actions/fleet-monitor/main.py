@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 import click
+import yaml
 
 sys.path.append(str(Path(__file__).parent))
 
@@ -25,7 +26,7 @@ def list_fleet(config_dir: Path):
     """Print one JSON Lines jurisdiction record per locale per fleet."""
     try:
         records = read_fleet(config_dir)
-    except ValueError as e:
+    except (ValueError, yaml.YAMLError) as e:
         raise click.ClickException(str(e)) from e
     for record in records:
         click.echo(json.dumps(record, ensure_ascii=False))

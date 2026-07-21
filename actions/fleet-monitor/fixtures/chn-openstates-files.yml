@@ -16,7 +16,7 @@ locales:
     name: Alabama
     disabled_jobs:
       - extract-text # Exclude extract-text.yml workflow
-      - nightly # Exclude nightly.yml.j2 — matched on the stem after the .j2 strip
+      - nightly.yml # Exclude nightly.yml.j2 — render.py's disable key is splitext of the on-disk name
     labels:
       - working
   gu:

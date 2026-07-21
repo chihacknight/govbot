@@ -3,4 +3,5 @@
 {"fleet": "chn-openstates-scrape", "state": "ak", "name": "Alaska", "org": "govbot-openstates-scrapers", "repo": "ak-legislation", "template": "openstates-scrape", "paused": false, "runner": "ubuntu-latest", "expected_workflows": ["openstates-scrape.yml"]}
 {"fleet": "chn-openstates-scrape", "state": "az", "name": "Arizona", "org": "govbot-openstates-scrapers", "repo": "az-legislation", "template": "openstates-scrape-paused", "paused": true, "runner": "ubuntu-latest", "expected_workflows": ["openstates-scrape.yml"]}
 {"fleet": "chn-openstates-scrape", "state": "wy", "name": "Wyoming", "org": "govbot-openstates-scrapers", "repo": "wy-legislation", "template": "openstates-scrape", "paused": false, "runner": "self-hosted", "expected_workflows": ["openstates-scrape.yml"]}
+{"fleet": "minimal-fleet", "state": "yy", "name": "Wye", "org": "test-org", "repo": "yy-data", "template": "marked", "paused": false, "runner": "ubuntu-latest", "expected_workflows": ["deploy.yml"]}
 {"fleet": "minimal-fleet", "state": "zz", "name": "Zed", "org": "test-org", "repo": "zz", "template": "bare", "paused": false, "runner": "ubuntu-latest", "expected_workflows": ["run.yml"]}
