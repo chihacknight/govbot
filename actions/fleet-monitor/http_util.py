@@ -6,7 +6,8 @@ HTTP 429 honors Retry-After, 5xx and network errors back off exponentially,
 4xx (other than 429) fails immediately — a bad request never gets better by
 retrying. Exhausted retries raise RuntimeError with the URL and last error,
 so callers decide whether that is fatal (a push) or recorded-and-skipped
-(one repo in a poll).
+(one repo in a poll). The policy is locked by offline asserts in
+render-snapshots.sh (fake urlopen, injected sleep).
 """
 
 import json
@@ -16,6 +17,15 @@ import urllib.request
 
 DEFAULT_TIMEOUT = 15
 DEFAULT_MAX_RETRIES = 3
+
+
+def _retry_after_seconds(response_headers):
+    """Parse Retry-After as integer seconds; the RFC also allows an HTTP-date
+    form, which falls back to 0 (the exponential default takes over)."""
+    try:
+        return int(response_headers.get("Retry-After") or 0)
+    except ValueError:
+        return 0
 
 
 def request_with_retry(
@@ -32,6 +42,7 @@ def request_with_retry(
     ``data`` (bytes) switches the request to POST. ``sleep`` is injectable so
     tests never wait.
     """
+    method = "POST" if data is not None else "GET"
     last_error = None
     for attempt in range(max_retries):
         request = urllib.request.Request(url, data=data, headers=headers or {})
@@ -41,17 +52,17 @@ def request_with_retry(
         except urllib.error.HTTPError as e:
             last_error = f"HTTP {e.code}"
             if e.code == 429:
-                retry_after = int(e.headers.get("Retry-After", 0) or 0)
-                sleep(max(retry_after, 2 ** (attempt + 3)))
-                continue
-            if e.code >= 500:
-                sleep(2 ** (attempt + 1))
-                continue
-            raise RuntimeError(f"{'POST' if data else 'GET'} {url}: HTTP {e.code}") from e
+                delay = max(_retry_after_seconds(e.headers), 2 ** (attempt + 3))
+            elif e.code >= 500:
+                delay = 2 ** (attempt + 1)
+            else:
+                raise RuntimeError(f"{method} {url}: HTTP {e.code}") from e
         except Exception as e:  # URLError, timeout, connection reset
             last_error = str(e)
-            sleep(2 ** (attempt + 1))
-    raise RuntimeError(f"{'POST' if data else 'GET'} {url}: giving up after {max_retries} attempts ({last_error})")
+            delay = 2 ** (attempt + 1)
+        if attempt < max_retries - 1:  # no point sleeping before giving up
+            sleep(delay)
+    raise RuntimeError(f"{method} {url}: giving up after {max_retries} attempts ({last_error})")
 
 
 def request_json(url, *, headers=None, timeout=DEFAULT_TIMEOUT, max_retries=DEFAULT_MAX_RETRIES):

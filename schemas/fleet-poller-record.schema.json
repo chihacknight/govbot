@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Fleet poller record",
+  "description": "One record per fleet repo, emitted by the poller and consumed by the metrics shipper (and `collect --poller-records`). Null values mean \"unknown\" — a workflow that never completed or succeeded, a data path with no commits — and emit no metric series.",
+  "type": "object",
+  "properties": {
+    "fleet": {
+      "type": "string",
+      "description": "Fleet name, carried through from the jurisdiction record"
+    },
+    "config": {
+      "type": "string",
+      "description": "Lineage: file name of the fleet config the record was derived from"
+    },
+    "state": {
+      "type": "string",
+      "description": "Locale code, e.g. wy"
+    },
+    "org": {
+      "type": "string",
+      "description": "GitHub org owning the repo"
+    },
+    "repo": {
+      "type": "string",
+      "description": "Repo name the poller queried"
+    },
+    "paused": {
+      "type": "boolean",
+      "description": "Carried through from the jurisdiction record; labels every series"
+    },
+    "polled_at": {
+      "type": "string",
+      "description": "Lineage: ISO 8601 UTC time the GitHub data was fetched; collect defaults the series timestamp from it"
+    },
+    "workflows": {
+      "type": "array",
+      "description": "One entry per expected workflow that was successfully polled",
+      "items": {
+        "type": "object",
+        "properties": {
+          "workflow": {
+            "type": "string",
+            "description": "Workflow file name, e.g. openstates-scrape.yml"
+          },
+          "latest_conclusion": {
+            "type": ["string", "null"],
+            "description": "Conclusion of the latest completed run; null when the workflow never completed a run"
+          },
+          "hours_since_success": {
+            "type": ["number", "null"],
+            "description": "Hours since the last successful run; null when it never succeeded"
+          }
+        },
+        "required": ["workflow", "latest_conclusion", "hours_since_success"],
+        "additionalProperties": false
+      }
+    },
+    "data_commit_age_hours": {
+      "type": ["number", "null"],
+      "description": "Hours since the last commit touching the repo's data path; null when none exists or the query failed"
+    },
+    "errors": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Per-repo poll failures, recorded and skipped — never fatal to the sweep"
+    }
+  },
+  "required": [
+    "fleet",
+    "config",
+    "state",
+    "org",
+    "repo",
+    "paused",
+    "polled_at",
+    "workflows",
+    "data_commit_age_hours",
+    "errors"
+  ],
+  "additionalProperties": false
+}

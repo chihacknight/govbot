@@ -28,10 +28,16 @@ with no workflow files on disk, fails loudly with a nonzero exit — never an em
 steps, each its own module:
 
 - **[fleet_poller.py](fleet_poller.py)** — all GitHub REST knowledge. For every repo:
-  latest run conclusion and hours since the last successful run per expected workflow,
-  plus hours since the last commit touching the repo's data path (`_data/<locale>/` in
-  scraper repos, `country:us/` in data repos). Per-repo failures are recorded on the
-  output record's `errors` list and skipped — one bad repo never aborts the sweep.
+  the latest *completed* run's conclusion (an in-progress run never masks the last
+  finished one) and hours since the last successful run per expected workflow, plus
+  hours since the last commit touching the repo's data path (`_data/<locale>/` in
+  scraper repos, `country:us/` in data repos). The record shape is locked by
+  [schemas/fleet-poller-record.schema.json](../../schemas/fleet-poller-record.schema.json)
+  and carries `config`/`polled_at` lineage. Per-repo failures are recorded on the
+  output record's `errors` list and skipped — one bad repo never aborts the sweep —
+  but `collect` exits 1 when any repo erred, after shipping what it has: a degraded
+  sweep must never look like a clean one. An unknown template is a config gap and
+  fails the sweep before any polling.
 - **[metrics_shipper.py](metrics_shipper.py)** — pure encoder from poller records to the
   Influx line-protocol payload Grafana Cloud ingests. Series produced:
   `fleet_workflow_run_status` (1 = latest run succeeded),
@@ -54,7 +60,7 @@ steps, each its own module:
 
 | Variable | Meaning |
 | --- | --- |
-| `GITHUB_TOKEN` | optional for the poller (public reads); raises the rate limit |
+| `GITHUB_TOKEN` | **required for live polls**: one sweep ≈ 336 requests, the unauthenticated limit is 60/hour (the CLI refuses to start without it) |
 | `GRAFANA_PUSH_URL` | Influx write endpoint, `https://influx-…/api/v1/push/influx/write` |
 | `GRAFANA_PUSH_USER` / `GRAFANA_PUSH_KEY` | metrics instance ID / access-policy token (`metrics:write`) |
 | `GRAFANA_QUERY_URL` | Prometheus API base, `https://prometheus-…/api/prom` (live-check only) |
@@ -89,6 +95,8 @@ actions), e.g. `FLEET_MONITOR_LIST_FLEET_CONFIG_DIR`.
 ### As a GitHub Action
 
 See [action.yml](action.yml). Optional `config-dir` input, default `actions/pipeline-manager`.
+The Action currently exposes `list-fleet` only; wiring `collect` into an hourly workflow
+(with the `GRAFANA_*` secrets) is task 0003's orchestrator work.
 
 ## Testing
 
@@ -100,12 +108,18 @@ record against the schema and smoke-tests the real `../pipeline-manager` config.
 
 The metrics payload is snapshot-tested the same way: fixed poller records in
 [fixtures/poller-records.jsonl](fixtures/poller-records.jsonl) (success, failure, a
-still-running workflow, an unreachable repo) render byte-identically to
+never-completed workflow, a workflow name needing tag escaping, an unreachable repo)
+render byte-identically to
 [__snapshots__/metrics-payload.txt](__snapshots__/metrics-payload.txt) via
-`collect --dry-run` with a pinned `--timestamp`. The render also asserts the poller's
-never-fatal contract offline (fake fetcher, one repo down), the real-fleet API budget,
-and that `live-check` self-skips without credentials. The poller's happy path is
-deliberately untested beyond that — it is a pass-through against a live API.
+`collect --dry-run`, timestamped from the fixture's pinned `polled_at`. The render also
+validates every poller record (fixture and fake-fetcher output) against
+`fleet-poller-record.schema.json`, asserts the poller's never-fatal contract and the
+fatal unknown-template check offline, asserts `collect`'s exit-1-on-poll-errors
+contract, locks the HTTP retry policy (4xx fail-fast, 5xx backoff, no final-attempt
+sleep, HTTP-date `Retry-After` fallback) with a fake `urlopen` and injected sleep,
+checks the real-fleet API budget, and checks that `live-check` self-skips without
+credentials. The poller's happy path is deliberately untested beyond that — it is a
+pass-through against a live API.
 
 ```bash
 ../../scripts/before-snapshots.sh __snapshots__

@@ -12,19 +12,27 @@ named ``<measurement>_<field>`` with the tags as labels:
     fleet_repo_data_commit_age_hours{state, org, paused}
         Hours since the last commit touching the repo's data path.
 
-Labels are capped at state/org/workflow/paused by design (cardinality budget:
-one series per repo/workflow, high hundreds for the current fleet against the
-10k free-tier limit — see README). Repo name is derivable from state+org, so it
-is not a label. A missing value (workflow never succeeded, still-running run
-with no conclusion yet, or a poll error recorded on the record) emits no line:
+Labels are capped at state/org/workflow/paused by design; the README's Budgets
+section is the single source of the series-count arithmetic (~336 for the
+current fleet against the 10k free-tier limit). Repo name is derivable from
+state+org, so it is not a label. A missing value (workflow never succeeded or
+never completed a run, or a poll error recorded on the record) emits no line:
 absence, not a sentinel value, marks the gap.
 """
 
 
 def _escape_tag(value: str) -> str:
-    """Escape a tag value per Influx line protocol (commas, equals, spaces)."""
+    """Escape a tag value per Influx line protocol (commas, equals, spaces).
+
+    Rejects control characters outright: a newline in a tag value would split
+    the payload line and smuggle in a forged series, so it fails loudly
+    instead of being escaped away.
+    """
+    value = str(value)
+    if any(c in value for c in "\n\r"):
+        raise ValueError(f"control character in metric tag value {value!r}")
     return (
-        str(value).replace("\\", "\\\\").replace(",", "\\,").replace("=", "\\=").replace(" ", "\\ ")
+        value.replace("\\", "\\\\").replace(",", "\\,").replace("=", "\\=").replace(" ", "\\ ")
     )
 
 
