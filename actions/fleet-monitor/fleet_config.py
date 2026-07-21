@@ -21,10 +21,11 @@ def read_fleet(config_dir):
 
     A fleet config is any top-level *.yml/*.yaml file with a `locales` mapping;
     the fleet name is the file's stem. Records are sorted by (fleet, state) so
-    output is deterministic. Raises ValueError on two fleet configs sharing a
-    stem, a config without org.username, a locale that isn't a mapping or that
-    references a template the config doesn't define, or a referenced template
-    with no workflow files on disk.
+    output is deterministic. Raises ValueError on malformed input — two fleet
+    configs sharing a stem, a non-mapping top-level section, a config without
+    org.username, a non-string locale key, a locale that isn't a mapping, a
+    locale referencing a template the config doesn't define, a non-list
+    disabled_jobs, or a referenced template with no workflow files on disk.
     """
     config_dir = Path(config_dir)
     records = []
@@ -44,29 +45,59 @@ def read_fleet(config_dir):
     return sorted(records, key=lambda r: (r["fleet"], r["state"]))
 
 
+def _mapping(fleet, config, key):
+    """Return config[key] as a mapping, defaulting {} when absent/blank.
+
+    A scalar where a mapping is expected (`org: myorg`) is a config error, not
+    something to dereference into an AttributeError.
+    """
+    value = config.get(key)
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ValueError(f"{fleet}: '{key}' must be a mapping, not {type(value).__name__}")
+    return value
+
+
 def _read_one_config(config_path, config, config_dir):
     fleet = config_path.stem
-    org = (config.get("org") or {}).get("username") or ""
+    org = _mapping(fleet, config, "org").get("username") or ""
     if not org:
         # org is required by pipeline-manager's config.schema.json
         raise ValueError(f"{fleet}: config has no org.username")
-    markers = config.get("template_markers") or {}
+    markers = _mapping(fleet, config, "template_markers")
     marker_open = markers.get("open", DEFAULT_MARKER_OPEN)
     marker_close = markers.get("close", DEFAULT_MARKER_CLOSE)
-    templates = config.get("templates") or {}
+    templates = _mapping(fleet, config, "templates")
+    locales = _mapping(fleet, config, "locales")
+    # YAML 1.1 turns bare words like on/no/off/yes into booleans, so a locale
+    # code written unquoted arrives as True/False. Reject it before sorting —
+    # render.py reads config as text and never hits this, so a boolean key is a
+    # quoting mistake the author wants flagged, not silently coerced.
+    for code in locales:
+        if not isinstance(code, str):
+            raise ValueError(
+                f"{fleet}: locale key {code!r} is not a string — quote YAML words "
+                f"like on/no/off/yes that parse as booleans"
+            )
     # Resolved lazily, per referenced template: a defined-but-unreferenced
     # template without workflow files must not fail the listing (render.py
     # tolerates those too).
     workflows_cache = {}
 
-    for code, locale in sorted((config.get("locales") or {}).items()):
+    for code, locale in sorted(locales.items()):
         locale = locale or {}  # a bare `xx:` line parses to None
         if not isinstance(locale, dict):
             raise ValueError(
                 f"{fleet}: locale '{code}' must be a mapping, not {type(locale).__name__}"
             )
-        if locale.get("managed") is False:
-            continue  # render.py skips unmanaged locales entirely (process_locale)
+        # render.py skips unmanaged locales entirely (process_locale). It reads
+        # the value as text, so `managed: false` and quoted `"false"` both skip;
+        # YAML 1.1 also collapses no/off to False, which the loader skips here —
+        # an accepted divergence, since those are the same intent.
+        managed = locale.get("managed", True)
+        if managed is False or managed == "false":
+            continue
         template = locale.get("template", "")
         if template not in templates:
             raise ValueError(
@@ -74,7 +105,7 @@ def _read_one_config(config_path, config, config_dir):
             )
         if template not in workflows_cache:
             workflows_cache[template] = _template_workflows(fleet, template, config_dir)
-        disabled = set(locale.get("disabled_jobs") or [])
+        disabled = _disabled_jobs(fleet, code, locale)
         yield {
             "fleet": fleet,
             "config": config_path.name,
@@ -93,6 +124,24 @@ def _read_one_config(config_path, config, config_dir):
                 if disable_key not in disabled
             ],
         }
+
+
+def _disabled_jobs(fleet, code, locale):
+    """Set of disabled_jobs keys for a locale.
+
+    render.py accepts a comma-separated string here as well as a list; a bare
+    string would otherwise be exploded into a set of single characters, so
+    require a list explicitly rather than mishandle the scalar silently.
+    """
+    raw = locale.get("disabled_jobs")
+    if raw is None:
+        return set()
+    if not isinstance(raw, list):
+        raise ValueError(
+            f"{fleet}: locale '{code}' disabled_jobs must be a list, not "
+            f"{type(raw).__name__}"
+        )
+    return set(raw)
 
 
 def _repo_name(templates, template, code, marker_open, marker_close):

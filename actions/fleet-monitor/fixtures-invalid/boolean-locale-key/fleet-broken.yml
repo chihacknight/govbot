@@ -1,0 +1,12 @@
+# Invalid fixture: locale key `on` parses to the boolean True under YAML 1.1
+# (yaml.safe_load), not the string "on". Must fail loudly with a clear message,
+# not a TypeError from sorting mixed key types. Locked by
+# __snapshots__/invalid-boolean-locale-key-error.txt.
+org:
+  username: broken-org
+templates: {}
+locales:
+  al:
+    template: t
+  on:
+    template: t

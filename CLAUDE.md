@@ -61,6 +61,7 @@ Use these meta-prompts to guide architectural decisions and code quality.
 ```
 actions/
   extract/      # Data extraction utilities
+  fleet-monitor/     # Observability for the scraper and data-repo fleets
   format/       # Data transformation and formatting
   govbot/       # CLI tool for interacting with government data
   pipeline-manager/  # Orchestrates data pipelines

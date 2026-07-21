@@ -1,0 +1,1 @@
+Error: fleet-broken: locale key True is not a string — quote YAML words like on/no/off/yes that parse as booleans

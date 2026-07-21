@@ -90,6 +90,10 @@
               "type": "string",
               "description": "GitHub Actions runner for the locale's workflows (e.g., 'self-hosted'); defaults to ubuntu-latest"
             },
+            "managed": {
+              "type": "boolean",
+              "description": "When false, render.py skips the locale entirely and fleet-monitor emits no record for it; defaults to true"
+            },
             "labels": {
               "type": "array",
               "items": {
