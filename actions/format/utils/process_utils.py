@@ -64,6 +64,7 @@ def process_and_save(
     DATA_PROCESSED_FOLDER: Path,
     latest_timestamps: LatestTimestamps,
     output_folder: Path,
+    expected_session: Optional[str] = None,
 ) -> dict[str, int]:
     bill_count = 0
     event_count = 0
@@ -85,6 +86,21 @@ def process_and_save(
         if not session_metadata:
             record_error_file(
                 DATA_NOT_PROCESSED_FOLDER, "unknown_session", filename, data
+            )
+            continue
+
+        # This repo is meant to hold exactly one session's data (see
+        # actions/pipeline-manager/close_session.py). If the scraper repo
+        # feeding this run isn't properly session-scoped, don't silently
+        # create a second sessions/{id}/ folder here — route it to errors
+        # for a human to notice instead.
+        if expected_session and session != expected_session:
+            print(
+                f"⚠️ Skipping {filename}, session '{session}' does not match "
+                f"expected session '{expected_session}'"
+            )
+            record_error_file(
+                DATA_NOT_PROCESSED_FOLDER, "wrong_session", filename, data
             )
             continue
 

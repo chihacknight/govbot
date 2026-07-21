@@ -1,0 +1,112 @@
+# Human-triggered workflow to close out a jurisdiction's legislative session:
+# transfers its repo to the archive org (full history preserved), renames it
+# with the session identifier, marks it read-only, and creates a fresh repo
+# for the next session. See actions/pipeline-manager/close_session.py.
+#
+# This workflow is NEVER triggered automatically — only workflow_dispatch.
+# A person decides a session has closed (see project notes on why OpenStates'
+# session data isn't trusted to gate this) and runs it by hand, one locale at
+# a time. Run with dry-run: true first.
+#
+# Requires: locales.<locale>.session set in the relevant config file(s)
+# before running (the script refuses to proceed without it — see
+# close_session.py's docstring).
+#
+# APPLY_TOKEN must have Administration write access on BOTH the active org
+# (govbot-openstates-scrapers / govbot-data) and the archive org, since repo
+# transfer/rename/archive/create all require it.
+name: Close Legislative Session
+
+on:
+  workflow_dispatch:
+    inputs:
+      locale:
+        type: string
+        description: "Locale code to close, e.g. ca"
+        required: true
+      config:
+        type: choice
+        description: "Which repo(s) to close for this locale"
+        required: true
+        default: both
+        options:
+          - scrape
+          - files
+          - both
+      archive_org:
+        type: string
+        description: "Destination org for the archived repo"
+        required: false
+        default: govbot-archive
+      new_session:
+        type: string
+        description: "Session identifier for the NEXT session (leave blank if not yet known)"
+        required: false
+        default: ""
+      dry-run:
+        type: boolean
+        description: "Preview actions without making any changes"
+        required: true
+        default: true
+
+jobs:
+  close-session:
+    name: "🔒 Close Session — ${{ inputs.locale }}"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout govbot
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Configure git authentication
+        env:
+          GH_TOKEN: ${{ secrets.APPLY_TOKEN }}
+        run: |
+          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
+
+      - name: Close scrape repo
+        if: inputs.config == 'scrape' || inputs.config == 'both'
+        env:
+          GH_TOKEN: ${{ secrets.APPLY_TOKEN }}
+        run: |
+          cd actions/pipeline-manager
+          python3 close_session.py \
+            --config chn-openstates-scrape.yml \
+            --locale "${{ inputs.locale }}" \
+            --archive-org "${{ inputs.archive_org }}" \
+            ${{ inputs.new_session != '' && format('--new-session {0}', inputs.new_session) || '' }} \
+            ${{ inputs.dry-run == 'true' && '--dry-run' || '' }}
+
+      - name: Close files repo
+        if: inputs.config == 'files' || inputs.config == 'both'
+        env:
+          GH_TOKEN: ${{ secrets.APPLY_TOKEN }}
+        run: |
+          cd actions/pipeline-manager
+          python3 close_session.py \
+            --config chn-openstates-files.yml \
+            --locale "${{ inputs.locale }}" \
+            --archive-org "${{ inputs.archive_org }}" \
+            ${{ inputs.new_session != '' && format('--new-session {0}', inputs.new_session) || '' }} \
+            ${{ inputs.dry-run == 'true' && '--dry-run' || '' }}
+
+      - name: Commit config changes
+        if: inputs.dry-run != 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add actions/pipeline-manager/chn-openstates-scrape.yml actions/pipeline-manager/chn-openstates-files.yml
+          if git diff --staged --quiet; then
+            echo "No config changes to commit"
+          else
+            git commit -m "chore: close ${{ inputs.locale }} session, rotate to next"
+            git push origin main
+          fi

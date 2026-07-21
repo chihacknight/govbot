@@ -38,6 +38,18 @@ failed_bills_tracker = {
     "total_failed": 0,
 }
 
+# The real underlying exception from the most recent download_with_retry() call
+# that exhausted its retries -- download_with_retry only ever returns None on
+# failure, discarding the actual requests.exceptions.RequestException string
+# (e.g. "403 Client Error: Forbidden for url: ..."), so callers that only see
+# None have no way to report anything more specific than "download failed".
+_last_download_error: Optional[str] = None
+
+
+def get_last_download_error() -> Optional[str]:
+    """Real error from the most recent failed download_with_retry() call, if any."""
+    return _last_download_error
+
 
 def get_realistic_headers() -> dict:
     """Get realistic browser headers."""
@@ -63,7 +75,6 @@ def record_failed_bill(
     url: str = "",
     metadata_file: str = "",
     additional_info: Dict = None,
-    output_folder: Path = None,
 ):
     """Record a failed bill for error tracking and reporting."""
     global failed_bills_tracker
@@ -88,81 +99,19 @@ def record_failed_bill(
 
     failed_bills_tracker["total_failed"] += 1
 
-    # Save individual error file to data_not_processed if output folder provided
-    if output_folder:
-        save_individual_error_file(error_record, output_folder)
 
+def get_failed_bills_summary() -> Dict:
+    """
+    Return the current run's failed-bill tracker for the caller to print/report.
 
-def save_individual_error_file(error_record: Dict, output_folder: Path):
-    """Save an individual failed bill error file to data_not_processed."""
-    try:
-        # Create data_not_processed folder structure
-        data_not_processed = output_folder / "data_not_processed"
-        error_category = f"{error_record['error_type']}_failures"
-        error_folder = data_not_processed / "text_extraction_errors" / error_category
-        error_folder.mkdir(parents=True, exist_ok=True)
-
-        # Create filename
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        bill_id_clean = error_record["bill_id"].replace(" ", "").replace("/", "_")
-        filename = f"bill_{bill_id_clean}_{timestamp}.json"
-
-        # Save the error record
-        with open(error_folder / filename, "w", encoding="utf-8") as f:
-            json.dump(error_record, f, indent=2, ensure_ascii=False)
-
-        print(f"   📋 Saved error file: {error_folder / filename}")
-
-    except Exception as e:
-        print(f"   ❌ Error saving individual error file: {e}")
-
-
-def save_failed_bills_report(output_folder: Path, state: str):
-    """Save a comprehensive report of failed bills."""
+    Deliberately does not write anything to disk: a failed download of one
+    document within an otherwise-fine bill isn't a bill-processing error (that's
+    what .windycivi/errors/ is for -- missing_session, unknown_session, etc.),
+    it's a per-run transient we want visible in the run's own summary output,
+    not a permanent record persisted into the repo.
+    """
     global failed_bills_tracker
-
-    if failed_bills_tracker["total_failed"] == 0:
-        print("✅ No failed bills to report")
-        return
-
-    # Create data_not_processed folder structure
-    data_not_processed = output_folder / "data_not_processed"
-    text_extraction_errors = data_not_processed / "text_extraction_errors"
-    summary_reports = text_extraction_errors / "summary_reports"
-    summary_reports.mkdir(parents=True, exist_ok=True)
-
-    # Generate timestamp for the report
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    # Save detailed error report
-    report_file = summary_reports / f"failed_text_extraction_{state}_{timestamp}.json"
-
-    report_data = {
-        "state": state,
-        "timestamp": datetime.now().isoformat(),
-        "summary": {
-            "total_failed": failed_bills_tracker["total_failed"],
-            "failed_downloads": len(failed_bills_tracker["failed_downloads"]),
-            "failed_parsing": len(failed_bills_tracker["failed_parsing"]),
-            "failed_saves": len(failed_bills_tracker["failed_saves"]),
-        },
-        "failed_downloads": failed_bills_tracker["failed_downloads"],
-        "failed_parsing": failed_bills_tracker["failed_parsing"],
-        "failed_saves": failed_bills_tracker["failed_saves"],
-    }
-
-    try:
-        with open(report_file, "w", encoding="utf-8") as f:
-            json.dump(report_data, f, indent=2, ensure_ascii=False)
-
-        print(f"📋 Failed bills report saved: {report_file}")
-        print(f"   Total failed: {failed_bills_tracker['total_failed']}")
-        print(f"   Download failures: {len(failed_bills_tracker['failed_downloads'])}")
-        print(f"   Parsing failures: {len(failed_bills_tracker['failed_parsing'])}")
-        print(f"   Save failures: {len(failed_bills_tracker['failed_saves'])}")
-
-    except Exception as e:
-        print(f"❌ Error saving failed bills report: {e}")
+    return failed_bills_tracker
 
 
 def reset_error_tracking():
@@ -183,6 +132,8 @@ def download_with_retry(
     use_aggressive_mode: bool = False,
 ) -> Optional[requests.Response]:
     """Download with basic retry logic and exponential backoff."""
+    global _last_download_error
+    _last_download_error = None
 
     for attempt in range(max_retries):
         try:
@@ -206,6 +157,7 @@ def download_with_retry(
 
         except requests.exceptions.RequestException as e:
             print(f"   ⚠️ Attempt {attempt + 1} failed: {e}")
+            _last_download_error = str(e)
             if attempt < max_retries - 1:
                 # Exponential backoff with jitter
                 wait_time = delay * (2**attempt) + random.uniform(1, 3)

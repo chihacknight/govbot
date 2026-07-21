@@ -35,10 +35,22 @@ session_mapping = {}
     required=True,
     help="Path to the output folder where processed files will be saved.",
 )
+@click.option(
+    "--expected-session",
+    default=None,
+    help=(
+        "If set, bills/events/votes whose legislative_session doesn't match this "
+        "value are routed to .windycivi/errors/wrong_session/ instead of being "
+        "processed. Use this once a repo is scoped to a single session (see "
+        "actions/pipeline-manager/close_session.py) to guard against stray data "
+        "from an unexpected session silently landing in this repo."
+    ),
+)
 def main(
     state: str,
     openstates_data_folder: Path,
     git_repo_folder: Path,
+    expected_session: str = None,
 ):
     state_abbr = state.lower()
 
@@ -91,6 +103,7 @@ def main(
         repo_root,
         latest_timestamps,
         git_repo_folder,
+        expected_session=expected_session,
     )
 
     # 5. Link archived event logs to state sessions and save

@@ -17,7 +17,8 @@ from .common import (
     download_with_retry,
     download_bill_text,
     record_failed_bill,
-    save_failed_bills_report,
+    get_failed_bills_summary,
+    get_last_download_error,
     reset_error_tracking,
     rotate_session,
     get_congress_gov_headers,
@@ -169,16 +170,13 @@ def download_congress_gov_content(url: str) -> str:
         return None
 
 
-def extract_bill_text_from_metadata(
-    metadata_file: Path, files_dir: Path, output_folder: Path = None
-) -> bool:
+def extract_bill_text_from_metadata(metadata_file: Path, files_dir: Path) -> bool:
     """
     Extract bill text for a single bill from its metadata.json file.
 
     Args:
         metadata_file: Path to metadata.json file
         files_dir: Path to files/ directory for this bill
-        output_folder: Path to calling repo root for error reporting (optional)
 
     Returns:
         True if successful, False otherwise
@@ -255,6 +253,52 @@ def extract_bill_text_from_metadata(
                 url = best_link.get("url")
                 media_type = best_link.get("media_type", "")
 
+                # Compute where this specific version/document would be saved
+                # *before* touching the network. Each versions[]/documents[]
+                # entry has its own URL, so an existing file here is a direct,
+                # correct signal that we already have this exact document --
+                # unlike inferring "did anything change" from the bill's
+                # actions[] (e.g. a vote), which says nothing about whether a
+                # new document actually exists.
+                file_extension = (
+                    "xml"
+                    if "xml" in media_type.lower()
+                    else "html" if "html" in media_type.lower() else "pdf"
+                )
+                filename = create_safe_filename(url, item_note, file_extension)
+                # Handle both lowercase and uppercase extensions (e.g., .html vs .HTM)
+                if filename.endswith(f".{file_extension}"):
+                    text_filename = filename.replace(
+                        f".{file_extension}", "_extracted.txt"
+                    )
+                elif filename.endswith(f".{file_extension.upper()}"):
+                    text_filename = filename.replace(
+                        f".{file_extension.upper()}", "_extracted.txt"
+                    )
+                else:
+                    # Fallback: just append _extracted.txt
+                    text_filename = filename.rsplit(".", 1)[0] + "_extracted.txt"
+
+                # Determine target directory
+                if array_name == "documents":
+                    # Documents (e.g. amendments) live in a separate subfolder
+                    target_dir = files_dir / "documents"
+                else:
+                    # Versions live in the main files directory
+                    target_dir = files_dir
+
+                content_file = target_dir / filename
+                text_file = target_dir / text_filename
+
+                if content_file.exists() and text_file.exists():
+                    print(
+                        f"   ⏭️  Already have {array_name} '{item_note}' "
+                        f"({filename}) — skipping"
+                    )
+                    success_count += 1
+                    continue
+
+                target_dir.mkdir(parents=True, exist_ok=True)
                 print(f"   📥 Downloading: {url} (type: {media_type})")
 
                 # Download content based on media type
@@ -295,17 +339,20 @@ def extract_bill_text_from_metadata(
 
                 if not content:
                     print(f"   ❌ Failed to download: {url}")
+                    error_message = (
+                        get_last_download_error()
+                        or f"Failed to download content from {media_type}"
+                    )
                     record_failed_bill(
                         bill_id=bill_id,
                         error_type="download",
-                        error_message=f"Failed to download content from {media_type}",
+                        error_message=error_message,
                         url=url,
                         metadata_file=str(metadata_file),
                         additional_info={
                             "media_type": media_type,
                             "item_note": item_note,
                         },
-                        output_folder=output_folder,
                     )
                     continue
 
@@ -339,44 +386,10 @@ def extract_bill_text_from_metadata(
                             "media_type": media_type,
                             "item_note": item_note,
                         },
-                        output_folder=output_folder,
                     )
                     continue
 
-                # Create filenames
-                file_extension = (
-                    "xml"
-                    if "xml" in media_type.lower()
-                    else "html" if "html" in media_type.lower() else "pdf"
-                )
-                filename = create_safe_filename(url, item_note, file_extension)
-                # Handle both lowercase and uppercase extensions (e.g., .html vs .HTM)
-                if filename.endswith(f".{file_extension}"):
-                    text_filename = filename.replace(
-                        f".{file_extension}", "_extracted.txt"
-                    )
-                elif filename.endswith(f".{file_extension.upper()}"):
-                    text_filename = filename.replace(
-                        f".{file_extension.upper()}", "_extracted.txt"
-                    )
-                else:
-                    # Fallback: just append _extracted.txt
-                    text_filename = filename.rsplit(".", 1)[0] + "_extracted.txt"
-
-                # Create appropriate directory structure
-                if array_name == "documents":
-                    # Put documents in a separate subfolder
-                    target_dir = files_dir / "documents"
-                    target_dir.mkdir(parents=True, exist_ok=True)
-                    print(f"   📁 Created documents directory: {target_dir}")
-                else:
-                    # Put versions in the main files directory
-                    target_dir = files_dir
-                    target_dir.mkdir(parents=True, exist_ok=True)
-                    print(f"   📁 Created directory: {target_dir}")
-
                 # Save original content
-                content_file = target_dir / filename
                 print(f"   💾 Saving {file_extension.upper()} to: {content_file}")
                 try:
                     with open(content_file, "w", encoding="utf-8") as f:
@@ -387,7 +400,6 @@ def extract_bill_text_from_metadata(
                     continue
 
                 # Save extracted text
-                text_file = target_dir / text_filename
                 print(f"   💾 Saving extracted text to: {text_file}")
                 try:
                     with open(text_file, "w", encoding="utf-8") as f:
@@ -430,7 +442,6 @@ def extract_bill_text_from_metadata(
                             "item_note": item_note,
                             "text_filename": text_filename,
                         },
-                        output_folder=output_folder,
                     )
                     continue
 
@@ -447,7 +458,6 @@ def extract_bill_text_from_metadata(
 def process_bills_in_batch(
     processed_folder: Path,
     batch_size: int = 100,
-    output_folder: Path = None,
     state: str = "unknown",
     incremental: bool = False,
 ) -> Dict[str, int]:
@@ -457,7 +467,6 @@ def process_bills_in_batch(
     Args:
         processed_folder: Path to the processed data folder
         batch_size: Number of bills to process in each batch
-        output_folder: Path to save error reports (optional)
         state: State identifier for error reports (optional)
 
     Returns:
@@ -501,9 +510,7 @@ def process_bills_in_batch(
                 files_dir.mkdir(parents=True, exist_ok=True)
 
                 # Extract text for this bill
-                success = extract_bill_text_from_metadata(
-                    metadata_file, files_dir, output_folder
-                )
+                success = extract_bill_text_from_metadata(metadata_file, files_dir)
 
                 if success:
                     success_count += 1
@@ -527,9 +534,12 @@ def process_bills_in_batch(
             f"✅ Batch {batch_num} complete. Success: {success_count}, Errors: {error_count}, Skipped: {skipped_count}"
         )
 
-    # Save error report if output folder is provided
-    if output_folder:
-        save_failed_bills_report(output_folder, state)
+    failed_summary = get_failed_bills_summary()
+    failed_bills = [
+        {"bill_id": r["bill_id"], "error_type": r["error_type"], "error_message": r["error_message"]}
+        for category in ("failed_downloads", "failed_parsing", "failed_saves")
+        for r in failed_summary[category]
+    ]
 
     return {
         "total_bills": total_bills,
@@ -537,6 +547,7 @@ def process_bills_in_batch(
         "successful": success_count,
         "errors": error_count,
         "skipped": skipped_count,
+        "failed_bills": failed_bills,
     }
 
 

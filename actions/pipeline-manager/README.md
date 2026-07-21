@@ -56,9 +56,22 @@ OPENSTATES_API_KEY=your_key python3 check-sessions.py --dry-run --only nc,pa,dc
 | `-c CONFIG` / `--config CONFIG` | Required. Config file (`chn-openstates-scrape.yml` for scraper repos, `chn-openstates-files.yml` for format/data repos) |
 | `--all-states` | Process all states in the config |
 | `--test-states wy,nv` | Comma-separated list of states to process (no spaces). Default test states: al, ak, de, wy, sd |
-| `--no-delete` | Skip deletion of repos not in config. **Always use this unless you intend to delete repos.** |
+| `--no-delete` | Skip deletion of repos not in config at all (config drift cleanup). Doesn't affect `--test-states`/`--all-states` scoping. |
 | `--dry-run` | Show what would change without making any changes |
 
-### ⚠️ Watch out for the delete prompt
+### Deletion safety
 
-When running in test mode, apply.py sees only N expected repos vs 56 actual repos and will offer to delete the other 54. **Always pass `--no-delete` when testing on a subset of states.**
+`apply.py` only ever proposes deleting a repo that isn't in the config **at all** — a
+`--test-states wy` run will never propose deleting `il-legislation` or any other
+configured-but-out-of-scope repo, regardless of `--no-delete`. Deletion candidates are
+computed against the full, unfiltered config (`get_all_expected_repo_names()`), not the
+scoped subset a given run happens to be processing.
+
+`--no-delete` still matters for the case it's meant for: real config drift, e.g. a locale
+was removed or renamed and its old repo is still sitting in GitHub. **Still pass
+`--no-delete`** for routine/test runs — it's the difference between "review this
+before deleting" and "delete genuinely orphaned repos automatically" — but you no longer
+need to worry that testing on a handful of states will threaten every other real, still-
+configured repo. (This was a real near-miss caught via `--dry-run` before it ran for
+real — see the `fix: apply.py's --test-states no longer treats out-of-scope repos as
+deletable` commit for the full story.)

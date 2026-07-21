@@ -34,7 +34,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run formatter action
-        uses: chihacknight/govbot/actions/format@main
+        uses: chihacknight/govbot/actions/format@feat/session-scoped-repo-lifecycle
         with:
           state: ${{ env.STATE_CODE }}
           scraper-repo: ${{ env.SCRAPER_REPO }}

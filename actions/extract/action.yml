@@ -12,6 +12,13 @@ inputs:
     description: "Force push changes even if there are upstream changes"
     required: false
     default: "false"
+  slack-webhook-url:
+    description: >-
+      Slack Incoming Webhook URL to notify when a run has errors. Optional --
+      leave unset/empty to skip Slack notification entirely (e.g. before the
+      webhook has been provisioned).
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -24,6 +31,8 @@ runs:
     - name: Install dependencies
       shell: bash
       working-directory: ${{ github.action_path }}
+      env:
+        PIPENV_VENV_IN_PROJECT: "1"
       run: |
         python -m pip install --upgrade pip
         pip install pipenv
@@ -50,6 +59,8 @@ runs:
       id: extract
       shell: bash
       working-directory: ${{ github.action_path }}/../..
+      env:
+        PIPENV_VENV_IN_PROJECT: "1"
       run: |
         echo "📄 Extracting text from PDFs and XMLs for ${{ inputs.state }}"
 
@@ -205,14 +216,21 @@ runs:
         # Run text extraction using the colocated main.py
         # Explicitly set Pipfile location for pipenv
         export PIPENV_PIPFILE="$ACTION_DIR/Pipfile"
-        EXIT_CODE=0
-        EXTRACTION_OUTPUT=$(cd "$ACTION_DIR" && pipenv run python main.py \
+        # Stream output live via tee instead of buffering it all into a shell
+        # variable -- a run across thousands of bills would otherwise show
+        # zero progress in the log until the entire thing finished (or hung),
+        # making a slow-but-working run indistinguishable from a stuck one.
+        export PYTHONUNBUFFERED=1
+        EXTRACTION_LOG="$(mktemp)"
+        set +e
+        (cd "$ACTION_DIR" && pipenv run python main.py \
           --state "${{ inputs.state }}" \
           --data-folder "${{ github.workspace }}" \
-          --output-folder "${{ github.workspace }}" \
-          --incremental 2>&1) || EXIT_CODE=$?
-
-        echo "$EXTRACTION_OUTPUT"
+          --incremental 2>&1) | tee "$EXTRACTION_LOG"
+        EXIT_CODE=${PIPESTATUS[0]}
+        set -e
+        EXTRACTION_OUTPUT=$(cat "$EXTRACTION_LOG")
+        rm -f "$EXTRACTION_LOG"
 
         # Stop the auto-commit background process
         echo "🛑 Stopping auto-commit background process..."
@@ -230,6 +248,10 @@ runs:
         SUCCESSFUL=$(echo "$EXTRACTION_OUTPUT" | grep -oP 'Successful: \K\d+' | tail -1 || echo "0")
         ERRORS=$(echo "$EXTRACTION_OUTPUT" | grep -oP 'Errors: \K\d+' | tail -1 || echo "0")
         SKIPPED=$(echo "$EXTRACTION_OUTPUT" | grep -oP 'Skipped \(already processed\): \K\d+' | tail -1 || echo "0")
+        # Bill IDs that failed, printed by main.py under a "Failed bills:" header --
+        # not written anywhere in the repo (see actions/extract/utils/common.py),
+        # so the run summary is the only place these are visible.
+        FAILED_BILLS=$(echo "$EXTRACTION_OUTPUT" | sed -n '/^Failed bills:$/,$p' | tail -n +2)
 
         # Save stats to a file for easy display in caller workflow
         echo "📊 Text Extraction Summary for ${{ inputs.state }}" > "${{ github.workspace }}/.extraction_summary.txt"
@@ -254,6 +276,32 @@ runs:
           echo "| Skipped | $SKIPPED |"
           echo ""
         } >> $GITHUB_STEP_SUMMARY
+
+        if [ -n "$FAILED_BILLS" ]; then
+          {
+            echo "<details><summary>Failed bills ($ERRORS)</summary>"
+            echo ""
+            echo '```'
+            echo "$FAILED_BILLS"
+            echo '```'
+            echo "</details>"
+            echo ""
+          } >> $GITHUB_STEP_SUMMARY
+        fi
+
+        # Notify Slack on errors, if a webhook has been configured. Silently
+        # does nothing if slack-webhook-url is empty (e.g. not provisioned
+        # yet) -- never blocks or fails the run either way.
+        if [ -n "${{ inputs.slack-webhook-url }}" ] && [ "$ERRORS" -gt 0 ]; then
+          SLACK_FAILED_BILLS=$(echo "$FAILED_BILLS" | head -20)
+          SLACK_TEXT=$(printf '⚠️ *Text extraction errors for %s*: %s error(s) out of %s bills.\n```\n%s\n```\n<%s/%s/actions/runs/%s|View run>' \
+            "${{ inputs.state }}" "$ERRORS" "$TOTAL_BILLS" "$SLACK_FAILED_BILLS" \
+            "${{ github.server_url }}" "${{ github.repository }}" "${{ github.run_id }}")
+          SLACK_PAYLOAD=$(jq -n --arg text "$SLACK_TEXT" '{text: $text}')
+          curl -s -X POST -H 'Content-Type: application/json' -d "$SLACK_PAYLOAD" \
+            "${{ inputs.slack-webhook-url }}" > /dev/null \
+            || echo "⚠️ Slack notification failed (non-fatal, continuing)"
+        fi
 
         if [ $EXIT_CODE -eq 0 ]; then
           echo "✅ **Status:** Complete" >> $GITHUB_STEP_SUMMARY
