@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../../pipeline-manager/config.schema.json
 template_markers:
   open: ✏️{
   close: '}✏️'

@@ -23,7 +23,11 @@ def cli():
 )
 def list_fleet(config_dir: Path):
     """Print one JSON Lines jurisdiction record per locale per fleet."""
-    for record in read_fleet(config_dir):
+    try:
+        records = read_fleet(config_dir)
+    except ValueError as e:
+        raise click.ClickException(str(e)) from e
+    for record in records:
         click.echo(json.dumps(record, ensure_ascii=False))
 
 

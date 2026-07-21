@@ -1,0 +1,11 @@
+# Minimal fleet: locks the discovery convention (any top-level YAML with a `locales`
+# mapping is a fleet) and the repo-name fallback when a template has no folder-name
+# (the bare locale code, matching render.py).
+org:
+  username: test-org
+templates:
+  bare: {}
+locales:
+  zz:
+    template: bare
+    name: Zed

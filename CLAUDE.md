@@ -52,7 +52,7 @@ Use these meta-prompts to guide architectural decisions and code quality.
 
 - **"Does this have an `action.yml`?"** - New actions must be GitHub Actions-compatible.
 
-- **"Where are the snapshots?"** - Each action manages snapshots via `render_snapshots.sh`. Add test data in `__snapshots__/`.
+- **"Where are the snapshots?"** - Each action manages snapshots via `render-snapshots.sh`. Add test data in `__snapshots__/`.
 
 - **"CLI-first, API-second"** - Prefer shell-composable tools. Unix pipe friendliness enables automation.
 

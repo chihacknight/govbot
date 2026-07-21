@@ -8,6 +8,7 @@ sort_pipfile = true
 
 [packages]
 click = "*"
+jsonschema = "*"
 pyyaml = "*"
 
 [dev-packages]

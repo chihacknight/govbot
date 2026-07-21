@@ -11,4 +11,33 @@ mkdir -p "$output_dir"
 
 pipenv run python3 main.py list-fleet --config-dir fixtures > "$output_dir/fleet.jsonl"
 
+# A broken config must fail loudly (nonzero exit, clear error), never emit empty records.
+if pipenv run python3 main.py list-fleet --config-dir fixtures-invalid \
+    > /dev/null 2> "$output_dir/invalid-config-error.txt"; then
+  echo "✗ fixtures-invalid should have failed but exited 0"
+  exit 1
+fi
+
+# Every record must validate against the module's declared contract.
+pipenv run python3 - <<'EOF'
+import json
+from pathlib import Path
+from jsonschema import validate
+
+schema = json.load(open("record.schema.json"))
+lines = Path("__snapshots__/fleet.jsonl").read_text().splitlines()
+for line in lines:
+    validate(instance=json.loads(line), schema=schema)
+print(f"✓ {len(lines)} records validate against record.schema.json")
+EOF
+
+# Smoke: the real pipeline-manager config must parse and be non-empty.
+# Not snapshotted — the real config churns; this only locks "it still works".
+real_count=$(pipenv run python3 main.py list-fleet --config-dir ../pipeline-manager | wc -l | tr -d ' ')
+if [ "$real_count" -lt 1 ]; then
+  echo "✗ real-config smoke failed: no records from ../pipeline-manager"
+  exit 1
+fi
+echo "✓ real-config smoke: $real_count records from ../pipeline-manager"
+
 echo "✓ Snapshot generation complete. Output in $output_dir"

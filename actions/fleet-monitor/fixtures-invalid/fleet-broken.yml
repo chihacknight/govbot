@@ -1,0 +1,12 @@
+# Invalid fixture: locale `nm` has an empty body (no template), which must fail loudly
+# instead of emitting an empty record. Locked by the invalid-config-error.txt snapshot.
+org:
+  username: broken-org
+templates:
+  good-template:
+    folder-name: ✏️{ locale.key }✏️-legislation
+locales:
+  nm:
+  ok:
+    template: good-template
+    name: Okay

@@ -23,5 +23,10 @@ runs:
     - name: List fleet
       shell: bash
       working-directory: ${{ github.action_path }}
+      # The input goes through an env var, never expression-interpolated into the
+      # script: expression expansion happens before bash parses it, so inlining
+      # ${{ inputs.config-dir }} would be a shell-injection sink for consumers.
+      env:
+        CONFIG_DIR: ${{ inputs.config-dir }}
       run: |
-        pipenv run python main.py list-fleet --config-dir "${{ github.workspace }}/${{ inputs.config-dir }}"
+        pipenv run python main.py list-fleet --config-dir "${GITHUB_WORKSPACE}/${CONFIG_DIR}"
