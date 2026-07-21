@@ -215,7 +215,36 @@ else
   COUNT_JSON=0
 fi
 echo "Found ${COUNT_JSON} JSON files in $JSON_DIR"
-if [ "$exit_code" -eq 0 ] && [ "$COUNT_JSON" -gt 0 ]; then
+
+# exit_code == 0 only means the docker scraper itself didn't crash -- it does
+# NOT mean this run produced a complete dataset. A run that gets cut short
+# (e.g. cancelled by a newer trigger and replaced by a fresh, short-lived one;
+# or a retry attempt within this same run that returns less than an earlier
+# attempt already did) can still exit 0 with a handful of real files, which
+# used to be enough to trigger the wipe below and silently replace a larger,
+# good dataset with a smaller one -- confirmed happening for real on IL (a
+# single run's last retry produced ~4k files after auto-save had already
+# captured ~19k earlier in that same run) and FL (a fresh run, started after
+# an in-progress 6-hour run got cancelled, "succeeded" with a fraction of a
+# full scrape and overwrote the larger dataset the cancelled run had already
+# saved). Comparing against what's already committed catches both: within a
+# single run there's no legitimate reason a later retry has fewer real bills
+# than an earlier one already did today, and across runs the existing count
+# already reflects this run's own auto-saves, not stale history -- so a
+# shrink here is always suspicious, never normal session growth (which only
+# ever adds bills over time).
+EXISTING_DIR="${OUTPUT_DIR}/_data/${STATE}"
+if [ -d "$EXISTING_DIR" ]; then
+  EXISTING_COUNT=$(find "$EXISTING_DIR" -type f -name '*.json' 2>/dev/null | wc -l | tr -d ' ')
+else
+  EXISTING_COUNT=0
+fi
+
+if [ "$exit_code" -eq 0 ] && [ "$COUNT_JSON" -gt 0 ] && [ "$COUNT_JSON" -lt "$EXISTING_COUNT" ]; then
+  echo "⚠️ Fresh scrape produced ${COUNT_JSON} files, fewer than the ${EXISTING_COUNT} already saved -- refusing to overwrite. Leaving existing data in place; this run's output is not being committed." >&2
+  FAILURE_TYPE_OVERRIDE="P1_SHRINKING_OUTPUT"
+  COUNT_JSON=0  # so the summary/downstream logic reports this as "nothing new," not a success
+elif [ "$exit_code" -eq 0 ] && [ "$COUNT_JSON" -gt 0 ]; then
   # Copy files directly to workspace _data directory
   # Clean the directory first to avoid accumulating stale files with different UUIDs
   mkdir -p "${OUTPUT_DIR}/_data/${STATE}"
@@ -316,7 +345,9 @@ fi
 # Grep the log file directly — avoids broken-pipe errors from piping large variables through echo.
 IS_ACTIVE_BLOCK="false"
 
-if [ "$exit_code" -eq 0 ]; then
+if [ -n "${FAILURE_TYPE_OVERRIDE:-}" ]; then
+  FAILURE_TYPE="$FAILURE_TYPE_OVERRIDE"
+elif [ "$exit_code" -eq 0 ]; then
   FAILURE_TYPE="NONE"
 elif grep -qE "ConnectionRefusedError|Errno 111" "$SCRAPE_LOG" 2>/dev/null; then
   FAILURE_TYPE="N1_ACTIVE_BLOCK"
