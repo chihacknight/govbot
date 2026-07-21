@@ -10,6 +10,12 @@ on:
         description: "Force push even if upstream changed (use with caution)"
         default: false
 
+# Same reasoning as extract-text.yml's concurrency block -- avoid a
+# scheduled run cancelling/racing a still-in-flight manual one.
+concurrency:
+  group: format
+  cancel-in-progress: false
+
 env:
   STATE_CODE: mt
   SCRAPER_REPO: govbot-openstates-scrapers/mt-legislation

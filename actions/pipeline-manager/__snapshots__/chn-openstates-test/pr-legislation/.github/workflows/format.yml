@@ -1,4 +1,4 @@
-name: Format Data for id
+name: Format Data for pr
 
 on:
   schedule:
@@ -17,8 +17,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  STATE_CODE: id
-  SCRAPER_REPO: govbot-openstates-scrapers/id-legislation
+  STATE_CODE: pr
+  SCRAPER_REPO: govbot-openstates-scrapers/pr-legislation
 
 jobs:
   format:
@@ -34,7 +34,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run formatter action
-        uses: chihacknight/govbot/actions/format@main
+        uses: chihacknight/govbot/actions/format@feat/session-scoped-repo-lifecycle
         with:
           state: ${{ env.STATE_CODE }}
           scraper-repo: ${{ env.SCRAPER_REPO }}
