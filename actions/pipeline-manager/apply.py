@@ -189,6 +189,52 @@ def get_expected_repos(
     return expected_repos, org_username
 
 
+def get_all_expected_repo_names(config_file: Path) -> Set[str]:
+    """
+    Repo names for EVERY locale in the config, regardless of --test-states
+    scope, used only to bound what's safe to delete.
+
+    get_expected_repos() filters locales down to whatever scope this run was
+    given (--test-states, or the default test-state list) before computing
+    names -- correct for deciding what to create/update, but wrong for
+    deciding what to delete: a repo outside today's scope isn't "unexpected,"
+    it's just not part of this run. This computes names for the full,
+    unfiltered locale list so a scoped run can never mistake "not selected
+    today" for "not in config at all." Doesn't call render.py or touch
+    generated/ -- only needs the name, not rendered files.
+    """
+    import importlib.util
+
+    script_dir = config_file.parent
+    render_path = script_dir / "render.py"
+    spec = importlib.util.spec_from_file_location("render", render_path)
+    render = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(render)
+
+    all_locales, all_configs, marker_open, marker_close, templates, _ = (
+        render.parse_config(config_file)
+    )
+
+    names = set()
+    for locale, config_str in zip(all_locales, all_configs):
+        template = render.get_config_value(config_str, "template", "")
+        if not template:
+            continue
+        managed = render.get_config_value(config_str, "managed", "true")
+        if managed == "false":
+            continue
+
+        folder_name = locale
+        if template in templates and "folder-name" in templates[template]:
+            folder_name_template = templates[template]["folder-name"]
+            folder_name = render.render_folder_name(
+                folder_name_template, locale, marker_open, marker_close
+            )
+        names.add(folder_name)
+
+    return names
+
+
 def get_actual_repos(org: str) -> Set[str]:
     """Get list of actual repos in the GitHub organization."""
     print(f"📋 Fetching existing repos in {org}...")
@@ -578,10 +624,17 @@ def main():
     actual_repos = get_actual_repos(org)
 
     expected_names = set(expected_repos.keys())
+    # Deletion safety net: bound against the FULL config, not just this run's
+    # scope, so a --test-states subset never mistakes "not selected today"
+    # for "not in config at all" -- see get_all_expected_repo_names() and the
+    # near-miss this fixes: a --test-states wy run previously computed
+    # to_delete against expected_names={wy-legislation}, meaning every other
+    # real, configured state repo looked deletable.
+    all_expected_names = get_all_expected_repo_names(config_file)
 
     # Calculate differences
     to_create = expected_names - actual_repos
-    to_delete = actual_repos - expected_names
+    to_delete = actual_repos - all_expected_names
     to_update = expected_names & actual_repos
 
     print()

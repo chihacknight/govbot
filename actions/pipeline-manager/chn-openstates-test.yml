@@ -1,0 +1,249 @@
+# yaml-language-server: $schema=./config.schema.json
+#
+# TEST config -- mirrors chn-openstates-files.yml but targets the govbot-test
+# org instead of govbot-data. Used to re-run the formatter (with its log
+# format fix) and the extract-text pipeline against real scraper data before
+# cutting the real govbot-data repos over. See close_session.py docstring
+# and project notes for the retirement plan once this is validated.
+#
+# extract-text is enabled for ALL locales here (full pilot rollout). Some
+# will fail fast (no country:us data, e.g. paused/broken scrapers like il) --
+# expected, not alarming, tracked separately.
+#
+# toolkit_branch pinned to feat/session-scoped-repo-lifecycle for every
+# locale -- TEMP until fixes merge to main.
+template_markers:
+  open: ✏️{
+  close: '}✏️'
+org:
+  username: govbot-test
+templates:
+  openstates-to-ocd-files:
+    folder-name: ✏️{ locale.key }✏️-legislation
+    fully_override_dirs:
+    - .github
+locales:
+  al:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Alabama
+  ak:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Alaska
+  az:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Arizona
+  ar:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Arkansas
+  ca:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: California
+  co:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Colorado
+  ct:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Connecticut
+  dc:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: District of Columbia
+  de:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Delaware
+  fl:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Florida
+  ga:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Georgia
+  hi:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Hawaii
+  id:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Idaho
+  il:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Illinois
+  in:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Indiana
+  ia:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Iowa
+  ks:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Kansas
+  ky:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Kentucky
+  la:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Louisiana
+  me:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Maine
+  md:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Maryland
+  ma:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Massachusetts
+  mi:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Michigan
+  mn:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Minnesota
+  ms:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Mississippi
+  mo:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Missouri
+  mt:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Montana
+  ne:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Nebraska
+  nv:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Nevada
+  nh:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: New Hampshire
+  nj:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: New Jersey
+  nm:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: New Mexico
+  ny:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: New York
+  nc:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: North Carolina
+  nd:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: North Dakota
+  oh:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Ohio
+  ok:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Oklahoma
+  or:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Oregon
+  pa:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Pennsylvania
+  ri:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Rhode Island
+  sc:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: South Carolina
+  sd:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: South Dakota
+  tn:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Tennessee
+  tx:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Texas
+  ut:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Utah
+  vt:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Vermont
+  va:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Virginia
+  wa:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Washington
+  wv:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: West Virginia
+  wi:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Wisconsin
+  wy:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Wyoming
+  pr:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Puerto Rico
+  mp:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Northern Mariana Islands
+  vi:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: U.S. Virgin Islands
+  gu:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: Guam
+  usa:
+    template: openstates-to-ocd-files
+    toolkit_branch: feat/session-scoped-repo-lifecycle
+    name: United States
