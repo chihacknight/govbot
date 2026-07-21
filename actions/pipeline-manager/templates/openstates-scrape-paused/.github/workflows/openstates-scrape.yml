@@ -12,6 +12,11 @@ on:
         description: "Force self-hosted for this manual run instead of the default tinyproxy + GitHub-hosted path (only meaningful for locales configured runner: self-hosted; e.g. to test without the proxy)"
         default: false
 
+# See the active (non-paused) template for the full explanation.
+concurrency:
+  group: scrape
+  cancel-in-progress: false
+
 env:
   STATE_CODE: ✏️{ locale.key }✏️
   # See the active (non-paused) template for the full explanation -- same

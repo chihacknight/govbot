@@ -19,6 +19,17 @@ on:
         description: "Force self-hosted for this manual run instead of the default tinyproxy + GitHub-hosted path (only meaningful for locales configured runner: self-hosted; e.g. to test without the proxy)"
         default: false
 
+# A scrape can take hours (FL up to 24h). Without this, a new trigger
+# (schedule, manual dispatch, or a delayed cron catching up) cancels an
+# in-progress run outright rather than queuing behind it -- confirmed
+# happening for real: FL's schedule firing hours late cancelled a 6-hour-old
+# manual run, and the fresh replacement "succeeded" with a fraction of the
+# data, overwriting what the cancelled run had already saved. Same pattern
+# already used in format.yml/extract-text.yml.
+concurrency:
+  group: scrape
+  cancel-in-progress: false
+
 env:
   STATE_CODE: wy
   # locale.runner is a render-time literal ("self-hosted" or "ubuntu-latest"),
