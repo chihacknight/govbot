@@ -55,9 +55,18 @@ runs:
         TARGET_DIR="${RUNNER_TEMP}/scrape-snapshot-nightly/_data/${{ inputs.state }}"
         mkdir -p "$TARGET_DIR"
 
-        # Copy data
+        # Copy data. Use rsync (or cp's "/." form as a fallback) rather than a
+        # shell-glob "/*" -- that expands to one argument per file before cp
+        # even runs, and blows past the OS argument-length limit for large
+        # states (confirmed failing on USA at 54,228 files: "Argument list
+        # too long"). Both alternatives copy directory *contents* without the
+        # shell doing the expansion.
         echo "📦 Copying to: $TARGET_DIR"
-        cp -r "scraper-data/_data/${{ inputs.state }}"/* "$TARGET_DIR/"
+        if command -v rsync >/dev/null 2>&1; then
+          rsync -a "scraper-data/_data/${{ inputs.state }}/" "$TARGET_DIR/"
+        else
+          cp -r "scraper-data/_data/${{ inputs.state }}/." "$TARGET_DIR/"
+        fi
 
         FILE_COUNT=$(find "$TARGET_DIR" -type f -name "*.json" | wc -l)
         echo "📋 Files copied: $FILE_COUNT JSON files"
