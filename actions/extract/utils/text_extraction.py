@@ -28,12 +28,7 @@ from .common import (
 # Import specialized extractors
 from .xml_extractor import extract_text_from_xml
 from .html_extractor import download_html_content, extract_text_from_html
-from .pdf_extractor import (
-    download_pdf_content,
-    extract_text_from_pdf,
-    extract_text_with_strikethroughs,
-    debug_pdf_structure,
-)
+from .pdf_extractor import extract_pdf
 
 
 def create_safe_filename(
@@ -303,7 +298,8 @@ def extract_bill_text_from_metadata(metadata_file: Path, files_dir: Path) -> boo
 
                 # Download content based on media type
                 content = None
-                strikethrough_info = None
+                is_binary_content = False
+                has_visual_markup = False
 
                 if "xml" in media_type.lower():
                     content = download_bill_text(url)
@@ -312,27 +308,17 @@ def extract_bill_text_from_metadata(metadata_file: Path, files_dir: Path) -> boo
                         url, download_with_retry, download_congress_gov_content
                     )
                 elif "pdf" in media_type.lower():
-                    # Try enhanced strikethrough detection first
-                    strikethrough_result = extract_text_with_strikethroughs(
-                        url, download_with_retry
-                    )
-                    if strikethrough_result and strikethrough_result.get("raw_text"):
-                        content = strikethrough_result["raw_text"]
-                        strikethrough_info = {
-                            "has_strikethroughs": strikethrough_result.get(
-                                "has_strikethroughs", False
-                            ),
-                            "strikethrough_count": strikethrough_result.get(
-                                "strikethrough_count", 0
-                            ),
-                        }
-                        if strikethrough_info["has_strikethroughs"]:
+                    pdf_result = extract_pdf(url, download_with_retry)
+                    if pdf_result:
+                        content = pdf_result["raw_bytes"]
+                        is_binary_content = True
+                        has_visual_markup = pdf_result["has_visual_markup"]
+                        if has_visual_markup:
                             print(
-                                f"   🔍 Detected {strikethrough_info['strikethrough_count']} strikethrough sections"
+                                f"   🔍 Detected likely redline/strikethrough markup -- "
+                                f"flagged for full-fidelity review"
                             )
-                    else:
-                        # Fallback to regular PDF extraction
-                        content = download_pdf_content(url, download_with_retry)
+                        extracted_text = pdf_result["text"]
                 else:
                     print(f"   ⚠️ Unsupported media type: {media_type}")
                     continue
@@ -356,22 +342,31 @@ def extract_bill_text_from_metadata(metadata_file: Path, files_dir: Path) -> boo
                     )
                     continue
 
-                print(f"   📄 Downloaded {len(content)} characters")
+                print(f"   📄 Downloaded {len(content)} {'bytes' if is_binary_content else 'characters'}")
 
-                # Extract text based on content type
+                # Extract text based on content type. One clean read per
+                # document -- no section-splitting, since arbitrary
+                # formatting-based splits don't reliably capture anything
+                # meaningful across 56 states' differing bill formats, and
+                # duplicating the full text under both a "sections" and a
+                # "raw text" view was actively confusing for anything
+                # reading the output (human or AI).
                 extracted_data = None
                 if "xml" in media_type.lower():
                     extracted_data = extract_text_from_xml(content)
                 elif "html" in media_type.lower():
                     extracted_data = extract_text_from_html(content)
                 elif "pdf" in media_type.lower():
-                    extracted_data = extract_text_from_pdf(content)
+                    extracted_data = {
+                        "title": "",
+                        "official_title": "",
+                        "raw_text": extracted_text,
+                    }
                 else:
                     extracted_data = {
                         "raw_text": content,
                         "title": "",
                         "official_title": "",
-                        "sections": [],
                     }
 
                 if "error" in extracted_data:
@@ -389,17 +384,24 @@ def extract_bill_text_from_metadata(metadata_file: Path, files_dir: Path) -> boo
                     )
                     continue
 
-                # Save original content
+                # Save original content -- genuine bytes for PDFs (needed to
+                # hand off the real document later, e.g. to a vision-capable
+                # model for redline-heavy bills), plain text for XML/HTML.
                 print(f"   💾 Saving {file_extension.upper()} to: {content_file}")
                 try:
-                    with open(content_file, "w", encoding="utf-8") as f:
-                        f.write(content)
+                    if is_binary_content:
+                        with open(content_file, "wb") as f:
+                            f.write(content)
+                    else:
+                        with open(content_file, "w", encoding="utf-8") as f:
+                            f.write(content)
                     print(f"   ✅ {file_extension.upper()} saved successfully")
                 except Exception as e:
                     print(f"   ❌ Error saving {file_extension.upper()}: {e}")
                     continue
 
-                # Save extracted text
+                # Save extracted text -- a single clean read, no artificial
+                # section-splitting.
                 print(f"   💾 Saving extracted text to: {text_file}")
                 try:
                     with open(text_file, "w", encoding="utf-8") as f:
@@ -407,26 +409,16 @@ def extract_bill_text_from_metadata(metadata_file: Path, files_dir: Path) -> boo
                         f.write(
                             f"Official Title: {extracted_data.get('official_title', 'N/A')}\n"
                         )
-                        f.write(
-                            f"Number of Sections: {len(extracted_data.get('sections', []))}\n"
-                        )
                         f.write(f"Source: {array_name} - {item_note}\n")
                         f.write(f"Media Type: {media_type}\n")
-                        if strikethrough_info and strikethrough_info.get(
-                            "has_strikethroughs"
-                        ):
+                        if has_visual_markup:
                             f.write(
-                                f"Strikethrough Detection: {strikethrough_info['strikethrough_count']} sections found\n"
+                                "Visual Markup Detected: true -- this document likely "
+                                "contains redline (strikethrough/underline) formatting; "
+                                "plain text extraction may not faithfully represent what "
+                                "the bill changes. See the saved original file.\n"
                             )
                         f.write("\n" + "=" * 80 + "\n\n")
-
-                        for i, section in enumerate(
-                            extracted_data.get("sections", []), 1
-                        ):
-                            f.write(f"Section {i}:\n{section}\n\n")
-
-                        f.write("\n" + "=" * 80 + "\n\n")
-                        f.write("Raw Text:\n")
                         f.write(extracted_data.get("raw_text", ""))
                     print(f"   ✅ Text saved successfully")
                 except Exception as e:
