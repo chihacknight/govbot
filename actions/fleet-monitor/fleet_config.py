@@ -48,8 +48,9 @@ def read_fleet(config_dir):
 def _mapping(fleet, config, key):
     """Return config[key] as a mapping, defaulting {} when absent/blank.
 
-    A scalar where a mapping is expected (`org: myorg`) is a config error, not
-    something to dereference into an AttributeError.
+    A scalar where a mapping is expected (`org: myorg`, or a `templates` entry
+    like `t: some-scalar`) is a config error, not something to dereference into
+    an AttributeError.
     """
     value = config.get(key)
     if value is None:
@@ -92,9 +93,12 @@ def _read_one_config(config_path, config, config_dir):
                 f"{fleet}: locale '{code}' must be a mapping, not {type(locale).__name__}"
             )
         # render.py skips unmanaged locales entirely (process_locale). It reads
-        # the value as text, so `managed: false` and quoted `"false"` both skip;
-        # YAML 1.1 also collapses no/off to False, which the loader skips here —
-        # an accepted divergence, since those are the same intent.
+        # the value as text and compares case-sensitively to "false", so among
+        # string values only an exact "false" skips — matched here by `== "false"`.
+        # Bool values are the loader's doing, not text render.py can see: YAML 1.1
+        # collapses false/False/no/off all to Python False, so any of them skip
+        # here (via `is False`) even though render.py, reading raw text, would skip
+        # only lowercase `false`. That bool-collapse is an accepted divergence.
         managed = locale.get("managed", True)
         if managed is False or managed == "false":
             continue
@@ -114,7 +118,7 @@ def _read_one_config(config_path, config, config_dir):
             # and render.py treats those as absent
             "name": locale.get("name") or "",
             "org": org,
-            "repo": _repo_name(templates, template, code, marker_open, marker_close),
+            "repo": _repo_name(fleet, templates, template, code, marker_open, marker_close),
             "template": template,
             "paused": template.endswith("-paused"),
             "runner": locale.get("runner") or DEFAULT_RUNNER,
@@ -144,9 +148,12 @@ def _disabled_jobs(fleet, code, locale):
     return set(raw)
 
 
-def _repo_name(templates, template, code, marker_open, marker_close):
+def _repo_name(fleet, templates, template, code, marker_open, marker_close):
     """Substitute the locale code into the template's folder-name pattern."""
-    folder_name = (templates.get(template) or {}).get("folder-name")
+    # A scalar template entry (`t: some-scalar`) must fail loudly here too, not
+    # AttributeError; render.py falls back to the bare code for it, but a clean
+    # error is the module's contract for malformed input.
+    folder_name = _mapping(fleet, templates, template).get("folder-name")
     if not folder_name:
         return code  # render.py's fallback: the bare locale code
     marker = re.escape(marker_open) + r"\s*locale\.key\s*" + re.escape(marker_close)
