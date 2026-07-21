@@ -1,8 +1,13 @@
 name: OpenStates Scrape for wy
 
 on:
+  # Staggered by the state capital's timezone (see locale.scrape_cron in
+  # chn-openstates-scrape.yml) so each state scrapes shortly after its own
+  # legislative day ends, instead of every state firing at the same UTC
+  # instant regardless of local time -- previously that meant western states
+  # were effectively scraped in their own early evening/late night.
   schedule:
-    - cron: "0 6 * * *" # Daily at 6:00 AM UTC (1:00 AM Chicago / 2:00 AM Eastern)
+    - cron: "0 6 * * *"
   workflow_dispatch:
     inputs:
       force-update:

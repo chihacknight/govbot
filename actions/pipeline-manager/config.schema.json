@@ -96,6 +96,14 @@
             "session": {
               "type": "string",
               "description": "Identifier for the legislative session this locale's repo currently holds (e.g. '2025-2026', '2026-ss1' for a special session). Set by close_session.py when rotating repos; used to name the archived repo on transfer. Informational only — does not affect the active repo's name."
+            },
+            "runner": {
+              "type": "string",
+              "description": "GitHub Actions runner label for the locale's scrape/extract-text jobs (e.g. 'self-hosted'). Defaults to 'ubuntu-latest' when unset."
+            },
+            "scrape_cron": {
+              "type": "string",
+              "description": "Cron schedule (UTC) for this locale's scrape workflow, staggered by the state capital's timezone so scrapes run shortly after each state's own legislative day ends rather than all firing at once. E.g. '0 4 * * *' for Eastern, '0 7 * * *' for Pacific. See openstates-scrape.yml template."
             }
           },
           "additionalProperties": false
