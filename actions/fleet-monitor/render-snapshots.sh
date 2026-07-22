@@ -372,6 +372,198 @@ for mode in "" "--dry-run"; do
 done
 echo "✓ collect: empty payload fails loudly in push and dry-run modes"
 
+# Orchestrator `run` — the unattended hourly sweep. Its exit contract diverges
+# from collect's on purpose: a red workflow run must mean the *collector* is
+# down, so only an outright collector failure (config/poll error, or a failed
+# push) exits nonzero. Per-repo poll errors are logged but keep the run green —
+# a degraded fleet surfaces through metrics and Grafana alerts, not a red
+# collector workflow. A collector heartbeat ships on every run, so an all-null
+# sweep still proves the collector ran.
+
+# Heartbeat encoder: one untagged global line, always emitted.
+pipenv run python3 - <<'EOF'
+from metrics_shipper import encode_heartbeat
+
+assert encode_heartbeat(5, 1, 1784635200) == \
+    "fleet_collector_heartbeat repos=5,errors=1 1784635200000000000\n"
+# Always non-empty, even for a zero-repo sweep — the one line that always ships.
+assert encode_heartbeat(0, 0, 1) == "fleet_collector_heartbeat repos=0,errors=0 1000000000\n"
+print("✓ heartbeat: one untagged global line carrying the sweep size, always emitted")
+EOF
+
+# Partial-fail sweep (the fixture's 1-of-5 errored record): run exits 0 and its
+# dry-run payload is the metric lines PLUS a heartbeat carrying the sweep size.
+if ! pipenv run python3 main.py run --dry-run \
+    --poller-records fixtures/poller-records.jsonl \
+    > "$output_dir/run-payload.txt" 2> "$stderr_tmp"; then
+  echo "✗ run with a partial-fail fixture must stay green (exit 0)"
+  cat "$stderr_tmp"
+  exit 1
+fi
+if ! grep -q '^poll error: ' "$stderr_tmp"; then
+  echo "✗ run should still log per-repo poll errors to stderr; got:"
+  cat "$stderr_tmp"
+  exit 1
+fi
+if ! grep -q '^fleet_collector_heartbeat repos=5,errors=1 ' "$output_dir/run-payload.txt"; then
+  echo "✗ run payload must carry a heartbeat with the sweep size"
+  cat "$output_dir/run-payload.txt"
+  exit 1
+fi
+# The metric lines are exactly collect's (heartbeat aside): run adds the
+# heartbeat without altering the encoded series.
+if ! diff -q <(grep -v '^fleet_collector_heartbeat ' "$output_dir/run-payload.txt") \
+    "$output_dir/metrics-payload.txt" > /dev/null; then
+  echo "✗ run's metric lines should match the collect snapshot payload"
+  diff <(grep -v '^fleet_collector_heartbeat ' "$output_dir/run-payload.txt") \
+    "$output_dir/metrics-payload.txt" || true
+  exit 1
+fi
+echo "✓ run: partial-fail sweep exits 0, logs errors, ships metrics + heartbeat"
+
+# Clean sweep (errors-free records): exits 0, heartbeat reports zero errors.
+if ! pipenv run python3 main.py run --dry-run --poller-records "$clean_records" 2> /dev/null \
+    | grep -q '^fleet_collector_heartbeat repos=4,errors=0 '; then
+  echo "✗ run on a clean sweep should exit 0 with a zero-error heartbeat"
+  exit 1
+fi
+echo "✓ run: clean sweep exits 0 with a zero-error heartbeat"
+
+# All-errored sweep: no metric lines, yet run still exits 0 and ships the
+# heartbeat alone — an all-null fleet is the collector doing its job on a broken
+# fleet, not the collector failing (collect, by contrast, fails loudly here).
+run_all_errored=$(pipenv run python3 main.py run --dry-run --poller-records "$empty_records" 2> /dev/null)
+if [ -n "$(echo "$run_all_errored" | grep -v '^fleet_collector_heartbeat ' || true)" ]; then
+  echo "✗ an all-errored sweep should emit only the heartbeat line; got:"
+  echo "$run_all_errored"
+  exit 1
+fi
+if ! echo "$run_all_errored" | grep -q '^fleet_collector_heartbeat '; then
+  echo "✗ an all-errored sweep must still ship the heartbeat"
+  exit 1
+fi
+echo "✓ run: all-errored sweep still exits 0 and ships the heartbeat alone"
+
+# Outright failure: absent Grafana push credentials in real push mode exits
+# nonzero, so the workflow shows red — the acceptance case (a bad key = red).
+if env -u GRAFANA_PUSH_URL -u GRAFANA_PUSH_USER -u GRAFANA_PUSH_KEY \
+    pipenv run python3 main.py run --poller-records "$clean_records" \
+    > /dev/null 2> "$stderr_tmp"; then
+  echo "✗ run must exit nonzero when the Grafana push fails (missing credentials)"
+  exit 1
+fi
+if ! grep -q 'GRAFANA_PUSH' "$stderr_tmp"; then
+  echo "✗ an outright push failure should name the missing Grafana credentials; got:"
+  cat "$stderr_tmp"
+  exit 1
+fi
+echo "✓ run: outright push failure exits nonzero (workflow shows red)"
+
+# The shipper is resilient per record, the way the poller is per repo: a record
+# it can't encode (a control char in a tag, a missing key) is skipped — never a
+# half-built line — and never blanks the rest of the sweep.
+pipenv run python3 - <<'EOF'
+from metrics_shipper import encode_metrics
+
+good = {"state": "wy", "org": "o", "paused": False,
+        "workflows": [{"workflow": "s.yml", "latest_conclusion": "success",
+                       "hours_since_success": 1.0}],
+        "data_commit_age_hours": 2.0}
+bad = dict(good, state="w\ny")  # control char in a tag value -> ValueError
+missing = {"org": "o", "paused": False, "workflows": [],
+           "data_commit_age_hours": 1.0}  # no 'state' -> KeyError
+structured = dict(good, org="z", data_commit_age_hours=[1, 2])  # list field -> TypeError
+payload = encode_metrics([good, bad, missing, structured], 1784635200)
+assert payload.count("state=wy") == 2, payload  # the good record's two lines survive
+assert "w\ny" not in payload and "w\\ny" not in payload, "bad record must be skipped, not half-built"
+assert "org=z" not in payload, "a structured (TypeError) field value must be skipped too"
+print("✓ shipper: an un-encodable record (ValueError/KeyError/TypeError) is skipped; the rest ships")
+EOF
+
+# Through run: a good repo alongside a bad one — run exits 0, ships the good
+# repo's metrics + the heartbeat, and the un-encodable repo simply contributes
+# no line. One repo's bad data can neither blank the sweep nor turn it red.
+bad_encode=$(mktemp)
+trap 'rm -f "$stderr_tmp" "$clean_records" "$clean_out" "$empty_records" "$bad_encode"' EXIT
+pipenv run python3 - "$bad_encode" <<'EOF'
+import json, sys
+
+
+def rec(state):
+    return {"fleet": "f", "config": "f.yml", "state": state, "org": "o", "repo": "r-" + state,
+            "paused": False, "polled_at": "2026-07-21T12:00:00+00:00",
+            "workflows": [{"workflow": "openstates-scrape.yml",
+                           "latest_conclusion": "success", "hours_since_success": 1.0}],
+            "data_commit_age_hours": 2.0, "errors": []}
+
+
+with open(sys.argv[1], "w") as f:
+    f.write(json.dumps(rec("wy")) + "\n")    # good
+    f.write(json.dumps(rec("w\ny")) + "\n")  # control char in a tag -> skipped
+EOF
+if ! pipenv run python3 main.py run --dry-run --poller-records "$bad_encode" \
+    > "$clean_out" 2> "$stderr_tmp"; then
+  echo "✗ run must stay green when one repo's data fails to encode"
+  cat "$stderr_tmp"
+  exit 1
+fi
+wf_lines=$(grep -c '^fleet_workflow_run,' "$clean_out" || true)
+repo_lines=$(grep -c '^fleet_repo,' "$clean_out" || true)
+if [ "$wf_lines" != "1" ] || [ "$repo_lines" != "1" ]; then
+  echo "✗ only the good repo should contribute lines (got $wf_lines workflow, $repo_lines repo):"
+  cat "$clean_out"
+  exit 1
+fi
+if ! grep -q '^fleet_workflow_run,state=wy,' "$clean_out"; then
+  echo "✗ the good repo's metrics must still ship when another repo can't encode; got:"
+  cat "$clean_out"
+  exit 1
+fi
+if ! grep -q '^fleet_collector_heartbeat repos=2,errors=0 ' "$clean_out"; then
+  echo "✗ the heartbeat must report the full sweep size (repos=2), encode skips aside; got:"
+  cat "$clean_out"
+  exit 1
+fi
+echo "✓ run: a repo's un-encodable data is skipped, the good repo still ships, run stays green"
+
+# The named acceptance case — a bad Grafana key — end to end through run: a fake
+# urlopen returns HTTP 401, so the push fails at the wire (not the missing-env
+# guard above) and run exits nonzero. Driven in-process (CliRunner) because a
+# subprocess can't inject the fake urlopen.
+pipenv run python3 - "$clean_records" <<'EOF'
+import email.message
+import sys
+import urllib.error
+import urllib.request
+
+from click.testing import CliRunner
+
+import main
+
+
+def bad_key_urlopen(request, timeout=None):
+    raise urllib.error.HTTPError(
+        request.full_url, 401, "Unauthorized", email.message.Message(), None
+    )
+
+
+urllib.request.urlopen = bad_key_urlopen
+result = CliRunner().invoke(
+    main.cli,
+    ["run", "--poller-records", sys.argv[1]],
+    env={
+        "GRAFANA_PUSH_URL": "https://push.test/api/v1/push/influx/write",
+        "GRAFANA_PUSH_USER": "123456",
+        "GRAFANA_PUSH_KEY": "bad-key",
+    },
+)
+# click 8.2+ captures stdout/stderr separately; the ClickException lands on stderr.
+combined = result.output + (result.stderr or "")
+assert result.exit_code != 0, f"a rejected key (HTTP 401) must exit nonzero: {combined}"
+assert "HTTP 401" in combined, combined
+print("✓ run: a rejected Grafana key (HTTP 401) exits nonzero end to end")
+EOF
+
 # live-check's query-back proof derives expected series names AND counts from
 # the payload it pushed; the accounting is locked against the snapshot payload
 # (which includes an escaped-space tag value the parser must not trip on).

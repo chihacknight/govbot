@@ -8,7 +8,7 @@ import yaml
 sys.path.append(str(Path(__file__).parent))
 
 from fleet_config import read_fleet
-from metrics_shipper import encode_metrics
+from metrics_shipper import encode_heartbeat, encode_metrics
 
 
 @click.group()
@@ -46,16 +46,7 @@ def collect(config_dir, metrics_only, dry_run, poller_records, timestamp):
     Exits 1 when any repo had poll errors — partial data still ships (or
     prints), but a degraded sweep must never look like a clean one.
     """
-    if poller_records is not None:
-        records = [
-            json.loads(line)
-            for line in poller_records.read_text().splitlines()
-            if line.strip()
-        ]
-    elif config_dir is not None:
-        records = _poll_live(config_dir)
-    else:
-        raise click.ClickException("pass --config-dir (live poll) or --poller-records (fixture)")
+    records = _load_records(config_dir, poller_records)
 
     errored = _report_poll_errors(records)
     payload = _encode(records, timestamp if timestamp is not None else _default_timestamp(records))
@@ -74,6 +65,68 @@ def collect(config_dir, metrics_only, dry_run, poller_records, timestamp):
         _push(payload)
     if errored:
         raise click.ClickException(f"poll errors on {len(errored)} of {len(records)} repos")
+
+
+@cli.command("run")
+@click.option(
+    "--config-dir",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    help="Pipeline-manager config directory to poll (required unless --poller-records).",
+)
+@click.option("--dry-run", is_flag=True, help="Print the encoded payload instead of pushing.")
+@click.option(
+    "--poller-records",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="JSONL file of pre-built poller records; skips the GitHub poll (used by snapshots).",
+)
+@click.option(
+    "--timestamp",
+    type=int,
+    default=None,
+    help="Epoch-seconds timestamp for every series (default: the records' polled_at, else now).",
+)
+def run(config_dir, dry_run, poller_records, timestamp):
+    """Unattended hourly sweep: poll the fleet, ship metrics + a heartbeat.
+
+    The orchestrator the hourly workflow invokes. Wires config reader → poller →
+    metrics shipper, then appends a collector heartbeat that ships on every run.
+
+    Exit contract differs from ``collect`` on purpose: only an *outright*
+    collector failure exits nonzero — a config or poll error, or a failed push
+    (e.g. a bad Grafana key) — so a red workflow run always means the collector
+    itself is down. Per-repo poll errors are logged to stderr but keep the run
+    green: a degraded fleet surfaces through the shipped metrics and Grafana
+    alerts, not by turning the collector's own workflow red. The heartbeat
+    always ships, so an all-null sweep still proves the collector ran.
+    """
+    records = _load_records(config_dir, poller_records)
+
+    errored = _report_poll_errors(records)
+    series_timestamp = timestamp if timestamp is not None else _default_timestamp(records)
+    # encode_metrics is resilient per record — one repo's un-encodable data is
+    # skipped, never blanks the rest of the sweep — so a red run always means the
+    # collector itself is down, never a single degraded repo.
+    payload = encode_metrics(records, series_timestamp)
+    payload += encode_heartbeat(len(records), len(errored), series_timestamp)
+
+    if dry_run:
+        click.echo(payload, nl=False)
+    else:
+        _push(payload)
+
+
+def _load_records(config_dir, poller_records):
+    """Records for a sweep: a pre-built --poller-records fixture (offline) or a
+    live poll of --config-dir. Shared by ``collect`` and ``run``."""
+    if poller_records is not None:
+        return [
+            json.loads(line)
+            for line in poller_records.read_text().splitlines()
+            if line.strip()
+        ]
+    if config_dir is not None:
+        return _poll_live(config_dir)
+    raise click.ClickException("pass --config-dir (live poll) or --poller-records (fixture)")
 
 
 def _expected_series(payload):
@@ -97,8 +150,10 @@ def _expected_series(payload):
 
 
 def _encode(records, timestamp):
-    """encode_metrics with its ValueError (e.g. control chars in a tag value)
-    surfaced as a clean CLI error instead of a traceback."""
+    """encode_metrics with any residual ValueError surfaced as a clean CLI error
+    instead of a traceback. (Per-record encode failures — a control char in a
+    tag, a missing key — are skipped inside encode_metrics, not raised; this
+    guard only catches a malformed timestamp.)"""
     try:
         return encode_metrics(records, timestamp)
     except ValueError as e:

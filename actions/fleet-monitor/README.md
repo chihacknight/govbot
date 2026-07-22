@@ -44,7 +44,8 @@ steps, each its own module:
   Influx line-protocol payload Grafana Cloud ingests. Series produced:
   `fleet_workflow_run_status` (1 = latest run succeeded),
   `fleet_workflow_run_hours_since_success`, and `fleet_repo_data_commit_age_hours`.
-  Labels are capped at `state`/`org`/`workflow`/`paused`.
+  Labels are capped at `state`/`org`/`workflow`/`paused`. (The orchestrator adds one more,
+  untagged, series each sweep — `fleet_collector_heartbeat` — via `encode_heartbeat`; see below.)
 - **[metrics_push.py](metrics_push.py)** + **[http_util.py](http_util.py)** — POST with
   retry/backoff (429 honors Retry-After — as does a 403 that is really GitHub rate
   limiting — 5xx backs off, other 4xx fails fast; an exhausted quota with no
@@ -58,8 +59,9 @@ steps, each its own module:
   runs, latest success) + 1 per repo for the data-path commit. Current fleet: 112 repos × 1 workflow → **336
   requests per sweep**, well inside the default `GITHUB_TOKEN` limit of 1000/hour;
   `render-snapshots.sh` asserts the real-fleet count stays under 400.
-- **Series cardinality**: 2 series per repo/workflow + 1 per repo → **~336 series** for
-  the current fleet, against the Grafana Cloud free-tier budget of ~10k active series
+- **Series cardinality**: 2 series per repo/workflow + 1 per repo, plus the single global
+  `fleet_collector_heartbeat` pair the orchestrator emits per sweep → **~336 series (+2 heartbeat)**
+  for the current fleet, against the Grafana Cloud free-tier budget of ~10k active series
   (50 GB logs/mo, 14-day retention — re-verify at signup). 10× fleet growth still fits.
 
 ### Credentials (environment variables)
@@ -91,18 +93,56 @@ pipenv run python main.py collect --metrics-only --config-dir ../pipeline-manage
 # End-to-end proof: poll, push, then query the series back (needs all six
 # GRAFANA_* vars; exits 0 with a notice when they're absent):
 pipenv run python main.py live-check --config-dir ../pipeline-manager
+
+# The unattended sweep the hourly workflow runs: poll, push metrics + a
+# collector heartbeat. Exits nonzero only on an outright collector failure
+# (config/poll error, or a failed push) — per-repo poll errors stay green:
+pipenv run python main.py run --config-dir ../pipeline-manager
 ```
+
+`run` is the orchestrator: it wires config reader → poller → shipper and appends
+a `fleet_collector_heartbeat` series (`repos`, `errors`) that ships on **every**
+sweep. Its exit contract differs from `collect`'s by design — a red workflow run
+must mean the *collector* is down, so per-repo poll errors are logged but keep
+the run green (a degraded fleet surfaces through the metrics and Grafana alerts),
+and only a config/poll error or a failed push exits nonzero. Because the
+heartbeat always ships, an all-null sweep still proves the collector ran.
 
 `--config-dir` points at any directory holding fleet config YAMLs and their `templates/`
 folder, so the CLI runs against fixtures or the real config. Options can also be set via
 `FLEET_MONITOR_*` environment variables (click's `auto_envvar_prefix`, matching sibling
 actions), e.g. `FLEET_MONITOR_LIST_FLEET_CONFIG_DIR`.
 
+### Running the hourly workflow
+
+[`.github/workflows/fleet-monitor.yml`](../../.github/workflows/fleet-monitor.yml) runs the
+orchestrator (`run`) once an hour against the real `actions/pipeline-manager` config and pushes
+metrics + the collector heartbeat to Grafana Cloud. It's read-only on GitHub (the default
+`GITHUB_TOKEN` covers all reads), bounded by a 20-minute job timeout, and serialized by a
+`fleet-monitor` concurrency group so a manual dispatch never overlaps a scheduled sweep.
+
+To bring it up in a fork against your own Grafana Cloud account, set **one secret** and **two
+variables** on the repo (Settings → Secrets and variables → Actions):
+
+| Kind | Name | Value |
+| --- | --- | --- |
+| **Secret** | `GRAFANA_PUSH_KEY` | Grafana Cloud access-policy token with `metrics:write` |
+| Variable | `GRAFANA_PUSH_URL` | Influx write endpoint, `https://influx-…/api/v1/push/influx/write` |
+| Variable | `GRAFANA_PUSH_USER` | Metrics instance ID |
+
+The endpoint and instance ID aren't secret, so they're repo **variables** (`vars`), keeping the
+Grafana write key the single secret. Then enable Actions on the fork (the Actions tab, if a fresh
+fork has workflows disabled) and trigger a first sweep by hand — **Actions → Fleet Monitor → Run
+workflow** (`workflow_dispatch`) — to confirm it goes green and the metrics land before the hourly
+schedule takes over. A forced failure (e.g. a bad `GRAFANA_PUSH_KEY`) exits nonzero and the run
+shows red, which is what the `heartbeat absent` alert keys off.
+
 ### As a GitHub Action
 
 See [action.yml](action.yml). Optional `config-dir` input, default `actions/pipeline-manager`.
-The Action currently exposes `list-fleet` only; wiring `collect` into an hourly workflow
-(with the `GRAFANA_*` secrets) is task 0003's orchestrator work.
+The composite Action exposes `list-fleet` for consumers embedding fleet discovery in their own
+workflows; the hourly monitor above invokes the `run` orchestrator directly rather than through
+the Action.
 
 ## Testing
 
@@ -125,7 +165,15 @@ completed conclusion, flaked `status=success` pages fall back to the unfiltered
 listing, workflow names are percent-encoded, an empty repo's 409 is null not error),
 asserts `collect`'s exit contract from all sides (1 on any poll error, 0 on a clean
 sweep with an identical payload, loud failure on an empty payload in push and
-dry-run modes alike, `--timestamp` override), locks `live-check`'s expected-series
+dry-run modes alike, `--timestamp` override), asserts the `run` orchestrator's
+distinct contract (a heartbeat-encoder unit check and a shipper-resilience unit
+check — an un-encodable record is skipped while the rest of the sweep still ships —
+plus: a partial-fail sweep exits 0 shipping metrics + heartbeat, a clean sweep
+carries a zero-error heartbeat, an all-errored sweep still exits 0 with the
+heartbeat alone, a sweep with one un-encodable repo still exits 0 and ships the
+good repos' metrics + heartbeat, and an outright push failure — missing credentials
+or a rejected key/HTTP 401 — exits nonzero so the workflow shows red), locks
+`live-check`'s expected-series
 accounting (its query-back proof requires every series this payload shipped, per
 metric, and skips metrics the payload legitimately omits), locks the HTTP retry
 policy (4xx fail-fast, rate-limited 403 retries like
