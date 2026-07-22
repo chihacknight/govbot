@@ -44,7 +44,7 @@
           },
           "latest_conclusion": {
             "type": ["string", "null"],
-            "description": "Conclusion of the latest completed run; null when the workflow never completed a run"
+            "description": "Conclusion of the most recent completed run; null when no completed run is visible among the most recent runs (never ran, or every run in the window is still active)"
           },
           "hours_since_success": {
             "type": ["number", "null"],

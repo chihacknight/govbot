@@ -61,10 +61,7 @@ def collect(config_dir, metrics_only, dry_run, poller_records, timestamp):
         payload = encode_metrics(records, timestamp if timestamp is not None else _default_timestamp(records))
     except ValueError as e:
         raise click.ClickException(str(e)) from e
-    errored = [r for r in records if r.get("errors")]
-    for record in errored:
-        for error in record["errors"]:
-            click.echo(f"poll error: {record['org']}/{record['repo']}: {error}", err=True)
+    errored = _report_poll_errors(records)
 
     if dry_run:
         click.echo(payload, nl=False)
@@ -74,6 +71,15 @@ def collect(config_dir, metrics_only, dry_run, poller_records, timestamp):
         _push(payload)
     if errored:
         raise click.ClickException(f"poll errors on {len(errored)} of {len(records)} repos")
+
+
+def _report_poll_errors(records):
+    """Echo every per-repo poll error to stderr; return the errored records."""
+    errored = [r for r in records if r.get("errors")]
+    for record in errored:
+        for error in record["errors"]:
+            click.echo(f"poll error: {record['org']}/{record['repo']}: {error}", err=True)
+    return errored
 
 
 def _default_timestamp(records):
@@ -150,9 +156,10 @@ def live_check(config_dir):
     Grafana push), then asks the stack's Prometheus query API for all three
     shipped metric names, retrying for up to a minute — Grafana Cloud ingestion
     lags a push by seconds, so an instant query would flake false-negative on a
-    fresh stack. Needs all six GRAFANA_{PUSH,QUERY}_{URL,USER,KEY} env vars;
-    exits 0 with a skip notice otherwise, so offline runs (CI) pass without a
-    Grafana account.
+    fresh stack. Refuses an empty payload, and exits 1 after the proof when any
+    repo had poll errors: a degraded sweep must never look like a clean one.
+    Needs all six GRAFANA_{PUSH,QUERY}_{URL,USER,KEY} env vars; exits 0 with a
+    skip notice otherwise, so offline runs (CI) pass without a Grafana account.
     """
     import base64
     import os
@@ -169,7 +176,11 @@ def live_check(config_dir):
 
     from http_util import request_json
 
-    payload = encode_metrics(_poll_live(config_dir), int(time.time()))
+    records = _poll_live(config_dir)
+    errored = _report_poll_errors(records)
+    payload = encode_metrics(records, int(time.time()))
+    if not payload:
+        raise click.ClickException("nothing to push: payload is empty")
     _push(payload)
 
     credentials = f"{os.environ['GRAFANA_QUERY_USER']}:{os.environ['GRAFANA_QUERY_KEY']}"
@@ -196,6 +207,9 @@ def live_check(config_dir):
                     f"push succeeded but {metric} returned no series within 60s"
                 )
             time.sleep(5)
+    if errored:
+        # The proof ran, but a degraded sweep must never look like a clean one.
+        raise click.ClickException(f"poll errors on {len(errored)} of {len(records)} repos")
 
 
 if __name__ == "__main__":

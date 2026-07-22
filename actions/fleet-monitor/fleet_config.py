@@ -120,6 +120,10 @@ def _read_one_config(config_path, config, config_dir):
             "org": org,
             "repo": _repo_name(fleet, templates, template, code, marker_open, marker_close),
             "template": template,
+            # The -paused suffix is this module's convention to own: downstream
+            # consumers key durable per-template facts (like data paths) off
+            # base_template so pausing a locale never changes its identity.
+            "base_template": template.removesuffix("-paused"),
             "paused": template.endswith("-paused"),
             "runner": locale.get("runner") or DEFAULT_RUNNER,
             "expected_workflows": [

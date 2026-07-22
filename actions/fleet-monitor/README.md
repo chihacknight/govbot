@@ -16,7 +16,9 @@ The record shape is the module's contract, declared in
 [schemas/fleet-record.schema.json](../../schemas/fleet-record.schema.json) and validated on
 every snapshot render: `fleet`,
 `config` (lineage: the source config file name), `state`, `name`, `org`, `repo`,
-`template`, `paused`, `runner`, `expected_workflows`.
+`template`, `base_template` (the `-paused` suffix stripped — the locale's durable
+identity, which downstream keys per-template facts off), `paused`, `runner`,
+`expected_workflows`.
 A locale is paused when its `template` ends in `-paused`. `expected_workflows` lists the
 template's workflow files as they exist in rendered repos (`.j2` stripped), minus the
 locale's `disabled_jobs`. A config that references an unknown template, or a template
@@ -44,12 +46,14 @@ steps, each its own module:
   `fleet_workflow_run_hours_since_success`, and `fleet_repo_data_commit_age_hours`.
   Labels are capped at `state`/`org`/`workflow`/`paused`.
 - **[metrics_push.py](metrics_push.py)** + **[http_util.py](http_util.py)** — POST with
-  retry/backoff (429 honors Retry-After, 5xx backs off, other 4xx fails fast).
+  retry/backoff (429 honors Retry-After — as does a 403 that is really GitHub rate
+  limiting — 5xx backs off, other 4xx fails fast). Repos are polled concurrently,
+  bounded at 8 workers to stay inside GitHub's secondary-rate-limit etiquette.
 
 ### Budgets
 
-- **GitHub API**: only single-page queries (`per_page` ≤ 2) — 2 per workflow (two most
-  recent runs, latest success) + 1 per repo for the data-path commit. Current fleet: 112 repos × 1 workflow → **336
+- **GitHub API**: only single-page queries (`per_page` ≤ 3) — 2 per workflow (recent
+  runs, latest success) + 1 per repo for the data-path commit. Current fleet: 112 repos × 1 workflow → **336
   requests per sweep**, well inside the default `GITHUB_TOKEN` limit of 1000/hour;
   `render-snapshots.sh` asserts the real-fleet count stays under 400.
 - **Series cardinality**: 2 series per repo/workflow + 1 per repo → **~336 series** for
@@ -114,12 +118,18 @@ render byte-identically to
 `collect --dry-run`, timestamped from the fixture's pinned `polled_at`. The render also
 validates every poller record (fixture and fake-fetcher output) against
 `fleet-poller-record.schema.json`, asserts the poller's never-fatal contract and the
-fatal unknown-template check offline, asserts `collect`'s exit-1-on-poll-errors
-contract, locks the HTTP retry policy (4xx fail-fast, 5xx backoff, no final-attempt
-sleep, HTTP-date `Retry-After` fallback) with a fake `urlopen` and injected sleep,
-checks the real-fleet API budget, and checks that `live-check` self-skips without
-credentials. The poller's happy path is deliberately untested beyond that — it is a
-pass-through against a live API.
+fatal unknown-base-template check offline (plus: active runs never mask the last
+completed conclusion, flaked `status=success` pages fall back to the unfiltered
+listing, workflow names are percent-encoded, an empty repo's 409 is null not error),
+asserts both sides of `collect`'s exit contract (1 on any poll error, 0 on a clean
+sweep with an identical payload), locks the HTTP retry policy (4xx fail-fast,
+rate-limited 403 retries like 429, integer `Retry-After` honored, HTTP-date form
+falls back, 5xx backoff, no final-attempt sleep) with a fake `urlopen` and injected
+sleep, checks the real-fleet API budget and that every real-fleet base template has
+a `DATA_PATHS` entry, and runs `live-check` twice — once with credentials stripped
+to lock the skip path, once unconditionally so a credentialed render performs the
+real push-and-query proof. The poller's happy path is deliberately untested beyond
+that — it is a pass-through against a live API.
 
 ```bash
 ../../scripts/before-snapshots.sh __snapshots__
