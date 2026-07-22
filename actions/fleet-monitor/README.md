@@ -124,8 +124,11 @@ fatal unknown-base-template check offline (plus: active runs never mask the last
 completed conclusion, flaked `status=success` pages fall back to the unfiltered
 listing, workflow names are percent-encoded, an empty repo's 409 is null not error),
 asserts `collect`'s exit contract from all sides (1 on any poll error, 0 on a clean
-sweep with an identical payload, loud failure on an empty push, `--timestamp`
-override), locks the HTTP retry policy (4xx fail-fast, rate-limited 403 retries like
+sweep with an identical payload, loud failure on an empty payload in push and
+dry-run modes alike, `--timestamp` override), locks `live-check`'s expected-series
+accounting (its query-back proof requires every series this payload shipped, per
+metric, and skips metrics the payload legitimately omits), locks the HTTP retry
+policy (4xx fail-fast, rate-limited 403 retries like
 429, exhausted-quota fail-fast, integer `Retry-After` honored, HTTP-date form falls
 back, 5xx backoff, no final-attempt sleep) and the push wire format (URL, verb,
 Basic auth, Content-Type, body) with a fake `urlopen` and injected sleep, checks the

@@ -358,17 +358,34 @@ echo "✓ collect: explicit --timestamp overrides the polled_at default"
 empty_records=$(mktemp)
 trap 'rm -f "$stderr_tmp" "$clean_records" "$clean_out" "$empty_records"' EXIT
 grep '"errors": \[\"' fixtures/poller-records.jsonl > "$empty_records"
-if pipenv run python3 main.py collect --metrics-only \
-    --poller-records "$empty_records" > /dev/null 2> "$stderr_tmp"; then
-  echo "✗ collect (push mode) with an empty payload should exit nonzero"
-  exit 1
-fi
-if ! grep -q 'nothing to push' "$stderr_tmp"; then
-  echo "✗ empty-payload failure should say 'nothing to push'; got:"
-  cat "$stderr_tmp"
-  exit 1
-fi
-echo "✓ collect: empty payload in push mode fails loudly"
+for mode in "" "--dry-run"; do
+  if pipenv run python3 main.py collect --metrics-only $mode \
+      --poller-records "$empty_records" > /dev/null 2> "$stderr_tmp"; then
+    echo "✗ collect ${mode:-push mode} with an empty payload should exit nonzero"
+    exit 1
+  fi
+  if ! grep -q 'nothing to push' "$stderr_tmp"; then
+    echo "✗ empty-payload failure should say 'nothing to push'; got:"
+    cat "$stderr_tmp"
+    exit 1
+  fi
+done
+echo "✓ collect: empty payload fails loudly in push and dry-run modes"
+
+# live-check's query-back proof derives expected series names AND counts from
+# the payload it pushed; the accounting is locked against the snapshot payload
+# (which includes an escaped-space tag value the parser must not trip on).
+pipenv run python3 - <<'EOF'
+from main import _expected_series
+
+payload = open("__snapshots__/metrics-payload.txt").read()
+counts = _expected_series(payload)
+assert counts == {"fleet_workflow_run_status": 3,
+                  "fleet_workflow_run_hours_since_success": 3,
+                  "fleet_repo_data_commit_age_hours": 3}, counts
+assert all(n == 0 for n in _expected_series("").values())
+print("✓ live-check: expected-series accounting matches the snapshot payload")
+EOF
 
 # Smoke: the real pipeline-manager config must parse and be non-empty.
 # Not snapshotted — the real config churns; this only locks "it still works".

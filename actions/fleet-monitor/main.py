@@ -60,19 +60,40 @@ def collect(config_dir, metrics_only, dry_run, poller_records, timestamp):
     errored = _report_poll_errors(records)
     payload = _encode(records, timestamp if timestamp is not None else _default_timestamp(records))
 
-    if dry_run:
-        click.echo(payload, nl=False)
-    elif not payload:
-        # An all-null sweep pushing nothing is indistinguishable, stack-side,
-        # from the monitor never running — that must not read as clean.
+    if not payload:
+        # An all-null sweep emitting nothing is indistinguishable, stack-side,
+        # from the monitor never running — that must not read as clean, in
+        # push mode or on the dry-run path operators use to verify a sweep.
         raise click.ClickException(
             "nothing to push: payload is empty"
             + (f" (poll errors on {len(errored)} of {len(records)} repos)" if errored else "")
         )
+    if dry_run:
+        click.echo(payload, nl=False)
     else:
         _push(payload)
     if errored:
         raise click.ClickException(f"poll errors on {len(errored)} of {len(records)} repos")
+
+
+def _expected_series(payload):
+    """Per-metric series counts in a line-protocol payload — what a query-back
+    proof should find. Metric name = <measurement>_<field>; field strings never
+    contain spaces (values are numeric), so splitting the last two spaces off a
+    line isolates them even when a tag value carries an escaped space."""
+    counts = {
+        "fleet_workflow_run_status": 0,
+        "fleet_workflow_run_hours_since_success": 0,
+        "fleet_repo_data_commit_age_hours": 0,
+    }
+    for line in payload.splitlines():
+        measurement = line.split(",", 1)[0]
+        fields = line.rsplit(" ", 2)[-2]
+        for field in fields.split(","):
+            name = f"{measurement}_{field.split('=', 1)[0]}"
+            if name in counts:
+                counts[name] += 1
+    return counts
 
 
 def _encode(records, timestamp):
@@ -197,18 +218,19 @@ def live_check(config_dir):
 
     credentials = f"{os.environ['GRAFANA_QUERY_USER']}:{os.environ['GRAFANA_QUERY_KEY']}"
     auth = {"Authorization": "Basic " + base64.b64encode(credentials.encode()).decode()}
-    metrics = [
-        "fleet_workflow_run_status",
-        "fleet_workflow_run_hours_since_success",
-        "fleet_repo_data_commit_age_hours",
-    ]
     deadline = time.monotonic() + 60
-    for metric in metrics:
+    for metric, want in _expected_series(payload).items():
+        if want == 0:
+            # Legitimately absent from this payload (e.g. a bootstrapped fleet
+            # where nothing has succeeded yet) — nothing to prove, not a failure.
+            click.echo(f"· live check: {metric} absent from this payload, skipped")
+            continue
         while True:
             # timestamp(<metric>) returns each series' raw sample time, so the
             # proof only accepts samples stamped at/after THIS run's payload
             # timestamp — a previous push inside Prometheus's 5-minute instant
-            # lookback can't satisfy it.
+            # lookback can't satisfy it. The count must reach what this payload
+            # shipped: a partially ingested push (some series rejected) fails.
             query = urllib.parse.urlencode({"query": f"timestamp({metric})"})
             result = request_json(
                 f"{os.environ['GRAFANA_QUERY_URL'].rstrip('/')}/api/v1/query?{query}",
@@ -216,12 +238,15 @@ def live_check(config_dir):
             )
             series = result.get("data", {}).get("result", [])
             fresh = [s for s in series if float(s["value"][1]) >= pushed_at]
-            if fresh:
-                click.echo(f"✓ live check: {len(fresh)} {metric} series from this push queryable")
+            if len(fresh) >= want:
+                click.echo(
+                    f"✓ live check: {len(fresh)}/{want} {metric} series from this push queryable"
+                )
                 break
             if time.monotonic() >= deadline:
                 raise click.ClickException(
-                    f"push succeeded but {metric} returned no samples from this push within 60s"
+                    f"push succeeded but {metric} has {len(fresh)} of {want} expected "
+                    "fresh series after 60s"
                 )
             time.sleep(5)
     if errored:
