@@ -741,6 +741,28 @@ pub fn get_available_locales(repos_dir: &Path) -> Result<Vec<String>> {
     Ok(locales)
 }
 
+/// Make a filesystem entry writable so it can be removed.
+///
+/// On Unix this sets mode `0o777`; on Windows it clears the read-only
+/// attribute (the closest equivalent, since Windows uses ACLs rather than
+/// Unix-style permission bits). Errors are intentionally swallowed by callers
+/// — this is a best-effort helper used before deletion.
+fn make_writable(path: &Path) -> std::io::Result<()> {
+    let metadata = std::fs::metadata(path)?;
+    let mut perms = metadata.permissions();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        perms.set_mode(0o777);
+    }
+    #[cfg(not(unix))]
+    {
+        #[allow(clippy::permissions_set_readonly_false)]
+        perms.set_readonly(false);
+    }
+    std::fs::set_permissions(path, perms)
+}
+
 /// Recursively remove a directory and all its contents
 /// This is more robust than remove_dir_all on macOS
 fn remove_dir_all_robust(path: &Path) -> std::io::Result<()> {
@@ -750,12 +772,7 @@ fn remove_dir_all_robust(path: &Path) -> std::io::Result<()> {
 
     if path.is_file() {
         // Make file writable before removing
-        let _ = std::fs::metadata(path).and_then(|m| {
-            use std::os::unix::fs::PermissionsExt;
-            let mut perms = m.permissions();
-            perms.set_mode(0o777);
-            std::fs::set_permissions(path, perms)
-        });
+        let _ = make_writable(path);
         return std::fs::remove_file(path);
     }
 
@@ -767,12 +784,7 @@ fn remove_dir_all_robust(path: &Path) -> std::io::Result<()> {
         let entry_path = entry.path();
 
         // Make writable before trying to remove
-        let _ = std::fs::metadata(&entry_path).and_then(|m| {
-            use std::os::unix::fs::PermissionsExt;
-            let mut perms = m.permissions();
-            perms.set_mode(0o777);
-            std::fs::set_permissions(&entry_path, perms)
-        });
+        let _ = make_writable(&entry_path);
 
         if entry_path.is_dir() {
             // Recursively remove subdirectory
@@ -799,24 +811,14 @@ fn remove_dir_all_robust(path: &Path) -> std::io::Result<()> {
             }
             if !removed {
                 // Last resort: try to make it writable again and remove
-                let _ = std::fs::metadata(&entry_path).and_then(|m| {
-                    use std::os::unix::fs::PermissionsExt;
-                    let mut perms = m.permissions();
-                    perms.set_mode(0o777);
-                    std::fs::set_permissions(&entry_path, perms)
-                });
+                let _ = make_writable(&entry_path);
                 let _ = std::fs::remove_file(&entry_path);
             }
         }
     }
 
     // Make directory writable before removing
-    let _ = std::fs::metadata(path).and_then(|m| {
-        use std::os::unix::fs::PermissionsExt;
-        let mut perms = m.permissions();
-        perms.set_mode(0o777);
-        std::fs::set_permissions(path, perms)
-    });
+    let _ = make_writable(path);
 
     // Now try to remove the directory itself
     // Retry multiple times for macOS
@@ -842,6 +844,34 @@ fn remove_dir_all_robust(path: &Path) -> std::io::Result<()> {
                 Err(e)
             }
         }
+    }
+}
+
+/// Platform-native shell-based directory removal used as a last-resort fallback
+/// when `std::fs` removal fails. Unix uses `rm -rf`; Windows uses
+/// `cmd /C rmdir /S /Q`.
+fn shell_remove_dir(path: &Path) -> std::io::Result<std::process::Output> {
+    #[cfg(unix)]
+    {
+        std::process::Command::new("rm")
+            .arg("-rf")
+            .arg(path)
+            .output()
+    }
+    #[cfg(windows)]
+    {
+        std::process::Command::new("cmd")
+            .args(["/C", "rmdir", "/S", "/Q"])
+            .arg(path)
+            .output()
+    }
+    #[cfg(not(any(unix, windows)))]
+    {
+        let _ = path;
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "no shell removal command available on this platform",
+        ))
     }
 }
 
@@ -877,12 +907,10 @@ pub fn delete_repo(locale: &str, repos_dir: &Path) -> Result<()> {
 
     // Use robust removal that handles macOS edge cases
     if let Err(e) = remove_dir_all_robust(&target_dir) {
-        // If robust removal fails, try using shell command as fallback
-        // This is often more reliable on macOS for stubborn directories
-        let output = std::process::Command::new("rm")
-            .arg("-rf")
-            .arg(&target_dir)
-            .output();
+        // If robust removal fails, try using a platform-native shell command
+        // as a last-resort fallback. This is often more reliable for stubborn
+        // directories (macOS file handles, Windows read-only attributes, etc.).
+        let output = shell_remove_dir(&target_dir);
 
         match output {
             Ok(result) if result.status.success() => {
