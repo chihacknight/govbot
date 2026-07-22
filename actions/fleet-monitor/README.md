@@ -47,8 +47,10 @@ steps, each its own module:
   Labels are capped at `state`/`org`/`workflow`/`paused`.
 - **[metrics_push.py](metrics_push.py)** + **[http_util.py](http_util.py)** — POST with
   retry/backoff (429 honors Retry-After — as does a 403 that is really GitHub rate
-  limiting — 5xx backs off, other 4xx fails fast). Repos are polled concurrently,
-  bounded at 8 workers to stay inside GitHub's secondary-rate-limit etiquette.
+  limiting — 5xx backs off, other 4xx fails fast; an exhausted quota with no
+  Retry-After also fails fast, since its reset is up to an hour out and the next
+  scheduled sweep will retry anyway). Repos are polled concurrently, bounded at 8
+  workers to stay inside GitHub's secondary-rate-limit etiquette.
 
 ### Budgets
 
@@ -121,15 +123,18 @@ validates every poller record (fixture and fake-fetcher output) against
 fatal unknown-base-template check offline (plus: active runs never mask the last
 completed conclusion, flaked `status=success` pages fall back to the unfiltered
 listing, workflow names are percent-encoded, an empty repo's 409 is null not error),
-asserts both sides of `collect`'s exit contract (1 on any poll error, 0 on a clean
-sweep with an identical payload), locks the HTTP retry policy (4xx fail-fast,
-rate-limited 403 retries like 429, integer `Retry-After` honored, HTTP-date form
-falls back, 5xx backoff, no final-attempt sleep) with a fake `urlopen` and injected
-sleep, checks the real-fleet API budget and that every real-fleet base template has
-a `DATA_PATHS` entry, and runs `live-check` twice — once with credentials stripped
-to lock the skip path, once unconditionally so a credentialed render performs the
-real push-and-query proof. The poller's happy path is deliberately untested beyond
-that — it is a pass-through against a live API.
+asserts `collect`'s exit contract from all sides (1 on any poll error, 0 on a clean
+sweep with an identical payload, loud failure on an empty push, `--timestamp`
+override), locks the HTTP retry policy (4xx fail-fast, rate-limited 403 retries like
+429, exhausted-quota fail-fast, integer `Retry-After` honored, HTTP-date form falls
+back, 5xx backoff, no final-attempt sleep) and the push wire format (URL, verb,
+Basic auth, Content-Type, body) with a fake `urlopen` and injected sleep, checks the
+real-fleet API budget and that every real-fleet base template has a `DATA_PATHS`
+entry, and locks `live-check`'s credential-free skip path. The real push-and-query
+proof is opt-in — `FLEET_MONITOR_LIVE_CHECK=1 ./render-snapshots.sh` on a
+credentialed machine — so a bare render stays offline, deterministic, and
+side-effect-free. The poller's happy path is deliberately untested beyond that — it
+is a pass-through against a live API.
 
 ```bash
 ../../scripts/before-snapshots.sh __snapshots__

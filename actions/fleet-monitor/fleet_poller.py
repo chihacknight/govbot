@@ -166,6 +166,10 @@ def poll_fleet(jurisdictions, fetch_json=None, now=None):
         now = datetime.now(timezone.utc)
     elif isinstance(now, str):
         now = datetime.fromisoformat(now.replace("Z", "+00:00"))
+    if now.tzinfo is None:
+        # A naive anchor would make every aware-minus-naive age computation
+        # blow up into per-repo error records; fail once, clearly, instead.
+        raise ValueError("now must be timezone-aware (e.g. end with Z or +00:00)")
 
     unknown = sorted({j["base_template"] for j in jurisdictions} - DATA_PATHS.keys())
     if unknown:

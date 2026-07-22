@@ -5,7 +5,9 @@ mirrors the proven pattern in actions/pipeline-manager/check-sessions.py:
 HTTP 429 honors Retry-After — as does a 403 that is really GitHub rate
 limiting (Retry-After present or X-RateLimit-Remaining exhausted) — 5xx and
 network errors back off exponentially, and any other 4xx fails immediately:
-a bad request never gets better by retrying. Failures raise RequestFailed
+a bad request never gets better by retrying. One exception inside the
+rate-limit branch: an exhausted quota with no Retry-After fails fast, since
+its reset is typically up to an hour out and no in-sweep retry can succeed. Failures raise RequestFailed
 (status carries the HTTP code for fail-fast 4xx), so callers decide whether
 that is fatal (a push) or recorded-and-skipped (one repo in a poll). The
 policy is locked by offline asserts in render-snapshots.sh (fake urlopen,
@@ -71,6 +73,14 @@ def request_with_retry(
         except urllib.error.HTTPError as e:
             last_error = f"HTTP {e.code}"
             if e.code == 429 or (e.code == 403 and _is_rate_limited(e.headers)):
+                if not e.headers.get("Retry-After") and e.headers.get("X-RateLimit-Remaining") == "0":
+                    # Quota exhausted with no Retry-After: the reset
+                    # (X-RateLimit-Reset) is typically up to an hour away, so
+                    # no in-sweep retry can succeed — fail fast and let the
+                    # next scheduled sweep run after the window resets.
+                    raise RequestFailed(
+                        f"{method} {url}: HTTP {e.code} (rate limit exhausted)", status=e.code
+                    ) from e
                 delay = max(_retry_after_seconds(e.headers), 2 ** (attempt + 3))
             elif e.code >= 500:
                 delay = 2 ** (attempt + 1)

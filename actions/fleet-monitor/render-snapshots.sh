@@ -258,6 +258,15 @@ except RuntimeError as e:
     assert "HTTP 403" in str(e), e
 assert len(calls) == 1 and sleeps == [], "plain 403 (no rate-limit headers) must fail fast"
 
+calls.clear(); sleeps.clear()
+fake_urlopen.headers = {"X-RateLimit-Remaining": "0"}
+try:
+    request_with_retry("https://x.test/y", sleep=sleeps.append)
+except RuntimeError as e:
+    assert "rate limit exhausted" in str(e), e
+assert len(calls) == 1 and sleeps == [], \
+    "exhausted quota without Retry-After must fail fast (reset is up to an hour out)"
+
 try:
     push_metrics("payload", env={})
 except RuntimeError as e:
@@ -271,7 +280,44 @@ except ValueError:
     pass
 else:
     raise AssertionError("control character in tag value should raise")
-print("✓ http/push: retry policy (incl. rate-limited 403), POST labeling, env guard, control-char guard")
+
+# push_metrics happy path: what actually goes over the wire — URL, verb,
+# Basic auth, Content-Type, body — asserted offline with a succeeding fake.
+import base64
+
+class FakeResponse:
+    def read(self): return b""
+    def __enter__(self): return self
+    def __exit__(self, *args): return False
+
+def ok_urlopen(request, timeout=None):
+    calls.append(request)
+    return FakeResponse()
+urllib.request.urlopen = ok_urlopen
+
+calls.clear()
+push_metrics("m,state=wy f=1 1\n", env={
+    "GRAFANA_PUSH_URL": "https://push.test/api/v1/push/influx/write",
+    "GRAFANA_PUSH_USER": "123456",
+    "GRAFANA_PUSH_KEY": "write-key",
+})
+request = calls[0]
+assert request.full_url == "https://push.test/api/v1/push/influx/write", request.full_url
+assert request.data == b"m,state=wy f=1 1\n", request.data
+assert request.get_method() == "POST", request.get_method()
+expected_auth = "Basic " + base64.b64encode(b"123456:write-key").decode()
+assert request.get_header("Authorization") == expected_auth, request.header_items()
+assert request.get_header("Content-type") == "text/plain; charset=utf-8", request.header_items()
+
+# A naive `now` must fail once and clearly, not as 112 per-repo errors.
+from fleet_poller import poll_fleet
+try:
+    poll_fleet([], now="2026-07-21T12:00:00")
+except ValueError as e:
+    assert "timezone-aware" in str(e), e
+else:
+    raise AssertionError("naive now should raise ValueError")
+print("✓ http/push: retry policy (incl. exhausted quota), POST labeling, push wire format, guards")
 EOF
 
 # The clean path: an errors-free sweep must exit 0 and produce exactly the
@@ -296,6 +342,33 @@ if ! diff -q "$clean_out" "$output_dir/metrics-payload.txt" > /dev/null; then
   exit 1
 fi
 echo "✓ collect: errors-free sweep exits 0 with the identical payload"
+
+# Explicit --timestamp overrides the polled_at default on every line.
+pipenv run python3 main.py collect --metrics-only --dry-run \
+  --poller-records "$clean_records" --timestamp 1750000000 > "$clean_out"
+if grep -qv ' 1750000000000000000$' "$clean_out"; then
+  echo "✗ --timestamp 1750000000 should stamp every series line"
+  cat "$clean_out"
+  exit 1
+fi
+echo "✓ collect: explicit --timestamp overrides the polled_at default"
+
+# An all-null push (empty payload) must not read as a clean run: stack-side
+# it is indistinguishable from the monitor never running.
+empty_records=$(mktemp)
+trap 'rm -f "$stderr_tmp" "$clean_records" "$clean_out" "$empty_records"' EXIT
+grep '"errors": \[\"' fixtures/poller-records.jsonl > "$empty_records"
+if pipenv run python3 main.py collect --metrics-only \
+    --poller-records "$empty_records" > /dev/null 2> "$stderr_tmp"; then
+  echo "✗ collect (push mode) with an empty payload should exit nonzero"
+  exit 1
+fi
+if ! grep -q 'nothing to push' "$stderr_tmp"; then
+  echo "✗ empty-payload failure should say 'nothing to push'; got:"
+  cat "$stderr_tmp"
+  exit 1
+fi
+echo "✓ collect: empty payload in push mode fails loudly"
 
 # Smoke: the real pipeline-manager config must parse and be non-empty.
 # Not snapshotted — the real config churns; this only locks "it still works".
@@ -339,10 +412,15 @@ if ! echo "$skip_output" | grep -q "live check skipped"; then
 fi
 echo "✓ live-check: skips cleanly when credentials are absent"
 
-# And unconditionally, so the render IS the automated live check whenever the
-# GRAFANA_* credentials are present in the environment (CI has none → the
-# command self-skips; a credentialed local render runs the real poll, push,
-# and query-back proof with no extra step).
-pipenv run python3 main.py live-check --config-dir ../pipeline-manager
+# The real push-and-query proof is opt-in: a bare render must stay offline,
+# deterministic, and side-effect-free even on a machine that happens to have
+# GRAFANA_* set (each live check appends real samples to the production
+# stack and its result tracks live fleet health). Opting in makes the render
+# the automated live check.
+if [ "${FLEET_MONITOR_LIVE_CHECK:-}" = "1" ]; then
+  pipenv run python3 main.py live-check --config-dir ../pipeline-manager
+else
+  echo "· live-check (real push + query-back) not run; opt in with FLEET_MONITOR_LIVE_CHECK=1"
+fi
 
 echo "✓ Snapshot generation complete. Output in $output_dir"

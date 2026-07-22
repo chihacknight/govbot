@@ -38,7 +38,7 @@ def cli():
     "--timestamp",
     type=int,
     default=None,
-    help="Epoch-seconds timestamp for every series (default: now). Snapshots pin this.",
+    help="Epoch-seconds timestamp for every series (default: the records' polled_at, else now).",
 )
 def collect(config_dir, metrics_only, dry_run, poller_records, timestamp):
     """Poll the fleet and push (or print) Grafana Cloud metric payloads.
@@ -57,20 +57,31 @@ def collect(config_dir, metrics_only, dry_run, poller_records, timestamp):
     else:
         raise click.ClickException("pass --config-dir (live poll) or --poller-records (fixture)")
 
-    try:
-        payload = encode_metrics(records, timestamp if timestamp is not None else _default_timestamp(records))
-    except ValueError as e:
-        raise click.ClickException(str(e)) from e
     errored = _report_poll_errors(records)
+    payload = _encode(records, timestamp if timestamp is not None else _default_timestamp(records))
 
     if dry_run:
         click.echo(payload, nl=False)
     elif not payload:
-        click.echo("nothing to push: payload is empty", err=True)
+        # An all-null sweep pushing nothing is indistinguishable, stack-side,
+        # from the monitor never running — that must not read as clean.
+        raise click.ClickException(
+            "nothing to push: payload is empty"
+            + (f" (poll errors on {len(errored)} of {len(records)} repos)" if errored else "")
+        )
     else:
         _push(payload)
     if errored:
         raise click.ClickException(f"poll errors on {len(errored)} of {len(records)} repos")
+
+
+def _encode(records, timestamp):
+    """encode_metrics with its ValueError (e.g. control chars in a tag value)
+    surfaced as a clean CLI error instead of a traceback."""
+    try:
+        return encode_metrics(records, timestamp)
+    except ValueError as e:
+        raise click.ClickException(str(e)) from e
 
 
 def _report_poll_errors(records):
@@ -178,7 +189,8 @@ def live_check(config_dir):
 
     records = _poll_live(config_dir)
     errored = _report_poll_errors(records)
-    payload = encode_metrics(records, int(time.time()))
+    pushed_at = int(time.time())
+    payload = _encode(records, pushed_at)
     if not payload:
         raise click.ClickException("nothing to push: payload is empty")
     _push(payload)
@@ -193,18 +205,23 @@ def live_check(config_dir):
     deadline = time.monotonic() + 60
     for metric in metrics:
         while True:
-            query = urllib.parse.urlencode({"query": metric})
+            # timestamp(<metric>) returns each series' raw sample time, so the
+            # proof only accepts samples stamped at/after THIS run's payload
+            # timestamp — a previous push inside Prometheus's 5-minute instant
+            # lookback can't satisfy it.
+            query = urllib.parse.urlencode({"query": f"timestamp({metric})"})
             result = request_json(
                 f"{os.environ['GRAFANA_QUERY_URL'].rstrip('/')}/api/v1/query?{query}",
                 headers=auth,
             )
             series = result.get("data", {}).get("result", [])
-            if series:
-                click.echo(f"✓ live check: {len(series)} {metric} series queryable")
+            fresh = [s for s in series if float(s["value"][1]) >= pushed_at]
+            if fresh:
+                click.echo(f"✓ live check: {len(fresh)} {metric} series from this push queryable")
                 break
             if time.monotonic() >= deadline:
                 raise click.ClickException(
-                    f"push succeeded but {metric} returned no series within 60s"
+                    f"push succeeded but {metric} returned no samples from this push within 60s"
                 )
             time.sleep(5)
     if errored:
