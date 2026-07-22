@@ -564,6 +564,271 @@ assert "HTTP 401" in combined, combined
 print("✓ run: a rejected Grafana key (HTTP 401) exits nonzero end to end")
 EOF
 
+# ── Logs: harvester + Loki shipper + watermark (task 0004) ──────────────────
+# The logs tracer bullet, all offline. Loki shipper (pure encoder), watermark
+# store (load/save), harvester (unpack archive → parse GitHub's line-timestamp
+# prefix → drop noise → volume policy → labeled batches, incremental against a
+# per-repo/workflow watermark), Loki push wire format, and the CLI logs leg
+# (fixture archives in → exact Loki push payload out, an idempotent re-run ships
+# nothing, a lost watermark recovers via the 24h look-back).
+logs_wm=$(mktemp)
+trap 'rm -f "$stderr_tmp" "$clean_records" "$clean_out" "$empty_records" "$bad_encode" "$logs_wm"' EXIT
+
+# Loki shipper: labeled batches in, exact Loki push JSON out. Labels are capped
+# at org/state/workflow/outcome; run identity rides in structured metadata, never
+# a label; streams and values are sorted so the bytes are deterministic; an
+# un-encodable batch (control char in a label, a missing key) is skipped and an
+# empty batch emits no stream — the same per-item resilience the metrics shipper has.
+pipenv run python3 - <<'EOF'
+import json
+from logs_shipper import encode_logs
+
+batches = [
+    {"labels": {"org": "o", "state": "wy", "workflow": "s.yml", "outcome": "failure"},
+     "entries": [{"timestamp_ns": 2, "line": "second", "metadata": {"run_id": 9}},
+                 {"timestamp_ns": 1, "line": "first", "metadata": {"run_id": 9}}]},
+    {"labels": {"org": "o", "state": "w\ny", "workflow": "s.yml", "outcome": "failure"},
+     "entries": [{"timestamp_ns": 1, "line": "x"}]},                # control char -> skipped
+    {"labels": {"org": "o", "state": "nv", "workflow": "s.yml", "outcome": "success"},
+     "entries": []},                                                # empty -> no stream
+]
+obj = json.loads(encode_logs(batches))
+assert len(obj["streams"]) == 1, obj
+stream = obj["streams"][0]
+assert stream["stream"] == {"org": "o", "state": "wy", "workflow": "s.yml", "outcome": "failure"}, stream
+assert stream["values"][0] == ["1", "first", {"run_id": "9"}], stream["values"]  # sorted, ns as str, metadata stringified
+assert "run_id" not in stream["stream"], "run id must never be a label"
+payload = encode_logs(batches)
+assert ", " not in payload and '": ' not in payload, "payload must be compact + deterministic"
+assert encode_logs([]) == '{"streams":[]}'
+print("✓ logs shipper: labeled batches -> deterministic Loki JSON; run id in metadata, not labels")
+EOF
+
+# Watermark store: a missing/empty file reads as {} (a lost cache is a look-back,
+# not a crash); writes round-trip.
+pipenv run python3 - <<'EOF'
+import os, tempfile
+from watermark import load_watermarks, save_watermarks
+
+path = os.path.join(tempfile.mkdtemp(), "wm.json")
+assert load_watermarks(path) == {}, "missing file must read as empty"
+save_watermarks(path, {"o/r/w.yml": 42})
+assert load_watermarks(path) == {"o/r/w.yml": 42}
+open(path, "w").write("")
+assert load_watermarks(path) == {}, "empty file must read as empty, not error"
+print("✓ watermark: missing/empty reads as {}, writes round-trip")
+EOF
+
+# Harvester, offline (GitHub is fake fetchers): unpack the archive (top-level
+# per-job .txt only, step folders ignored), parse GitHub's RFC3339 line-timestamp
+# prefix (incl. a 7-digit fractional part and trailing Z), drop
+# ##[group]/##[endgroup] noise, apply the volume policy (full logs for a failure,
+# the last ~100 lines for a success), advance the per-repo/workflow watermark only
+# across contiguous shipped runs (an in-progress run or a failed archive fetch
+# halts advance so the run retries next sweep), bound a cold start to a 24h
+# look-back, and never raise per repo.
+pipenv run python3 - <<'EOF'
+import io, zipfile
+from datetime import datetime, timezone
+
+from log_harvester import _to_ns, harvest_logs, parse_log_text, unpack_archive
+
+NOW = datetime(2026, 7, 21, 12, 0, 0, tzinfo=timezone.utc)
+
+def zip_of(members):
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as archive:
+        for name, text in members.items():
+            archive.writestr(name, text)
+    return buf.getvalue()
+
+assert _to_ns("2026-07-21T00:00:00Z") == 1784592000000000000
+assert _to_ns("2026-07-21T00:00:00.5000000Z") == 1784592000500000000
+assert _to_ns("nope") is None
+assert [n for n, _ in unpack_archive(zip_of({"1_j.txt": "x\n", "j/1_step.txt": "dup\n"}))] == ["1_j.txt"]
+parsed = parse_log_text("2026-07-21T11:00:00.0000000Z hi\ntail without ts\n", _to_ns("2026-07-21T11:00:00Z"))
+assert parsed[0] == (_to_ns("2026-07-21T11:00:00Z"), "hi"), parsed
+assert parsed[1] == (_to_ns("2026-07-21T11:00:00Z"), "tail without ts"), parsed
+
+juris = [{"org": "o", "state": "wy", "repo": "r", "expected_workflows": ["w.yml"]}]
+FAIL = ("2026-07-21T11:00:00.0000000Z ##[group]setup\n"
+        "2026-07-21T11:00:01.0000000Z building\n"
+        "2026-07-21T11:00:02.0000000Z ##[endgroup]\n"
+        "2026-07-21T11:00:03.0000000Z ERROR: boom\n")
+def runs_fail(o, r, w):
+    return [{"id": 100, "status": "completed", "conclusion": "failure",
+             "created_at": "2026-07-21T11:00:00Z", "html_url": "u/100"}]
+batches, wm, errors = harvest_logs(juris, {}, runs_fail, lambda o, r, i: zip_of({"1_j.txt": FAIL}), NOW)
+assert errors == [] and len(batches) == 1, (errors, batches)
+assert batches[0]["labels"] == {"org": "o", "state": "wy", "workflow": "w.yml", "outcome": "failure"}
+assert [e["line"] for e in batches[0]["entries"]] == ["building", "ERROR: boom"], "group markers dropped, full logs kept"
+assert batches[0]["entries"][0]["metadata"] == {"run_id": "100", "run_url": "u/100"}
+assert wm == {"o/r/w.yml": 100}
+
+big = "".join(f"2026-07-21T11:00:00.0000000Z line {i}\n" for i in range(250))
+def runs_ok(o, r, w):
+    return [{"id": 5, "status": "completed", "conclusion": "success",
+             "created_at": "2026-07-21T11:00:00Z", "html_url": "u"}]
+b2, _, _ = harvest_logs(juris, {}, runs_ok, lambda o, r, i: zip_of({"1.txt": big}), NOW)
+assert len(b2[0]["entries"]) == 100 and b2[0]["entries"][-1]["line"] == "line 249", "success tailed to 100"
+
+def runs_mix(o, r, w):
+    return [{"id": 10, "status": "completed", "conclusion": "success",
+             "created_at": "2026-07-21T11:00:00Z", "html_url": "u"},
+            {"id": 11, "status": "completed", "conclusion": "failure",
+             "created_at": "2026-07-21T11:30:00Z", "html_url": "u"},
+            {"id": 12, "status": "in_progress", "conclusion": None,
+             "created_at": "2026-07-21T11:45:00Z", "html_url": "u"}]
+b3, wm3, _ = harvest_logs(juris, {"o/r/w.yml": 10}, runs_mix,
+                          lambda o, r, i: zip_of({"1.txt": "2026-07-21T11:30:00.0000000Z x\n"}), NOW)
+assert {e["metadata"]["run_id"] for b in b3 for e in b["entries"]} == {"11"}, "only the new completed run ships"
+assert wm3 == {"o/r/w.yml": 11}, "watermark not advanced past the in-progress run"
+
+def runs_hist(o, r, w):
+    return [{"id": 1, "status": "completed", "conclusion": "failure",
+             "created_at": "2026-07-01T00:00:00Z", "html_url": "u"},   # 3 weeks old -> skip
+            {"id": 2, "status": "completed", "conclusion": "failure",
+             "created_at": "2026-07-21T06:00:00Z", "html_url": "u"}]   # 6h old -> ship
+b4, wm4, _ = harvest_logs(juris, {}, runs_hist,
+                          lambda o, r, i: zip_of({"1.txt": "2026-07-21T06:00:00.0000000Z x\n"}), NOW)
+assert {e["metadata"]["run_id"] for b in b4 for e in b["entries"]} == {"2"}, "cold start bounded to a 24h look-back"
+b5, wm5, _ = harvest_logs(juris, wm4, runs_hist, lambda o, r, i: zip_of({"1.txt": "x\n"}), NOW)
+assert b5 == [] and wm5 == wm4, "idempotent re-run with the same watermark ships nothing"
+
+def boom(o, r, i):
+    raise RuntimeError("archive 500")
+b6, wm6, e6 = harvest_logs(juris, {}, runs_hist, boom, NOW)
+assert b6 == [] and e6 and "archive 500" in e6[0], (b6, e6)
+assert wm6.get("o/r/w.yml", 0) == 0, "watermark held below a run whose archive fetch failed"
+print("✓ harvester: unpack/parse/noise/volume policy; incremental watermark; cold-start look-back; per-repo error isolation")
+EOF
+
+# Loki push wire format + missing-env guard, offline (fake urlopen).
+pipenv run python3 - <<'EOF'
+import base64
+import urllib.request
+
+from logs_push import push_logs
+
+try:
+    push_logs("{}", env={})
+except RuntimeError as e:
+    assert "GRAFANA_LOGS_URL, GRAFANA_LOGS_USER, GRAFANA_LOGS_KEY" in str(e), e
+else:
+    raise AssertionError("push_logs with empty env should raise")
+
+class FakeResponse:
+    def read(self): return b""
+    def __enter__(self): return self
+    def __exit__(self, *args): return False
+
+calls = []
+def ok_urlopen(request, timeout=None):
+    calls.append(request)
+    return FakeResponse()
+urllib.request.urlopen = ok_urlopen
+
+push_logs('{"streams":[]}', env={"GRAFANA_LOGS_URL": "https://l.test/loki/api/v1/push",
+                                 "GRAFANA_LOGS_USER": "42", "GRAFANA_LOGS_KEY": "k"})
+request = calls[0]
+assert request.full_url == "https://l.test/loki/api/v1/push" and request.get_method() == "POST"
+assert request.data == b'{"streams":[]}'
+assert request.get_header("Authorization") == "Basic " + base64.b64encode(b"42:k").decode()
+assert request.get_header("Content-type") == "application/json", request.header_items()
+print("✓ logs push: Loki wire format (URL, POST, Basic auth, application/json) + missing-env guard")
+EOF
+
+# CLI logs leg: fixture archives in -> exact Loki push payload out (dry-run),
+# byte-identical from the fixed --timestamp. The fixture covers a failed run
+# (full logs, ##[group] noise dropped) and a successful run (tail); run/job ids
+# land in structured metadata while labels stay org/state/workflow/outcome.
+pipenv run python3 main.py collect --logs-only --dry-run \
+  --log-fixture fixtures/log-runs --timestamp 1784635200 \
+  > "$output_dir/logs-payload.json"
+pipenv run python3 - <<'EOF'
+import json
+
+obj = json.load(open("__snapshots__/logs-payload.json"))
+streams = {s["stream"]["outcome"]: s for s in obj["streams"]}
+assert set(streams) == {"failure", "success"}, streams
+fail_lines = [value[1] for value in streams["failure"]["values"]]
+assert "ERROR: HTTP 500 from source" in fail_lines, fail_lines
+assert "Traceback (most recent call last):" in fail_lines, fail_lines
+lines = [value[1] for s in obj["streams"] for value in s["values"]]
+assert not any("##[group]" in line or "##[endgroup]" in line for line in lines), "noise must be dropped"
+assert all(set(s["stream"]) == {"org", "state", "workflow", "outcome"} for s in obj["streams"]), "labels capped"
+assert all(value[2]["run_id"] for s in obj["streams"] for value in s["values"]), "run id in structured metadata"
+print("✓ logs snapshot: fixture archives render to the exact Loki payload (noise dropped, labels capped)")
+EOF
+
+# Idempotency + recovery, end to end through the CLI with a fake Loki push:
+# the first collection ships and advances the watermark; a second collection of
+# the same window ships nothing (no run newer than the watermark); deleting the
+# watermark recovers via the 24h look-back rather than re-shipping the full
+# history. Driven in-process (CliRunner) so the fake urlopen counts real pushes.
+pipenv run python3 - "$logs_wm" <<'EOF'
+import os
+import sys
+import urllib.request
+
+from click.testing import CliRunner
+
+import main
+
+wm = sys.argv[1]
+if os.path.exists(wm):
+    os.remove(wm)
+
+pushes = []
+class FakeResponse:
+    def read(self): return b""
+    def __enter__(self): return self
+    def __exit__(self, *args): return False
+def fake_urlopen(request, timeout=None):
+    pushes.append(request.data)
+    return FakeResponse()
+urllib.request.urlopen = fake_urlopen
+
+env = {"GRAFANA_LOGS_URL": "https://l.test/loki/api/v1/push",
+       "GRAFANA_LOGS_USER": "42", "GRAFANA_LOGS_KEY": "k"}
+args = ["collect", "--logs-only", "--log-fixture", "fixtures/log-runs",
+        "--watermark-file", wm, "--timestamp", "1784635200"]
+
+r1 = CliRunner().invoke(main.cli, args, env=env)
+assert r1.exit_code == 0, (r1.output, r1.exception)
+assert len(pushes) == 1, "the first collection must ship the fixture's runs"
+
+r2 = CliRunner().invoke(main.cli, args, env=env)
+assert r2.exit_code == 0, (r2.output, r2.exception)
+assert len(pushes) == 1, "a second collection of the same window must ship nothing (idempotent)"
+
+os.remove(wm)  # a lost Actions cache
+r3 = CliRunner().invoke(main.cli, args, env=env)
+assert r3.exit_code == 0, (r3.output, r3.exception)
+assert len(pushes) == 2, "a deleted watermark recovers via the look-back and ships the recent window again"
+print("✓ logs CLI: idempotent re-run ships nothing; a deleted watermark recovers via the 24h look-back")
+EOF
+
+# The orchestrator `run` wires the logs leg only when a log source is present: a
+# dry-run with the fixture prints the metrics + heartbeat payload AND the Loki
+# stream payload; a metrics-only run (no log source) omits it — the run-payload
+# snapshot above carries no streams.
+run_with_logs=$(pipenv run python3 main.py run --dry-run --poller-records "$clean_records" \
+  --log-fixture fixtures/log-runs --timestamp 1784635200 2> /dev/null)
+if ! echo "$run_with_logs" | grep -q '^fleet_collector_heartbeat '; then
+  echo "✗ run --log-fixture must still ship metrics + heartbeat"
+  exit 1
+fi
+if ! echo "$run_with_logs" | grep -q '"streams":'; then
+  echo "✗ run --log-fixture must also ship the harvested logs"
+  exit 1
+fi
+if grep -q '"streams":' "$output_dir/run-payload.txt"; then
+  echo "✗ a metrics-only run (no log source) must not emit a logs payload"
+  exit 1
+fi
+echo "✓ run: the logs leg ships when a log source is present, and is skipped otherwise"
+
 # live-check's query-back proof derives expected series names AND counts from
 # the payload it pushed; the accounting is locked against the snapshot payload
 # (which includes an escaped-space tag value the parser must not trip on).
@@ -620,6 +885,17 @@ if ! echo "$skip_output" | grep -q "live check skipped"; then
   exit 1
 fi
 echo "✓ live-check: skips cleanly when credentials are absent"
+
+# The Loki ingest-window probe self-skips without credentials the same way, so a
+# credential-free render stays offline; the real probe runs only with GRAFANA_LOGS_*.
+probe_skip=$(env -u GRAFANA_LOGS_URL -u GRAFANA_LOGS_USER -u GRAFANA_LOGS_KEY \
+  pipenv run python3 main.py probe-loki 2>&1)
+if ! echo "$probe_skip" | grep -q "loki probe skipped"; then
+  echo "✗ probe-loki without credentials should skip cleanly; got:"
+  echo "$probe_skip"
+  exit 1
+fi
+echo "✓ probe-loki: skips cleanly when credentials are absent"
 
 # The real push-and-query proof is opt-in: a bare render must stay offline,
 # deterministic, and side-effect-free even on a machine that happens to have

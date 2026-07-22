@@ -1,7 +1,8 @@
 # Hourly fleet sweep: poll every fleet repo's GitHub state and push metrics plus
-# a collector heartbeat to Grafana Cloud. Read-only on GitHub (the default token
-# covers all reads); the single secret is the Grafana Cloud write key. The push
-# endpoint and instance ID are non-secret per-fork config, supplied as repo
+# a collector heartbeat to Grafana Cloud, then harvest each repo's new run logs
+# and ship them to Loki. Read-only on GitHub (the default token covers all reads);
+# the secrets are the Grafana Cloud metrics and logs write keys. The push
+# endpoints and instance IDs are non-secret per-fork config, supplied as repo
 # variables — see actions/fleet-monitor/README.md "Running the hourly workflow".
 name: Fleet Monitor
 
@@ -45,18 +46,47 @@ jobs:
           pip install pipenv
           pipenv install --deploy
 
-      - name: Sweep the fleet and push metrics
+      # The log harvester's watermark (last run shipped per repo/workflow) must
+      # survive between hourly sweeps or every run would re-ship the last day of
+      # logs. The Actions cache carries it: restore the newest prior watermark by
+      # prefix, save a fresh key each run (cache keys are immutable, so a rolling
+      # run_id key + restore-keys prefix is the standard mutable-state pattern). A
+      # cold start with no cache restored is safe — the harvester falls back to a
+      # bounded 24h look-back, not the full history.
+      - name: Restore log watermark
+        uses: actions/cache/restore@v4
+        with:
+          path: actions/fleet-monitor/.watermarks
+          key: fleet-monitor-watermarks-${{ github.run_id }}
+          restore-keys: fleet-monitor-watermarks-
+
+      - name: Sweep the fleet, push metrics + heartbeat, ship logs
         working-directory: actions/fleet-monitor
         env:
           # GitHub's auto-provided default token (not a maintainer-set secret):
           # public reads only, ~336 requests/sweep (limit 1000/hr). It is the only
-          # way to populate the GITHUB_TOKEN env the poller needs; the one secret a
-          # fork maintainer sets is GRAFANA_PUSH_KEY below.
+          # way to populate the GITHUB_TOKEN env the poller needs; the two secrets a
+          # fork maintainer sets are the Grafana write keys below.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Endpoint + instance ID are non-secret per-fork config (repo variables).
+          # Endpoints + instance IDs are non-secret per-fork config (repo variables).
           GRAFANA_PUSH_URL: ${{ vars.GRAFANA_PUSH_URL }}
           GRAFANA_PUSH_USER: ${{ vars.GRAFANA_PUSH_USER }}
-          # The one secret: the Grafana Cloud metrics:write access-policy token.
+          GRAFANA_LOGS_URL: ${{ vars.GRAFANA_LOGS_URL }}
+          GRAFANA_LOGS_USER: ${{ vars.GRAFANA_LOGS_USER }}
+          # The secrets: the Grafana Cloud metrics:write and logs:write tokens.
           GRAFANA_PUSH_KEY: ${{ secrets.GRAFANA_PUSH_KEY }}
+          GRAFANA_LOGS_KEY: ${{ secrets.GRAFANA_LOGS_KEY }}
         run: |
-          pipenv run python main.py run --config-dir ../pipeline-manager
+          pipenv run python main.py run --config-dir ../pipeline-manager \
+            --watermark-file .watermarks/logs.json
+
+      # Persist the advanced watermark for the next sweep, even if the run failed
+      # after a partial log ship (the CLI saves the watermark only after a
+      # successful push, so a failed push leaves it untouched and the next sweep
+      # retries those runs).
+      - name: Save log watermark
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: actions/fleet-monitor/.watermarks
+          key: fleet-monitor-watermarks-${{ github.run_id }}

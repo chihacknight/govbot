@@ -1,0 +1,3 @@
+# Local log-harvester watermark store (README dev examples write here; in CI it
+# lives in the Actions cache, never the repo).
+.watermarks/

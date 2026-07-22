@@ -1,0 +1,2 @@
+{"org": "govbot-openstates-scrapers", "state": "wy", "repo": "wy-legislation", "expected_workflows": ["openstates-scrape.yml"]}
+{"org": "govbot-openstates-scrapers", "state": "il", "repo": "il-legislation", "expected_workflows": ["openstates-scrape.yml"]}

@@ -1,0 +1,5 @@
+2026-07-21T11:00:00.0000000Z ##[group]Run the scraper
+2026-07-21T11:00:01.0000000Z Fetching bill list for wy
+2026-07-21T11:00:02.5000000Z ##[endgroup]
+2026-07-21T11:00:03.0000000Z ERROR: HTTP 500 from source
+2026-07-21T11:00:03.5000000Z Traceback (most recent call last):
