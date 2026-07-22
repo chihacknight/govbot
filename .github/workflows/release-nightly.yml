@@ -37,15 +37,28 @@ jobs:
             binary: govbot.exe
 
     steps:
+      # Some format-action snapshot fixtures use OCD-style paths with ':' in
+      # the filename, which Windows/NTFS cannot check out. actions/checkout's
+      # `sparse-checkout` input alone doesn't help here: without a sparse
+      # index, git still expands and validates every path in the tree while
+      # building the index, even ones that end up skip-worktree. So on
+      # windows-latest we check out manually with a cone+sparse index, which
+      # never expands actions/format into individual blob entries. This job
+      # only needs actions/govbot, so nothing else is lost.
+      - name: Checkout repository (Windows sparse)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          git init -q .
+          git remote add origin https://github.com/${{ github.repository }}.git
+          git sparse-checkout init --cone --sparse-index
+          git sparse-checkout set actions/govbot
+          git fetch --no-tags --prune --depth=1 origin +${{ github.sha }}:refs/remotes/origin/ci-target
+          git checkout --force refs/remotes/origin/ci-target
+
       - name: Checkout repository
+        if: matrix.os != 'windows-latest'
         uses: actions/checkout@v4
-        with:
-          # Some format-action snapshot fixtures use OCD-style paths with ':'
-          # in the filename, which Windows/NTFS cannot check out. This job
-          # only needs actions/govbot, so scope the checkout to avoid those
-          # paths instead of cloning the whole tree.
-          sparse-checkout: |
-            actions/govbot
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
