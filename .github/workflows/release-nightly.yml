@@ -39,6 +39,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Some format-action snapshot fixtures use OCD-style paths with ':'
+          # in the filename, which Windows/NTFS cannot check out. This job
+          # only needs actions/govbot, so scope the checkout to avoid those
+          # paths instead of cloning the whole tree.
+          sparse-checkout: |
+            actions/govbot
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
