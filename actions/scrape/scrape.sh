@@ -130,6 +130,19 @@ fi
 echo "🕷️ Scraping ${STATE} (with retries + DNS override)..."
 exit_code=1
 
+# --fastmode sets requests_per_minute=0 (unlimited) in openstates-core's
+# Scraper.__init__, unconditionally overriding any per-state SCRAPELIB_RPM
+# setting -- confirmed via a local test run (2026-07-24) that NH's server
+# (gc.nh.gov) starts dropping connections under fastmode's unthrottled burst
+# pattern even with SCRAPELIB_RPM set in scrapers/nh/__init__.py, because
+# fastmode ignores it entirely. Dropping --fastmode for NH restores the
+# framework default of 60 RPM (1 req/sec), which a per-state RPM setting can
+# then actually take effect on top of.
+FASTMODE_FLAG="--fastmode"
+if [ "${STATE}" = "nh" ]; then
+  FASTMODE_FLAG=""
+fi
+
 if [ "${STATE}" = "va" ]; then
   # Virginia uses csv_bills scraper for two sessions; run each independently with retries
   va_regular_exit=1
@@ -180,7 +193,7 @@ else
         -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
         "${DOCKER_ENV_FLAGS[@]+"${DOCKER_ENV_FLAGS[@]}"}" \
         ${DOCKER_IMAGE} \
-        ${STATE} bills --scrape --fastmode 2>&1 | tee -a "$SCRAPE_LOG"
+        ${STATE} bills --scrape ${FASTMODE_FLAG} 2>&1 | tee -a "$SCRAPE_LOG"
     then
       exit_code=0
       break
