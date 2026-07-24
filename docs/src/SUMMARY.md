@@ -6,6 +6,10 @@
 
 - [Legislation Dashboard](./dashboard-guide.md)
 
+# Operations
+
+- [State Status Reference](./state-status-reference.md)
+
 # Current Effort
 
 - [2025 - Decentralize](./2025-Decentralize/readme.md)
