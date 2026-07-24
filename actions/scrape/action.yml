@@ -241,6 +241,8 @@ runs:
           DURATION=$(jq -r '.duration // "unknown"' "$SUMMARY_FILE")
           ERROR_COUNT=$(jq -r '.error_count // 0' "$SUMMARY_FILE")
           ERRORS=$(jq -r '.errors | if length > 0 then .[] else empty end' "$SUMMARY_FILE" 2>/dev/null || echo "")
+          SKIPPED_COUNT=$(jq -r '.skipped_count // 0' "$SUMMARY_FILE")
+          SKIPPED_ITEMS=$(jq -r '.skipped_items | if length > 0 then .[] else empty end' "$SUMMARY_FILE" 2>/dev/null || echo "")
         else
           BILL_COUNT="N/A"
           VOTE_EVENT_COUNT="N/A"
@@ -250,6 +252,8 @@ runs:
           DURATION="N/A"
           ERROR_COUNT=0
           ERRORS=""
+          SKIPPED_COUNT=0
+          SKIPPED_ITEMS=""
         fi
 
         # Calculate metadata total
@@ -302,6 +306,21 @@ runs:
           echo '```' >> $GITHUB_STEP_SUMMARY
           if [ "$ERROR_COUNT" -gt 5 ]; then
             echo "_...and $((ERROR_COUNT - 5)) more. Check logs for details._" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi
+
+        # Items a scraper deliberately skipped and will retry on the next scheduled
+        # run -- kept separate from the "Errors Detected" section above since this is
+        # expected behavior (one independent item's transient failure), not a fault
+        # that needs investigation.
+        if [ -f "$SUMMARY_FILE" ] && [ "$SKIPPED_COUNT" -gt 0 ] && [ -n "$SKIPPED_ITEMS" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔁 Skipped, Will Retry Next Run ($SKIPPED_COUNT)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "$SKIPPED_ITEMS" | head -5 >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          if [ "$SKIPPED_COUNT" -gt 5 ]; then
+            echo "_...and $((SKIPPED_COUNT - 5)) more. Check logs for details._" >> $GITHUB_STEP_SUMMARY
           fi
         fi
 

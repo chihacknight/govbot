@@ -319,9 +319,21 @@ EXCEPTIONS=$(grep -iE '^\w+Error:|^\w+Exception:|^\w+Warning:' "$SCRAPE_LOG" 2>/
 # Find other error indicators (ERROR/EXCEPTION/TRACEBACK in caps, exclude INFO logs and "failed" in vote messages)
 # Only match actual error keywords in caps, not "failed" in vote outcomes
 # Exclude ALL lines that contain " INFO " (case-insensitive) to filter out informational logs
+# Also exclude "SKIPPED BILL:" -- those are surfaced separately below as their own
+# distinct summary section, not lumped in with generic errors (a scraper choosing to
+# skip one item and continue is expected behavior, not a fault).
 OTHER_ERRORS=$(grep -E '(ERROR|EXCEPTION|TRACEBACK|AssertionError|TimeoutError|ConnectionError|HTTPError)' "$SCRAPE_LOG" 2>/dev/null | \
-  grep -viE '( INFO |scrape attempt|retry|retrying|resolved|recovered|succeeded)' | \
+  grep -viE '( INFO |scrape attempt|retry|retrying|resolved|recovered|succeeded|SKIPPED BILL)' | \
   head -10 || echo "")
+
+# Items a scraper deliberately skipped (logged some other independent item's fetch
+# failed after exhausting retries) and will pick up again on the next scheduled run --
+# distinct from OTHER_ERRORS above, which is stuff that actually needs attention.
+# "SKIPPED BILL:" is a convention, not enforced by any schema -- any scraper can opt in
+# by logging a line with that exact prefix (see fl/bills.py's HouseFetchResilientPage
+# for the originating example).
+SKIPPED_ITEMS=$(grep 'SKIPPED BILL:' "$SCRAPE_LOG" 2>/dev/null | head -10 || echo "")
+SKIPPED_COUNT=$(grep -c 'SKIPPED BILL:' "$SCRAPE_LOG" 2>/dev/null || echo "0")
 
 # Combine errors, prioritizing tracebacks
 if [ -n "$TRACEBACKS" ]; then
@@ -407,7 +419,9 @@ cat > "$SUMMARY_FILE" <<EOF
   "json_files": ${COUNT_JSON:-0},
   "duration": "${DURATION}",
   "error_count": ${ERROR_COUNT},
-  "errors": $(echo "$ERRORS" | head -5 | jq -R -s 'split("\n") | map(select(. != ""))')
+  "errors": $(echo "$ERRORS" | head -5 | jq -R -s 'split("\n") | map(select(. != ""))'),
+  "skipped_count": ${SKIPPED_COUNT:-0},
+  "skipped_items": $(echo "$SKIPPED_ITEMS" | head -5 | jq -R -s 'split("\n") | map(select(. != ""))')
 }
 EOF
 
