@@ -100,8 +100,10 @@ one line per age (1–24 h old) and reports which the real endpoint accepts.
 queryable by when the event happened, and correlate with the metrics), because the
 maximum age of any shipped entry is bounded — hourly cadence plus the 24 h look-back
 cap it at ~25 h — and Grafana Cloud Loki's default reject-old-samples window is 168 h
-(7 days), comfortably beyond that. `probe-loki` confirms this against the actual stack
-before launch. **Fallback** (only if a probe ever shows entries < 24 h old rejected):
+(7 days), comfortably beyond that. **Probed and confirmed**: `probe-loki` run against
+a Grafana Cloud stack (`logs-prod-036`) accepted all ages from 1 h to 24 h old, so
+event-time timestamps land within the window across the whole look-back. **Fallback**
+(only if a probe ever shows entries < 24 h old rejected):
 ship at collection time and carry the original event time in structured metadata
 alongside the run id — the harvester already threads event time through every entry,
 so the change is localized to the shipper's timestamp choice.
