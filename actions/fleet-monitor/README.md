@@ -72,9 +72,11 @@ run logs to Grafana Cloud Loki — never the same run twice — in three modules
   window ships nothing. Persisted between hourly sweeps by the Actions cache; a lost
   cache reads as empty and the harvester falls back to a bounded **one-day
   look-back**, recovering the last day rather than re-shipping a repo's whole
-  history. The watermark advances only across contiguous shipped runs — an
-  in-progress run, or one whose archive fetch failed, halts advancement so it is
-  retried next sweep, never stepped over.
+  history. The look-back bounds *every* sweep (not just a cold start), and the run
+  listing pages just far enough to cover it, so selection never wants a run the
+  listing didn't fetch. The watermark advances only across contiguous shipped runs —
+  an in-progress run, one whose archive fetch failed, or a label the shipper would
+  reject halts advancement so it is retried next sweep, never stepped over.
 - **[logs_shipper.py](logs_shipper.py)** + **[logs_push.py](logs_push.py)** — a pure
   encoder from labeled batches to the Loki push payload (reusing http_util's
   retry/backoff POST). Stream labels are capped at `org`/`state`/`workflow`/`outcome`;
@@ -104,9 +106,10 @@ so the change is localized to the shipper's timestamp choice.
   runs, latest success) + 1 per repo for the data-path commit. Current fleet: 112 repos × 1 workflow → **336
   requests per sweep**, well inside the default `GITHUB_TOKEN` limit of 1000/hour;
   `render-snapshots.sh` asserts the real-fleet count stays under 400. The logs leg
-  adds 1 run-listing request per workflow plus 1 archive download per *new* run —
-  bounded by how many runs actually finished in the hour, typically a handful, since
-  the watermark skips everything already shipped.
+  adds 1 run-listing request per workflow (paging up to 4 only when a page is full
+  and still inside the 24 h window — page 1 suffices on a normal hourly sweep) plus
+  1 archive download per *new* run — bounded by how many runs actually finished in
+  the hour, typically a handful, since the watermark skips everything already shipped.
 - **Series cardinality**: 2 series per repo/workflow + 1 per repo, plus the single global
   `fleet_collector_heartbeat` pair the orchestrator emits per sweep → **~336 series (+2 heartbeat)**
   for the current fleet, against the Grafana Cloud free-tier budget of ~10k active series.

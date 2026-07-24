@@ -1,10 +1,12 @@
-"""Per-repo watermark store: the last workflow-run id shipped to Loki, per repo.
+"""Per-(repo, workflow) watermark store: the last run id shipped to Loki.
 
 The log harvester is incremental — each hourly sweep must ship only runs it hasn't
-shipped before. The watermark is the boundary: a JSON map of ``"<org>/<repo>"`` →
-the highest completed run id already harvested. A run is new when its id exceeds
-that. Run ids are monotonic in creation order, so the id alone orders runs without
-a second field.
+shipped before. The watermark is the boundary: a JSON map of
+``"<org>/<repo>/<workflow>"`` → the highest completed run id already harvested for
+that workflow. The key is per workflow, not per repo, because each workflow's run
+stream is independent — see log_harvester's module docstring. A run is new when its
+id exceeds its workflow's entry. Run ids are monotonic in creation order, so the id
+alone orders runs without a second field.
 
 Backing store is deliberately a plain JSON file. In CI it is persisted between
 hourly sweeps by the Actions cache (restore before the sweep, save after); for

@@ -271,7 +271,12 @@ def _log_sources(config_dir, log_fixture):
     if log_fixture is not None:
         return _load_log_fixture(log_fixture)
     if config_dir is not None:
-        jurisdictions = read_fleet(config_dir)
+        # Same clean-error contract as _poll_live and list-fleet: a malformed
+        # config is a CLI error line, never a raw traceback.
+        try:
+            jurisdictions = read_fleet(config_dir)
+        except (ValueError, yaml.YAMLError) as e:
+            raise click.ClickException(str(e)) from e
         fetch_runs, fetch_archive = github_log_fetchers()
         return jurisdictions, fetch_runs, fetch_archive
     raise click.ClickException(
@@ -467,7 +472,7 @@ def probe_loki():
     from logs_push import push_logs
 
     now = time.time()
-    accepted, rejected = [], []
+    accepted, rejected, failed = [], [], []
     for hours in range(1, 25):
         timestamp_ns = int((now - hours * 3600) * 1_000_000_000)
         payload = json.dumps({
@@ -481,15 +486,28 @@ def probe_loki():
             accepted.append(hours)
             click.echo(f"✓ {hours:>2}h old: accepted")
         except RequestFailed as e:
-            rejected.append(hours)
-            click.echo(f"✗ {hours:>2}h old: rejected (HTTP {e.status})")
+            # Only a fail-fast 4xx is evidence about the ingest window — that is
+            # Loki refusing the entry. A retries-exhausted 5xx/network failure
+            # (status None) is a transient outage and must not masquerade as an
+            # age rejection.
+            if e.status is not None and 400 <= e.status < 500:
+                rejected.append(hours)
+                click.echo(f"✗ {hours:>2}h old: rejected (HTTP {e.status})")
+            else:
+                failed.append(hours)
+                click.echo(f"? {hours:>2}h old: push failed ({e}) — transient, not an age rejection")
+    if failed:
+        click.echo(
+            f"transient failures at {len(failed)} age(s) ({', '.join(f'{h}h' for h in failed)}); "
+            "re-run the probe for a clean read on those."
+        )
     if rejected:
         click.echo(
             f"ingest window rejects entries ≥ {min(rejected)}h old; the harvester's "
             "24h look-back would lose the oldest recovered logs — adopt the "
             "ship-at-collection-time fallback (README 'Logs')."
         )
-    else:
+    elif not failed:
         click.echo(f"ingest window accepts all of 1–24h old ({len(accepted)}/24); "
                    "event-time timestamps are safe within the harvester's look-back.")
 

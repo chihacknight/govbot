@@ -588,7 +588,11 @@ batches = [
      "entries": [{"timestamp_ns": 2, "line": "second", "metadata": {"run_id": 9}},
                  {"timestamp_ns": 1, "line": "first", "metadata": {"run_id": 9}}]},
     {"labels": {"org": "o", "state": "w\ny", "workflow": "s.yml", "outcome": "failure"},
-     "entries": [{"timestamp_ns": 1, "line": "x"}]},                # control char -> skipped
+     "entries": [{"timestamp_ns": 1, "line": "x"}]},                # control char -> ValueError -> skipped
+    {"labels": {"org": "o", "state": "mi", "workflow": "s.yml"},    # no outcome -> KeyError -> skipped
+     "entries": [{"timestamp_ns": 1, "line": "x"}]},
+    {"labels": {"org": "o", "state": "ak", "workflow": "s.yml", "outcome": "failure"},
+     "entries": [{"timestamp_ns": [1], "line": "x"}]},              # structured ts -> TypeError -> skipped
     {"labels": {"org": "o", "state": "nv", "workflow": "s.yml", "outcome": "success"},
      "entries": []},                                                # empty -> no stream
 ]
@@ -599,9 +603,11 @@ assert stream["stream"] == {"org": "o", "state": "wy", "workflow": "s.yml", "out
 assert stream["values"][0] == ["1", "first", {"run_id": "9"}], stream["values"]  # sorted, ns as str, metadata stringified
 assert "run_id" not in stream["stream"], "run id must never be a label"
 payload = encode_logs(batches)
+assert "mi" not in payload and "ak" not in payload, "KeyError/TypeError batches must be skipped whole"
 assert ", " not in payload and '": ' not in payload, "payload must be compact + deterministic"
 assert encode_logs([]) == '{"streams":[]}'
 print("✓ logs shipper: labeled batches -> deterministic Loki JSON; run id in metadata, not labels")
+print("✓ logs shipper: un-encodable batches (ValueError/KeyError/TypeError) skipped; the rest ships")
 EOF
 
 # Watermark store: a missing/empty file reads as {} (a lost cache is a look-back,
@@ -649,6 +655,10 @@ assert [n for n, _ in unpack_archive(zip_of({"1_j.txt": "x\n", "j/1_step.txt": "
 parsed = parse_log_text("2026-07-21T11:00:00.0000000Z hi\ntail without ts\n", _to_ns("2026-07-21T11:00:00Z"))
 assert parsed[0] == (_to_ns("2026-07-21T11:00:00Z"), "hi"), parsed
 assert parsed[1] == (_to_ns("2026-07-21T11:00:00Z"), "tail without ts"), parsed
+# A bare timestamp with no trailing space is a stamp with an empty message
+# (noise-dropped downstream), never shipped verbatim as content.
+bare = parse_log_text("2026-07-21T11:00:05Z\n", 0)
+assert bare == [(_to_ns("2026-07-21T11:00:05Z"), "")], bare
 
 juris = [{"org": "o", "state": "wy", "repo": "r", "expected_workflows": ["w.yml"]}]
 FAIL = ("2026-07-21T11:00:00.0000000Z ##[group]setup\n"
@@ -700,7 +710,73 @@ def boom(o, r, i):
 b6, wm6, e6 = harvest_logs(juris, {}, runs_hist, boom, NOW)
 assert b6 == [] and e6 and "archive 500" in e6[0], (b6, e6)
 assert wm6.get("o/r/w.yml", 0) == 0, "watermark held below a run whose archive fetch failed"
-print("✓ harvester: unpack/parse/noise/volume policy; incremental watermark; cold-start look-back; per-repo error isolation")
+
+# The look-back bounds every sweep, not just a cold start: with a warm watermark,
+# a new-by-id run created outside the window is skipped by the same policy the
+# cold start uses — so selection never wants a run the paged listing wouldn't fetch.
+def runs_warm(o, r, w):
+    return [{"id": 5, "status": "completed", "conclusion": "failure",
+             "created_at": "2026-07-01T00:00:00Z", "html_url": "u"},   # past wm but 3 weeks old
+            {"id": 6, "status": "completed", "conclusion": "failure",
+             "created_at": "2026-07-21T06:00:00Z", "html_url": "u"}]
+b7, wm7, _ = harvest_logs(juris, {"o/r/w.yml": 4}, runs_warm,
+                          lambda o, r, i: zip_of({"1.txt": "2026-07-21T06:00:00.0000000Z x\n"}), NOW)
+assert {e["metadata"]["run_id"] for b in b7 for e in b["entries"]} == {"6"}, b7
+assert wm7 == {"o/r/w.yml": 6}, wm7
+
+# A label the shipper would reject (control char) is a harvest-time error that
+# HOLDS the watermark — never a batch silently dropped after the watermark moved.
+bad_juris = [{"org": "o", "state": "w\ny", "repo": "r", "expected_workflows": ["w.yml"]}]
+b8, wm8, e8 = harvest_logs(bad_juris, {}, runs_hist,
+                           lambda o, r, i: zip_of({"1.txt": "x\n"}), NOW)
+assert b8 == [] and e8 and "control character" in e8[0], (b8, e8)
+assert wm8 == {}, "watermark must not advance for a batch the shipper would drop"
+print("✓ harvester: unpack/parse/noise/volume policy; incremental watermark; look-back bounds every sweep; per-repo error isolation")
+print("✓ harvester: a shipper-rejectable label errors at harvest time and holds the watermark")
+EOF
+
+# The live run listing pages until the harvest window is covered: stops on a
+# short page, stops once a page dips past the look-back boundary, and never
+# exceeds MAX_RUN_PAGES — so a burst of more than one page of new runs can't
+# leave a gap for the watermark to leap. Offline: request_json is monkeypatched.
+pipenv run python3 - <<'EOF'
+from datetime import datetime, timedelta, timezone
+
+import log_harvester
+
+def iso(hours_ago):
+    return (datetime.now(timezone.utc) - timedelta(hours=hours_ago)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+pages_requested = []
+def fake_request_json(url, headers=None):
+    from urllib.parse import parse_qs, urlparse
+    page = int(parse_qs(urlparse(url).query)["page"][0])
+    pages_requested.append(page)
+    return {"workflow_runs": fake_request_json.pages.get(page, [])}
+log_harvester.request_json = fake_request_json
+
+full_recent = [{"id": 200 - i, "created_at": iso(1)} for i in range(30)]
+full_old = [{"id": 100 - i, "created_at": iso(30)} for i in range(30)]
+
+# Page 2's oldest run predates the boundary -> stop after 2 pages, keep both.
+fake_request_json.pages = {1: full_recent, 2: full_old, 3: full_recent}
+fetch_runs, _ = log_harvester.github_log_fetchers()
+runs = fetch_runs("o", "r", "w.yml")
+assert pages_requested == [1, 2], pages_requested
+assert len(runs) == 60, len(runs)
+
+# A short page means no more runs -> one request.
+pages_requested.clear()
+fake_request_json.pages = {1: full_recent[:3]}
+assert len(fetch_runs("o", "r", "w.yml")) == 3
+assert pages_requested == [1], pages_requested
+
+# All pages full and recent -> the MAX_RUN_PAGES cap bounds the requests.
+pages_requested.clear()
+fake_request_json.pages = {p: full_recent for p in range(1, 10)}
+fetch_runs("o", "r", "w.yml")
+assert pages_requested == [1, 2, 3, 4], pages_requested
+print("✓ run listing: pages to the look-back boundary, stops on a short page, capped at MAX_RUN_PAGES")
 EOF
 
 # Loki push wire format + missing-env guard, offline (fake urlopen).
@@ -808,6 +884,21 @@ assert r3.exit_code == 0, (r3.output, r3.exception)
 assert len(pushes) == 2, "a deleted watermark recovers via the look-back and ships the recent window again"
 print("✓ logs CLI: idempotent re-run ships nothing; a deleted watermark recovers via the 24h look-back")
 EOF
+
+# A malformed config on the logs-only path fails with a clean CLI error line,
+# the same contract as list-fleet and the metrics poll — never a raw traceback.
+bad_config_dir=$(ls -d fixtures-invalid/*/ | head -1)
+if pipenv run python3 main.py collect --logs-only --config-dir "$bad_config_dir" \
+    > /dev/null 2> "$stderr_tmp"; then
+  echo "✗ collect --logs-only with a broken config should exit nonzero"
+  exit 1
+fi
+if ! grep -q '^Error:' "$stderr_tmp"; then
+  echo "✗ collect --logs-only should fail with a clean Error: line; stderr was:"
+  cat "$stderr_tmp"
+  exit 1
+fi
+echo "✓ collect --logs-only: a malformed config fails with a clean Error: line"
 
 # The orchestrator `run` wires the logs leg only when a log source is present: a
 # dry-run with the fixture prints the metrics + heartbeat payload AND the Loki
