@@ -1041,6 +1041,34 @@ if ! grep -q 'poll errors on 1 of 5 repos' "$stderr_tmp"; then
 fi
 echo "✓ collect combined mode: both payloads print, poll errors still exit 1"
 
+# Both legs failing at once: the single exit-1 message carries BOTH fragments,
+# proving the merge (not just one leg's failure surfacing). Metrics fails on the
+# errored poller record; logs fails on a bad-label jurisdiction. Dry-run, no
+# network. Driven in-process to read the merged ClickException message.
+pipenv run python3 - <<'EOF'
+import json
+import tempfile
+from pathlib import Path
+
+from click.testing import CliRunner
+
+import main
+
+fixture = Path(tempfile.mkdtemp())
+(fixture / "runs").mkdir()
+(fixture / "jurisdictions.jsonl").write_text(json.dumps(
+    {"org": "o", "state": "w\ny", "repo": "r", "expected_workflows": ["w.yml"]}) + "\n")
+result = CliRunner().invoke(main.cli, [
+    "collect", "--metrics-only", "--logs-only", "--dry-run",
+    "--poller-records", "fixtures/poller-records.jsonl",
+    "--log-fixture", str(fixture), "--timestamp", "1784635200"])
+combined = result.output + (result.stderr or "")
+assert result.exit_code != 0, combined
+assert "poll errors on 1 of 5 repos" in combined, f"metrics fragment missing: {combined}"
+assert "log harvest errors on 1 target(s)" in combined, f"logs fragment missing: {combined}"
+print("✓ collect combined mode: both legs failing merge into one exit-1 message")
+EOF
+
 # Combined push mode with Loki down: the metrics leg must still ship before the
 # logs failure exits 1 — one leg's failure never silences the other's data.
 pipenv run python3 - "$clean_records" "$logs_wm" <<'EOF'

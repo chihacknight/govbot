@@ -73,7 +73,7 @@ def collect(config_dir, metrics_only, logs_only, dry_run, poller_records, log_fi
         try:
             _collect_metrics(config_dir, poller_records, dry_run, timestamp)
         except click.ClickException as e:
-            failures.append(str(e.message))
+            failures.append(e.message)
     if logs_only:
         try:
             log_errors = _collect_logs(config_dir, log_fixture, watermark_file, dry_run,
@@ -81,7 +81,7 @@ def collect(config_dir, metrics_only, logs_only, dry_run, poller_records, log_fi
             if log_errors:
                 failures.append(f"log harvest errors on {len(log_errors)} target(s)")
         except click.ClickException as e:
-            failures.append(str(e.message))
+            failures.append(e.message)
     if failures:
         raise click.ClickException("; ".join(failures))
 
