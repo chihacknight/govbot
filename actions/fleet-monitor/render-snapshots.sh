@@ -320,6 +320,54 @@ else:
 print("✓ http/push: retry policy (incl. exhausted quota), POST labeling, push wire format, guards")
 EOF
 
+# request_with_retry must strip the Authorization header on a cross-host redirect
+# but keep it on a same-host one. GitHub's log-archive endpoint 302-redirects to
+# Azure blob storage; a forwarded GitHub token makes Azure answer 403 (and leaks
+# the token). Proven end to end against two loopback servers (localhost vs
+# 127.0.0.1 = a host change), no external network.
+pipenv run python3 - <<'EOF'
+import http.server
+import threading
+
+from http_util import request_with_retry
+
+seen = {}
+
+class Target(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        seen["auth"] = self.headers.get("Authorization")
+        self.send_response(200); self.end_headers(); self.wfile.write(b"ok")
+    def log_message(self, *a): pass
+
+class Redirector(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        # same-host hop first (keep auth), then cross-host to the target (strip)
+        if self.path == "/same":
+            seen["same_auth"] = self.headers.get("Authorization")
+            self.send_response(200); self.end_headers(); self.wfile.write(b"ok"); return
+        self.send_response(302)
+        self.send_header("Location", f"http://127.0.0.1:{target_port}/blob")
+        self.end_headers()
+    def log_message(self, *a): pass
+
+target = http.server.HTTPServer(("127.0.0.1", 0), Target)
+target_port = target.server_address[1]
+redir = http.server.HTTPServer(("127.0.0.1", 0), Redirector)
+redir_port = redir.server_address[1]
+threading.Thread(target=target.serve_forever, daemon=True).start()
+threading.Thread(target=redir.serve_forever, daemon=True).start()
+
+auth = {"Authorization": "Bearer SECRET-TOKEN"}
+# Cross-host: localhost -> 127.0.0.1 is a host change, so auth must be dropped.
+request_with_retry(f"http://localhost:{redir_port}/logs", headers=auth)
+assert seen.get("auth") is None, f"Authorization leaked across a cross-host redirect: {seen}"
+# Same-host: no redirect, auth must survive (GitHub API calls rely on it).
+seen.clear()
+request_with_retry(f"http://127.0.0.1:{target_port}/blob", headers=auth)
+assert seen.get("auth") == "Bearer SECRET-TOKEN", f"auth must survive a direct request: {seen}"
+print("✓ http: Authorization is stripped on a cross-host redirect, kept on a direct request")
+EOF
+
 # The clean path: an errors-free sweep must exit 0 and produce exactly the
 # same series lines (the errored record contributes none), so exit-1 is
 # provably tied to poll errors, not to collect itself.

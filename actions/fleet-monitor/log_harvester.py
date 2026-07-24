@@ -268,7 +268,10 @@ def github_log_fetchers(now=None):
     """Live GitHub fetchers for run listings and log archives, authenticated with
     GITHUB_TOKEN when present (public reads work without it, at a lower rate limit).
     Mirrors fleet_poller's header construction; the archive endpoint 302-redirects
-    to a zip, which urllib follows, so request_with_retry returns the zip bytes.
+    to an Azure blob zip, which urllib follows, so request_with_retry returns the
+    zip bytes. http_util strips the Authorization header on that cross-host
+    redirect — Azure answers 403 to a forwarded GitHub token — so the download
+    lands on the SAS-signed URL unauthenticated, as intended.
 
     ``now`` (tz-aware, default current UTC time) anchors the pagination boundary.
     It must be the same anchor harvest_logs selects with — the caller threads one

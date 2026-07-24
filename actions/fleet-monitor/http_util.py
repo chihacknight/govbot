@@ -17,7 +17,39 @@ injected sleep).
 import json
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
+
+
+class _StripAuthOnCrossHostRedirect(urllib.request.HTTPRedirectHandler):
+    """Follow redirects, but drop the Authorization header when the target host
+    differs from the origin.
+
+    GitHub's Actions log-download endpoint (``/actions/runs/{id}/logs``)
+    302-redirects to Azure blob storage, with its credentials in the URL's SAS
+    query string. A forwarded ``Authorization: Bearer <github-token>`` makes Azure
+    answer 403 (it tries, and fails, to authenticate with the stray header instead
+    of the SAS). Python < 3.13's urllib forwards the header across hosts, so we
+    strip it ourselves — which also stops any token from ever leaking to a
+    redirect target we didn't originate the request to.
+    """
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        new = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new is not None:
+            origin = urllib.parse.urlparse(req.full_url).hostname
+            target = urllib.parse.urlparse(newurl).hostname
+            if origin != target:
+                for key in [k for k in new.headers if k.lower() == "authorization"]:
+                    del new.headers[key]
+        return new
+
+
+# Install process-wide so urllib.request.urlopen (which request_with_retry calls)
+# strips Authorization on cross-host redirects. The offline suite patches urlopen
+# directly and bypasses this opener, so it is unaffected; the live paths (log
+# archive download, live-check) get the fix and the hardening.
+urllib.request.install_opener(urllib.request.build_opener(_StripAuthOnCrossHostRedirect()))
 
 DEFAULT_TIMEOUT = 15
 DEFAULT_MAX_RETRIES = 3
