@@ -1,7 +1,8 @@
 # PDF Visual-Markup Audit
 
 Audits how often bill PDFs from each "PDF-only" state (no HTML/XML alternative,
-per `actions/scrape/docs/bill-format-audit.md`) show detectable redline
+per the Machine-Readable Bill Text column in docs/src/state-status-reference.md,
+sourced from the now-archived `bill-format-audit.md`) show detectable redline
 (strikethrough/underline) markup — the signal that decides whether a document
 needs full-fidelity handling (e.g. handing the raw PDF to a vision-capable
 model) versus plain-text extraction being trustworthy on its own.
@@ -68,6 +69,6 @@ serves working PDFs for the same bills, but production's format preference
 (`text/xml > text/html > application/pdf`) picks the broken HTML over the
 working PDF, since nothing currently detects the HTML is a placeholder.
 Spot-checked MN and WV (the two states listed as HTML-only, no PDF fallback,
-in `bill-format-audit.md`) and both show genuine real content -- this appears
+per the now-archived `bill-format-audit.md`) and both show genuine real content -- this appears
 specific to SD's site, not a systemic HTML-only-states problem. Not fixed as
 part of this audit; tracked separately.

@@ -95,6 +95,7 @@ locales:
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 4 * * *"  # Eastern
+    runner: self-hosted
     labels:
     - working
   hi:
@@ -190,6 +191,7 @@ locales:
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 5 * * *"  # Central
+    runner: self-hosted
     labels:
     - working
   ms:
@@ -204,6 +206,7 @@ locales:
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 5 * * *"  # Central
+    runner: self-hosted
     labels:
     - working
   mt:
@@ -212,6 +215,7 @@ locales:
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 6 * * *"  # Mountain
+    runner: self-hosted
     labels:
     - working
   ne:
@@ -302,6 +306,7 @@ locales:
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 7 * * *"  # Pacific
+    runner: self-hosted
     labels:
     - working
   pa:
@@ -383,6 +388,7 @@ locales:
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 7 * * *"  # Pacific
+    runner: self-hosted
     labels:
     - working
   wv:
@@ -416,6 +422,7 @@ locales:
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 4 * * *"  # Atlantic (PR/VI, no DST)
+    runner: self-hosted
     labels:
     - working
   mp:

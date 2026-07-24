@@ -46,12 +46,12 @@ env:
   # self-hosted alone silently depended on a laptop being on and connected for
   # every single automatic run. Locales that were never self-hosted (the
   # literal below is "ubuntu-latest") are untouched by any of this.
-  USE_PROXY: ${{ 'ubuntu-latest' == 'self-hosted' && !(github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) }}
+  USE_PROXY: ${{ 'self-hosted' == 'self-hosted' && !(github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) }}
 
 jobs:
   scrape:
     name: "🕷️ Scrape Data"
-    runs-on: ${{ (github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) && 'self-hosted' || ('ubuntu-latest' == 'self-hosted' && 'ubuntu-latest' || 'ubuntu-latest') }}
+    runs-on: ${{ (github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) && 'self-hosted' || ('self-hosted' == 'self-hosted' && 'ubuntu-latest' || 'self-hosted') }}
     # Per-locale override (locale.scrape_timeout_minutes in
     # chn-openstates-scrape.yml) -- this used to be a one-off hand-edit
     # directly on FL's live workflow file (raised to 24h after its default
