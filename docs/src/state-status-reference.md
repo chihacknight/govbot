@@ -48,62 +48,62 @@ run summary instead of re-classified into a separate scheme.
 
 | State | Current Session | Session Dates (verified) | Config | Should Be | Scraper | Text-Extraction | Machine-Readable Bill Text | Bill Count (current session) | Last Verified / Notes |
 |---|---|---|---|---|---|---|---|---|---|
-| AK | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (text/html, pdf) | TBD | — |
-| AL | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
+| AK | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (text/html, pdf) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
+| AL | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | AR | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (no bills yet as of audit) | TBD | — |
 | AZ | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (no bills yet as of audit) | TBD | Long-standing `S3` cookie bug, PR [#5722](https://github.com/openstates/openstates-scrapers/pull/5722) open, confirmed self-hosting does NOT fix it |
-| CA | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (text/html, pdf) | TBD | — |
-| CO | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
+| CA | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (text/html, pdf) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
+| CO | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | CT | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | Self-hosted required (Azure IP block on FTP server) |
-| DC | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
-| DE | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (pdf, text/html) | TBD | — |
+| DC | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
+| DE | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (pdf, text/html) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | FL | 2026 Regular (+ 2026F special) | TBD | Self-hosted | Active | 🔧 in progress | TBD | ❌ (pdf only) | TBD | 2026-07-23/24: found two distinct bugs — `flhouse.gov` bot detection (PR [#5724](https://github.com/openstates/openstates-scrapers/pull/5724), issue [#1386](https://github.com/openstates/issues/issues/1386)) and a separate missing-timeout hang on the same host. Both fixes pushed, awaiting maintainer review. Self-hosted required; tinyproxy path untested until amd64 image fix lands. |
 | GA | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
-| GU | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
-| HI | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (no bills yet as of audit) | TBD | WAF block (Cloudflare) per bill-format-audit |
-| IA | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
-| ID | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
-| IL | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (pdf, text/html) | TBD | Self-hosted required (Azure IPs served different content, broke title xpath) |
-| IN | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
-| KS | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (pdf, text/html) | TBD | — |
-| KY | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
-| LA | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
+| GU | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
+| HI | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (no bills yet as of audit) | TBD | WAF block (Cloudflare) per bill-format-audit (Scraper ✅ per 2026-07-21 audit) |
+| IA | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
+| ID | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
+| IL | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (pdf, text/html) | TBD | Self-hosted required (Azure IPs served different content, broke title xpath) (Scraper ✅ per 2026-07-21 audit) |
+| IN | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
+| KS | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (pdf, text/html) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
+| KY | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
+| LA | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | MA | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | Self-hosted required (malegislature.gov blocks Azure); known runner-uptime gaps have caused missed nights |
-| MD | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
-| ME | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
+| MD | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
+| ME | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | MI | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (pdf, text/html) | TBD | Fails on every hosting path — `legislature.mi.gov` doesn't serve its full TLS cert chain, not a proxy/hosting issue |
 | MN | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (text/html) | TBD | — |
 | MO | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
 | MP | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | Blank-title OCD validation crash (`S6`), fix identified, not yet filed upstream |
-| MS | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (text/html, pdf) | TBD | — |
+| MS | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (text/html, pdf) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | MT | 2025 (only active session upstream — worth double-checking this is still correct given MT meets biennially) | TBD | Not self-hosted (plain GitHub-hosted) | TBD | `P1` (disputed) | 🔧 fixed 2026-07-24 | ❌ (no version links) | ~4,495 (disputed — see notes) | 2026-07-23/24: shrink-guard blocking scrapes since 07-21; investigated at length, real duplication confirmed (~1-2%) but doesn't explain the gap between the committed baseline (~6,900 unique estimated) and format/fresh-scrape output (4,495) — cause still open. Separately, fixed the org-wide broken extract-text restart mechanism (`PAT_WORKFLOW_TRIGGER` → GitHub App token, matching scrape→format pattern); applied to this repo only so far, worth rolling out to all states. |
-| NC | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | Self-hosted required — was NOT an IP block, was frozen ~7 months for a different reason, see scraper-health.md |
-| ND | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
+| NC | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Self-hosted required — was NOT an IP block, was frozen ~7 months for a different reason, see scraper-health.md (Scraper ✅ per 2026-07-21 audit) |
+| ND | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | NE | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
 | NH | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (no version links) | TBD | Site blocks scraping 6am-9pm ET — schedule around this, not a real block |
-| NJ | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (text/html, pdf) | TBD | — |
+| NJ | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (text/html, pdf) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | NM | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (no bills yet as of audit) | TBD | Intermittent FTP server issue (confirmed via direct `curl` testing), not a permanent dead end, not hosting-related |
 | NV | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | Meets biennially, no regular session until 2027 — low bill count is expected, not broken |
-| NY | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (text/html, pdf) | TBD | — |
+| NY | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (text/html, pdf) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | OH | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (pdf, text/html) | TBD | — |
-| OK | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
+| OK | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | OR | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
 | PA | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (pdf, text/html, msword) | TBD | — |
 | PR | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (msword) | TBD | — |
-| RI | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
-| SC | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (text/html, docx) | TBD | — |
-| SD | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (text/html, pdf) | TBD | — |
-| TN | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
-| TX | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (text/html, pdf) | TBD | Blocks GitHub Actions IP ranges at the firewall — self-hosted only, see `tx-backfill-runbook.md` |
+| RI | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
+| SC | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (text/html, docx) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
+| SD | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (text/html, pdf) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
+| TN | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
+| TX | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (text/html, pdf) | TBD | Blocks GitHub Actions IP ranges at the firewall — self-hosted only, see `tx-backfill-runbook.md` (Scraper ✅ per 2026-07-21 audit) |
 | USA | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (text/xml, pdf) | TBD | — |
-| UT | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (text/xml, pdf) | TBD | — |
-| VA | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (no bills yet as of audit) | TBD | Workflow disabled since 2026-04-01, reason unclear — worth investigating |
+| UT | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (text/xml, pdf) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
+| VA | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (no bills yet as of audit) | TBD | Workflow disabled since 2026-04-01, reason unclear — worth investigating (Scraper ✅ per 2026-07-21 audit) |
 | VI | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | Source server itself offline (`billtracking.legvi.org:8082`) — not a code problem, fails on every hosting path |
-| VT | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
+| VT | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | WA | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (no version links) | TBD | — |
-| WI | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (pdf, text/html) | TBD | — |
-| WV | TBD | TBD | TBD | TBD | TBD | TBD | ✅ (text/html) | TBD | Self-hosted required (same Azure-block pattern as IL/CT/HI/MA/TN) |
-| WY | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (pdf only) | TBD | — |
+| WI | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (pdf, text/html) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
+| WV | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (text/html) | TBD | Self-hosted required (same Azure-block pattern as IL/CT/HI/MA/TN) (Scraper ✅ per 2026-07-21 audit) |
+| WY | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 
 ## Related docs
 
