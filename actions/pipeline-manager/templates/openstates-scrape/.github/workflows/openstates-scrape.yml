@@ -46,12 +46,22 @@ env:
   # self-hosted alone silently depended on a laptop being on and connected for
   # every single automatic run. Locales that were never self-hosted (the
   # literal below is "ubuntu-latest") are untouched by any of this.
-  USE_PROXY: ${{ '✏️{ locale.runner }✏️' == 'self-hosted' && !(github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) }}
+  #
+  # locale.force_self_hosted (default "false") is a separate, stronger
+  # override for locales whose real scrape duration regularly exceeds
+  # GitHub-hosted runners' hard 6-hour execution cap -- a limit `timeout-minutes`
+  # cannot raise, no matter how high it's set. Tinyproxy still runs on
+  # ubuntu-latest under the hood, so it inherits that same cap; for a locale
+  # like this, the *scheduled* run needs to land on self-hosted directly, not
+  # just via a manual workflow_dispatch opt-out (confirmed on MA: every
+  # schedule-triggered run since Tinyproxy became the self-hosted default
+  # was killed at exactly 6h00m, never completing).
+  USE_PROXY: ${{ '✏️{ locale.runner }✏️' == 'self-hosted' && '✏️{ locale.force_self_hosted }✏️' != 'true' && !(github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) }}
 
 jobs:
   scrape:
     name: "🕷️ Scrape Data"
-    runs-on: ${{ (github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) && 'self-hosted' || ('✏️{ locale.runner }✏️' == 'self-hosted' && 'ubuntu-latest' || '✏️{ locale.runner }✏️') }}
+    runs-on: ${{ ('✏️{ locale.force_self_hosted }✏️' == 'true' || (github.event_name == 'workflow_dispatch' && inputs.use-self-hosted)) && 'self-hosted' || ('✏️{ locale.runner }✏️' == 'self-hosted' && 'ubuntu-latest' || '✏️{ locale.runner }✏️') }}
     # Per-locale override (locale.scrape_timeout_minutes in
     # chn-openstates-scrape.yml) -- this used to be a one-off hand-edit
     # directly on FL's live workflow file (raised to 24h after its default

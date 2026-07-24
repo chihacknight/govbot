@@ -87,6 +87,13 @@ locales:
     scrape_timeout_minutes: "2520"
     scrape_cron: "0 4 * * *"  # Eastern
     runner: self-hosted
+    # Real scrape duration runs close to (or past) GitHub-hosted runners' hard
+    # 6h execution cap -- already being worked around by manually dispatching
+    # with use-self-hosted=true every run; this makes that the actual
+    # scheduled default instead. NOT yet applied to the live fl-legislation
+    # repo (holding off while a scrape is in progress -- see MA rollout for
+    # apply.py --test-states usage).
+    force_self_hosted: "true"
     labels:
     - working
   ga:
@@ -178,6 +185,12 @@ locales:
     scrape_timeout_minutes: "720"
     scrape_cron: "0 4 * * *"  # Eastern
     runner: self-hosted
+    # Real scrape duration (2.5-12h) regularly exceeds GitHub-hosted runners'
+    # hard 6h execution cap -- Tinyproxy doesn't help since it still runs on
+    # ubuntu-latest under the hood. Every schedule-triggered run since the
+    # Tinyproxy default (PR #75) shipped was killed at exactly 6h00m, never
+    # completing. See project_docs/state-problems.md for the full writeup.
+    force_self_hosted: "true"
   mi:
     template: openstates-scrape
     name: Michigan
