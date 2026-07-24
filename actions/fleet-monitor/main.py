@@ -58,22 +58,38 @@ def collect(config_dir, metrics_only, logs_only, dry_run, poller_records, log_fi
 
     Both legs share collect's exit contract — a degraded sweep must never look
     like a clean one: the metrics leg exits 1 when any repo had poll errors, and
-    the logs leg exits 1 when any repo's harvest erred. Partial data still ships
-    (or prints) first. An *empty* log sweep, though — no run newer than the
-    watermark — is the idempotent steady state and exits 0: nothing was degraded,
-    there was simply nothing new.
+    the logs leg exits 1 when any repo's harvest erred or a push failed. Partial
+    data still ships (or prints) first — in combined mode each leg runs to
+    completion regardless of the other's failure (metrics first, mirroring
+    ``run``), and the failures merge into one exit-1 message at the end. An
+    *empty* log sweep, though — no run newer than the watermark — is the
+    idempotent steady state and exits 0: nothing was degraded, there was simply
+    nothing new.
     """
     if not (metrics_only or logs_only):
         raise click.ClickException("pass --metrics-only and/or --logs-only")
-    log_errors = []
+    failures = []
+    if metrics_only:
+        try:
+            _collect_metrics(config_dir, poller_records, dry_run, timestamp)
+        except click.ClickException as e:
+            failures.append(str(e.message))
     if logs_only:
-        log_errors = _collect_logs(config_dir, log_fixture, watermark_file, dry_run,
-                                   _harvest_now(timestamp))
-    if not metrics_only:
-        if log_errors:
-            raise click.ClickException(f"log harvest errors on {len(log_errors)} target(s)")
-        return
+        try:
+            log_errors = _collect_logs(config_dir, log_fixture, watermark_file, dry_run,
+                                       _harvest_now(timestamp))
+            if log_errors:
+                failures.append(f"log harvest errors on {len(log_errors)} target(s)")
+        except click.ClickException as e:
+            failures.append(str(e.message))
+    if failures:
+        raise click.ClickException("; ".join(failures))
 
+
+def _collect_metrics(config_dir, poller_records, dry_run, timestamp):
+    """collect's metrics leg: poll, encode, ship (or print). Raises ClickException
+    on poll errors — after shipping what it has — so the caller decides whether
+    that failure stands alone or merges with the logs leg's."""
     records = _load_records(config_dir, poller_records)
 
     errored = _report_poll_errors(records)
@@ -91,13 +107,8 @@ def collect(config_dir, metrics_only, logs_only, dry_run, poller_records, log_fi
         click.echo(payload, nl=False)
     else:
         _push(payload)
-    if errored or log_errors:
-        parts = []
-        if errored:
-            parts.append(f"poll errors on {len(errored)} of {len(records)} repos")
-        if log_errors:
-            parts.append(f"log harvest errors on {len(log_errors)} target(s)")
-        raise click.ClickException("; ".join(parts))
+    if errored:
+        raise click.ClickException(f"poll errors on {len(errored)} of {len(records)} repos")
 
 
 @cli.command("run")
@@ -266,10 +277,11 @@ def _push(payload):
 
 
 def _harvest_now(timestamp):
-    """Tz-aware anchor for the harvester's cold-start look-back: the explicit
-    --timestamp (so a fixture render is deterministic), else the current UTC time.
-    Only the cold-start window depends on it; entry timestamps come from the log
-    lines themselves."""
+    """Tz-aware anchor for the log harvester's look-back window — which bounds
+    every sweep — and for the live fetchers' pagination boundary (one clock for
+    both, so selection never wants a run pagination didn't fetch): the explicit
+    --timestamp (so a fixture render is deterministic), else the current UTC
+    time. Entry timestamps come from the log lines themselves."""
     from datetime import datetime, timezone
 
     if timestamp is not None:
@@ -345,7 +357,11 @@ def _collect_logs(config_dir, log_fixture, watermark_file, dry_run, now):
     fleet's progress.
     """
     jurisdictions, fetch_runs, fetch_archive = _log_sources(config_dir, log_fixture, now)
-    watermarks = load_watermarks(watermark_file) if watermark_file else {}
+    watermarks = (
+        load_watermarks(watermark_file, warn=lambda message: click.echo(message, err=True))
+        if watermark_file
+        else {}
+    )
     batches, new_watermarks, errors = harvest_logs(
         jurisdictions, watermarks, fetch_runs, fetch_archive, now
     )
@@ -353,6 +369,9 @@ def _collect_logs(config_dir, log_fixture, watermark_file, dry_run, now):
         click.echo(f"log harvest error: {error}", err=True)
 
     if dry_run:
+        # One combined payload for reading and snapshotting; a real push sends
+        # one payload per workflow (below). Same streams either way — Loki
+        # derives stream identity from the labels, not the request boundaries.
         click.echo(encode_logs(batches))
         return errors
 

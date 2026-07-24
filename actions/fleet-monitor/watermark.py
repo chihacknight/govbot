@@ -21,12 +21,16 @@ import sys
 from pathlib import Path
 
 
-def load_watermarks(path) -> dict:
+def load_watermarks(path, warn=None) -> dict:
     """Read the watermark map. A missing, empty, or corrupt file reads as ``{}``
     so a cold start, a lost cache, or a truncated cache save is a bounded
     look-back, never a crash. Corruption matters because the workflow re-saves
     the cache after every run: a crash here would re-persist the corrupt file
-    and stay red every hour, whereas an empty read self-heals on the next save."""
+    and stay red every hour, whereas an empty read self-heals on the next save.
+
+    ``warn(message)`` reports the corruption; it defaults to a stderr print so
+    the module stays usable standalone, and the CLI injects its own reporter —
+    the same injectable-dependency pattern as http_util's ``sleep``."""
     p = Path(path)
     if not p.exists():
         return {}
@@ -36,10 +40,8 @@ def load_watermarks(path) -> dict:
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        print(
-            f"watermark file {p} is corrupt; starting empty (bounded look-back re-ship)",
-            file=sys.stderr,
-        )
+        warn = warn or (lambda message: print(message, file=sys.stderr))
+        warn(f"watermark file {p} is corrupt; starting empty (bounded look-back re-ship)")
         return {}
 
 

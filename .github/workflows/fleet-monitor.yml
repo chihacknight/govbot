@@ -81,9 +81,9 @@ jobs:
             --watermark-file .watermarks/logs.json
 
       # Persist the advanced watermark for the next sweep, even if the run failed
-      # after a partial log ship (the CLI saves the watermark only after a
-      # successful push, so a failed push leaves it untouched and the next sweep
-      # retries those runs).
+      # after a partial log ship. Pushes go per workflow: a failed push holds only
+      # that workflow's watermark entry while the rest advance and are saved, so
+      # the next sweep re-ships only the failed workflow's runs.
       - name: Save log watermark
         if: always()
         uses: actions/cache/save@v4

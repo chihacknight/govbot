@@ -277,7 +277,10 @@ is a pass-through against a live API.
 The logs leg is snapshot-tested the same way. Committed fixture archives under
 [fixtures/log-runs/](fixtures/log-runs/) (a failed run and a successful one) render
 byte-identically to [__snapshots__/logs-payload.json](__snapshots__/logs-payload.json)
-via `collect --logs-only --dry-run`, pinned by `--timestamp`. Around that, offline
+via `collect --logs-only --dry-run`, pinned by `--timestamp`. (Dry-run prints the
+streams as one combined payload; a real push sends one payload per workflow — same
+streams either way, since Loki derives stream identity from labels, not request
+boundaries.) Around that, offline
 unit checks lock: the Loki shipper (labeled batches → deterministic Loki JSON, labels
 capped at org/state/workflow/outcome, run id in structured metadata not labels, an
 un-encodable batch skipped); the watermark store (missing/empty file reads as `{}`,

@@ -1019,6 +1019,83 @@ assert "log harvest errors on 1 target(s)" in combined, combined
 print("✓ collect --logs-only: per-repo harvest errors exit 1 (degraded never looks clean)")
 EOF
 
+# Combined mode (--metrics-only --logs-only): each leg runs to completion
+# regardless of the other's failure — partial data still ships (or prints)
+# first — and the failures merge into one exit-1 message. Dry-run: both payloads
+# print even though the poller fixture carries an errored repo.
+if pipenv run python3 main.py collect --metrics-only --logs-only --dry-run \
+    --poller-records fixtures/poller-records.jsonl --log-fixture fixtures/log-runs \
+    --timestamp 1784635200 > "$clean_out" 2> "$stderr_tmp"; then
+  echo "✗ combined collect with an errored poller record should exit nonzero"
+  exit 1
+fi
+if ! grep -q '^fleet_workflow_run,' "$clean_out" || ! grep -q '"streams":' "$clean_out"; then
+  echo "✗ combined dry-run must print BOTH the metrics payload and the logs payload; got:"
+  cat "$clean_out"
+  exit 1
+fi
+if ! grep -q 'poll errors on 1 of 5 repos' "$stderr_tmp"; then
+  echo "✗ combined collect should still report the poll errors; got:"
+  cat "$stderr_tmp"
+  exit 1
+fi
+echo "✓ collect combined mode: both payloads print, poll errors still exit 1"
+
+# Combined push mode with Loki down: the metrics leg must still ship before the
+# logs failure exits 1 — one leg's failure never silences the other's data.
+pipenv run python3 - "$clean_records" "$logs_wm" <<'EOF'
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+
+import email.message
+from click.testing import CliRunner
+
+import main
+
+clean_records, wm = sys.argv[1], sys.argv[2]
+if os.path.exists(wm):
+    os.remove(wm)
+
+influx_pushes, loki_pushes = [], []
+class FakeResponse:
+    def read(self): return b""
+    def __enter__(self): return self
+    def __exit__(self, *args): return False
+def loki_down_urlopen(request, timeout=None):
+    # 413 (fail-fast 4xx) rather than 5xx: the real retry path would sleep
+    # for real here, since the CLI cannot inject a fake sleep.
+    if request.data.startswith(b'{"streams"'):
+        loki_pushes.append(request.data)
+        raise urllib.error.HTTPError(request.full_url, 413, "Payload Too Large",
+                                     email.message.Message(), None)
+    influx_pushes.append(request.data)
+    return FakeResponse()
+urllib.request.urlopen = loki_down_urlopen
+
+result = CliRunner().invoke(main.cli, [
+    "collect", "--metrics-only", "--logs-only",
+    "--poller-records", clean_records, "--log-fixture", "fixtures/log-runs",
+    "--watermark-file", wm, "--timestamp", "1784635200",
+], env={
+    "GRAFANA_PUSH_URL": "https://push.test/api/v1/push/influx/write",
+    "GRAFANA_PUSH_USER": "123456", "GRAFANA_PUSH_KEY": "metrics-key",
+    "GRAFANA_LOGS_URL": "https://l.test/loki/api/v1/push",
+    "GRAFANA_LOGS_USER": "42", "GRAFANA_LOGS_KEY": "logs-key",
+})
+combined = result.output + (result.stderr or "")
+assert result.exit_code != 0, "a failed logs leg must still exit nonzero in combined mode"
+assert len(influx_pushes) == 1, "the metrics leg must ship even when the logs leg fails"
+assert loki_pushes, "the logs leg must have attempted its pushes"
+assert "log push failed" in combined, combined
+saved = json.load(open(wm))
+assert saved == {}, f"no watermark may advance when every Loki push failed: {saved}"
+os.remove(wm)
+print("✓ collect combined mode: metrics ship even when Loki is down; failures merge into exit 1")
+EOF
+
 # probe-loki classification: a bad credential (HTTP 401 on every push) is a
 # probe-SETUP failure, not an ingest-window rejection — it must never print the
 # adopt-the-fallback verdict. Only HTTP 400 is evidence about the window.

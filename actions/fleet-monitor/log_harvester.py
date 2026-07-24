@@ -192,21 +192,23 @@ def _select_new(runs, last_id, cutoff_ns):
 _bad_label = is_bad_label_value
 
 
-def harvest_logs(jurisdictions, watermarks, fetch_runs, fetch_archive, now,
-                 lookback_hours=LOOKBACK_HOURS):
+def harvest_logs(jurisdictions, watermarks, fetch_runs, fetch_archive, now):
     """Harvest new-run logs across the fleet as labeled batches.
 
     ``fetch_runs(org, repo, workflow) -> [run]`` and
     ``fetch_archive(org, repo, run_id) -> bytes`` are injectable (live GitHub by
     default via ``github_log_fetchers``; fakes in tests). ``watermarks`` maps
     ``"<org>/<repo>/<workflow>"`` to the last shipped run id. ``now`` is a
-    tz-aware datetime anchoring the cold-start look-back.
+    tz-aware datetime anchoring the look-back window (which bounds every sweep);
+    pass the same anchor to ``github_log_fetchers`` so pagination agrees with it.
 
     Returns ``(batches, new_watermarks, errors)``. Never raises per repo: a failed
     run listing or archive fetch is recorded in ``errors`` and skipped, exactly as
     the poller records a per-repo failure — one bad repo never aborts the sweep.
     """
-    cutoff_ns = int((now - timedelta(hours=lookback_hours)).timestamp()) * 1_000_000_000
+    # LOOKBACK_HOURS directly — not a parameter — so the selection window and the
+    # live fetchers' pagination boundary share one constant and cannot diverge.
+    cutoff_ns = int((now - timedelta(hours=LOOKBACK_HOURS)).timestamp()) * 1_000_000_000
     grouped = {}
     new_watermarks = dict(watermarks)
     errors = []
