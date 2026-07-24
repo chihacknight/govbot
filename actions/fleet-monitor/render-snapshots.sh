@@ -891,10 +891,14 @@ push_logs('{"streams":[]}', env={"GRAFANA_LOGS_URL": "https://l.test/loki/api/v1
                                  "GRAFANA_LOGS_USER": "42", "GRAFANA_LOGS_KEY": "k"})
 request = calls[0]
 assert request.full_url == "https://l.test/loki/api/v1/push" and request.get_method() == "POST"
-assert request.data == b'{"streams":[]}'
+# The body is gzip-compressed (log payloads are multi-MB); Loki decodes it via
+# Content-Encoding. Decompress to prove the payload round-trips.
+assert request.get_header("Content-encoding") == "gzip", request.header_items()
+import gzip as _gzip
+assert _gzip.decompress(request.data) == b'{"streams":[]}', request.data
 assert request.get_header("Authorization") == "Basic " + base64.b64encode(b"42:k").decode()
 assert request.get_header("Content-type") == "application/json", request.header_items()
-print("✓ logs push: Loki wire format (URL, POST, Basic auth, application/json) + missing-env guard")
+print("✓ logs push: Loki wire format (URL, POST, Basic auth, gzip json body) + missing-env guard")
 EOF
 
 # CLI logs leg: fixture archives in -> exact Loki push payload out (dry-run),
@@ -1001,6 +1005,7 @@ EOF
 # needs attention, but it never un-ships the fleet's progress). The next sweep
 # retries only the failed workflow.
 pipenv run python3 - "$logs_wm" <<'EOF'
+import gzip
 import json
 import os
 import sys
@@ -1023,7 +1028,7 @@ class FakeResponse:
     def __exit__(self, *args): return False
 def wy_fails_urlopen(request, timeout=None):
     pushes.append(request.data)
-    if b'"state":"wy"' in request.data:
+    if b'"state":"wy"' in gzip.decompress(request.data):  # bodies are gzipped
         raise urllib.error.HTTPError(request.full_url, 413, "Payload Too Large",
                                      email.message.Message(), None)
     return FakeResponse()
@@ -1156,9 +1161,10 @@ class FakeResponse:
     def __enter__(self): return self
     def __exit__(self, *args): return False
 def loki_down_urlopen(request, timeout=None):
-    # 413 (fail-fast 4xx) rather than 5xx: the real retry path would sleep
-    # for real here, since the CLI cannot inject a fake sleep.
-    if request.data.startswith(b'{"streams"'):
+    # Distinguish the legs by endpoint, not body — the Loki body is now gzipped.
+    # 413 (fail-fast 4xx) rather than 5xx: the real retry path would sleep for
+    # real here, since the CLI cannot inject a fake sleep.
+    if "/loki/" in request.full_url:
         loki_pushes.append(request.data)
         raise urllib.error.HTTPError(request.full_url, 413, "Payload Too Large",
                                      email.message.Message(), None)

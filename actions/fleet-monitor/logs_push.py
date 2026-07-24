@@ -11,13 +11,24 @@ logs go to Loki as JSON, metrics to Influx as line protocol.
 """
 
 import base64
+import gzip
 import os
 
 from http_util import request_with_retry
 
+# Log payloads dwarf the metrics one: a single verbose failed run ships its full
+# log — megabytes (a real Florida sweep measured ~9 MB). Two consequences the
+# metrics push never faces, both handled here:
+#   - gzip the body (log text compresses ~10x) so the upload is small and fast;
+#     Loki accepts a gzipped push via Content-Encoding. Without it a multi-MB POST
+#     blows the default socket write timeout.
+#   - a generous timeout for the largest bodies over a slow uplink.
+LOGS_PUSH_TIMEOUT = 120
+
 
 def push_logs(payload: str, env=os.environ):
-    """POST the Loki JSON payload; raises RuntimeError on missing env or failed push."""
+    """POST the Loki JSON payload (gzip-compressed); raises RuntimeError on missing
+    env or failed push."""
     missing = [
         name
         for name in ("GRAFANA_LOGS_URL", "GRAFANA_LOGS_USER", "GRAFANA_LOGS_KEY")
@@ -28,9 +39,11 @@ def push_logs(payload: str, env=os.environ):
     credentials = f"{env['GRAFANA_LOGS_USER']}:{env['GRAFANA_LOGS_KEY']}"
     request_with_retry(
         env["GRAFANA_LOGS_URL"],
-        data=payload.encode(),
+        data=gzip.compress(payload.encode()),
+        timeout=LOGS_PUSH_TIMEOUT,
         headers={
             "Authorization": "Basic " + base64.b64encode(credentials.encode()).decode(),
             "Content-Type": "application/json",
+            "Content-Encoding": "gzip",
         },
     )
