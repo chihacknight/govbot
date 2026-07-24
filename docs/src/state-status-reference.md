@@ -51,7 +51,7 @@ run summary instead of re-classified into a separate scheme.
 | AK | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (text/html, pdf) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | AL | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | AR | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (no bills yet as of audit) | TBD | — |
-| AZ | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (no bills yet as of audit) | TBD | Long-standing `S3` cookie bug, PR [#5722](https://github.com/openstates/openstates-scrapers/pull/5722) open, confirmed self-hosting does NOT fix it |
+| AZ | TBD | TBD | TBD | TBD | ✅ | 🔄 running | TBD | 2,190 | Fixed 2026-07-24 (`--fastmode` cache poisoning, not the old cookie bug) — first successful scrape ever, live via PR [#5742](https://github.com/openstates/openstates-scrapers/pull/5742). See `project_docs/scraper-status/not-working.md` for the full writeup |
 | CA | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (text/html, pdf) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | CO | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | CT | TBD | TBD | TBD | TBD | `P1` | TBD | ❌ (pdf only) | TBD | Hit shrink-guard 2026-07-21 — duplicate bill objects under different UUIDs (1.4-2.9x inflation), single-session not multi-session. Cleared and re-dispatched same day per scraper-status.md; not independently re-verified since (see MT for a case where a similar 'fixed' claim didn't fully hold up). Self-hosted required (Azure IP block on FTP server) |
@@ -118,7 +118,7 @@ failed. Only non-`fl`/`mt` states are P1-noted from the same 07-21 audit as the 
 | State | Paths Tried | Clean Runs (per path) | Best Path So Far | Notes |
 |---|---|---|---|---|
 | AR | Tinyproxy, MacBookPro | Tinyproxy 6/6, MacBookPro 0/1 | Tinyproxy | MacBookPro has only one real (non-cancelled) data point, and it failed — not enough to judge that path yet |
-| AZ | Tinyproxy, MacBookPro, GitHub-hosted-plain | 0/6, 0/1, 0/2 | None — fails everywhere | `S3_SESSION_CONFIG` on all three paths identically — confirms not hosting-related, PR [#5722](https://github.com/openstates/openstates-scrapers/pull/5722) open |
+| AZ | Tinyproxy, MacBookPro, GitHub-hosted-plain | 0/6, 0/1, 0/2 pre-fix; ✅ clean on Tinyproxy post-fix | Tinyproxy | Not a hosting issue at all — was `--fastmode` cache poisoning, identical failure on every path was the tell. Fixed 2026-07-24, PR [#5742](https://github.com/openstates/openstates-scrapers/pull/5742) |
 | CT | Tinyproxy, MacBookPro, GitHub-hosted-plain | Tinyproxy 4/5, MacBookPro 2/3, GitHub-hosted-plain 0/1 | Tinyproxy or MacBookPro | GitHub-hosted-plain's one real data point was `S1_OUT_OF_SESSION` — a soft/expected failure, not evidence the path itself is broken |
 | FL | Tinyproxy, MacBookPro | 0/6, 0/3 | None confirmed yet | See dedicated FL section above — two distinct bugs found and fixed 2026-07-23/24, awaiting merge |
 | GA | GitHub-hosted-plain only | 2/10 (+4 no clear signal) | Only path tried | Never tried Tinyproxy or MacBookPro |
