@@ -253,8 +253,48 @@ else
   EXISTING_COUNT=0
 fi
 
+# OpenStates assigns a fresh random UUID to every bill file on every scrape,
+# even when the underlying bill content hasn't changed -- a raw file-count
+# comparison can't tell "the site actually removed bills" (real, worth
+# blocking) apart from "same bills, some stale duplicate-UUID copies of them
+# already sitting in the repo" (not a real shrink at all). Confirmed on MT
+# (2026-07-24): 2,529 of 4,495 real bills each had exactly one byte-identical
+# duplicate under a different UUID already committed -- from a prior run's
+# auto-save that never got cleaned up because *that* run also tripped this
+# same guard, which skips the wipe that would normally clean it out. That
+# alone explained the entire 7,024-vs-4,495 gap. Counting distinct
+# `identifier` fields instead of raw files means the guard only trips on an
+# actual drop in real bills, and doesn't keep compounding once triggered.
+# Scoped to bill_*.json specifically -- vote_event/person/organization/
+# jurisdiction objects also have their own unrelated `identifier` fields
+# (e.g. a vote event's own identifier, not the bill's), and mixing those in
+# would inflate the distinct count with values that have nothing to do with
+# bill duplication.
+count_distinct_identifiers() {
+  local dir="$1"
+  if [ -d "$dir" ]; then
+    find "$dir" -type f -name 'bill_*.json' -print0 2>/dev/null \
+      | xargs -0 jq -r '.identifier // empty' 2>/dev/null \
+      | sort -u | wc -l | tr -d ' '
+  else
+    echo 0
+  fi
+}
+
+REAL_SHRINK=false
 if [ "$exit_code" -eq 0 ] && [ "$COUNT_JSON" -gt 0 ] && [ "$COUNT_JSON" -lt "$EXISTING_COUNT" ]; then
-  echo "⚠️ Fresh scrape produced ${COUNT_JSON} files, fewer than the ${EXISTING_COUNT} already saved -- refusing to overwrite. Leaving existing data in place; this run's output is not being committed." >&2
+  FRESH_IDENTIFIERS=$(count_distinct_identifiers "$JSON_DIR")
+  EXISTING_IDENTIFIERS=$(count_distinct_identifiers "$EXISTING_DIR")
+  echo "ℹ️ File count shrank (${COUNT_JSON} < ${EXISTING_COUNT} files) -- checking distinct bill identifiers: fresh=${FRESH_IDENTIFIERS}, existing=${EXISTING_IDENTIFIERS}"
+  if [ "$FRESH_IDENTIFIERS" -lt "$EXISTING_IDENTIFIERS" ]; then
+    REAL_SHRINK=true
+  else
+    echo "✅ Distinct bill identifiers did not shrink -- file-count drop looks like stale-duplicate cleanup, not real data loss. Proceeding with wipe+replace."
+  fi
+fi
+
+if [ "$REAL_SHRINK" = "true" ]; then
+  echo "⚠️ Fresh scrape produced ${FRESH_IDENTIFIERS} distinct bills, fewer than the ${EXISTING_IDENTIFIERS} already saved -- refusing to overwrite. Leaving existing data in place; this run's output is not being committed." >&2
   FAILURE_TYPE_OVERRIDE="P1_SHRINKING_OUTPUT"
   COUNT_JSON=0  # so the summary/downstream logic reports this as "nothing new," not a success
 elif [ "$exit_code" -eq 0 ] && [ "$COUNT_JSON" -gt 0 ]; then
