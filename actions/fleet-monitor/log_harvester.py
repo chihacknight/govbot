@@ -29,11 +29,14 @@ Three rules keep the watermark honest against partial progress:
   rationale, and loses it *by policy* rather than by a silent page cutoff.
 
 Timestamps: an hourly collector ships logs from runs that finished up to an hour
-(or, on a cold cache, a day) earlier. Loki rejects samples older than its ingest
-window, so the ingest-window behavior is probed before trusting event-time
-timestamps — see README "Logs: harvester + shipper" for the probe and the chosen
-strategy. Each entry preserves the run's original event time; the shipper carries
-run/job identity in structured metadata, never labels.
+(or, on a cold cache, a day) earlier — older than Grafana Cloud Loki's ingest
+window, which was probed and found to *silently discard* such samples (it answers
+the push 204, then drops the line). So every entry is stamped at **collection
+time** — this sweep's `now`, plus a per-stream offset for ordering — which always
+lands inside the window. The run's real event time is preserved as ``event_time``
+structured metadata, so logs stay correlatable to when they happened without
+relying on the index timestamp. run/job identity rides in metadata too, never
+labels. See README "Logs" for the probe result and this decision.
 """
 
 import os
@@ -83,6 +86,15 @@ def _to_ns(token: str):
     if fraction:
         nanoseconds += int((fraction + "000000000")[:9])
     return nanoseconds
+
+
+def _ns_to_iso(nanoseconds: int) -> str:
+    """Render epoch nanoseconds as an RFC 3339 UTC string, losslessly (9 fractional
+    digits) — the form the original log line carried. Kept as structured metadata
+    (``event_time``) so an entry stamped at collection time is still correlatable
+    to when the event actually happened."""
+    whole = datetime.fromtimestamp(nanoseconds // 1_000_000_000, tz=timezone.utc)
+    return whole.strftime("%Y-%m-%dT%H:%M:%S") + f".{nanoseconds % 1_000_000_000:09d}Z"
 
 
 def unpack_archive(archive_bytes: bytes):
@@ -161,8 +173,12 @@ def harvest_run(run, archive_bytes, now):
     base = {"run_id": str(run["id"])}
     if run.get("html_url"):
         base["run_url"] = run["html_url"]
+    # timestamp_ns here is the original *event* time — harvest_logs re-stamps it to
+    # collection time before shipping (see the module "Timestamps" note), but keeps
+    # it as the ordering key and preserves it as event_time metadata.
     return [
-        {"timestamp_ns": stamp, "line": message, "metadata": {**base, "job": job}}
+        {"timestamp_ns": stamp, "line": message,
+         "metadata": {**base, "job": job, "event_time": _ns_to_iso(stamp)}}
         for stamp, message, job in parsed
     ]
 
@@ -251,16 +267,29 @@ def harvest_logs(jurisdictions, watermarks, fetch_runs, fetch_archive, now):
                 candidate = run["id"]
             if candidate > 0:
                 new_watermarks[key] = candidate
-    # Each batch names the watermark entry it belongs to, so the push side can
-    # ship per workflow and advance only the watermarks whose batches actually
-    # made it to Loki — one un-pushable payload must not block (or falsely
-    # advance) the rest of the fleet. encode_logs reads labels/entries only and
-    # ignores the extra key.
-    batches = [
-        {"labels": {"org": org, "state": state, "workflow": workflow, "outcome": outcome},
-         "watermark_key": key, "entries": entries}
-        for (org, state, workflow, outcome, key), entries in sorted(grouped.items())
-    ]
+    # Re-stamp every entry at collection time (see the module "Timestamps" note):
+    # this sweep's `now`, plus a per-stream nanosecond offset assigned in
+    # event-time order. Grafana Cloud silently discards samples older than its
+    # ingest window (~hours) — accepting the push with a 204 but dropping the
+    # line — so an event-time stamp on an older log would vanish. A collection-time
+    # stamp always lands inside the window; the true event time rides in the
+    # event_time metadata (added in harvest_run). The offset keeps each stream's
+    # entries uniquely ordered and, because it counts up from `now`, strictly
+    # after anything an earlier sweep shipped to the same stream.
+    collection_ns = int(now.timestamp()) * 1_000_000_000
+    batches = []
+    for (org, state, workflow, outcome, key), entries in sorted(grouped.items()):
+        entries.sort(key=lambda entry: entry["timestamp_ns"])  # true event-time order
+        for offset, entry in enumerate(entries):
+            entry["timestamp_ns"] = collection_ns + offset
+        # Each batch names the watermark entry it belongs to, so the push side can
+        # ship per workflow and advance only the watermarks whose batches actually
+        # made it to Loki. encode_logs reads labels/entries only and ignores the key.
+        batches.append({
+            "labels": {"org": org, "state": state, "workflow": workflow, "outcome": outcome},
+            "watermark_key": key,
+            "entries": entries,
+        })
     return batches, new_watermarks, errors
 
 

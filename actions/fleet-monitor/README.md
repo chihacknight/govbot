@@ -83,8 +83,8 @@ run logs to Grafana Cloud Loki — never the same run twice — in three modules
 - **[logs_shipper.py](logs_shipper.py)** + **[logs_push.py](logs_push.py)** — a pure
   encoder from labeled batches to the Loki push payload (reusing http_util's
   retry/backoff POST). Stream labels are capped at `org`/`state`/`workflow`/`outcome`;
-  run and job ids are high-cardinality, so they ride in each entry's Loki
-  **structured metadata**, never as labels. Pushes go **per workflow** — one payload
+  run id, job, and the original `event_time` are high-cardinality, so they ride in
+  each entry's Loki **structured metadata**, never as labels. Pushes go **per workflow** — one payload
   per watermark entry, each watermark advancing only after its own payload lands —
   so one un-pushable payload (an oversized recovery sweep, say) fails only its own
   workflow's logs and holds only its own watermark, never the whole fleet's.
@@ -92,21 +92,24 @@ run logs to Grafana Cloud Loki — never the same run twice — in three modules
 ### Ingest window (the retired risk)
 
 An hourly collector ships logs from runs that finished up to an hour — or, on a lost
-cache, a day — earlier, and Loki rejects samples older than its ingest window. That
-is the PRD's first risk to retire, so it is probed, not assumed: `probe-loki` pushes
-one line per age (1–24 h old) and reports which the real endpoint accepts.
+cache, a day — earlier, older than Loki's ingest window. The PRD's first risk to
+retire, so it was probed, not assumed. `probe-loki` pushes one line per age (1–24 h
+old) and — crucially — **queries each back**, because the HTTP status alone lies:
+Grafana Cloud answers the push `204` and then *silently discards* a sample older than
+its window, so a status-only probe reports a false "accepted."
 
-**Decision**: ship each entry stamped with its **original event time** (so logs are
-queryable by when the event happened, and correlate with the metrics), because the
-maximum age of any shipped entry is bounded — hourly cadence plus the 24 h look-back
-cap it at ~25 h — and Grafana Cloud Loki's default reject-old-samples window is 168 h
-(7 days), comfortably beyond that. **Probed and confirmed**: `probe-loki` run against
-a Grafana Cloud stack (`logs-prod-036`) accepted all ages from 1 h to 24 h old, so
-event-time timestamps land within the window across the whole look-back. **Fallback**
-(only if a probe ever shows entries < 24 h old rejected):
-ship at collection time and carry the original event time in structured metadata
-alongside the run id — the harvester already threads event time through every entry,
-so the change is localized to the shipper's timestamp choice.
+**Probed result**: on the validated Grafana Cloud stack (`logs-prod-036`), only the
+last ~2 h of ages were actually queryable; everything older was accepted-then-dropped.
+The default 168 h reject window did **not** apply. So the event-time strategy would
+lose every log from a run that finished more than ~2 h before the sweep — the whole
+recovery window and any slow run.
+
+**Decision (fallback, adopted)**: stamp every entry at **collection time** — this
+sweep's `now`, plus a per-stream nanosecond offset for ordering — which always lands
+inside the window. The run's real event time is preserved as `event_time` structured
+metadata, so logs stay correlatable to when they happened (display it as a column in
+Grafana) without depending on the index timestamp. Event-time ordering is preserved:
+the offsets are assigned in event-time order within each stream.
 
 ### Budgets
 
@@ -138,7 +141,7 @@ so the change is localized to the shipper's timestamp choice.
 | `GRAFANA_PUSH_URL` | Influx write endpoint, `https://influx-…/api/v1/push/influx/write` |
 | `GRAFANA_PUSH_USER` / `GRAFANA_PUSH_KEY` | metrics instance ID / access-policy token (`metrics:write`) |
 | `GRAFANA_LOGS_URL` | Loki push endpoint, `https://logs-…/loki/api/v1/push` (logs leg + `probe-loki`) |
-| `GRAFANA_LOGS_USER` / `GRAFANA_LOGS_KEY` | logs instance ID / access-policy token (`logs:write`) |
+| `GRAFANA_LOGS_USER` / `GRAFANA_LOGS_KEY` | logs instance ID / access-policy token (`logs:write`; also `logs:read` if you run `probe-loki`, whose query-back reads the entries back) |
 | `GRAFANA_QUERY_URL` | Prometheus API base, `https://prometheus-…/api/prom` (live-check only) |
 | `GRAFANA_QUERY_USER` / `GRAFANA_QUERY_KEY` | Prometheus instance ID / token (`metrics:read`, live-check only) |
 
@@ -165,8 +168,9 @@ pipenv run python main.py collect --metrics-only --config-dir ../pipeline-manage
 GITHUB_TOKEN=$(gh auth token) pipenv run python main.py collect --logs-only \
   --config-dir ../pipeline-manager --watermark-file .watermarks/logs.json --dry-run
 
-# Retire the Loki ingest-window risk before launch: push one line per age
-# (1–24 h old) and see which the endpoint accepts (needs GRAFANA_LOGS_* vars):
+# Diagnose the Loki ingest window: push one line per age (1–24 h old) and query
+# each BACK to see which actually landed — Grafana Cloud 204s a too-old push then
+# silently drops it (needs GRAFANA_LOGS_* vars; the token also needs logs:read):
 pipenv run python main.py probe-loki
 
 # End-to-end proof: poll, push, then query the series back (needs all six
@@ -302,11 +306,12 @@ one re-ships next sweep); `collect --logs-only`'s exit contract (harvest errors 
 empty (bounded re-ship, never an hourly-recurring crash); run-listing pagination
 (stops at the look-back boundary anchored to the harvest `now`, short pages, the
 page cap, and unparseable timestamps never faking oldness); the log-fixture
-jurisdictions validating against `fleet-record.schema.json`; job identity pinned in
-structured metadata; that `run` wires the logs leg only when a log source is
-present; `probe-loki`'s credential-free skip path; and `probe-loki`'s
-classification (a bad key is a setup failure, never an ingest-window verdict). The
-real ingest-window probe runs only with `GRAFANA_LOGS_*` set.
+jurisdictions validating against `fleet-record.schema.json`; job identity and the
+original `event_time` pinned in structured metadata while entries carry
+collection-time index stamps; that `run` wires the logs leg only when a log source
+is present; `probe-loki`'s credential-free skip path, its bad-key exit, and its
+query-back detecting a silently-discarded (204-but-dropped) age against a fake
+Loki. The real ingest-window probe runs only with `GRAFANA_LOGS_*` set.
 
 ```bash
 ../../scripts/before-snapshots.sh __snapshots__

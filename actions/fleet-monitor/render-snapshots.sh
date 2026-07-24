@@ -726,8 +726,16 @@ assert errors == [] and len(batches) == 1, (errors, batches)
 assert batches[0]["labels"] == {"org": "o", "state": "wy", "workflow": "w.yml", "outcome": "failure"}
 assert batches[0]["watermark_key"] == "o/r/w.yml", "batch must name its watermark entry"
 assert [e["line"] for e in batches[0]["entries"]] == ["building", "ERROR: boom"], "group markers dropped, full logs kept"
-assert batches[0]["entries"][0]["metadata"] == {"run_id": "100", "run_url": "u/100", "job": "1_j"}, \
-    "run AND job identity ride in structured metadata"
+# Entries are stamped at COLLECTION time (NOW), not event time, with a per-stream
+# offset for ordering — Grafana Cloud silently discards event-time-stamped old
+# logs. The real event time is preserved as event_time metadata.
+collection_ns = int(NOW.timestamp()) * 1_000_000_000
+assert [e["timestamp_ns"] for e in batches[0]["entries"]] == [collection_ns, collection_ns + 1], \
+    f"entries must be stamped at collection time + offset: {[e['timestamp_ns'] for e in batches[0]['entries']]}"
+assert batches[0]["entries"][0]["metadata"] == {
+    "run_id": "100", "run_url": "u/100", "job": "1_j",
+    "event_time": "2026-07-21T11:00:01.000000000Z"}, batches[0]["entries"][0]["metadata"]
+assert batches[0]["entries"][1]["metadata"]["event_time"] == "2026-07-21T11:00:03.000000000Z"
 assert wm == {"o/r/w.yml": 100}
 
 big = "".join(f"2026-07-21T11:00:00.0000000Z line {i}\n" for i in range(250))
@@ -911,7 +919,14 @@ assert all(set(s["stream"]) == {"org", "state", "workflow", "outcome"} for s in 
 assert all(value[2]["run_id"] for s in obj["streams"] for value in s["values"]), "run id in structured metadata"
 assert all(value[2]["job"] == "1_scrape" for s in obj["streams"] for value in s["values"]), \
     "job identity (archive member name) in structured metadata"
-print("✓ logs snapshot: fixture archives render to the exact Loki payload (noise dropped, labels capped)")
+# Entries are stamped at collection time (the pinned --timestamp 1784635200 =
+# 1784635200000000000 ns), not their 2026-07-21 event time; the event time is
+# preserved as event_time metadata so it survives the collection-time stamping.
+assert all(int(value[0]) >= 1784635200000000000 for s in obj["streams"] for value in s["values"]), \
+    "entries must be stamped at collection time, not their older event time"
+assert all(value[2]["event_time"].startswith("2026-07-21T") for s in obj["streams"] for value in s["values"]), \
+    "original event time must be preserved as event_time metadata"
+print("✓ logs snapshot: fixture archives render to the exact Loki payload (collection-time stamps, event_time kept)")
 EOF
 
 # The log fixture's jurisdiction records are full fleet-record-shaped and
@@ -1172,9 +1187,8 @@ os.remove(wm)
 print("✓ collect combined mode: metrics ship even when Loki is down; failures merge into exit 1")
 EOF
 
-# probe-loki classification: a bad credential (HTTP 401 on every push) is a
-# probe-SETUP failure, not an ingest-window rejection — it must never print the
-# adopt-the-fallback verdict. Only HTTP 400 is evidence about the window.
+# probe-loki: a bad credential (HTTP 401 on every push) exits nonzero without any
+# ingest-window verdict — a failed push says nothing about the window.
 pipenv run python3 - <<'EOF'
 import email.message
 import urllib.error
@@ -1195,11 +1209,59 @@ result = CliRunner().invoke(main.cli, ["probe-loki"], env={
     "GRAFANA_LOGS_URL": "https://l.test/loki/api/v1/push",
     "GRAFANA_LOGS_USER": "42", "GRAFANA_LOGS_KEY": "bad-key"})
 combined = result.output + (result.stderr or "")
-assert "probe setup failure (HTTP 401)" in combined, combined
-assert "adopt the ship-at-collection-time fallback" not in combined, \
-    f"a bad key must not read as an ingest-window rejection: {combined}"
-assert "fix the credentials/endpoint" in combined, combined
-print("✓ probe-loki: a bad credential is a setup failure, never an ingest-window verdict")
+assert result.exit_code != 0, combined
+assert "push failed (HTTP 401)" in combined and "every probe push failed" in combined, combined
+assert "queryable" not in combined and "ingest window" not in combined, \
+    f"a failed push must not produce a window verdict: {combined}"
+print("✓ probe-loki: a bad credential exits nonzero with no ingest-window verdict")
+EOF
+
+# probe-loki query-back: the truth-teller. Push succeeds (204) for every age, but
+# only ages ≤2h are queryable; the probe must report the ~2h window and name the
+# older ages as silently discarded — NOT trust the 204. Offline: a fake urlopen
+# 204s pushes and answers query_range with data only for age ≤ 2.
+pipenv run python3 - <<'EOF'
+import re
+import urllib.parse
+import urllib.request
+
+from click.testing import CliRunner
+
+import main
+
+
+class Resp:
+    def __init__(self, body):
+        self._body = body
+    def read(self):
+        return self._body
+    def __enter__(self):
+        return self
+    def __exit__(self, *args):
+        return False
+
+
+def fake_urlopen(request, timeout=None):
+    if request.data is not None:          # a push (POST) — accept with 204/empty
+        return Resp(b"")
+    query = urllib.parse.parse_qs(urllib.parse.urlparse(request.full_url).query)["query"][0]
+    age = int(re.search(r'age_hours="(\d+)"', query).group(1))
+    # Simulate Grafana Cloud silently dropping anything older than 2h.
+    if age <= 2:
+        return Resp(b'{"data":{"result":[{"values":[["1","x"]]}]}}')
+    return Resp(b'{"data":{"result":[]}}')
+
+
+urllib.request.urlopen = fake_urlopen
+result = CliRunner().invoke(main.cli, ["probe-loki"], env={
+    "GRAFANA_LOGS_URL": "https://l.test/loki/api/v1/push",
+    "GRAFANA_LOGS_USER": "42", "GRAFANA_LOGS_KEY": "rw-key"})
+combined = result.output + (result.stderr or "")
+assert result.exit_code == 0, combined
+assert " 1h old: accepted AND queryable" in combined, combined
+assert " 3h old: pushed (204) but silently discarded" in combined, combined
+assert "ingest window ≈ 2h" in combined, combined
+print("✓ probe-loki: query-back detects silent discard and reports the real ~2h window")
 EOF
 
 # A malformed config on the logs-only path fails with a clean CLI error line,

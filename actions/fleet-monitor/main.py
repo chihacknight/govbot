@@ -506,20 +506,27 @@ def live_check(config_dir):
 
 @cli.command("probe-loki")
 def probe_loki():
-    """Probe the Loki ingest window: push one line per age (1–24 h old), report
-    which the endpoint accepts, and skip without credentials.
+    """Probe the real Loki ingest window: push one line per age (1–24 h old) and
+    **query each back**, reporting which ages are actually retrievable.
 
-    The logs risk the PRD flags first: an hourly collector ships logs from runs
-    that finished hours earlier, and Loki rejects entries older than its ingest
-    window. This retires that risk empirically before trusting event-time
-    timestamps — each age is its own push, so a rejected age (Loki answers HTTP
-    400, "entry too far behind") is isolated to that age, not the whole batch. It
-    writes ~24 throwaway lines under a ``probe`` label (not a fleet label), so it
-    is safe to run against the real stack. Needs GRAFANA_LOGS_{URL,USER,KEY};
-    exits 0 with a skip notice otherwise, so a credential-free CI run passes.
+    The HTTP status alone lies. Grafana Cloud answers a too-old push ``204`` and
+    then *silently discards* the line, so a status-only probe reports a false
+    "accepted" (this is exactly what fooled an earlier version). Only a query-back
+    tells the truth. This is now a diagnostic, not a launch gate: the harvester
+    ships at collection time (README "Ingest window"), so correctness never depends
+    on the window — the probe just characterizes the stack and validates that
+    decision.
+
+    Writes ~24 throwaway lines under a ``probe`` label (never a fleet label), each
+    tagged with a per-run nonce so a re-run can't read a prior run's entries. Needs
+    GRAFANA_LOGS_{URL,USER,KEY}; the token must also carry ``logs:read`` for the
+    query-back. Exits 0 with a skip notice when credentials are absent, so a
+    credential-free CI run passes.
     """
+    import base64
     import os
     import time
+    import urllib.parse
 
     names = ["GRAFANA_LOGS_URL", "GRAFANA_LOGS_USER", "GRAFANA_LOGS_KEY"]
     missing = [name for name in names if not os.environ.get(name)]
@@ -527,59 +534,90 @@ def probe_loki():
         click.echo(f"loki probe skipped: missing {', '.join(missing)}")
         return
 
-    from http_util import RequestFailed
+    from http_util import RequestFailed, request_json
     from logs_push import push_logs
 
+    push_url = os.environ["GRAFANA_LOGS_URL"]
+    if not push_url.endswith("/push"):
+        raise click.ClickException(
+            f"GRAFANA_LOGS_URL should end in /loki/api/v1/push to derive the query URL; got {push_url}"
+        )
+    query_url = push_url[: -len("/push")] + "/query_range"
+    credentials = f"{os.environ['GRAFANA_LOGS_USER']}:{os.environ['GRAFANA_LOGS_KEY']}"
+    auth = {"Authorization": "Basic " + base64.b64encode(credentials.encode()).decode()}
+
     now = time.time()
-    accepted, rejected, setup_failed, transient = [], [], [], []
+    nonce = str(int(now * 1000))
+    pushed = []
     for hours in range(1, 25):
         timestamp_ns = int((now - hours * 3600) * 1_000_000_000)
         payload = json.dumps({
             "streams": [{
-                "stream": {"probe": "ingest_window", "age_hours": str(hours)},
-                "values": [[str(timestamp_ns), f"fleet-monitor ingest-window probe, {hours}h old"]],
+                "stream": {"probe": "ingest_window", "nonce": nonce, "age_hours": str(hours)},
+                "values": [[str(timestamp_ns),
+                            f"fleet-monitor ingest-window probe {nonce}, {hours}h old"]],
             }]
         })
         try:
             push_logs(payload)
-            accepted.append(hours)
-            click.echo(f"✓ {hours:>2}h old: accepted")
+            pushed.append(hours)
         except RequestFailed as e:
-            # Only HTTP 400 is evidence about the ingest window — that is Loki
-            # refusing the entry itself ("too far behind"). Any other fail-fast
-            # 4xx (401/403 bad key, 413 too large, 429 quota) is a probe-setup
-            # problem, and a retries-exhausted 5xx/network failure (status None)
-            # is transient — neither may masquerade as an age rejection, or a
-            # bad credential would print "adopt the fallback" for every age.
-            if e.status == 400:
-                rejected.append(hours)
-                click.echo(f"✗ {hours:>2}h old: rejected (HTTP 400)")
-            elif e.status is not None:
-                setup_failed.append(hours)
-                click.echo(f"! {hours:>2}h old: probe setup failure (HTTP {e.status}) — "
-                           "check credentials/endpoint, not the ingest window")
-            else:
-                transient.append(hours)
-                click.echo(f"? {hours:>2}h old: push failed ({e}) — transient, not an age rejection")
-    if setup_failed:
+            click.echo(f"! {hours:>2}h old: push failed (HTTP {e.status}) — "
+                       "check credentials/endpoint")
+    if not pushed:
+        raise click.ClickException("every probe push failed; fix credentials/endpoint and re-run")
+
+    def queryable(hours):
+        query = urllib.parse.urlencode({
+            "query": f'{{probe="ingest_window",nonce="{nonce}",age_hours="{hours}"}}',
+            "start": str(int((now - 25 * 3600) * 1_000_000_000)),
+            "end": str(int((now + 3600) * 1_000_000_000)),
+            "limit": "5",
+        })
+        try:
+            result = request_json(f"{query_url}?{query}", headers=auth)
+        except RequestFailed as e:
+            if e.status == 401:
+                raise click.ClickException(
+                    "query-back got HTTP 401 — the GRAFANA_LOGS_KEY token needs the logs:read "
+                    "scope (not just logs:write) to verify what actually landed"
+                ) from e
+            raise click.ClickException(f"query-back failed: HTTP {e.status}") from e
+        return any(stream.get("values") for stream in result.get("data", {}).get("result", []))
+
+    # Grafana Cloud ingestion lags a push by seconds; wait for the freshest pushed
+    # age to become queryable before judging the rest, so lag isn't read as a drop.
+    click.echo("pushed; waiting for ingestion...", err=True)
+    deadline = time.monotonic() + 45
+    while not queryable(min(pushed)):
+        if time.monotonic() >= deadline:
+            raise click.ClickException(
+                f"even the {min(pushed)}h-old entry isn't queryable after 45s — "
+                "ingestion lag or a query problem; re-run"
+            )
+        time.sleep(5)
+
+    retrievable, discarded = [], []
+    for hours in pushed:
+        if queryable(hours):
+            retrievable.append(hours)
+            click.echo(f"✓ {hours:>2}h old: accepted AND queryable")
+        else:
+            discarded.append(hours)
+            click.echo(f"✗ {hours:>2}h old: pushed (204) but silently discarded")
+
+    if discarded:
+        window = max(retrievable) if retrievable else 0
         click.echo(
-            f"setup failures at {len(setup_failed)} age(s); fix the credentials/endpoint "
-            "and re-run — these say nothing about the ingest window."
+            f"ingest window ≈ {window}h: entries older than that are accepted then dropped "
+            f"({len(discarded)} of {len(pushed)} ages). The harvester ships at collection time "
+            "to stay inside it, so a short window is expected here — no action needed."
         )
-    if transient:
+    else:
         click.echo(
-            f"transient failures at {len(transient)} age(s) "
-            f"({', '.join(f'{h}h' for h in transient)}); re-run the probe for a clean read."
+            f"all {len(pushed)} pushed ages (1–{max(pushed)}h) are queryable — this stack's window "
+            "covers the whole look-back; collection-time stamping is belt-and-suspenders."
         )
-    if rejected:
-        click.echo(
-            f"ingest window rejects entries ≥ {min(rejected)}h old; the harvester's "
-            "24h look-back would lose the oldest recovered logs — adopt the "
-            "ship-at-collection-time fallback (README 'Logs')."
-        )
-    elif not setup_failed and not transient:
-        click.echo(f"ingest window accepts all of 1–24h old ({len(accepted)}/24); "
-                   "event-time timestamps are safe within the harvester's look-back.")
 
 
 if __name__ == "__main__":
