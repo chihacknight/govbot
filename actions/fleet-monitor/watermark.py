@@ -17,17 +17,30 @@ self-healing: the next sweep recovers the last day and moves on.
 """
 
 import json
+import sys
 from pathlib import Path
 
 
 def load_watermarks(path) -> dict:
-    """Read the watermark map. A missing or empty file reads as ``{}`` so a cold
-    start or a lost cache is a bounded look-back, never a crash."""
+    """Read the watermark map. A missing, empty, or corrupt file reads as ``{}``
+    so a cold start, a lost cache, or a truncated cache save is a bounded
+    look-back, never a crash. Corruption matters because the workflow re-saves
+    the cache after every run: a crash here would re-persist the corrupt file
+    and stay red every hour, whereas an empty read self-heals on the next save."""
     p = Path(path)
     if not p.exists():
         return {}
     text = p.read_text().strip()
-    return json.loads(text) if text else {}
+    if not text:
+        return {}
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        print(
+            f"watermark file {p} is corrupt; starting empty (bounded look-back re-ship)",
+            file=sys.stderr,
+        )
+        return {}
 
 
 def save_watermarks(path, watermarks) -> None:

@@ -1,2 +1,2 @@
-{"org": "govbot-openstates-scrapers", "state": "wy", "repo": "wy-legislation", "expected_workflows": ["openstates-scrape.yml"]}
-{"org": "govbot-openstates-scrapers", "state": "il", "repo": "il-legislation", "expected_workflows": ["openstates-scrape.yml"]}
+{"fleet": "chn-openstates-scrape", "config": "chn-openstates-scrape.yml", "state": "wy", "name": "Wyoming", "org": "govbot-openstates-scrapers", "repo": "wy-legislation", "template": "openstates-scrape", "base_template": "openstates-scrape", "paused": false, "runner": "ubuntu-latest", "expected_workflows": ["openstates-scrape.yml"]}
+{"fleet": "chn-openstates-scrape", "config": "chn-openstates-scrape.yml", "state": "il", "name": "Illinois", "org": "govbot-openstates-scrapers", "repo": "il-legislation", "template": "openstates-scrape", "base_template": "openstates-scrape", "paused": false, "runner": "ubuntu-latest", "expected_workflows": ["openstates-scrape.yml"]}

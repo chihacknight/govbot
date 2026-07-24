@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   collect:
-    name: "📡 Sweep fleet, push metrics + heartbeat"
+    name: "📡 Sweep fleet: metrics + heartbeat + logs"
     runs-on: ubuntu-latest
     # A healthy sweep is a couple of minutes (~336 requests, 8 concurrent); this
     # ceiling kills a hung run long before the next hour's schedule fires.

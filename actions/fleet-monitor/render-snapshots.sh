@@ -622,7 +622,12 @@ save_watermarks(path, {"o/r/w.yml": 42})
 assert load_watermarks(path) == {"o/r/w.yml": 42}
 open(path, "w").write("")
 assert load_watermarks(path) == {}, "empty file must read as empty, not error"
-print("✓ watermark: missing/empty reads as {}, writes round-trip")
+# A truncated/garbled cache save must self-heal as the documented lost-cache
+# recovery (bounded look-back), never crash — a crash would re-persist the
+# corrupt file via the workflow's always-save and stay red every hour.
+open(path, "w").write('{"o/r/w.yml": 4')
+assert load_watermarks(path) == {}, "corrupt file must read as empty, not raise"
+print("✓ watermark: missing/empty/corrupt reads as {}, writes round-trip")
 EOF
 
 # Harvester, offline (GitHub is fake fetchers): unpack the archive (top-level
@@ -671,8 +676,10 @@ def runs_fail(o, r, w):
 batches, wm, errors = harvest_logs(juris, {}, runs_fail, lambda o, r, i: zip_of({"1_j.txt": FAIL}), NOW)
 assert errors == [] and len(batches) == 1, (errors, batches)
 assert batches[0]["labels"] == {"org": "o", "state": "wy", "workflow": "w.yml", "outcome": "failure"}
+assert batches[0]["watermark_key"] == "o/r/w.yml", "batch must name its watermark entry"
 assert [e["line"] for e in batches[0]["entries"]] == ["building", "ERROR: boom"], "group markers dropped, full logs kept"
-assert batches[0]["entries"][0]["metadata"] == {"run_id": "100", "run_url": "u/100"}
+assert batches[0]["entries"][0]["metadata"] == {"run_id": "100", "run_url": "u/100", "job": "1_j"}, \
+    "run AND job identity ride in structured metadata"
 assert wm == {"o/r/w.yml": 100}
 
 big = "".join(f"2026-07-21T11:00:00.0000000Z line {i}\n" for i in range(250))
@@ -744,8 +751,12 @@ from datetime import datetime, timedelta, timezone
 
 import log_harvester
 
+# A fixed anchor, threaded into github_log_fetchers the way _collect_logs
+# threads the harvest now — pagination and selection must share one clock.
+ANCHOR = datetime(2026, 7, 21, 12, 0, 0, tzinfo=timezone.utc)
+
 def iso(hours_ago):
-    return (datetime.now(timezone.utc) - timedelta(hours=hours_ago)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return (ANCHOR - timedelta(hours=hours_ago)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 pages_requested = []
 def fake_request_json(url, headers=None):
@@ -760,7 +771,7 @@ full_old = [{"id": 100 - i, "created_at": iso(30)} for i in range(30)]
 
 # Page 2's oldest run predates the boundary -> stop after 2 pages, keep both.
 fake_request_json.pages = {1: full_recent, 2: full_old, 3: full_recent}
-fetch_runs, _ = log_harvester.github_log_fetchers()
+fetch_runs, _ = log_harvester.github_log_fetchers(ANCHOR)
 runs = fetch_runs("o", "r", "w.yml")
 assert pages_requested == [1, 2], pages_requested
 assert len(runs) == 60, len(runs)
@@ -776,7 +787,23 @@ pages_requested.clear()
 fake_request_json.pages = {p: full_recent for p in range(1, 10)}
 fetch_runs("o", "r", "w.yml")
 assert pages_requested == [1, 2, 3, 4], pages_requested
-print("✓ run listing: pages to the look-back boundary, stops on a short page, capped at MAX_RUN_PAGES")
+
+# A missing/garbled created_at is not evidence of oldness: a full page whose
+# only unparseable stamp would have coerced "old" must page on, not stop —
+# stopping early would let the watermark leap runs that were never fetched.
+pages_requested.clear()
+one_bad = [dict(run) for run in full_recent]
+one_bad[7] = {"id": 193}                                 # no created_at at all
+fake_request_json.pages = {1: one_bad, 2: full_recent[:5]}
+assert len(fetch_runs("o", "r", "w.yml")) == 35
+assert pages_requested == [1, 2], "an unparseable stamp must not stop pagination"
+pages_requested.clear()
+all_bad = [{"id": 300 - i, "created_at": "garbled"} for i in range(30)]
+fake_request_json.pages = {1: all_bad, 2: full_recent[:5]}
+fetch_runs("o", "r", "w.yml")
+assert pages_requested == [1, 2], "a page with no parseable stamps pages on"
+print("✓ run listing: pages to the look-back boundary (anchored to the harvest now), stops on a")
+print("  short page, caps at MAX_RUN_PAGES; unparseable stamps never fake oldness")
 EOF
 
 # Loki push wire format + missing-env guard, offline (fake urlopen).
@@ -834,7 +861,25 @@ lines = [value[1] for s in obj["streams"] for value in s["values"]]
 assert not any("##[group]" in line or "##[endgroup]" in line for line in lines), "noise must be dropped"
 assert all(set(s["stream"]) == {"org", "state", "workflow", "outcome"} for s in obj["streams"]), "labels capped"
 assert all(value[2]["run_id"] for s in obj["streams"] for value in s["values"]), "run id in structured metadata"
+assert all(value[2]["job"] == "1_scrape" for s in obj["streams"] for value in s["values"]), \
+    "job identity (archive member name) in structured metadata"
 print("✓ logs snapshot: fixture archives render to the exact Loki payload (noise dropped, labels capped)")
+EOF
+
+# The log fixture's jurisdiction records are full fleet-record-shaped and
+# validate against the same schema as every other record crossing the module
+# boundary — drift between read_fleet output and what harvest_logs consumes
+# must not go uncaught.
+pipenv run python3 - <<'EOF'
+import json
+from pathlib import Path
+from jsonschema import validate
+
+schema = json.load(open("../../schemas/fleet-record.schema.json"))
+lines = Path("fixtures/log-runs/jurisdictions.jsonl").read_text().splitlines()
+for line in lines:
+    validate(instance=json.loads(line), schema=schema)
+print(f"✓ {len(lines)} log-fixture jurisdiction records validate against fleet-record.schema.json")
 EOF
 
 # Idempotency + recovery, end to end through the CLI with a fake Loki push:
@@ -870,19 +915,138 @@ env = {"GRAFANA_LOGS_URL": "https://l.test/loki/api/v1/push",
 args = ["collect", "--logs-only", "--log-fixture", "fixtures/log-runs",
         "--watermark-file", wm, "--timestamp", "1784635200"]
 
+# Pushes go per workflow (one payload per watermark entry): the fixture's two
+# repos are two watermark keys, so a shipping collection is exactly two pushes.
 r1 = CliRunner().invoke(main.cli, args, env=env)
 assert r1.exit_code == 0, (r1.output, r1.exception)
-assert len(pushes) == 1, "the first collection must ship the fixture's runs"
+assert len(pushes) == 2, f"first collection must push once per workflow, got {len(pushes)}"
 
 r2 = CliRunner().invoke(main.cli, args, env=env)
 assert r2.exit_code == 0, (r2.output, r2.exception)
-assert len(pushes) == 1, "a second collection of the same window must ship nothing (idempotent)"
+assert len(pushes) == 2, "a second collection of the same window must ship nothing (idempotent)"
 
 os.remove(wm)  # a lost Actions cache
 r3 = CliRunner().invoke(main.cli, args, env=env)
 assert r3.exit_code == 0, (r3.output, r3.exception)
-assert len(pushes) == 2, "a deleted watermark recovers via the look-back and ships the recent window again"
+assert len(pushes) == 4, "a deleted watermark recovers via the look-back and ships the recent window again"
 print("✓ logs CLI: idempotent re-run ships nothing; a deleted watermark recovers via the 24h look-back")
+EOF
+
+# Per-workflow push isolation: one workflow's un-pushable payload fails only its
+# own logs and holds only its own watermark — the other workflow ships, its
+# watermark saves, and the run exits nonzero (a red run means the collector
+# needs attention, but it never un-ships the fleet's progress). The next sweep
+# retries only the failed workflow.
+pipenv run python3 - "$logs_wm" <<'EOF'
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+
+import email.message
+from click.testing import CliRunner
+
+import main
+
+wm = sys.argv[1]
+if os.path.exists(wm):
+    os.remove(wm)
+
+pushes = []
+class FakeResponse:
+    def read(self): return b""
+    def __enter__(self): return self
+    def __exit__(self, *args): return False
+def wy_fails_urlopen(request, timeout=None):
+    pushes.append(request.data)
+    if b'"state":"wy"' in request.data:
+        raise urllib.error.HTTPError(request.full_url, 413, "Payload Too Large",
+                                     email.message.Message(), None)
+    return FakeResponse()
+urllib.request.urlopen = wy_fails_urlopen
+
+env = {"GRAFANA_LOGS_URL": "https://l.test/loki/api/v1/push",
+       "GRAFANA_LOGS_USER": "42", "GRAFANA_LOGS_KEY": "k"}
+args = ["collect", "--logs-only", "--log-fixture", "fixtures/log-runs",
+        "--watermark-file", wm, "--timestamp", "1784635200"]
+
+r1 = CliRunner().invoke(main.cli, args, env=env)
+combined = r1.output + (r1.stderr or "")
+assert r1.exit_code != 0, "a failed per-workflow push must exit nonzero"
+assert "log push failed for 1 of 2 workflows" in combined, combined
+saved = json.load(open(wm))
+assert "govbot-openstates-scrapers/il-legislation/openstates-scrape.yml" in saved, saved
+assert "govbot-openstates-scrapers/wy-legislation/openstates-scrape.yml" not in saved, \
+    f"the failed workflow's watermark must hold: {saved}"
+
+# Next sweep, push healthy again: only the held workflow re-ships.
+def ok_urlopen(request, timeout=None):
+    pushes.append(request.data)
+    return FakeResponse()
+urllib.request.urlopen = ok_urlopen
+before = len(pushes)
+r2 = CliRunner().invoke(main.cli, args, env=env)
+assert r2.exit_code == 0, (r2.output, r2.exception)
+assert len(pushes) == before + 1, "only the failed workflow should re-ship"
+saved = json.load(open(wm))
+assert len(saved) == 2, saved
+os.remove(wm)
+print("✓ logs CLI: a failed workflow push holds only its own watermark; the rest ship and save")
+EOF
+
+# collect's exit contract covers the logs leg: per-repo harvest errors exit 1
+# (degraded must never look clean), unlike `run` which keeps them green.
+pipenv run python3 - <<'EOF'
+import json
+import tempfile
+from pathlib import Path
+
+from click.testing import CliRunner
+
+import main
+
+fixture = Path(tempfile.mkdtemp())
+(fixture / "runs").mkdir()
+(fixture / "jurisdictions.jsonl").write_text(json.dumps(
+    {"org": "o", "state": "w\ny", "repo": "r", "expected_workflows": ["w.yml"]}) + "\n")
+result = CliRunner().invoke(
+    main.cli, ["collect", "--logs-only", "--dry-run", "--log-fixture", str(fixture),
+               "--timestamp", "1784635200"])
+combined = result.output + (result.stderr or "")
+assert result.exit_code != 0, "collect --logs-only must exit nonzero on harvest errors"
+assert "log harvest errors on 1 target(s)" in combined, combined
+print("✓ collect --logs-only: per-repo harvest errors exit 1 (degraded never looks clean)")
+EOF
+
+# probe-loki classification: a bad credential (HTTP 401 on every push) is a
+# probe-SETUP failure, not an ingest-window rejection — it must never print the
+# adopt-the-fallback verdict. Only HTTP 400 is evidence about the window.
+pipenv run python3 - <<'EOF'
+import email.message
+import urllib.error
+import urllib.request
+
+from click.testing import CliRunner
+
+import main
+
+
+def unauthorized_urlopen(request, timeout=None):
+    raise urllib.error.HTTPError(request.full_url, 401, "Unauthorized",
+                                 email.message.Message(), None)
+
+
+urllib.request.urlopen = unauthorized_urlopen
+result = CliRunner().invoke(main.cli, ["probe-loki"], env={
+    "GRAFANA_LOGS_URL": "https://l.test/loki/api/v1/push",
+    "GRAFANA_LOGS_USER": "42", "GRAFANA_LOGS_KEY": "bad-key"})
+combined = result.output + (result.stderr or "")
+assert "probe setup failure (HTTP 401)" in combined, combined
+assert "adopt the ship-at-collection-time fallback" not in combined, \
+    f"a bad key must not read as an ingest-window rejection: {combined}"
+assert "fix the credentials/endpoint" in combined, combined
+print("✓ probe-loki: a bad credential is a setup failure, never an ingest-window verdict")
 EOF
 
 # A malformed config on the logs-only path fails with a clean CLI error line,

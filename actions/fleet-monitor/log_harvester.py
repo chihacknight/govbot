@@ -44,6 +44,7 @@ from datetime import datetime, timedelta, timezone
 from io import BytesIO
 
 from http_util import request_json, request_with_retry
+from logs_shipper import is_bad_label_value
 
 GITHUB_API = "https://api.github.com"
 
@@ -144,20 +145,26 @@ def apply_volume_policy(entries, outcome, tail=SUCCESS_TAIL):
 
 def harvest_run(run, archive_bytes, now):
     """Labeled entries for one run's logs: unpack → parse → drop noise → apply the
-    volume policy. Each entry carries the run's identity (id, url) in metadata, not
-    labels. Unstamped lines fall back to the run's creation time (or ``now``)."""
+    volume policy. Each entry carries the run's identity (id, url) and its job (the
+    archive member name, e.g. ``1_scrape``) in structured metadata, not labels — so
+    a multi-job run's lines stay attributable per job without a label. Unstamped
+    lines fall back to the run's creation time (or ``now``)."""
     created_ns = _to_ns(run.get("created_at") or "")
     fallback_ns = created_ns if created_ns is not None else int(now.timestamp()) * 1_000_000_000
     parsed = []
-    for _name, text in unpack_archive(archive_bytes):
+    for name, text in unpack_archive(archive_bytes):
+        job = name.removesuffix(".txt")
         for stamp, message in parse_log_text(text, fallback_ns):
             if not _is_noise(message):
-                parsed.append((stamp, message))
+                parsed.append((stamp, message, job))
     parsed = apply_volume_policy(parsed, run.get("conclusion"))
-    metadata = {"run_id": str(run["id"])}
+    base = {"run_id": str(run["id"])}
     if run.get("html_url"):
-        metadata["run_url"] = run["html_url"]
-    return [{"timestamp_ns": stamp, "line": message, "metadata": metadata} for stamp, message in parsed]
+        base["run_url"] = run["html_url"]
+    return [
+        {"timestamp_ns": stamp, "line": message, "metadata": {**base, "job": job}}
+        for stamp, message, job in parsed
+    ]
 
 
 def _select_new(runs, last_id, cutoff_ns):
@@ -177,12 +184,12 @@ def _select_new(runs, last_id, cutoff_ns):
     return selected
 
 
-def _bad_label(value) -> bool:
-    """A label value the shipper would reject (control characters). Checked at
-    harvest time so a bad label surfaces as a per-repo error that HOLDS the
-    watermark — if it were left for encode_logs to drop, the batch would vanish
-    after the watermark had already advanced, losing those logs permanently."""
-    return any(c in str(value) for c in "\n\r")
+# Label validation at harvest time uses the shipper's own predicate
+# (logs_shipper.is_bad_label_value), so a bad label surfaces as a per-repo error
+# that HOLDS the watermark — if it were left for encode_logs to drop, the batch
+# would vanish after the watermark had already advanced, losing those logs
+# permanently. One predicate, one owner: the two modules cannot disagree.
+_bad_label = is_bad_label_value
 
 
 def harvest_logs(jurisdictions, watermarks, fetch_runs, fetch_archive, now,
@@ -238,23 +245,34 @@ def harvest_logs(jurisdictions, watermarks, fetch_runs, fetch_archive, now,
                     errors.append(f"{org}/{repo} run {run['id']}: {error}")
                     break
                 if entries:
-                    grouped.setdefault((org, state, workflow, run["conclusion"]), []).extend(entries)
+                    grouped.setdefault((org, state, workflow, run["conclusion"], key), []).extend(entries)
                 candidate = run["id"]
             if candidate > 0:
                 new_watermarks[key] = candidate
+    # Each batch names the watermark entry it belongs to, so the push side can
+    # ship per workflow and advance only the watermarks whose batches actually
+    # made it to Loki — one un-pushable payload must not block (or falsely
+    # advance) the rest of the fleet. encode_logs reads labels/entries only and
+    # ignores the extra key.
     batches = [
         {"labels": {"org": org, "state": state, "workflow": workflow, "outcome": outcome},
-         "entries": entries}
-        for (org, state, workflow, outcome), entries in sorted(grouped.items())
+         "watermark_key": key, "entries": entries}
+        for (org, state, workflow, outcome, key), entries in sorted(grouped.items())
     ]
     return batches, new_watermarks, errors
 
 
-def github_log_fetchers():
+def github_log_fetchers(now=None):
     """Live GitHub fetchers for run listings and log archives, authenticated with
     GITHUB_TOKEN when present (public reads work without it, at a lower rate limit).
     Mirrors fleet_poller's header construction; the archive endpoint 302-redirects
     to a zip, which urllib follows, so request_with_retry returns the zip bytes.
+
+    ``now`` (tz-aware, default current UTC time) anchors the pagination boundary.
+    It must be the same anchor harvest_logs selects with — the caller threads one
+    ``now`` through both — or the module's "selection never wants a run pagination
+    didn't fetch" guarantee breaks when the two clocks diverge (e.g. an explicit
+    past ``--timestamp``).
 
     The run listing pages until it has covered the harvest window: it stops as
     soon as a page runs short (no more runs) or its oldest run predates the
@@ -263,6 +281,8 @@ def github_log_fetchers():
     the extra pages only exist so a burst of more than one page of new runs
     can't leave a gap the watermark then leaps over.
     """
+    if now is None:
+        now = datetime.now(timezone.utc)
     headers = {
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
@@ -274,8 +294,7 @@ def github_log_fetchers():
     def fetch_runs(org, repo, workflow):
         # One hour of slack past the look-back so a run created right at the
         # boundary is fetched by the same sweep that would select it.
-        boundary = datetime.now(timezone.utc) - timedelta(hours=LOOKBACK_HOURS + 1)
-        boundary_ns = int(boundary.timestamp()) * 1_000_000_000
+        boundary_ns = int((now - timedelta(hours=LOOKBACK_HOURS + 1)).timestamp()) * 1_000_000_000
         workflow = urllib.parse.quote(workflow, safe="")
         runs = []
         for page in range(1, MAX_RUN_PAGES + 1):
@@ -287,8 +306,17 @@ def github_log_fetchers():
             runs.extend(page_runs)
             if len(page_runs) < RUNS_PER_PAGE:
                 break
-            oldest = min((_to_ns(run.get("created_at") or "") or 0) for run in page_runs)
-            if oldest < boundary_ns:
+            # Only parseable stamps are evidence of age: a run with a missing or
+            # garbled created_at must not fake "this page is old" and stop
+            # pagination while in-window runs remain on later pages (the
+            # watermark would then leap them). A full page with no parseable
+            # stamp at all just pages on.
+            stamps = [
+                stamp
+                for run in page_runs
+                if (stamp := _to_ns(run.get("created_at") or "")) is not None
+            ]
+            if stamps and min(stamps) < boundary_ns:
                 break
         return runs
 

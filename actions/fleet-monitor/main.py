@@ -49,23 +49,29 @@ def cli():
     "--timestamp",
     type=int,
     default=None,
-    help="Epoch-seconds timestamp for every series (default: the records' polled_at, else now).",
+    help="Epoch-seconds timestamp for every series (default: the records' polled_at, "
+         "else now); also anchors the log harvester's look-back window.",
 )
 def collect(config_dir, metrics_only, logs_only, dry_run, poller_records, log_fixture,
             watermark_file, timestamp):
     """Poll the fleet and push (or print) Grafana Cloud metric and/or log payloads.
 
-    The metrics leg exits 1 when any repo had poll errors — partial data still
-    ships (or prints), but a degraded sweep must never look like a clean one. The
-    logs leg, by contrast, ships nothing when no run is newer than the watermark
-    and exits 0: an empty log sweep is the idempotent steady state, not a failure.
+    Both legs share collect's exit contract — a degraded sweep must never look
+    like a clean one: the metrics leg exits 1 when any repo had poll errors, and
+    the logs leg exits 1 when any repo's harvest erred. Partial data still ships
+    (or prints) first. An *empty* log sweep, though — no run newer than the
+    watermark — is the idempotent steady state and exits 0: nothing was degraded,
+    there was simply nothing new.
     """
     if not (metrics_only or logs_only):
         raise click.ClickException("pass --metrics-only and/or --logs-only")
+    log_errors = []
     if logs_only:
-        _collect_logs(config_dir, log_fixture, watermark_file, dry_run,
-                      _harvest_now(timestamp))
+        log_errors = _collect_logs(config_dir, log_fixture, watermark_file, dry_run,
+                                   _harvest_now(timestamp))
     if not metrics_only:
+        if log_errors:
+            raise click.ClickException(f"log harvest errors on {len(log_errors)} target(s)")
         return
 
     records = _load_records(config_dir, poller_records)
@@ -85,8 +91,13 @@ def collect(config_dir, metrics_only, logs_only, dry_run, poller_records, log_fi
         click.echo(payload, nl=False)
     else:
         _push(payload)
-    if errored:
-        raise click.ClickException(f"poll errors on {len(errored)} of {len(records)} repos")
+    if errored or log_errors:
+        parts = []
+        if errored:
+            parts.append(f"poll errors on {len(errored)} of {len(records)} repos")
+        if log_errors:
+            parts.append(f"log harvest errors on {len(log_errors)} target(s)")
+        raise click.ClickException("; ".join(parts))
 
 
 @cli.command("run")
@@ -115,7 +126,8 @@ def collect(config_dir, metrics_only, logs_only, dry_run, poller_records, log_fi
     "--timestamp",
     type=int,
     default=None,
-    help="Epoch-seconds timestamp for every series (default: the records' polled_at, else now).",
+    help="Epoch-seconds timestamp for every series (default: the records' polled_at, "
+         "else now); also anchors the log harvester's look-back window.",
 )
 def run(config_dir, dry_run, poller_records, log_fixture, watermark_file, timestamp):
     """Unattended hourly sweep: poll the fleet, ship metrics + a heartbeat + logs.
@@ -265,9 +277,11 @@ def _harvest_now(timestamp):
     return datetime.now(timezone.utc)
 
 
-def _log_sources(config_dir, log_fixture):
+def _log_sources(config_dir, log_fixture, now):
     """Resolve (jurisdictions, fetch_runs, fetch_archive) for the logs leg: an
-    offline fixture directory, or a live GitHub harvest of the fleet config."""
+    offline fixture directory, or a live GitHub harvest of the fleet config.
+    ``now`` is the harvest anchor, threaded into the live fetchers so pagination
+    and selection share one clock."""
     if log_fixture is not None:
         return _load_log_fixture(log_fixture)
     if config_dir is not None:
@@ -277,7 +291,7 @@ def _log_sources(config_dir, log_fixture):
             jurisdictions = read_fleet(config_dir)
         except (ValueError, yaml.YAMLError) as e:
             raise click.ClickException(str(e)) from e
-        fetch_runs, fetch_archive = github_log_fetchers()
+        fetch_runs, fetch_archive = github_log_fetchers(now)
         return jurisdictions, fetch_runs, fetch_archive
     raise click.ClickException(
         "pass --config-dir (live harvest) or --log-fixture (offline) for logs"
@@ -310,41 +324,68 @@ def _load_log_fixture(directory):
 
 
 def _collect_logs(config_dir, log_fixture, watermark_file, dry_run, now):
-    """Harvest new-run logs and print (dry-run) or push them to Loki.
+    """Harvest new-run logs and print (dry-run) or push them to Loki. Returns the
+    per-repo harvest errors so ``collect`` can turn them into a nonzero exit while
+    ``run`` keeps them green.
 
-    Per-repo harvest errors are logged to stderr but never raise — one bad repo
-    must not abort the sweep, the same contract the poller keeps. An empty payload
-    (no run newer than the watermark) ships nothing and stays green: that is the
-    idempotent steady state. On a real push the advanced watermark is saved only
-    after the push succeeds, so a failed push leaves the boundary untouched and the
-    next sweep retries the same runs.
+    Per-repo harvest errors are logged to stderr but never raise here — one bad
+    repo must not abort the sweep, the same contract the poller keeps. An empty
+    payload (no run newer than the watermark) ships nothing and stays green: that
+    is the idempotent steady state.
+
+    Pushes go **per workflow**, one payload per watermark entry, and each
+    watermark advances only after its own payload lands — so one un-pushable
+    payload (an oversized recovery sweep hitting the endpoint's size limit, say)
+    fails only its own workflow's logs and holds only its own watermark, instead
+    of blocking the whole fleet's logs and boundaries every sweep until the runs
+    age out of the look-back. Watermarks that advanced with nothing to push (all
+    new runs empty after filtering) advance unconditionally. Any failed push
+    still exits nonzero after the rest have shipped and their watermarks saved —
+    a red run means the collector needs attention, but it never un-ships the
+    fleet's progress.
     """
-    jurisdictions, fetch_runs, fetch_archive = _log_sources(config_dir, log_fixture)
+    jurisdictions, fetch_runs, fetch_archive = _log_sources(config_dir, log_fixture, now)
     watermarks = load_watermarks(watermark_file) if watermark_file else {}
     batches, new_watermarks, errors = harvest_logs(
         jurisdictions, watermarks, fetch_runs, fetch_archive, now
     )
     for error in errors:
         click.echo(f"log harvest error: {error}", err=True)
-    payload = encode_logs(batches)
 
     if dry_run:
-        click.echo(payload)
-        return
-    if batches:
-        _push_logs(payload)
-    if watermark_file is not None:
-        save_watermarks(watermark_file, new_watermarks)
+        click.echo(encode_logs(batches))
+        return errors
 
-
-def _push_logs(payload):
     from logs_push import push_logs
 
-    try:
-        push_logs(payload)
-    except RuntimeError as e:
-        raise click.ClickException(str(e)) from e
-    click.echo("pushed logs to Loki", err=True)
+    by_key = {}
+    for batch in batches:
+        by_key.setdefault(batch["watermark_key"], []).append(batch)
+    saved = dict(watermarks)
+    push_errors = []
+    for key in sorted(by_key):
+        try:
+            push_logs(encode_logs(by_key[key]))
+        except RuntimeError as e:
+            push_errors.append(f"{key}: {e}")
+            continue
+        saved[key] = new_watermarks[key]
+    for key, value in new_watermarks.items():
+        if key not in by_key:  # advanced with nothing to push
+            saved[key] = value
+    if watermark_file is not None:
+        save_watermarks(watermark_file, saved)
+
+    if by_key:
+        shipped = len(by_key) - len(push_errors)
+        click.echo(f"pushed logs for {shipped} of {len(by_key)} workflows", err=True)
+    for error in push_errors:
+        click.echo(f"log push error: {error}", err=True)
+    if push_errors:
+        raise click.ClickException(
+            f"log push failed for {len(push_errors)} of {len(by_key)} workflows"
+        )
+    return errors
 
 
 @cli.command("list-fleet")
@@ -452,13 +493,12 @@ def probe_loki():
     The logs risk the PRD flags first: an hourly collector ships logs from runs
     that finished hours earlier, and Loki rejects entries older than its ingest
     window. This retires that risk empirically before trusting event-time
-    timestamps — each age is its own push, so a rejected age (Loki answers 4xx
-    "entry too far behind") is isolated to that age, not the whole batch. It
+    timestamps — each age is its own push, so a rejected age (Loki answers HTTP
+    400, "entry too far behind") is isolated to that age, not the whole batch. It
     writes ~24 throwaway lines under a ``probe`` label (not a fleet label), so it
     is safe to run against the real stack. Needs GRAFANA_LOGS_{URL,USER,KEY};
     exits 0 with a skip notice otherwise, so a credential-free CI run passes.
     """
-    import json
     import os
     import time
 
@@ -472,7 +512,7 @@ def probe_loki():
     from logs_push import push_logs
 
     now = time.time()
-    accepted, rejected, failed = [], [], []
+    accepted, rejected, setup_failed, transient = [], [], [], []
     for hours in range(1, 25):
         timestamp_ns = int((now - hours * 3600) * 1_000_000_000)
         payload = json.dumps({
@@ -486,20 +526,31 @@ def probe_loki():
             accepted.append(hours)
             click.echo(f"✓ {hours:>2}h old: accepted")
         except RequestFailed as e:
-            # Only a fail-fast 4xx is evidence about the ingest window — that is
-            # Loki refusing the entry. A retries-exhausted 5xx/network failure
-            # (status None) is a transient outage and must not masquerade as an
-            # age rejection.
-            if e.status is not None and 400 <= e.status < 500:
+            # Only HTTP 400 is evidence about the ingest window — that is Loki
+            # refusing the entry itself ("too far behind"). Any other fail-fast
+            # 4xx (401/403 bad key, 413 too large, 429 quota) is a probe-setup
+            # problem, and a retries-exhausted 5xx/network failure (status None)
+            # is transient — neither may masquerade as an age rejection, or a
+            # bad credential would print "adopt the fallback" for every age.
+            if e.status == 400:
                 rejected.append(hours)
-                click.echo(f"✗ {hours:>2}h old: rejected (HTTP {e.status})")
+                click.echo(f"✗ {hours:>2}h old: rejected (HTTP 400)")
+            elif e.status is not None:
+                setup_failed.append(hours)
+                click.echo(f"! {hours:>2}h old: probe setup failure (HTTP {e.status}) — "
+                           "check credentials/endpoint, not the ingest window")
             else:
-                failed.append(hours)
+                transient.append(hours)
                 click.echo(f"? {hours:>2}h old: push failed ({e}) — transient, not an age rejection")
-    if failed:
+    if setup_failed:
         click.echo(
-            f"transient failures at {len(failed)} age(s) ({', '.join(f'{h}h' for h in failed)}); "
-            "re-run the probe for a clean read on those."
+            f"setup failures at {len(setup_failed)} age(s); fix the credentials/endpoint "
+            "and re-run — these say nothing about the ingest window."
+        )
+    if transient:
+        click.echo(
+            f"transient failures at {len(transient)} age(s) "
+            f"({', '.join(f'{h}h' for h in transient)}); re-run the probe for a clean read."
         )
     if rejected:
         click.echo(
@@ -507,7 +558,7 @@ def probe_loki():
             "24h look-back would lose the oldest recovered logs — adopt the "
             "ship-at-collection-time fallback (README 'Logs')."
         )
-    elif not failed:
+    elif not setup_failed and not transient:
         click.echo(f"ingest window accepts all of 1–24h old ({len(accepted)}/24); "
                    "event-time timestamps are safe within the harvester's look-back.")
 

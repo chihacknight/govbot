@@ -74,14 +74,20 @@ run logs to Grafana Cloud Loki — never the same run twice — in three modules
   look-back**, recovering the last day rather than re-shipping a repo's whole
   history. The look-back bounds *every* sweep (not just a cold start), and the run
   listing pages just far enough to cover it, so selection never wants a run the
-  listing didn't fetch. The watermark advances only across contiguous shipped runs —
+  listing didn't fetch. The flip side, by policy: a run created more than a day
+  before the sweep is outside the shipping contract even with a healthy watermark —
+  a collector outage longer than a day loses the overflow, the same budget trade as
+  the cold-start rule. The watermark advances only across contiguous shipped runs —
   an in-progress run, one whose archive fetch failed, or a label the shipper would
   reject halts advancement so it is retried next sweep, never stepped over.
 - **[logs_shipper.py](logs_shipper.py)** + **[logs_push.py](logs_push.py)** — a pure
   encoder from labeled batches to the Loki push payload (reusing http_util's
   retry/backoff POST). Stream labels are capped at `org`/`state`/`workflow`/`outcome`;
   run and job ids are high-cardinality, so they ride in each entry's Loki
-  **structured metadata**, never as labels.
+  **structured metadata**, never as labels. Pushes go **per workflow** — one payload
+  per watermark entry, each watermark advancing only after its own payload lands —
+  so one un-pushable payload (an oversized recovery sweep, say) fails only its own
+  workflow's logs and holds only its own watermark, never the whole fleet's.
 
 ### Ingest window (the retired risk)
 
@@ -150,8 +156,10 @@ GITHUB_TOKEN=$(gh auth token) pipenv run python main.py collect --metrics-only \
 # Same, but push to Grafana Cloud (needs GRAFANA_PUSH_* env vars):
 pipenv run python main.py collect --metrics-only --config-dir ../pipeline-manager
 
-# Harvest new run logs and print the Loki payload without pushing (idempotent:
-# --watermark-file tracks what has shipped, so a re-run of the same window is empty):
+# Harvest new run logs and print the Loki payload without pushing. The watermark
+# tracks what has been *pushed*; --dry-run neither pushes nor advances it, so a
+# dry-run repeats — idempotency ("a re-run of the same window ships nothing")
+# applies to real, non-dry-run collections:
 GITHUB_TOKEN=$(gh auth token) pipenv run python main.py collect --logs-only \
   --config-dir ../pipeline-manager --watermark-file .watermarks/logs.json --dry-run
 
@@ -282,9 +290,18 @@ look-back, and per-repo error isolation); the Loki push wire format (URL, POST, 
 auth, `application/json`, missing-env guard) with a fake `urlopen`; the CLI's
 end-to-end idempotency (a re-run of the same window ships nothing) and recovery (a
 deleted watermark ships the recent window, not the full history) driven in-process
-with a fake push; that `run` wires the logs leg only when a log source is present; and
-`probe-loki`'s credential-free skip path. The real ingest-window probe runs only with
-`GRAFANA_LOGS_*` set.
+with a fake push; per-workflow push isolation (one workflow's failed push exits
+nonzero but holds only its own watermark — the rest ship, save, and only the failed
+one re-ships next sweep); `collect --logs-only`'s exit contract (harvest errors exit
+1; a malformed config is a clean CLI error); a corrupt watermark file reading as
+empty (bounded re-ship, never an hourly-recurring crash); run-listing pagination
+(stops at the look-back boundary anchored to the harvest `now`, short pages, the
+page cap, and unparseable timestamps never faking oldness); the log-fixture
+jurisdictions validating against `fleet-record.schema.json`; job identity pinned in
+structured metadata; that `run` wires the logs leg only when a log source is
+present; `probe-loki`'s credential-free skip path; and `probe-loki`'s
+classification (a bad key is a setup failure, never an ingest-window verdict). The
+real ingest-window probe runs only with `GRAFANA_LOGS_*` set.
 
 ```bash
 ../../scripts/before-snapshots.sh __snapshots__

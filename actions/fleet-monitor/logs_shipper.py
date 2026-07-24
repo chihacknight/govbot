@@ -31,14 +31,22 @@ import json
 STREAM_LABELS = ("org", "state", "workflow", "outcome")
 
 
+def is_bad_label_value(value) -> bool:
+    """True when a label value would be rejected by this encoder (control
+    characters). The single owner of the rejection rule: the harvester imports
+    this same predicate to validate labels at harvest time, so the two modules
+    can never disagree about what the shipper will drop — a disagreement would
+    let a batch vanish after the watermark had already advanced."""
+    return any(c in str(value) for c in "\n\r")
+
+
 def _check_label(value: str) -> str:
     """A label value with no control characters. A newline in a label would break
     the stream identity Loki derives from the label set, so it fails loudly rather
     than being silently mangled — mirroring the metrics shipper's tag guard."""
-    value = str(value)
-    if any(c in value for c in "\n\r"):
+    if is_bad_label_value(value):
         raise ValueError(f"control character in log label value {value!r}")
-    return value
+    return str(value)
 
 
 def _stream(batch) -> dict:
