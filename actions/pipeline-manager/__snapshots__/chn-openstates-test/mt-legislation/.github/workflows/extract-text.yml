@@ -104,13 +104,28 @@ jobs:
             echo "needs_restart=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Generate GitHub App token for workflow restart
+        id: app-token
+        if: steps.check.outputs.needs_restart == 'true'
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+
       - name: Trigger workflow restart
         if: steps.check.outputs.needs_restart == 'true'
         env:
-          # Note: GITHUB_TOKEN cannot trigger workflows due to GitHub security restrictions
-          # You must create a Personal Access Token (PAT) with 'workflow' scope and add it as a secret
-          # See: https://docs.github.com/en/actions/security-guides/automatic-token-authentication#using-the-github_token-in-a-workflow
-          GH_TOKEN: ${{ secrets.PAT_WORKFLOW_TRIGGER }}
+          # GITHUB_TOKEN structurally cannot trigger new workflow runs (GitHub
+          # security restriction, to prevent runaway recursive workflow
+          # triggering). A long-lived PAT in a repo/org secret was the original
+          # fix here, but that needs admin:org access to provision and is one
+          # more long-lived credential to rotate/leak. Reuse the GitHub App
+          # token approach the scrape -> format cross-org dispatch already
+          # relies on instead (see openstates-scrape.yml) -- short-lived,
+          # scoped to just this repo, no second PAT to manage.
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           echo "⚠️ Previous run was cancelled/failed. Restarting to continue extraction..."
           echo "   (Incremental processing will skip already-completed bills)"
