@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Fleet jurisdiction record",
+  "description": "One JSON Lines record per locale per fleet, emitted by `list-fleet`. The contract consumed by everything downstream in fleet-monitor.",
+  "type": "object",
+  "properties": {
+    "fleet": {
+      "type": "string",
+      "description": "Fleet name: the stem of the config file the locale came from"
+    },
+    "config": {
+      "type": "string",
+      "description": "Lineage: file name of the fleet config the record was derived from"
+    },
+    "state": {
+      "type": "string",
+      "description": "Locale code, e.g. wy"
+    },
+    "name": {
+      "type": "string",
+      "description": "Full jurisdiction name, e.g. Wyoming"
+    },
+    "org": {
+      "type": "string",
+      "description": "GitHub org owning the fleet's repos"
+    },
+    "repo": {
+      "type": "string",
+      "description": "Repo name, derived from the template's folder-name pattern"
+    },
+    "template": {
+      "type": "string",
+      "description": "The pipeline-manager template the locale uses"
+    },
+    "base_template": {
+      "type": "string",
+      "description": "template with any -paused suffix stripped: the locale's durable identity, stable across session pauses"
+    },
+    "paused": {
+      "type": "boolean",
+      "description": "True when the template name ends in -paused (out-of-session)"
+    },
+    "runner": {
+      "type": "string",
+      "description": "GitHub Actions runner for the locale, default ubuntu-latest"
+    },
+    "expected_workflows": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Workflow file names the template ships, minus disabled_jobs, as they exist in rendered repos (.j2 stripped)"
+    }
+  },
+  "required": [
+    "fleet",
+    "config",
+    "state",
+    "name",
+    "org",
+    "repo",
+    "template",
+    "base_template",
+    "paused",
+    "runner",
+    "expected_workflows"
+  ],
+  "additionalProperties": false
+}

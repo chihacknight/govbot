@@ -1,0 +1,11 @@
+# Invalid fixture: template `ghost` is defined in the config but ships no workflow
+# files on disk. Must fail loudly. Locked by invalid-missing-workflows-error.txt.
+org:
+  username: broken-org
+templates:
+  ghost:
+    folder-name: ✏️{ locale.key }✏️-legislation
+locales:
+  nm:
+    template: ghost
+    name: New Mexico

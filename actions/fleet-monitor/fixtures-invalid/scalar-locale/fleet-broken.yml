@@ -1,0 +1,8 @@
+# Invalid fixture: locale `bb` is a scalar, not a mapping (a plausible typo for
+# `bb: {template: ...}`). Must fail loudly. Locked by
+# __snapshots__/invalid-scalar-locale-error.txt.
+org:
+  username: broken-org
+templates: {}
+locales:
+  bb: t

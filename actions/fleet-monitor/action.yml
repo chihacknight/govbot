@@ -1,0 +1,32 @@
+name: "Fleet Monitor"
+description: "Observability for the govbot scraper and data-repo fleets: reads the pipeline-manager configs and emits jurisdiction records"
+inputs:
+  config-dir:
+    description: "Directory (relative to the workspace) holding the pipeline-manager config YAMLs and their templates/ folder"
+    required: false
+    default: "actions/pipeline-manager"
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        pip install pipenv
+        pipenv install --deploy
+
+    - name: List fleet
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      # The input goes through an env var, never expression-interpolated into the
+      # script: expression expansion happens before bash parses it, so inlining
+      # ${{ inputs.config-dir }} would be a shell-injection sink for consumers.
+      env:
+        CONFIG_DIR: ${{ inputs.config-dir }}
+      run: |
+        pipenv run python main.py list-fleet --config-dir "${GITHUB_WORKSPACE}/${CONFIG_DIR}"
