@@ -6,8 +6,8 @@ what's currently broken vs. just out of session.
 
 **This is a living document — most rows below are placeholders (`TBD`) to be filled in over
 time, not a claim that data is missing or wrong.** The columns that are already fully populated
-(Machine Readable Bill Text) come straight from `actions/scrape/docs/bill-format-audit.md`
-(last updated 2026-07-02) — check there for source domains and detail.
+(Machine Readable Bill Text) come from `bill-format-audit.md` (last updated 2026-07-02, archived
+2026-07-24 — no longer in the repo, this table is now the canonical copy of that data).
 
 ## Why this exists
 
@@ -142,7 +142,6 @@ failed. Only non-`fl`/`mt` states are P1-noted from the same 07-21 audit as the 
 
 ## Related docs
 
-- `actions/scrape/docs/bill-format-audit.md` — source for the Machine-Readable column, full format/domain detail
-- `actions/scrape/docs/scraper-health.md` / `error-tracking.md` — incident-log style history, not a flat reference
+- `bill-format-audit.md`, `scraper-health.md`, `error-tracking.md` — archived 2026-07-24 (no longer in the repo); this doc and `project_docs/state-problems.md` are their replacements
 - `actions/pipeline-manager/chn-openstates-scrape.yml` — the actual per-state config this doc should stay consistent with (`runner`, `template`, `scrape_cron`)
 - `actions/pipeline-manager/check-sessions.py` — the disabled session-pause automation this doc's session columns are meant to eventually feed

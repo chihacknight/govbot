@@ -80,9 +80,10 @@ repo yet) that, for every `govbot-data/*-legislation` repo:
   instead of session dates).
 - Whatever the output format, it should distinguish "flagged, not yet investigated" from
   "investigated, cause identified" — so a recurring run doesn't re-surface the same known
-  issue every week as if it were new. `actions/scrape/docs/scraper-health.md` is already
-  playing that role manually; the automated report could plausibly open/update a tracking
-  issue that links back to that doc once a state's been looked at.
+  issue every week as if it were new. `scraper-health.md` (archived 2026-07-24, no longer in
+  the repo -- see docs/src/state-status-reference.md for the current per-state reference
+  instead) played that role manually; the automated report could plausibly open/update a
+  tracking issue that links back to the new reference doc once a state's been looked at.
 
 ## Reference: what a first pass actually found (2026-07-14)
 
@@ -92,7 +93,7 @@ far:
 - Frozen at 2025-12-14 (7+ months stale): `usa, ak, ar, il, in, mi, nc, ne, nm, nv, ny, oh,
   pa, sc, vi, vt`
 - Gradual staircase after that, tapering through Jan–June as sessions wound down normally
-  (not inherently a problem — see `scraper-health.md` for the full breakdown)
+  (not inherently a problem — full breakdown was in the now-archived `scraper-health.md`)
 - Of the frozen 16, only `nc`, `il`, `wv` (not itself in the frozen-16, but the same
   symptom), and `ar` have been individually investigated as of this writing. `nc` was a
   config gap (never set to self-hosted); `il`/`wv` were confirmed Azure IP blocks. `ar` is
