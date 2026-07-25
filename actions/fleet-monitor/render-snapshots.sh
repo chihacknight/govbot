@@ -1377,7 +1377,8 @@ pipenv run python3 - <<'EOF'
 import json
 import re
 
-from dashboard import (FORMAT_WORKFLOW, SCRAPE_WORKFLOW, build_dashboard,
+from dashboard import (DEFAULT_LOGS_DATASOURCE, DEFAULT_METRICS_DATASOURCE, FORMAT_WORKFLOW,
+                       OBSERVED_MAX_SWEEP_GAP_HOURS, SCRAPE_WORKFLOW, build_dashboard,
                        encode_dashboard)
 
 board = build_dashboard()
@@ -1420,6 +1421,11 @@ def datasource_uids(node):
 assert variables["metrics"]["type"] == "datasource", variables["metrics"]
 assert variables["metrics"]["query"] == "prometheus", variables["metrics"]
 assert variables["logs"]["query"] == "loki", variables["logs"]
+# ...and each defaults to this fleet's own stack, because the import screen never
+# asks and Grafana's own fallback is the first datasource of the type in name
+# order — on Grafana Cloud as likely to be grafanacloud-usage as the real one.
+assert variables["metrics"]["current"]["value"] == DEFAULT_METRICS_DATASOURCE, variables["metrics"]
+assert variables["logs"]["current"]["value"] == DEFAULT_LOGS_DATASOURCE, variables["logs"]
 uids = datasource_uids(board["panels"])
 assert uids, "no panel datasource references found"
 assert set(uids) <= {"${metrics}", "${logs}"}, sorted(set(uids))
@@ -1439,10 +1445,15 @@ assert len(ids) == len(set(ids)), ids
 #
 #     Derived from the board, not a hand-written list of titles: a sixth metric
 #     panel added later must be covered too, or the same regression returns for
-#     it with a green suite. And the window is asserted against the sweep
-#     interval rather than against LOOKBACK itself — importing the constant
-#     under test would let LOOKBACK="1m" reintroduce the exact bug and stay green.
-SWEEP_HOURS = 1  # .github/workflows/fleet-monitor.yml: cron "0 * * * *"
+#     it with a green suite. And the window is asserted against a measured sweep
+#     gap rather than against LOOKBACK itself — importing the constant under test
+#     would let LOOKBACK="1m" reintroduce the exact bug and stay green.
+#
+#     The gap is MEASURED, not the cron expression. The workflow says hourly;
+#     GitHub runs scheduled workflows best-effort and on a fork's non-default
+#     branch they drift hard — 25 consecutive sweeps showed a median of 2.0h and
+#     a max of 3.6h. Sizing the window off "0 * * * *" is what blanked the board
+#     a second time, so this asserts real headroom over the observed worst case.
 metric_panels = [
     p for p in board["panels"]
     if p.get("datasource", {}).get("uid") == "${metrics}"
@@ -1455,11 +1466,11 @@ for panel in metric_panels:
     window = re.search(r"\[(\d+)([smh])\]\)$", expr)
     assert window, (panel["title"], expr)
     hours = int(window.group(1)) * {"s": 1 / 3600, "m": 1 / 60, "h": 1}[window.group(2)]
-    # Two sweeps of slack minimum: one missed sweep must not blank the fleet.
-    assert hours >= 2 * SWEEP_HOURS, (panel["title"], expr, hours)
+    assert hours >= 1.5 * OBSERVED_MAX_SWEEP_GAP_HOURS, (panel["title"], expr, hours)
     # Still an instant vector, so the table transformations and the stat
     # reducer keep working unchanged.
     assert target["instant"] is True, (panel["title"], target)
+assert OBSERVED_MAX_SWEEP_GAP_HOURS >= 3.6, OBSERVED_MAX_SWEEP_GAP_HOURS
 
 # 3. One status grid per action, in the order the actions run — scrape, then
 #    format. 112 tiles in a single panel shrank the text past legibility, so
@@ -1534,17 +1545,33 @@ paused_column = next(
 paused_properties = {p["id"]: p["value"] for p in paused_column["properties"]}
 assert paused_properties["custom.cellOptions"] == {"type": "auto"}, paused_properties
 assert "red" not in repr(paused_properties).lower(), paused_properties
+# The row link drives the LOGS panel's own jurisdiction filter, not the board's.
+# It is an absolute dashboard path: a bare "?var=..." relative URL rewrote the
+# address bar and re-ran nothing, so the link looked live and did nothing.
 links = fresh["fieldConfig"]["defaults"]["links"]
-assert links and "var-state=${__data.fields.state}" in links[0]["url"], links
+assert links, "no data link on the freshness table"
+assert links[0]["url"].startswith("/d/fleet-monitor-overview"), links
+assert "var-log_state=${__data.fields.state}" in links[0]["url"], links
+assert "var-state=" not in links[0]["url"], links
+# Carry the chosen time range through, so a drill-down does not silently reset it.
+assert "${__url_time_range}" in links[0]["url"], links
 
 # 5. The logs panel filters on every stream label the harvester ships, each as a
-#    regex matcher so multi-select "All" (.*) and a single pick both work. Run id
+#    regex matcher so multi-select "All" and a single pick both work. Run id
 #    and run URL are structured metadata, not labels, so they surface by
 #    expanding a line — log details must stay on.
+#
+#    Its jurisdiction filter is `log_state`, its own variable: a freshness row
+#    click narrows the logs without narrowing the fleet view around them.
 logs = panels["Run logs"]
 assert logs["type"] == "logs", logs["type"]
-for label in ("state", "org", "workflow", "outcome"):
-    assert f'{label}=~"${label}"' in logs["targets"][0]["expr"], logs["targets"][0]["expr"]
+for label, variable in (("state", "log_state"), ("org", "org"),
+                        ("workflow", "workflow"), ("outcome", "outcome")):
+    assert f'{label}=~"${variable}"' in logs["targets"][0]["expr"], logs["targets"][0]["expr"]
+# The grids and the table keep reading the ordinary state picker, so the two
+# filters stay independent by construction.
+assert 'state=~"$state"' in panels["Scrapers"]["targets"][0]["expr"], panels["Scrapers"]
+assert 'state=~"$state"' in fresh["targets"][0]["expr"], fresh["targets"][0]["expr"]
 assert logs["options"]["enableLogDetails"] is True, logs["options"]
 assert logs["options"]["sortOrder"] == "Descending", logs["options"]
 
@@ -1576,14 +1603,15 @@ assert outcome["query"]["stream"] == '{state=~".+"}', outcome
 # It must be ".+", not ".*": LogQL rejects a stream selector whose every matcher
 # is empty-compatible, so with all four pickers on All (the default on a fresh
 # import) ".*" makes the logs panel a parse error rather than an empty result.
-for name in ("state", "org", "workflow", "outcome"):
+for name in ("state", "org", "workflow", "outcome", "log_state"):
     assert variables[name]["allValue"] == ".+", variables[name]
     assert variables[name].get("skipUrlSync") is not True, variables[name]
 
 # Proven on the rendered selector, not just the variable: interpolate every
 # picker to its All value and confirm the logs query still holds one matcher
 # that cannot match empty.
-interpolated = re.sub(r"\$(state|org|workflow|outcome)", ".+", logs["targets"][0]["expr"])
+interpolated = re.sub(r"\$(log_state|state|org|workflow|outcome)", ".+",
+                      logs["targets"][0]["expr"])
 matchers = re.findall(r'(\w+)\s*=~\s*"([^"]*)"', interpolated)
 assert matchers, interpolated
 assert any(not re.fullmatch(value, "") for _, value in matchers), interpolated
@@ -1756,7 +1784,7 @@ for name, key, value in (
 
 intact, _ = run(CREDS, loads_as(board))
 assert intact.exit_code == 0, intact.output + str(intact.exception)
-assert "6 variables" in intact.output, intact.output
+assert f"{len(board['templating']['list'])} variables" in intact.output, intact.output
 print("✓ check-dashboard: pushes by uid, reads back panels AND variables, fails on rejection, "
       "on a hollow import, on a dropped picker, and on one that survives in name only")
 EOF

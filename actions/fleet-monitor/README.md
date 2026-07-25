@@ -190,12 +190,31 @@ say — and it is committed rather than hand-built, so the Grafana side is repro
 - **Nothing in the JSON belongs to one account.** Datasources are pickers (`${metrics}`,
   `${logs}`), never UIDs, and the dashboard carries `id: null` with a stable uid, so the
   same file imports into any stack instead of colliding with whatever holds that id there.
-- **Every metric panel looks back three hours.** The collector sweeps hourly, but an
-  instant query resolves against Prometheus's 5-minute staleness window — so a bare
-  selector finds nothing for ~55 minutes of every hour and the whole board reads "No
-  data". (It did, on a real import.) `last_over_time(…[3h])` keeps the queries instant
-  vectors, so the table transformations and the stat reducer are untouched, but one
-  missed sweep can no longer blank the fleet.
+  The pickers do *default* to this fleet's stack (`grafanacloud-govbot-prom` /
+  `grafanacloud-govbot-logs`) so an import renders immediately — a default, not a hardcode:
+  another stack changes them in the picker and nothing else about the JSON differs.
+- **Clicking a freshness row shows that jurisdiction's run logs.** It drives `log_state`,
+  a variable only the logs panel reads, so the grids and the table keep showing the whole
+  fleet — a fleet view narrowed to one state stops being a fleet view. The link is an
+  absolute dashboard path carrying the current time range; the bare `?var=…` relative URL
+  it replaced rewrote the address bar and re-ran nothing, so it looked live and did nothing.
+- **Every metric panel looks back six hours, and that number is measured.** An instant
+  query resolves against Prometheus's 5-minute staleness window, so a bare selector finds
+  nothing between sweeps — the board reads "No data", which it did on a real import.
+  `last_over_time(…[6h])` keeps the queries instant vectors, leaving the table
+  transformations and the stat reducer untouched.
+
+  Six hours, not one, because **the hourly cron is aspirational**. GitHub runs scheduled
+  workflows best-effort, and on a fork's non-default branch they drift hard: 25 consecutive
+  sweeps (2026-07-22..25) showed a median gap of **2.0h and a maximum of 3.6h**, with 4 of
+  24 gaps past three hours. A window sized off `cron: "0 * * * *"` blanked the board a
+  second time. Size it off the observed gap, with headroom.
+
+  The cost, worth knowing before you trust a number: a displayed value can be one window
+  old, so a repo whose data commit has just crossed 48 h can still read green for up to six
+  hours. **The same drift applies to alerting** — a "collector heartbeat absent 3h" rule
+  would false-fire on a routine 3.6h gap, so task 0006 needs to pick its thresholds from
+  this measurement, not from the cron expression.
 - **Filters are label-driven and URL-synced.** The state, org, and workflow pickers read
   their options from the metrics labels and the outcome picker from Loki's, so a
   jurisdiction added to the pipeline-manager config appears on its next sweep with no
@@ -437,9 +456,11 @@ then worst staleness and turns red at exactly the 48 h alert
 threshold, each freshness row
 links to its jurisdiction's filtered view, the logs panel matches on all four stream
 labels as regexes with log details on, every metric panel wraps its selector in
-`last_over_time` over a window of at least two sweeps so an hourly sweep is always in scope
-(checked against the cron interval, and over the metric panels derived from the board
-rather than a hand-written list), the rendered logs selector keeps at least one matcher
+`last_over_time` over a window with real headroom on the *measured* worst sweep gap, not on
+the cron expression (checked over the metric panels derived from the board rather than a
+hand-written list), the datasource pickers default to this stack, the freshness row link is
+an absolute path driving the logs panel's own `log_state` filter and carrying the time
+range, the rendered logs selector keeps at least one matcher
 that is not empty-compatible, each picker carries its own
 datasource's query dialect and an explicit `allValue: ".+"`, the pickers are label-driven,
 multi-select, and URL-synced, and the encoding is

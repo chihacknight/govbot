@@ -18,21 +18,45 @@ DASHBOARD_UID = "fleet-monitor-overview"
 # re-renders and diffs to prove it still matches this module.
 DASHBOARD_PATH = "dashboards/fleet-overview.json"
 
-# The collector sweeps hourly, but an instant query resolves against Prometheus's
-# 5-minute staleness lookback — so a bare selector finds nothing for ~55 minutes
-# of every hour, and the whole board reads "No data" (observed on a real import).
-# last_over_time reaches back three sweeps: still an instant vector, so the table
-# transformations and the stat reducer are unaffected, but one missed sweep can
-# no longer blank the fleet. main.py's live-check documents the same trap.
+# The workflow's cron says hourly. GitHub does not honour it: scheduled runs are
+# best-effort and queue behind everything else, and on a fork's non-default
+# branch they drift badly. Measured over 25 consecutive sweeps (2026-07-22..25):
+# median gap 2.0h, MAX 3.6h, with 4 of 24 gaps past three hours.
 #
-# The cost of the wider window: `paused` is a label, so flipping a jurisdiction
+# Size the look-back against that, never against the cron expression — a 3h
+# window read "No data" for the ~30 minutes after each long gap, which is
+# exactly how the board went blank the second time.
+OBSERVED_MAX_SWEEP_GAP_HOURS = 3.6
+
+# ~1.7x the worst observed gap. The cost of a wider window is that a displayed
+# value can be up to this old: a data-commit age can under-report by one window,
+# so a repo at 43h reads green when it has really crossed the 48h line. Against
+# a 48h threshold that is tolerable; a much wider window would not be.
+#
+# An instant query resolves against Prometheus's 5-minute staleness lookback, so
+# a bare selector finds nothing between sweeps whatever the schedule — hence
+# last_over_time, which stays an instant vector, leaving the table
+# transformations and the stat reducer unaffected. main.py's live-check
+# documents the same 5-minute trap from the other side.
+#
+# The other cost of the window: `paused` is a label, so flipping a jurisdiction
 # in or out of session starts a new series and abandons the old one, and the
-# abandoned twin stays resolvable for the look-back. For up to three hours after
-# a transition a jurisdiction appears in both grids and both freshness tables —
-# including red in the active grid, briefly, for something now out of session.
-# The same lag applies to a workflow dropped from expected_workflows. It settles
-# on its own; it is the price of a board that renders at all between sweeps.
-LOOKBACK = "3h"
+# abandoned twin stays resolvable for the look-back. For up to one window after a
+# transition a jurisdiction appears twice in a grid — including, briefly, red for
+# something now out of session. The same lag applies to a workflow dropped from
+# expected_workflows. It settles on its own; it is the price of a board that
+# renders at all between sweeps.
+LOOKBACK = "6h"
+
+# This fleet's own stack, so an import renders immediately instead of making
+# someone hunt through pickers. The import screen never asks (that prompt needs
+# an `__inputs` block, which parameterizing by variable deliberately avoids), and
+# Grafana's own fallback is the first datasource of the type in name order —
+# which on Grafana Cloud is as likely to be `grafanacloud-usage` as the stack's
+# own. These are defaults, not hardcoded uids: the pickers still work, so another
+# stack overrides them by hand and nothing else about the JSON changes.
+DEFAULT_METRICS_DATASOURCE = "grafanacloud-govbot-prom"
+DEFAULT_LOGS_DATASOURCE = "grafanacloud-govbot-logs"
 
 
 def _latest(selector: str) -> str:
@@ -40,10 +64,10 @@ def _latest(selector: str) -> str:
     return f"last_over_time({selector}[{LOOKBACK}])"
 
 
-def _datasource_variable(name: str, plugin: str, label: str) -> dict:
+def _datasource_variable(name: str, plugin: str, label: str, default: str) -> dict:
     """A datasource picker, so the JSON carries no stack-specific UID."""
     return {
-        "current": {},
+        "current": {"text": default, "value": default},
         "hide": 0,
         "includeAll": False,
         "label": label,
@@ -137,8 +161,10 @@ def _metrics_picker(name: str, label: str) -> dict:
 def _templating() -> dict:
     return {
         "list": [
-            _datasource_variable("metrics", "prometheus", "Metrics datasource"),
-            _datasource_variable("logs", "loki", "Logs datasource"),
+            _datasource_variable(
+                "metrics", "prometheus", "Metrics datasource", DEFAULT_METRICS_DATASOURCE
+            ),
+            _datasource_variable("logs", "loki", "Logs datasource", DEFAULT_LOGS_DATASOURCE),
             _metrics_picker("state", "Jurisdiction"),
             _metrics_picker("org", "Org"),
             _metrics_picker("workflow", "Workflow"),
@@ -157,6 +183,23 @@ def _templating() -> dict:
                 },
                 f"label_values({FLEET_STREAMS}, outcome)",
                 "Log outcome",
+            ),
+            # The logs panel gets its own jurisdiction filter, separate from the
+            # `state` picker that scopes the grids and the table. Clicking a
+            # freshness row should show that jurisdiction's logs, not narrow the
+            # whole board to one state — a fleet view filtered to a single
+            # jurisdiction stops being a fleet view.
+            _label_variable(
+                "log_state",
+                LOGS,
+                {
+                    "label": "state",
+                    "refId": "LokiVariableQueryEditor-VariableQuery",
+                    "stream": FLEET_STREAMS,
+                    "type": 1,
+                },
+                f"label_values({FLEET_STREAMS}, state)",
+                "Logs: jurisdiction",
             ),
         ]
     }
@@ -351,12 +394,20 @@ def _freshness_table(panel_id: int, y: int, height: int) -> dict:
     }
 
 
-# A relative link, so it works in whatever stack the JSON was imported into:
-# Grafana resolves it against the current dashboard and just swaps the filter.
+# Clicking a freshness row shows that jurisdiction's run logs. It drives
+# `log_state`, which only the logs panel reads, so the grids and the table keep
+# showing the whole fleet — narrowing everything to one state was both useless
+# and, as a bare "?var=..." relative URL, silently inert: Grafana rewrote the
+# address bar without re-running a thing. An absolute dashboard path fixes that,
+# and carrying the time range through means the click doesn't also reset the
+# window someone just chose.
 STATE_LINK = [
     {
-        "title": "Filter this dashboard to ${__data.fields.state}",
-        "url": "?var-state=${__data.fields.state}&var-org=${__data.fields.org}",
+        "title": "Show ${__data.fields.state} run logs",
+        "url": (
+            f"/d/{DASHBOARD_UID}?var-log_state=${{__data.fields.state}}"
+            "&${__url_time_range}"
+        ),
     }
 ]
 
@@ -393,8 +444,12 @@ def _logs_panel(panel_id: int, y: int) -> dict:
             {
                 "datasource": LOGS,
                 "editorMode": "code",
+                # `log_state`, not `state`: this panel has its own jurisdiction
+                # filter so a freshness row can point at it without dragging the
+                # rest of the board along.
                 "expr": (
-                    '{state=~"$state", org=~"$org", workflow=~"$workflow", outcome=~"$outcome"}'
+                    '{state=~"$log_state", org=~"$org", workflow=~"$workflow", '
+                    'outcome=~"$outcome"}'
                 ),
                 "queryType": "range",
                 "refId": "A",

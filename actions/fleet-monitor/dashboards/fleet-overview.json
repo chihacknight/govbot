@@ -109,7 +109,7 @@
             "uid": "${metrics}"
           },
           "editorMode": "code",
-          "expr": "last_over_time(fleet_workflow_run_status{workflow=\"openstates-scrape.yml\", paused=\"false\", state=~\"$state\", org=~\"$org\"}[3h])",
+          "expr": "last_over_time(fleet_workflow_run_status{workflow=\"openstates-scrape.yml\", paused=\"false\", state=~\"$state\", org=~\"$org\"}[6h])",
           "instant": true,
           "legendFormat": "{{state}}",
           "range": false,
@@ -121,7 +121,7 @@
             "uid": "${metrics}"
           },
           "editorMode": "code",
-          "expr": "last_over_time(fleet_workflow_run_status{workflow=\"openstates-scrape.yml\", paused=\"true\", state=~\"$state\", org=~\"$org\"}[3h])",
+          "expr": "last_over_time(fleet_workflow_run_status{workflow=\"openstates-scrape.yml\", paused=\"true\", state=~\"$state\", org=~\"$org\"}[6h])",
           "instant": true,
           "legendFormat": "{{state}}",
           "range": false,
@@ -233,7 +233,7 @@
             "uid": "${metrics}"
           },
           "editorMode": "code",
-          "expr": "last_over_time(fleet_workflow_run_status{workflow=\"format.yml\", paused=\"false\", state=~\"$state\", org=~\"$org\"}[3h])",
+          "expr": "last_over_time(fleet_workflow_run_status{workflow=\"format.yml\", paused=\"false\", state=~\"$state\", org=~\"$org\"}[6h])",
           "instant": true,
           "legendFormat": "{{state}}",
           "range": false,
@@ -245,7 +245,7 @@
             "uid": "${metrics}"
           },
           "editorMode": "code",
-          "expr": "last_over_time(fleet_workflow_run_status{workflow=\"format.yml\", paused=\"true\", state=~\"$state\", org=~\"$org\"}[3h])",
+          "expr": "last_over_time(fleet_workflow_run_status{workflow=\"format.yml\", paused=\"true\", state=~\"$state\", org=~\"$org\"}[6h])",
           "instant": true,
           "legendFormat": "{{state}}",
           "range": false,
@@ -271,8 +271,8 @@
           },
           "links": [
             {
-              "title": "Filter this dashboard to ${__data.fields.state}",
-              "url": "?var-state=${__data.fields.state}&var-org=${__data.fields.org}"
+              "title": "Show ${__data.fields.state} run logs",
+              "url": "/d/fleet-monitor-overview?var-log_state=${__data.fields.state}&${__url_time_range}"
             }
           ],
           "thresholds": {
@@ -360,7 +360,7 @@
             "uid": "${metrics}"
           },
           "editorMode": "code",
-          "expr": "last_over_time(fleet_repo_data_commit_age_hours{state=~\"$state\", org=~\"$org\"}[3h])",
+          "expr": "last_over_time(fleet_repo_data_commit_age_hours{state=~\"$state\", org=~\"$org\"}[6h])",
           "format": "table",
           "instant": true,
           "range": false,
@@ -426,7 +426,7 @@
             "uid": "${logs}"
           },
           "editorMode": "code",
-          "expr": "{state=~\"$state\", org=~\"$org\", workflow=~\"$workflow\", outcome=~\"$outcome\"}",
+          "expr": "{state=~\"$log_state\", org=~\"$org\", workflow=~\"$workflow\", outcome=~\"$outcome\"}",
           "queryType": "range",
           "refId": "A"
         }
@@ -443,7 +443,10 @@
   "templating": {
     "list": [
       {
-        "current": {},
+        "current": {
+          "text": "grafanacloud-govbot-prom",
+          "value": "grafanacloud-govbot-prom"
+        },
         "hide": 0,
         "includeAll": false,
         "label": "Metrics datasource",
@@ -457,7 +460,10 @@
         "type": "datasource"
       },
       {
-        "current": {},
+        "current": {
+          "text": "grafanacloud-govbot-logs",
+          "value": "grafanacloud-govbot-logs"
+        },
         "hide": 0,
         "includeAll": false,
         "label": "Logs datasource",
@@ -587,6 +593,39 @@
         "options": [],
         "query": {
           "label": "outcome",
+          "refId": "LokiVariableQueryEditor-VariableQuery",
+          "stream": "{state=~\".+\"}",
+          "type": 1
+        },
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".+",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "loki",
+          "uid": "${logs}"
+        },
+        "definition": "label_values({state=~\".+\"}, state)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Logs: jurisdiction",
+        "multi": true,
+        "name": "log_state",
+        "options": [],
+        "query": {
+          "label": "state",
           "refId": "LokiVariableQueryEditor-VariableQuery",
           "stream": "{state=~\".+\"}",
           "type": 1
