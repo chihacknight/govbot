@@ -386,7 +386,15 @@ OTHER_ERRORS=$(grep -E '(ERROR|EXCEPTION|TRACEBACK|AssertionError|TimeoutError|C
 # by logging a line with that exact prefix (see fl/bills.py's HouseFetchResilientPage
 # for the originating example).
 SKIPPED_ITEMS=$(grep 'SKIPPED BILL:' "$SCRAPE_LOG" 2>/dev/null | head -10 || echo "")
-SKIPPED_COUNT=$(grep -c 'SKIPPED BILL:' "$SCRAPE_LOG" 2>/dev/null || echo "0")
+# grep -c always prints a count to stdout, including "0" -- but it also
+# exits 1 whenever the count is zero (its normal "no match" signal), which
+# is the case for every state except FL right now. `|| echo "0"` looked
+# like a safe fallback but actually double-fires here: grep's own "0" and
+# the fallback's "0" both land in the variable ("0\n0"), corrupting the
+# JSON built from it below. `|| true` avoids the double-print; the
+# parameter expansion below still covers a genuinely-empty/unset case.
+SKIPPED_COUNT=$(grep -c 'SKIPPED BILL:' "$SCRAPE_LOG" 2>/dev/null || true)
+SKIPPED_COUNT=${SKIPPED_COUNT:-0}
 
 # Combine errors, prioritizing tracebacks
 if [ -n "$TRACEBACKS" ]; then
@@ -399,7 +407,12 @@ fi
 
 # Count unique error occurrences (rough estimate)
 if [ -n "$TRACEBACKS" ]; then
-  ERROR_COUNT=$(echo "$TRACEBACKS" | grep -c 'Traceback\|Error\|Exception' 2>/dev/null || echo "1")
+  # Same grep -c double-print pitfall as SKIPPED_COUNT above: if TRACEBACKS
+  # somehow doesn't literally contain any of these keywords, grep -c prints
+  # "0" AND exits 1, triggering "|| echo 1" too -- corrupting this into
+  # "0\n1" instead of a single value.
+  ERROR_COUNT=$(echo "$TRACEBACKS" | grep -c 'Traceback\|Error\|Exception' 2>/dev/null || true)
+  ERROR_COUNT=${ERROR_COUNT:-1}
 elif [ -n "$EXCEPTIONS" ]; then
   ERROR_COUNT=$(echo "$EXCEPTIONS" | wc -l | tr -d ' ')
 else
