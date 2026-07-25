@@ -165,16 +165,28 @@ say — and it is committed rather than hand-built, so the Grafana side is repro
   has drifted — it does not rewrite the file, so regenerate it yourself with
   `main.py dashboard --out dashboards/fleet-overview.json` after editing the builder. The
   file in the repo can never quietly stop matching the code that explains it.
-- **Five panels.** Two status grids on `fleet_workflow_run_status` (one tile per
-  jurisdiction+workflow, coloured by the latest completed run), two freshness tables on
-  `fleet_repo_data_commit_age_hours` sorted worst-first, and a logs panel on the Loki
-  streams. Tables turn red above 48 h — the same number the staleness alert fires on, kept
-  in one place so the dashboard and the alert cannot disagree.
-- **Paused jurisdictions are split out, not filtered out.** Out of session, a failing run
-  and a month-old data commit are the legislative calendar, not an incident, so paused
-  repos get their own grid and their own table, are never coloured red, and still say
-  whether their last run failed. Dimmed, not hidden — colouring them red would teach
-  everyone to ignore red.
+- **Four panels.** Two status grids on `fleet_workflow_run_status` — **Scrapers** then
+  **Formatters**, the order the actions actually run — each one tile per jurisdiction,
+  coloured by that jurisdiction's latest completed run. Then one full-width freshness table
+  on `fleet_repo_data_commit_age_hours`, and a logs panel on the Loki streams. The table
+  turns red above 48 h — the same number the staleness alert fires on, kept in one place so
+  the dashboard and the alert cannot disagree.
+- **One grid per workflow, and a tile says only its state.** 112 tiles in a single panel
+  shrank the text past reading; 56 apiece with the workflow carried by the panel title
+  leaves the two-letter jurisdiction code rendered as large as the OK/FAILING beside it.
+  (The code renders as the metric label stores it, lower-case — Grafana has no way to
+  upper-case a series name without hardcoding all 56 jurisdictions into the JSON, which
+  would cost the property that a new jurisdiction appears on its own.)
+- **Paused jurisdictions are dimmed in place, not split out.** Out of session, a failing run
+  and a month-old data commit are the legislative calendar, not an incident. In the grids
+  they come from a second query overridden to a flat colour — never red — whose text still
+  says whether the last run failed. In the freshness table they are a column. A separate
+  panel for them, which is what this replaced, was an empty box whenever the whole fleet
+  was in session, which is most of the time.
+- **One place the never-red rule cannot hold**: a table colours a column by threshold, not
+  a row by another row's value, so a paused repo stale past 48 h does turn red in the
+  freshness table. Sorting keeps it out of the way — in-session repos first, worst
+  staleness at the top of them — so rows needing action outrank rows waiting for a session.
 - **Nothing in the JSON belongs to one account.** Datasources are pickers (`${metrics}`,
   `${logs}`), never UIDs, and the dashboard carries `id: null` with a stable uid, so the
   same file imports into any stack instead of colliding with whatever holds that id there.
@@ -415,10 +427,14 @@ committed `dashboards/fleet-overview.json` (it never rewrites the committed copy
 so it is guarded by that diff rather than by the repo-wide `verify-snapshots.sh` gate.
 Around that, offline checks lock what the panels actually promise — every datasource
 reference is a variable and never a stack UID, `id` is null and the uid stable (so a fresh
-stack imports rather than collides), panel ids are unique, the status grids read the
-latest-run metric with paused split into its own never-red grid whose text still reports
-the last run, the freshness tables sort worst-first and turn red at exactly the 48 h alert
-threshold while the paused table has no red anywhere in its config, each freshness row
+stack imports rather than collides), panel ids are unique, the Scrapers grid precedes the
+Formatters grid and each pins its own workflow, a tile is labelled `{{state}}` alone at the
+same text size as its value, paused tiles come from a second query overridden to a flat
+never-red colour whose text still reports the last run, the freshness table is one
+full-width panel whose query carries no paused filter and whose `paused` column survives
+the organize step uncoloured by the staleness thresholds, it sorts in-session rows first
+then worst staleness and turns red at exactly the 48 h alert
+threshold, each freshness row
 links to its jurisdiction's filtered view, the logs panel matches on all four stream
 labels as regexes with log details on, every metric panel wraps its selector in
 `last_over_time` over a window of at least two sweeps so an hourly sweep is always in scope

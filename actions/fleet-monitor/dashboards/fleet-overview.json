@@ -12,7 +12,7 @@
         "type": "prometheus",
         "uid": "${metrics}"
       },
-      "description": "Latest completed run per expected workflow, in-session jurisdictions only. Red is actionable.",
+      "description": "Latest completed scrape per jurisdiction. Red is actionable; a dimmed tile is out of session, where a failing run is the calendar, not a fault.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -38,10 +38,46 @@
           ],
           "noValue": "no data"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "text",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "color": "text",
+                        "index": 0,
+                        "text": "paused \u00b7 last run failed"
+                      },
+                      "1": {
+                        "color": "text",
+                        "index": 1,
+                        "text": "paused \u00b7 last run ok"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 10,
+        "h": 12,
         "w": 24,
         "x": 0,
         "y": 0
@@ -59,6 +95,10 @@
           "fields": "",
           "values": false
         },
+        "text": {
+          "titleSize": 18,
+          "valueSize": 18
+        },
         "textMode": "value_and_name",
         "wideLayout": false
       },
@@ -69,14 +109,26 @@
             "uid": "${metrics}"
           },
           "editorMode": "code",
-          "expr": "last_over_time(fleet_workflow_run_status{paused=\"false\", state=~\"$state\", org=~\"$org\", workflow=~\"$workflow\"}[3h])",
+          "expr": "last_over_time(fleet_workflow_run_status{workflow=\"openstates-scrape.yml\", paused=\"false\", state=~\"$state\", org=~\"$org\"}[3h])",
           "instant": true,
-          "legendFormat": "{{state}} {{workflow}}",
+          "legendFormat": "{{state}}",
           "range": false,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+          },
+          "editorMode": "code",
+          "expr": "last_over_time(fleet_workflow_run_status{workflow=\"openstates-scrape.yml\", paused=\"true\", state=~\"$state\", org=~\"$org\"}[3h])",
+          "instant": true,
+          "legendFormat": "{{state}}",
+          "range": false,
+          "refId": "B"
         }
       ],
-      "title": "Active jurisdictions",
+      "title": "Scrapers",
       "type": "stat"
     },
     {
@@ -84,7 +136,7 @@
         "type": "prometheus",
         "uid": "${metrics}"
       },
-      "description": "Out-of-session jurisdictions. Shown for completeness and never coloured red \u2014 a stale or failing run here is expected, not a problem.",
+      "description": "Latest completed format run per jurisdiction \u2014 the step after the scrape. Same colouring: red is actionable, dimmed is out of session.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -95,14 +147,14 @@
             {
               "options": {
                 "0": {
-                  "color": "text",
+                  "color": "red",
                   "index": 0,
-                  "text": "paused \u00b7 last run failed"
+                  "text": "FAILING"
                 },
                 "1": {
-                  "color": "text",
+                  "color": "green",
                   "index": 1,
-                  "text": "paused \u00b7 last run ok"
+                  "text": "OK"
                 }
               },
               "type": "value"
@@ -110,13 +162,49 @@
           ],
           "noValue": "no data"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "text",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "color": "text",
+                        "index": 0,
+                        "text": "paused \u00b7 last run failed"
+                      },
+                      "1": {
+                        "color": "text",
+                        "index": 1,
+                        "text": "paused \u00b7 last run ok"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 6,
+        "h": 12,
         "w": 24,
         "x": 0,
-        "y": 10
+        "y": 12
       },
       "id": 2,
       "options": {
@@ -131,6 +219,10 @@
           "fields": "",
           "values": false
         },
+        "text": {
+          "titleSize": 18,
+          "valueSize": 18
+        },
         "textMode": "value_and_name",
         "wideLayout": false
       },
@@ -141,14 +233,26 @@
             "uid": "${metrics}"
           },
           "editorMode": "code",
-          "expr": "last_over_time(fleet_workflow_run_status{paused=\"true\", state=~\"$state\", org=~\"$org\", workflow=~\"$workflow\"}[3h])",
+          "expr": "last_over_time(fleet_workflow_run_status{workflow=\"format.yml\", paused=\"false\", state=~\"$state\", org=~\"$org\"}[3h])",
           "instant": true,
-          "legendFormat": "{{state}} {{workflow}}",
+          "legendFormat": "{{state}}",
           "range": false,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+          },
+          "editorMode": "code",
+          "expr": "last_over_time(fleet_workflow_run_status{workflow=\"format.yml\", paused=\"true\", state=~\"$state\", org=~\"$org\"}[3h])",
+          "instant": true,
+          "legendFormat": "{{state}}",
+          "range": false,
+          "refId": "B"
         }
       ],
-      "title": "Paused jurisdictions",
+      "title": "Formatters",
       "type": "stat"
     },
     {
@@ -156,7 +260,7 @@
         "type": "prometheus",
         "uid": "${metrics}"
       },
-      "description": "Hours since the last commit touching each in-session repo's data path. Red above 48h \u2014 the same line the staleness alert fires on.",
+      "description": "Hours since the last commit touching each repo's data path, in-session repos first. Red above 48h \u2014 the same line the staleness alert fires on. A paused repo is stale by the session calendar, not by fault; read the paused column before reacting to its colour.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -198,14 +302,52 @@
                 "value": "Hours since data commit"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paused"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "In session"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "auto"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "false": {
+                        "color": "text",
+                        "index": 0,
+                        "text": "yes"
+                      },
+                      "true": {
+                        "color": "text",
+                        "index": 1,
+                        "text": "paused"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
           }
         ]
       },
       "gridPos": {
-        "h": 12,
-        "w": 12,
+        "h": 14,
+        "w": 24,
         "x": 0,
-        "y": 16
+        "y": 24
       },
       "id": 3,
       "options": {
@@ -218,7 +360,7 @@
             "uid": "${metrics}"
           },
           "editorMode": "code",
-          "expr": "last_over_time(fleet_repo_data_commit_age_hours{paused=\"false\", state=~\"$state\", org=~\"$org\"}[3h])",
+          "expr": "last_over_time(fleet_repo_data_commit_age_hours{state=~\"$state\", org=~\"$org\"}[3h])",
           "format": "table",
           "instant": true,
           "range": false,
@@ -231,8 +373,7 @@
           "id": "organize",
           "options": {
             "excludeByName": {
-              "Time": true,
-              "paused": true
+              "Time": true
             }
           }
         },
@@ -242,101 +383,9 @@
             "fields": {},
             "sort": [
               {
-                "desc": true,
-                "field": "Value"
-              }
-            ]
-          }
-        }
-      ],
-      "type": "table"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${metrics}"
-      },
-      "description": "Out-of-session repos. Staleness here is the session calendar, not a fault, so nothing in this table turns red.",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "color-text"
-            }
-          },
-          "links": [
-            {
-              "title": "Filter this dashboard to ${__data.fields.state}",
-              "url": "?var-state=${__data.fields.state}&var-org=${__data.fields.org}"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "text",
-                "value": null
-              }
-            ]
-          },
-          "unit": "h"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Value"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Hours since data commit"
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 12,
-        "w": 12,
-        "x": 12,
-        "y": 16
-      },
-      "id": 4,
-      "options": {
-        "showHeader": true
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${metrics}"
-          },
-          "editorMode": "code",
-          "expr": "last_over_time(fleet_repo_data_commit_age_hours{paused=\"true\", state=~\"$state\", org=~\"$org\"}[3h])",
-          "format": "table",
-          "instant": true,
-          "range": false,
-          "refId": "A"
-        }
-      ],
-      "title": "Data freshness \u00b7 paused",
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "paused": true
-            }
-          }
-        },
-        {
-          "id": "sortBy",
-          "options": {
-            "fields": {},
-            "sort": [
+                "desc": false,
+                "field": "paused"
+              },
               {
                 "desc": true,
                 "field": "Value"
@@ -357,9 +406,9 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 28
+        "y": 38
       },
-      "id": 5,
+      "id": 4,
       "options": {
         "dedupStrategy": "none",
         "enableLogDetails": true,

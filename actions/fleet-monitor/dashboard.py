@@ -162,58 +162,12 @@ def _templating() -> dict:
     }
 
 
-def _status_grid(panel_id: int, title: str, paused: str, mappings: dict, y: int,
-                 height: int, description: str) -> dict:
-    """One tile per jurisdiction+workflow, coloured by the latest completed run.
-
-    A stat panel rather than a table because the question it answers is
-    "anything red?", read in one glance across the whole fleet, and stat lays
-    many series out as a grid on its own.
-    """
-    return {
-        "datasource": METRICS,
-        "description": description,
-        "fieldConfig": {
-            "defaults": {
-                "color": {"mode": "fixed", "fixedColor": "text"},
-                "mappings": [{"options": mappings, "type": "value"}],
-                "noValue": "no data",
-            },
-            "overrides": [],
-        },
-        "gridPos": {"h": height, "w": 24, "x": 0, "y": y},
-        "id": panel_id,
-        "options": {
-            "colorMode": "background",
-            "graphMode": "none",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False},
-            "textMode": "value_and_name",
-            "wideLayout": False,
-        },
-        "targets": [
-            {
-                "datasource": METRICS,
-                "editorMode": "code",
-                "expr": _latest(
-                    f'fleet_workflow_run_status{{paused="{paused}", state=~"$state", '
-                    'org=~"$org", workflow=~"$workflow"}'
-                ),
-                "instant": True,
-                "legendFormat": "{{state}} {{workflow}}",
-                "range": False,
-                "refId": "A",
-            }
-        ],
-        "title": title,
-        "type": "stat",
-    }
-
-
-# Paused jurisdictions are out of session, so a failing run is expected rather
-# than actionable: they keep their own grid, are never coloured red, and their
-# text still says whether the last run failed — dimmed, not hidden.
+# Paused jurisdictions are out of session, so a failing run is the legislative
+# calendar rather than something to act on. They sit in the same grid as
+# everything else — hiding them loses the fleet, and giving them their own panel
+# left a permanently empty box whenever the whole fleet is in session — but they
+# are dimmed to a flat colour and never red, and their text still says whether
+# the last run failed.
 ACTIVE_MAPPINGS = {
     "0": {"color": "red", "index": 0, "text": "FAILING"},
     "1": {"color": "green", "index": 1, "text": "OK"},
@@ -223,6 +177,81 @@ PAUSED_MAPPINGS = {
     "1": {"color": "text", "index": 1, "text": "paused · last run ok"},
 }
 
+# The tile text, as large as the OK/FAILING beside it. A jurisdiction is its
+# two-letter code and nothing else: the workflow is the panel it sits in now,
+# so repeating it per tile only shrank the part that identifies the tile.
+TILE_TEXT_SIZE = 18
+
+
+def _status_grid(panel_id: int, title: str, workflow: str, y: int, height: int,
+                 description: str) -> dict:
+    """One tile per jurisdiction, coloured by its latest completed run.
+
+    A stat panel rather than a table because the question it answers is
+    "anything red?", read in one glance, and stat lays many series out as a grid
+    on its own. One grid per workflow keeps that glance readable: 112 tiles in a
+    single panel shrank the text past legibility.
+
+    Paused jurisdictions come from a second query rather than a second panel, so
+    the grid holds the whole fleet; an override keyed on that query's refId
+    flattens their colour and rewords their mapping, which is the only way
+    Grafana will colour some tiles by value and others not.
+    """
+    def target(ref_id: str, paused: str) -> dict:
+        return {
+            "datasource": METRICS,
+            "editorMode": "code",
+            # The workflow is pinned by the panel, so it carries no
+            # `workflow=~"$workflow"` matcher — the split *is* that filter. The
+            # workflow picker still scopes the logs panel.
+            "expr": _latest(
+                f'fleet_workflow_run_status{{workflow="{workflow}", paused="{paused}", '
+                'state=~"$state", org=~"$org"}'
+            ),
+            "instant": True,
+            "legendFormat": "{{state}}",
+            "range": False,
+            "refId": ref_id,
+        }
+
+    return {
+        "datasource": METRICS,
+        "description": description,
+        "fieldConfig": {
+            "defaults": {
+                "color": {"mode": "fixed", "fixedColor": "text"},
+                "mappings": [{"options": ACTIVE_MAPPINGS, "type": "value"}],
+                "noValue": "no data",
+            },
+            "overrides": [
+                {
+                    "matcher": {"id": "byFrameRefID", "options": "B"},
+                    "properties": [
+                        {"id": "color", "value": {"fixedColor": "text", "mode": "fixed"}},
+                        {"id": "mappings", "value": [
+                            {"options": PAUSED_MAPPINGS, "type": "value"}
+                        ]},
+                    ],
+                }
+            ],
+        },
+        "gridPos": {"h": height, "w": 24, "x": 0, "y": y},
+        "id": panel_id,
+        "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False},
+            "text": {"titleSize": TILE_TEXT_SIZE, "valueSize": TILE_TEXT_SIZE},
+            "textMode": "value_and_name",
+            "wideLayout": False,
+        },
+        "targets": [target("A", "false"), target("B", "true")],
+        "title": title,
+        "type": "stat",
+    }
+
 
 # The data-commit-age alert fires above 48 hours (README "Alerting"); the table
 # turns red at the same number so the dashboard and the alert can never disagree.
@@ -231,27 +260,64 @@ STALE_HOURS = 48
 AGE_FIELD = "Value"
 
 
-def _freshness_table(panel_id: int, title: str, paused: str, thresholds: dict, y: int,
-                     height: int, description: str, links: list) -> dict:
-    """Hours since each repo's last data commit, worst first."""
+def _freshness_table(panel_id: int, y: int, height: int) -> dict:
+    """Hours since each repo's last data commit — the whole fleet, one table.
+
+    Paused repos are a column here rather than a second panel: a table can say
+    "out of session" in a cell, and the separate panel it replaces was an empty
+    box whenever the whole fleet was in session, which is most of the time.
+
+    The cost, worth knowing: a table colours a column by threshold, not a row by
+    another row's value, so a paused repo stale past 48 h does turn red — the
+    one place the never-red-for-paused rule cannot hold. Sorting keeps it out of
+    the way: in-session repos first, worst staleness at the top of them, so the
+    rows that need action outrank rows that are just waiting for a session.
+    """
     return {
         "datasource": METRICS,
-        "description": description,
+        "description": (
+            "Hours since the last commit touching each repo's data path, in-session repos "
+            f"first. Red above {STALE_HOURS}h — the same line the staleness alert fires on. "
+            "A paused repo is stale by the session calendar, not by fault; read the paused "
+            "column before reacting to its colour."
+        ),
         "fieldConfig": {
             "defaults": {
                 "custom": {"align": "auto", "cellOptions": {"type": "color-text"}},
-                "links": links,
-                "thresholds": thresholds,
+                "links": STATE_LINK,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {"color": "green", "value": None},
+                        {"color": "red", "value": STALE_HOURS},
+                    ],
+                },
                 "unit": "h",
             },
             "overrides": [
                 {
                     "matcher": {"id": "byName", "options": AGE_FIELD},
                     "properties": [{"id": "displayName", "value": "Hours since data commit"}],
-                }
+                },
+                {
+                    # The paused column is a label, not a measurement — colouring
+                    # it by the staleness thresholds would be meaningless.
+                    "matcher": {"id": "byName", "options": "paused"},
+                    "properties": [
+                        {"id": "displayName", "value": "In session"},
+                        {"id": "custom.cellOptions", "value": {"type": "auto"}},
+                        {"id": "mappings", "value": [{
+                            "options": {
+                                "false": {"color": "text", "index": 0, "text": "yes"},
+                                "true": {"color": "text", "index": 1, "text": "paused"},
+                            },
+                            "type": "value",
+                        }]},
+                    ],
+                },
             ],
         },
-        "gridPos": {"h": height, "w": 12, "x": 0 if paused == "false" else 12, "y": y},
+        "gridPos": {"h": height, "w": 24, "x": 0, "y": y},
         "id": panel_id,
         "options": {"showHeader": True},
         "targets": [
@@ -259,8 +325,7 @@ def _freshness_table(panel_id: int, title: str, paused: str, thresholds: dict, y
                 "datasource": METRICS,
                 "editorMode": "code",
                 "expr": _latest(
-                    f'fleet_repo_data_commit_age_hours{{paused="{paused}", state=~"$state", '
-                    'org=~"$org"}'
+                    'fleet_repo_data_commit_age_hours{state=~"$state", org=~"$org"}'
                 ),
                 "format": "table",
                 "instant": True,
@@ -268,14 +333,19 @@ def _freshness_table(panel_id: int, title: str, paused: str, thresholds: dict, y
                 "refId": "A",
             }
         ],
-        "title": title,
+        "title": "Data freshness",
         "transformations": [
             # The instant query returns one row per series with the labels as
-            # columns; drop the bookkeeping ones and put the worst staleness on
-            # top. (No __name__ to drop: a range-vector function strips it.)
-            {"id": "organize", "options": {"excludeByName": {"Time": True, "paused": True}}},
-            {"id": "sortBy", "options": {"fields": {},
-                                         "sort": [{"desc": True, "field": AGE_FIELD}]}},
+            # columns; drop the bookkeeping ones. `paused` stays — it is the
+            # column that replaced the second table. (No __name__ to drop: a
+            # range-vector function strips it.)
+            {"id": "organize", "options": {"excludeByName": {"Time": True}}},
+            # In-session first ("false" sorts before "true"), worst staleness at
+            # the top of each group.
+            {"id": "sortBy", "options": {"fields": {}, "sort": [
+                {"desc": False, "field": "paused"},
+                {"desc": True, "field": AGE_FIELD},
+            ]}},
         ],
         "type": "table",
     }
@@ -335,65 +405,41 @@ def _logs_panel(panel_id: int, y: int) -> dict:
     }
 
 
+# The two actions the fleet performs, in the order they run: a jurisdiction is
+# scraped, then its output is formatted. One grid each — 56 tiles apiece instead
+# of 112 in one panel, which is where legibility went.
+SCRAPE_WORKFLOW = "openstates-scrape.yml"
+FORMAT_WORKFLOW = "format.yml"
+
+GRID_HEIGHT = 12
+
+
 def _panels() -> list:
     return [
         _status_grid(
             1,
-            "Active jurisdictions",
-            "false",
-            ACTIVE_MAPPINGS,
+            "Scrapers",
+            SCRAPE_WORKFLOW,
             y=0,
-            height=10,
+            height=GRID_HEIGHT,
             description=(
-                "Latest completed run per expected workflow, in-session jurisdictions only. "
-                "Red is actionable."
+                "Latest completed scrape per jurisdiction. Red is actionable; a dimmed "
+                "tile is out of session, where a failing run is the calendar, not a fault."
             ),
         ),
         _status_grid(
             2,
-            "Paused jurisdictions",
-            "true",
-            PAUSED_MAPPINGS,
-            y=10,
-            height=6,
+            "Formatters",
+            FORMAT_WORKFLOW,
+            y=GRID_HEIGHT,
+            height=GRID_HEIGHT,
             description=(
-                "Out-of-session jurisdictions. Shown for completeness and never coloured "
-                "red — a stale or failing run here is expected, not a problem."
+                "Latest completed format run per jurisdiction — the step after the scrape. "
+                "Same colouring: red is actionable, dimmed is out of session."
             ),
         ),
-        _freshness_table(
-            3,
-            "Data freshness",
-            "false",
-            {
-                "mode": "absolute",
-                "steps": [
-                    {"color": "green", "value": None},
-                    {"color": "red", "value": STALE_HOURS},
-                ],
-            },
-            y=16,
-            height=12,
-            description=(
-                "Hours since the last commit touching each in-session repo's data path. "
-                f"Red above {STALE_HOURS}h — the same line the staleness alert fires on."
-            ),
-            links=STATE_LINK,
-        ),
-        _freshness_table(
-            4,
-            "Data freshness · paused",
-            "true",
-            {"mode": "absolute", "steps": [{"color": "text", "value": None}]},
-            y=16,
-            height=12,
-            description=(
-                "Out-of-session repos. Staleness here is the session calendar, not a fault, "
-                "so nothing in this table turns red."
-            ),
-            links=STATE_LINK,
-        ),
-        _logs_panel(5, y=28),
+        _freshness_table(3, y=2 * GRID_HEIGHT, height=14),
+        _logs_panel(4, y=2 * GRID_HEIGHT + 14),
     ]
 
 

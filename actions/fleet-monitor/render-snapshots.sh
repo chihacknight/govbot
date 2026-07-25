@@ -1377,7 +1377,8 @@ pipenv run python3 - <<'EOF'
 import json
 import re
 
-from dashboard import build_dashboard, encode_dashboard
+from dashboard import (FORMAT_WORKFLOW, SCRAPE_WORKFLOW, build_dashboard,
+                       encode_dashboard)
 
 board = build_dashboard()
 panels = {p["title"]: p for p in board["panels"] if "title" in p}
@@ -1446,7 +1447,7 @@ metric_panels = [
     p for p in board["panels"]
     if p.get("datasource", {}).get("uid") == "${metrics}"
 ]
-assert len(metric_panels) == 4, [p.get("title") for p in metric_panels]
+assert len(metric_panels) == 3, [p.get("title") for p in metric_panels]
 for panel in metric_panels:
     target = panel["targets"][0]
     expr = target["expr"]
@@ -1460,41 +1461,79 @@ for panel in metric_panels:
     # reducer keep working unchanged.
     assert target["instant"] is True, (panel["title"], target)
 
-# 3. Status grids read the latest-run metric. Paused jurisdictions are split
-#    into their own grid and never coloured red: they are out of session, so a
-#    failing run there is the calendar, not an incident, and colouring it red
-#    would train people to ignore red.
-active, paused = panels["Active jurisdictions"], panels["Paused jurisdictions"]
-assert 'paused="false"' in active["targets"][0]["expr"], active["targets"][0]["expr"]
-assert 'paused="true"' in paused["targets"][0]["expr"], paused["targets"][0]["expr"]
-for panel in (active, paused):
-    legend = panel["targets"][0]["legendFormat"]
-    assert "{{state}}" in legend and "{{workflow}}" in legend, legend
-    assert panel["targets"][0]["instant"] is True, panel["targets"][0]
-options = active["fieldConfig"]["defaults"]["mappings"][0]["options"]
-assert options["0"] == {"color": "red", "index": 0, "text": "FAILING"}, options
-assert options["1"] == {"color": "green", "index": 1, "text": "OK"}, options
-assert "red" not in {c.lower() for c in colors(paused)}, colors(paused)
-paused_options = paused["fieldConfig"]["defaults"]["mappings"][0]["options"]
-assert paused_options["0"]["text"].startswith("paused"), paused_options
-assert paused_options["1"]["text"].startswith("paused"), paused_options
+# 3. One status grid per action, in the order the actions run — scrape, then
+#    format. 112 tiles in a single panel shrank the text past legibility, so
+#    the split is the readability fix, not decoration; the panel ordering is
+#    part of the contract.
+titles = [p["title"] for p in board["panels"] if "title" in p]
+assert titles.index("Scrapers") < titles.index("Formatters"), titles
+scrapers, formatters = panels["Scrapers"], panels["Formatters"]
+assert scrapers["gridPos"]["y"] < formatters["gridPos"]["y"], titles
+assert f'workflow="{SCRAPE_WORKFLOW}"' in scrapers["targets"][0]["expr"], scrapers["targets"][0]
+assert f'workflow="{FORMAT_WORKFLOW}"' in formatters["targets"][0]["expr"], formatters["targets"][0]
 
-# 4. Freshness tables: worst first, red exactly at the 48h alert line (one
-#    number, so dashboard and alert can never disagree), paused split out and
-#    never red, and every row links to that jurisdiction's own filtered view.
-fresh, fresh_paused = panels["Data freshness"], panels["Data freshness · paused"]
-for panel in (fresh, fresh_paused):
-    target = panel["targets"][0]
-    assert "fleet_repo_data_commit_age_hours{" in target["expr"], target["expr"]
-    assert target["instant"] is True and target["format"] == "table", target
-    sorts = [t for t in panel["transformations"] if t["id"] == "sortBy"]
-    assert sorts and sorts[0]["options"]["sort"][0]["desc"] is True, panel["transformations"]
-assert 'paused="false"' in fresh["targets"][0]["expr"], fresh["targets"][0]["expr"]
-assert 'paused="true"' in fresh_paused["targets"][0]["expr"], fresh_paused["targets"][0]["expr"]
+for grid in (scrapers, formatters):
+    # A tile is its jurisdiction and nothing else: the workflow is the panel it
+    # sits in now, so repeating it per tile only shrank the identifying part.
+    assert grid["targets"][0]["legendFormat"] == "{{state}}", grid["targets"][0]
+    # ...rendered as large as the OK/FAILING beside it.
+    text = grid["options"]["text"]
+    assert text["titleSize"] == text["valueSize"], text
+    for target in grid["targets"]:
+        assert target["instant"] is True, target
+
+    # Paused jurisdictions live in the SAME grid (a separate panel was an empty
+    # box whenever the whole fleet was in session), dimmed via an override on
+    # the second query's frame — the only way Grafana will colour some tiles by
+    # value and leave others flat.
+    active, paused = grid["targets"]
+    assert 'paused="false"' in active["expr"], active["expr"]
+    assert 'paused="true"' in paused["expr"], paused["expr"]
+    assert paused["refId"] == "B", paused
+    options = grid["fieldConfig"]["defaults"]["mappings"][0]["options"]
+    assert options["0"] == {"color": "red", "index": 0, "text": "FAILING"}, options
+    assert options["1"] == {"color": "green", "index": 1, "text": "OK"}, options
+    override = next(
+        o for o in grid["fieldConfig"]["overrides"]
+        if o["matcher"] == {"id": "byFrameRefID", "options": "B"}
+    )
+    properties = {p["id"]: p["value"] for p in override["properties"]}
+    assert properties["color"] == {"fixedColor": "text", "mode": "fixed"}, properties
+    paused_options = properties["mappings"][0]["options"]
+    assert paused_options["0"]["text"].startswith("paused"), paused_options
+    assert paused_options["1"]["text"].startswith("paused"), paused_options
+    # A paused tile is never red, whatever its last run did.
+    assert "red" not in repr(properties).lower(), properties
+
+# 4. One full-width freshness table for the whole fleet, red exactly at the 48h
+#    alert line (one number, so dashboard and alert can never disagree), paused
+#    carried as a column rather than a second table, in-session rows first with
+#    the worst staleness on top, and every row linking to its own filtered view.
+fresh = panels["Data freshness"]
+assert "Data freshness · paused" not in panels, list(panels)
+assert fresh["gridPos"]["w"] == 24, fresh["gridPos"]
+target = fresh["targets"][0]
+assert "fleet_repo_data_commit_age_hours{" in target["expr"], target["expr"]
+assert target["instant"] is True and target["format"] == "table", target
+# No paused filter: one query covers the fleet.
+assert "paused=" not in target["expr"], target["expr"]
+# ...and the paused label survives as a column rather than being dropped.
+organize = next(t for t in fresh["transformations"] if t["id"] == "organize")
+assert not organize["options"]["excludeByName"].get("paused"), organize
+sort = next(t for t in fresh["transformations"] if t["id"] == "sortBy")["options"]["sort"]
+assert sort[0] == {"desc": False, "field": "paused"}, sort
+assert sort[1] == {"desc": True, "field": "Value"}, sort
 steps = fresh["fieldConfig"]["defaults"]["thresholds"]["steps"]
 assert {"color": "red", "value": 48} in steps, steps
 assert any(s["color"] == "green" and s["value"] is None for s in steps), steps
-assert "red" not in repr(fresh_paused["fieldConfig"]), fresh_paused["fieldConfig"]
+# The paused column is a label, not a measurement: it must not be coloured by
+# the staleness thresholds.
+paused_column = next(
+    o for o in fresh["fieldConfig"]["overrides"] if o["matcher"]["options"] == "paused"
+)
+paused_properties = {p["id"]: p["value"] for p in paused_column["properties"]}
+assert paused_properties["custom.cellOptions"] == {"type": "auto"}, paused_properties
+assert "red" not in repr(paused_properties).lower(), paused_properties
 links = fresh["fieldConfig"]["defaults"]["links"]
 assert links and "var-state=${__data.fields.state}" in links[0]["url"], links
 
@@ -1556,7 +1595,7 @@ assert any(not re.fullmatch(value, "") for _, value in matchers), interpolated
 encoded = encode_dashboard()
 assert not re.search(r"20\d\d-\d\d-\d\dT", encoded), "a timestamp leaked into the dashboard"
 print(f"✓ dashboard: {len(board['panels'])} panels, parameterized datasources, "
-      "paused split out of red, logs filtered on all four stream labels")
+      "scrapers before formatters, paused dimmed inline, logs filtered on all four labels")
 EOF
 
 # The committed dashboard must be exactly what the builder produces — otherwise
