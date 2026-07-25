@@ -161,8 +161,10 @@ say — and it is committed rather than hand-built, so the Grafana side is repro
 
 - **[dashboard.py](dashboard.py)** builds it as data; **[dashboards/fleet-overview.json](dashboards/fleet-overview.json)**
   is that build, rendered and committed. The JSON is what you import; the module is what
-  you review. The render script regenerates the JSON and fails if the two have drifted, so
-  the file in the repo can never quietly stop matching the code that explains it.
+  you review. The render script re-renders the dashboard and fails if the committed copy
+  has drifted — it does not rewrite the file, so regenerate it yourself with
+  `main.py dashboard --out dashboards/fleet-overview.json` after editing the builder. The
+  file in the repo can never quietly stop matching the code that explains it.
 - **Five panels.** Two status grids on `fleet_workflow_run_status` (one tile per
   jurisdiction+workflow, coloured by the latest completed run), two freshness tables on
   `fleet_repo_data_commit_age_hours` sorted worst-first, and a logs panel on the Loki
@@ -191,7 +193,10 @@ say — and it is committed rather than hand-built, so the Grafana side is repro
   the options it resolved, or to the empty string when it resolved none, which quietly
   turns each `=~` matcher into one that matches nothing. Every filter round-trips
   through the URL — "here is Wyoming's freshness" is a link you can paste to someone,
-  and each freshness row links to its own jurisdiction's filtered view.
+  and each freshness row links to its own jurisdiction's filtered view. The all-value is
+  `.+` rather than `.*` because LogQL rejects a stream selector whose every matcher is
+  empty-compatible: with all four pickers on All, `.*` would make the logs panel a parse
+  error instead of a query.
 - **Run id and run URL surface by expanding a log line**, not as labels: they travel as
   structured metadata (see Budgets above), which is why log details stay on.
 
@@ -396,7 +401,10 @@ query-back detecting a silently-discarded (204-but-dropped) age against a fake
 Loki. The real ingest-window probe runs only with `GRAFANA_LOGS_*` set.
 
 The dashboard has no snapshot file because the committed JSON is the snapshot: the render
-regenerates `dashboards/fleet-overview.json` from `dashboard.py` and fails on any drift.
+re-renders it from `dashboard.py` into a temporary file and fails on any drift from the
+committed `dashboards/fleet-overview.json` (it never rewrites the committed copy — that is
+`main.py dashboard --out …`). Note that this one artifact lives outside `__snapshots__/`,
+so it is guarded by that diff rather than by the repo-wide `verify-snapshots.sh` gate.
 Around that, offline checks lock what the panels actually promise — every datasource
 reference is a variable and never a stack UID, `id` is null and the uid stable (so a fresh
 stack imports rather than collides), panel ids are unique, the status grids read the
@@ -405,14 +413,19 @@ the last run, the freshness tables sort worst-first and turn red at exactly the 
 threshold while the paused table has no red anywhere in its config, each freshness row
 links to its jurisdiction's filtered view, the logs panel matches on all four stream
 labels as regexes with log details on, every metric panel wraps its selector in
-`last_over_time(…[3h])` so an hourly sweep is always in scope, each picker carries its own
-datasource's query dialect and an explicit `allValue: ".*"`, the pickers are label-driven,
+`last_over_time` over a window of at least two sweeps so an hourly sweep is always in scope
+(checked against the cron interval, and over the metric panels derived from the board
+rather than a hand-written list), the rendered logs selector keeps at least one matcher
+that is not empty-compatible, each picker carries its own
+datasource's query dialect and an explicit `allValue: ".+"`, the pickers are label-driven,
 multi-select, and URL-synced, and the encoding is
 deterministic. `check-dashboard` is locked the same way as the other live paths: its
 credential-free skip, and against a fake Grafana its wire shape (dashboards API endpoint,
 bearer auth, overwrite-by-uid, read-back by uid), its loud failure on a rejected import,
 its refusal to pass a push that returns 200 but reads back hollow, and its refusal to pass
-an import that lost a template variable. The real import is
+an import that lost a template variable or kept one in name only (stripped of its
+all-value, or repointed at the wrong datasource — a picker that resolves to nothing blanks
+every panel filtering on it). The real import is
 opt-in — `FLEET_MONITOR_DASHBOARD_CHECK=1 ./render-snapshots.sh` — so a bare render never
 writes into anyone's stack.
 

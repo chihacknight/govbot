@@ -508,13 +508,31 @@ def check_dashboard():
     # at `${metrics}`/`${logs}`, so a variable Grafana declined to migrate leaves
     # all five panels present and all five rendering nothing — a blank board that
     # a panel count reports as a clean import.
+    stored = {
+        v.get("name"): v
+        for v in loaded.get("dashboard", {}).get("templating", {}).get("list", [])
+    }
     want = {v["name"] for v in board["templating"]["list"]}
-    got = {v.get("name") for v in loaded.get("dashboard", {}).get("templating", {}).get("list", [])}
-    if want - got:
+    if want - set(stored):
         raise click.ClickException(
-            f"dashboard imported without variable(s) {', '.join(sorted(want - got))}; "
+            f"dashboard imported without variable(s) {', '.join(sorted(want - set(stored)))}; "
             "panels would render empty"
         )
+    # Presence by name is not enough — that is precisely how the first broken
+    # import passed. A picker stripped of its all-value, or repointed at the
+    # wrong datasource, resolves to nothing and blanks every panel that filters
+    # on it while the name sits there looking fine. Only the fields that decide
+    # whether a picker resolves are compared; the query object itself is left
+    # alone, since Grafana may legitimately normalise it on store.
+    for variable in board["templating"]["list"]:
+        landed = stored[variable["name"]]
+        for field in ("allValue", "datasource"):
+            if field in variable and landed.get(field) != variable[field]:
+                raise click.ClickException(
+                    f"variable {variable['name']} imported with {field}="
+                    f"{landed.get(field)!r}, expected {variable[field]!r}; "
+                    "it would resolve to nothing and blank every panel using it"
+                )
     click.echo(
         f"✓ dashboard imports and loads back with all {len(panels)} panels "
         f"and {len(want)} variables"

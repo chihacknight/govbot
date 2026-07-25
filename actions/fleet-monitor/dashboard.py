@@ -15,7 +15,7 @@ LOGS = {"type": "loki", "uid": "${logs}"}
 DASHBOARD_UID = "fleet-monitor-overview"
 
 # The committed artifact: what a maintainer imports, and what the render script
-# regenerates to prove it still matches this module.
+# re-renders and diffs to prove it still matches this module.
 DASHBOARD_PATH = "dashboards/fleet-overview.json"
 
 # The collector sweeps hourly, but an instant query resolves against Prometheus's
@@ -56,7 +56,7 @@ def _datasource_variable(name: str, plugin: str, label: str) -> dict:
 FLEET_STREAMS = '{state=~".+"}'
 
 
-def _label_variable(name: str, datasource: dict, query, definition: str, label: str) -> dict:
+def _label_variable(name: str, datasource: dict, query: dict, definition: str, label: str) -> dict:
     """A multi-select picker fed by the datasource's own label values.
 
     Label-driven rather than a hardcoded list: a jurisdiction or workflow added
@@ -71,13 +71,19 @@ def _label_variable(name: str, datasource: dict, query, definition: str, label: 
     nothing. A picker that hasn't populated yet would silently blank every panel
     that uses it, and it would look identical to having no data at all.
 
+    It is ``.+`` rather than ``.*`` because LogQL rejects a stream selector
+    whose every matcher is empty-compatible: with all four pickers on All,
+    ``{state=~".*", …}`` is a parse error, not an empty result. Every fleet
+    stream and every fleet series carries all four labels, so ``.+`` selects
+    exactly the same thing and is legal in both LogQL and PromQL.
+
     ``query`` is the datasource's own query object, not one shape for both:
     Prometheus wants the label-values discriminator its editor writes, Loki
     wants a different object entirely, and feeding either the other's shape
     leaves the picker empty.
     """
     return {
-        "allValue": ".*",
+        "allValue": ".+",
         "current": {"selected": True, "text": ["All"], "value": ["$__all"]},
         "datasource": datasource,
         "definition": definition,

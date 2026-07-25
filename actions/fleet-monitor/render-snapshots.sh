@@ -1375,8 +1375,9 @@ EOF
 # regenerates it and fails if the repo copy no longer matches the builder.
 pipenv run python3 - <<'EOF'
 import json
+import re
 
-from dashboard import LOOKBACK, build_dashboard, encode_dashboard
+from dashboard import build_dashboard, encode_dashboard
 
 board = build_dashboard()
 panels = {p["title"]: p for p in board["panels"] if "title" in p}
@@ -1434,14 +1435,30 @@ assert len(ids) == len(set(ids)), ids
 #     minutes of each hour — a whole-board "No data" that every offline check
 #     here would otherwise pass. Observed on a real import; locked so it cannot
 #     come back.
-for title in ("Active jurisdictions", "Paused jurisdictions",
-              "Data freshness", "Data freshness · paused"):
-    target = panels[title]["targets"][0]
-    assert target["expr"].startswith("last_over_time("), (title, target["expr"])
-    assert target["expr"].endswith(f"[{LOOKBACK}])"), (title, target["expr"])
+#
+#     Derived from the board, not a hand-written list of titles: a sixth metric
+#     panel added later must be covered too, or the same regression returns for
+#     it with a green suite. And the window is asserted against the sweep
+#     interval rather than against LOOKBACK itself — importing the constant
+#     under test would let LOOKBACK="1m" reintroduce the exact bug and stay green.
+SWEEP_HOURS = 1  # .github/workflows/fleet-monitor.yml: cron "0 * * * *"
+metric_panels = [
+    p for p in board["panels"]
+    if p.get("datasource", {}).get("uid") == "${metrics}"
+]
+assert len(metric_panels) == 4, [p.get("title") for p in metric_panels]
+for panel in metric_panels:
+    target = panel["targets"][0]
+    expr = target["expr"]
+    assert expr.startswith("last_over_time("), (panel["title"], expr)
+    window = re.search(r"\[(\d+)([smh])\]\)$", expr)
+    assert window, (panel["title"], expr)
+    hours = int(window.group(1)) * {"s": 1 / 3600, "m": 1 / 60, "h": 1}[window.group(2)]
+    # Two sweeps of slack minimum: one missed sweep must not blank the fleet.
+    assert hours >= 2 * SWEEP_HOURS, (panel["title"], expr, hours)
     # Still an instant vector, so the table transformations and the stat
     # reducer keep working unchanged.
-    assert target["instant"] is True, (title, target)
+    assert target["instant"] is True, (panel["title"], target)
 
 # 3. Status grids read the latest-run metric. Paused jurisdictions are split
 #    into their own grid and never coloured red: they are out of session, so a
@@ -1513,9 +1530,21 @@ assert outcome["query"]["stream"] == '{state=~".+"}', outcome
 # alternation of the options it resolved, and to the EMPTY STRING when it
 # resolved none — turning each =~ matcher into one that matches nothing. A
 # not-yet-populated picker would silently blank every panel that uses it.
+#
+# It must be ".+", not ".*": LogQL rejects a stream selector whose every matcher
+# is empty-compatible, so with all four pickers on All (the default on a fresh
+# import) ".*" makes the logs panel a parse error rather than an empty result.
 for name in ("state", "org", "workflow", "outcome"):
-    assert variables[name]["allValue"] == ".*", variables[name]
+    assert variables[name]["allValue"] == ".+", variables[name]
     assert variables[name].get("skipUrlSync") is not True, variables[name]
+
+# Proven on the rendered selector, not just the variable: interpolate every
+# picker to its All value and confirm the logs query still holds one matcher
+# that cannot match empty.
+interpolated = re.sub(r"\$(state|org|workflow|outcome)", ".+", logs["targets"][0]["expr"])
+matchers = re.findall(r'(\w+)\s*=~\s*"([^"]*)"', interpolated)
+assert matchers, interpolated
+assert any(not re.fullmatch(value, "") for _, value in matchers), interpolated
 
 # 7. Deterministic: regenerating the committed JSON is a no-op diff unless the
 #    dashboard really changed.
@@ -1661,11 +1690,31 @@ none_at_all["templating"] = {"list": []}
 blank, _ = run(CREDS, loads_as(none_at_all))
 assert blank.exit_code != 0, blank.output
 
+
+# Presence by name is not enough — that is exactly how the first broken import
+# passed. A picker stripped of its all-value, or repointed at the wrong
+# datasource, resolves to nothing and blanks every panel that filters on it.
+def mangled(name, key, value):
+    copy = json.loads(json.dumps(board))
+    for variable in copy["templating"]["list"]:
+        if variable["name"] == name:
+            variable[key] = value
+    return copy
+
+
+for name, key, value in (
+    ("state", "allValue", ""),
+    ("outcome", "datasource", {"type": "prometheus", "uid": "${metrics}"}),
+):
+    hollow, _ = run(CREDS, loads_as(mangled(name, key, value)))
+    assert hollow.exit_code != 0, (name, key, hollow.output)
+    assert name in hollow.output, (name, key, hollow.output)
+
 intact, _ = run(CREDS, loads_as(board))
 assert intact.exit_code == 0, intact.output + str(intact.exception)
 assert "6 variables" in intact.output, intact.output
 print("✓ check-dashboard: pushes by uid, reads back panels AND variables, fails on rejection, "
-      "on a hollow import, and on a dropped picker")
+      "on a hollow import, on a dropped picker, and on one that survives in name only")
 EOF
 
 # Live check self-skips without credentials (exit 0, says so) — CI has no
