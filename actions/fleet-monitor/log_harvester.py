@@ -5,9 +5,10 @@ Each hourly sweep ships only runs newer than the per-(repo, workflow) watermark
 (watermark.py), so re-running an unchanged window ships nothing. For every new
 *completed* run it downloads the log archive, unpacks the per-job logs, parses the
 RFC 3339 timestamp GitHub prefixes on every line, drops known-noise lines, and
-applies a volume policy — full logs for a failed/cancelled run, the last ~100
-lines for a success — then groups the result into batches labeled
-``org``/``state``/``workflow``/``outcome`` for logs_shipper.
+applies a volume policy — full logs for a failed/cancelled run (bounded to the last
+~MAX_FAILURE_BYTES so a pathological multi-MB dump can't time out the push or trip
+Loki's rate limit), the last ~100 lines for a success — then groups the result into
+batches labeled ``org``/``state``/``workflow``/``outcome`` for logs_shipper.
 
 Three rules keep the watermark honest against partial progress:
 
@@ -61,13 +62,19 @@ LOOKBACK_HOURS = 24
 RUNS_PER_PAGE = 30
 MAX_RUN_PAGES = 4
 
-# Outcomes whose full logs we keep — the ones an operator debugs. Deliberately
+# Outcomes whose logs we keep in full — the ones an operator debugs. Deliberately
 # wider than the task's named "failed/cancelled": timed_out and startup_failure
-# are equally debuggable failures, and they are rare enough that the log-volume
-# budget (README Budgets) is unaffected. Everything else (a success) is tailed to
-# the last SUCCESS_TAIL lines: proof it ran, not a transcript.
+# are equally debuggable failures. Everything else (a success) is tailed to the
+# last SUCCESS_TAIL lines: proof it ran, not a transcript.
 FULL_LOG_OUTCOMES = frozenset({"failure", "cancelled", "timed_out", "startup_failure"})
 SUCCESS_TAIL = 100
+
+# A failure keeps its full log, but bounded to the tail — where the error and
+# traceback land. An unbounded dump is a real problem, not a hypothetical: a
+# Florida sweep measured ~9 MB in one run, which times out the push, trips Loki's
+# ingestion rate limit (429), and threatens the 50 GB/mo budget. The tail up to
+# this many bytes captures the failure while keeping each push small.
+MAX_FAILURE_BYTES = 256 * 1024
 
 # RFC 3339 with an optional fractional part and a literal Z, the exact form GitHub
 # prefixes on every Actions log line (fractional part is up to 9 digits — more
@@ -146,13 +153,29 @@ def _is_noise(message: str) -> bool:
     return stripped.startswith("##[group]") or stripped.startswith("##[endgroup]")
 
 
-def apply_volume_policy(entries, outcome, tail=SUCCESS_TAIL):
-    """Full logs for a debuggable outcome (failure/cancelled/timed out); the last
-    ``tail`` lines for anything else. Absence of a transcript for a green run is
-    the budget trade the README documents."""
-    if outcome in FULL_LOG_OUTCOMES:
+def apply_volume_policy(entries, outcome):
+    """The last SUCCESS_TAIL lines for a green run (proof it ran, not a transcript);
+    a debuggable outcome (failure/cancelled/timed out) keeps its full log, bounded
+    to the last ~MAX_FAILURE_BYTES — the tail, where the error and traceback land.
+    An over-cap failure is truncated with a marker line naming how many lines were
+    dropped, so an unbounded dump can't time out the push, trip Loki's rate limit,
+    or blow the volume budget. ``entries`` are (event_ns, message, job) tuples."""
+    if outcome not in FULL_LOG_OUTCOMES:
+        return entries[-SUCCESS_TAIL:]
+    total = 0
+    kept = 0  # entries retained from the end
+    for index in range(len(entries) - 1, -1, -1):
+        total += len(entries[index][1].encode("utf-8")) + 1
+        if total > MAX_FAILURE_BYTES and kept:
+            break
+        kept += 1
+    if kept == len(entries):
         return entries
-    return entries[-tail:]
+    tail = entries[len(entries) - kept:]
+    marker = (tail[0][0],
+              f"[fleet-monitor] {len(entries) - kept} earlier line(s) dropped — "
+              f"failure log capped at ~{MAX_FAILURE_BYTES // 1024} KB", tail[0][2])
+    return [marker] + tail
 
 
 def harvest_run(run, archive_bytes, now):

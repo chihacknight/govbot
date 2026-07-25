@@ -745,6 +745,26 @@ def runs_ok(o, r, w):
 b2, _, _ = harvest_logs(juris, {}, runs_ok, lambda o, r, i: zip_of({"1.txt": big}), NOW)
 assert len(b2[0]["entries"]) == 100 and b2[0]["entries"][-1]["line"] == "line 249", "success tailed to 100"
 
+# A failure keeps FULL logs but bounded to the last ~MAX_FAILURE_BYTES: an
+# unbounded dump (a real 9 MB Florida run) times out the push and trips Loki's
+# rate limit. Over-cap failures are truncated to the tail (error/traceback) with
+# a marker; the last line — where the failure lands — always survives.
+from log_harvester import MAX_FAILURE_BYTES
+huge = "".join(f"2026-07-21T11:00:00.0000000Z filler line {i}\n" for i in range(200000))
+huge += "2026-07-21T11:00:09.0000000Z FATAL: the actual error\n"
+def runs_huge(o, r, w):
+    return [{"id": 9, "status": "completed", "conclusion": "failure",
+             "created_at": "2026-07-21T11:00:00Z", "html_url": "u"}]
+b_huge, _, _ = harvest_logs(juris, {}, runs_huge, lambda o, r, i: zip_of({"1.txt": huge}), NOW)
+kept_lines = [e["line"] for e in b_huge[0]["entries"]]
+kept_bytes = sum(len(line.encode()) + 1 for line in kept_lines)
+assert kept_bytes <= MAX_FAILURE_BYTES + 200, f"failure log not capped: {kept_bytes} bytes"
+assert len(kept_lines) < 200001, "an over-cap failure must be truncated, not shipped whole"
+assert kept_lines[-1] == "FATAL: the actual error", "the tail (the error) must survive the cap"
+assert kept_lines[0].startswith("[fleet-monitor]") and "dropped" in kept_lines[0], \
+    f"a truncation marker must lead the capped log: {kept_lines[0]}"
+print("✓ harvester: an oversized failure log is capped to the tail with a truncation marker")
+
 def runs_mix(o, r, w):
     return [{"id": 10, "status": "completed", "conclusion": "success",
              "created_at": "2026-07-21T11:00:00Z", "html_url": "u"},

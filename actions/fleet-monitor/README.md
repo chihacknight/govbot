@@ -64,9 +64,12 @@ run logs to Grafana Cloud Loki — never the same run twice — in three modules
   run downloads the log archive, unpacks the top-level per-job logs, parses the
   RFC 3339 timestamp GitHub prefixes on every line, drops known-noise lines
   (`##[group]`/`##[endgroup]`, blanks), and applies the **volume policy**: full logs
-  for a failed/cancelled/timed-out run (the ones you debug), the last ~100 lines for
-  a success (proof it ran, not a transcript). Per-repo failures are recorded and
-  skipped — one bad repo never aborts the sweep.
+  for a failed/cancelled/timed-out run (the ones you debug) — bounded to the last
+  ~256 KB, the tail where the error and traceback land, since a real Florida run
+  shipped a 9 MB dump that timed out the push and tripped Loki's rate limit — and
+  the last ~100 lines for a success (proof it ran, not a transcript). An over-cap
+  failure gets a marker line naming how many lines were dropped. Per-repo failures
+  are recorded and skipped — one bad repo never aborts the sweep.
 - **[watermark.py](watermark.py)** — the incremental boundary: a JSON map of
   `"<org>/<repo>/<workflow>"` → the last shipped run id, so re-running an unchanged
   window ships nothing. Persisted between hourly sweeps by the Actions cache; a lost
@@ -125,13 +128,17 @@ the offsets are assigned in event-time order within each stream.
   `fleet_collector_heartbeat` pair the orchestrator emits per sweep → **~336 series (+2 heartbeat)**
   for the current fleet, against the Grafana Cloud free-tier budget of ~10k active series.
   10× fleet growth still fits.
-- **Log volume**: the tail policy is what keeps logs in budget. Worst case — one new
-  run per repo per hour (scrapers mostly run less often), ~100-line success tails at
-  ~200 B/line ≈ 20 KB/run → 112 runs × 24 h × 30 d ≈ **1.6 GB/month**, plus full logs
-  for the failures (say 5%, ~2k lines ≈ 400 KB each) ≈ another ~1.7 GB → **≈ 3 GB/month**,
-  well inside the Grafana Cloud free-tier budget of **50 GB/month, 14-day retention**
-  (re-verify at signup). Even 10× fleet growth (~33 GB) fits; shipping full success
-  logs instead of the tail would not.
+- **Log volume**: the success tail and the **256 KB failure cap** are what keep logs
+  in budget — and inside Loki's ingestion rate limit. Worst case — one new run per
+  repo per hour (scrapers mostly run less often), ~100-line success tails at ~200 B/line
+  ≈ 20 KB/run → 112 runs × 24 h × 30 d ≈ **1.6 GB/month**, plus capped failure logs
+  (say 5% at the 256 KB ceiling) ≈ another ~1 GB → **≈ 3 GB/month**, well inside the
+  Grafana Cloud free-tier budget of **50 GB/month, 14-day retention** (re-verify at
+  signup). Even every failure hitting the cap every hour (112 × 256 KB × 720) is ~20 GB,
+  still under budget. Pushes are **gzipped** (log text compresses ~10×), which cuts
+  egress and upload time; an uncapped 9 MB failure (measured) both timed out the push
+  and tripped Loki's per-tenant ingestion rate limit (HTTP 429), which the cap fixes at
+  the source by keeping each push small.
 
 ### Credentials (environment variables)
 
