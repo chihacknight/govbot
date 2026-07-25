@@ -173,6 +173,11 @@ the offsets are assigned in event-time order within each stream.
 | `GRAFANA_QUERY_USER` / `GRAFANA_QUERY_KEY` | Prometheus instance ID / token (`metrics:read`, live-check only) |
 | `GRAFANA_DASHBOARD_URL` | stack base URL, `https://<stack>.grafana.net` (`check-dashboard` only) |
 | `GRAFANA_DASHBOARD_KEY` | service-account token with dashboard write (`check-dashboard` only; **bearer**-authed, unlike the Basic-auth push endpoints) |
+| `GRAFANA_ALERTS_URL` | stack base URL, `https://<stack>.grafana.net` (`provision-alerts` only) |
+| `GRAFANA_ALERTS_KEY` | service-account token with **alerting write** and datasource read (`provision-alerts` only; bearer-authed) |
+| `SLACK_WEBHOOK_URL` | Slack incoming-webhook URL for the contact point (`provision-alerts` only; never committed) |
+| `ALERT_EMAIL` | address the email integration delivers to (`provision-alerts` only; never committed) |
+| `GRAFANA_METRICS_DATASOURCE_UID` | *optional*: pins the datasource the rules query. Discovered from the stack when unset; **required** when a stack has more than one Prometheus datasource |
 
 ## Dashboard: the fleet view, as code
 
@@ -241,8 +246,9 @@ say — and it is committed rather than hand-built, so the Grafana side is repro
   The cost, worth knowing before you trust a number: a displayed value can be one window
   old, so a repo whose data commit has just crossed 48 h can still read green for up to six
   hours. **The same drift applies to alerting** — a "collector heartbeat absent 3h" rule
-  would false-fire on a routine 3.6h gap, so task 0006 needs to pick its thresholds from
-  this measurement, not from the cron expression.
+  would false-fire on a routine 3.6h gap, which is why the dead-man rule below waits six
+  hours instead. Thresholds here come from this measurement, never from the cron
+  expression.
 - **Filters are label-driven and URL-synced.** The state, org, and workflow pickers read
   their options from the metrics labels and the outcome picker from Loki's, so a
   jurisdiction added to the pipeline-manager config appears on its next sweep with no
@@ -290,6 +296,96 @@ every panel filters on `=~"$state"` and points at `${metrics}`/`${logs}`, so a v
 Grafana declined to migrate leaves all five panels present and all five rendering nothing.
 Missing credentials exit 0 with a skip notice, so an offline run passes without an account.
 
+## Alerting: rules and contact points, as code
+
+Three rules at launch, committed the same way the dashboard is — built as data by
+[alerting.py](alerting.py), rendered into [alerting/](alerting/), applied by
+`provision-alerts`:
+
+- **An active jurisdiction's latest run failed** (`fleet_workflow_run_status < 1`), **an
+  active jurisdiction's data is stale** (`fleet_repo_data_commit_age_hours > 48`), and
+  **the collector itself has gone quiet** (`absent_over_time(fleet_collector_heartbeat_repos[6h])`).
+  The first two carry the jurisdiction; the third is the dead-man switch that stops the
+  other two from being quietly meaningless when nothing is being measured at all.
+- **Paused jurisdictions never page.** Both jurisdiction rules filter `paused="false"` in
+  the query, so an out-of-session state whose scrape fails doesn't reach the notification
+  policy, let alone a phone. This is the same rule the dashboard renders as a dimmed tile,
+  and the reason the metric carries the label at all.
+- **The dead-man waits six hours, not the three the PRD asked for.** Three is below the
+  *measured* worst sweep gap of 3.6 h (see the dashboard section above), so a 3 h rule
+  pages on an ordinary late run — the fastest way to teach everyone to ignore it. Six is
+  ~1.7× the observed worst case and reuses the dashboard's look-back, so board and alert
+  can't drift apart. The cost is real and worth stating: a collector that dies right after
+  a sweep goes unreported for up to six hours. Against a 48 h staleness rule, that is
+  affordable.
+- **The 48 h number exists once.** `alerting.py` imports `STALE_HOURS` from `dashboard.py`
+  rather than restating it, so the table's red line and the alert's threshold are the same
+  number by construction, not by anyone remembering to change both.
+- **Rules evaluate every 5 minutes with a 10-minute pending period, and no-data resolves to
+  OK.** The facts underneath change hourly at most, so a long pending period would only
+  delay real alerts. A missing series means the collector didn't ship — which the heartbeat
+  rule reports once, rather than 47 per-state pages saying the same thing worse. An
+  execution error is *not* treated as no-data: a datasource that has gone away shows up as
+  a broken rule.
+- **One contact point, two integrations: Slack and email.** Adding the PRD's GitHub-issue
+  delivery later is a third integration on the same point, not a second route to keep in
+  step. Resolved notifications are on, because a channel that only ever fills with red and
+  never visibly clears is a channel people mute.
+- **Grouped by rule, not by jurisdiction.** 47 jurisdictions share the same scrapers, so
+  one upstream break trips the run-failed rule for dozens at once. Grouped by `alertname`
+  that is one message listing every affected state; grouped by state it is forty messages
+  in a minute. `group_wait` 30 s, `group_interval` 5 m, `repeat_interval` 24 h — still
+  broken tomorrow is worth saying again, still broken in an hour is not.
+- **Every alert links into the board, filtered to the jurisdiction that fired it.** The
+  link is absolute and carries a pinned time range: a notification is read in Slack or an
+  inbox, where the dashboard's own relative `/d/…` row links resolve against the wrong
+  host, and `${__url_time_range}` has nothing to expand it. The heartbeat alert links to
+  the unfiltered board — its series carries no labels, so a `var-state=` there would filter
+  to nothing on the one alert that fires when everything else has gone quiet.
+- **Nothing stack-specific and no credential is committed.** The datasource uid, the stack
+  URL, the webhook, and the address are `$PLACEHOLDERS` resolved at provision time. A
+  placeholder nobody supplies is a hard failure, never an empty string — Grafana accepts a
+  contact point with a blank webhook URL, then accepts alerts routed to it and drops them,
+  which looks exactly like a working alerting setup that nothing ever trips.
+
+### Provisioning it into a fresh stack
+
+```bash
+export GRAFANA_ALERTS_URL=https://<stack>.grafana.net
+export GRAFANA_ALERTS_KEY=<service-account token with alerting write>
+export SLACK_WEBHOOK_URL=<Slack incoming webhook>
+export ALERT_EMAIL=<address to notify>
+pipenv run python main.py provision-alerts
+```
+
+It reads the committed files (not a fresh render — what you reviewed is what gets applied),
+resolves their placeholders, creates the `Fleet Monitor` folder, applies the contact point
+and the whole rule group, grafts the notification route, and then **waits for the stack to
+evaluate the rules**. That last step is the point: Grafana will accept a rule whose
+datasource uid points at nothing, store it, and serve it back intact — the failure only
+appears as `health: error` once evaluation runs, so a check that stops at the 200 is a
+check that passes while nothing works. Missing credentials exit 0 with a skip notice.
+
+Two behaviours worth knowing before you run it against someone else's stack:
+
+- **The notification policy is grafted, never replaced.** Grafana's policy API has no
+  partial update — a PUT swaps the entire root tree — so applying a root of our own would
+  silently redirect every alert that stack already runs to this contact point. Instead the
+  fleet's route is inserted as a child of whatever root is there, matched on the
+  `service=fleet-monitor` label every rule carries, and a re-run replaces that one branch
+  rather than adding a second. For the same reason
+  [alerting/fleet-notification-policy.yaml](alerting/fleet-notification-policy.yaml) is
+  deliberately **not** a Grafana `policies:` document: dropping such a file into a
+  self-hosted provisioning directory would do exactly the damage this avoids. The rules and
+  contact-point files are ordinary provisioning documents and can be dropped in as-is.
+- **Everything is applied with `X-Disable-Provenance`,** so the rules stay editable in the
+  UI. Without it Grafana marks API-provisioned resources read-only, and the first
+  maintainer who tries to silence a rule meets a greyed-out form with no explanation.
+
+Re-running is safe and idempotent: the rule group is one PUT keyed by folder and group
+name (so a rule deleted from the committed file actually disappears instead of lingering as
+an orphan), and the integrations are keyed by stable uids.
+
 ## Usage
 
 ### As a Standalone Script
@@ -326,6 +422,16 @@ pipenv run python main.py dashboard --out dashboards/fleet-overview.json
 # Import the dashboard into a real stack and read it back (needs
 # GRAFANA_DASHBOARD_URL/KEY; exits 0 with a notice when they're absent):
 pipenv run python main.py check-dashboard
+
+# Print the alerting YAML, or regenerate the committed copies after editing
+# alerting.py (the render script fails if the two have drifted):
+pipenv run python main.py alerts
+pipenv run python main.py alerts --out-dir alerting
+
+# Apply the committed rules, contact point, and route to a real stack, then wait
+# for it to evaluate them (needs GRAFANA_ALERTS_URL/KEY + SLACK_WEBHOOK_URL +
+# ALERT_EMAIL; exits 0 with a notice when they're absent):
+pipenv run python main.py provision-alerts
 
 # End-to-end proof: poll, push, then query the series back (needs all six
 # GRAFANA_* vars; exits 0 with a notice when they're absent):
@@ -502,6 +608,34 @@ all-value, or repointed at the wrong datasource — a picker that resolves to no
 every panel filtering on it). The real import is
 opt-in — `FLEET_MONITOR_DASHBOARD_CHECK=1 ./render-snapshots.sh` — so a bare render never
 writes into anyone's stack.
+
+The alerting artifacts are guarded the same way, and for the same reason: the committed
+`alerting/*.yaml` are the snapshot, re-rendered from `alerting.py` into a temporary
+directory and diffed, never rewritten in place. Around that, offline checks lock what the
+rules promise — both jurisdiction rules filter `paused="false"` so an out-of-session state
+cannot page, the thresholds are explicit expression nodes rather than numbers buried in
+PromQL, the staleness number is imported from `dashboard.py` rather than restated, the
+dead-man window has real headroom on the *measured* worst sweep gap (asserted against the
+measurement, not against the window constant, so it cannot shrink back to the PRD's 3 h and
+stay green), rules evaluate on a 5 m interval with a 10 m pending period, no-data resolves
+to OK while an execution error does not, every alert carries an absolute state-filtered
+dashboard link with a pinned time range and no `var-org` while the label-less heartbeat
+rule carries no `var-state` at all, Slack and email are two integrations on one contact
+point with resolved notifications on, the route groups by `alertname` alone, the policy
+document is deliberately not a Grafana `policies:` document, rendering is deterministic,
+and the four placeholders are exactly the four the provisioner resolves — plus a `grep`
+that fails the render if anything resembling a real webhook URL or address ever lands in
+the committed files. `provision-alerts` is locked like the other live paths: its
+credential-free skip touches the stack not at all, and against a fake Grafana it discovers
+the datasource uid, prefers an explicit one, refuses to guess between two Prometheus
+datasources, sends one idempotent rule-group PUT with the interval in seconds, carries
+bearer auth and `X-Disable-Provenance` on every write, ships no unresolved placeholder
+while leaving Grafana's own `{{ $labels.* }}` templating untouched, creates the
+integrations once and updates them in place thereafter, grafts its route under a stack's
+existing root policy (preserving that root's receiver, grouping, and unrelated children)
+and replaces rather than duplicates its own branch on a re-run, and fails loudly on a rule
+the stack stored but cannot evaluate — or never evaluates at all. The real provisioning run
+is opt-in: `FLEET_MONITOR_ALERT_CHECK=1 ./render-snapshots.sh` on a credentialed machine.
 
 ```bash
 ../../scripts/before-snapshots.sh __snapshots__

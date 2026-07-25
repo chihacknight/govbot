@@ -1903,4 +1903,416 @@ else
   echo "· check-dashboard (real import) not run; opt in with FLEET_MONITOR_DASHBOARD_CHECK=1"
 fi
 
+# Alerting: built as data, committed rendered — the same bargain as the
+# dashboard, and with the same oracle. There is no snapshot file because the
+# committed alerting/*.yaml ARE the snapshot; the drift check below regenerates
+# them and fails if the repo copies no longer match the builder.
+pipenv run python3 - <<'EOF'
+import re
+
+import yaml
+
+from dashboard import DASHBOARD_UID, OBSERVED_MAX_SWEEP_GAP_HOURS, STALE_HOURS
+from alerting import (CONTACT_POINT, CONTACT_POINTS_FILE, EVAL_INTERVAL, FOLDER,
+                      HEARTBEAT_UID, PENDING_PERIOD, POLICY_FILE, ROUTE_LABEL,
+                      RULES_FILE, RUN_FAILED_UID, STALE_UID, UnresolvedPlaceholder,
+                      build_contact_point, build_route, build_rule_group,
+                      placeholders, render_documents, substitute)
+
+group = build_rule_group()
+rules = {r["uid"]: r for r in group["rules"]}
+assert set(rules) == {RUN_FAILED_UID, STALE_UID, HEARTBEAT_UID}, sorted(rules)
+
+
+def condition(rule):
+    """The evaluator a rule fires on, found through the rule's own `condition`."""
+    node = next(q for q in rule["data"] if q["refId"] == rule["condition"])
+    assert node["model"]["type"] == "threshold", node["model"]
+    return node["model"]["conditions"][0]["evaluator"]
+
+
+# 1. Paused jurisdictions never page. An out-of-session state whose scrape fails
+#    is the legislative calendar, not a fault — the PRD's whole reason the metric
+#    carries a `paused` label at all. Filtered in the query, so a paused state
+#    doesn't even reach the notification policy.
+for uid in (RUN_FAILED_UID, STALE_UID):
+    exprs = [q["model"]["expr"] for q in rules[uid]["data"] if "expr" in q.get("model", {})]
+    assert exprs and all('paused="false"' in e for e in exprs), (uid, exprs)
+# The heartbeat series carries no labels at all, so it filters on nothing.
+dead_expr = rules[HEARTBEAT_UID]["data"][0]["model"]["expr"]
+assert "paused" not in dead_expr and "state" not in dead_expr, dead_expr
+
+# 2. Thresholds, as explicit expression nodes rather than numbers buried in a
+#    PromQL string — the number a rule fires on is the thing a reviewer most
+#    wants to see, and the thing that must not drift from the dashboard.
+assert condition(rules[RUN_FAILED_UID]) == {"type": "lt", "params": [1]}, rules[RUN_FAILED_UID]
+assert condition(rules[STALE_UID]) == {"type": "gt", "params": [STALE_HOURS]}, rules[STALE_UID]
+assert condition(rules[HEARTBEAT_UID]) == {"type": "gt", "params": [0]}, rules[HEARTBEAT_UID]
+# Imported from dashboard.py, never restated: the freshness table turns red on
+# this number, and one number is the only way the two cannot disagree.
+assert STALE_HOURS == 48, STALE_HOURS
+for uid, rule in rules.items():
+    types = [q["model"].get("type") for q in rule["data"]]
+    assert types == [None, "reduce", "threshold"], (uid, types)
+
+# 3. When a rule fires, and what it does when the data isn't there.
+assert group["interval"] == EVAL_INTERVAL == "5m", group["interval"]
+for uid, rule in rules.items():
+    assert rule["for"] == PENDING_PERIOD == "10m", (uid, rule["for"])
+    # A missing series means the collector didn't ship it — the heartbeat rule's
+    # job to report once, rather than 47 per-state pages saying it worse.
+    assert rule["noDataState"] == "OK", (uid, rule["noDataState"])
+    # An execution error is NOT no-data: a datasource that has gone away has to
+    # be visible as a broken rule rather than a healthy one.
+    assert rule["execErrState"] == "Error", (uid, rule["execErrState"])
+    assert rule["isPaused"] is False, uid
+
+# 3b. The dead-man window is sized against the MEASURED sweep gap, never the
+#     workflow's cron expression. GitHub runs scheduled workflows best-effort and
+#     25 consecutive sweeps showed a median of 2.0h and a max of 3.6h, so the
+#     PRD's literal "3 hours" sits BELOW the routine worst case and would page on
+#     an ordinary long gap. Asserted against the measurement, not against the
+#     window constant — importing the constant under test would let it shrink
+#     back to 3h and stay green.
+window = re.search(r"\[(\d+)([smh])\]", dead_expr)
+assert window, dead_expr
+hours = int(window.group(1)) * {"s": 1 / 3600, "m": 1 / 60, "h": 1}[window.group(2)]
+assert hours >= 1.5 * OBSERVED_MAX_SWEEP_GAP_HOURS, (dead_expr, hours)
+assert OBSERVED_MAX_SWEEP_GAP_HOURS >= 3.6, OBSERVED_MAX_SWEEP_GAP_HOURS
+
+# 4. Triage is one click: every alert carries a link into the board, filtered to
+#    the jurisdiction that alerted. Absolute, because a notification is read in
+#    Slack or an inbox — the relative path the board's own row links use resolves
+#    against slack.com there.
+for uid, rule in rules.items():
+    assert rule["labels"] == dict([ROUTE_LABEL]), (uid, rule["labels"])
+    link = rule["annotations"]["dashboard"]
+    assert link.startswith(f"$GRAFANA_DASHBOARD_URL/d/{DASHBOARD_UID}"), (uid, link)
+    # Pinned range: `${__url_time_range}` is a dashboard macro with nothing to
+    # expand it in an annotation, and "the last 24h from whenever you click"
+    # shows a different window to every reader.
+    assert "from=now-24h&to=now" in link, (uid, link)
+    assert "${__url_time_range}" not in link, (uid, link)
+for uid in (RUN_FAILED_UID, STALE_UID):
+    link = rules[uid]["annotations"]["dashboard"]
+    assert "var-state={{ $labels.state }}" in link, (uid, link)
+    # Not var-org — a jurisdiction has two repos, and naming one hides the other.
+    assert "var-org=" not in link, (uid, link)
+    # The state has to be in the message too: "a run failed" without saying whose
+    # is not something anyone can act on at 3am.
+    assert "{{ $labels.state }}" in rules[uid]["annotations"]["summary"], uid
+# The heartbeat has no state label to interpolate, so a var-state here would
+# render `var-state=` — a filter matching nothing, on the one alert that fires
+# when everything else has gone quiet.
+assert "$labels" not in rules[HEARTBEAT_UID]["annotations"]["dashboard"], rules[HEARTBEAT_UID]
+assert "var-state" not in rules[HEARTBEAT_UID]["annotations"]["dashboard"], rules[HEARTBEAT_UID]
+
+# 5. Slack and email as two integrations on ONE contact point, so the PRD's
+#    later GitHub-issue delivery is a third entry rather than a second route to
+#    keep in step forever.
+point = build_contact_point()
+kinds = {r["type"]: r for r in point["receivers"]}
+assert set(kinds) == {"slack", "email"}, sorted(kinds)
+assert kinds["slack"]["settings"]["url"] == "$SLACK_WEBHOOK_URL", kinds["slack"]
+assert kinds["email"]["settings"]["addresses"] == "$ALERT_EMAIL", kinds["email"]
+for receiver in point["receivers"]:
+    # A channel that only ever fills with red and never visibly clears is a
+    # channel people mute.
+    assert receiver["disableResolveMessage"] is False, receiver
+# Nothing that could only have come from a real workspace or a real inbox.
+assert "hooks.slack.com" not in repr(point), repr(point)
+assert "@" not in repr(point), repr(point)
+
+# 6. 47 jurisdictions share the same scrapers, so one upstream break trips the
+#    run-failed rule for dozens at once. Grouped by the rule that is ONE message
+#    listing every affected state; grouped by state it is forty messages in a
+#    minute, which is how people learn to mute a channel.
+route = build_route()
+assert route["group_by"] == ["alertname"], route["group_by"]
+assert route["receiver"] == CONTACT_POINT, route
+assert route["object_matchers"] == [[ROUTE_LABEL[0], "=", ROUTE_LABEL[1]]], route
+assert (route["group_wait"], route["group_interval"], route["repeat_interval"]) \
+    == ("30s", "5m", "24h"), route
+
+# 7. The committed documents. The policy one is deliberately NOT Grafana's
+#    `policies:` key: that key replaces the entire root notification tree, so a
+#    stack dropping this file into its provisioning directory would silently
+#    redirect every alert it already runs to this contact point.
+documents = render_documents()
+assert set(documents) == {RULES_FILE, CONTACT_POINTS_FILE, POLICY_FILE}, sorted(documents)
+policy_doc = yaml.safe_load(documents[POLICY_FILE])
+assert "policies" not in policy_doc, policy_doc
+assert policy_doc["route"]["receiver"] == CONTACT_POINT, policy_doc
+assert yaml.safe_load(documents[RULES_FILE])["groups"][0]["folder"] == FOLDER, documents[RULES_FILE]
+for name, text in documents.items():
+    # Reasoning survives in the artifact people actually open, not only in the
+    # builder they may never look at.
+    assert text.startswith("#"), (name, text[:40])
+# Deterministic, or the committed copy is not a meaningful diff.
+assert render_documents() == documents
+
+# 8. Placeholders: exactly four, resolved at provision time. A committed webhook
+#    URL is a committed credential; a committed datasource uid belongs to one
+#    stack and makes the file unimportable anywhere else.
+found = set()
+for text in documents.values():
+    found |= placeholders(text)
+assert found == {"GRAFANA_METRICS_DATASOURCE_UID", "GRAFANA_DASHBOARD_URL",
+                 "SLACK_WEBHOOK_URL", "ALERT_EMAIL"}, sorted(found)
+# Grafana's own templating is lower-case and survives untouched — expanding it
+# would turn every alert message into a literal.
+assert substitute("{{ $labels.state }}", {}) == "{{ $labels.state }}"
+# A prefix is not a partial match.
+assert substitute("$ALERT_EMAIL", {"ALERT": "x", "ALERT_EMAIL": "right"}) == "right"
+# A placeholder nobody supplied is a hard stop, not an empty string: Grafana
+# accepts a contact point with a blank webhook URL, then accepts alerts routed to
+# it and drops them — a setup that looks provisioned and never reaches anyone.
+try:
+    substitute("url: $SLACK_WEBHOOK_URL", {})
+except UnresolvedPlaceholder as e:
+    assert "SLACK_WEBHOOK_URL" in str(e), str(e)
+else:
+    raise AssertionError("an unresolved placeholder was substituted away silently")
+
+print(f"✓ alerting: {len(rules)} rules, paused filtered out, thresholds shared with the "
+      "dashboard, dead-man sized on the measured sweep gap, no credentials committed")
+EOF
+
+# The committed alerting files must be exactly what the builder produces —
+# otherwise the YAML people provision and the code reviewers read have diverged.
+alerts_tmp=$(mktemp -d)
+pipenv run python3 main.py alerts --out-dir "$alerts_tmp" 2>/dev/null
+if ! diff -ru alerting "$alerts_tmp"; then
+  echo "✗ alerting/ is stale; regenerate it:"
+  echo "    pipenv run python3 main.py alerts --out-dir alerting"
+  rm -rf "$alerts_tmp"
+  exit 1
+fi
+rm -rf "$alerts_tmp"
+echo "✓ alerting: committed alerting/*.yaml matches the builder"
+
+# No credential ever lands in the committed files. Cheap to assert, and the one
+# mistake here is unrecoverable — a webhook URL in git history stays there.
+if grep -rEq 'hooks\.slack\.com|@[a-z0-9.-]+\.(com|org|net|online)' alerting/; then
+  echo "✗ alerting/ contains what looks like a real webhook URL or address:"
+  grep -rEn 'hooks\.slack\.com|@[a-z0-9.-]+\.(com|org|net|online)' alerting/
+  exit 1
+fi
+echo "✓ alerting: committed files carry placeholders, not credentials"
+
+# Provisioning writes to a real stack, so like every other live path it must
+# self-skip without credentials; the offline suite locks that skip. Explicitly
+# unset rather than merely absent — a developer machine may export its own
+# SLACK_WEBHOOK_URL, and at least one does.
+alerts_skip=$(env -u GRAFANA_ALERTS_URL -u GRAFANA_ALERTS_KEY -u SLACK_WEBHOOK_URL \
+  -u ALERT_EMAIL pipenv run python3 main.py provision-alerts 2>&1)
+if ! echo "$alerts_skip" | grep -q "alert provisioning skipped"; then
+  echo "✗ provision-alerts without credentials should skip cleanly; got:"
+  echo "$alerts_skip"
+  exit 1
+fi
+echo "✓ provision-alerts: skips cleanly when credentials are absent"
+
+# Offline proof of provisioning itself: a fake Grafana answers every read and
+# accepts every write, so the request shapes (verbs, bearer auth, the
+# provenance header, placeholder resolution, the grafted policy) and the
+# refusal paths are all tested without an account. The real run is opt-in below.
+pipenv run python3 - <<'EOF'
+import json
+import urllib.error
+import urllib.request
+from io import BytesIO
+
+from click.testing import CliRunner
+
+import main
+from alerting import CONTACT_POINT, HEARTBEAT_UID, ROUTE_LABEL, RUN_FAILED_UID, STALE_UID
+from alerts_provision import Stack, confirm_rules
+
+CREDS = {
+    "GRAFANA_ALERTS_URL": "https://stack.grafana.net/",
+    "GRAFANA_ALERTS_KEY": "tok",
+    "SLACK_WEBHOOK_URL": "https://hooks.example/x",
+    "ALERT_EMAIL": "alerts@example.org",
+}
+PROMETHEUS = {"uid": "prom-uid", "type": "prometheus", "name": "grafanacloud-govbot-prom"}
+LOKI = {"uid": "loki-uid", "type": "loki", "name": "grafanacloud-govbot-logs"}
+UIDS = [RUN_FAILED_UID, STALE_UID, HEARTBEAT_UID]
+
+
+class FakeResponse(BytesIO):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
+
+def stack(datasources=(PROMETHEUS, LOKI), policies=None, contact_points=None, rules=None):
+    """A Grafana that answers reads and accepts every write."""
+    healthy = {"data": {"groups": [{"rules": [{"uid": u, "health": "ok"} for u in UIDS]}]}}
+
+    def respond(request):
+        url = request.full_url
+        if request.get_method() != "GET":
+            return FakeResponse(b"{}")
+        if url.endswith("/api/datasources"):
+            return FakeResponse(json.dumps(list(datasources)).encode())
+        if "/api/v1/provisioning/contact-points" in url:
+            return FakeResponse(json.dumps(contact_points or []).encode())
+        if url.endswith("/api/v1/provisioning/policies") and policies is not None:
+            return FakeResponse(json.dumps(policies).encode())
+        if "/api/prometheus/grafana/api/v1/rules" in url:
+            return FakeResponse(json.dumps(rules or healthy).encode())
+        # Folders, an absent policy tree, anything else: not there, so the run
+        # creates it.
+        raise urllib.error.HTTPError(url, 404, "Not Found", {}, None)
+
+    return respond
+
+
+def run(env, respond):
+    calls = []
+
+    def fake_urlopen(request, timeout=None):
+        calls.append(request)
+        return respond(request)
+
+    real, urllib.request.urlopen = urllib.request.urlopen, fake_urlopen
+    try:
+        return CliRunner().invoke(main.cli, ["provision-alerts"], env=env), calls
+    finally:
+        urllib.request.urlopen = real
+
+
+def written(calls, fragment):
+    return [c for c in calls if c.data is not None and fragment in c.full_url]
+
+
+# A skipped run must touch nothing at all, not merely exit 0.
+for absent in CREDS:
+    skipped, calls = run({**CREDS, absent: None}, stack())
+    assert skipped.exit_code == 0, (absent, skipped.output)
+    assert absent in skipped.output, (absent, skipped.output)
+    assert not calls, (absent, "a skipped run still talked to the stack")
+
+ok, calls = run(CREDS, stack())
+assert ok.exit_code == 0, ok.output + str(ok.exception)
+for call in [c for c in calls if c.data is not None]:
+    assert call.get_header("Authorization") == "Bearer tok", call.full_url
+    # Without this header Grafana marks everything it provisions read-only, and
+    # the first maintainer who tries to silence a rule meets a greyed-out form.
+    assert call.get_header("X-disable-provenance") == "true", call.full_url
+    # Nothing ships with an unresolved placeholder.
+    body = call.data.decode()
+    assert "$GRAFANA" not in body and "$SLACK" not in body and "$ALERT_EMAIL" not in body, \
+        call.full_url
+
+# The datasource uid is the one thing that cannot be committed, so it is
+# discovered from the stack being provisioned.
+group = json.loads(written(calls, "rule-groups")[0].data)
+assert [r["data"][0]["datasourceUid"] for r in group["rules"]] == ["prom-uid"] * 3, group
+# The whole group in one idempotent PUT: three separate creates would duplicate
+# on a second run, and a rule dropped from the committed file would linger on the
+# stack as an orphan nobody remembers creating.
+assert len(written(calls, "rule-groups")) == 1, [c.full_url for c in written(calls, "rule-groups")]
+assert written(calls, "rule-groups")[0].get_method() == "PUT"
+assert [r["uid"] for r in group["rules"]] == UIDS, group
+# Seconds, not "5m" — the group API takes a number.
+assert group["interval"] == 300, group["interval"]
+# Grafana's own templating survives substitution untouched.
+assert "{{ $labels.state }}" in json.dumps(group), group
+
+# An explicit uid wins, for a stack with more than one Prometheus.
+pinned, calls = run({**CREDS, "GRAFANA_METRICS_DATASOURCE_UID": "chosen"}, stack())
+assert json.loads(written(calls, "rule-groups")[0].data)["rules"][0]["data"][0]["datasourceUid"] \
+    == "chosen"
+assert not any(c.full_url.endswith("/api/datasources") for c in calls), \
+    "asked the stack for a datasource it was already told about"
+
+# Two Prometheus datasources and no instruction is a stop, not a coin flip: the
+# wrong one provisions three rules that evaluate against nothing forever while
+# reporting perfect health.
+usage = {"uid": "other", "type": "prometheus", "name": "grafanacloud-usage"}
+confused, _ = run(CREDS, stack(datasources=(PROMETHEUS, LOKI, usage)))
+assert confused.exit_code != 0 and "grafanacloud-usage" in confused.output, confused.output
+assert "GRAFANA_METRICS_DATASOURCE_UID" in confused.output, confused.output
+none_at_all, _ = run(CREDS, stack(datasources=(LOKI,)))
+assert none_at_all.exit_code != 0 and "no Prometheus datasource" in none_at_all.output
+
+# Integrations are created once and updated in place after that, keyed by their
+# stable uids — never a second copy of the same Slack webhook.
+points = written(calls, "contact-points")
+assert [c.get_method() for c in points] == ["POST", "POST"], [c.get_method() for c in points]
+bodies = [json.loads(c.data) for c in points]
+assert {b["type"] for b in bodies} == {"slack", "email"}, bodies
+assert any(b["settings"].get("url") == CREDS["SLACK_WEBHOOK_URL"] for b in bodies), bodies
+assert any(b["settings"].get("addresses") == CREDS["ALERT_EMAIL"] for b in bodies), bodies
+existing = [{"uid": "fleet-monitor-slack"}, {"uid": "fleet-monitor-email"}]
+again, calls = run(CREDS, stack(contact_points=existing))
+assert [c.get_method() for c in written(calls, "contact-points")] == ["PUT", "PUT"], again.output
+
+# The notification policy is GRAFTED, never swapped. Grafana's policy API has no
+# partial update — a PUT replaces the whole tree — so applying a root of our own
+# to the maintainers' stack would silently redirect every alert they already run
+# to this contact point.
+theirs = {
+    "receiver": "their-default",
+    "group_by": ["grafana_folder", "alertname"],
+    "routes": [{"receiver": "their-oncall", "object_matchers": [["team", "=", "data"]]}],
+}
+grafted, calls = run(CREDS, stack(policies=theirs))
+assert grafted.exit_code == 0, grafted.output
+tree = json.loads(written(calls, "policies")[0].data)
+assert tree["receiver"] == "their-default", tree
+assert tree["group_by"] == ["grafana_folder", "alertname"], tree
+assert {"receiver": "their-oncall", "object_matchers": [["team", "=", "data"]]} in tree["routes"]
+ours = [r for r in tree["routes"] if r["receiver"] == CONTACT_POINT]
+assert len(ours) == 1 and ours[0]["object_matchers"] == [[ROUTE_LABEL[0], "=", ROUTE_LABEL[1]]]
+# ...and re-running replaces our own branch rather than stacking a second copy.
+already = {**theirs, "routes": theirs["routes"] + [dict(ours[0], group_wait="stale")]}
+rerun, calls = run(CREDS, stack(policies=already))
+tree = json.loads(written(calls, "policies")[0].data)
+ours = [r for r in tree["routes"] if r["receiver"] == CONTACT_POINT]
+assert len(ours) == 1 and ours[0]["group_wait"] == "30s", tree["routes"]
+assert "replaced" in rerun.output, rerun.output
+
+# Storing a rule is not the same as being able to run it. Grafana accepts a rule
+# whose datasource uid points at nothing, serves it back intact, and only reports
+# the failure once evaluation runs — so a check that stops at the 200 is a check
+# that passes while nothing works.
+broken = {"data": {"groups": [{"rules": [
+    {"uid": UIDS[0], "health": "error", "lastError": "datasource not found"},
+    {"uid": UIDS[1], "health": "ok"},
+    {"uid": UIDS[2], "health": "ok"},
+]}]}}
+failed, _ = run(CREDS, stack(rules=broken))
+assert failed.exit_code != 0, failed.output
+assert UIDS[0] in failed.output and "datasource not found" in failed.output, failed.output
+
+# A rule the stack never evaluates at all is equally not a pass.
+silent = Stack("https://stack.grafana.net", "tok", sleep=lambda _: None)
+silent.get = lambda path: {"data": {"groups": []}}
+try:
+    confirm_rules(silent, UIDS, deadline_seconds=0)
+except RuntimeError as e:
+    assert "0 of 3" in str(e) and UIDS[0] in str(e), str(e)
+else:
+    raise AssertionError("rules that never evaluated were reported as provisioned")
+
+print("✓ provision-alerts: discovers the datasource or refuses to guess, applies one idempotent "
+      "rule group, grafts the route under the stack's own root, and fails on a rule the stack "
+      "cannot evaluate")
+EOF
+
+# Same bargain as the dashboard import: provisioning writes real rules and a real
+# contact point into a real stack, so a bare render never does it even on a
+# machine with the credentials set. Opting in makes the render the automated
+# provisioning check the task asks for.
+if [ "${FLEET_MONITOR_ALERT_CHECK:-}" = "1" ]; then
+  pipenv run python3 main.py provision-alerts
+else
+  echo "· provision-alerts (real provisioning) not run; opt in with FLEET_MONITOR_ALERT_CHECK=1"
+fi
+
 echo "✓ Snapshot generation complete. Output in $output_dir"

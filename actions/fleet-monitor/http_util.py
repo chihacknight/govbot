@@ -86,19 +86,22 @@ def request_with_retry(
     *,
     data=None,
     headers=None,
+    method=None,
     timeout=DEFAULT_TIMEOUT,
     max_retries=DEFAULT_MAX_RETRIES,
     sleep=time.sleep,
 ):
     """Return the response body (bytes) for a request, retrying transient failures.
 
-    ``data`` (bytes) switches the request to POST. ``sleep`` is injectable so
-    tests never wait.
+    ``data`` (bytes) switches the request to POST; ``method`` overrides that,
+    which is what the alert provisioning API needs — its update endpoints are
+    PUT, and a PUT sent as a POST creates a duplicate instead of replacing.
+    ``sleep`` is injectable so tests never wait.
     """
-    method = "POST" if data is not None else "GET"
+    method = method or ("POST" if data is not None else "GET")
     last_error = None
     for attempt in range(max_retries):
-        request = urllib.request.Request(url, data=data, headers=headers or {})
+        request = urllib.request.Request(url, data=data, headers=headers or {}, method=method)
         try:
             with urllib.request.urlopen(request, timeout=timeout) as response:
                 return response.read()

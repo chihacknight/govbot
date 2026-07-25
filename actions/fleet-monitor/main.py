@@ -479,6 +479,92 @@ def dashboard(out):
         click.echo(text, nl=False)
 
 
+@cli.command("alerts")
+@click.option(
+    "--out-dir",
+    type=click.Path(file_okay=False, path_type=Path),
+    help="Write the alerting YAML here instead of stdout (committed at alerting/).",
+)
+def alerts(out_dir):
+    """Emit the alert rules, contact point, and notification route as provisioning YAML.
+
+    Built as data (alerting.py) and committed rendered (alerting/*.yaml), same
+    bargain as the dashboard: reviewable as code, and regenerating it is a diff
+    rather than an export from somebody's browser. Stack-specific values — the
+    datasource uid, the stack URL, the Slack webhook, the alert address — are
+    $PLACEHOLDERS resolved by `provision-alerts`, so the committed files carry no
+    credentials and apply to any stack.
+    """
+    from alerting import render_documents
+
+    documents = render_documents()
+    if out_dir:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for name, text in documents.items():
+            (out_dir / name).write_text(text)
+        click.echo(f"wrote {len(documents)} files to {out_dir}", err=True)
+        return
+    for name, text in documents.items():
+        click.echo(f"# ===== {name} =====")
+        click.echo(text, nl=False)
+
+
+@cli.command("provision-alerts")
+@click.option(
+    "--alerting-dir",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    default="alerting",
+    show_default=True,
+    help="Directory of committed alerting YAML to apply.",
+)
+def provision_alerts(alerting_dir):
+    """Apply the committed alert rules, contact point, and route to a real stack;
+    skips without credentials.
+
+    Provisioning is the check. The committed files are read from disk (not
+    re-rendered), their $PLACEHOLDERS resolved from the environment, and the
+    result applied through Grafana's provisioning API — then the stack is polled
+    until it has actually *evaluated* the rules, because Grafana will happily
+    store a rule pointing at a datasource that does not exist and only report
+    `health: error` once it tries to run it.
+
+    Needs GRAFANA_ALERTS_URL (the stack base URL) and GRAFANA_ALERTS_KEY (a
+    service-account token with alerting write), plus SLACK_WEBHOOK_URL and
+    ALERT_EMAIL for the contact point. GRAFANA_METRICS_DATASOURCE_UID pins the
+    datasource when a stack has more than one Prometheus; otherwise it is
+    discovered. GRAFANA_DASHBOARD_URL overrides the base used in alert deep
+    links, which defaults to the stack URL. Exits 0 with a skip notice when
+    credentials are absent, so an offline run passes without a Grafana account.
+    """
+    import os
+
+    names = ["GRAFANA_ALERTS_URL", "GRAFANA_ALERTS_KEY", "SLACK_WEBHOOK_URL", "ALERT_EMAIL"]
+    missing = [name for name in names if not os.environ.get(name)]
+    if missing:
+        click.echo(f"alert provisioning skipped: missing {', '.join(missing)}")
+        return
+
+    from alerts_provision import provision
+
+    base = os.environ["GRAFANA_ALERTS_URL"]
+    values = {
+        "SLACK_WEBHOOK_URL": os.environ["SLACK_WEBHOOK_URL"],
+        "ALERT_EMAIL": os.environ["ALERT_EMAIL"],
+        # The stack that serves the UI is the stack being provisioned unless
+        # someone says otherwise, so the deep links need no second variable.
+        "GRAFANA_DASHBOARD_URL": os.environ.get("GRAFANA_DASHBOARD_URL", base).rstrip("/"),
+        "GRAFANA_METRICS_DATASOURCE_UID": os.environ.get("GRAFANA_METRICS_DATASOURCE_UID", ""),
+    }
+    try:
+        provision(alerting_dir, base, os.environ["GRAFANA_ALERTS_KEY"], values,
+                  echo=click.echo)
+    except RuntimeError as e:
+        # RequestFailed and UnresolvedPlaceholder are both RuntimeErrors: a
+        # rejected write, a stack that can't evaluate what it stored, and a
+        # placeholder nobody supplied all end the run the same way.
+        raise click.ClickException(str(e)) from e
+
+
 @cli.command("check-dashboard")
 def check_dashboard():
     """Import the committed dashboard into a real stack and read it back; skips
