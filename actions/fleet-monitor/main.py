@@ -504,7 +504,21 @@ def check_dashboard():
         raise click.ClickException(
             f"dashboard loaded with {len(panels)} panels, expected {len(board['panels'])}"
         )
-    click.echo(f"✓ dashboard imports and loads back with all {len(panels)} panels")
+    # Panels alone are not proof. Every panel filters on `=~"$state"` and points
+    # at `${metrics}`/`${logs}`, so a variable Grafana declined to migrate leaves
+    # all five panels present and all five rendering nothing — a blank board that
+    # a panel count reports as a clean import.
+    want = {v["name"] for v in board["templating"]["list"]}
+    got = {v.get("name") for v in loaded.get("dashboard", {}).get("templating", {}).get("list", [])}
+    if want - got:
+        raise click.ClickException(
+            f"dashboard imported without variable(s) {', '.join(sorted(want - got))}; "
+            "panels would render empty"
+        )
+    click.echo(
+        f"✓ dashboard imports and loads back with all {len(panels)} panels "
+        f"and {len(want)} variables"
+    )
 
 
 @cli.command("live-check")

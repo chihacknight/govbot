@@ -18,6 +18,19 @@ DASHBOARD_UID = "fleet-monitor-overview"
 # regenerates to prove it still matches this module.
 DASHBOARD_PATH = "dashboards/fleet-overview.json"
 
+# The collector sweeps hourly, but an instant query resolves against Prometheus's
+# 5-minute staleness lookback — so a bare selector finds nothing for ~55 minutes
+# of every hour, and the whole board reads "No data" (observed on a real import).
+# last_over_time reaches back three sweeps: still an instant vector, so the table
+# transformations and the stat reducer are unaffected, but one missed sweep can
+# no longer blank the fleet. main.py's live-check documents the same trap.
+LOOKBACK = "3h"
+
+
+def _latest(selector: str) -> str:
+    """The last sample of a selector within the look-back, as an instant vector."""
+    return f"last_over_time({selector}[{LOOKBACK}])"
+
 
 def _datasource_variable(name: str, plugin: str, label: str) -> dict:
     """A datasource picker, so the JSON carries no stack-specific UID."""
@@ -37,7 +50,13 @@ def _datasource_variable(name: str, plugin: str, label: str) -> dict:
     }
 
 
-def _label_variable(name: str, datasource: dict, query: str, label: str) -> dict:
+# Scopes the Loki picker to this fleet's own streams: every stream the harvester
+# ships carries a state label, so another producer's `outcome` values in the same
+# logs instance can't leak into the picker.
+FLEET_STREAMS = '{state=~".+"}'
+
+
+def _label_variable(name: str, datasource: dict, query, definition: str, label: str) -> dict:
     """A multi-select picker fed by the datasource's own label values.
 
     Label-driven rather than a hardcoded list: a jurisdiction or workflow added
@@ -45,18 +64,30 @@ def _label_variable(name: str, datasource: dict, query: str, label: str) -> dict
     with no dashboard edit. Left URL-synced (the Grafana default) so a filtered
     view — one state's freshness, one workflow's failures — is a link you can
     paste to someone.
+
+    ``allValue`` is explicit and not optional. Left blank, Grafana expands "All"
+    to an alternation of the options it resolved — and to the empty string when
+    it resolved none, which turns every ``=~`` matcher into one that matches
+    nothing. A picker that hasn't populated yet would silently blank every panel
+    that uses it, and it would look identical to having no data at all.
+
+    ``query`` is the datasource's own query object, not one shape for both:
+    Prometheus wants the label-values discriminator its editor writes, Loki
+    wants a different object entirely, and feeding either the other's shape
+    leaves the picker empty.
     """
     return {
+        "allValue": ".*",
         "current": {"selected": True, "text": ["All"], "value": ["$__all"]},
         "datasource": datasource,
-        "definition": query,
+        "definition": definition,
         "hide": 0,
         "includeAll": True,
         "label": label,
         "multi": True,
         "name": name,
         "options": [],
-        "query": {"query": query, "refId": f"{name}-variable"},
+        "query": query,
         "refresh": 2,
         "regex": "",
         "sort": 1,
@@ -64,21 +95,49 @@ def _label_variable(name: str, datasource: dict, query: str, label: str) -> dict
     }
 
 
+def _prometheus_label_values(name: str) -> dict:
+    """A Prometheus label-values variable query (``qryType`` 1 = label values)."""
+    return {
+        "qryType": 1,
+        "query": f"label_values(fleet_workflow_run_status, {name})",
+        "refId": "PrometheusVariableQueryEditor-VariableQuery",
+    }
+
+
+def _metrics_picker(name: str, label: str) -> dict:
+    return _label_variable(
+        name,
+        METRICS,
+        _prometheus_label_values(name),
+        f"label_values(fleet_workflow_run_status, {name})",
+        label,
+    )
+
+
 def _templating() -> dict:
     return {
         "list": [
             _datasource_variable("metrics", "prometheus", "Metrics datasource"),
             _datasource_variable("logs", "loki", "Logs datasource"),
-            _label_variable(
-                "state", METRICS, "label_values(fleet_workflow_run_status, state)", "Jurisdiction"
-            ),
-            _label_variable("org", METRICS, "label_values(fleet_workflow_run_status, org)", "Org"),
-            _label_variable(
-                "workflow", METRICS, "label_values(fleet_workflow_run_status, workflow)", "Workflow"
-            ),
+            _metrics_picker("state", "Jurisdiction"),
+            _metrics_picker("org", "Org"),
+            _metrics_picker("workflow", "Workflow"),
             # Outcome exists only on the Loki streams — metrics carry a status
-            # number, logs carry the run conclusion that produced them.
-            _label_variable("outcome", LOGS, "label_values(outcome)", "Log outcome"),
+            # number, logs carry the run conclusion that produced them — so this
+            # one picker speaks Loki's variable-query dialect (type 1 = label
+            # values), not Prometheus's.
+            _label_variable(
+                "outcome",
+                LOGS,
+                {
+                    "label": "outcome",
+                    "refId": "LokiVariableQueryEditor-VariableQuery",
+                    "stream": FLEET_STREAMS,
+                    "type": 1,
+                },
+                f"label_values({FLEET_STREAMS}, outcome)",
+                "Log outcome",
+            ),
         ]
     }
 
@@ -117,7 +176,7 @@ def _status_grid(panel_id: int, title: str, paused: str, mappings: dict, y: int,
             {
                 "datasource": METRICS,
                 "editorMode": "code",
-                "expr": (
+                "expr": _latest(
                     f'fleet_workflow_run_status{{paused="{paused}", state=~"$state", '
                     'org=~"$org", workflow=~"$workflow"}'
                 ),
@@ -179,7 +238,7 @@ def _freshness_table(panel_id: int, title: str, paused: str, thresholds: dict, y
             {
                 "datasource": METRICS,
                 "editorMode": "code",
-                "expr": (
+                "expr": _latest(
                     f'fleet_repo_data_commit_age_hours{{paused="{paused}", state=~"$state", '
                     'org=~"$org"}'
                 ),

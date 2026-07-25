@@ -1376,7 +1376,7 @@ EOF
 pipenv run python3 - <<'EOF'
 import json
 
-from dashboard import DASHBOARD_UID, build_dashboard, encode_dashboard
+from dashboard import LOOKBACK, build_dashboard, encode_dashboard
 
 board = build_dashboard()
 panels = {p["title"]: p for p in board["panels"] if "title" in p}
@@ -1425,9 +1425,23 @@ assert set(uids) <= {"${metrics}", "${logs}"}, sorted(set(uids))
 # 2. A fresh stack must accept this as a NEW dashboard; a numeric id would
 #    collide with whatever holds it there.
 assert board["id"] is None, board["id"]
-assert board["uid"] == DASHBOARD_UID, board["uid"]
+assert board["uid"] == "fleet-monitor-overview", board["uid"]
 ids = [p["id"] for p in board["panels"]]
 assert len(ids) == len(set(ids)), ids
+
+# 2b. The collector sweeps hourly and an instant query looks back only 5
+#     minutes, so a bare selector leaves every metric panel empty for ~55
+#     minutes of each hour — a whole-board "No data" that every offline check
+#     here would otherwise pass. Observed on a real import; locked so it cannot
+#     come back.
+for title in ("Active jurisdictions", "Paused jurisdictions",
+              "Data freshness", "Data freshness · paused"):
+    target = panels[title]["targets"][0]
+    assert target["expr"].startswith("last_over_time("), (title, target["expr"])
+    assert target["expr"].endswith(f"[{LOOKBACK}])"), (title, target["expr"])
+    # Still an instant vector, so the table transformations and the stat
+    # reducer keep working unchanged.
+    assert target["instant"] is True, (title, target)
 
 # 3. Status grids read the latest-run metric. Paused jurisdictions are split
 #    into their own grid and never coloured red: they are out of session, so a
@@ -1454,7 +1468,7 @@ assert paused_options["1"]["text"].startswith("paused"), paused_options
 fresh, fresh_paused = panels["Data freshness"], panels["Data freshness · paused"]
 for panel in (fresh, fresh_paused):
     target = panel["targets"][0]
-    assert target["expr"].startswith("fleet_repo_data_commit_age_hours{"), target["expr"]
+    assert "fleet_repo_data_commit_age_hours{" in target["expr"], target["expr"]
     assert target["instant"] is True and target["format"] == "table", target
     sorts = [t for t in panel["transformations"] if t["id"] == "sortBy"]
     assert sorts and sorts[0]["options"]["sort"][0]["desc"] is True, panel["transformations"]
@@ -1480,13 +1494,27 @@ assert logs["options"]["sortOrder"] == "Descending", logs["options"]
 
 # 6. Pickers are label-driven (a new jurisdiction appears without a dashboard
 #    edit) and URL-synced, which is what makes a filtered view a shareable link.
-for name, source in (("state", "metrics"), ("org", "metrics"), ("workflow", "metrics")):
+#    Each speaks its own datasource's variable-query dialect: a Prometheus-shaped
+#    query on the Loki picker leaves it empty, which blanks the logs panel.
+for name in ("state", "org", "workflow"):
     variable = variables[name]
     assert variable["type"] == "query", variable
-    assert f"label_values(fleet_workflow_run_status, {name})" in variable["query"]["query"], variable
+    assert variable["datasource"]["type"] == "prometheus", variable
+    assert variable["query"]["qryType"] == 1, variable
+    assert variable["query"]["query"] == f"label_values(fleet_workflow_run_status, {name})", variable
     assert variable["multi"] and variable["includeAll"], variable
-assert variables["outcome"]["datasource"]["type"] == "loki", variables["outcome"]
+outcome = variables["outcome"]
+assert outcome["datasource"]["type"] == "loki", outcome
+# Loki's own dialect (type 1 = label values), scoped to fleet streams so another
+# producer's `outcome` label in the same logs instance can't leak into the picker.
+assert outcome["query"]["type"] == 1 and outcome["query"]["label"] == "outcome", outcome
+assert outcome["query"]["stream"] == '{state=~".+"}', outcome
+# Every picker needs an explicit allValue: blank, Grafana expands "All" to an
+# alternation of the options it resolved, and to the EMPTY STRING when it
+# resolved none — turning each =~ matcher into one that matches nothing. A
+# not-yet-populated picker would silently blank every panel that uses it.
 for name in ("state", "org", "workflow", "outcome"):
+    assert variables[name]["allValue"] == ".*", variables[name]
     assert variables[name].get("skipUrlSync") is not True, variables[name]
 
 # 7. Deterministic: regenerating the committed JSON is a no-op diff unless the
@@ -1602,7 +1630,42 @@ def truncated(request):
 empty, _ = run(CREDS, truncated)
 assert empty.exit_code != 0, empty.output
 assert "0 panels" in empty.output, empty.output
-print("✓ check-dashboard: pushes by uid, reads back, fails on rejection and on a hollow import")
+
+
+# Panels alone are not proof of a working import. Every panel filters on
+# `=~"$state"` and points at `${metrics}`/`${logs}`, so a variable Grafana
+# declined to migrate leaves all five panels present and all five rendering
+# nothing — a blank board that a panel count reports as a clean import. This is
+# the check that was missing when a real import came back all "No data".
+def loads_as(dashboard):
+    def respond(request):
+        if request.full_url.endswith("/api/dashboards/db"):
+            return FakeResponse(json.dumps({"uid": DASHBOARD_UID, "status": "success"}).encode())
+        return FakeResponse(json.dumps({"dashboard": dashboard}).encode())
+
+    return respond
+
+
+board = build_dashboard()
+for dropped in ("state", "outcome", "metrics"):
+    mangled = json.loads(json.dumps(board))
+    mangled["templating"]["list"] = [
+        v for v in mangled["templating"]["list"] if v["name"] != dropped
+    ]
+    lost, _ = run(CREDS, loads_as(mangled))
+    assert lost.exit_code != 0, (dropped, lost.output)
+    assert dropped in lost.output, (dropped, lost.output)
+
+none_at_all = json.loads(json.dumps(board))
+none_at_all["templating"] = {"list": []}
+blank, _ = run(CREDS, loads_as(none_at_all))
+assert blank.exit_code != 0, blank.output
+
+intact, _ = run(CREDS, loads_as(board))
+assert intact.exit_code == 0, intact.output + str(intact.exception)
+assert "6 variables" in intact.output, intact.output
+print("✓ check-dashboard: pushes by uid, reads back panels AND variables, fails on rejection, "
+      "on a hollow import, and on a dropped picker")
 EOF
 
 # Live check self-skips without credentials (exit 0, says so) — CI has no

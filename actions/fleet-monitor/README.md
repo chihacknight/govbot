@@ -176,12 +176,22 @@ say — and it is committed rather than hand-built, so the Grafana side is repro
 - **Nothing in the JSON belongs to one account.** Datasources are pickers (`${metrics}`,
   `${logs}`), never UIDs, and the dashboard carries `id: null` with a stable uid, so the
   same file imports into any stack instead of colliding with whatever holds that id there.
+- **Every metric panel looks back three hours.** The collector sweeps hourly, but an
+  instant query resolves against Prometheus's 5-minute staleness window — so a bare
+  selector finds nothing for ~55 minutes of every hour and the whole board reads "No
+  data". (It did, on a real import.) `last_over_time(…[3h])` keeps the queries instant
+  vectors, so the table transformations and the stat reducer are untouched, but one
+  missed sweep can no longer blank the fleet.
 - **Filters are label-driven and URL-synced.** The state, org, and workflow pickers read
   their options from the metrics labels and the outcome picker from Loki's, so a
   jurisdiction added to the pipeline-manager config appears on its next sweep with no
-  dashboard edit. Every filter round-trips through the URL — "here is Wyoming's
-  freshness" is a link you can paste to someone, and each freshness row links to its own
-  jurisdiction's filtered view.
+  dashboard edit. Each picker speaks its own datasource's variable-query dialect —
+  a Prometheus-shaped query on the Loki picker leaves it empty — and every one sets
+  `allValue: ".*"` explicitly, because a blank all-value makes Grafana expand "All" to
+  the options it resolved, or to the empty string when it resolved none, which quietly
+  turns each `=~` matcher into one that matches nothing. Every filter round-trips
+  through the URL — "here is Wyoming's freshness" is a link you can paste to someone,
+  and each freshness row links to its own jurisdiction's filtered view.
 - **Run id and run URL surface by expanding a log line**, not as labels: they travel as
   structured metadata (see Budgets above), which is why log details stay on.
 
@@ -201,9 +211,12 @@ pipenv run python main.py check-dashboard
 ```
 
 It POSTs the dashboard to the stack's API keyed by uid (so re-running updates rather than
-littering copies) and then **reads it back by uid**, because a 200 on the push is not proof
-it renders — Grafana will store a payload it then shows as an empty dashboard. Missing
-credentials exit 0 with a skip notice, so an offline run passes without an account.
+littering copies) and then **reads it back by uid**, checking both the panels and the
+template variables. A 200 on the push is not proof it renders — Grafana will store a
+payload it then shows as an empty dashboard — and panels alone are not proof either:
+every panel filters on `=~"$state"` and points at `${metrics}`/`${logs}`, so a variable
+Grafana declined to migrate leaves all five panels present and all five rendering nothing.
+Missing credentials exit 0 with a skip notice, so an offline run passes without an account.
 
 ## Usage
 
@@ -391,12 +404,15 @@ latest-run metric with paused split into its own never-red grid whose text still
 the last run, the freshness tables sort worst-first and turn red at exactly the 48 h alert
 threshold while the paused table has no red anywhere in its config, each freshness row
 links to its jurisdiction's filtered view, the logs panel matches on all four stream
-labels as regexes (so multi-select "All" and a single pick both work) with log details on,
-the pickers are label-driven, multi-select, and URL-synced, and the encoding is
+labels as regexes with log details on, every metric panel wraps its selector in
+`last_over_time(…[3h])` so an hourly sweep is always in scope, each picker carries its own
+datasource's query dialect and an explicit `allValue: ".*"`, the pickers are label-driven,
+multi-select, and URL-synced, and the encoding is
 deterministic. `check-dashboard` is locked the same way as the other live paths: its
 credential-free skip, and against a fake Grafana its wire shape (dashboards API endpoint,
 bearer auth, overwrite-by-uid, read-back by uid), its loud failure on a rejected import,
-and its refusal to pass a push that returns 200 but reads back hollow. The real import is
+its refusal to pass a push that returns 200 but reads back hollow, and its refusal to pass
+an import that lost a template variable. The real import is
 opt-in — `FLEET_MONITOR_DASHBOARD_CHECK=1 ./render-snapshots.sh` — so a bare render never
 writes into anyone's stack.
 

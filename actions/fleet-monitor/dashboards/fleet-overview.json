@@ -69,7 +69,7 @@
             "uid": "${metrics}"
           },
           "editorMode": "code",
-          "expr": "fleet_workflow_run_status{paused=\"false\", state=~\"$state\", org=~\"$org\", workflow=~\"$workflow\"}",
+          "expr": "last_over_time(fleet_workflow_run_status{paused=\"false\", state=~\"$state\", org=~\"$org\", workflow=~\"$workflow\"}[3h])",
           "instant": true,
           "legendFormat": "{{state}} {{workflow}}",
           "range": false,
@@ -141,7 +141,7 @@
             "uid": "${metrics}"
           },
           "editorMode": "code",
-          "expr": "fleet_workflow_run_status{paused=\"true\", state=~\"$state\", org=~\"$org\", workflow=~\"$workflow\"}",
+          "expr": "last_over_time(fleet_workflow_run_status{paused=\"true\", state=~\"$state\", org=~\"$org\", workflow=~\"$workflow\"}[3h])",
           "instant": true,
           "legendFormat": "{{state}} {{workflow}}",
           "range": false,
@@ -218,7 +218,7 @@
             "uid": "${metrics}"
           },
           "editorMode": "code",
-          "expr": "fleet_repo_data_commit_age_hours{paused=\"false\", state=~\"$state\", org=~\"$org\"}",
+          "expr": "last_over_time(fleet_repo_data_commit_age_hours{paused=\"false\", state=~\"$state\", org=~\"$org\"}[3h])",
           "format": "table",
           "instant": true,
           "range": false,
@@ -315,7 +315,7 @@
             "uid": "${metrics}"
           },
           "editorMode": "code",
-          "expr": "fleet_repo_data_commit_age_hours{paused=\"true\", state=~\"$state\", org=~\"$org\"}",
+          "expr": "last_over_time(fleet_repo_data_commit_age_hours{paused=\"true\", state=~\"$state\", org=~\"$org\"}[3h])",
           "format": "table",
           "instant": true,
           "range": false,
@@ -424,6 +424,7 @@
         "type": "datasource"
       },
       {
+        "allValue": ".*",
         "current": {
           "selected": true,
           "text": [
@@ -445,8 +446,9 @@
         "name": "state",
         "options": [],
         "query": {
+          "qryType": 1,
           "query": "label_values(fleet_workflow_run_status, state)",
-          "refId": "state-variable"
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 2,
         "regex": "",
@@ -454,6 +456,7 @@
         "type": "query"
       },
       {
+        "allValue": ".*",
         "current": {
           "selected": true,
           "text": [
@@ -475,8 +478,9 @@
         "name": "org",
         "options": [],
         "query": {
+          "qryType": 1,
           "query": "label_values(fleet_workflow_run_status, org)",
-          "refId": "org-variable"
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 2,
         "regex": "",
@@ -484,6 +488,7 @@
         "type": "query"
       },
       {
+        "allValue": ".*",
         "current": {
           "selected": true,
           "text": [
@@ -505,8 +510,9 @@
         "name": "workflow",
         "options": [],
         "query": {
+          "qryType": 1,
           "query": "label_values(fleet_workflow_run_status, workflow)",
-          "refId": "workflow-variable"
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 2,
         "regex": "",
@@ -514,6 +520,7 @@
         "type": "query"
       },
       {
+        "allValue": ".*",
         "current": {
           "selected": true,
           "text": [
@@ -527,7 +534,7 @@
           "type": "loki",
           "uid": "${logs}"
         },
-        "definition": "label_values(outcome)",
+        "definition": "label_values({state=~\".+\"}, outcome)",
         "hide": 0,
         "includeAll": true,
         "label": "Log outcome",
@@ -535,8 +542,10 @@
         "name": "outcome",
         "options": [],
         "query": {
-          "query": "label_values(outcome)",
-          "refId": "outcome-variable"
+          "label": "outcome",
+          "refId": "LokiVariableQueryEditor-VariableQuery",
+          "stream": "{state=~\".+\"}",
+          "type": 1
         },
         "refresh": 2,
         "regex": "",
