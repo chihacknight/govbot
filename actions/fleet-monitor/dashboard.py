@@ -58,6 +58,13 @@ LOOKBACK = "6h"
 DEFAULT_METRICS_DATASOURCE = "grafanacloud-govbot-prom"
 DEFAULT_LOGS_DATASOURCE = "grafanacloud-govbot-logs"
 
+# The scrape is the fleet's entry point — every other workflow consumes what it
+# produces — so it gets a pinned grid at the top of the board. It is the ONLY
+# workflow named in this file: the rest are discovered from the metric's labels
+# (see the `other_workflow` variable), because a hardcoded list is exactly how
+# `extract-text.yml` shipped upstream and went unmonitored.
+SCRAPE_WORKFLOW = "openstates-scrape.yml"
+
 
 def _latest(selector: str) -> str:
     """The last sample of a selector within the look-back, as an instant vector."""
@@ -184,6 +191,28 @@ def _templating() -> dict:
                 f"label_values({FLEET_STREAMS}, outcome)",
                 "Log outcome",
             ),
+            # Drives the repeated status grids: every workflow except the pinned
+            # scrape one, which has its own grid at the top. Excluded in the
+            # query rather than by a regex over the results, so the rule is one
+            # readable matcher. Hidden from the toolbar (hide: 2) — it is panel
+            # plumbing, not a filter anyone should be setting by hand.
+            {
+                **_label_variable(
+                    "other_workflow",
+                    METRICS,
+                    {
+                        "query": (
+                            f'label_values(fleet_workflow_run_status{{workflow!="{SCRAPE_WORKFLOW}"}}'
+                            ", workflow)"
+                        ),
+                        "refId": "PrometheusVariableQueryEditor-VariableQuery",
+                    },
+                    f'label_values(fleet_workflow_run_status{{workflow!="{SCRAPE_WORKFLOW}"}}'
+                    ", workflow)",
+                    "Other workflows",
+                ),
+                "hide": 2,
+            },
         ]
     }
 
@@ -210,13 +239,18 @@ TILE_TEXT_SIZE = 18
 
 
 def _status_grid(panel_id: int, title: str, workflow: str, y: int, height: int,
-                 description: str) -> dict:
+                 description: str, repeat: str = None) -> dict:
     """One tile per jurisdiction, coloured by its latest completed run.
 
     A stat panel rather than a table because the question it answers is
     "anything red?", read in one glance, and stat lays many series out as a grid
     on its own. One grid per workflow keeps that glance readable: 112 tiles in a
     single panel shrank the text past legibility.
+
+    ``repeat`` names a variable to generate one grid per value of, instead of
+    pinning a single workflow. That is how every workflow but the scrape gets a
+    grid without being named here — `extract-text.yml` was added upstream and
+    went unmonitored precisely because the workflows were a hardcoded pair.
 
     Paused jurisdictions come from a second query rather than a second panel, so
     the grid holds the whole fleet; an override keyed on that query's refId
@@ -227,9 +261,9 @@ def _status_grid(panel_id: int, title: str, workflow: str, y: int, height: int,
         return {
             "datasource": METRICS,
             "editorMode": "code",
-            # The workflow is pinned by the panel, so it carries no
-            # `workflow=~"$workflow"` matcher — the split *is* that filter. The
-            # workflow picker still scopes the logs panel.
+            # The workflow is fixed by the panel — pinned, or supplied by the
+            # repeat — so it carries no `workflow=~"$workflow"` matcher of its
+            # own. The workflow picker still scopes the logs panel.
             "expr": _latest(
                 f'fleet_workflow_run_status{{workflow="{workflow}", paused="{paused}", '
                 'state=~"$state", org=~"$org"}'
@@ -240,7 +274,7 @@ def _status_grid(panel_id: int, title: str, workflow: str, y: int, height: int,
             "refId": ref_id,
         }
 
-    return {
+    panel = {
         "datasource": METRICS,
         "description": description,
         "fieldConfig": {
@@ -277,6 +311,10 @@ def _status_grid(panel_id: int, title: str, workflow: str, y: int, height: int,
         "title": title,
         "type": "stat",
     }
+    if repeat:
+        panel["repeat"] = repeat
+        panel["repeatDirection"] = "v"
+    return panel
 
 
 # The data-commit-age alert fires above 48 hours (README "Alerting"); the table
@@ -442,16 +480,20 @@ def _logs_panel(panel_id: int, y: int) -> dict:
     }
 
 
-# The two actions the fleet performs, in the order they run: a jurisdiction is
-# scraped, then its output is formatted. One grid each — 56 tiles apiece instead
-# of 112 in one panel, which is where legibility went.
-SCRAPE_WORKFLOW = "openstates-scrape.yml"
-FORMAT_WORKFLOW = "format.yml"
-
 GRID_HEIGHT = 12
+TABLE_HEIGHT = 14
+LOGS_HEIGHT = 12
 
 
 def _panels() -> list:
+    """Scrapers, freshness, logs — then a grid per remaining workflow.
+
+    The scrape is the fleet's entry point and everything downstream depends on
+    it, so it is pinned to the top where it needs no scrolling. The rest of the
+    workflows are generated by Grafana's panel repeat and sit below the logs:
+    naming them here is what let `extract-text.yml` ship upstream and go
+    unmonitored, so the dashboard no longer holds a list that can fall behind.
+    """
     return [
         _status_grid(
             1,
@@ -460,23 +502,27 @@ def _panels() -> list:
             y=0,
             height=GRID_HEIGHT,
             description=(
-                "Latest completed scrape per jurisdiction. Red is actionable; a dimmed "
-                "tile is out of session, where a failing run is the calendar, not a fault."
+                "Latest completed scrape per jurisdiction — the fleet's entry point. Red is "
+                "actionable; a dimmed tile is out of session, where a failing run is the "
+                "calendar, not a fault."
             ),
         ),
+        _freshness_table(2, y=GRID_HEIGHT, height=TABLE_HEIGHT),
+        _logs_panel(3, y=GRID_HEIGHT + TABLE_HEIGHT),
         _status_grid(
-            2,
-            "Formatters",
-            FORMAT_WORKFLOW,
-            y=GRID_HEIGHT,
+            4,
+            "$other_workflow",
+            "$other_workflow",
+            y=GRID_HEIGHT + TABLE_HEIGHT + LOGS_HEIGHT,
             height=GRID_HEIGHT,
             description=(
-                "Latest completed format run per jurisdiction — the step after the scrape. "
-                "Same colouring: red is actionable, dimmed is out of session."
+                "Latest completed run per jurisdiction for this workflow. One grid per "
+                "workflow the fleet runs besides the scrape, generated from the metric's own "
+                "labels — a workflow added to the pipeline-manager config appears here on its "
+                "next sweep, with no dashboard edit."
             ),
+            repeat="other_workflow",
         ),
-        _freshness_table(3, y=2 * GRID_HEIGHT, height=14),
-        _logs_panel(4, y=2 * GRID_HEIGHT + 14),
     ]
 
 

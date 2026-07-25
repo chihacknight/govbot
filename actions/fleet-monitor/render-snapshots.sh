@@ -1349,17 +1349,46 @@ if [ "$real_count" -lt 1 ]; then
 fi
 echo "✓ real-config smoke: $real_count records from ../pipeline-manager"
 
-# API budget: one sweep of the real fleet must stay in the low hundreds of
-# GitHub requests (default GITHUB_TOKEN allows 1000/hour). Not snapshotted —
-# the count moves with the fleet; this locks the ceiling, not the number.
+# API budget: one sweep of the real fleet, against the GITHUB_TOKEN ceiling of
+# 1000 requests/hour. Not snapshotted — the count moves with the fleet; this
+# locks the ceiling, not the number.
+#
+# It counts BOTH legs. The old check looked only at the metrics leg against a
+# flat 400, which understated a sweep by the logs leg's run-listing request per
+# workflow — and it fired for real when upstream added a third fleet config plus
+# a second production workflow, at which point the true cost was over the
+# ceiling, not merely over 400. Budget the whole sweep or the tripwire lies.
 pipenv run python3 - <<'EOF'
 from fleet_config import read_fleet
 from fleet_poller import DATA_PATHS, estimate_request_count
 
+# GITHUB_TOKEN's documented limit for an Actions workflow, and the sweep runs
+# hourly, so one sweep must fit inside one hour's budget with room for the
+# archive downloads (one per NEW run, unpredictable and unbounded by config).
+# 80% leaves ~200 requests/hour for those; the measured fleet sits at ~62%.
+TOKEN_LIMIT_PER_HOUR = 1000
+HEADROOM = 0.8
+
 records = read_fleet("../pipeline-manager")
-count = estimate_request_count(records)
-assert count < 400, f"fleet sweep now costs {count} GitHub requests; revisit the polling strategy"
-print(f"✓ API budget: one sweep of the real fleet = {count} GitHub requests (< 400)")
+metrics_requests = estimate_request_count(records)
+# The logs leg lists runs once per workflow; archive downloads are extra and
+# depend on how many runs actually finished, which is why the ceiling keeps 40%.
+logs_requests = sum(len(r["expected_workflows"]) for r in records)
+count = metrics_requests + logs_requests
+budget = int(TOKEN_LIMIT_PER_HOUR * HEADROOM)
+assert count < budget, (
+    f"fleet sweep now costs {count} GitHub requests/hour ({metrics_requests} metrics + "
+    f"{logs_requests} log listings) against a {TOKEN_LIMIT_PER_HOUR}/hour token limit; "
+    "revisit the polling strategy or exclude a fleet"
+)
+utilisation = 100 * count / TOKEN_LIMIT_PER_HOUR
+print(f"✓ API budget: one sweep of the real fleet = {count} GitHub requests "
+      f"({metrics_requests} metrics + {logs_requests} log listings) = "
+      f"{utilisation:.0f}% of the {TOKEN_LIMIT_PER_HOUR}/hour token limit")
+if utilisation > 60:
+    # Not a failure — a heads-up that the next fleet or workflow may not fit.
+    print(f"· note: the sweep is over 60% of the token budget; one more fleet or "
+          f"workflow would need a polling-strategy change")
 
 # Every real-fleet base template needs a DATA_PATHS entry, or the first live
 # sweep after a new template ships would fail at startup while snapshots
@@ -1367,6 +1396,22 @@ print(f"✓ API budget: one sweep of the real fleet = {count} GitHub requests (<
 missing = {r["base_template"] for r in records} - DATA_PATHS.keys()
 assert not missing, f"real-fleet base template(s) missing from DATA_PATHS: {sorted(missing)}"
 print("✓ data paths: every real-fleet base template has a DATA_PATHS entry")
+
+# Non-production fleets stay out of the sweep by default. `chn-openstates-test`
+# mirrors the files fleet against govbot-test and its own header says some
+# locales are expected to fail — monitoring it would put permanent expected-red
+# on the board, page someone once alerting lands, and (with its 56 repos ×
+# 2 workflows) take the sweep over the token ceiling above.
+from fleet_config import EXCLUDED_FLEETS
+
+fleets = {r["fleet"] for r in records}
+assert not fleets & set(EXCLUDED_FLEETS), sorted(fleets & set(EXCLUDED_FLEETS))
+# ...but the config stays the authority: opting out restores everything, so the
+# skip is a visible, reversible statement about what is worth alerting on.
+everything = {r["fleet"] for r in read_fleet("../pipeline-manager", exclude_fleets=())}
+skipped = everything - fleets
+print(f"✓ fleet exclusion: monitoring {sorted(fleets)}"
+      + (f", skipping {sorted(skipped)}" if skipped else " (nothing to skip in this checkout)"))
 EOF
 
 # Dashboard: built as data, committed rendered. The checks below are the whole
@@ -1377,7 +1422,7 @@ pipenv run python3 - <<'EOF'
 import json
 import re
 
-from dashboard import (DEFAULT_LOGS_DATASOURCE, DEFAULT_METRICS_DATASOURCE, FORMAT_WORKFLOW,
+from dashboard import (DEFAULT_LOGS_DATASOURCE, DEFAULT_METRICS_DATASOURCE,
                        OBSERVED_MAX_SWEEP_GAP_HOURS, SCRAPE_WORKFLOW, build_dashboard,
                        encode_dashboard)
 
@@ -1472,18 +1517,36 @@ for panel in metric_panels:
     assert target["instant"] is True, (panel["title"], target)
 assert OBSERVED_MAX_SWEEP_GAP_HOURS >= 3.6, OBSERVED_MAX_SWEEP_GAP_HOURS
 
-# 3. One status grid per action, in the order the actions run — scrape, then
-#    format. 112 tiles in a single panel shrank the text past legibility, so
-#    the split is the readability fix, not decoration; the panel ordering is
-#    part of the contract.
-titles = [p["title"] for p in board["panels"] if "title" in p]
-assert titles.index("Scrapers") < titles.index("Formatters"), titles
-scrapers, formatters = panels["Scrapers"], panels["Formatters"]
-assert scrapers["gridPos"]["y"] < formatters["gridPos"]["y"], titles
-assert f'workflow="{SCRAPE_WORKFLOW}"' in scrapers["targets"][0]["expr"], scrapers["targets"][0]
-assert f'workflow="{FORMAT_WORKFLOW}"' in formatters["targets"][0]["expr"], formatters["targets"][0]
+# 3. One status grid per workflow — 112 tiles in a single panel shrank the text
+#    past legibility, so the split is the readability fix, not decoration.
+#    Scrapers is pinned to the top (the fleet's entry point, worth seeing without
+#    scrolling); every OTHER workflow is generated by Grafana's panel repeat and
+#    sits after the logs. Only the scrape may be named in dashboard.py: a
+#    hardcoded workflow list is how `extract-text.yml` shipped upstream and went
+#    unmonitored, and no offline check could have caught it.
+ordered = sorted((p["gridPos"]["y"], p["title"]) for p in board["panels"] if "title" in p)
+titles = [t for _, t in ordered]
+assert titles[0] == "Scrapers", titles
+assert titles.index("Data freshness") < titles.index("Run logs"), titles
 
-for grid in (scrapers, formatters):
+scrapers = panels["Scrapers"]
+assert f'workflow="{SCRAPE_WORKFLOW}"' in scrapers["targets"][0]["expr"], scrapers["targets"][0]
+assert "repeat" not in scrapers, scrapers.get("repeat")
+
+repeated = next(p for p in board["panels"] if p.get("repeat"))
+assert repeated["repeat"] == "other_workflow", repeated["repeat"]
+assert repeated["title"] == "$other_workflow", repeated["title"]
+assert '"$other_workflow"' in repeated["targets"][0]["expr"], repeated["targets"][0]["expr"]
+# After the logs, as laid out deliberately.
+assert repeated["gridPos"]["y"] > panels["Run logs"]["gridPos"]["y"], ordered
+# The repeat variable is every workflow EXCEPT the pinned one, excluded in the
+# query itself — otherwise the scrapers grid renders a second time at the bottom.
+other = variables["other_workflow"]
+assert other["type"] == "query", other
+assert f'workflow!="{SCRAPE_WORKFLOW}"' in other["query"]["query"], other["query"]
+assert other["multi"] and other["includeAll"], other
+
+for grid in (scrapers, repeated):
     # A tile is its jurisdiction and nothing else: the workflow is the panel it
     # sits in now, so repeating it per tile only shrank the identifying part.
     assert grid["targets"][0]["legendFormat"] == "{{state}}", grid["targets"][0]
@@ -1569,7 +1632,7 @@ assert logs["type"] == "logs", logs["type"]
 for label in ("state", "org", "workflow", "outcome"):
     assert f'{label}=~"${label}"' in logs["targets"][0]["expr"], logs["targets"][0]["expr"]
 assert "log_state" not in repr(board["templating"]), "a second jurisdiction picker came back"
-for title in ("Scrapers", "Formatters", "Data freshness"):
+for title in ("Scrapers", "Data freshness", "$other_workflow"):
     assert 'state=~"$state"' in panels[title]["targets"][0]["expr"], title
 assert logs["options"]["enableLogDetails"] is True, logs["options"]
 assert logs["options"]["sortOrder"] == "Descending", logs["options"]
@@ -1602,7 +1665,7 @@ assert outcome["query"]["stream"] == '{state=~".+"}', outcome
 # It must be ".+", not ".*": LogQL rejects a stream selector whose every matcher
 # is empty-compatible, so with all four pickers on All (the default on a fresh
 # import) ".*" makes the logs panel a parse error rather than an empty result.
-for name in ("state", "org", "workflow", "outcome"):
+for name in ("state", "org", "workflow", "outcome", "other_workflow"):
     assert variables[name]["allValue"] == ".+", variables[name]
     assert variables[name].get("skipUrlSync") is not True, variables[name]
 

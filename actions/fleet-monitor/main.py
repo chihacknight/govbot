@@ -10,7 +10,7 @@ import yaml
 sys.path.append(str(Path(__file__).parent))
 
 from dashboard import DASHBOARD_PATH, encode_dashboard
-from fleet_config import read_fleet
+from fleet_config import EXCLUDED_FLEETS, read_fleet
 from log_harvester import github_log_fetchers, harvest_logs
 from logs_shipper import encode_logs
 from metrics_shipper import encode_heartbeat, encode_metrics
@@ -53,8 +53,17 @@ def cli():
     help="Epoch-seconds timestamp for every series (default: the records' polled_at, "
          "else now); also anchors the log harvester's look-back window.",
 )
+@click.option(
+    "--exclude-fleet",
+    "exclude_fleets",
+    multiple=True,
+    default=EXCLUDED_FLEETS,
+    show_default=True,
+    help="Fleet config stem to skip (repeatable). Pass --exclude-fleet= to monitor every "
+         "fleet discovery finds, including non-production ones.",
+)
 def collect(config_dir, metrics_only, logs_only, dry_run, poller_records, log_fixture,
-            watermark_file, timestamp):
+            watermark_file, timestamp, exclude_fleets):
     """Poll the fleet and push (or print) Grafana Cloud metric and/or log payloads.
 
     Both legs share collect's exit contract — a degraded sweep must never look
@@ -72,13 +81,14 @@ def collect(config_dir, metrics_only, logs_only, dry_run, poller_records, log_fi
     failures = []
     if metrics_only:
         try:
-            _collect_metrics(config_dir, poller_records, dry_run, timestamp)
+            _collect_metrics(config_dir, poller_records, dry_run, timestamp,
+                             exclude_fleets)
         except click.ClickException as e:
             failures.append(e.message)
     if logs_only:
         try:
             log_errors = _collect_logs(config_dir, log_fixture, watermark_file, dry_run,
-                                       _harvest_now(timestamp))
+                                       _harvest_now(timestamp), exclude_fleets)
             if log_errors:
                 failures.append(f"log harvest errors on {len(log_errors)} target(s)")
         except click.ClickException as e:
@@ -87,11 +97,11 @@ def collect(config_dir, metrics_only, logs_only, dry_run, poller_records, log_fi
         raise click.ClickException("; ".join(failures))
 
 
-def _collect_metrics(config_dir, poller_records, dry_run, timestamp):
+def _collect_metrics(config_dir, poller_records, dry_run, timestamp, exclude_fleets):
     """collect's metrics leg: poll, encode, ship (or print). Raises ClickException
     on poll errors — after shipping what it has — so the caller decides whether
     that failure stands alone or merges with the logs leg's."""
-    records = _load_records(config_dir, poller_records)
+    records = _load_records(config_dir, poller_records, exclude_fleets)
 
     errored = _report_poll_errors(records)
     payload = _encode(records, timestamp if timestamp is not None else _default_timestamp(records))
@@ -141,7 +151,17 @@ def _collect_metrics(config_dir, poller_records, dry_run, timestamp):
     help="Epoch-seconds timestamp for every series (default: the records' polled_at, "
          "else now); also anchors the log harvester's look-back window.",
 )
-def run(config_dir, dry_run, poller_records, log_fixture, watermark_file, timestamp):
+@click.option(
+    "--exclude-fleet",
+    "exclude_fleets",
+    multiple=True,
+    default=EXCLUDED_FLEETS,
+    show_default=True,
+    help="Fleet config stem to skip (repeatable). Pass --exclude-fleet= to monitor every "
+         "fleet discovery finds, including non-production ones.",
+)
+def run(config_dir, dry_run, poller_records, log_fixture, watermark_file, timestamp,
+        exclude_fleets):
     """Unattended hourly sweep: poll the fleet, ship metrics + a heartbeat + logs.
 
     The orchestrator the hourly workflow invokes. Wires config reader → poller →
@@ -160,7 +180,7 @@ def run(config_dir, dry_run, poller_records, log_fixture, watermark_file, timest
     live harvest, or ``--log-fixture`` offline); a metrics-only invocation
     (``--poller-records`` alone) skips it.
     """
-    records = _load_records(config_dir, poller_records)
+    records = _load_records(config_dir, poller_records, exclude_fleets)
 
     errored = _report_poll_errors(records)
     series_timestamp = timestamp if timestamp is not None else _default_timestamp(records)
@@ -177,10 +197,10 @@ def run(config_dir, dry_run, poller_records, log_fixture, watermark_file, timest
 
     if config_dir is not None or log_fixture is not None:
         _collect_logs(config_dir, log_fixture, watermark_file, dry_run,
-                      _harvest_now(timestamp))
+                      _harvest_now(timestamp), exclude_fleets)
 
 
-def _load_records(config_dir, poller_records):
+def _load_records(config_dir, poller_records, exclude_fleets=EXCLUDED_FLEETS):
     """Records for a sweep: a pre-built --poller-records fixture (offline) or a
     live poll of --config-dir. Shared by ``collect`` and ``run``."""
     if poller_records is not None:
@@ -190,7 +210,7 @@ def _load_records(config_dir, poller_records):
             if line.strip()
         ]
     if config_dir is not None:
-        return _poll_live(config_dir)
+        return _poll_live(config_dir, exclude_fleets)
     raise click.ClickException("pass --config-dir (live poll) or --poller-records (fixture)")
 
 
@@ -246,7 +266,7 @@ def _default_timestamp(records):
     return int(time.time())
 
 
-def _poll_live(config_dir):
+def _poll_live(config_dir, exclude_fleets=EXCLUDED_FLEETS):
     """Read the fleet config and poll GitHub for every repo's current state."""
     import os
 
@@ -256,7 +276,7 @@ def _poll_live(config_dir):
             "costs ~336 requests and the unauthenticated GitHub limit is 60/hour"
         )
     try:
-        jurisdictions = read_fleet(config_dir)
+        jurisdictions = read_fleet(config_dir, exclude_fleets)
     except (ValueError, yaml.YAMLError) as e:
         raise click.ClickException(str(e)) from e
     from fleet_poller import poll_fleet
@@ -290,7 +310,7 @@ def _harvest_now(timestamp):
     return datetime.now(timezone.utc)
 
 
-def _log_sources(config_dir, log_fixture, now):
+def _log_sources(config_dir, log_fixture, now, exclude_fleets=EXCLUDED_FLEETS):
     """Resolve (jurisdictions, fetch_runs, fetch_archive) for the logs leg: an
     offline fixture directory, or a live GitHub harvest of the fleet config.
     ``now`` is the harvest anchor, threaded into the live fetchers so pagination
@@ -301,7 +321,7 @@ def _log_sources(config_dir, log_fixture, now):
         # Same clean-error contract as _poll_live and list-fleet: a malformed
         # config is a CLI error line, never a raw traceback.
         try:
-            jurisdictions = read_fleet(config_dir)
+            jurisdictions = read_fleet(config_dir, exclude_fleets)
         except (ValueError, yaml.YAMLError) as e:
             raise click.ClickException(str(e)) from e
         fetch_runs, fetch_archive = github_log_fetchers(now)
@@ -336,7 +356,7 @@ def _load_log_fixture(directory):
     return jurisdictions, fetch_runs, fetch_archive
 
 
-def _collect_logs(config_dir, log_fixture, watermark_file, dry_run, now):
+def _collect_logs(config_dir, log_fixture, watermark_file, dry_run, now, exclude_fleets):
     """Harvest new-run logs and print (dry-run) or push them to Loki. Returns the
     per-repo harvest errors so ``collect`` can turn them into a nonzero exit while
     ``run`` keeps them green.
@@ -357,7 +377,8 @@ def _collect_logs(config_dir, log_fixture, watermark_file, dry_run, now):
     a red run means the collector needs attention, but it never un-ships the
     fleet's progress.
     """
-    jurisdictions, fetch_runs, fetch_archive = _log_sources(config_dir, log_fixture, now)
+    jurisdictions, fetch_runs, fetch_archive = _log_sources(config_dir, log_fixture, now,
+                                                            exclude_fleets)
     watermarks = (
         load_watermarks(watermark_file, warn=lambda message: click.echo(message, err=True))
         if watermark_file
@@ -415,10 +436,19 @@ def _collect_logs(config_dir, log_fixture, watermark_file, dry_run, now):
     required=True,
     help="Directory holding pipeline-manager config YAMLs and their templates/ folder.",
 )
-def list_fleet(config_dir: Path):
+@click.option(
+    "--exclude-fleet",
+    "exclude_fleets",
+    multiple=True,
+    default=EXCLUDED_FLEETS,
+    show_default=True,
+    help="Fleet config stem to skip (repeatable). Pass --exclude-fleet= to monitor every "
+         "fleet discovery finds, including non-production ones.",
+)
+def list_fleet(config_dir: Path, exclude_fleets):
     """Print one JSON Lines jurisdiction record per locale per fleet."""
     try:
-        records = read_fleet(config_dir)
+        records = read_fleet(config_dir, exclude_fleets)
     except (ValueError, yaml.YAMLError) as e:
         raise click.ClickException(str(e)) from e
     for record in records:

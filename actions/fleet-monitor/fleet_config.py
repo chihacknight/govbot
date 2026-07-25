@@ -15,25 +15,47 @@ DEFAULT_MARKER_OPEN = "✏️{"
 DEFAULT_MARKER_CLOSE = "}✏️"
 DEFAULT_RUNNER = "ubuntu-latest"
 
+# Fleets discovery finds but the monitor skips by default.
+#
+# `chn-openstates-test` mirrors the files fleet against the govbot-test org to
+# validate changes before cutting the real repos over, and its own header says
+# some locales "will fail fast ... expected, not alarming". Monitoring it would
+# put permanent expected-red on the board and page someone for it once alerting
+# lands — the same reason paused jurisdictions are never coloured red. It is
+# also 56 repos × 2 workflows of API budget: including it takes an hourly sweep
+# to ~1000 GitHub requests, at the GITHUB_TOKEN ceiling, before the logs leg.
+#
+# A default, not a law: `--exclude-fleet` overrides it (name nothing and the
+# whole fleet is monitored), so the pipeline-manager configs stay the authority
+# on what exists and this is only a visible, reversible statement about what is
+# worth alerting on.
+EXCLUDED_FLEETS = ("chn-openstates-test",)
 
-def read_fleet(config_dir):
+
+def read_fleet(config_dir, exclude_fleets=EXCLUDED_FLEETS):
     """Return one jurisdiction record per locale per fleet config in config_dir.
 
     A fleet config is any top-level *.yml/*.yaml file with a `locales` mapping;
-    the fleet name is the file's stem. Records are sorted by (fleet, state) so
-    output is deterministic. Raises ValueError on malformed input — two fleet
-    configs sharing a stem, a non-mapping top-level section, a config without
-    org.username, a non-string locale key, a locale that isn't a mapping, a
-    locale referencing a template the config doesn't define, a non-list
-    disabled_jobs, or a referenced template with no workflow files on disk.
+    the fleet name is the file's stem. Fleets named in ``exclude_fleets`` are
+    skipped (see EXCLUDED_FLEETS for why the default is non-empty); passing an
+    empty collection monitors everything discovery finds. Records are sorted by
+    (fleet, state) so output is deterministic. Raises ValueError on malformed
+    input — two fleet configs sharing a stem, a non-mapping top-level section, a
+    config without org.username, a non-string locale key, a locale that isn't a
+    mapping, a locale referencing a template the config doesn't define, a
+    non-list disabled_jobs, or a referenced template with no workflow files on
+    disk.
     """
     config_dir = Path(config_dir)
+    excluded = set(exclude_fleets or ())
     records = []
     fleets_seen = {}
     for config_path in sorted(config_dir.glob("*.yml")) + sorted(config_dir.glob("*.yaml")):
         with open(config_path) as f:
             config = yaml.safe_load(f)
         if not isinstance(config, dict) or "locales" not in config:
+            continue
+        if config_path.stem in excluded:
             continue
         if config_path.stem in fleets_seen:
             raise ValueError(

@@ -19,6 +19,18 @@ every snapshot render: `fleet`,
 `template`, `base_template` (the `-paused` suffix stripped — the locale's durable
 identity, which downstream keys per-template facts off), `paused`, `runner`,
 `expected_workflows`.
+**Non-production fleets are skipped by default.** Discovery finds every fleet config, but
+`--exclude-fleet` (default: `chn-openstates-test`) keeps some out of the sweep.
+`chn-openstates-test` mirrors the files fleet against the `govbot-test` org to validate
+changes before cutting the real repos over, and its own header says some locales "will fail
+fast … expected, not alarming" — monitoring it would put permanent expected-red on the
+board and page someone once alerting lands, the same reason paused jurisdictions are never
+coloured red. It is also 56 repos × 2 workflows of API budget: including it takes an hourly
+sweep to **~1,008 requests against the 1,000/hour `GITHUB_TOKEN` limit**, before any log
+archive downloads. This is a default, not a law — `--exclude-fleet=` (empty) monitors
+everything discovery finds — so the pipeline-manager configs stay the authority on what
+*exists*, and this is only a visible, reversible statement about what is worth alerting on.
+
 A locale is paused when its `template` ends in `-paused`. `expected_workflows` lists the
 template's workflow files as they exist in rendered repos (`.j2` stripped), minus the
 locale's `disabled_jobs`. A config that references an unknown template, or a template
@@ -117,13 +129,21 @@ the offsets are assigned in event-time order within each stream.
 ### Budgets
 
 - **GitHub API**: only single-page queries (`per_page` ≤ 3) — 2 per workflow (recent
-  runs, latest success) + 1 per repo for the data-path commit. Current fleet: 112 repos × 1 workflow → **336
-  requests per sweep**, well inside the default `GITHUB_TOKEN` limit of 1000/hour;
-  `render-snapshots.sh` asserts the real-fleet count stays under 400. The logs leg
-  adds 1 run-listing request per workflow (paging up to 4 only when a page is full
-  and still inside the 24 h window — page 1 suffices on a normal hourly sweep) plus
-  1 archive download per *new* run — bounded by how many runs actually finished in
-  the hour, typically a handful, since the watermark skips everything already shipped.
+  runs, latest success) + 1 per repo for the data-path commit, plus the logs leg's
+  1 run-listing request per workflow (paging up to 4 only when a page is full and still
+  inside the 24 h window — page 1 suffices on a normal hourly sweep) and 1 archive download
+  per *new* run, bounded by how many runs actually finished in the hour, typically a
+  handful, since the watermark skips everything already shipped.
+
+  Against the `GITHUB_TOKEN` limit of **1000 requests/hour**, and the sweep runs hourly, so
+  one sweep must fit in one hour's budget. The monitored fleet — 56 scraper repos × 1
+  workflow plus 56 data repos × 2 — costs **448 metrics + 168 log listings = 616/hour, 62%
+  of the limit**. `render-snapshots.sh` asserts the whole sweep stays under 80%, leaving
+  ~200 for archive downloads, and prints a notice past 60% so the next fleet or workflow
+  doesn't arrive as a surprise. That check counts **both legs**: budgeting the metrics leg
+  alone against a flat number understated a sweep and let the real cost cross the ceiling
+  before anything complained. Including `chn-openstates-test` would put the sweep at
+  ~1,008/hour — over the limit — which is the arithmetic behind excluding it above.
 - **Series cardinality**: 2 series per repo/workflow + 1 per repo, plus the single global
   `fleet_collector_heartbeat` pair the orchestrator emits per sweep → **~336 series (+2 heartbeat)**
   for the current fleet, against the Grafana Cloud free-tier budget of ~10k active series.
@@ -165,18 +185,25 @@ say — and it is committed rather than hand-built, so the Grafana side is repro
   has drifted — it does not rewrite the file, so regenerate it yourself with
   `main.py dashboard --out dashboards/fleet-overview.json` after editing the builder. The
   file in the repo can never quietly stop matching the code that explains it.
-- **Four panels.** Two status grids on `fleet_workflow_run_status` — **Scrapers** then
-  **Formatters**, the order the actions actually run — each one tile per jurisdiction,
-  coloured by that jurisdiction's latest completed run. Then one full-width freshness table
-  on `fleet_repo_data_commit_age_hours`, and a logs panel on the Loki streams. The table
-  turns red above 48 h — the same number the staleness alert fires on, kept in one place so
-  the dashboard and the alert cannot disagree.
-- **One grid per workflow, and a tile says only its state.** 112 tiles in a single panel
-  shrank the text past reading; 56 apiece with the workflow carried by the panel title
-  leaves the two-letter jurisdiction code rendered as large as the OK/FAILING beside it.
-  (The code renders as the metric label stores it, lower-case — Grafana has no way to
-  upper-case a series name without hardcoding all 56 jurisdictions into the JSON, which
-  would cost the property that a new jurisdiction appears on its own.)
+- **Scrapers, freshness, logs — then a grid per remaining workflow.** The scrape is the
+  fleet's entry point and everything downstream depends on it, so its status grid is pinned
+  to the top. Below it, one full-width freshness table on
+  `fleet_repo_data_commit_age_hours` and a logs panel on the Loki streams; below those, one
+  status grid per *other* workflow. The table turns red above 48 h — the same number the
+  staleness alert fires on, kept in one place so the dashboard and the alert cannot
+  disagree.
+- **Only the scrape workflow is named in the JSON.** The rest of the grids are Grafana
+  panel repeats over a variable fed by the metric's own `workflow` label, so a workflow
+  added to the pipeline-manager config gets a grid on its next sweep with no dashboard
+  edit. This is not hypothetical: `extract-text.yml` was added to the production files
+  fleet upstream, and the earlier hardcoded Scrapers/Formatters pair would have left it
+  silently unmonitored — no tile, no alert, and no offline check that could have caught it.
+- **A tile says only its state.** 112 tiles in a single panel shrank the text past reading;
+  56 apiece with the workflow carried by the panel title leaves the two-letter jurisdiction
+  code rendered as large as the OK/FAILING beside it. (The code renders as the metric label
+  stores it, lower-case — Grafana has no way to upper-case a series name without hardcoding
+  all 56 jurisdictions into the JSON, which would cost the property that a new jurisdiction
+  appears on its own.)
 - **Paused jurisdictions are dimmed in place, not split out.** Out of session, a failing run
   and a month-old data commit are the legislative calendar, not an incident. In the grids
   they come from a second query overridden to a flat colour — never red — whose text still
@@ -447,9 +474,10 @@ committed `dashboards/fleet-overview.json` (it never rewrites the committed copy
 so it is guarded by that diff rather than by the repo-wide `verify-snapshots.sh` gate.
 Around that, offline checks lock what the panels actually promise — every datasource
 reference is a variable and never a stack UID, `id` is null and the uid stable (so a fresh
-stack imports rather than collides), panel ids are unique, the Scrapers grid precedes the
-Formatters grid and each pins its own workflow, a tile is labelled `{{state}}` alone at the
-same text size as its value, paused tiles come from a second query overridden to a flat
+stack imports rather than collides), panel ids are unique, the Scrapers grid is first and
+pins the scrape workflow while every other grid is a panel repeat over a variable that
+excludes it (so no workflow list can fall behind the config) and sits after the logs, a
+tile is labelled `{{state}}` alone at the same text size as its value, paused tiles come from a second query overridden to a flat
 never-red colour whose text still reports the last run, the freshness table is one
 full-width panel whose query carries no paused filter and whose `paused` column survives
 the organize step uncoloured by the staleness thresholds, it sorts in-session rows first
