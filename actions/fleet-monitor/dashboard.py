@@ -184,23 +184,6 @@ def _templating() -> dict:
                 f"label_values({FLEET_STREAMS}, outcome)",
                 "Log outcome",
             ),
-            # The logs panel gets its own jurisdiction filter, separate from the
-            # `state` picker that scopes the grids and the table. Clicking a
-            # freshness row should show that jurisdiction's logs, not narrow the
-            # whole board to one state — a fleet view filtered to a single
-            # jurisdiction stops being a fleet view.
-            _label_variable(
-                "log_state",
-                LOGS,
-                {
-                    "label": "state",
-                    "refId": "LokiVariableQueryEditor-VariableQuery",
-                    "stream": FLEET_STREAMS,
-                    "type": 1,
-                },
-                f"label_values({FLEET_STREAMS}, state)",
-                "Logs: jurisdiction",
-            ),
         ]
     }
 
@@ -394,18 +377,21 @@ def _freshness_table(panel_id: int, y: int, height: int) -> dict:
     }
 
 
-# Clicking a freshness row shows that jurisdiction's run logs. It drives
-# `log_state`, which only the logs panel reads, so the grids and the table keep
-# showing the whole fleet — narrowing everything to one state was both useless
-# and, as a bare "?var=..." relative URL, silently inert: Grafana rewrote the
-# address bar without re-running a thing. An absolute dashboard path fixes that,
-# and carrying the time range through means the click doesn't also reset the
-# window someone just chose.
+# Clicking a freshness row narrows the whole board — grids, table, and logs — to
+# that jurisdiction, through the single `state` picker. One picker means the
+# filter you can see at the top is the filter that is applied, everywhere.
+#
+# The path is absolute on purpose: the bare "?var=..." relative URL this replaced
+# was silently inert, rewriting the address bar without re-running a thing, which
+# is why the link looked live and did nothing. Carrying the time range through
+# means the click doesn't also reset the window someone just chose. It sets the
+# jurisdiction only — adding `var-org` narrowed to one of the jurisdiction's two
+# repos, hiding its sibling.
 STATE_LINK = [
     {
-        "title": "Show ${__data.fields.state} run logs",
+        "title": "Filter to ${__data.fields.state}",
         "url": (
-            f"/d/{DASHBOARD_UID}?var-log_state=${{__data.fields.state}}"
+            f"/d/{DASHBOARD_UID}?var-state=${{__data.fields.state}}"
             "&${__url_time_range}"
         ),
     }
@@ -444,12 +430,8 @@ def _logs_panel(panel_id: int, y: int) -> dict:
             {
                 "datasource": LOGS,
                 "editorMode": "code",
-                # `log_state`, not `state`: this panel has its own jurisdiction
-                # filter so a freshness row can point at it without dragging the
-                # rest of the board along.
                 "expr": (
-                    '{state=~"$log_state", org=~"$org", workflow=~"$workflow", '
-                    'outcome=~"$outcome"}'
+                    '{state=~"$state", org=~"$org", workflow=~"$workflow", outcome=~"$outcome"}'
                 ),
                 "queryType": "range",
                 "refId": "A",

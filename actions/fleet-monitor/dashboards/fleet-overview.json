@@ -271,8 +271,8 @@
           },
           "links": [
             {
-              "title": "Show ${__data.fields.state} run logs",
-              "url": "/d/fleet-monitor-overview?var-log_state=${__data.fields.state}&${__url_time_range}"
+              "title": "Filter to ${__data.fields.state}",
+              "url": "/d/fleet-monitor-overview?var-state=${__data.fields.state}&${__url_time_range}"
             }
           ],
           "thresholds": {
@@ -426,7 +426,7 @@
             "uid": "${logs}"
           },
           "editorMode": "code",
-          "expr": "{state=~\"$log_state\", org=~\"$org\", workflow=~\"$workflow\", outcome=~\"$outcome\"}",
+          "expr": "{state=~\"$state\", org=~\"$org\", workflow=~\"$workflow\", outcome=~\"$outcome\"}",
           "queryType": "range",
           "refId": "A"
         }
@@ -593,39 +593,6 @@
         "options": [],
         "query": {
           "label": "outcome",
-          "refId": "LokiVariableQueryEditor-VariableQuery",
-          "stream": "{state=~\".+\"}",
-          "type": 1
-        },
-        "refresh": 2,
-        "regex": "",
-        "sort": 1,
-        "type": "query"
-      },
-      {
-        "allValue": ".+",
-        "current": {
-          "selected": true,
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "loki",
-          "uid": "${logs}"
-        },
-        "definition": "label_values({state=~\".+\"}, state)",
-        "hide": 0,
-        "includeAll": true,
-        "label": "Logs: jurisdiction",
-        "multi": true,
-        "name": "log_state",
-        "options": [],
-        "query": {
-          "label": "state",
           "refId": "LokiVariableQueryEditor-VariableQuery",
           "stream": "{state=~\".+\"}",
           "type": 1

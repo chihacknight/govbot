@@ -193,11 +193,12 @@ say — and it is committed rather than hand-built, so the Grafana side is repro
   The pickers do *default* to this fleet's stack (`grafanacloud-govbot-prom` /
   `grafanacloud-govbot-logs`) so an import renders immediately — a default, not a hardcode:
   another stack changes them in the picker and nothing else about the JSON differs.
-- **Clicking a freshness row shows that jurisdiction's run logs.** It drives `log_state`,
-  a variable only the logs panel reads, so the grids and the table keep showing the whole
-  fleet — a fleet view narrowed to one state stops being a fleet view. The link is an
-  absolute dashboard path carrying the current time range; the bare `?var=…` relative URL
-  it replaced rewrote the address bar and re-ran nothing, so it looked live and did nothing.
+- **Clicking a freshness row narrows the whole board to that jurisdiction** — grids, table,
+  and logs — through the single `Jurisdiction` picker, so the filter shown at the top is
+  always the filter applied. The link is an absolute dashboard path carrying the current
+  time range; the bare `?var=…` relative URL it replaced rewrote the address bar and re-ran
+  nothing, so it looked live and did nothing. It sets the jurisdiction only: adding the org
+  narrowed to one of that jurisdiction's two repos and hid its sibling.
 - **Every metric panel looks back six hours, and that number is measured.** An instant
   query resolves against Prometheus's 5-minute staleness window, so a bare selector finds
   nothing between sweeps — the board reads "No data", which it did on a real import.
@@ -459,8 +460,8 @@ labels as regexes with log details on, every metric panel wraps its selector in
 `last_over_time` over a window with real headroom on the *measured* worst sweep gap, not on
 the cron expression (checked over the metric panels derived from the board rather than a
 hand-written list), the datasource pickers default to this stack, the freshness row link is
-an absolute path driving the logs panel's own `log_state` filter and carrying the time
-range, the rendered logs selector keeps at least one matcher
+an absolute path setting the single jurisdiction picker and carrying the time range, the
+rendered logs selector keeps at least one matcher
 that is not empty-compatible, each picker carries its own
 datasource's query dialect and an explicit `allValue: ".+"`, the pickers are label-driven,
 multi-select, and URL-synced, and the encoding is

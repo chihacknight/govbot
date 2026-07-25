@@ -1545,14 +1545,15 @@ paused_column = next(
 paused_properties = {p["id"]: p["value"] for p in paused_column["properties"]}
 assert paused_properties["custom.cellOptions"] == {"type": "auto"}, paused_properties
 assert "red" not in repr(paused_properties).lower(), paused_properties
-# The row link drives the LOGS panel's own jurisdiction filter, not the board's.
-# It is an absolute dashboard path: a bare "?var=..." relative URL rewrote the
-# address bar and re-ran nothing, so the link looked live and did nothing.
+# The row link narrows the whole board through the single `state` picker. It is
+# an absolute dashboard path: a bare "?var=..." relative URL rewrote the address
+# bar and re-ran nothing, so the link looked live and did nothing.
 links = fresh["fieldConfig"]["defaults"]["links"]
 assert links, "no data link on the freshness table"
 assert links[0]["url"].startswith("/d/fleet-monitor-overview"), links
-assert "var-log_state=${__data.fields.state}" in links[0]["url"], links
-assert "var-state=" not in links[0]["url"], links
+assert "var-state=${__data.fields.state}" in links[0]["url"], links
+# The jurisdiction, not one of its two repos: var-org would hide the sibling.
+assert "var-org=" not in links[0]["url"], links
 # Carry the chosen time range through, so a drill-down does not silently reset it.
 assert "${__url_time_range}" in links[0]["url"], links
 
@@ -1561,17 +1562,15 @@ assert "${__url_time_range}" in links[0]["url"], links
 #    and run URL are structured metadata, not labels, so they surface by
 #    expanding a line — log details must stay on.
 #
-#    Its jurisdiction filter is `log_state`, its own variable: a freshness row
-#    click narrows the logs without narrowing the fleet view around them.
+#    One jurisdiction picker drives the whole board — grids, table, and logs —
+#    so the filter shown at the top is the filter applied everywhere.
 logs = panels["Run logs"]
 assert logs["type"] == "logs", logs["type"]
-for label, variable in (("state", "log_state"), ("org", "org"),
-                        ("workflow", "workflow"), ("outcome", "outcome")):
-    assert f'{label}=~"${variable}"' in logs["targets"][0]["expr"], logs["targets"][0]["expr"]
-# The grids and the table keep reading the ordinary state picker, so the two
-# filters stay independent by construction.
-assert 'state=~"$state"' in panels["Scrapers"]["targets"][0]["expr"], panels["Scrapers"]
-assert 'state=~"$state"' in fresh["targets"][0]["expr"], fresh["targets"][0]["expr"]
+for label in ("state", "org", "workflow", "outcome"):
+    assert f'{label}=~"${label}"' in logs["targets"][0]["expr"], logs["targets"][0]["expr"]
+assert "log_state" not in repr(board["templating"]), "a second jurisdiction picker came back"
+for title in ("Scrapers", "Formatters", "Data freshness"):
+    assert 'state=~"$state"' in panels[title]["targets"][0]["expr"], title
 assert logs["options"]["enableLogDetails"] is True, logs["options"]
 assert logs["options"]["sortOrder"] == "Descending", logs["options"]
 
@@ -1603,15 +1602,14 @@ assert outcome["query"]["stream"] == '{state=~".+"}', outcome
 # It must be ".+", not ".*": LogQL rejects a stream selector whose every matcher
 # is empty-compatible, so with all four pickers on All (the default on a fresh
 # import) ".*" makes the logs panel a parse error rather than an empty result.
-for name in ("state", "org", "workflow", "outcome", "log_state"):
+for name in ("state", "org", "workflow", "outcome"):
     assert variables[name]["allValue"] == ".+", variables[name]
     assert variables[name].get("skipUrlSync") is not True, variables[name]
 
 # Proven on the rendered selector, not just the variable: interpolate every
 # picker to its All value and confirm the logs query still holds one matcher
 # that cannot match empty.
-interpolated = re.sub(r"\$(log_state|state|org|workflow|outcome)", ".+",
-                      logs["targets"][0]["expr"])
+interpolated = re.sub(r"\$(state|org|workflow|outcome)", ".+", logs["targets"][0]["expr"])
 matchers = re.findall(r'(\w+)\s*=~\s*"([^"]*)"', interpolated)
 assert matchers, interpolated
 assert any(not re.fullmatch(value, "") for _, value in matchers), interpolated
