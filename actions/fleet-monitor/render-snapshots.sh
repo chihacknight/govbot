@@ -1369,6 +1369,242 @@ assert not missing, f"real-fleet base template(s) missing from DATA_PATHS: {sort
 print("✓ data paths: every real-fleet base template has a DATA_PATHS entry")
 EOF
 
+# Dashboard: built as data, committed rendered. The checks below are the whole
+# test for it — there is no snapshot file, because the committed artifact
+# (dashboards/fleet-overview.json) IS the snapshot: the drift check further down
+# regenerates it and fails if the repo copy no longer matches the builder.
+pipenv run python3 - <<'EOF'
+import json
+
+from dashboard import DASHBOARD_UID, build_dashboard, encode_dashboard
+
+board = build_dashboard()
+panels = {p["title"]: p for p in board["panels"] if "title" in p}
+variables = {v["name"]: v for v in board["templating"]["list"]}
+
+
+def colors(node):
+    """Every colour named anywhere under a panel, however nested."""
+    found = []
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key == "color" and isinstance(value, str):
+                found.append(value)
+            elif key == "color" and isinstance(value, dict) and "fixedColor" in value:
+                found.append(value["fixedColor"])
+            else:
+                found.extend(colors(value))
+    elif isinstance(node, list):
+        for item in node:
+            found.extend(colors(item))
+    return found
+
+
+def datasource_uids(node):
+    found = []
+    if isinstance(node, dict):
+        if set(node) >= {"type", "uid"} and node["type"] in ("prometheus", "loki"):
+            found.append(node["uid"])
+        for value in node.values():
+            found.extend(datasource_uids(value))
+    elif isinstance(node, list):
+        for item in node:
+            found.extend(datasource_uids(item))
+    return found
+
+
+# 1. Datasources are pickers, not UIDs — a UID belongs to one stack, and the
+#    committed JSON has to import into any of them.
+assert variables["metrics"]["type"] == "datasource", variables["metrics"]
+assert variables["metrics"]["query"] == "prometheus", variables["metrics"]
+assert variables["logs"]["query"] == "loki", variables["logs"]
+uids = datasource_uids(board["panels"])
+assert uids, "no panel datasource references found"
+assert set(uids) <= {"${metrics}", "${logs}"}, sorted(set(uids))
+
+# 2. A fresh stack must accept this as a NEW dashboard; a numeric id would
+#    collide with whatever holds it there.
+assert board["id"] is None, board["id"]
+assert board["uid"] == DASHBOARD_UID, board["uid"]
+ids = [p["id"] for p in board["panels"]]
+assert len(ids) == len(set(ids)), ids
+
+# 3. Status grids read the latest-run metric. Paused jurisdictions are split
+#    into their own grid and never coloured red: they are out of session, so a
+#    failing run there is the calendar, not an incident, and colouring it red
+#    would train people to ignore red.
+active, paused = panels["Active jurisdictions"], panels["Paused jurisdictions"]
+assert 'paused="false"' in active["targets"][0]["expr"], active["targets"][0]["expr"]
+assert 'paused="true"' in paused["targets"][0]["expr"], paused["targets"][0]["expr"]
+for panel in (active, paused):
+    legend = panel["targets"][0]["legendFormat"]
+    assert "{{state}}" in legend and "{{workflow}}" in legend, legend
+    assert panel["targets"][0]["instant"] is True, panel["targets"][0]
+options = active["fieldConfig"]["defaults"]["mappings"][0]["options"]
+assert options["0"] == {"color": "red", "index": 0, "text": "FAILING"}, options
+assert options["1"] == {"color": "green", "index": 1, "text": "OK"}, options
+assert "red" not in {c.lower() for c in colors(paused)}, colors(paused)
+paused_options = paused["fieldConfig"]["defaults"]["mappings"][0]["options"]
+assert paused_options["0"]["text"].startswith("paused"), paused_options
+assert paused_options["1"]["text"].startswith("paused"), paused_options
+
+# 4. Freshness tables: worst first, red exactly at the 48h alert line (one
+#    number, so dashboard and alert can never disagree), paused split out and
+#    never red, and every row links to that jurisdiction's own filtered view.
+fresh, fresh_paused = panels["Data freshness"], panels["Data freshness · paused"]
+for panel in (fresh, fresh_paused):
+    target = panel["targets"][0]
+    assert target["expr"].startswith("fleet_repo_data_commit_age_hours{"), target["expr"]
+    assert target["instant"] is True and target["format"] == "table", target
+    sorts = [t for t in panel["transformations"] if t["id"] == "sortBy"]
+    assert sorts and sorts[0]["options"]["sort"][0]["desc"] is True, panel["transformations"]
+assert 'paused="false"' in fresh["targets"][0]["expr"], fresh["targets"][0]["expr"]
+assert 'paused="true"' in fresh_paused["targets"][0]["expr"], fresh_paused["targets"][0]["expr"]
+steps = fresh["fieldConfig"]["defaults"]["thresholds"]["steps"]
+assert {"color": "red", "value": 48} in steps, steps
+assert any(s["color"] == "green" and s["value"] is None for s in steps), steps
+assert "red" not in repr(fresh_paused["fieldConfig"]), fresh_paused["fieldConfig"]
+links = fresh["fieldConfig"]["defaults"]["links"]
+assert links and "var-state=${__data.fields.state}" in links[0]["url"], links
+
+# 5. The logs panel filters on every stream label the harvester ships, each as a
+#    regex matcher so multi-select "All" (.*) and a single pick both work. Run id
+#    and run URL are structured metadata, not labels, so they surface by
+#    expanding a line — log details must stay on.
+logs = panels["Run logs"]
+assert logs["type"] == "logs", logs["type"]
+for label in ("state", "org", "workflow", "outcome"):
+    assert f'{label}=~"${label}"' in logs["targets"][0]["expr"], logs["targets"][0]["expr"]
+assert logs["options"]["enableLogDetails"] is True, logs["options"]
+assert logs["options"]["sortOrder"] == "Descending", logs["options"]
+
+# 6. Pickers are label-driven (a new jurisdiction appears without a dashboard
+#    edit) and URL-synced, which is what makes a filtered view a shareable link.
+for name, source in (("state", "metrics"), ("org", "metrics"), ("workflow", "metrics")):
+    variable = variables[name]
+    assert variable["type"] == "query", variable
+    assert f"label_values(fleet_workflow_run_status, {name})" in variable["query"]["query"], variable
+    assert variable["multi"] and variable["includeAll"], variable
+assert variables["outcome"]["datasource"]["type"] == "loki", variables["outcome"]
+for name in ("state", "org", "workflow", "outcome"):
+    assert variables[name].get("skipUrlSync") is not True, variables[name]
+
+# 7. Deterministic: regenerating the committed JSON is a no-op diff unless the
+#    dashboard really changed.
+assert encode_dashboard() == encode_dashboard(), "dashboard encoding is not deterministic"
+assert json.loads(encode_dashboard()) == json.loads(json.dumps(board))
+print(f"✓ dashboard: {len(board['panels'])} panels, parameterized datasources, "
+      "paused split out of red, logs filtered on all four stream labels")
+EOF
+
+# The committed dashboard must be exactly what the builder produces — otherwise
+# the JSON people import and the code reviewers read have quietly diverged.
+dashboard_tmp=$(mktemp)
+pipenv run python3 main.py dashboard > "$dashboard_tmp"
+if ! diff -u dashboards/fleet-overview.json "$dashboard_tmp"; then
+  echo "✗ dashboards/fleet-overview.json is stale; regenerate it:"
+  echo "    pipenv run python3 main.py dashboard --out dashboards/fleet-overview.json"
+  rm -f "$dashboard_tmp"
+  exit 1
+fi
+rm -f "$dashboard_tmp"
+echo "✓ dashboard: committed dashboards/fleet-overview.json matches the builder"
+
+# The import check pushes to a real stack, so like every other live path it must
+# self-skip without credentials; the offline suite locks that skip.
+dashboard_skip=$(env -u GRAFANA_DASHBOARD_URL -u GRAFANA_DASHBOARD_KEY \
+  pipenv run python3 main.py check-dashboard 2>&1)
+if ! echo "$dashboard_skip" | grep -q "dashboard check skipped"; then
+  echo "✗ check-dashboard without credentials should skip cleanly; got:"
+  echo "$dashboard_skip"
+  exit 1
+fi
+echo "✓ check-dashboard: skips cleanly when credentials are absent"
+
+# Offline proof of the import itself: a fake Grafana answers the push and the
+# read-back, so the request shape (endpoint, bearer auth, overwrite-by-uid) and
+# the rejection path are both tested without an account. The real import runs
+# opt-in below.
+pipenv run python3 - <<'EOF'
+import json
+import urllib.error
+import urllib.request
+from io import BytesIO
+
+from click.testing import CliRunner
+
+import main
+from dashboard import DASHBOARD_UID, build_dashboard
+
+CREDS = {"GRAFANA_DASHBOARD_URL": "https://stack.grafana.net/", "GRAFANA_DASHBOARD_KEY": "tok"}
+
+
+class FakeResponse(BytesIO):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
+
+def run(env, respond):
+    calls = []
+
+    def fake_urlopen(request, timeout=None):
+        calls.append(request)
+        return respond(request)
+
+    real, urllib.request.urlopen = urllib.request.urlopen, fake_urlopen
+    try:
+        return CliRunner().invoke(main.cli, ["check-dashboard"], env=env), calls
+    finally:
+        urllib.request.urlopen = real
+
+
+def happy(request):
+    if request.full_url.endswith("/api/dashboards/db"):
+        return FakeResponse(json.dumps({"uid": DASHBOARD_UID, "status": "success"}).encode())
+    return FakeResponse(json.dumps({"dashboard": build_dashboard()}).encode())
+
+
+ok, calls = run(CREDS, happy)
+assert ok.exit_code == 0, ok.output + str(ok.exception)
+posted, fetched = calls[0], calls[-1]
+assert posted.full_url == "https://stack.grafana.net/api/dashboards/db", posted.full_url
+assert posted.get_header("Authorization") == "Bearer tok", posted.header_items()
+body = json.loads(posted.data)
+assert body["dashboard"]["uid"] == DASHBOARD_UID, body["dashboard"]["uid"]
+# Idempotent by uid: a re-run updates the same dashboard rather than erroring or
+# littering copies across the stack.
+assert body["overwrite"] is True, body
+# A 200 on the push is not proof it renders, so the check reads it back by uid.
+assert fetched.full_url == f"https://stack.grafana.net/api/dashboards/uid/{DASHBOARD_UID}", (
+    fetched.full_url
+)
+
+
+def rejected(request):
+    raise urllib.error.HTTPError(request.full_url, 400, "Bad Request", {}, None)
+
+
+bad, _ = run(CREDS, rejected)
+assert bad.exit_code != 0, bad.output
+assert "400" in bad.output, bad.output
+
+# A push that succeeds but comes back missing panels is a failure, not a pass:
+# Grafana will happily store a payload it then renders as an empty dashboard.
+def truncated(request):
+    if request.full_url.endswith("/api/dashboards/db"):
+        return FakeResponse(json.dumps({"status": "success"}).encode())
+    return FakeResponse(json.dumps({"dashboard": {"panels": []}}).encode())
+
+
+empty, _ = run(CREDS, truncated)
+assert empty.exit_code != 0, empty.output
+assert "0 panels" in empty.output, empty.output
+print("✓ check-dashboard: pushes by uid, reads back, fails on rejection and on a hollow import")
+EOF
+
 # Live check self-skips without credentials (exit 0, says so) — CI has no
 # Grafana account, so this locks the skip path; the live path runs only when
 # GRAFANA_* env vars are present (see README).
@@ -1402,6 +1638,15 @@ if [ "${FLEET_MONITOR_LIVE_CHECK:-}" = "1" ]; then
   pipenv run python3 main.py live-check --config-dir ../pipeline-manager
 else
   echo "· live-check (real push + query-back) not run; opt in with FLEET_MONITOR_LIVE_CHECK=1"
+fi
+
+# Same bargain for the dashboard import: it writes a real dashboard into a real
+# stack, so a bare render never does it even on a machine with GRAFANA_DASHBOARD_*
+# set. Opting in makes the render the automated import check.
+if [ "${FLEET_MONITOR_DASHBOARD_CHECK:-}" = "1" ]; then
+  pipenv run python3 main.py check-dashboard
+else
+  echo "· check-dashboard (real import) not run; opt in with FLEET_MONITOR_DASHBOARD_CHECK=1"
 fi
 
 echo "✓ Snapshot generation complete. Output in $output_dir"

@@ -151,6 +151,59 @@ the offsets are assigned in event-time order within each stream.
 | `GRAFANA_LOGS_USER` / `GRAFANA_LOGS_KEY` | logs instance ID / access-policy token (`logs:write`; also `logs:read` if you run `probe-loki`, whose query-back reads the entries back) |
 | `GRAFANA_QUERY_URL` | Prometheus API base, `https://prometheus-…/api/prom` (live-check only) |
 | `GRAFANA_QUERY_USER` / `GRAFANA_QUERY_KEY` | Prometheus instance ID / token (`metrics:read`, live-check only) |
+| `GRAFANA_DASHBOARD_URL` | stack base URL, `https://<stack>.grafana.net` (`check-dashboard` only) |
+| `GRAFANA_DASHBOARD_KEY` | service-account token with dashboard write (`check-dashboard` only; **bearer**-authed, unlike the Basic-auth push endpoints) |
+
+## Dashboard: the fleet view, as code
+
+One dashboard answers the whole question — anything red, anything stale, and what did it
+say — and it is committed rather than hand-built, so the Grafana side is reproducible:
+
+- **[dashboard.py](dashboard.py)** builds it as data; **[dashboards/fleet-overview.json](dashboards/fleet-overview.json)**
+  is that build, rendered and committed. The JSON is what you import; the module is what
+  you review. The render script regenerates the JSON and fails if the two have drifted, so
+  the file in the repo can never quietly stop matching the code that explains it.
+- **Five panels.** Two status grids on `fleet_workflow_run_status` (one tile per
+  jurisdiction+workflow, coloured by the latest completed run), two freshness tables on
+  `fleet_repo_data_commit_age_hours` sorted worst-first, and a logs panel on the Loki
+  streams. Tables turn red above 48 h — the same number the staleness alert fires on, kept
+  in one place so the dashboard and the alert cannot disagree.
+- **Paused jurisdictions are split out, not filtered out.** Out of session, a failing run
+  and a month-old data commit are the legislative calendar, not an incident, so paused
+  repos get their own grid and their own table, are never coloured red, and still say
+  whether their last run failed. Dimmed, not hidden — colouring them red would teach
+  everyone to ignore red.
+- **Nothing in the JSON belongs to one account.** Datasources are pickers (`${metrics}`,
+  `${logs}`), never UIDs, and the dashboard carries `id: null` with a stable uid, so the
+  same file imports into any stack instead of colliding with whatever holds that id there.
+- **Filters are label-driven and URL-synced.** The state, org, and workflow pickers read
+  their options from the metrics labels and the outcome picker from Loki's, so a
+  jurisdiction added to the pipeline-manager config appears on its next sweep with no
+  dashboard edit. Every filter round-trips through the URL — "here is Wyoming's
+  freshness" is a link you can paste to someone, and each freshness row links to its own
+  jurisdiction's filtered view.
+- **Run id and run URL surface by expanding a log line**, not as labels: they travel as
+  structured metadata (see Budgets above), which is why log details stay on.
+
+### Importing it into a fresh stack
+
+Grafana → Dashboards → New → Import → upload
+[dashboards/fleet-overview.json](dashboards/fleet-overview.json), then pick the stack's
+Prometheus and Loki datasources when it asks. No edits, no find-and-replace.
+
+To do the same unattended — and to prove the file still imports — point
+`check-dashboard` at the stack:
+
+```bash
+export GRAFANA_DASHBOARD_URL=https://<stack>.grafana.net
+export GRAFANA_DASHBOARD_KEY=<service-account token with dashboard write>
+pipenv run python main.py check-dashboard
+```
+
+It POSTs the dashboard to the stack's API keyed by uid (so re-running updates rather than
+littering copies) and then **reads it back by uid**, because a 200 on the push is not proof
+it renders — Grafana will store a payload it then shows as an empty dashboard. Missing
+credentials exit 0 with a skip notice, so an offline run passes without an account.
 
 ## Usage
 
@@ -179,6 +232,15 @@ GITHUB_TOKEN=$(gh auth token) pipenv run python main.py collect --logs-only \
 # each BACK to see which actually landed — Grafana Cloud 204s a too-old push then
 # silently drops it (needs GRAFANA_LOGS_* vars; the token also needs logs:read):
 pipenv run python main.py probe-loki
+
+# Print the dashboard JSON, or regenerate the committed copy after editing
+# dashboard.py (the render script fails if the two have drifted):
+pipenv run python main.py dashboard
+pipenv run python main.py dashboard --out dashboards/fleet-overview.json
+
+# Import the dashboard into a real stack and read it back (needs
+# GRAFANA_DASHBOARD_URL/KEY; exits 0 with a notice when they're absent):
+pipenv run python main.py check-dashboard
 
 # End-to-end proof: poll, push, then query the series back (needs all six
 # GRAFANA_* vars; exits 0 with a notice when they're absent):
@@ -319,6 +381,24 @@ collection-time index stamps; that `run` wires the logs leg only when a log sour
 is present; `probe-loki`'s credential-free skip path, its bad-key exit, and its
 query-back detecting a silently-discarded (204-but-dropped) age against a fake
 Loki. The real ingest-window probe runs only with `GRAFANA_LOGS_*` set.
+
+The dashboard has no snapshot file because the committed JSON is the snapshot: the render
+regenerates `dashboards/fleet-overview.json` from `dashboard.py` and fails on any drift.
+Around that, offline checks lock what the panels actually promise — every datasource
+reference is a variable and never a stack UID, `id` is null and the uid stable (so a fresh
+stack imports rather than collides), panel ids are unique, the status grids read the
+latest-run metric with paused split into its own never-red grid whose text still reports
+the last run, the freshness tables sort worst-first and turn red at exactly the 48 h alert
+threshold while the paused table has no red anywhere in its config, each freshness row
+links to its jurisdiction's filtered view, the logs panel matches on all four stream
+labels as regexes (so multi-select "All" and a single pick both work) with log details on,
+the pickers are label-driven, multi-select, and URL-synced, and the encoding is
+deterministic. `check-dashboard` is locked the same way as the other live paths: its
+credential-free skip, and against a fake Grafana its wire shape (dashboards API endpoint,
+bearer auth, overwrite-by-uid, read-back by uid), its loud failure on a rejected import,
+and its refusal to pass a push that returns 200 but reads back hollow. The real import is
+opt-in — `FLEET_MONITOR_DASHBOARD_CHECK=1 ./render-snapshots.sh` — so a bare render never
+writes into anyone's stack.
 
 ```bash
 ../../scripts/before-snapshots.sh __snapshots__

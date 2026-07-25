@@ -9,6 +9,7 @@ import yaml
 
 sys.path.append(str(Path(__file__).parent))
 
+from dashboard import DASHBOARD_PATH, encode_dashboard
 from fleet_config import read_fleet
 from log_harvester import github_log_fetchers, harvest_logs
 from logs_shipper import encode_logs
@@ -422,6 +423,88 @@ def list_fleet(config_dir: Path):
         raise click.ClickException(str(e)) from e
     for record in records:
         click.echo(json.dumps(record, ensure_ascii=False))
+
+
+@cli.command("dashboard")
+@click.option(
+    "--out",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help=f"Write the dashboard JSON here instead of stdout (committed at {DASHBOARD_PATH}).",
+)
+def dashboard(out):
+    """Emit the fleet-overview dashboard JSON, ready to import into any stack.
+
+    The dashboard is built as data (dashboard.py) and committed rendered
+    (dashboards/fleet-overview.json) so it reviews as code and imports as JSON.
+    Datasource references are variables, not UIDs, so the same file imports into
+    any Grafana Cloud stack; nothing here is specific to the account it was
+    developed against.
+    """
+    text = encode_dashboard()
+    if out:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(text)
+        click.echo(f"wrote {out}", err=True)
+    else:
+        click.echo(text, nl=False)
+
+
+@cli.command("check-dashboard")
+def check_dashboard():
+    """Import the committed dashboard into a real stack and read it back; skips
+    without credentials.
+
+    A dashboard that only ever renders in the browser it was built in is not
+    reproducible, so the check is the import itself: POST the JSON to the
+    stack's dashboards API, then GET it by uid. The read-back matters — Grafana
+    answers the push before it has stored anything renderable, and a payload it
+    quietly mangles still returns 200.
+
+    Needs GRAFANA_DASHBOARD_URL (the stack base URL) and GRAFANA_DASHBOARD_KEY
+    (a service-account token with dashboards write; bearer-authed, unlike the
+    Basic-auth push endpoints). Exits 0 with a skip notice otherwise, so an
+    offline run passes without a Grafana account.
+    """
+    import os
+
+    names = ["GRAFANA_DASHBOARD_URL", "GRAFANA_DASHBOARD_KEY"]
+    missing = [name for name in names if not os.environ.get(name)]
+    if missing:
+        click.echo(f"dashboard check skipped: missing {', '.join(missing)}")
+        return
+
+    from dashboard import DASHBOARD_UID, build_dashboard
+    from http_util import RequestFailed, request_json, request_with_retry
+
+    base = os.environ["GRAFANA_DASHBOARD_URL"].rstrip("/")
+    auth = {"Authorization": f"Bearer {os.environ['GRAFANA_DASHBOARD_KEY']}"}
+    board = build_dashboard()
+    payload = json.dumps({
+        "dashboard": board,
+        # Idempotent by uid: re-running the check updates the same dashboard
+        # instead of erroring on the second run or littering copies.
+        "overwrite": True,
+        "message": "fleet-monitor import check",
+    }).encode()
+    try:
+        request_with_retry(
+            f"{base}/api/dashboards/db",
+            data=payload,
+            headers={**auth, "Content-Type": "application/json"},
+        )
+    except RequestFailed as e:
+        raise click.ClickException(f"dashboard import rejected: {e}") from e
+
+    try:
+        loaded = request_json(f"{base}/api/dashboards/uid/{DASHBOARD_UID}", headers=auth)
+    except RequestFailed as e:
+        raise click.ClickException(f"dashboard imported but does not load back: {e}") from e
+    panels = loaded.get("dashboard", {}).get("panels", [])
+    if len(panels) != len(board["panels"]):
+        raise click.ClickException(
+            f"dashboard loaded with {len(panels)} panels, expected {len(board['panels'])}"
+        )
+    click.echo(f"✓ dashboard imports and loads back with all {len(panels)} panels")
 
 
 @cli.command("live-check")
