@@ -1517,8 +1517,11 @@ for name in ("state", "org", "workflow"):
     variable = variables[name]
     assert variable["type"] == "query", variable
     assert variable["datasource"]["type"] == "prometheus", variable
-    assert variable["query"]["qryType"] == 1, variable
     assert variable["query"]["query"] == f"label_values(fleet_workflow_run_status, {name})", variable
+    # Editor-state keys are deliberately absent: a partial set opens the
+    # variable editor half-populated, and saving from there writes back an
+    # empty label_values() that resolves to nothing.
+    assert set(variable["query"]) == {"query", "refId"}, variable
     assert variable["multi"] and variable["includeAll"], variable
 outcome = variables["outcome"]
 assert outcome["datasource"]["type"] == "loki", outcome
@@ -1546,10 +1549,12 @@ matchers = re.findall(r'(\w+)\s*=~\s*"([^"]*)"', interpolated)
 assert matchers, interpolated
 assert any(not re.fullmatch(value, "") for _, value in matchers), interpolated
 
-# 7. Deterministic: regenerating the committed JSON is a no-op diff unless the
-#    dashboard really changed.
-assert encode_dashboard() == encode_dashboard(), "dashboard encoding is not deterministic"
-assert json.loads(encode_dashboard()) == json.loads(json.dumps(board))
+# 7. Nothing volatile in the encoding — a timestamp or a run-varying id would
+#    make the committed artifact drift on every render. (Determinism itself is
+#    proven by the byte diff against the committed JSON further down, which is a
+#    real oracle; comparing encode_dashboard() to itself in one process is not.)
+encoded = encode_dashboard()
+assert not re.search(r"20\d\d-\d\d-\d\dT", encoded), "a timestamp leaked into the dashboard"
 print(f"✓ dashboard: {len(board['panels'])} panels, parameterized datasources, "
       "paused split out of red, logs filtered on all four stream labels")
 EOF

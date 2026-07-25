@@ -203,8 +203,16 @@ say — and it is committed rather than hand-built, so the Grafana side is repro
 ### Importing it into a fresh stack
 
 Grafana → Dashboards → New → Import → upload
-[dashboards/fleet-overview.json](dashboards/fleet-overview.json), then pick the stack's
-Prometheus and Loki datasources when it asks. No edits, no find-and-replace.
+[dashboards/fleet-overview.json](dashboards/fleet-overview.json). It asks for a name,
+folder, and uid, and nothing else. No edits, no find-and-replace.
+
+**Then check the two datasource pickers at the top of the dashboard.** The import screen
+never asks about datasources — that prompt only appears for dashboards carrying an
+`__inputs` block, and this one parameterizes through template variables instead — so
+Grafana auto-selects the first datasource of each type it finds. A Grafana Cloud stack has
+more than one Prometheus-type datasource (`grafanacloud-<stack>-prom` sits alongside
+`grafanacloud-usage`), and landing on the wrong one renders "No data" on every metric
+panel while looking perfectly healthy. If the board is empty, look here first.
 
 To do the same unattended — and to prove the file still imports — point
 `check-dashboard` at the stack:

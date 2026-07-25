@@ -24,6 +24,14 @@ DASHBOARD_PATH = "dashboards/fleet-overview.json"
 # last_over_time reaches back three sweeps: still an instant vector, so the table
 # transformations and the stat reducer are unaffected, but one missed sweep can
 # no longer blank the fleet. main.py's live-check documents the same trap.
+#
+# The cost of the wider window: `paused` is a label, so flipping a jurisdiction
+# in or out of session starts a new series and abandons the old one, and the
+# abandoned twin stays resolvable for the look-back. For up to three hours after
+# a transition a jurisdiction appears in both grids and both freshness tables —
+# including red in the active grid, briefly, for something now out of session.
+# The same lag applies to a workflow dropped from expected_workflows. It settles
+# on its own; it is the price of a board that renders at all between sweeps.
 LOOKBACK = "3h"
 
 
@@ -102,9 +110,15 @@ def _label_variable(name: str, datasource: dict, query: dict, definition: str, l
 
 
 def _prometheus_label_values(name: str) -> dict:
-    """A Prometheus label-values variable query (``qryType`` 1 = label values)."""
+    """A Prometheus label-values variable query.
+
+    The query string is the operative field — it is what Prometheus's
+    ``metricFindQuery`` parses — and this is the shape Grafana persists for a
+    label-values variable. Editor-state fields are deliberately absent: a
+    partial set of them opens the variable editor half-populated, and saving
+    from there writes back an empty ``label_values()`` that resolves to nothing.
+    """
     return {
-        "qryType": 1,
         "query": f"label_values(fleet_workflow_run_status, {name})",
         "refId": "PrometheusVariableQueryEditor-VariableQuery",
     }
@@ -257,9 +271,9 @@ def _freshness_table(panel_id: int, title: str, paused: str, thresholds: dict, y
         "title": title,
         "transformations": [
             # The instant query returns one row per series with the labels as
-            # columns; drop the bookkeeping ones and put the worst staleness on top.
-            {"id": "organize", "options": {"excludeByName": {"Time": True, "__name__": True,
-                                                             "paused": True}}},
+            # columns; drop the bookkeeping ones and put the worst staleness on
+            # top. (No __name__ to drop: a range-vector function strips it.)
+            {"id": "organize", "options": {"excludeByName": {"Time": True, "paused": True}}},
             {"id": "sortBy", "options": {"fields": {},
                                          "sort": [{"desc": True, "field": AGE_FIELD}]}},
         ],

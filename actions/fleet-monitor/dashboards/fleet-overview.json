@@ -232,7 +232,6 @@
           "options": {
             "excludeByName": {
               "Time": true,
-              "__name__": true,
               "paused": true
             }
           }
@@ -329,7 +328,6 @@
           "options": {
             "excludeByName": {
               "Time": true,
-              "__name__": true,
               "paused": true
             }
           }
@@ -446,7 +444,6 @@
         "name": "state",
         "options": [],
         "query": {
-          "qryType": 1,
           "query": "label_values(fleet_workflow_run_status, state)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
@@ -478,7 +475,6 @@
         "name": "org",
         "options": [],
         "query": {
-          "qryType": 1,
           "query": "label_values(fleet_workflow_run_status, org)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
@@ -510,7 +506,6 @@
         "name": "workflow",
         "options": [],
         "query": {
-          "qryType": 1,
           "query": "label_values(fleet_workflow_run_status, workflow)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
