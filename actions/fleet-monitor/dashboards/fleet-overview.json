@@ -414,7 +414,7 @@
             "uid": "${metrics}"
           },
           "editorMode": "code",
-          "expr": "last_over_time(fleet_workflow_run_status{workflow=\"$other_workflow\", paused=\"false\", state=~\"$state\", org=~\"$org\"}[6h])",
+          "expr": "last_over_time(fleet_workflow_run_status{workflow=~\"$other_workflow\", paused=\"false\", state=~\"$state\", org=~\"$org\"}[6h])",
           "instant": true,
           "legendFormat": "{{state}}",
           "range": false,
@@ -426,7 +426,7 @@
             "uid": "${metrics}"
           },
           "editorMode": "code",
-          "expr": "last_over_time(fleet_workflow_run_status{workflow=\"$other_workflow\", paused=\"true\", state=~\"$state\", org=~\"$org\"}[6h])",
+          "expr": "last_over_time(fleet_workflow_run_status{workflow=~\"$other_workflow\", paused=\"true\", state=~\"$state\", org=~\"$org\"}[6h])",
           "instant": true,
           "legendFormat": "{{state}}",
           "range": false,

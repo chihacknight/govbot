@@ -1536,7 +1536,16 @@ assert "repeat" not in scrapers, scrapers.get("repeat")
 repeated = next(p for p in board["panels"] if p.get("repeat"))
 assert repeated["repeat"] == "other_workflow", repeated["repeat"]
 assert repeated["title"] == "$other_workflow", repeated["title"]
-assert '"$other_workflow"' in repeated["targets"][0]["expr"], repeated["targets"][0]["expr"]
+# REGEX matcher, never exact. Grafana interpolates a multi-value variable into a
+# Prometheus query using the regex form — `(format.yml)`, parentheses included —
+# even where a repeat has scoped it to one value, so `workflow="$var"` compares
+# against a literal "(format.yml)" and matches nothing. That renders "No data"
+# under a title that interpolated as plain text and reads perfectly right, which
+# is exactly how it shipped. The rule is asserted over every panel below.
+assert 'workflow=~"$other_workflow"' in repeated["targets"][0]["expr"], repeated["targets"][0]
+for panel in board["panels"]:
+    for target in panel.get("targets", []):
+        assert '="$' not in target.get("expr", ""), (panel.get("title"), target.get("expr"))
 # After the logs, as laid out deliberately.
 assert repeated["gridPos"]["y"] > panels["Run logs"]["gridPos"]["y"], ordered
 # The repeat variable is every workflow EXCEPT the pinned one, excluded in the

@@ -238,7 +238,7 @@ PAUSED_MAPPINGS = {
 TILE_TEXT_SIZE = 18
 
 
-def _status_grid(panel_id: int, title: str, workflow: str, y: int, height: int,
+def _status_grid(panel_id: int, title: str, workflow_matcher: str, y: int, height: int,
                  description: str, repeat: str = None) -> dict:
     """One tile per jurisdiction, coloured by its latest completed run.
 
@@ -246,6 +246,16 @@ def _status_grid(panel_id: int, title: str, workflow: str, y: int, height: int,
     "anything red?", read in one glance, and stat lays many series out as a grid
     on its own. One grid per workflow keeps that glance readable: 112 tiles in a
     single panel shrank the text past legibility.
+
+    ``workflow_matcher`` is the whole PromQL label matcher, not a bare value,
+    because the two callers need different operators. A pinned grid names a
+    literal and matches it exactly; a repeated grid matches its variable with
+    ``=~`` and must — Grafana interpolates a *multi-value* variable into a
+    Prometheus query using the regex form, ``(format.yml)`` with parentheses,
+    even where a repeat has scoped it to a single value. An ``=`` matcher then
+    compares against a literal ``(format.yml)`` and matches nothing: the panel
+    renders "No data" while its title, interpolated as plain text, reads
+    perfectly right.
 
     ``repeat`` names a variable to generate one grid per value of, instead of
     pinning a single workflow. That is how every workflow but the scrape gets a
@@ -265,7 +275,7 @@ def _status_grid(panel_id: int, title: str, workflow: str, y: int, height: int,
             # repeat — so it carries no `workflow=~"$workflow"` matcher of its
             # own. The workflow picker still scopes the logs panel.
             "expr": _latest(
-                f'fleet_workflow_run_status{{workflow="{workflow}", paused="{paused}", '
+                f'fleet_workflow_run_status{{{workflow_matcher}, paused="{paused}", '
                 'state=~"$state", org=~"$org"}'
             ),
             "instant": True,
@@ -498,7 +508,7 @@ def _panels() -> list:
         _status_grid(
             1,
             "Scrapers",
-            SCRAPE_WORKFLOW,
+            f'workflow="{SCRAPE_WORKFLOW}"',
             y=0,
             height=GRID_HEIGHT,
             description=(
@@ -512,7 +522,8 @@ def _panels() -> list:
         _status_grid(
             4,
             "$other_workflow",
-            "$other_workflow",
+            # Regex, not exact: see _status_grid on multi-value interpolation.
+            'workflow=~"$other_workflow"',
             y=GRID_HEIGHT + TABLE_HEIGHT + LOGS_HEIGHT,
             height=GRID_HEIGHT,
             description=(
