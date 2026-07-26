@@ -189,7 +189,7 @@ locales:
     template: openstates-scrape
     name: Massachusetts
     toolkit_branch: main
-    scrape_timeout_minutes: "720"
+    scrape_timeout_minutes: "1440"
     scrape_cron: "0 4 * * *"  # Eastern
     runner: self-hosted
     # Real scrape duration (2.5-12h) regularly exceeds GitHub-hosted runners'
@@ -197,6 +197,13 @@ locales:
     # ubuntu-latest under the hood. Every schedule-triggered run since the
     # Tinyproxy default (PR #75) shipped was killed at exactly 6h00m, never
     # completing. See project_docs/state-problems.md for the full writeup.
+    #
+    # Bumped 720 -> 1440 (12h -> 24h) 2026-07-25: a genuine self-hosted run
+    # (30161792298, MacBookPro-8) was still going past 11h, meaning the
+    # original 12h estimate no longer has enough margin -- that run would
+    # still get killed at the old 720min cap regardless of this change
+    # (timeout-minutes is fixed at dispatch time, doesn't apply retroactively
+    # to an already-running job), but future runs get real headroom now.
     force_self_hosted: "true"
   mi:
     template: openstates-scrape
