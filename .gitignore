@@ -50,8 +50,7 @@ test_output/
 *.log
 sample_data/*
 
-# Project documentation (local development notes)
-project_docs/*
+# Project documentation (tracked for history — see project_docs/)
 WORKFLOW_PREFERENCES.md
 actions/scrape/session-notes-*.md
 actions/scrape/combined-status-*.md

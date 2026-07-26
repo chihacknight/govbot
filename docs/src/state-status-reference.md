@@ -51,7 +51,7 @@ run summary instead of re-classified into a separate scheme.
 | AK | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (text/html, pdf) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | AL | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | AR | TBD | TBD | TBD | TBD | TBD | TBD | ❌ (no bills yet as of audit) | TBD | — |
-| AZ | TBD | TBD | TBD | TBD | ✅ | 🔄 running | TBD | 2,190 | Fixed 2026-07-24 (`--fastmode` cache poisoning, not the old cookie bug) — first successful scrape ever, live via PR [#5742](https://github.com/openstates/openstates-scrapers/pull/5742). See `project_docs/scraper-status/not-working.md` for the full writeup |
+| AZ | TBD | TBD | TBD | TBD | ✅ | 🔄 running | TBD | 2,190 | Fixed 2026-07-24 (`--fastmode` cache poisoning, not the old cookie bug) — first successful scrape ever, live via PR [#5742](https://github.com/openstates/openstates-scrapers/pull/5742). See `tamara-notes/scraper-status/not-working.md` for the full writeup |
 | CA | TBD | TBD | TBD | TBD | ✅ | TBD | ✅ (text/html, pdf) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | CO | TBD | TBD | TBD | TBD | ✅ | TBD | ❌ (pdf only) | TBD | Scraper ✅ per 2026-07-21 full 56-state audit (scraper-status.md) — not re-verified since; other columns still unchecked |
 | CT | TBD | TBD | TBD | TBD | `P1` | TBD | ❌ (pdf only) | TBD | Hit shrink-guard 2026-07-21 — duplicate bill objects under different UUIDs (1.4-2.9x inflation), single-session not multi-session. Cleared and re-dispatched same day per scraper-status.md; not independently re-verified since (see MT for a case where a similar 'fixed' claim didn't fully hold up). Self-hosted required (Azure IP block on FTP server) |
@@ -127,7 +127,7 @@ failed. Only non-`fl`/`mt` states are P1-noted from the same 07-21 audit as the 
 | MN | GitHub-hosted-plain only | 5/10 (+3 no clear signal) | Only path tried | Never tried Tinyproxy or MacBookPro |
 | MO | GitHub-hosted-plain only | 4/9 (+2 no clear signal) | Only path tried | Repeated `P1` shrink-guard hits, not a hosting problem; MacBookPro's only entry was cancelled (discarded) |
 | MP | GitHub-hosted-plain only | 0/10 | None — fails every time | Never tried Tinyproxy or MacBookPro. `S6_VALIDATION`/`H3_RATE_LIMITED` — known blank-title crash + rate limiting |
-| MT | GitHub-hosted-plain, MacBookPro (1 real run) | GitHub-hosted-plain 3/9, MacBookPro 1/1 | MacBookPro (only one data point, but clean) | GitHub-hosted-plain repeatedly hits the disputed `P1` shrink-guard — see project_docs/state-problems.md for full MT writeup |
+| MT | GitHub-hosted-plain, MacBookPro (1 real run) | GitHub-hosted-plain 3/9, MacBookPro 1/1 | MacBookPro (only one data point, but clean) | GitHub-hosted-plain repeatedly hits the disputed `P1` shrink-guard — see tamara-notes/state-problems.md for full MT writeup |
 | NE | Tinyproxy, MacBookPro | 0/5, 0/3 | None confirmed yet | Both paths failing — Tinyproxy hits shrink-guard/rate-limit, MacBookPro's 3 real runs all failed outright, worth investigating |
 | NH | GitHub-hosted-plain, MacBookPro (1 real run) | 0/8, 0/1 | None — fails everywhere | `H3_RATE_LIMITED` on both paths — known site blocks scraping 6am-9pm ET, likely a scheduling/timing issue rather than hosting |
 | NM | Tinyproxy, MacBookPro | 0/6, 0/2 | None confirmed yet | Known intermittent FTP server issue (confirmed via direct `curl` testing), not hosting-related |
@@ -142,6 +142,6 @@ failed. Only non-`fl`/`mt` states are P1-noted from the same 07-21 audit as the 
 
 ## Related docs
 
-- `bill-format-audit.md`, `scraper-health.md`, `error-tracking.md` — archived 2026-07-24 (no longer in the repo); this doc and `project_docs/state-problems.md` are their replacements
+- `bill-format-audit.md`, `scraper-health.md`, `error-tracking.md` — archived 2026-07-24 (no longer in the repo); this doc and `tamara-notes/state-problems.md` are their replacements
 - `actions/pipeline-manager/chn-openstates-scrape.yml` — the actual per-state config this doc should stay consistent with (`runner`, `template`, `scrape_cron`)
 - `actions/pipeline-manager/check-sessions.py` — the disabled session-pause automation this doc's session columns are meant to eventually feed
