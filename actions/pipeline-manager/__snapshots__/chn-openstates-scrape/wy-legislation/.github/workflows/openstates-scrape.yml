@@ -88,6 +88,11 @@ jobs:
           commit-and-push: true
           force-update: ${{ inputs.force-update }}
           branch: main
+          # locale.docker_image (default matches action.yml's own default) -- config-driven
+          # so a locale temporarily on a custom test image (e.g. while a fix awaits upstream
+          # merge) survives a template re-apply instead of reverting silently. A hand-edit
+          # here used to do the same job but doesn't survive apply.py's fully_override_dirs.
+          docker-image: openstates/scrapers:latest
           api-keys: |
             {
               "DC_API_KEY": "${{ secrets.DC_API_KEY }}",

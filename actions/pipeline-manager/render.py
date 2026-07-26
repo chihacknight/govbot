@@ -27,7 +27,7 @@ def run_shell(cmd, check=True, capture_output=True):
     return result
 
 
-def render_template(template_file, output_file, locale, toolkit_branch="main", managed="true", runner="ubuntu-latest", force_self_hosted="false", extra_vars=None, marker_open="✏️✏️", marker_close="✏️✏️"):
+def render_template(template_file, output_file, locale, toolkit_branch="main", managed="true", runner="ubuntu-latest", force_self_hosted="false", docker_image="openstates/scrapers:latest", extra_vars=None, marker_open="✏️✏️", marker_close="✏️✏️"):
     """Render a template file using sed for replacements."""
     if extra_vars is None:
         extra_vars = []
@@ -59,6 +59,7 @@ def render_template(template_file, output_file, locale, toolkit_branch="main", m
     sed_script += f" | sed 's|{raw_open}[[:space:]]*locale\\.toolkit_branch[[:space:]]*{raw_close}|{toolkit_branch}|g'"
     sed_script += f" | sed 's|{raw_open}[[:space:]]*locale\\.runner[[:space:]]*{raw_close}|{runner}|g'"
     sed_script += f" | sed 's|{raw_open}[[:space:]]*locale\\.force_self_hosted[[:space:]]*{raw_close}|{force_self_hosted}|g'"
+    sed_script += f" | sed 's|{raw_open}[[:space:]]*locale\\.docker_image[[:space:]]*{raw_close}|{docker_image}|g'"
     sed_script += f" | sed 's|{raw_open}[[:space:]]*managed[[:space:]]*{raw_close}|{managed}|g'"
 
     # Add extra variable replacements with locale. prefix
@@ -327,6 +328,12 @@ def process_locale(locale, config_str, templates_dir, output_dir, marker_open, m
     # doesn't help here since it still runs on ubuntu-latest under the hood)
     force_self_hosted = get_config_value(config_str, "force_self_hosted", "false")
 
+    # Extract docker_image (for locales temporarily running a custom test image while
+    # a fix awaits upstream merge -- config-driven so it survives a template re-apply,
+    # instead of a hand-edit on the live workflow that silently reverts. Defaults to
+    # the same default action.yml's own docker-image input already has.)
+    docker_image = get_config_value(config_str, "docker_image", "openstates/scrapers:latest")
+
     # Get folder-name from templates config, fallback to locale if not found
     folder_name = locale  # default fallback
     if template in templates and 'folder-name' in templates[template]:
@@ -346,7 +353,7 @@ def process_locale(locale, config_str, templates_dir, output_dir, marker_open, m
     for pair in config_str.split("|"):
         if "=" in pair:
             key, value = pair.split("=", 1)
-            if key not in ("managed", "toolkit_branch", "runner", "force_self_hosted", "template", "disabled_jobs"):
+            if key not in ("managed", "toolkit_branch", "runner", "force_self_hosted", "docker_image", "template", "disabled_jobs"):
                 extra_vars.append(f"{key}={value}")
 
     # Find all template files in the specific template directory
@@ -384,6 +391,7 @@ def process_locale(locale, config_str, templates_dir, output_dir, marker_open, m
             managed,
             runner,
             force_self_hosted,
+            docker_image,
             extra_vars,
             marker_open,
             marker_close

@@ -88,12 +88,19 @@ locales:
     scrape_cron: "0 4 * * *"  # Eastern
     runner: self-hosted
     # Real scrape duration runs close to (or past) GitHub-hosted runners' hard
-    # 6h execution cap -- already being worked around by manually dispatching
-    # with use-self-hosted=true every run; this makes that the actual
-    # scheduled default instead. NOT yet applied to the live fl-legislation
-    # repo (holding off while a scrape is in progress -- see MA rollout for
-    # apply.py --test-states usage).
+    # 6h execution cap -- confirmed for real 2026-07-25: both the nightly
+    # `schedule` trigger and a manual dispatch without use-self-hosted=true
+    # ran on GitHub-hosted (runner_group_name: "GitHub Actions", not the
+    # MacBookPro) and got cancelled -- one at exactly 6h00m, the classic
+    # hosted-runner hard-cap signature. Applied via apply.py 2026-07-25.
     force_self_hosted: "true"
+    # Temporary custom image carrying a scraper fix (single-bill failures no
+    # longer crash the whole ~1,900-bill session) that hasn't merged upstream
+    # yet -- see PR #5724 on openstates/openstates-scrapers and
+    # project_docs/scraper-status/not-working.md's FL section. Revert to the
+    # config default (by deleting this line) once that PR merges and
+    # openstates/scrapers:latest is rebuilt with the fix.
+    docker_image: "ghcr.io/tamara-builds/openstates-scrapers:fl-fix-test"
     labels:
     - working
   ga:
