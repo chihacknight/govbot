@@ -7,6 +7,34 @@ the `govbot` repo or the `tamara-builds/openstates-scrapers` fork.
 
 ## govbot repo
 
+### fix/commit-summary-identifier-aware — 🔄 MT and NH confirmed, USA still running
+
+Two bundled fixes, both found while reviewing USA's shrink-guard test runs:
+
+1. **Commit-summary label was still raw-file-count based.** The job-summary's "Commit Content"
+   label (not the shrink-guard itself, already fixed below) used raw `git diff --shortstat`
+   insertions/deletions to decide "worth a look" vs "no net new content" — same blind spot the
+   shrink-guard used to have. Confirmed on USA: three consecutive commits, distinct bill count
+   flat at 17,574 the whole time, but each one flagged "⚠️ Net fewer files than last commit"
+   anyway, because stale-duplicate cleanup deletes old files without a 1:1 new file replacing
+   them. Fixed by comparing distinct bill identifiers instead, same approach as the shrink-guard.
+2. **`503`/`429` classifier false positives.** `scrape.sh`'s failure-type grep did a bare
+   substring match on `"503"`/`"429"`, which can match inside cache-busting query params some
+   scrapers append to every request URL. Confirmed on NH: a plain `ScrapeError: no objects
+   returned` (should classify as `S1_OUT_OF_SESSION`) got mislabeled `H4_SERVER_DOWN` because
+   the timestamp in every logged request URL (`?x=<timestamp>`) happened to contain "503".
+   Anchored both regexes to require non-digit boundaries.
+
+**Confirmed:**
+- MT (2026-07-26): re-scraped, 4,495 distinct bills flat, correctly labeled "no net new content."
+- NH (2026-07-26): correctly reported `S1_OUT_OF_SESSION` instead of `H4_SERVER_DOWN`, fell back
+  to nightly (1,751 files) as designed, overall `✅ Success`.
+
+**Still running:** USA (dispatched ~03:29 UTC 2026-07-26). Once it lands clean, revert
+MT/NH/USA's `openstates-scrape.yml` back to `@main` and merge.
+
+**Pushed:** yes, `origin/fix/commit-summary-identifier-aware`.
+
 ### fix/nh-skip-fastmode — ✅ MERGED (PR #95, 2026-07-24)
 
 Drops `--fastmode` for NH so the framework's 60 RPM default applies instead of `--fastmode`'s
@@ -40,7 +68,7 @@ both branches, and everything below, are now just history/context, not active wo
 | PR | — | landed clean | ✅ confirmed |
 | USA | 34,992 files (half stale) | 17,574ish bills | ✅ confirmed, 2 clean runs since |
 | WA | 6,153 files, frozen since 07-24 04:06 | 3,411ish bills | ✅ confirmed, unfroze cleanly |
-| MA | 50,183 files (worst bloat found, ~4.5x) | ~11,123 bills expected | 🔄 still running (self-hosted, ~11hr typical) as of merge time |
+| MA | 50,183 files (worst bloat found, ~4.5x) | ~11,123 bills expected | 🔄 still not confirmed as of 2026-07-26 — several manually-dispatched runs since the merge got cancelled before finishing (~30-45min in, not the full ~11hr); timeout bumped from 12h to 2 days and re-triggered again |
 
 **FL also has this exact bug** (found 2026-07-25: 3,123 bill files, only 1,878 distinct, 357
 duplicated — same-day duplicate timestamps) but was never added to the manual test batch. No
@@ -110,30 +138,46 @@ checks out the ref at job start, doesn't re-read it mid-run).
 - **Next:** decide upstream PR vs. custom-image-in-the-meantime (same pattern as AZ/GA). Update
   `not-working.md`'s MP row once resolved either way.
 
-### fix/mi-digicert-intermediate — 🔄 local docker test in progress, looking very promising
+### fix/mi-digicert-intermediate — ❌ ABANDONED 2026-07-26, wrong diagnosis
 
-- **Commit:** `fc7e16c43` — bundles the missing DigiCert Global G2 TLS RSA SHA256 2020 CA1
-  intermediate certificate into the image's CA store (`update-ca-certificates`), plus
-  `REQUESTS_CA_BUNDLE` pointed at the updated system store (requests/urllib3 default to
-  certifi's bundle, not the OS store, so the cert alone wouldn't have been enough).
-- **Verified before building:** downloaded the exact matching intermediate from DigiCert's own
-  repository (`cacerts.digicert.com`), confirmed via `openssl verify -untrusted <intermediate>
-  <mi-leaf-cert>` that it actually completes the chain.
-- **Verified after building:** inside the built image, both `curl` and Python `requests` now
-  get a clean `HTTP 200` from `legislature.mi.gov` with default certificate verification (no
-  `-k`/`verify=False`) — previously an `SSLCertVerificationError` on every path tried, including
-  genuine self-hosted with zero proxy.
-- **Live scrape test:** running now, 93+ bills saved and climbing as of last check — MI has
-  never produced a single file before. Note: `mi/bills.py` itself separately passes
-  `verify=False` on its own requests (an `InsecureRequestWarning` shows in the log) — unrelated
-  to this fix, worth a follow-up cleanup later (same spirit as the NH `verify=False` removal)
-  but not blocking this fix's validity, since the actual chain-verification failure this fixes
-  happens at a different layer (TLS handshake) before request-level `verify=` is even relevant
-  to *whether a connection succeeds* — it was failing to connect at all before.
-- **Pushed:** yes, `origin/fix/mi-digicert-intermediate`
-- **Next:** confirm the live test finishes clean (final bill count, exit 0, no tracebacks), then
-  decide upstream PR vs. custom-image-in-the-meantime (same pattern as AZ/GA/MP). Update
-  `not-working.md`'s MI row once resolved either way.
+Branch deleted, `mi-fix-test` image and workflow override removed. The DigiCert intermediate
+cert theory (missing chain on `legislature.mi.gov`, confirmed via `openssl s_client` against the
+bare domain) turned out to be a red herring for what actually blocks production: checked three
+real runs' full logs (2026-07-22, 07-23, 07-25) and found **zero** occurrences of
+`SSLCertVerificationError` in any of them. `mi/bills.py` already calls with `verify=False` for
+the actual bill-detail host (a raw IP, `34.57.23.77`), bypassing the cert chain entirely on every
+request — the missing intermediate never actually blocks a live run. Building/testing a custom
+image with the cert bundled was solving a problem that doesn't manifest in practice.
+
+**What those three runs actually showed:**
+- 07-22 (`29896737044`): scraped cleanly to completion, 5,097 real files, zero tracebacks — but
+  blocked by the *old* raw-file-count shrink-guard (`P1_SHRINKING_OUTPUT`), already fixed on
+  `main` since (see `fix/commit-summary-identifier-aware`'s sibling fix above).
+- 07-23 and 07-25 (`29985152080`, `30147190768`): both crash identically, every retry, on
+  `dateutil.parser._parser.ParserError: Unknown string format: 4/29/2025<` at `mi/bills.py:118`
+  — a malformed date cell (stray unescaped `<`) on HB 4401, 2025-2026 session. Discards whatever
+  was scraped (2,207 files) and falls back to nightly. Misclassified as `H3_RATE_LIMITED` (same
+  bare-substring-grep issue as NH's `503` bug — no real rate-limiting involved).
+
+See `fix/mi-date-parsing` below — the actual fix for MI's real, reproducible blocker.
+
+### fix/mi-date-parsing — 🔄 local docker test in progress
+
+- **Commit:** `e68079346` — extracts just the date portion (`\d{1,2}/\d{1,2}/\d{4}`) from
+  History table date cells before handing to `dateutil.parser.parse()`, in both
+  `scrape_actions` and `scrape_votes` (same table, same bug, both call sites fixed).
+- **Root cause:** some action/vote rows' date cells carry a stray, unescaped `<` right after
+  the date (e.g. `"4/29/2025<"`), which `dateutil.parser.parse()` can't handle. Confirmed
+  reproducible on HB 4401 — every scheduled run since 2026-07-23 crashes on this exact bill.
+- **Verified:** regex extraction tested against the exact malformed string plus normal-format
+  dates (`4/29/2025<`, `4/29/2025`, `12/1/2025<br`, `1/1/2026`) — all parse to the correct date,
+  well-formed dates unaffected.
+- **Local docker test:** in progress — a full MI scrape takes roughly an hour based on prior
+  GitHub Actions run times.
+- **Pushed:** yes, `origin/fix/mi-date-parsing`
+- **Next:** confirm the local test clears HB 4401 without crashing and gets a real final bill
+  count, then decide upstream PR vs. custom-image-in-the-meantime (same pattern as AZ/GA/MP).
+  Update `not-working.md`'s MI row once resolved either way.
 
 ### fix/ga-subjects-resilience — ✅ confirmed working locally (176 bills, 280 vote events, exit 0, zero tracebacks)
 
