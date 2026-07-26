@@ -3,6 +3,17 @@
 Everything pending across the scraper-status folder, in one place — not just the upstream PR
 follow-ups. Started 2026-07-24 evening; most of the shrink-guard saga resolved same night.
 
+## Recurring maintenance (do this daily, not just once)
+
+- **Clear out local Docker/scraper working files on Tamara's MacBook.** Local test runs (MI, MP,
+  and others this session) leave scratch data, mounted volumes, and Docker images/containers
+  behind — hogging disk space. Should be an actual daily habit, not a one-time cleanup, given
+  how often local Docker tests get run as part of the fix-and-verify workflow. Related: chronic
+  disk tightness already flagged in `not-working.md`'s "Resurfaced from historical docs" section
+  (~3-4GB free even after a cleanup pass on 07-21) — that was about `apply.py`/template-rollout
+  disk pressure specifically; this is the broader daily habit that would help prevent it
+  recurring.
+
 ## Do first, time-sensitive
 
 - **MP live GitHub Actions test in progress — first real (not just local) confirmation before
