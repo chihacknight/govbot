@@ -105,11 +105,13 @@ stuck — other "success"-reporting states could be silently frozen the same way
 
 ## Harder — needs a proper deep-dive (not a quick win)
 
-- **VA — issue [#1385](https://github.com/openstates/issues/issues/1385)**: `csv_bills` crashes
-  with `KeyError: ' '` on the 2026 regular session's `HISTORY.CSV` — a row has a blank chamber
-  code. Zero engagement, never touched. Worth investigating — VA's GitHub Actions workflow has
-  been disabled since 2026-04-01 for an "unclear reason," and this crash is a plausible
-  explanation nobody's connected yet. Candidate for the same fix-and-test pattern as GA/AZ/NH.
+- **VA — ✅ actually resolved, not a deep-dive candidate.** Corrected 2026-07-26: both halves of
+  this entry were stale/wrong. The `csv_bills` `KeyError: ' '` crash (issue #1385) was already
+  fixed upstream by [#5725](https://github.com/openstates/openstates-scrapers/pull/5725), merged
+  2026-07-08 — just needs a manual issue close. The "workflow disabled since 2026-04-01" claim
+  was also wrong — re-checked directly: workflow state is `active`, running successfully on its
+  daily schedule (2026-07-25 run: 1,051 files, exit 0, no fallback). Nothing left to investigate
+  here.
 - **NE** — only ever retried through tinyproxy, never genuine self-hosted. Not started.
 - **FL** — third fix (single-bill failures) on `fix/fl-streaming-bills`, not yet verified live —
   its verification run got blocked by the shrink-guard bug (now fixed) and was cancelled. Needs

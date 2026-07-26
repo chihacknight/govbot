@@ -37,7 +37,7 @@ for anything more recent before trusting this blindly.
 | TN | — |
 | TX | Self-hosted only — blocks GitHub Actions IP ranges at the firewall. See `tx-backfill-runbook.md`. |
 | UT | — |
-| VA | ⚠️ Scraper itself verified healthy 2026-07-21, but its GitHub Actions workflow has been **disabled since 2026-04-01** for an unclear reason — worth investigating whether it's actually still running on schedule at all. |
+| VA | ✅ Re-verified 2026-07-26 — the "workflow disabled since 2026-04-01" claim in this doc was wrong. Workflow state is `active`, running successfully on its daily `schedule` trigger (confirmed via a 2026-07-25 run: 1,051 files, exit 0, no fallback). The `csv_bills` `KeyError: ' '` crash (issue [#1385](https://github.com/openstates/issues/issues/1385)) was already fixed upstream by [#5725](https://github.com/openstates/openstates-scrapers/pull/5725), merged 2026-07-08 — issue just needs a manual close. |
 | VT | — |
 | WI | — |
 | WV | Self-hosted required (same Azure-block pattern as IL/CT/HI/MA/TN). |
