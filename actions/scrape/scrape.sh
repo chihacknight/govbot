@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Resolved before any `cd` below changes the working directory -- used to find
+# fold_scrape_log.awk regardless of the caller's cwd.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Usage: scrape.sh <state> [DOCKER_IMAGE] [working_dir] [output_dir] [api_keys_json] [branch]
 #   state: State abbreviation (e.g., "id", "il", "tx", "ny", or "usa")
 #   DOCKER_IMAGE: Full Docker image reference (defaults to "openstates/scrapers:latest")
@@ -28,6 +32,13 @@ mkdir -p _working/_data _working/_cache
 # Log file to capture Docker output for summary
 SCRAPE_LOG="${OUTPUT_DIR}/scrape-output.log"
 > "$SCRAPE_LOG"  # Clear/create log file
+
+# Folds consecutive INFO-level lines into collapsible GitHub Actions log groups
+# in the terminal/step output -- $SCRAPE_LOG itself stays raw and ungrouped
+# (docker's output is teed to it *before* this filter below), since scrape.sh's
+# own parsing further down greps that file and shouldn't have to account for
+# ::group::/::endgroup:: markers. See fold_scrape_log.awk for the folding rule.
+FOLD_LOG="${SCRIPT_DIR}/fold_scrape_log.awk"
 
 # --- Incremental auto-commit, mirroring actions/extract's 30-minute auto-save ---
 #
@@ -154,7 +165,7 @@ if [ "${STATE}" = "va" ]; then
         -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
         "${DOCKER_ENV_FLAGS[@]+"${DOCKER_ENV_FLAGS[@]}"}" \
         ${DOCKER_IMAGE} \
-        ${STATE} csv_bills --scrape session=2026 --fastmode 2>&1 | tee -a "$SCRAPE_LOG"
+        ${STATE} csv_bills --scrape session=2026 --fastmode 2>&1 | tee -a "$SCRAPE_LOG" | awk -f "$FOLD_LOG"
     then
       va_regular_exit=0
       break
@@ -172,7 +183,7 @@ if [ "${STATE}" = "va" ]; then
         -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
         "${DOCKER_ENV_FLAGS[@]+"${DOCKER_ENV_FLAGS[@]}"}" \
         ${DOCKER_IMAGE} \
-        ${STATE} csv_bills --scrape session=2026S1 --fastmode 2>&1 | tee -a "$SCRAPE_LOG"
+        ${STATE} csv_bills --scrape session=2026S1 --fastmode 2>&1 | tee -a "$SCRAPE_LOG" | awk -f "$FOLD_LOG"
     then
       va_special_exit=0
       break
@@ -193,7 +204,7 @@ else
         -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
         "${DOCKER_ENV_FLAGS[@]+"${DOCKER_ENV_FLAGS[@]}"}" \
         ${DOCKER_IMAGE} \
-        ${STATE} bills --scrape ${FASTMODE_FLAG} 2>&1 | tee -a "$SCRAPE_LOG"
+        ${STATE} bills --scrape ${FASTMODE_FLAG} 2>&1 | tee -a "$SCRAPE_LOG" | awk -f "$FOLD_LOG"
     then
       exit_code=0
       break
