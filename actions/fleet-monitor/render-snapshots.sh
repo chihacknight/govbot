@@ -2067,7 +2067,17 @@ assert coverage_expr.count("count by (state, org)") == 2, coverage_expr
 #     right-hand side makes the whole subtraction empty — which noDataState
 #     resolves to OK. Without this floor the rule is silent in exactly its worst
 #     case: every repo gone at once.
-assert "or vector(0)" in coverage_expr, coverage_expr
+#
+#     Asserted as a SHAPE, not as a bag of ingredients. Both operand order and
+#     the floor's placement are load-bearing and neither shows up in a substring
+#     check: swap the windows and the difference is always ≤ 0, so the rule can
+#     never fire; move `or vector(0)` to the left operand and the case it exists
+#     for is silent again. Both mutations keep every ingredient present.
+metric = "fleet_repo_data_commit_age_hours"
+counted = f"count(count by (state, org) (last_over_time({metric}[%s])))"
+assert coverage_expr == (
+    f"{counted % COVERAGE_BASELINE} - ({counted % LOOKBACK_WINDOW} or vector(0))"
+), coverage_expr
 
 # 4. Triage is one click: every alert carries a link into the board, filtered to
 #    the jurisdiction that alerted. Absolute, because a notification is read in
@@ -2282,6 +2292,11 @@ class FakeResponse(BytesIO):
         self.close()
 
 
+EARLIER = (
+    datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1)
+).isoformat().replace("+00:00", "Z")
+
+
 def evaluated(health="ok", when=LATER, **extra):
     """The ruler API's view of rules this stack has actually run."""
     return {"data": {"groups": [{"rules": [
@@ -2289,12 +2304,22 @@ def evaluated(health="ok", when=LATER, **extra):
     ]}]}}
 
 
+NEVER_EVALUATED = {"data": {"groups": []}}
+
+
 UNSET = object()
 
 
 def stack(datasources=(PROMETHEUS, LOKI), policies=UNSET, contact_points=None, rules=None,
-          missing_policies=False):
-    """A Grafana that answers reads and accepts every write."""
+          missing_policies=False, baseline_rules=NEVER_EVALUATED):
+    """A Grafana that answers reads and accepts every write.
+
+    The FIRST ruler read is the pre-write baseline; every read after it is the
+    confirmation poll. That ordering is the point of the check under test, so the
+    fake has to reproduce it rather than serve one answer forever.
+    """
+    reads = []
+
     def respond(request):
         url = request.full_url
         if request.get_method() != "GET":
@@ -2307,6 +2332,9 @@ def stack(datasources=(PROMETHEUS, LOKI), policies=UNSET, contact_points=None, r
             tree = {"receiver": "grafana-default"} if policies is UNSET else policies
             return FakeResponse(json.dumps(tree).encode())
         if "/api/prometheus/grafana/api/v1/rules" in url:
+            reads.append(url)
+            if len(reads) == 1:
+                return FakeResponse(json.dumps(baseline_rules).encode())
             return FakeResponse(json.dumps(rules or evaluated()).encode())
         # Folders, an unreadable policy tree, anything else: not there.
         raise urllib.error.HTTPError(url, 404, "Not Found", {}, None)
@@ -2371,6 +2399,28 @@ assert [r["uid"] for r in group["rules"]] == UIDS, group
 assert group["interval"] == 300, group["interval"]
 # Grafana's own templating survives substitution untouched.
 assert "{{ $labels.state }}" in json.dumps(group), group
+
+# The deep link resolves to a real absolute URL on the stack being provisioned —
+# asserted on the RESOLVED value, not just on the placeholder's presence. A link
+# that resolves to the empty string, to a trailing double slash, or to some other
+# host is still a link, and still passes an unresolved-placeholder scan.
+links = {r["annotations"]["dashboard"] for r in group["rules"]}
+assert all(link.startswith("https://stack.grafana.net/d/fleet-monitor-overview?") for link in links), \
+    links
+# GRAFANA_ALERTS_URL carries a trailing slash in these credentials; the join must
+# not double it.
+assert not any("net//d/" in link for link in links), links
+# ...and an explicit dashboard URL overrides the stack URL, for a UI served
+# elsewhere.
+elsewhere, calls = run({**CREDS, "GRAFANA_DASHBOARD_URL": "https://ui.example/"}, stack())
+overridden = json.loads(written(calls, "rule-groups")[0].data)["rules"][0]
+assert overridden["annotations"]["dashboard"].startswith("https://ui.example/d/"), overridden
+# An unset CI secret renders as the EMPTY STRING, not as an absent variable, and
+# an empty base would make every alert link relative — resolving against
+# slack.com wherever the notification is read.
+blank, calls = run({**CREDS, "GRAFANA_DASHBOARD_URL": ""}, stack())
+fallback = json.loads(written(calls, "rule-groups")[0].data)["rules"][0]
+assert fallback["annotations"]["dashboard"].startswith("https://stack.grafana.net/d/"), fallback
 
 # What gets applied is the file on disk, not a fresh render of the builder —
 # which is what the README promises and what makes reviewing the committed YAML
@@ -2579,19 +2629,37 @@ for stored in (
     evaluated(health="unknown", when=LATER),
     evaluated(health="ok", when="0001-01-01T00:00:00Z"),
     evaluated(health="ok", when=None),
-    # A previous run's evaluation, from before this run's write.
-    evaluated(health="ok", when="2020-01-01T00:00:00Z"),
 ):
     unevaluated, _ = run(CREDS, stack(rules=stored))
     assert unevaluated.exit_code != 0, (stored["data"]["groups"][0]["rules"][0], unevaluated.output)
     assert f"0 of {len(UIDS)} rules had evaluated" in unevaluated.output, unevaluated.output
 
-# The same guard the other way round: a stale `health: error` recorded BEFORE
-# this run's write must not fail the very run that corrected it.
-stale_error = evaluated(health="error", when="2020-01-01T00:00:00Z",
-                        lastError="datasource not found")
-corrected, _ = run(CREDS, stack(rules=stale_error))
+# The baseline is the stack's OWN last-evaluation time, read before the write,
+# and the confirmation must be strictly newer than it. Comparing against this
+# host's clock instead needs a skew tolerance, and any tolerance wide enough for
+# a laptop a few minutes fast is also wide enough to accept the evaluation that
+# ran just BEFORE the write — the previous rule definitions, which is the exact
+# false pass this check exists to prevent.
+unchanged, _ = run(CREDS, stack(baseline_rules=evaluated(when=LATER), rules=evaluated(when=LATER)))
+assert unchanged.exit_code != 0, unchanged.output
+assert f"0 of {len(UIDS)} rules had evaluated" in unchanged.output, unchanged.output
+# ...and one tick later, the same stack passes.
+ticked, _ = run(CREDS, stack(baseline_rules=evaluated(when=EARLIER), rules=evaluated(when=LATER)))
+assert ticked.exit_code == 0, ticked.output + str(ticked.exception)
+
+# The guard the other way round: a `health: error` left over from the previous
+# configuration must not fail the run that corrected it. Its stamp is the
+# baseline's, so it is not evidence about the rules this run just wrote.
+stale_error = evaluated(health="error", when=EARLIER, lastError="datasource not found")
+corrected, _ = run(CREDS, stack(baseline_rules=stale_error, rules=stale_error))
 assert "provisioned, but the stack cannot evaluate" not in corrected.output, corrected.output
+# ...but the same error re-recorded AFTER the write is real, and fails.
+still_broken, _ = run(CREDS, stack(
+    baseline_rules=stale_error,
+    rules=evaluated(health="error", when=LATER, lastError="datasource not found"),
+))
+assert still_broken.exit_code != 0, still_broken.output
+assert "datasource not found" in still_broken.output, still_broken.output
 
 # A rule the stack never lists at all is named in the failure.
 absent, _ = run(CREDS, stack(rules={"data": {"groups": []}}))

@@ -559,7 +559,10 @@ def provision_alerts(alerting_dir, deadline_seconds):
         "ALERT_EMAIL": os.environ["ALERT_EMAIL"],
         # The stack that serves the UI is the stack being provisioned unless
         # someone says otherwise, so the deep links need no second variable.
-        "GRAFANA_DASHBOARD_URL": os.environ.get("GRAFANA_DASHBOARD_URL", base).rstrip("/"),
+        # `or base`, not a default: an unset CI secret renders as the EMPTY
+        # STRING, and an empty base makes every alert link relative — which
+        # resolves against slack.com wherever the notification is read.
+        "GRAFANA_DASHBOARD_URL": (os.environ.get("GRAFANA_DASHBOARD_URL") or base).rstrip("/"),
         "GRAFANA_METRICS_DATASOURCE_UID": os.environ.get("GRAFANA_METRICS_DATASOURCE_UID", ""),
     }
     deadline = {} if deadline_seconds is None else {"deadline_seconds": deadline_seconds}

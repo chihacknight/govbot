@@ -44,7 +44,15 @@ class _StripAuthOnCrossHostRedirect(urllib.request.HTTPRedirectHandler):
                 # Default ports normalised, or a redirect that merely spells out
                 # ":443" would read as cross-origin and drop the token on a hop
                 # that never left the host.
-                port = parsed.port or {"https": 443, "http": 80}.get(parsed.scheme)
+                try:
+                    port = parsed.port or {"https": 443, "http": 80}.get(parsed.scheme)
+                except ValueError:
+                    # "host:notaport" — an authority we cannot parse is not an
+                    # origin we can match, so a fresh object() stands in and
+                    # compares equal to nothing, dropping the header. Letting
+                    # this raise would surface inside urlopen as a retried
+                    # network error: a bad redirect reported as a timeout.
+                    return object()
                 return (parsed.scheme, parsed.hostname, port)
 
             if identity(req.full_url) != identity(newurl):

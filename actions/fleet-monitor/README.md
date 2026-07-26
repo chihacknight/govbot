@@ -329,7 +329,12 @@ Four rules, committed the same way the dashboard is — built as data by
   nothing would have paged, breaking the rule the whole design turns on.
 
   A repo deliberately removed from the pipeline-manager config also lands here, and clears
-  on its own within a day.
+  on its own within a day. **So does a total outage, and that resolution is not recovery**:
+  once nothing has reported for a full day, both sides of the comparison are empty and the
+  alert goes quiet with the fleet still dark. The heartbeat rule covers a dead collector;
+  this one cannot also cover a live collector that has seen nothing for a day. Read a
+  resolution of this rule against the board, not on its own — the rule description says so
+  too, since that is where someone reads it at 3am.
 - **Paused jurisdictions never page.** Both jurisdiction rules filter `paused="false"` in
   the query, so an out-of-session state whose scrape fails doesn't reach the notification
   policy, let alone a phone. This is the same rule the dashboard renders as a dimmed tile,
@@ -699,10 +704,17 @@ ones dropped from the file while leaving another contact point's receivers alone
 its route **first** under a stack's existing root policy (preserving that root's receiver,
 grouping, and unrelated children), replaces rather than duplicates its own branch in either
 matcher encoding, refuses to write a policy tree it could not read, and — the assertion the
-whole check exists for — waits for an evaluation *stamped after its own write*: a rule the
-stack has merely stored (`health: unknown`, or `ok` with a zeroed `lastEvaluation`), a pass
-inherited from a previous run, and a stale failure from the configuration this run just
-replaced are all refused. It also refuses before writing anything when the policy tree
+whole check exists for — waits for an evaluation *newer than the one the stack had before
+this run wrote*: a rule the stack has merely stored (`health: unknown`, or `ok` with a
+zeroed `lastEvaluation`), a pass inherited from a previous run, and a stale failure from
+the configuration this run just replaced are all refused, while the same failure re-recorded
+after the write still fails the run. The baseline is read from the stack's own ruler API
+rather than compared against this host's clock: a comparison across two machines needs a
+skew tolerance, and any tolerance wide enough for a laptop a few minutes fast is also wide
+enough to accept the evaluation that ran just *before* the write — the previous rule
+definitions, which is the exact false pass the check exists to prevent. It also asserts the
+deep link *resolves* to an absolute URL on the stack (an empty `GRAFANA_DASHBOARD_URL`
+falls back rather than producing a relative link, and a trailing slash doesn't double). It also refuses before writing anything when the policy tree
 can't be read or can't be interpreted, so a refusal never strands enabled, unrouted rules;
 provisions a credential carrying a YAML metacharacter without a parse error; rejects a
 non-https stack URL before sending a request; applies every group in the file rather than

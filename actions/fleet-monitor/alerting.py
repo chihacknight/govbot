@@ -280,7 +280,10 @@ def build_rule_group() -> dict:
                     "rule that notices. Compare the freshness table against yesterday's row "
                     "count to find which. A repo deliberately removed from the "
                     "pipeline-manager config also lands here, and clears on its own within a "
-                    "day."
+                    "day. So does a TOTAL outage, and that resolution is not recovery: once "
+                    "nothing has reported for a full day both sides of the comparison are "
+                    "empty and this alert goes quiet with the fleet still dark. Read a "
+                    "resolution of this rule against the board, not on its own."
                 ),
                 state_filtered=False,
             ),

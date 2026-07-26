@@ -328,10 +328,6 @@ EVALUATED_HEALTH = ("ok", "nodata", "error")
 # time out on every healthy provisioning run.
 CONFIRM_DEADLINE_SECONDS = _seconds(EVAL_INTERVAL) * 2 + 120
 
-# How far this host's clock may run ahead of the stack's before the
-# "evaluated after our write" comparison starts rejecting good evaluations.
-CLOCK_SKEW = datetime.timedelta(minutes=2)
-
 
 def _evaluated_at(rule):
     """When Grafana last ran this rule, or None if it never has."""
@@ -349,14 +345,52 @@ def _evaluated_at(rule):
     return None if when.year < 2000 else when
 
 
-def confirm_rules(stack, rules, applied_at, deadline_seconds=CONFIRM_DEADLINE_SECONDS):
+def _rules_by_identity(stack):
+    """The ruler API's rules, keyed by uid and by title.
+
+    Both, because a stack whose response omits the per-rule uid can still be
+    identified by title — and the fallback this replaced looked for
+    ``__alert_rule_uid__`` in the rule's own labels, where Grafana never puts it
+    (it is an alert *instance* label), so it could never have rescued anything.
+    """
+    groups = (
+        stack.get("/api/prometheus/grafana/api/v1/rules").get("data", {}).get("groups", [])
+    )
+    seen = {}
+    for group in groups:
+        for rule in group.get("rules", []):
+            for key in (rule.get("uid"), rule.get("name")):
+                if key:
+                    seen[key] = rule
+    return seen
+
+
+def evaluation_baseline(stack, rules):
+    """When the stack last evaluated each of these rules, before we write.
+
+    The reference point for "has it run *our* rules yet", and it comes from the
+    stack's own clock on purpose. Comparing Grafana's `lastEvaluation` against
+    this host's wall clock needs a skew tolerance, and any tolerance wide enough
+    to survive a laptop a few minutes fast is also wide enough to accept the
+    evaluation that ran just *before* the write — which is the previous rule
+    definitions, i.e. exactly the false pass this whole function exists to
+    prevent. Two stamps from one clock need no tolerance at all.
+    """
+    seen = _rules_by_identity(stack)
+    return {
+        uid: _evaluated_at(seen.get(uid) or seen.get(title) or {})
+        for uid, title in rules.items()
+    }
+
+
+def confirm_rules(stack, rules, baseline, deadline_seconds=CONFIRM_DEADLINE_SECONDS):
     """Prove the rules loaded AND that this stack has actually run them.
 
     Loading is not the same as working: Grafana accepts a rule whose datasource
     uid points at nothing, stores it, serves it back intact, and only reports
     `health: error` once evaluation runs. So the wait is for an *evaluation*,
-    not for the rule to appear — and specifically for one stamped after the
-    write this run performed. Two failures hide behind the weaker check:
+    and specifically for one strictly newer than the ``baseline`` taken before
+    the write. Two failures hide behind the weaker check:
 
     * A rule the stack has merely stored reports `health: "unknown"` (or, on
       older builds, `"ok"`) with a zeroed `lastEvaluation`, seconds after the
@@ -366,27 +400,20 @@ def confirm_rules(stack, rules, applied_at, deadline_seconds=CONFIRM_DEADLINE_SE
       a corrected re-run's PUT, so trusting it fails the very run that fixed the
       problem, and tells the operator their fix did not take.
 
-    ``rules`` maps uid → title; the title is the fallback identity for stacks
-    whose ruler response omits the per-rule uid.
+    ``rules`` maps uid → title; ``baseline`` maps uid → the evaluation time
+    before this write, or None for a rule the stack had never run.
     """
     deadline = time.monotonic() + deadline_seconds
     while True:
-        groups = (
-            stack.get("/api/prometheus/grafana/api/v1/rules")
-            .get("data", {})
-            .get("groups", [])
-        )
-        by_identity = {}
-        for group in groups:
-            for rule in group.get("rules", []):
-                for key in (rule.get("uid"), rule.get("name")):
-                    if key:
-                        by_identity[key] = rule
+        by_identity = _rules_by_identity(stack)
         fresh = {}
         for uid, title in rules.items():
             rule = by_identity.get(uid) or by_identity.get(title)
             when = _evaluated_at(rule) if rule else None
-            if rule and when and when >= applied_at and rule.get("health") in EVALUATED_HEALTH:
+            was = baseline.get(uid)
+            if not (rule and when and rule.get("health") in EVALUATED_HEALTH):
+                continue
+            if was is None or when > was:
                 fresh[uid] = rule
         broken = {
             uid: rule.get("lastError") or "evaluation error"
@@ -427,16 +454,18 @@ def provision(alerting_dir, base, token, values, echo=print, sleep=time.sleep,
     echo(f"· folder: {ensure_folder(stack)}")
     for kind, action in apply_contact_point(stack, _load(alerting_dir, CONTACT_POINTS_FILE, values)):
         echo(f"· contact point: {kind} {action}")
-    # Stamped before the write, so an evaluation that merely *straddles* the PUT
-    # can still count — and one recorded before it never can. The tolerance is
-    # for clock skew between this host and the stack: the comparison spans two
-    # machines, and a laptop a few minutes fast would otherwise reject every
-    # evaluation until the deadline ran out.
-    applied_at = datetime.datetime.now(datetime.timezone.utc) - CLOCK_SKEW
-    rules = apply_rules(stack, _load(alerting_dir, RULES_FILE, values))
+    # Read the stack's current evaluation times before writing, so "has it run
+    # our rules yet" is two stamps from one clock rather than a comparison
+    # against this host's.
+    document = _load(alerting_dir, RULES_FILE, values)
+    wanted = {
+        rule["uid"]: rule["title"] for group in document["groups"] for rule in group["rules"]
+    }
+    baseline = evaluation_baseline(stack, wanted)
+    rules = apply_rules(stack, document)
     echo(f"· rules: {len(rules)} applied")
     echo(f"· notification route: "
          f"{graft_route(stack, tree, _load(alerting_dir, POLICY_FILE, values)['route'])}")
-    confirm_rules(stack, rules, applied_at, deadline_seconds=deadline_seconds)
+    confirm_rules(stack, rules, baseline, deadline_seconds=deadline_seconds)
     echo(f"✓ {len(rules)} rules provisioned and evaluating, delivering to the fleet-monitor contact point")
     return sorted(rules)
