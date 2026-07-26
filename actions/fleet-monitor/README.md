@@ -307,22 +307,29 @@ Four rules, committed the same way the dashboard is — built as data by
   **the collector itself has gone quiet** (`absent_over_time(fleet_collector_heartbeat_repos[6h])`).
   The first two carry the jurisdiction; the third is the dead-man switch that stops the
   other two from being quietly meaningless when nothing is being measured at all.
-- **A fourth rule covers the gap the other three leave**: repos that were swept but
-  reported no freshness series at all. `noDataState: OK` is right for a sweep that didn't
-  happen and wrong for a repo that silently stopped reporting, and per-series the two are
-  indistinguishable — so the rule counts instead, comparing the freshness series against
-  the collector's own heartbeat count. This is not hypothetical: a repo with **zero commits
-  on its data path** is the most stale a repo can be, and it emits nothing at all
-  (`fleet_poller` returns None on GitHub's 409 "Git Repository is empty", and the shipper
-  only emits an age when there is one). Without this rule that repo is permanently green
-  while its 46 neighbours report normally. The expected count comes from the heartbeat
-  rather than a hardcoded fleet size, so adding a jurisdiction raises both sides at once.
+- **A fourth rule covers the gap the other three leave**: repos that reported freshness
+  yesterday and have gone quiet. `noDataState: OK` is right for a sweep that didn't happen
+  and wrong for a repo that silently stopped reporting, and per-series the two are
+  indistinguishable — so the rule counts instead, comparing the fleet against **itself a
+  day ago**. This is not hypothetical: a repo with **zero commits on its data path** is the
+  most stale a repo can be, and it emits nothing at all (`fleet_poller` returns None on
+  GitHub's 409 "Git Repository is empty", and the shipper only emits an age when there is
+  one). Without this rule that repo is permanently green while its 46 neighbours report
+  normally.
 
-  One caveat, stated plainly because it is the only threshold here not derived from
-  measurement: the tolerance is zero, which assumes every polled repo has at least one
-  data-path commit in steady state. If the first real sweep shows a persistent non-zero
-  gap, raise `COVERAGE_TOLERANCE` to that floor rather than deleting the rule — the point
-  is to notice the gap *changing*, and a rule that fires constantly notices nothing.
+  Three details in that expression are each load-bearing. It counts **repos, not series** —
+  `paused` is a label, so a jurisdiction going out of session starts a second series for
+  the same repo, and counting series would read the legislative calendar turning over as
+  coverage appearing and vanishing in batches. It floors the subtraction with **`or
+  vector(0)`** — a count over no series is an *empty* vector, not zero, and an empty
+  operand makes the whole expression empty, which `noDataState` resolves to OK; without the
+  floor the rule would be silent in exactly its worst case, every repo gone at once. And it
+  compares against the fleet's own past rather than the collector's heartbeat count (which
+  is what this replaced): the heartbeat counts paused repos too, so a paused repo reporting
+  nothing would have paged, breaking the rule the whole design turns on.
+
+  A repo deliberately removed from the pipeline-manager config also lands here, and clears
+  on its own within a day.
 - **Paused jurisdictions never page.** Both jurisdiction rules filter `paused="false"` in
   the query, so an out-of-session state whose scrape fails doesn't reach the notification
   policy, let alone a phone. This is the same rule the dashboard renders as a dimmed tile,
@@ -410,9 +417,21 @@ Two behaviours worth knowing before you run it against someone else's stack:
   maintainer who tries to silence a rule meets a greyed-out form with no explanation. The
   trade-off is real: nothing then stops an Editor on the stack from repointing the Slack
   webhook or deleting the fleet's route, and there is no scheduled re-apply, so that drift
-  persists until someone re-runs the command. Re-running is the remedy, and it is cheap —
-  which is also why the render script runs this check whenever credentials are present
-  rather than behind an opt-in flag, unlike `live-check` and `check-dashboard`.
+  persists until someone re-runs the command. Re-running is the remedy, and it is cheap.
+- **The policy tree is read before anything is written.** It is the only step that can
+  refuse, and a refusal after the rules land would leave them enabled with no route
+  matching them — every fleet alert falling through to the stack owner's own receiver,
+  reproduced on every retry.
+- **`GRAFANA_ALERTS_URL` must be https.** Every request carries a bearer token, and the
+  contact-point body carries the resolved webhook URL, which is itself a credential for
+  posting to that channel.
+
+One trust assumption worth stating: `{{ $labels.state }}` is interpolated into the deep
+link's query string without URL-encoding, and `{{ $labels.workflow }}` into the Slack
+summary unescaped. Both come from the pipeline-manager config and the GitHub API for the
+project's own orgs — a jurisdiction code is two letters — so this is a trust boundary, not
+a live hole. If either ever carries untrusted text, wrap the link interpolation in Grafana's
+`urlquery`.
 
 Re-running is safe and idempotent: the rule group is one PUT keyed by folder and group
 name (so a rule deleted from the committed file actually disappears instead of lingering as
@@ -683,9 +702,15 @@ matcher encoding, refuses to write a policy tree it could not read, and — the 
 whole check exists for — waits for an evaluation *stamped after its own write*: a rule the
 stack has merely stored (`health: unknown`, or `ok` with a zeroed `lastEvaluation`), a pass
 inherited from a previous run, and a stale failure from the configuration this run just
-replaced are all refused. Its credential-free skip touches the stack not at all. The real
-provisioning run happens whenever credentials are present; opt out with
-`FLEET_MONITOR_ALERT_CHECK=0`.
+replaced are all refused. It also refuses before writing anything when the policy tree
+can't be read or can't be interpreted, so a refusal never strands enabled, unrouted rules;
+provisions a credential carrying a YAML metacharacter without a parse error; rejects a
+non-https stack URL before sending a request; applies every group in the file rather than
+the first; and never issues a DELETE for a receiver the API returned without a uid. Its
+credential-free skip touches the stack not at all. The real provisioning run is opt-in —
+`FLEET_MONITOR_ALERT_CHECK=1 ./render-snapshots.sh` on a credentialed machine — because
+idempotent is not side-effect-free: it writes a live contact point and route, and the next
+evaluation can deliver to a real Slack channel.
 
 ```bash
 ../../scripts/before-snapshots.sh __snapshots__

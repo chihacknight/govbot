@@ -365,7 +365,36 @@ assert seen.get("auth") is None, f"Authorization leaked across a cross-host redi
 seen.clear()
 request_with_retry(f"http://127.0.0.1:{target_port}/blob", headers=auth)
 assert seen.get("auth") == "Bearer SECRET-TOKEN", f"auth must survive a direct request: {seen}"
-print("✓ http: Authorization is stripped on a cross-host redirect, kept on a direct request")
+
+# The comparison is (scheme, host, port), not host alone: a SAME-host redirect
+# that downgrades https to http would otherwise forward a bearer token in
+# cleartext. Asserted on the comparison itself — a live https downgrade needs a
+# certificate, and the handler's decision is the whole behaviour.
+import urllib.request
+
+from http_util import _StripAuthOnCrossHostRedirect
+
+
+def forwards_auth(origin, target):
+    """Whether the real handler carries Authorization on this hop."""
+    request = urllib.request.Request(origin, headers={"Authorization": "Bearer SECRET-TOKEN"})
+    followed = _StripAuthOnCrossHostRedirect().redirect_request(
+        request, None, 302, "Found", {}, target
+    )
+    return followed is not None and followed.get_header("Authorization") is not None
+
+
+base = "https://stack.grafana.net/api/x"
+assert not forwards_auth(base, "http://stack.grafana.net/api/y"), "token forwarded on https→http"
+assert not forwards_auth(base, "https://stack.grafana.net:8443/api/y"), "token forwarded on a port change"
+assert not forwards_auth(base, "https://elsewhere.example/api/y"), "token forwarded cross-host"
+# ...but a redirect that merely spells out the default port never left the
+# origin, and dropping the token there breaks provisioning on a 401.
+assert forwards_auth(base, "https://stack.grafana.net:443/api/y"), "token dropped on an explicit :443"
+assert forwards_auth("https://stack.grafana.net:443/api/x", "https://stack.grafana.net/api/y")
+
+print("✓ http: Authorization is stripped on a cross-host redirect and on a scheme or port "
+      "change, kept on a direct request and across an explicit default port")
 EOF
 
 # The clean path: an errors-free sweep must exit 0 and produce exactly the
@@ -1914,13 +1943,15 @@ from pathlib import Path
 
 import yaml
 
-from dashboard import DASHBOARD_UID, OBSERVED_MAX_SWEEP_GAP_HOURS, STALE_HOURS
-from alerting import (CONTACT_POINT, CONTACT_POINTS_FILE, COVERAGE_TOLERANCE,
-                      COVERAGE_UID, EVAL_INTERVAL, FOLDER, HEARTBEAT_UID,
-                      PENDING_PERIOD, POLICY_FILE, ROUTE_LABEL, RULES_FILE,
-                      RUN_FAILED_UID, STALE_UID, UnresolvedPlaceholder,
+from dashboard import (DASHBOARD_UID, LOOKBACK as LOOKBACK_WINDOW,
+                       OBSERVED_MAX_SWEEP_GAP_HOURS, STALE_HOURS)
+from alerting import (CONTACT_POINT, CONTACT_POINTS_FILE, COVERAGE_BASELINE,
+                      COVERAGE_TOLERANCE, COVERAGE_UID, EVAL_INTERVAL, FOLDER,
+                      HEARTBEAT_UID, PENDING_PERIOD, POLICY_FILE, ROUTE_LABEL,
+                      RULES_FILE, RUN_FAILED_UID, STALE_UID,
                       build_contact_point, build_route, build_rule_group,
-                      placeholders, render_documents, substitute)
+                      placeholders, render_documents, UnresolvedPlaceholder)
+from alerts_provision import _load, _resolve
 
 group = build_rule_group()
 rules = {r["uid"]: r for r in group["rules"]}
@@ -2015,15 +2046,28 @@ assert OBSERVED_MAX_SWEEP_GAP_HOURS >= 3.6, OBSERVED_MAX_SWEEP_GAP_HOURS
 #     most stale a repo can be: fleet_poller returns None on a 409 "Git
 #     Repository is empty", and metrics_shipper then emits no age series at all)
 #     stays green forever while the other 46 report normally.
-#
-#     The expected count is the collector's own heartbeat rather than a hardcoded
-#     fleet size, so adding a jurisdiction raises both sides at once.
 coverage_expr = rules[COVERAGE_UID]["data"][0]["model"]["expr"]
-assert "fleet_collector_heartbeat_repos" in coverage_expr, coverage_expr
-assert "count(" in coverage_expr, coverage_expr
 assert "fleet_repo_data_commit_age_hours" in coverage_expr, coverage_expr
+#     The fleet is compared against ITSELF a day ago, never against a count of
+#     what someone expected it to be. A hardcoded size goes stale; the collector's
+#     heartbeat (the version this replaced) counts paused repos too, so a paused
+#     repo that reports nothing would page — breaking the one rule the whole
+#     design turns on.
+assert f"[{COVERAGE_BASELINE}]" in coverage_expr and f"[{LOOKBACK_WINDOW}]" in coverage_expr, \
+    coverage_expr
+assert "fleet_collector_heartbeat_repos" not in coverage_expr, coverage_expr
 assert re.search(r"\b112\b|\b47\b|\b56\b", coverage_expr) is None, \
     ("the fleet size is hardcoded in the coverage rule", coverage_expr)
+#     Repos, not series: `paused` is a label, so a jurisdiction going out of
+#     session starts a SECOND series for the same repo and both stay resolvable
+#     for a whole look-back. Counting series would read the legislative calendar
+#     turning over as coverage appearing and then vanishing, in batches.
+assert coverage_expr.count("count by (state, org)") == 2, coverage_expr
+#     A count over no series at all is an EMPTY vector, not zero, and an empty
+#     right-hand side makes the whole subtraction empty — which noDataState
+#     resolves to OK. Without this floor the rule is silent in exactly its worst
+#     case: every repo gone at once.
+assert "or vector(0)" in coverage_expr, coverage_expr
 
 # 4. Triage is one click: every alert carries a link into the board, filtered to
 #    the jurisdiction that alerted. Absolute, because a notification is read in
@@ -2106,20 +2150,34 @@ for text in documents.values():
     found |= placeholders(text)
 assert found == {"GRAFANA_METRICS_DATASOURCE_UID", "GRAFANA_DASHBOARD_URL",
                  "SLACK_WEBHOOK_URL", "ALERT_EMAIL"}, sorted(found)
+# ...and the resolver that actually runs in provisioning is the one asserted
+# against — not a text-level helper the production path no longer calls, which is
+# how a contract stays green while the code under it rots.
+resolved = _resolve(
+    {"url": "$SLACK_WEBHOOK_URL", "summary": "{{ $labels.state }}", "to": "$ALERT_EMAIL"},
+    {"SLACK_WEBHOOK_URL": "https://hooks.example/x", "ALERT": "x", "ALERT_EMAIL": "right"},
+    set(),
+)
 # Grafana's own templating is lower-case and survives untouched — expanding it
 # would turn every alert message into a literal.
-assert substitute("{{ $labels.state }}", {}) == "{{ $labels.state }}"
-# A prefix is not a partial match.
-assert substitute("$ALERT_EMAIL", {"ALERT": "x", "ALERT_EMAIL": "right"}) == "right"
+assert resolved["summary"] == "{{ $labels.state }}", resolved
+# A prefix is not a partial match: $ALERT must not eat $ALERT_EMAIL.
+assert resolved["to"] == "right", resolved
+assert resolved["url"] == "https://hooks.example/x", resolved
 # A placeholder nobody supplied is a hard stop, not an empty string: Grafana
 # accepts a contact point with a blank webhook URL, then accepts alerts routed to
 # it and drops them — a setup that looks provisioned and never reaches anyone.
+# Asserted through _load, so the refusal is proven on the real file, not a stub.
 try:
-    substitute("url: $SLACK_WEBHOOK_URL", {})
+    _load(Path("alerting"), CONTACT_POINTS_FILE, {})
 except UnresolvedPlaceholder as e:
     assert "SLACK_WEBHOOK_URL" in str(e), str(e)
 else:
     raise AssertionError("an unresolved placeholder was substituted away silently")
+# An empty string is not a supplied value either.
+seen = set()
+_resolve({"url": "$SLACK_WEBHOOK_URL"}, {"SLACK_WEBHOOK_URL": ""}, seen)
+assert not seen, "an empty value counted as missing"
 
 # 8b. Positive, not a blacklist: every credential-bearing setting in the
 #     committed contact point must STILL be a bare placeholder. The blacklist
@@ -2195,9 +2253,11 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
+import yaml
+
 import main
-from alerting import (CONTACT_POINT, COVERAGE_UID, HEARTBEAT_UID, ROUTE_LABEL,
-                      RULES_FILE, RUN_FAILED_UID, STALE_UID)
+from alerting import (CONTACT_POINT, COVERAGE_UID, HEARTBEAT_UID, PLACEHOLDER,
+                      ROUTE_LABEL, RULES_FILE, RUN_FAILED_UID, STALE_UID)
 from alerts_provision import CONFIRM_DEADLINE_SECONDS, _seconds
 
 CREDS = {
@@ -2229,7 +2289,10 @@ def evaluated(health="ok", when=LATER, **extra):
     ]}]}}
 
 
-def stack(datasources=(PROMETHEUS, LOKI), policies=None, contact_points=None, rules=None,
+UNSET = object()
+
+
+def stack(datasources=(PROMETHEUS, LOKI), policies=UNSET, contact_points=None, rules=None,
           missing_policies=False):
     """A Grafana that answers reads and accepts every write."""
     def respond(request):
@@ -2241,7 +2304,8 @@ def stack(datasources=(PROMETHEUS, LOKI), policies=None, contact_points=None, ru
         if "/api/v1/provisioning/contact-points" in url:
             return FakeResponse(json.dumps(contact_points or []).encode())
         if url.endswith("/api/v1/provisioning/policies") and not missing_policies:
-            return FakeResponse(json.dumps(policies or {"receiver": "grafana-default"}).encode())
+            tree = {"receiver": "grafana-default"} if policies is UNSET else policies
+            return FakeResponse(json.dumps(tree).encode())
         if "/api/prometheus/grafana/api/v1/rules" in url:
             return FakeResponse(json.dumps(rules or evaluated()).encode())
         # Folders, an unreadable policy tree, anything else: not there.
@@ -2287,10 +2351,11 @@ for call in [c for c in ok_calls if c.data is not None]:
     # Without this header Grafana marks everything it provisions read-only, and
     # the first maintainer who tries to silence a rule meets a greyed-out form.
     assert call.get_header("X-disable-provenance") == "true", call.full_url
-    # Nothing ships with an unresolved placeholder.
-    body = call.data.decode()
-    assert "$GRAFANA" not in body and "$SLACK" not in body and "$ALERT_EMAIL" not in body, \
-        call.full_url
+    # Nothing ships with an unresolved placeholder — checked against the pattern
+    # the module itself defines, not three literal prefixes: a fifth placeholder
+    # the provisioner forgets to resolve has to fail this, not slip past it.
+    left = PLACEHOLDER.findall(call.data.decode())
+    assert not left, (call.full_url, left)
 
 # The datasource uid is the one thing that cannot be committed, so it is
 # discovered from the stack being provisioned.
@@ -2321,6 +2386,53 @@ with tempfile.TemporaryDirectory() as tmp:
     exprs = [q["model"].get("expr", "") for r in applied["rules"] for q in r["data"]]
     assert any('paused="SENTINEL"' in expr for expr in exprs), \
         ("provision-alerts re-rendered the rules instead of applying the committed file", exprs)
+
+# Every group in the committed file, not just the first — a second group would
+# otherwise render, pass the drift check, and exist in git and nowhere else while
+# provisioning reported success.
+with tempfile.TemporaryDirectory() as tmp:
+    for name in Path("alerting").iterdir():
+        shutil.copy(name, tmp)
+    doc = yaml.safe_load(Path(tmp, RULES_FILE).read_text())
+    second = json.loads(json.dumps(doc["groups"][0]))
+    second["name"] = "fleet-monitor-slow"
+    second["rules"] = second["rules"][:1]
+    second["rules"][0]["uid"] = "fleet-second-group"
+    doc["groups"].append(second)
+    Path(tmp, RULES_FILE).write_text(yaml.safe_dump(doc, sort_keys=False))
+    multi, calls = run(CREDS, stack(), ("--alerting-dir", tmp, "--deadline-seconds", "0"))
+    groups_put = [c.full_url.rsplit("/", 1)[-1] for c in written(calls, "rule-groups")]
+    assert groups_put == ["fleet-monitor", "fleet-monitor-slow"], groups_put
+
+# A credential carrying a YAML metacharacter must still provision. Placeholders
+# are resolved into the PARSED document precisely so this cannot become a parse
+# error — whose message would quote a window of the offending line, i.e. print
+# the resolved Slack webhook URL to stderr and into the CI log that keeps it.
+awkward = {**CREDS, "SLACK_WEBHOOK_URL": "https://hooks.example/x: {y} #z",
+           "ALERT_EMAIL": "Ops: oncall@example.org"}
+metachar, calls = run(awkward, stack())
+assert metachar.exit_code == 0, metachar.output + str(metachar.exception)
+sent = [json.loads(c.data) for c in written(calls, "contact-points")]
+assert any(b["settings"].get("url") == awkward["SLACK_WEBHOOK_URL"] for b in sent), sent
+assert any(b["settings"].get("addresses") == awkward["ALERT_EMAIL"] for b in sent), sent
+
+# The base URL carries a bearer token and, in the contact-point body, the Slack
+# webhook URL. Plain http puts both on the wire in the clear.
+cleartext, calls = run({**CREDS, "GRAFANA_ALERTS_URL": "http://stack.grafana.net"}, stack())
+assert cleartext.exit_code != 0, cleartext.output
+assert "https" in cleartext.output, cleartext.output
+assert not calls, "sent a request before rejecting the scheme"
+
+# A receiver the API returns without a uid must not become a DELETE to `.../None`
+# — nor make the removal sort raise on a mix of None and real uids.
+uidless = [
+    {"uid": "fleet-monitor-slack", "name": CONTACT_POINT, "type": "slack"},
+    {"name": CONTACT_POINT, "type": "webhook"},
+]
+odd, odd_calls = run(CREDS, stack(contact_points=uidless))
+assert odd.exit_code == 0, odd.output + str(odd.exception)
+assert not [c for c in odd_calls if c.get_method() == "DELETE" and c.full_url.endswith("None")], \
+    [c.full_url for c in odd_calls if c.get_method() == "DELETE"]
 
 # An explicit uid wins, for a stack with more than one Prometheus.
 pinned, pinned_calls = run({**CREDS, "GRAFANA_METRICS_DATASOURCE_UID": "chosen"}, stack())
@@ -2426,6 +2538,25 @@ blind, blind_calls = run(CREDS, stack(missing_policies=True))
 assert blind.exit_code != 0, blind.output
 assert "notification policy" in blind.output, blind.output
 assert not written(blind_calls, "policies"), "wrote a policy tree it could not read first"
+# ...and it refuses BEFORE writing any rules. A refusal after they land leaves
+# four enabled rules on the stack with no route matching them, so every fleet
+# alert falls through to the stack owner's own receiver — and each retry
+# reproduces the same half-applied state.
+assert not written(blind_calls, "rule-groups"), \
+    "applied rules, then refused — leaving them enabled and unrouted"
+assert not written(blind_calls, "contact-points"), blind_calls
+
+# A tree that reads back with children but no root receiver is not an empty
+# tree — it could be a proxy's JSON error body, or a build that omits the field.
+# Synthesising a root over it destroys those children with no local copy.
+headless, headless_calls = run(CREDS, stack(policies={"routes": [{"receiver": "their-oncall"}]}))
+assert headless.exit_code != 0, headless.output
+assert "cannot interpret" in headless.output, headless.output
+assert not written(headless_calls, "policies"), "overwrote a policy tree it could not interpret"
+# A genuinely empty tree is still fine to adopt: nothing is being displaced.
+fresh_stack, fresh_calls = run(CREDS, stack(policies={}))
+assert fresh_stack.exit_code == 0, fresh_stack.output + str(fresh_stack.exception)
+assert json.loads(written(fresh_calls, "policies")[0].data)["receiver"] == CONTACT_POINT
 
 print("✓ provision-alerts: route grafted FIRST under the stack's own root, replaced not "
       "duplicated in either matcher encoding, and refuses to write a tree it cannot read")
@@ -2500,20 +2631,18 @@ print("✓ provision-alerts: waits for an evaluation stamped after its own write
       "rule, a stale pass, and a stale failure are all refused")
 EOF
 
-# The real provisioning run happens whenever credentials are present: the task
-# asks for a check "skipped when credentials are absent", and provision-alerts'
-# own skip already covers exactly that. Set FLEET_MONITOR_ALERT_CHECK=0 to opt
-# out on a credentialed machine.
+# Same bargain as live-check and check-dashboard: the real run writes rules, a
+# contact point, and a notification route into a real stack — and the next
+# evaluation can deliver to a real Slack channel — so a bare render never does it
+# even on a machine that happens to have the credentials set. Opting in makes the
+# render the automated provisioning check.
 #
-# This differs from live-check and check-dashboard, which stay opt-IN. The
-# difference is what a re-run costs: those two append samples to the production
-# stack and rewrite a dashboard, while this one is idempotent by construction —
-# a rule-group PUT and contact points keyed by stable uid converge on exactly
-# what is committed, so re-applying changes nothing that was already right.
-if [ "${FLEET_MONITOR_ALERT_CHECK:-1}" = "0" ]; then
-  echo "· provision-alerts (real provisioning) opted out with FLEET_MONITOR_ALERT_CHECK=0"
-else
+# Idempotent is not side-effect-free, which is why this is opt-IN despite
+# converging on exactly what is committed.
+if [ "${FLEET_MONITOR_ALERT_CHECK:-}" = "1" ]; then
   pipenv run python3 main.py provision-alerts
+else
+  echo "· provision-alerts (real provisioning) not run; opt in with FLEET_MONITOR_ALERT_CHECK=1"
 fi
 
 echo "✓ Snapshot generation complete. Output in $output_dir"

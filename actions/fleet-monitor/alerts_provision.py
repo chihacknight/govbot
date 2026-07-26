@@ -21,6 +21,7 @@ import datetime
 import json
 import re
 import time
+import urllib.parse
 
 import yaml
 
@@ -65,6 +66,19 @@ class Stack:
     """The subset of Grafana's API this needs, over the shared retry helper."""
 
     def __init__(self, base, token, sleep=time.sleep):
+        # Everything below carries a bearer token, and the contact-point body
+        # carries the resolved Slack webhook URL — itself a credential for
+        # posting to that channel. Over plain http both are readable on the wire,
+        # so a base URL missing its scheme (a plausible copy-paste, or a CI
+        # variable set without normalising) is refused rather than trusted.
+        scheme = urllib.parse.urlparse(base).scheme
+        if scheme != "https" and urllib.parse.urlparse(base).hostname not in (
+            "localhost", "127.0.0.1", "::1"
+        ):
+            raise RuntimeError(
+                f"GRAFANA_ALERTS_URL must be https (got {scheme or 'no scheme'}): a bearer "
+                "token and the Slack webhook URL travel in these requests"
+            )
         self.base = base.rstrip("/")
         self.headers = {"Authorization": f"Bearer {token}"}
         self.sleep = sleep
@@ -108,7 +122,7 @@ def resolve_datasource_uid(stack) -> str:
     Not committed, because a uid belongs to one stack and these files have to
     apply to any of them. Discovered rather than demanded, so provisioning a
     fresh stack is one command — but never guessed: picking the wrong one of
-    several provisions three rules that evaluate against nothing, forever, while
+    several provisions rules that evaluate against nothing, forever, while
     reporting perfect health.
     """
     candidates = [d for d in stack.get("/api/datasources") if d.get("type") == "prometheus"]
@@ -159,7 +173,7 @@ def _load(alerting_dir, name, values):
 
 
 def ensure_folder(stack):
-    """The rules' own folder, so all three can be found — and removed — together."""
+    """The rules' own folder, so they can be found — and removed — together."""
     if stack.find(f"/api/folders/{FOLDER_UID}") is None:
         stack.write("/api/folders", {"uid": FOLDER_UID, "title": FOLDER})
         return "created"
@@ -179,9 +193,12 @@ def apply_contact_point(stack, document):
     another contact point's receivers are none of our business.
     """
     on_stack = {
-        point.get("uid"): point
+        point["uid"]: point
         for point in (stack.find("/api/v1/provisioning/contact-points") or [])
-        if point.get("name") == CONTACT_POINT
+        # A uid is required, not assumed: a receiver returned without one would
+        # otherwise key this dict under None and send a DELETE to `.../None` —
+        # and mixing None with real uids makes the sort below raise instead.
+        if point.get("name") == CONTACT_POINT and point.get("uid")
     }
     applied, wanted = [], set()
     for point in document["contactPoints"]:
@@ -197,7 +214,9 @@ def apply_contact_point(stack, document):
                 stack.write("/api/v1/provisioning/contact-points", body)
                 applied.append((receiver["type"], "created"))
     for uid in sorted(set(on_stack) - wanted):
-        stack.delete(f"/api/v1/provisioning/contact-points/{uid}")
+        # Quoted: this is the one destructive call here, and the uid is a path
+        # segment supplied by the remote side.
+        stack.delete(f"/api/v1/provisioning/contact-points/{urllib.parse.quote(uid, safe='')}")
         applied.append((on_stack[uid].get("type", uid), "removed"))
     return applied
 
@@ -234,7 +253,40 @@ def apply_rules(stack, document):
     return applied
 
 
-def graft_route(stack, route):
+def read_policy_tree(stack):
+    """The stack's existing root notification policy, or a hard failure.
+
+    Read BEFORE anything is written. The refusal below is only worth having if
+    it happens before the rules land: a run that applies four enabled rules and
+    then discovers it cannot read the policy tree leaves them live and unrouted,
+    so every fleet alert falls through to the stack owner's own receiver — and
+    every retry reproduces it.
+    """
+    tree = stack.find("/api/v1/provisioning/policies")
+    if tree is None:
+        # NOT an empty tree. A 404 here means the token lacks notification-policy
+        # read scope, or the base URL has a path prefix — cases where writes may
+        # still land.
+        raise RuntimeError(
+            "cannot read the stack's notification policy tree "
+            "(/api/v1/provisioning/policies returned 404) — refusing to replace a root "
+            "policy sight-unseen. Check that the token carries alerting/notification "
+            "policy read scope and that GRAFANA_ALERTS_URL has no path prefix."
+        )
+    if not tree.get("receiver") and tree.get("routes"):
+        # Readable, but not a shape we understand: a root with children and no
+        # receiver could be a proxy's JSON error body, or a Grafana build that
+        # omits the field. Synthesising a root over it would destroy those
+        # children with no local copy of them.
+        raise RuntimeError(
+            "the stack's notification policy has child routes but no root receiver; "
+            "refusing to overwrite a tree this module cannot interpret. Inspect "
+            "/api/v1/provisioning/policies by hand."
+        )
+    return tree
+
+
+def graft_route(stack, tree, route):
     """Insert the fleet's route as the FIRST child of the stack's root policy.
 
     First, not last, and that ordering is the whole correctness of this
@@ -250,21 +302,6 @@ def graft_route(stack, route):
     as ``object_matchers``), and comparing only one of them leaves a stale twin
     ahead of the new route, where it wins every delivery.
     """
-    tree = stack.find("/api/v1/provisioning/policies")
-    if tree is None:
-        # NOT an empty tree. A 404 here means the token lacks notification-policy
-        # read scope, or the base URL has a path prefix — cases where writes may
-        # still land. Synthesising a root from that would PUT the fleet's own
-        # receiver over a root policy nobody ever read, sending every unmatched
-        # alert on the stack to this Slack webhook and destroying the previous
-        # root with no local copy of it. That is precisely the takeover this
-        # module exists to avoid, so it is a hard stop.
-        raise RuntimeError(
-            "cannot read the stack's notification policy tree "
-            "(/api/v1/provisioning/policies returned 404) — refusing to replace a root "
-            "policy sight-unseen. Check that the token carries alerting/notification "
-            "policy read scope and that GRAFANA_ALERTS_URL has no path prefix."
-        )
     if not tree.get("receiver"):
         # A stack that genuinely has no root policy: ours becomes the root, with
         # the fleet route as its only child. Nothing is being displaced.
@@ -290,6 +327,10 @@ EVALUATED_HEALTH = ("ok", "nodata", "error")
 # tick is up to one whole interval away, so any deadline shorter than that would
 # time out on every healthy provisioning run.
 CONFIRM_DEADLINE_SECONDS = _seconds(EVAL_INTERVAL) * 2 + 120
+
+# How far this host's clock may run ahead of the stack's before the
+# "evaluated after our write" comparison starts rejecting good evaluations.
+CLOCK_SKEW = datetime.timedelta(minutes=2)
 
 
 def _evaluated_at(rule):
@@ -379,15 +420,23 @@ def provision(alerting_dir, base, token, values, echo=print, sleep=time.sleep,
         values = {**values, "GRAFANA_METRICS_DATASOURCE_UID": resolve_datasource_uid(stack)}
         echo(f"· datasource: discovered {values['GRAFANA_METRICS_DATASOURCE_UID']}")
 
+    # Read the policy tree first: it is the only step that can refuse, and a
+    # refusal after the rules land would leave them enabled and unrouted.
+    tree = read_policy_tree(stack)
+
     echo(f"· folder: {ensure_folder(stack)}")
     for kind, action in apply_contact_point(stack, _load(alerting_dir, CONTACT_POINTS_FILE, values)):
         echo(f"· contact point: {kind} {action}")
     # Stamped before the write, so an evaluation that merely *straddles* the PUT
-    # can still count — and one recorded before it never can.
-    applied_at = datetime.datetime.now(datetime.timezone.utc)
+    # can still count — and one recorded before it never can. The tolerance is
+    # for clock skew between this host and the stack: the comparison spans two
+    # machines, and a laptop a few minutes fast would otherwise reject every
+    # evaluation until the deadline ran out.
+    applied_at = datetime.datetime.now(datetime.timezone.utc) - CLOCK_SKEW
     rules = apply_rules(stack, _load(alerting_dir, RULES_FILE, values))
     echo(f"· rules: {len(rules)} applied")
-    echo(f"· notification route: {graft_route(stack, _load(alerting_dir, POLICY_FILE, values)['route'])}")
+    echo(f"· notification route: "
+         f"{graft_route(stack, tree, _load(alerting_dir, POLICY_FILE, values)['route'])}")
     confirm_rules(stack, rules, applied_at, deadline_seconds=deadline_seconds)
     echo(f"✓ {len(rules)} rules provisioned and evaluating, delivering to the fleet-monitor contact point")
     return sorted(rules)

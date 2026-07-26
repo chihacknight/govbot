@@ -26,7 +26,7 @@ COVERAGE_UID = "fleet-coverage-gap"
 
 # Evaluated far more often than the data changes (the collector ships hourly at
 # best), so a condition that clears is seen to clear quickly. The cost of a short
-# interval is only query load, and these are three instant queries.
+# interval is only query load, and these are four instant queries.
 EVAL_INTERVAL = "5m"
 
 # What absorbs evaluation-boundary flap. Deliberately short: the facts these
@@ -40,14 +40,21 @@ PENDING_PERIOD = "10m"
 # per-state pages all saying the same thing in a worse way.
 NO_DATA_STATE = "OK"
 
-# How many swept repos may report no data-commit age before the coverage rule
-# fires. Zero assumes every polled repo has at least one commit on its data path
-# in steady state — true of the fleet as configured, but it is an *assumption*,
-# not a measurement, and it is the one number here that was not derived from
-# observed behaviour. If the first real sweep shows a persistent non-zero gap,
-# raise this to the observed floor rather than deleting the rule: the point is to
-# notice the gap *changing*, and a rule that fires constantly notices nothing.
+# How many repos may stop reporting a data-commit age before the coverage rule
+# fires. Zero needs no assumption about the fleet: the rule compares the fleet
+# against *itself* a day ago, so a repo that has never reported is absent from
+# both sides and a repo that stopped is present in only one.
+#
+# An earlier version compared against the collector's heartbeat count instead.
+# That needed every polled repo to have a data-path commit in steady state — an
+# assumption, not a measurement — and it paged on a paused repo, breaking the
+# rule that out-of-session jurisdictions never alert.
 COVERAGE_TOLERANCE = 0
+
+# The comparison window for that regression. A day is long enough that a repo
+# reporting normally is in both windows, and short enough that a repo removed
+# from the config stops being mourned within one.
+COVERAGE_BASELINE = "24h"
 
 # The one label every fleet alert carries, and the only thing the fleet's
 # notification route matches on. That is what lets the route be grafted under a
@@ -59,7 +66,7 @@ ROUTE_LABEL = ("service", "fleet-monitor")
 CONTACT_POINT = "fleet-monitor"
 
 # Where the rules live in the stack's own folder tree. Its own folder, so a
-# maintainer can see at a glance which rules came from here and delete all three
+# maintainer can see at a glance which rules came from here and delete them all
 # by deleting one thing.
 FOLDER = "Fleet Monitor"
 FOLDER_UID = "fleet-monitor"
@@ -185,7 +192,7 @@ def _rule(uid: str, title: str, expr: str, evaluator: dict, summary: str,
 
 
 def build_rule_group() -> dict:
-    """The three launch rules, as one evaluation group."""
+    """The launch rules, as one evaluation group."""
     return {
         "name": "fleet-monitor",
         "interval": EVAL_INTERVAL,
@@ -239,21 +246,41 @@ def build_rule_group() -> dict:
             _rule(
                 COVERAGE_UID,
                 "Fleet coverage gap",
-                # Swept repos, minus repos that reported an age. The collector
-                # publishes its own sweep size in the heartbeat, so the expected
-                # count is measured rather than hardcoded — a jurisdiction added
-                # to the pipeline-manager config raises both sides at once.
-                f"last_over_time(fleet_collector_heartbeat_repos[{LOOKBACK}]) - "
-                f"count(last_over_time(fleet_repo_data_commit_age_hours[{LOOKBACK}]))",
+                # Repos reporting a day ago, minus repos reporting now. The fleet
+                # is compared against itself, so nothing here has to know how big
+                # it is, and a repo that has never reported is absent from both
+                # sides rather than permanently accusing.
+                #
+                # `count by (state, org)` before counting, because the unit is
+                # repos and not series: `paused` is a label, so a jurisdiction
+                # going out of session starts a *second* series for the same
+                # repo, and both are resolvable for a whole look-back. Counting
+                # series would read that as coverage appearing and then
+                # vanishing, in batches, every time the legislative calendar
+                # turns over.
+                #
+                # `or vector(0)` because a count over no series at all is an
+                # EMPTY vector, not zero — and an empty right-hand side makes the
+                # whole subtraction empty, which noDataState resolves to OK. That
+                # would silence this rule in exactly its worst case: every repo
+                # gone at once, which is what a fleet-wide GitHub outage looks
+                # like while the heartbeat keeps ticking.
+                f"count(count by (state, org) "
+                f"(last_over_time(fleet_repo_data_commit_age_hours[{COVERAGE_BASELINE}]))) - "
+                f"(count(count by (state, org) "
+                f"(last_over_time(fleet_repo_data_commit_age_hours[{LOOKBACK}]))) or vector(0))",
                 {"type": "gt", "params": [COVERAGE_TOLERANCE]},
-                summary="{{ $values.B }} swept repos reported no data-commit age",
+                summary="{{ $values.B }} repos stopped reporting a data-commit age",
                 description=(
-                    "These repos were polled but shipped no freshness series at all, so the "
-                    "staleness rule cannot see them: it resolves NoData to OK, which is right "
-                    "for a sweep that didn't happen and wrong for a repo that silently stopped "
-                    "reporting. A repo with zero commits on its data path — the most stale a "
-                    "repo can be — looks exactly like this. Compare the freshness table's row "
-                    "count against the fleet size to find which."
+                    "These repos reported freshness within the last day and have now gone "
+                    "quiet, so the staleness rule cannot see them: it resolves NoData to OK, "
+                    "which is right for a sweep that didn't happen and wrong for a repo that "
+                    "silently stopped reporting. A repo whose data path has no commits at all "
+                    "— the most stale a repo can be — emits no series, and this is the only "
+                    "rule that notices. Compare the freshness table against yesterday's row "
+                    "count to find which. A repo deliberately removed from the "
+                    "pipeline-manager config also lands here, and clears on its own within a "
+                    "day."
                 ),
                 state_filtered=False,
             ),
@@ -269,7 +296,8 @@ def build_contact_point() -> dict:
     that has to be kept in step with this one forever.
 
     The webhook URL and the address are placeholders resolved at provision time
-    (see ``substitute``): a committed webhook URL is a committed credential, and
+    (see ``alerts_provision._resolve``): a committed webhook URL is a committed
+    credential, and
     a committed address is somebody's inbox in a public repo.
     """
     return {
@@ -323,7 +351,7 @@ def build_route() -> dict:
 
 
 RULES_HEADER = """\
-# The fleet's three launch alert rules, generated by alerting.py — edit that, not
+# The fleet's launch alert rules, generated by alerting.py — edit that, not
 # this, and regenerate with `main.py alerts --out-dir alerting`.
 #
 # $GRAFANA_METRICS_DATASOURCE_UID is resolved at provision time: a datasource uid
@@ -370,22 +398,6 @@ PLACEHOLDER = re.compile(r"\$([A-Z][A-Z0-9_]*)")
 def placeholders(text: str) -> set:
     """Every placeholder name a rendered document expects."""
     return set(PLACEHOLDER.findall(text))
-
-
-def substitute(text: str, values: dict) -> str:
-    """Resolve every ``$NAME`` placeholder, or refuse to produce a document.
-
-    Refusing is the point. Grafana accepts a contact point whose webhook URL is
-    the empty string, and then accepts alerts routed to it and drops them — an
-    alerting setup that looks provisioned, reports healthy, and never reaches
-    anyone. A missing value has to be louder than that.
-    """
-    missing = sorted(placeholders(text) - set(values))
-    if missing:
-        raise UnresolvedPlaceholder(
-            f"no value supplied for {', '.join('$' + name for name in missing)}"
-        )
-    return PLACEHOLDER.sub(lambda m: values[m.group(1)], text)
 
 
 def _document(header: str, body: dict) -> str:
