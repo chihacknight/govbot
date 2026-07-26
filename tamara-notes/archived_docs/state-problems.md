@@ -143,7 +143,7 @@ verification run; nothing merged yet
 - Live verification: `govbot-openstates-scrapers/az-legislation`'s workflow temporarily points
   `docker-image:` at the test image (pushed directly to that repo's `main`, same pattern FL used —
   intentionally not routed through the shared pipeline-manager template, since it's a temporary
-  test override, not a permanent config; see `project_docs/scraper-debugging-onboarding.md`).
+  test override, not a permanent config; see `tamara-notes/scraper-debugging-onboarding.md`).
   First dispatch ([run 30107906183](https://github.com/govbot-openstates-scrapers/az-legislation/actions/runs/30107906183))
   was healthy the whole way through — actively saving bills with zero errors — but got cancelled
   partway through by mistake (looked idle in the UI; log review afterward confirmed it wasn't
@@ -164,7 +164,7 @@ verification run; nothing merged yet
 
 **Related:** PR [#5722](https://github.com/openstates/openstates-scrapers/pull/5722) (merged,
 did not fix the real bug), issue [#1382](https://github.com/openstates/issues/issues/1382).
-`project_docs/scraper-debugging-onboarding.md` has the generalized `--fastmode` gotcha and the
+`tamara-notes/scraper-debugging-onboarding.md` has the generalized `--fastmode` gotcha and the
 full reproduce→fix→test→upstream playbook this followed.
 
 ---
@@ -267,7 +267,7 @@ runner cap, not network/IP blocking; fix applied and a live self-hosted verifica
 
 **Related:** PR #75 (introduced the Tinyproxy default, 2026-07-20) is what turned this from "self-
 hosted, occasionally cancelled by runner-uptime gaps" into "guaranteed to fail every single scheduled
-run." `project_docs/scraper-debugging-onboarding.md` has the general reproduce→fix→test playbook.
+run." `tamara-notes/scraper-debugging-onboarding.md` has the general reproduce→fix→test playbook.
 
 <!-- Template for a new entry:
 

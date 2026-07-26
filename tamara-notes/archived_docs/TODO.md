@@ -67,7 +67,7 @@ Near-term
 
 Fix macOS `tar --mode=755` incompatibility in `action.yml` — affects all self-hosted runners on Mac (confirmed on FL and TN runners). GNU tar flag not supported by BSD tar. Scrape succeeds but tarball creation fails; workflow falls back to prior release tarball. Fix: detect OS or use portable tar flags.
 
-File OpenStates issues (all identified 2026-07-02, analysis in `project_docs/openstates-responses.md`):
+File OpenStates issues (all identified 2026-07-02, analysis in `tamara-notes/openstates-responses.md`):
 
 - **WY** — scraper misses `enrolled`/`inactive` bills (HB0001, SF0001, SF0002 — the entire point of WY's budget session)
 - **IN** — missing all Senate Bills and HB1001-1010 for 2026 session

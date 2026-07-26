@@ -1,6 +1,6 @@
 # Scraper Status — states with a problem (not currently working)
 
-Moved into `project_docs/scraper-status/` alongside `working-in-session.md` and
+Moved into `tamara-notes/scraper-status/` alongside `working-in-session.md` and
 `working-out-of-session.md` (2026-07-24) — those two cover the states that *are* working,
 split by whether the state is currently in session. This doc is the third bucket: anything
 not confirmed `✅` in the 2026-07-21 audit, in-session or out, all in one place with a
@@ -8,7 +8,7 @@ session-status column since "not working" is the thing that matters here, not se
 timing.
 
 Relationship to other docs:
-- **`project_docs/openstates-responses.md`** stays separate — it's specifically for drafting/tracking
+- **`tamara-notes/openstates-responses.md`** stays separate — it's specifically for drafting/tracking
   communications with OpenStates maintainers (issue/PR threads). Cross-referenced from here, not merged.
 - **`actions/scrape/docs/error-tracking.md`** and **`actions/scrape/docs/scraper-health.md`** are the
   historical snapshots (2026-07-02 through 2026-07-14) this doc is built from. Superseded by this doc
@@ -252,7 +252,7 @@ Retry Next Run (N)" section in the GitHub Actions summary, separate from the gen
 since this scrape runs nightly, a skipped bill is expected to get picked up again and shouldn't read
 as an unresolved fault. Same session also shipped a broader, all-states log-folding feature
 (`actions/scrape/fold_scrape_log.awk` + related) that collapses routine scrape-log noise into
-GitHub Actions groups — see `project_docs/` or ask about it separately, not FL-specific.
+GitHub Actions groups — see `tamara-notes/` or ask about it separately, not FL-specific.
 
 A separate config fix landed the same session: FL's (and MA's) *scheduled* runs were landing
 on GitHub-hosted infrastructure instead of self-hosted regardless of the `runner:
@@ -302,14 +302,14 @@ same 2,190 bills / 3,462 vote events, committed to `main`.
 workflow is temporarily pointed at a custom test image
 (`ghcr.io/tamara-builds/openstates-scrapers:az-fix-test`) so AZ keeps producing real data nightly
 while waiting on the merge, rather than sitting broken. Full revert-once-merged checklist tracked
-in `project_docs/scraper-status/upstream-pr-todo.md` — check that doc before assuming this is
+in `tamara-notes/scraper-status/upstream-pr-todo.md` — check that doc before assuming this is
 fully closed out.
 
 **General lesson worth remembering for other states**: any scraper that does
 "GET → POST to mutate server-side state → GET the same URL again expecting the change reflected"
 is vulnerable to this same `--fastmode` cache-poisoning pattern. AZ is the only confirmed case so
 far, but nothing else has been specifically checked. See
-`project_docs/scraper-debugging-onboarding.md` for the generalized writeup.
+`tamara-notes/scraper-debugging-onboarding.md` for the generalized writeup.
 
 ### Not self-hosted, not proxy-related — genuinely new, still needs a look
 
@@ -416,7 +416,7 @@ congestion rather than a per-state block (NE, WA — though WA isn't even self-h
 - **AZ** — ✅ resolved 2026-07-24. #5722 merged but didn't fix the real bug; PR
   [#5742](https://github.com/openstates/openstates-scrapers/pull/5742) has the actual fix
   (`--fastmode` cache poisoning), confirmed working live. See dedicated writeup above and
-  `project_docs/scraper-status/upstream-pr-todo.md` for the revert-once-merged checklist.
+  `tamara-notes/scraper-status/upstream-pr-todo.md` for the revert-once-merged checklist.
 - **FL** PR [#5724](https://github.com/openstates/openstates-scrapers/pull/5724) — updated 2026-07-23 per maintainer feedback (opt-in `allow_partial` flag + a newly-found `flhouse.gov` timeout fix), then again 2026-07-26 with a third fix (single-bill failures crashing the whole session, both a plain timeout and a `RejectedResponse` bot-detection variant) — pushed and commented, all three fixes verified live. CI green, awaiting maintainer re-review. Still don't assume merged/live in the official docker image yet — `fl-legislation` runs from a temporary custom image (`ghcr.io/tamara-builds/openstates-scrapers:fl-fix-test`, now config-driven) until it merges. See the dedicated FL section above and `openstates-responses.md` for full detail.
 - **NM** — waiting on maintainer to re-open issue [#1381](https://github.com/openstates/issues/issues/1381); we have a PR ready (`urllib.request.urlopen()` swap).
 - **WV** — real 39-vs-2975 bill discrepancy from early July is resolved (self-hosted fix confirmed at exactly 2,975), but the *original* root cause of that discrepancy was never actually explained — see `openstates-responses.md`'s WV section before reopening any related work.

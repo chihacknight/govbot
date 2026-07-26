@@ -209,6 +209,6 @@ fix yet, just flags that more is coming before they spend more review time on th
   `openstates/scrapers:latest` image is rebuilt upstream with the fix.
 - 413 real bills are committed to `_data/fl` in that repo as of tonight -- first real progress
   since 2026-07-02.
-- `docs/src/state-status-reference.md` and `project_docs/state-problems.md` have the broader FL
+- `docs/src/state-status-reference.md` and `tamara-notes/state-problems.md` have the broader FL
   writeup and status; this doc is specifically about the narrower "one bill kills the whole run"
   question.

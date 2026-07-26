@@ -113,7 +113,7 @@ Found 22 JSON files in _working/_data/fl   ← 5 special session bills + metadat
 1. Remove `list()` wrapper — bills stream to disk as they're yielded
 2. Catch `RejectedResponse` in `_process_bill_list()` — scraper exits cleanly with partial data instead of crashing
 
-**Scale context:** FL 2026 regular session has ~8,000 bills. At ~160/run before bot detection, full coverage needs ~50 runs. A separate incremental scraping proposal is in [project_docs/fl-incremental-scraping-proposal.md](fl-incremental-scraping-proposal.md) — filed as follow-up in issue #1386 pending OpenStates response.
+**Scale context:** FL 2026 regular session has ~8,000 bills. At ~160/run before bot detection, full coverage needs ~50 runs. A separate incremental scraping proposal is in [tamara-notes/fl-incremental-scraping-proposal.md](fl-incremental-scraping-proposal.md) — filed as follow-up in issue #1386 pending OpenStates response.
 
 **Secondary issue (macOS runner):** The action uses `tar --mode=755` (GNU tar flag) which fails silently on macOS's BSD tar. The workflow fell back to the previous nightly release tarball, so no data was lost. **Fixed 2026-07-14** in `actions/scrape/scrape.sh` — replaced with `chmod -R 755` before a plain `tar` call, which works on both GNU and BSD tar. This bug was actively confusing every self-hosted Mac run (FL, IL, NC all showed bogus "Nightly fallback / N/A" summaries despite the real data landing correctly).
 

@@ -19,7 +19,7 @@ workflow back to the default and cross it off. Check back periodically — no au
   3. Trigger a manual run, confirm AZ scrapes clean on the official image (no `S3_SESSION_CONFIG` regression).
   4. Delete/stop publishing `ghcr.io/tamara-builds/openstates-scrapers:az-fix-test`.
   5. Update `not-working.md` — AZ moves out of the "not working" bucket.
-  6. Update `project_docs/archived_docs/openstates-responses.md`'s AZ section to close the loop.
+  6. Update `tamara-notes/archived_docs/openstates-responses.md`'s AZ section to close the loop.
 
 - **Note:** the *earlier* AZ PR, [#5722](https://github.com/openstates/openstates-scrapers/pull/5722)
   ("preserve session cookies across setsession.php POST"), is already **MERGED** — that fixed a

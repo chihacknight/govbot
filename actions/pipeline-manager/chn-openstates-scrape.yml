@@ -97,7 +97,7 @@ locales:
     # Temporary custom image carrying a scraper fix (single-bill failures no
     # longer crash the whole ~1,900-bill session) that hasn't merged upstream
     # yet -- see PR #5724 on openstates/openstates-scrapers and
-    # project_docs/scraper-status/not-working.md's FL section. Revert to the
+    # tamara-notes/scraper-status/not-working.md's FL section. Revert to the
     # config default (by deleting this line) once that PR merges and
     # openstates/scrapers:latest is rebuilt with the fix.
     docker_image: "ghcr.io/tamara-builds/openstates-scrapers:fl-fix-test"
@@ -196,7 +196,7 @@ locales:
     # hard 6h execution cap -- Tinyproxy doesn't help since it still runs on
     # ubuntu-latest under the hood. Every schedule-triggered run since the
     # Tinyproxy default (PR #75) shipped was killed at exactly 6h00m, never
-    # completing. See project_docs/state-problems.md for the full writeup.
+    # completing. See tamara-notes/state-problems.md for the full writeup.
     #
     # Bumped 720 -> 1440 (12h -> 24h) 2026-07-25: a genuine self-hosted run
     # (30161792298, MacBookPro-8) was still going past 11h, meaning the

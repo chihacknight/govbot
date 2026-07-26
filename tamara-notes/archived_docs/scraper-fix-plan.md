@@ -16,7 +16,7 @@ at least as well as self-hosted everywhere it's actually been tried.
 
 Source data: `docs/src/state-status-reference.md`'s Hosting Path History table (2026-07-24
 audit of the last 10 scrape runs per state) and tonight's investigation notes in
-`project_docs/state-problems.md`.
+`tamara-notes/state-problems.md`.
 
 ---
 

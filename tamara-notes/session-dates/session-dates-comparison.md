@@ -4,7 +4,7 @@ Side-by-side comparison of 2026 legislative session dates from the two sources w
 access to, so we can decide which to trust per state and know where OpenStates simply
 doesn't have the data (in which case asking them to add it is the only fix).
 
-- **LegiScan** — from `project_docs/archived_docs/session-dates/session-calendar-2026.md`
+- **LegiScan** — from `tamara-notes/archived_docs/session-dates/session-calendar-2026.md`
   (LegiScan 2026 Legislative Schedule, updated 2026-07-08). This is the source we trust
   most. Covers regular-session floor dates; territories (GU, MP, PR, VI) aren't LegiScan
   jurisdictions, so those rows there are sourced from each territory's own legislature site
@@ -75,7 +75,7 @@ column instead, since LegiScan's row is regular-session-only).
 | MO | Missouri | 2026 Regular Session | 2026-01-07 | 2026-05-15 | 2026 Regular Session | 2026-01-07 | 2026-05-15 | ✅ match | — |
 | MP | Northern Mariana Islands | 24th Legislature | 2025-01-06 | 2026-12-31 | *(none)* | — | — | ❓ no OpenStates coverage | LegiScan note: year-round, regular + special sessions called as needed; source cnmileg.net. OpenStates has no `legislative_sessions` data for MP at all — consistent with `check-sessions.py`'s known "no scraper coverage" case. Worth filing with OpenStates if we ever need their feed for MP. |
 | MS | Mississippi | 2026 Regular Session | 2026-01-06 | 2026-04-15 | 2026 Regular Session | 2025-01-06 | 2025-04-05 | ⚠️ mismatch | LegiScan `2026-01-06→2026-04-15` vs OpenStates `2025-01-06→2025-04-05` — OpenStates is a full year behind. OpenStates also lists 1 special session since 2025. |
-| MT | Montana | No Regular Session | — | — | 2025 Regular Session | 2025-01-06 | 2025-05-03 | ℹ️ LegiScan says no 2026 regular session | LegiScan note: no regular session in 2026 (meets biennially). OpenStates' nearest match is its 2025 session — not evidence of a 2026 session, just the closest thing in its history. See `project_docs/state-problems.md` for MT's separate, unrelated `P1` shrink-guard investigation. |
+| MT | Montana | No Regular Session | — | — | 2025 Regular Session | 2025-01-06 | 2025-05-03 | ℹ️ LegiScan says no 2026 regular session | LegiScan note: no regular session in 2026 (meets biennially). OpenStates' nearest match is its 2025 session — not evidence of a 2026 session, just the closest thing in its history. See `tamara-notes/state-problems.md` for MT's separate, unrelated `P1` shrink-guard investigation. |
 | NC | North Carolina | 2025-2026 Biennium | 2026-04-21 | 2026-07-27 | 2025-2026 Session | 2025-01-11 | 2026-07-01 | ℹ️ within OpenStates biennium | LegiScan note: end date estimated. OpenStates also lists 1 special session since 2025. |
 | ND | North Dakota | No Regular Session | — | — | 70th Legislative Assembly (2027-28) | 2027-01-07 | 2028-05-02 | ℹ️ LegiScan says no 2026 regular session | LegiScan note: no regular session in 2026 (meets biennially). OpenStates' nearest non-special match is its *next* assembly (2027-28), not evidence of anything in 2026. |
 | NE | Nebraska | 109th Legislature | 2026-01-07 | 2026-04-17 | 109th Legislature (2025-2026) | 2025-01-08 | 2026-04-19 | ℹ️ within OpenStates biennium | — |
@@ -139,7 +139,7 @@ different granularity — no action needed.
 - `docs/src/state-status-reference.md` — the operational per-state table (scraper health,
   hosting path, session config) this doc is meant to feed the "Session Dates (verified)"
   column of
-- `project_docs/archived_docs/session-dates/session-calendar-2026.md` — the LegiScan source
+- `tamara-notes/archived_docs/session-dates/session-calendar-2026.md` — the LegiScan source
   data this doc compares against
 - `actions/pipeline-manager/check-sessions.py` — the disabled automated session-pause script
   whose OpenStates-fetch logic and known biennium-end-date bug this doc's methodology reuses

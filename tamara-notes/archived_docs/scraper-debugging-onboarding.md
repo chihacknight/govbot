@@ -18,13 +18,13 @@ not a replacement for the state-specific detail in `state-problems.md`.
    tells you what's actually been tried (Tinyproxy / self-hosted / plain GitHub-hosted) and
    what worked, per state — check this before re-trying a hosting fix that's already been
    ruled out.
-2. **`project_docs/state-problems.md`** — the working notes behind that table. Only states
+2. **`tamara-notes/state-problems.md`** — the working notes behind that table. Only states
    that have actually been investigated get an entry here; if a state isn't in this file,
    nothing beyond the one-line status has been verified yet.
-3. **`project_docs/scraper-fix-plan.md`** — "what's been tried / what to try next" per state,
+3. **`tamara-notes/scraper-fix-plan.md`** — "what's been tried / what to try next" per state,
    if it's still current when you read this (it's a point-in-time planning doc, not
    continuously maintained).
-4. **Don't trust `project_docs/archived_docs/*`** without re-checking against current code —
+4. **Don't trust `tamara-notes/archived_docs/*`** without re-checking against current code —
    that's exactly the scattered, sometimes-contradictory pre-cleanup state `state-problems.md`
    was created to replace.
 
@@ -60,7 +60,7 @@ on the wrong trail.
 ## Standard workflow: reproduce → fix → test → upstream
 
 This is the pattern used for both FL (2026-07-23/24, see
-`project_docs/fl-single-bill-failure-handoff.md`) and AZ (2026-07-24). Repeat it for any new
+`tamara-notes/fl-single-bill-failure-handoff.md`) and AZ (2026-07-24). Repeat it for any new
 state-specific scraper bug:
 
 1. **Reproduce locally first**, outside CI, using the real image:
