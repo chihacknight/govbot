@@ -137,10 +137,9 @@ checks out the ref at job start, doesn't re-read it mid-run).
   working live: `HCommRes 24-6 has no title on cnmileg.net, using identifier as a fallback` and
   the same for `HCommRes 24-7`, zero tracebacks, zero `KeyError`, zero retries.
 - **Pushed:** yes, `origin/fix/mp-blank-title`
-- **Next:** revert `mp-legislation`'s workflow back to `@main`/default docker-image (cleanup,
-  same as every other test-branch pattern), then open the upstream OpenStates PR — this is the
-  strongest-evidenced fix of the three (GA/MP/NH), ready to go. Update `not-working.md`'s MP row
-  once the PR is filed.
+- **Upstream PR filed:** [openstates/openstates-scrapers#5744](https://github.com/openstates/openstates-scrapers/pull/5744) (2026-07-26). See `upstream-pr-todo.md` for the merge-day
+  checklist. **`mp-legislation`'s workflow stays pointed at `mp-fix-test`** until #5744 actually
+  merges — same pattern as AZ, not reverted to default.
 
 ### fix/mi-digicert-intermediate — ❌ ABANDONED 2026-07-26, wrong diagnosis
 
