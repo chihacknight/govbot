@@ -28,12 +28,16 @@ workflow back to the default and cross it off. Check back periodically — no au
 ## MP
 
 - **PR:** [openstates/openstates-scrapers#5744](https://github.com/openstates/openstates-scrapers/pull/5744) — "MP: fix blank-title crash and bill_id spacing on cnmileg.net"
+- **Issue:** [openstates/issues#1394](https://github.com/openstates/issues/issues/1394) — filed
+  2026-07-26, referencing #5744
 - **Status:** OPEN (filed 2026-07-26)
 - **Fix verified:** confirmed via a *real GitHub Actions run* on a self-built Docker image, not
   just local — 321 bills, `SCRAPE_EXIT_CODE: 0`, zero tracebacks, zero `KeyError`. See
   `pending-branches.md` for full detail (including a correction: the doc originally claimed a
   second commit already existed for the bill_id-spacing fix — it didn't, had to be added before
   this PR could honestly be filed).
+- **Ran `poetry run black scrapers/mp/bills.py`** before considering the PR done — reformatted
+  the new code plus two pre-existing blank-line nits elsewhere in the file (commit `4a3e96db2`).
 - **Currently pointed at:** `ghcr.io/tamara-builds/openstates-scrapers:mp-fix-test`, set in
   `govbot-openstates-scrapers/mp-legislation/.github/workflows/openstates-scrape.yml:81`
   (`docker-image:` input) — **stays pointed at this custom image until #5744 merges**, same
