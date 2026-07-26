@@ -5,7 +5,7 @@ follow-ups. Started 2026-07-24 evening; most of the shrink-guard saga resolved s
 
 ## Do first, time-sensitive
 
-- **Commit-summary identifier-aware fix — testing on USA and MT, revert branches after.**
+- **Commit-summary identifier-aware fix — MT and NH confirmed, USA still running.**
   `fix/commit-summary-identifier-aware` (pushed to `origin`) fixes a *separate*, still-open bug
   found while reviewing USA's shrink-guard test runs: the job-summary's "Commit Content" label
   (not the shrink-guard itself, which is already fixed) was still using raw `git diff --shortstat`
@@ -14,15 +14,16 @@ follow-ups. Started 2026-07-24 evening; most of the shrink-guard saga resolved s
   count flat at 17,574 the whole time, but each one flagged "⚠️ Net fewer files than last commit"
   anyway, because stale-duplicate cleanup deletes old files without a 1:1 new file replacing them.
   Fix compares distinct bill identifiers instead (same approach as the shrink-guard in
-  `scrape.sh`). USA and MT's `openstates-scrape.yml` workflows need to be pointed at
-  `@fix/commit-summary-identifier-aware` to test, then **reverted back to `@main` once confirmed**
-  (same pattern as the shrink-guard test batch) — don't forget this step before merging the branch.
-- **NH re-test — happens automatically, no action needed.** NH's cron is `0 4 * * *` UTC
-  (midnight ET) — outside the known 6am-9pm ET block window — and its workflow points at
-  `@main`, which has the merged `--fastmode` skip (PR #95). Check whether that run landed clean.
-  If yes, `fix/nh-rate-limit`'s extra `SCRAPELIB_RPM=20` cap (fork branch, not deployed anywhere)
-  may not even be necessary. If it degraded the same gradual way as before, the cap is probably
-  needed. If it failed *instantly*, that's a separate, still-unaddressed time-based block.
+  `scrape.sh`). Bundled into the same branch: a second fix for a bare-substring `"503"`/`"429"`
+  classifier bug (found live on NH — a cache-busting query-param timestamp coincidentally
+  contained "503", mislabeling a plain `S1_OUT_OF_SESSION` as `H4_SERVER_DOWN`).
+  **MT confirmed 2026-07-26**: re-scraped, 4,495 distinct bills flat, correctly labeled
+  "no net new content" instead of a false alarm. **NH confirmed 2026-07-26**: correctly reported
+  `S1_OUT_OF_SESSION` instead of `H4_SERVER_DOWN`, fell back to nightly (1,751 files) as designed,
+  overall `✅ Success`. **USA still running** (dispatched ~03:29 UTC 07-26, in progress) — once it
+  lands clean, revert MT/NH/USA's `openstates-scrape.yml` back to `@main` and merge the branch.
+- **NH's 6am-9pm ET block window is real** (confirmed from NH's own site logs) — don't let the
+  classifier fix above be misread as calling that into question. See `not-working.md`'s NH row.
 
 ## ✅ Shrink-guard duplicate-bloat bug — RESOLVED, merged to main
 
@@ -68,11 +69,15 @@ stuck — other "success"-reporting states could be silently frozen the same way
 - **NH — partially resolved.** `--fastmode` fix merged (see above). Separate time-based block
   (6am-9pm ET) still real and unaddressed. Bonus: removed dead `verify=False` from 11 request
   sites (`fix/nh-rate-limit`, not yet deployed anywhere).
-- **MI — 🔄 in progress, looking very promising, not fully confirmed.** Bundled the missing
-  DigiCert intermediate cert into the Docker CA store; verified `curl`/`requests` now get clean
-  `HTTP 200` with real cert verification (previously failed on every path). Live scrape test was
-  climbing past 150+ bills (MI has never produced a single file before) when the background
-  process got interrupted — needs a re-run for a final confirmed count. `fix/mi-digicert-intermediate`.
+- **MI — 🔄 first live GitHub Actions test attempted 2026-07-26, blocked by an infra mistake, retesting.**
+  Bundled the missing DigiCert intermediate cert into the Docker CA store; verified `curl`/`requests`
+  get clean `HTTP 200` with real cert verification (previously failed on every path, confirmed both
+  locally and inside the built image). Built and pushed `ghcr.io/tamara-builds/openstates-scrapers:mi-fix-test`,
+  pointed `mi-legislation`'s workflow at it, dispatched — but the first image was built `arm64`-only
+  (local machine's native arch) and every attempt failed instantly with `exec format error` on
+  GitHub's `linux/amd64` runners, never even reaching `legislature.mi.gov` (nothing to do with the
+  DigiCert fix itself). Rebuilding with `docker buildx build --platform linux/amd64` and
+  re-dispatching. `fix/mi-digicert-intermediate` (on `tamara-builds/openstates-scrapers`).
 - **AR, NV, OR, MN, CT, OH, PA — ✅ all confirmed healthy**, ready to promote out of
   `not-working.md` into `working-in-session.md`/`working-out-of-session.md`.
 - **NM** — issue was already closed by the maintainer 07-02; no PR was ever actually filed
