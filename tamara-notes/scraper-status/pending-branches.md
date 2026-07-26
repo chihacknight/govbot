@@ -164,20 +164,28 @@ image with the cert bundled was solving a problem that doesn't manifest in pract
 
 See `fix/mi-date-parsing` below — the actual fix for MI's real, reproducible blocker.
 
-### fix/mi-date-parsing — 🔄 local docker test in progress
+### fix/mi-date-parsing — ✅ confirmed via local Docker test 2026-07-26, first-ever complete MI scrape
 
 - **Commit:** `e68079346` — extracts just the date portion (`\d{1,2}/\d{1,2}/\d{4}`) from
   History table date cells before handing to `dateutil.parser.parse()`, in both
   `scrape_actions` and `scrape_votes` (same table, same bug, both call sites fixed).
 - **Root cause:** some action/vote rows' date cells carry a stray, unescaped `<` right after
   the date (e.g. `"4/29/2025<"`), which `dateutil.parser.parse()` can't handle. Confirmed
-  reproducible on HB 4401 — every scheduled run since 2026-07-23 crashes on this exact bill.
+  reproducible on HB 4401 — every scheduled run since 2026-07-23 crashed on this exact bill.
 - **Verified:** regex extraction tested against the exact malformed string plus normal-format
   dates (`4/29/2025<`, `4/29/2025`, `12/1/2025<br`, `1/1/2026`) — all parse to the correct date,
   well-formed dates unaffected.
-- **Local docker test:** in progress — a full MI scrape takes roughly an hour based on prior
-  GitHub Actions run times.
+- **Local Docker test: ✅ complete, clean.** Ran ~2 hours, finished 2026-07-26. **3,884 real
+  bills, 5,097 total JSON files** — matches almost exactly the 07-22 GitHub Actions run that got
+  blocked by the old raw-count shrink-guard (also 5,097 files), confirming this is genuinely the
+  full session. Zero tracebacks during the actual scrape (HB 4401 and every other bill saved
+  cleanly) — the only exception anywhere in the log is an unrelated Postgres connection error
+  in the report-saving step *after* scraping finishes (no local DB configured for this
+  standalone test, not a real problem). MI has never produced a real file before this.
 - **Pushed:** yes, `origin/fix/mi-date-parsing`
+- **Next:** same standard as MP — needs a real live GitHub Actions confirmation (not just
+  local) before deciding upstream PR vs. custom-image-in-the-meantime. Local test alone isn't
+  sufficient per the standard set today.
 - **Next:** confirm the local test clears HB 4401 without crashing and gets a real final bill
   count, then decide upstream PR vs. custom-image-in-the-meantime (same pattern as AZ/GA/MP).
   Update `not-working.md`'s MI row once resolved either way.
