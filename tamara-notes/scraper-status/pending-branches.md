@@ -7,6 +7,27 @@ the `govbot` repo or the `tamara-builds/openstates-scrapers` fork.
 
 ## govbot repo
 
+### fix/identifier-count-malformed-json — ✅ MERGED (PR #98, 2026-07-26)
+
+**Real production bug in PR #97's own commit-summary fix, found and fixed same night.**
+`count_distinct_identifiers`'s batched `xargs -0 jq ...` call meant a single malformed
+`bill_*.json` file made `jq` fail, `xargs` return exit 123, and under `set -euo pipefail` the
+entire calling step aborted **silently, with zero output** — including the commit step in
+`action.yml`, which could lose a perfectly good commit with no error message at all.
+
+**Confirmed live in production**: GA's 06:30 scheduled run (30191180653) scraped 460 real bills
+cleanly, then the commit step crashed with exit 123 at `OLD_DISTINCT=$(count_distinct_identifiers
+...)`, losing that commit entirely — conclusion showed `failure` but the underlying scrape had
+worked fine. Reproduced exactly in a real `ubuntu:24.04` + `jq` container (matching the actual
+runner environment): one malformed file among valid ones → zero output, exit 123.
+
+**Fix**: invoke `jq` once per file instead of one batched `xargs` call, so a single bad file
+can't take the others down (`xargs -0 -I{} sh -c 'jq ... "$1" 2>/dev/null || true' _ {}`).
+Verified against the exact malformed-file repro, plus empty-directory and missing-directory edge
+cases. Same fix applied to `scrape.sh`'s original shrink-guard identifier check too, for
+consistency (lower risk there since only invoked when file count already shrank, but same
+underlying fragility).
+
 ### fix/commit-summary-identifier-aware — ✅ MERGED (PR #97, 2026-07-26)
 
 Two bundled fixes, both found while reviewing USA's shrink-guard test runs:
