@@ -158,7 +158,16 @@ if [ "${STATE}" = "va" ]; then
   # Virginia uses csv_bills scraper for two sessions; run each independently with retries
   va_regular_exit=1
   for i in 1 2 3; do
+    # A cold pull (fresh cache, or right after a new image push) prints one
+    # "Pulling fs layer"/"Verifying Checksum"/"Pull complete" set per image
+    # layer -- confirmed on a real run as 60 lines of pure noise before the
+    # scraper even starts. Folded the same way as git commit's output; safe
+    # to fold unconditionally since `|| true` already means a real pull
+    # failure here isn't fatal on its own -- the subsequent `docker run` just
+    # fails with its own clearer error if the image truly doesn't exist.
+    echo "::group::📥 docker pull ${DOCKER_IMAGE}"
     docker pull ${DOCKER_IMAGE} || true
+    echo "::endgroup::"
     if docker run \
         --dns 8.8.8.8 --dns 1.1.1.1 \
         -v "$(pwd)/_working/_data":/opt/openstates/openstates/_data \
@@ -176,7 +185,9 @@ if [ "${STATE}" = "va" ]; then
 
   va_special_exit=1
   for i in 1 2 3; do
+    echo "::group::📥 docker pull ${DOCKER_IMAGE}"
     docker pull ${DOCKER_IMAGE} || true
+    echo "::endgroup::"
     if docker run \
         --dns 8.8.8.8 --dns 1.1.1.1 \
         -v "$(pwd)/_working/_data":/opt/openstates/openstates/_data \
@@ -197,7 +208,9 @@ if [ "${STATE}" = "va" ]; then
   fi
 else
   for i in 1 2 3; do
+    echo "::group::📥 docker pull ${DOCKER_IMAGE}"
     docker pull ${DOCKER_IMAGE} || true
+    echo "::endgroup::"
     if docker run \
         --dns 8.8.8.8 --dns 1.1.1.1 \
         -v "$(pwd)/_working/_data":/opt/openstates/openstates/_data \
