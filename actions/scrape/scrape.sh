@@ -297,8 +297,13 @@ fi
 count_distinct_identifiers() {
   local dir="$1"
   if [ -d "$dir" ]; then
+    # One jq invocation per file (not a single batched xargs call) so a lone
+    # malformed/truncated bill_*.json can't take the whole count down with it --
+    # confirmed for real: xargs propagates a single jq parse failure as exit 123,
+    # which under this script's `set -euo pipefail` silently aborted the entire
+    # step (including this function's caller), blocking a perfectly good commit.
     find "$dir" -type f -name 'bill_*.json' -print0 2>/dev/null \
-      | xargs -0 jq -r '.identifier // empty' 2>/dev/null \
+      | xargs -0 -I{} sh -c 'jq -r ".identifier // empty" "$1" 2>/dev/null || true' _ {} \
       | sort -u | wc -l | tr -d ' '
   else
     echo 0
