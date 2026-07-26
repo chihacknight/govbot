@@ -412,12 +412,12 @@ congestion rather than a per-state block (NE, WA — though WA isn't even self-h
 - **Session Pause Automation** (`check-sessions.py`) has been disabled since 2026-07-14 — its
   OpenStates-API-based session dates proved repeatedly inaccurate and caused several of the false
   "frozen" states. Don't re-enable until its accuracy problem is fixed.
-- **VA** — issue [#1377](https://github.com/openstates/issues/issues/1377) already closed. Issue
-  [#1385](https://github.com/openstates/issues/issues/1385) fixed upstream by
-  [#5725](https://github.com/openstates/openstates-scrapers/pull/5725) (merged 2026-07-08), still
-  needs a manual close. Re-verified 2026-07-26: VA's workflow is genuinely healthy (not disabled
-  as this doc previously claimed elsewhere — see `working-out-of-session.md`), running daily,
-  landing real data (1,051 files, exit 0). Not a problem state at all, nothing further to do.
+- **VA** — ✅ fully closed out 2026-07-26. Issues [#1377](https://github.com/openstates/issues/issues/1377) and
+  [#1385](https://github.com/openstates/issues/issues/1385) both closed (the latter referencing
+  [#5725](https://github.com/openstates/openstates-scrapers/pull/5725), merged 2026-07-08). VA's
+  workflow is genuinely healthy (not disabled as this doc previously claimed elsewhere — see
+  `working-out-of-session.md`), running daily, landing real data (1,051 files, exit 0). Not a
+  problem state at all.
 - **AZ** — ✅ resolved 2026-07-24. #5722 merged but didn't fix the real bug; PR
   [#5742](https://github.com/openstates/openstates-scrapers/pull/5742) has the actual fix
   (`--fastmode` cache poisoning), confirmed working live. See dedicated writeup above and
