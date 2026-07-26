@@ -474,7 +474,21 @@ runs:
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else
-          git commit -m "🕷️ Scrape data for ${{ inputs.state }} - $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          # git commit's own rename-detection summary lists every renamed file
+          # individually (openstates regenerates a fresh random UUID per file on
+          # every run, so a full re-scrape looks like "rename old => new (NN%)"
+          # per file even when the content barely changed) -- routine, not
+          # diagnostic, and can be thousands of lines for a large state. Folded
+          # into its own collapsible group; explicitly closed before surfacing
+          # a failure so a real commit error still shows up outside any group,
+          # not trapped inside a collapsed section.
+          echo "::group::📝 git commit summary (renamed/changed files)"
+          if ! git commit -m "🕷️ Scrape data for ${{ inputs.state }} - $(date -u +'%Y-%m-%d %H:%M:%S UTC')"; then
+            echo "::endgroup::"
+            echo "❌ git commit failed" >&2
+            exit 1
+          fi
+          echo "::endgroup::"
 
           # Pull latest changes before pushing
           echo "📥 Pulling latest changes..."
