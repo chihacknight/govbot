@@ -463,11 +463,19 @@ elif grep -qE "403.*(Forbidden|forbidden)|Forbidden.*403" "$SCRAPE_LOG" 2>/dev/n
 elif grep -qE "Name or service not known|nodename nor servname provided|EAI_NONAME" "$SCRAPE_LOG" 2>/dev/null; then
   FAILURE_TYPE="N4_DNS_FAILURE"
   IS_ACTIVE_BLOCK="true"
-elif grep -qE "429|Too Many Requests" "$SCRAPE_LOG" 2>/dev/null; then
+elif grep -qE "(^|[^0-9])429([^0-9]|$)|Too Many Requests" "$SCRAPE_LOG" 2>/dev/null; then
   FAILURE_TYPE="H3_RATE_LIMITED"
 elif grep -qE "TimeoutError|ConnectTimeoutError|timed out|Errno 110|RemoteDisconnected|Connection aborted" "$SCRAPE_LOG" 2>/dev/null; then
   FAILURE_TYPE="N2_CONNECTIVITY"
-elif grep -qE "503|Service Unavailable" "$SCRAPE_LOG" 2>/dev/null; then
+elif grep -qE "(^|[^0-9])503([^0-9]|$)|Service Unavailable" "$SCRAPE_LOG" 2>/dev/null; then
+  # Bare "503"/"429" used to match as a substring of anything -- including cache-busting
+  # query params some scrapers append to every request URL (e.g. NH's `?x=<timestamp>`,
+  # which routinely contains "503" purely by digit coincidence). Confirmed on NH
+  # (2026-07-26 run 30184528088): every attempt actually failed with a plain
+  # `ScrapeError: no objects returned` (S1_OUT_OF_SESSION), but got misclassified as
+  # H4_SERVER_DOWN because the timestamp in every logged request URL happened to
+  # contain "503". Requiring non-digit boundaries keeps a real "503"/"429" (surrounded
+  # by spaces, punctuation, etc.) matching while rejecting digit-run coincidences.
   FAILURE_TYPE="H4_SERVER_DOWN"
 elif grep -qE "ScrapeValueError|validation.*failed|failed.*validation" "$SCRAPE_LOG" 2>/dev/null; then
   # Check before H2 — ScrapeValueError is a specific openstates schema failure, not an auth issue.

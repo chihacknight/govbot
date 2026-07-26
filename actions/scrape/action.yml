@@ -437,11 +437,34 @@ runs:
         # Every scrape run regenerates a fresh random UUID per bill/vote-event
         # file (that's how OpenStates names them), so a full delete-old/add-new
         # diff happens on every commit regardless of whether the underlying
-        # legislative content actually changed. Insertions == deletions is the
-        # signature of "same data, re-scraped" (e.g. an out-of-session state
-        # with nothing new to report) rather than real new activity -- surface
-        # that distinction in the job summary so it doesn't have to be
-        # reverse-engineered from commit stats after the fact.
+        # legislative content actually changed. Insertions/deletions are still
+        # shown below as raw stats, but labeling the result from them doesn't
+        # work -- this used to say "worth a look" on perfectly healthy commits
+        # that were simply cleaning out old duplicate-UUID cruft (confirmed on
+        # USA: three consecutive commits, bill count flat at 17,574 the whole
+        # time, but each one showed net deletions since old stale-duplicate
+        # files were being cleared without a 1:1 new file replacing them).
+        # Compare distinct bill identifiers instead, same fix already applied
+        # to the shrink-guard itself in scrape.sh.
+        count_distinct_identifiers() {
+          local dir="$1"
+          if [ -d "$dir" ]; then
+            find "$dir" -type f -name 'bill_*.json' -print0 2>/dev/null \
+              | xargs -0 jq -r '.identifier // empty' 2>/dev/null \
+              | sort -u | wc -l | tr -d ' '
+          else
+            echo 0
+          fi
+        }
+
+        OLD_SNAPSHOT=$(mktemp -d)
+        if git rev-parse --verify -q HEAD >/dev/null; then
+          git archive HEAD -- "_data/${{ inputs.state }}/" 2>/dev/null | tar -x -C "$OLD_SNAPSHOT" 2>/dev/null || true
+        fi
+        OLD_DISTINCT=$(count_distinct_identifiers "${OLD_SNAPSHOT}/_data/${{ inputs.state }}")
+        NEW_DISTINCT=$(count_distinct_identifiers "$DATA_DIR")
+        rm -rf "$OLD_SNAPSHOT"
+
         DIFF_STAT=$(git diff --staged --shortstat)
         INSERTIONS=$(echo "$DIFF_STAT" | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo 0)
         DELETIONS=$(echo "$DIFF_STAT" | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo 0)
@@ -450,12 +473,12 @@ runs:
 
         if [ "$INSERTIONS" -eq 0 ] && [ "$DELETIONS" -eq 0 ]; then
           CONTENT_CHANGE="⏸️ No changes (nothing staged)"
-        elif [ "$INSERTIONS" -eq "$DELETIONS" ]; then
-          CONTENT_CHANGE="🔁 Re-scraped, no net new content ($INSERTIONS files replaced with fresh UUIDs, same count) — likely an out-of-session or otherwise unchanged state"
-        elif [ "$INSERTIONS" -gt "$DELETIONS" ]; then
-          CONTENT_CHANGE="✨ Net new content (+$((INSERTIONS - DELETIONS)) files vs. last commit)"
+        elif [ "$NEW_DISTINCT" -lt "$OLD_DISTINCT" ]; then
+          CONTENT_CHANGE="⚠️ Distinct bills dropped ($OLD_DISTINCT → $NEW_DISTINCT) — worth a look"
+        elif [ "$NEW_DISTINCT" -gt "$OLD_DISTINCT" ]; then
+          CONTENT_CHANGE="✨ Net new content (+$((NEW_DISTINCT - OLD_DISTINCT)) distinct bills vs. last commit)"
         else
-          CONTENT_CHANGE="⚠️ Net fewer files than last commit (-$((DELETIONS - INSERTIONS)) files) — worth a look"
+          CONTENT_CHANGE="🔁 Re-scraped, no net new content ($NEW_DISTINCT distinct bills, same as last commit) — likely an out-of-session or otherwise unchanged state, or stale-duplicate cleanup"
         fi
 
         echo "$CONTENT_CHANGE"
@@ -466,6 +489,7 @@ runs:
           echo "| Metric | Value |"
           echo "|--------|-------|"
           echo "| Result | $CONTENT_CHANGE |"
+          echo "| Distinct bills (before → after) | $OLD_DISTINCT → $NEW_DISTINCT |"
           echo "| Insertions | $INSERTIONS |"
           echo "| Deletions | $DELETIONS |"
         } >> "$GITHUB_STEP_SUMMARY"
