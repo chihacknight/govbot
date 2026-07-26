@@ -346,6 +346,48 @@ far, but nothing else has been specifically checked. See
 
 ---
 
+## Resurfaced from historical docs (2026-07-14/07-21) — unverified, don't lose track
+
+Found while reviewing `archived_docs/2026-07-14-recovery-summary.md` and
+`archived_docs/2026-07-21-session-handoff.md` for anything that fell out of current tracking.
+**None of these have been re-checked as of 2026-07-26** — some may already be fixed or
+superseded; they're listed here so they don't get lost, not as confirmed-current problems.
+
+- **Guam (GU) — each bill saved ~3x per run.** Wasted requests, no data loss. Root cause was
+  identified back on 07-14 but a fix was never filed upstream. Not mentioned anywhere else in
+  current tracking; GU only appears in `working-in-session.md` with no notes.
+- **ID/MD/UT/WY — undercounting bug, distinct from their (already-fixed) self-hosted/IP issue.**
+  "Only 'active' bills returned — completed sessions undercounted." Root cause confirmed for
+  Wyoming (the state API filters out signed/enrolled bills); same pattern suspected but
+  unconfirmed for ID/MD/UT. These four states currently show up in `working-out-of-session.md`
+  with a bare `—`, no mention of this silently-missing-bills issue.
+- **`extract-text.yml` design gap — any single failed bill causes a hard job failure.** Masks
+  otherwise-fine runs (New Mexico's 809/812 looked identical to total failure in the GitHub
+  Actions UI). A design note was written (`actions/extract/docs/error-log-design-note.md`) but
+  never implemented, separating "did the job complete" from "how many bills had errors."
+- **`PAT_WORKFLOW_TRIGGER` secret — not set as of 2026-07-21, blocking `check-and-restart`'s
+  actual retrigger step.** The `if:` condition bug that made `check-and-restart` never fire at
+  all was fixed (PR #83), but the retrigger step itself (`gh workflow run extract-text.yml`)
+  needs this secret, which wasn't set on at least `govbot-data/sd-legislation` (confirmed
+  `total_count: 0` directly). Couldn't check at the org level then (needs `admin:org` scope);
+  still couldn't as of 2026-07-26 (same blocker). Suggested alternative: switch to the same
+  GitHub App token approach already used for the scrape→format dispatch, avoiding a second
+  long-lived PAT entirely.
+- **SD's format preference picks broken placeholder HTML over a working PDF.** SD's `text/html`
+  bill pages are a JS-rendered Vue.js SPA shell with no real content; SD also serves working
+  PDFs for the same bills, but `text_extraction.py`'s `MEDIA_TYPE_PREFERENCE`
+  (`text/xml > text/html > application/pdf`) picks the broken HTML since nothing currently
+  detects "this HTML is actually just a placeholder." Two options were on the table 07-21: a
+  quick SD-only hardcode, or a general "detect placeholder HTML, fall back to next-preferred
+  media type" fix (leaning toward general, since this class of bug could recur on any other
+  JS-heavy state site). SD's already-committed extracted files were garbage placeholders as of
+  07-21 and would need a clear-and-re-extract pass once fixed.
+- **Local machine disk space chronically tight** (~3-4GB free even after a cleanup pass on
+  2026-07-21) — flagged as worth a proper cleanup (Time Machine local snapshots, Docker
+  Desktop's VM disk compaction) before the next large-repo `apply.py` rollout. Infra hygiene,
+  not a scraper bug, but could silently block future template rollouts the same way it did for
+  DC/MA/NY on 07-21.
+
 ## ✅ Currently healthy (40 states)
 
 ak, al, ca, co, dc, de, gu, hi, ia, id, il, in, ks, ky, la, md, me, ms, nc, nd, nj, ny, ok, ri, sc,
