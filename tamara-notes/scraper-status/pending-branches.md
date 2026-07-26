@@ -7,7 +7,7 @@ the `govbot` repo or the `tamara-builds/openstates-scrapers` fork.
 
 ## govbot repo
 
-### fix/commit-summary-identifier-aware — 🔄 MT and NH confirmed, USA still running
+### fix/commit-summary-identifier-aware — ✅ MERGED (PR #97, 2026-07-26)
 
 Two bundled fixes, both found while reviewing USA's shrink-guard test runs:
 
@@ -25,15 +25,16 @@ Two bundled fixes, both found while reviewing USA's shrink-guard test runs:
    the timestamp in every logged request URL (`?x=<timestamp>`) happened to contain "503".
    Anchored both regexes to require non-digit boundaries.
 
-**Confirmed:**
+**Confirmed clean on all three test states:**
 - MT (2026-07-26): re-scraped, 4,495 distinct bills flat, correctly labeled "no net new content."
 - NH (2026-07-26): correctly reported `S1_OUT_OF_SESSION` instead of `H4_SERVER_DOWN`, fell back
   to nightly (1,751 files) as designed, overall `✅ Success`.
+- USA (2026-07-26): re-scraped, 17,574 distinct bills flat, correctly labeled "no net new content"
+  despite 18,373 raw deletions vs. 9,229 insertions — exactly the false-alarm case this fix
+  targets.
 
-**Still running:** USA (dispatched ~03:29 UTC 2026-07-26). Once it lands clean, revert
-MT/NH/USA's `openstates-scrape.yml` back to `@main` and merge.
-
-**Pushed:** yes, `origin/fix/commit-summary-identifier-aware`.
+**Cleanup done:** MT/NH/USA's `openstates-scrape.yml` reverted back to `@main` before merging.
+PR #97 squash-merged to `main`, branch deleted (local + remote).
 
 ### fix/nh-skip-fastmode — ✅ MERGED (PR #95, 2026-07-24)
 
@@ -89,54 +90,57 @@ checks out the ref at job start, doesn't re-read it mid-run).
 
 ## tamara-builds/openstates-scrapers fork
 
-### fix/nh-rate-limit — 🔄 waiting on tonight's automatic scheduled run
+### fix/nh-rate-limit — 🔄 decision made: RPM cap likely unneeded, verify=False cleanup still pending
 
 - Adds `settings = dict(SCRAPELIB_RPM=20)` to `scrapers/nh/__init__.py`.
-- Only matters once `fix/nh-skip-fastmode` is live (already is, merged) — without dropping
-  `--fastmode`, this setting is silently ignored regardless.
-- **Not deployed anywhere NH's real workflow uses.** This branch lives only on the
-  `tamara-builds/openstates-scrapers` fork, never merged upstream, and NH's workflow was never
-  pointed at a custom image containing it (unlike AZ's `ghcr.io/tamara-builds/openstates-
-  scrapers:az-fix-test`). NH still runs on stock `openstates/scrapers:latest`.
-- **The clean re-test is already happening automatically, no manual dispatch needed.** NH's
-  cron is `0 4 * * *` UTC (midnight ET) — outside the 6am-9pm ET block window — and its
-  workflow points at `@main`, which already has the merged `--fastmode` skip. Tonight's
-  scheduled run tests whether dropping `--fastmode` alone (framework's 60 RPM default) is
-  sufficient, *without* this fork branch's extra `SCRAPELIB_RPM=20` cap.
-- **Decision point once that run lands:** if it's clean, this branch's extra RPM cap may not
-  even be necessary — don't bother building/deploying it. If NH still degrades the same gradual
-  way as before, this branch's setting is probably needed after all, and building/pointing NH's
-  workflow at a custom image (same pattern as AZ) is the next step. If it fails *instantly* the
-  way the mid-block-window test did, that's an unrelated, still-unaddressed time-based block
-  that neither this branch nor `fix/nh-skip-fastmode` addresses.
-- **Also (commit `1b576734e`, 2026-07-24):** removed `verify=False` from all 11 request sites
-  in `bills.py`. `gc.nh.gov`'s cert is currently valid (checked directly via `openssl s_client`
-  and `curl -v` — Let's Encrypt, verifies clean, not expiring until Oct 2026), so this wasn't
-  masking a real problem the way MI's cert issue is — looked like leftover dead code, no comment
-  explaining it. Restores real cert verification, kills the `InsecureRequestWarning` log spam.
-  Bundled into this branch since it's already touching NH's scraper; no separate test needed
-  beyond the same re-test above (this part doesn't change scrape behavior, just verification).
+- **Decision point resolved 2026-07-26.** Checked both real completed scrapes since
+  `fix/nh-skip-fastmode` (#95) merged: 07-25 06:19 (the automatic scheduled run this was waiting
+  on) and 07-25 14:34 (a manual dispatch, at 10:34 ET — inside the 6am-9pm ET block window). Both
+  landed clean: 1,751 files, `SCRAPE_TARBALL: present`, `SCRAPE_FAILURE_TYPE: NONE`, zero errors.
+  Per the original decision point — dropping `--fastmode` alone was sufficient. This branch's
+  extra `SCRAPELIB_RPM=20` cap is probably not needed; not building/deploying it.
+- **Not deployed anywhere NH's real workflow uses**, and no live test planned now given the
+  above — NH still runs on stock `openstates/scrapers:latest`.
+- **Still worth doing separately:** commit `1b576734e` (2026-07-24) removed dead `verify=False`
+  from all 11 request sites in `bills.py` (`gc.nh.gov`'s cert is valid, checked via `openssl
+  s_client`/`curl -v` — not masking a real problem). This part is independent of the RPM-cap
+  question and could still go up as its own small PR/cleanup.
+- **NH's 6am-9pm ET block window is still real and unaddressed** (confirmed from NH's own site
+  logs) — neither this branch nor #95 touches it. Separate, still-open problem.
 
-### fix/mp-blank-title — ✅ confirmed working locally, 2 bugs fixed
+### fix/mp-blank-title — ✅ confirmed via real GitHub Actions run (2026-07-26), ready for upstream PR
 
-- **Commits:** `b607f5692` (blank-title fallback) + `4f3af9c54` (bill_id spacing normalization,
-  found while testing the first fix).
+- **Commits:** `b607f5692` (blank-title fallback, 07-24) + `cd8d39403` (bill_id spacing
+  normalization, 07-26 — see correction below).
 - **Root cause #1:** `HCommRes 24-6` has a genuinely empty title on `cnmileg.net`; OCD requires
   `minLength: 1`, so the scraper crashed on this exact bill every run and silently dropped every
   bill after it in iteration order (139 files = the partial haul before the crash). Fix: fall
   back to the bill's own identifier as the title when the site gives us nothing.
-- **Root cause #2 (found via testing #1):** fixing the title crash surfaced a second, previously
-  -hidden bug on the *same* bill — `cnmileg.net`'s "Number" cell renders it as `HCommRes24-6`
-  (no space) instead of the normal `HB 123`-style spacing, breaking
-  `bill_type_map[bill_id.split(" ")[0]]`'s lookup (`KeyError: 'HCommRes24-6'`). Only affects the
-  lower-chamber path. Fix: normalize `bill_id` to always have a space between type prefix and
-  number.
-- **Local test:** clean full run, 317 bills (vs. the 139-file fallback previously), exit 0, zero
-  tracebacks. Bonus: a *second* previously-unknown blank-title bill (`HCommRes 24-7`) also hit
-  the fallback cleanly — the fix generalizes, not just hardcoded to the one known case.
+- **Root cause #2:** `cnmileg.net`'s "Number" cell renders the same bill as `HCommRes24-6` (no
+  space) instead of the normal `HB 123`-style spacing on the lower-chamber path, breaking
+  `bill_type_map[bill_id.split(" ")[0]]`'s lookup (`KeyError: 'HCommRes24-6'`). Fix: normalize
+  `bill_id` to always have a space between type prefix and number.
+- **Correction, 2026-07-26:** this doc previously claimed root cause #2 was already fixed via a
+  commit `4f3af9c54` — that commit **never existed**, confirmed via `git log --all` on the fork.
+  Only the blank-title fix had actually been pushed; the local "317 bills, zero tracebacks"
+  result described below must have been run against uncommitted local changes that were lost.
+  Re-verified the underlying bug is still live in production (07-25 scheduled run: crashes on
+  `HCommRes 24-6` every retry, same 139-file fallback every time), then added the actual missing
+  fix (`cd8d39403`) before doing anything else with this branch.
+- **Confirmed via real GitHub Actions run, not just local** — explicit standard set 2026-07-26:
+  a local Docker test alone isn't sufficient confirmation anymore (see MI's arch-mismatch
+  mistake). Built `ghcr.io/tamara-builds/openstates-scrapers:mp-fix-test` for `linux/amd64`
+  explicitly (verified via `docker manifest inspect --verbose` before dispatching —
+  `"architecture": "amd64"`), pointed `mp-legislation`'s workflow at it, dispatched (run
+  `30188623954`). **Result: clean, first attempt** — `SCRAPE_EXIT_CODE: 0`,
+  `SCRAPE_FAILURE_TYPE: NONE`, `SCRAPE_TARBALL: present`, 321 real bills. Log shows both fixes
+  working live: `HCommRes 24-6 has no title on cnmileg.net, using identifier as a fallback` and
+  the same for `HCommRes 24-7`, zero tracebacks, zero `KeyError`, zero retries.
 - **Pushed:** yes, `origin/fix/mp-blank-title`
-- **Next:** decide upstream PR vs. custom-image-in-the-meantime (same pattern as AZ/GA). Update
-  `not-working.md`'s MP row once resolved either way.
+- **Next:** revert `mp-legislation`'s workflow back to `@main`/default docker-image (cleanup,
+  same as every other test-branch pattern), then open the upstream OpenStates PR — this is the
+  strongest-evidenced fix of the three (GA/MP/NH), ready to go. Update `not-working.md`'s MP row
+  once the PR is filed.
 
 ### fix/mi-digicert-intermediate — ❌ ABANDONED 2026-07-26, wrong diagnosis
 

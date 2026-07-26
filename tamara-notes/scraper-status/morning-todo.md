@@ -5,25 +5,34 @@ follow-ups. Started 2026-07-24 evening; most of the shrink-guard saga resolved s
 
 ## Do first, time-sensitive
 
-- **Commit-summary identifier-aware fix — MT and NH confirmed, USA still running.**
-  `fix/commit-summary-identifier-aware` (pushed to `origin`) fixes a *separate*, still-open bug
-  found while reviewing USA's shrink-guard test runs: the job-summary's "Commit Content" label
-  (not the shrink-guard itself, which is already fixed) was still using raw `git diff --shortstat`
-  insertions/deletions to decide "worth a look" vs "no net new content" — same raw-count blind
-  spot the shrink-guard used to have. Confirmed on USA: three consecutive commits, distinct bill
-  count flat at 17,574 the whole time, but each one flagged "⚠️ Net fewer files than last commit"
-  anyway, because stale-duplicate cleanup deletes old files without a 1:1 new file replacing them.
-  Fix compares distinct bill identifiers instead (same approach as the shrink-guard in
-  `scrape.sh`). Bundled into the same branch: a second fix for a bare-substring `"503"`/`"429"`
-  classifier bug (found live on NH — a cache-busting query-param timestamp coincidentally
-  contained "503", mislabeling a plain `S1_OUT_OF_SESSION` as `H4_SERVER_DOWN`).
-  **MT confirmed 2026-07-26**: re-scraped, 4,495 distinct bills flat, correctly labeled
-  "no net new content" instead of a false alarm. **NH confirmed 2026-07-26**: correctly reported
-  `S1_OUT_OF_SESSION` instead of `H4_SERVER_DOWN`, fell back to nightly (1,751 files) as designed,
-  overall `✅ Success`. **USA still running** (dispatched ~03:29 UTC 07-26, in progress) — once it
-  lands clean, revert MT/NH/USA's `openstates-scrape.yml` back to `@main` and merge the branch.
-- **NH's 6am-9pm ET block window is real** (confirmed from NH's own site logs) — don't let the
-  classifier fix above be misread as calling that into question. See `not-working.md`'s NH row.
+- **MP live GitHub Actions test in progress — first real (not just local) confirmation before
+  any upstream PR.** Re-checked `fix/mp-blank-title` before trusting it: found the doc's claimed
+  second commit (`4f3af9c54`, bill_id spacing normalization) had never actually been pushed —
+  only the blank-title fallback existed on the branch. Added the missing fix (normalizes
+  `HCommRes24-6` → `HCommRes 24-6` before the `bill_type_map` lookup that otherwise raises
+  `KeyError`), confirmed still-live in production via a fresh `2026-07-25` run (crashes on
+  `HCommRes 24-6` every single retry, same 139-file fallback every time — the bug is real and
+  current, not stale). Built `ghcr.io/tamara-builds/openstates-scrapers:mp-fix-test` explicitly
+  for `linux/amd64` this time (learning from MI's arch-mismatch mistake below — confirmed via
+  `docker manifest inspect --verbose` before dispatching), pointed `mp-legislation`'s workflow at
+  it, dispatched. **No upstream PR for MP/GA/NH until each has an actual confirmed live run** —
+  explicit ask, not optional: local Docker tests aren't good enough on their own anymore.
+
+## ✅ Commit-summary identifier-aware fix + 503/429 classifier fix — MERGED (PR #97, 2026-07-26)
+
+`fix/commit-summary-identifier-aware` fixed two bugs found while reviewing USA's shrink-guard
+test runs: (1) the job-summary's "Commit Content" label was still raw-file-count based (same
+blind spot the shrink-guard itself used to have, now compares distinct bill identifiers), and
+(2) a bare-substring `"503"`/`"429"` classifier bug (a cache-busting query-param timestamp on NH
+coincidentally contained "503", mislabeling a plain `S1_OUT_OF_SESSION` as `H4_SERVER_DOWN`).
+**All three test states confirmed clean:** MT (4,495 distinct bills flat, correctly labeled),
+NH (correctly reclassified `S1_OUT_OF_SESSION`), USA (17,574 distinct bills flat despite 18,373
+raw deletions vs. 9,229 insertions — exactly the false-alarm case this fix targets). MT/NH/USA's
+workflows reverted to `@main` before merging. PR #97 squash-merged, branch deleted.
+
+- **NH's 6am-9pm ET block window is still real** (confirmed from NH's own site logs) — the
+  classifier fix above doesn't call that into question, it just fixed an unrelated mislabel.
+  See `not-working.md`'s NH row.
 
 ## ✅ Shrink-guard duplicate-bloat bug — RESOLVED, merged to main
 
@@ -62,22 +71,33 @@ stuck — other "success"-reporting states could be silently frozen the same way
 - **AZ — ✅ resolved, merged, live in production.** `--fastmode` cache-poisoning bug (not the
   old cookie theory). Upstream PR [#5742](https://github.com/openstates/openstates-scrapers/pull/5742).
   AZ runs on a custom image until that merges — see `upstream-pr-todo.md`.
-- **GA — ✅ confirmed working locally** (176 bills, 280 vote events, exit 0, zero tracebacks).
-  `fix/ga-subjects-resilience`. Next: decide upstream PR vs. custom-image-in-the-meantime.
-- **MP — ✅ confirmed working locally** (317 bills vs. old 139-file fallback, zero tracebacks).
-  Two layered bugs on the same bill, both fixed. `fix/mp-blank-title`. Same next-step decision.
-- **NH — partially resolved.** `--fastmode` fix merged (see above). Separate time-based block
-  (6am-9pm ET) still real and unaddressed. Bonus: removed dead `verify=False` from 11 request
-  sites (`fix/nh-rate-limit`, not yet deployed anywhere).
-- **MI — 🔄 first live GitHub Actions test attempted 2026-07-26, blocked by an infra mistake, retesting.**
-  Bundled the missing DigiCert intermediate cert into the Docker CA store; verified `curl`/`requests`
-  get clean `HTTP 200` with real cert verification (previously failed on every path, confirmed both
-  locally and inside the built image). Built and pushed `ghcr.io/tamara-builds/openstates-scrapers:mi-fix-test`,
-  pointed `mi-legislation`'s workflow at it, dispatched — but the first image was built `arm64`-only
-  (local machine's native arch) and every attempt failed instantly with `exec format error` on
-  GitHub's `linux/amd64` runners, never even reaching `legislature.mi.gov` (nothing to do with the
-  DigiCert fix itself). Rebuilding with `docker buildx build --platform linux/amd64` and
-  re-dispatching. `fix/mi-digicert-intermediate` (on `tamara-builds/openstates-scrapers`).
+- **GA — confirmed working locally only** (176 bills, 280 vote events, exit 0, zero tracebacks),
+  **but the original `N2_CONNECTIVITY` crash hasn't recurred in any of the last 8 production runs**
+  (07-21 through 07-26, all land exactly 460 files, zero tracebacks) — genuinely was a one-off
+  transient blip. Can't get a live confirmation of the fix by watching production since production
+  isn't currently failing; local test is the best evidence available. `fix/ga-subjects-resilience`.
+  Still needs a live custom-image test before any upstream PR, same standard as MP.
+- **MP — re-verified 2026-07-25/26, one bug was missing, now both are fixed and being live-tested.**
+  See "Do first" above — the doc's claimed second fix was never actually pushed; added it, confirmed
+  the underlying crash is still happening in production daily, built a correct `linux/amd64` image,
+  dispatched a live test. `fix/mp-blank-title`.
+- **NH — `--fastmode` fix confirmed sufficient, extra RPM cap likely unnecessary.** Checked both
+  real completed scrapes since PR #95 merged (07-25 06:19 scheduled + 07-25 14:34 manual dispatch,
+  the latter at 10:34 ET — inside the block window): both landed clean, 1,751 files, zero errors,
+  `SCRAPE_TARBALL: present`. Per the original decision point, `fix/nh-rate-limit`'s extra
+  `SCRAPELIB_RPM=20` cap probably isn't needed — dropping `--fastmode` alone did it. The
+  `verify=False` cleanup (11 request sites, same branch) is still worth a small separate PR
+  regardless. Separate time-based block (6am-9pm ET) still real and unaddressed by any of this.
+- **MI — ❌ DigiCert theory abandoned, wrong diagnosis.** Checked three real production runs'
+  full logs (07-22, 07-23, 07-25): zero occurrences of `SSLCertVerificationError` in any of them.
+  `mi/bills.py` already calls with `verify=False` for the actual bill-detail host (raw IP,
+  bypasses the cert chain entirely) — the missing DigiCert intermediate never actually blocks a
+  live run. `fix/mi-digicert-intermediate` branch deleted, test image and workflow override
+  removed. **Real root cause found:** `dateutil.parser.ParserError: Unknown string format:
+  4/29/2025<` at `mi/bills.py:118` — a malformed date cell (stray unescaped `<`) on HB 4401,
+  crashes every retry, every run since 07-23, discards partial data, falls back to nightly.
+  Fixed on `fix/mi-date-parsing` (extracts just the date portion via regex before parsing, in
+  both `scrape_actions` and `scrape_votes`) — local Docker test in progress.
 - **AR, NV, OR, MN, CT, OH, PA — ✅ all confirmed healthy**, ready to promote out of
   `not-working.md` into `working-in-session.md`/`working-out-of-session.md`.
 - **NM** — issue was already closed by the maintainer 07-02; no PR was ever actually filed
