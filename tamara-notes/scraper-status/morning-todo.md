@@ -3,6 +3,15 @@
 Everything pending across the scraper-status folder, in one place — not just the upstream PR
 follow-ups. Started 2026-07-24 evening; most of the shrink-guard saga resolved same night.
 
+## 🚨 Start here: `critical-merge-conflict-corruption.md`
+
+Found 2026-07-26 night: GA's committed bill data was silently corrupted with unresolved git
+merge-conflict markers for 5 days (all 352 `bill_*.json` files, unparseable garbage, nothing
+caught it). Root cause traced to the conflict-resolution path in `action.yml`/`scrape.sh`. GA
+itself is fixed as a side effect, but the underlying bug isn't fixed, and it's unknown whether
+other states hit the same thing. Full writeup and priority-ordered next steps in
+`critical-merge-conflict-corruption.md` — read that before anything else below.
+
 ## Recurring maintenance (do this daily, not just once)
 
 - **Clear out local Docker/scraper working files on Tamara's MacBook.** Local test runs (MI, MP,
