@@ -18,35 +18,23 @@ Last audited: **2026-07-21** (full 56-state pass — see `actions/pipeline-manag
 this session). States with a current problem are listed first, grouped by what kind of action they
 need. Healthy states are a compact table at the bottom.
 
-## Session status at a glance (22 states)
+## Session status at a glance (9 states)
 
 In/out of session per LegiScan's `session-calendar-2026.md` (as of 2026-07-13, cross-checked
 2026-07-24 in `session-dates-comparison.md`).
 
 | State | In/Out of Session | Status |
 |---|---|---|
-| AR | Out | Looked fine 07-21 (6 files, matches 2 genuinely-live 2026S1 bills) — not yet re-marked `✅` in the newer per-state table, borderline "working" but keeping it here until confirmed. |
-| AZ | Out | ✅ Resolved 2026-07-24 — real cause was `--fastmode` cache poisoning, not the cookie bug. See dedicated writeup below and PR [#5742](https://github.com/openstates/openstates-scrapers/pull/5742). |
-| CT | Out | ✅ Confirmed clean 2026-07-24 (re-verified via identifier check: 1,283 bill files, 1,283 distinct, zero dupes) — the 07-21 clear+rescrape held. Ready to promote to `working-out-of-session.md`. |
-| FL | Out | 🔧 Scraper fixes done, awaiting upstream merge. All 3 root causes (bot detection, silent timeout hangs, single-bill failures crashing the whole session) fixed and verified live in PR [#5724](https://github.com/openstates/openstates-scrapers/pull/5724), pushed + commented 2026-07-26. `BillDetail` itself still deliberately not covered (open question). Separately: shrink-guard duplicate-bloat bug found 07-25 already resolved (fix merged to govbot `main`, FL's workflow auto-picks it up). Re-verification run in progress ([30185187734](https://github.com/govbot-openstates-scrapers/fl-legislation/actions/runs/30185187734)) combining both fixes. |
-| GA | Out | `N2_CONNECTIVITY` — no prior history of this, looks transient. |
-| MA | **In** | 🔄 Had the shrink-guard duplicate-bloat bug (50,183 files, only 11,123 distinct — worst ratio found, ~4.5x). Fix merged to `main` 2026-07-25; MA's own live-test run (self-hosted, ~11hr typical) was still finishing as of the merge — confirm it landed a clean `"🕷️ Scrape data for ma"` commit. |
-| MI | Out | 🔄 Fix in progress 2026-07-24 (`fix/mi-digicert-intermediate`, `tamara-builds/openstates-scrapers` fork) — bundled the missing DigiCert intermediate into the Docker image's CA store. Verified directly: curl/Python `requests` now get clean `HTTP 200` from `legislature.mi.gov` with real cert verification. Live local scrape test in progress, 93+ bills saved and climbing as of last check (previously 0, always). See `pending-branches.md`. |
-| MN | Out | `N4_DNS_FAILURE`, but got a substantial partial haul (5,314 files) — likely transient, hit late in the run. |
-| MO | Out | ✅ Confirmed clean 2026-07-25 — shrink-guard identifier-check fix (merged to `main`) landed 3,158 real bills, replacing a 22,015-file bloated baseline. A later run correctly held back on a small genuine drop (guard working as designed). |
-| MP | Out | `S6_VALIDATION` — known blank-title OCD crash, fix identified, not yet filed upstream. |
-| MT | Out | ✅ Confirmed clean 2026-07-25 — the "1-2% duplication, cause still open" note was wrong; a full census found 2,529 of 4,495 real bills had a stale duplicate (56%, fully explaining the gap). Shrink-guard identifier-check fix (merged to `main`) landed 4,495 real bills twice now, replacing a 37,555-file bloated baseline. |
+| AZ | Out | ✅ Resolved 2026-07-24, live on custom image pending upstream merge. Real cause was `--fastmode` cache poisoning, not the cookie bug. PR [#5742](https://github.com/openstates/openstates-scrapers/pull/5742). |
+| FL | Out | 🔧 Scraper fixes done, awaiting upstream merge. All 3 root causes (bot detection, silent timeout hangs, single-bill failures crashing the whole session) fixed and verified live in PR [#5724](https://github.com/openstates/openstates-scrapers/pull/5724), pushed + commented 2026-07-26. `BillDetail` itself still deliberately not covered (open question). Long-running verification (`fl-fix-test`, local + a queued GitHub Actions run) still in progress as of 2026-07-26 morning — local run is actively handling `flhouse.gov` bot-detection gracefully (skip + retry-next-run) exactly as designed, good sign. |
+| GA | Out | ✅ Likely resolved 2026-07-26, confirming. Original `N2_CONNECTIVITY` crash (`fix/ga-subjects-resilience`, unprotected `get_token()` call) hasn't recurred in 8 straight runs (07-21 through 07-26) — was genuinely a one-off. Separately, GA's 06:30 run hit a *different*, unrelated bug: PR #97's new commit-summary code crashed on a malformed `bill_*.json` file, silently losing an otherwise-good commit (exit 123, zero output). Fixed same night (PR #98, merged) and GA re-dispatched — confirm the re-dispatch landed clean. `fix/ga-subjects-resilience` itself still needs a live GitHub Actions test before any upstream PR (same standard as MP), since production hasn't been failing to prove it against. |
+| MA | **In** | 🔄 Still unconfirmed as of 2026-07-26 morning. Had the shrink-guard duplicate-bloat bug (50,183 files, only 11,123 distinct — worst ratio found, ~4.5x), fix merged 07-25. Several manually-dispatched runs since got cancelled before finishing (~30-45min in, not the full ~11hr); timeout bumped from 12h to 2 days and re-triggered — one run `in_progress` since 03:38, another queued behind it. |
+| MI | Out | 🔄 Real root cause found and being fixed live, 2026-07-26. Not a cert issue (see `pending-branches.md` for the abandoned DigiCert theory) — a `dateutil.parser.ParserError` on a malformed date cell (HB 4401), fixed on `fix/mi-date-parsing`. Local Docker test confirmed clean (3,884 bills, first complete MI scrape ever), but the first live GitHub Actions test found a *second* bug on the same bill (empty action description, different `ScrapeValueError`) that hadn't reproduced locally — fixed and re-dispatched, second live test in progress. Good concrete case for why local-only testing isn't sufficient. |
+| MP | Out | ✅ Resolved 2026-07-26, live on custom image pending upstream merge (same pattern as AZ). Two bugs on `HCommRes 24-6`/`24-7` (blank title + unspaced bill_id breaking a lookup) — confirmed via a real GitHub Actions run (321 bills, zero tracebacks), not just local. Upstream PR [#5744](https://github.com/openstates/openstates-scrapers/pull/5744) + issue [#1394](https://github.com/openstates/issues/issues/1394) filed. |
 | NE | Out | `H3_RATE_LIMITED`, likely shared-proxy congestion rather than a new site-specific block; not yet retried on genuine self-hosted. |
-| NH | Out | `H3_RATE_LIMITED` — turns out to be two separate issues, not one (found 2026-07-24, see full writeup below and `pending-branches.md`): (1) the site chokes under our unthrottled `--fastmode` request burst even at 2:27am ET, well outside the known block window — fix merged (`fix/nh-skip-fastmode`, PR #95, live on `main`); (2) a same-day test squarely inside the 6am-9pm ET window failed instantly on the very first request — a harder, different failure than (1), consistent with the original block-window theory after all. **The re-test for (1) happens automatically tonight** — NH's cron (`0 4 * * *` UTC = midnight ET) is outside the block window and its workflow already points at `@main`, so no manual dispatch needed. That run will *not* include the fork-side `SCRAPELIB_RPM=20` extra (`fix/nh-rate-limit`, never deployed to NH's actual workflow) — check in the morning whether dropping `--fastmode` alone was enough. **Update 2026-07-26: the 6am-9pm ET block window itself is still real** (confirmed directly from NH's own site logs, not just inferred from run timing) — nothing here changes that. What changed is a *different* run's failure label: a manually-dispatched run at 22:25 ET (`run 30184528088`, outside the block window) got tagged `H4_SERVER_DOWN`, which looked like a new instant-fail mode outside the window. Turned out to be a **classifier false positive**: the actual error on all 3 retry attempts was a plain `ScrapeError: no objects returned`, misclassified because `scrape.sh`'s failure-type grep did a bare substring match on `"503"`, which coincidentally appears inside NH's cache-busting query param (`?x=<timestamp>`) on every logged request URL. Fixed on `fix/commit-summary-identifier-aware` (anchored the `503`/`429` regexes to require non-digit boundaries). With NH's 2026 session already over (ended 2026-06-04/06-30, see `session-dates-comparison.md`), "no objects returned" outside the block window is exactly the expected `S1_OUT_OF_SESSION` behavior, not evidence of anything new — the mislabel just made it look scarier than it was. |
+| NH | Out | ✅ Resolved 2026-07-26 (moved to `working-out-of-session.md`) — dropping `--fastmode` (PR #95) confirmed sufficient via two real completed scrapes, `fix/nh-rate-limit`'s extra RPM cap likely unneeded. **The 6am-9pm ET block window is still real and separately unaddressed** (confirmed from NH's own site logs) — see `pending-branches.md`. |
 | NM | Out | Intermittent FTP server issue (confirmed via direct `curl` testing) — not a permanent dead end, just unlucky timing on the last run. |
-| NV | Out | Looked fine 07-21 (64 files, matches biennial no-regular-session-until-2027 expectation) — not yet re-marked `✅`, keeping here until confirmed. Separate known ~1,000+ bill backfill gap from the 2025 session. |
-| OH | **In** | ✅ Confirmed clean 2026-07-24 (re-verified via identifier check: 2,452 bill files, 2,452 distinct, zero dupes) — the 07-21 clear+rescrape held. Ready to promote to `working-in-session.md`. |
-| OR | Out | Looked fine 07-21 (308 files, consistent with 07-02 baseline) — not yet re-marked `✅`, keeping here until confirmed. |
-| PA | **In** | ✅ Confirmed clean 2026-07-24 (re-verified via identifier check: 4,857 bill files, 4,857 distinct, zero dupes) — the 07-21 clear+rescrape held. Ready to promote to `working-in-session.md`. |
-| PR | Out | ✅ Confirmed clean 2026-07-25 — shrink-guard identifier-check fix (merged to `main`) landed cleanly, replacing a 23,866-file bloated baseline (only 5,115 were real). |
-| USA | **In** | ✅ Confirmed clean 2026-07-25 — shrink-guard identifier-check fix (merged to `main`) landed 17,574ish real bills twice now, replacing a 48,714-file baseline (half was stale duplicates). |
-| VI | **In** | Source server itself offline (`billtracking.legvi.org:8082`) — not a code or hosting problem, fails on every path since the site is down. |
-| WA | Out | ✅ Confirmed clean 2026-07-25 — was frozen since `2026-07-24T04:06:15Z` (silently reporting "success" on every scheduled run while landing zero new data). Shrink-guard identifier-check fix (merged to `main`) unfroze it, replacing a 6,153-file baseline (only 3,411 were real) with a clean commit. |
+| VI | **In** | Source server itself offline (`billtracking.legvi.org:8082`) — not a code or hosting problem, fails on every path since the site is down. Genuine dead end, not actionable on our end. |
 
 **Read before acting on any row below:** a "current problem" today doesn't always mean something is
 newly broken — several rows below are long-known issues that just look scary out of context (see the
@@ -350,13 +338,16 @@ far, but nothing else has been specifically checked. See
 
 Found while reviewing `archived_docs/2026-07-14-recovery-summary.md` and
 `archived_docs/2026-07-21-session-handoff.md` for anything that fell out of current tracking.
-**None of these have been re-checked as of 2026-07-26** — some may already be fixed or
-superseded; they're listed here so they don't get lost, not as confirmed-current problems.
+**Update 2026-07-26 morning:** quick-checked what's feasible without a deeper investigation.
 
-- **Guam (GU) — each bill saved ~3x per run.** Wasted requests, no data loss. Root cause was
-  identified back on 07-14 but a fix was never filed upstream. Not mentioned anywhere else in
-  current tracking; GU only appears in `working-in-session.md` with no notes.
-- **ID/MD/UT/WY — undercounting bug, distinct from their (already-fixed) self-hosted/IP issue.**
+- **Guam (GU) — ✅ doesn't reproduce.** Checked a recent run directly: 831 bills reported,
+  833 total files — essentially 1:1, not the ~3x described in 07-14's doc. Either already
+  fixed or the ratio was never this severe; no action needed right now.
+- **SD placeholder-HTML format preference — ✅ looks fixed.** Checked a real extracted file in
+  `govbot-data/sd-legislation`: `Media Type: application/pdf` with genuine bill text, not the
+  JS-rendered placeholder garbage the 07-21 doc described. Using the working PDF path correctly.
+- **ID/MD/UT/WY — still genuinely unverified, needs real investigation (not a quick check).**
+  Undercounting bug, distinct from their (already-fixed) self-hosted/IP issue.
   "Only 'active' bills returned — completed sessions undercounted." Root cause confirmed for
   Wyoming (the state API filters out signed/enrolled bills); same pattern suspected but
   unconfirmed for ID/MD/UT. These four states currently show up in `working-out-of-session.md`
