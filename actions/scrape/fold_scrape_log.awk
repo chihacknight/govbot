@@ -12,9 +12,15 @@
 #    format, generic across every state, not FL-specific.
 # 2. Python's own `warnings.warn()` output (DeprecationWarning,
 #    InsecureRequestWarning, etc.) -- a completely different code path than
-#    `logging`, always exactly two lines ("/path/to/lib.py:1064: XWarning:
-#    message" then "  warnings.warn(..."), with no per-line prefix at all.
-#    This is generic library/runtime noise about the codebase's own
+#    `logging`, with no per-line prefix at all. Usually just two lines
+#    ("/path/to/lib.py:1064: XWarning: message" then "  warnings.warn(...");
+#    but if the warning's own message spans multiple lines (confirmed on a
+#    real run -- google-auth's Python 3.9 EOL notice wraps across 3 lines),
+#    everything up to the actual source-line continuation (always indented
+#    with exactly two spaces, per Python's own default formatter) gets folded
+#    too, capped at MAX_PYWARNING_BLOCK_LINES so unrecognized content can't
+#    get stuck folding forever. This is generic library/runtime noise about
+#    the codebase's own
 #    housekeeping (deprecated APIs, disabled SSL verification, unsupported
 #    Python version) repeated on every single request -- not a signal about
 #    anything happening in the scrape itself, unlike openstates' own
@@ -37,7 +43,9 @@ BEGIN {
   in_group = 0
   chunk_start_epoch = -1
   MAX_CHUNK_SECONDS = 300
-  prev_was_pywarning_header = 0
+  in_pywarning_block = 0
+  pywarning_block_lines = 0
+  MAX_PYWARNING_BLOCK_LINES = 20
   last_known_epoch = -1
   last_known_time = ""
 }
@@ -59,13 +67,21 @@ function open_group(label) {
   is_info = 0
   is_pywarning = 0
 
-  if (prev_was_pywarning_header) {
-    # the "  warnings.warn(...)" continuation line -- always fold, whatever it says
+  if (in_pywarning_block) {
     is_pywarning = 1
-    prev_was_pywarning_header = 0
+    pywarning_block_lines++
+    # Python's default warnings formatter always ends with the actual source
+    # line, indented with exactly two spaces -- a multi-line message's own
+    # wrapped text is whatever the message happens to use (commonly more than
+    # two spaces, per google-auth's EOL notice), so this reliably distinguishes
+    # "still inside the message body" from "this is the final line."
+    if (line ~ /^  [^ ]/ || pywarning_block_lines >= MAX_PYWARNING_BLOCK_LINES) {
+      in_pywarning_block = 0
+    }
   } else if (line ~ /^\/[^ ]*:[0-9]+: [A-Za-z_]+Warning: /) {
     is_pywarning = 1
-    prev_was_pywarning_header = 1
+    in_pywarning_block = 1
+    pywarning_block_lines = 0
   } else if (substr(line, 3, 1) == ":" && substr(line, 6, 1) == ":" && substr(line, 9, 5) == " INFO") {
     h = substr(line, 1, 2) + 0
     m = substr(line, 4, 2) + 0
