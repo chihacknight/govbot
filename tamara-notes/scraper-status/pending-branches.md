@@ -185,31 +185,34 @@ image with the cert bundled was solving a problem that doesn't manifest in pract
 
 See `fix/mi-date-parsing` below — the actual fix for MI's real, reproducible blocker.
 
-### fix/mi-date-parsing — ✅ confirmed via local Docker test 2026-07-26, first-ever complete MI scrape
+### fix/mi-date-parsing — 🔄 second bug found via live test, re-testing 2026-07-26
 
-- **Commit:** `e68079346` — extracts just the date portion (`\d{1,2}/\d{1,2}/\d{4}`) from
+- **Commit 1 (`e68079346`):** extracts just the date portion (`\d{1,2}/\d{1,2}/\d{4}`) from
   History table date cells before handing to `dateutil.parser.parse()`, in both
   `scrape_actions` and `scrape_votes` (same table, same bug, both call sites fixed).
-- **Root cause:** some action/vote rows' date cells carry a stray, unescaped `<` right after
+- **Root cause 1:** some action/vote rows' date cells carry a stray, unescaped `<` right after
   the date (e.g. `"4/29/2025<"`), which `dateutil.parser.parse()` can't handle. Confirmed
   reproducible on HB 4401 — every scheduled run since 2026-07-23 crashed on this exact bill.
-- **Verified:** regex extraction tested against the exact malformed string plus normal-format
-  dates (`4/29/2025<`, `4/29/2025`, `12/1/2025<br`, `1/1/2026`) — all parse to the correct date,
-  well-formed dates unaffected.
 - **Local Docker test: ✅ complete, clean.** Ran ~2 hours, finished 2026-07-26. **3,884 real
   bills, 5,097 total JSON files** — matches almost exactly the 07-22 GitHub Actions run that got
-  blocked by the old raw-count shrink-guard (also 5,097 files), confirming this is genuinely the
-  full session. Zero tracebacks during the actual scrape (HB 4401 and every other bill saved
-  cleanly) — the only exception anywhere in the log is an unrelated Postgres connection error
-  in the report-saving step *after* scraping finishes (no local DB configured for this
-  standalone test, not a real problem). MI has never produced a real file before this.
+  blocked by the old raw-count shrink-guard (also 5,097 files). Zero tracebacks during the
+  actual scrape (HB 4401 and every other bill saved cleanly locally).
+- **First live GitHub Actions test (run 30205750040): ❌ failed — a second, different bug
+  on the same bill.** HB 4401 crashed again, this time on `ScrapeValueError: '' is too short`
+  for `actions[1].description` — a *different* action row in the same bill's malformed History
+  table has an empty description cell. OCD requires `minLength: 1`. Didn't reproduce locally
+  (unclear why — possibly a difference in exactly what `legislature.mi.gov` served between the
+  two test runs), only surfaced on the real infrastructure run. Exactly why the live-test
+  standard matters: this would not have been caught by the local test alone.
+- **Commit 2 (`76b55a323`):** skip an action row entirely if its description is empty, rather
+  than crashing or fabricating text the site didn't provide.
+- **Second live GitHub Actions test: 🔄 in progress** — rebuilt `mi-date-fix-test`
+  (`linux/amd64`, verified via `docker manifest inspect --verbose`), re-dispatched
+  (run [30206081122](https://github.com/govbot-openstates-scrapers/mi-legislation/actions/runs/30206081122)).
 - **Pushed:** yes, `origin/fix/mi-date-parsing`
-- **Next:** same standard as MP — needs a real live GitHub Actions confirmation (not just
-  local) before deciding upstream PR vs. custom-image-in-the-meantime. Local test alone isn't
-  sufficient per the standard set today.
-- **Next:** confirm the local test clears HB 4401 without crashing and gets a real final bill
-  count, then decide upstream PR vs. custom-image-in-the-meantime (same pattern as AZ/GA/MP).
-  Update `not-working.md`'s MI row once resolved either way.
+- **Next:** confirm this second live test lands clean before deciding upstream PR vs.
+  custom-image-in-the-meantime (same pattern as AZ/GA/MP). Update `not-working.md`'s MI row
+  once resolved either way.
 
 ### fix/ga-subjects-resilience — ✅ confirmed working locally (176 bills, 280 vote events, exit 0, zero tracebacks)
 

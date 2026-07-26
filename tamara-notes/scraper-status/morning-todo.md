@@ -108,10 +108,12 @@ stuck — other "success"-reporting states could be silently frozen the same way
   4/29/2025<` at `mi/bills.py:118` — a malformed date cell (stray unescaped `<`) on HB 4401,
   crashes every retry, every run since 07-23, discards partial data, falls back to nightly.
   Fixed on `fix/mi-date-parsing` (extracts just the date portion via regex before parsing, in
-  both `scrape_actions` and `scrape_votes`). **Local Docker test confirmed clean 2026-07-26:**
-  3,884 real bills, 5,097 total files (first complete MI scrape ever), zero tracebacks during
-  the scrape itself. Still needs a real live GitHub Actions confirmation (same standard as MP)
-  before deciding upstream PR vs. custom-image.
+  both `scrape_actions` and `scrape_votes`). **Local Docker test clean 2026-07-26:** 3,884 real
+  bills, 5,097 total files, zero tracebacks locally. **First live GitHub Actions test failed
+  anyway** — a second, different bug on the same bill (HB 4401): an empty action description,
+  `ScrapeValueError: '' is too short`, didn't reproduce locally. Fixed (`76b55a323`, skip
+  empty-description action rows) and re-dispatched — this is exactly why the live-test standard
+  matters, the local test alone would have missed this. Second live test in progress.
 - **AR, NV, OR, MN, CT, OH, PA — ✅ all confirmed healthy**, ready to promote out of
   `not-working.md` into `working-in-session.md`/`working-out-of-session.md`.
 - **NM** — issue was already closed by the maintainer 07-02; no PR was ever actually filed
