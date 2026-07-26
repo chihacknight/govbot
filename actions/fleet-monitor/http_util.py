@@ -37,9 +37,13 @@ class _StripAuthOnCrossHostRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         new = super().redirect_request(req, fp, code, msg, headers, newurl)
         if new is not None:
-            origin = urllib.parse.urlparse(req.full_url).hostname
-            target = urllib.parse.urlparse(newurl).hostname
-            if origin != target:
+            # Scheme and port, not just host: a same-host https→http redirect
+            # would otherwise forward a bearer token in cleartext.
+            def identity(url):
+                parsed = urllib.parse.urlparse(url)
+                return (parsed.scheme, parsed.hostname, parsed.port)
+
+            if identity(req.full_url) != identity(newurl):
                 for key in [k for k in new.headers if k.lower() == "authorization"]:
                     del new.headers[key]
         return new

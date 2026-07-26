@@ -171,7 +171,7 @@ the offsets are assigned in event-time order within each stream.
 | `GRAFANA_LOGS_USER` / `GRAFANA_LOGS_KEY` | logs instance ID / access-policy token (`logs:write`; also `logs:read` if you run `probe-loki`, whose query-back reads the entries back) |
 | `GRAFANA_QUERY_URL` | Prometheus API base, `https://prometheus-…/api/prom` (live-check only) |
 | `GRAFANA_QUERY_USER` / `GRAFANA_QUERY_KEY` | Prometheus instance ID / token (`metrics:read`, live-check only) |
-| `GRAFANA_DASHBOARD_URL` | stack base URL, `https://<stack>.grafana.net` (`check-dashboard` only) |
+| `GRAFANA_DASHBOARD_URL` | stack base URL, `https://<stack>.grafana.net` (`check-dashboard`; also the optional deep-link base for `provision-alerts`, which defaults to `GRAFANA_ALERTS_URL`) |
 | `GRAFANA_DASHBOARD_KEY` | service-account token with dashboard write (`check-dashboard` only; **bearer**-authed, unlike the Basic-auth push endpoints) |
 | `GRAFANA_ALERTS_URL` | stack base URL, `https://<stack>.grafana.net` (`provision-alerts` only) |
 | `GRAFANA_ALERTS_KEY` | service-account token with **alerting write** and datasource read (`provision-alerts` only; bearer-authed) |
@@ -298,7 +298,7 @@ Missing credentials exit 0 with a skip notice, so an offline run passes without 
 
 ## Alerting: rules and contact points, as code
 
-Three rules at launch, committed the same way the dashboard is — built as data by
+Four rules, committed the same way the dashboard is — built as data by
 [alerting.py](alerting.py), rendered into [alerting/](alerting/), applied by
 `provision-alerts`:
 
@@ -307,6 +307,22 @@ Three rules at launch, committed the same way the dashboard is — built as data
   **the collector itself has gone quiet** (`absent_over_time(fleet_collector_heartbeat_repos[6h])`).
   The first two carry the jurisdiction; the third is the dead-man switch that stops the
   other two from being quietly meaningless when nothing is being measured at all.
+- **A fourth rule covers the gap the other three leave**: repos that were swept but
+  reported no freshness series at all. `noDataState: OK` is right for a sweep that didn't
+  happen and wrong for a repo that silently stopped reporting, and per-series the two are
+  indistinguishable — so the rule counts instead, comparing the freshness series against
+  the collector's own heartbeat count. This is not hypothetical: a repo with **zero commits
+  on its data path** is the most stale a repo can be, and it emits nothing at all
+  (`fleet_poller` returns None on GitHub's 409 "Git Repository is empty", and the shipper
+  only emits an age when there is one). Without this rule that repo is permanently green
+  while its 46 neighbours report normally. The expected count comes from the heartbeat
+  rather than a hardcoded fleet size, so adding a jurisdiction raises both sides at once.
+
+  One caveat, stated plainly because it is the only threshold here not derived from
+  measurement: the tolerance is zero, which assumes every polled repo has at least one
+  data-path commit in steady state. If the first real sweep shows a persistent non-zero
+  gap, raise `COVERAGE_TOLERANCE` to that floor rather than deleting the rule — the point
+  is to notice the gap *changing*, and a rule that fires constantly notices nothing.
 - **Paused jurisdictions never page.** Both jurisdiction rules filter `paused="false"` in
   the query, so an out-of-session state whose scrape fails doesn't reach the notification
   policy, let alone a phone. This is the same rule the dashboard renders as a dimmed tile,
@@ -378,13 +394,31 @@ Two behaviours worth knowing before you run it against someone else's stack:
   deliberately **not** a Grafana `policies:` document: dropping such a file into a
   self-hosted provisioning directory would do exactly the damage this avoids. The rules and
   contact-point files are ordinary provisioning documents and can be dropped in as-is.
+- **The route is grafted FIRST, ahead of the root's existing children.** Grafana walks a
+  root's children in order and stops at the first match (`continue` defaults to false), so
+  appending would put the fleet's route behind any ordinary "everything else goes here"
+  catch-all sibling — every fleet alert delivered somewhere else, Slack and email silent,
+  and provisioning reporting success. A re-run replaces the fleet's own branch rather than
+  stacking a second one, matching on receiver name as well as matchers because Grafana
+  accepts and serves back more than one matcher encoding.
+- **A policy tree that can't be read is a hard stop, not an empty tree.** A 404 on
+  `/api/v1/provisioning/policies` means the token lacks notification-policy read scope, or
+  the base URL carries a path prefix — and writes may still land. Treating that as "no root
+  policy" would PUT the fleet's own receiver over a root nobody ever read.
 - **Everything is applied with `X-Disable-Provenance`,** so the rules stay editable in the
   UI. Without it Grafana marks API-provisioned resources read-only, and the first
-  maintainer who tries to silence a rule meets a greyed-out form with no explanation.
+  maintainer who tries to silence a rule meets a greyed-out form with no explanation. The
+  trade-off is real: nothing then stops an Editor on the stack from repointing the Slack
+  webhook or deleting the fleet's route, and there is no scheduled re-apply, so that drift
+  persists until someone re-runs the command. Re-running is the remedy, and it is cheap —
+  which is also why the render script runs this check whenever credentials are present
+  rather than behind an opt-in flag, unlike `live-check` and `check-dashboard`.
 
 Re-running is safe and idempotent: the rule group is one PUT keyed by folder and group
 name (so a rule deleted from the committed file actually disappears instead of lingering as
-an orphan), and the integrations are keyed by stable uids.
+an orphan), and the integrations are keyed by stable uids — including removal, so an
+integration dropped from the committed file is deleted from the stack rather than left
+delivering to an address the repo no longer mentions.
 
 ## Usage
 
@@ -623,19 +657,35 @@ dashboard link with a pinned time range and no `var-org` while the label-less he
 rule carries no `var-state` at all, Slack and email are two integrations on one contact
 point with resolved notifications on, the route groups by `alertname` alone, the policy
 document is deliberately not a Grafana `policies:` document, rendering is deterministic,
-and the four placeholders are exactly the four the provisioner resolves — plus a `grep`
-that fails the render if anything resembling a real webhook URL or address ever lands in
-the committed files. `provision-alerts` is locked like the other live paths: its
-credential-free skip touches the stack not at all, and against a fake Grafana it discovers
-the datasource uid, prefers an explicit one, refuses to guess between two Prometheus
-datasources, sends one idempotent rule-group PUT with the interval in seconds, carries
-bearer auth and `X-Disable-Provenance` on every write, ships no unresolved placeholder
-while leaving Grafana's own `{{ $labels.* }}` templating untouched, creates the
-integrations once and updates them in place thereafter, grafts its route under a stack's
-existing root policy (preserving that root's receiver, grouping, and unrelated children)
-and replaces rather than duplicates its own branch on a re-run, and fails loudly on a rule
-the stack stored but cannot evaluate — or never evaluates at all. The real provisioning run
-is opt-in: `FLEET_MONITOR_ALERT_CHECK=1 ./render-snapshots.sh` on a credentialed machine.
+and the four placeholders are exactly the four the provisioner resolves. Two of those
+assertions are worth naming because the obvious version of each proves nothing. The
+staleness threshold is checked by *parsing `alerting.py`* and requiring that it imports
+`STALE_HOURS` and never binds it — comparing the built rule against the constant passes
+just as happily when the module restates its own 48, and an identity check doesn't help
+either, since CPython interns small ints. And the committed contact point is checked
+*positively*, requiring every credential-bearing setting to still match
+`^\$[A-Z][A-Z0-9_]*$`; the host-and-TLD blacklist this replaced missed `.gov`, `.io`, any
+upper-case address, and every non-Slack webhook, which is how a weak check becomes a reason
+not to look.
+
+`provision-alerts` is locked like the other live paths, every scenario driven through the
+CLI with `--deadline-seconds 0` so the suite never waits on a clock. Against a fake Grafana
+it discovers the datasource uid, prefers an explicit one, refuses to guess between two
+Prometheus datasources, applies **the file on disk** rather than a fresh render (proven
+with a sentinel only present in a doctored copy), sends one idempotent rule-group PUT with
+the interval in seconds, carries bearer auth and `X-Disable-Provenance` on every write,
+ships no unresolved placeholder while leaving Grafana's own `{{ $labels.* }}` templating
+untouched, creates the integrations once, updates them in place thereafter and deletes the
+ones dropped from the file while leaving another contact point's receivers alone, grafts
+its route **first** under a stack's existing root policy (preserving that root's receiver,
+grouping, and unrelated children), replaces rather than duplicates its own branch in either
+matcher encoding, refuses to write a policy tree it could not read, and — the assertion the
+whole check exists for — waits for an evaluation *stamped after its own write*: a rule the
+stack has merely stored (`health: unknown`, or `ok` with a zeroed `lastEvaluation`), a pass
+inherited from a previous run, and a stale failure from the configuration this run just
+replaced are all refused. Its credential-free skip touches the stack not at all. The real
+provisioning run happens whenever credentials are present; opt out with
+`FLEET_MONITOR_ALERT_CHECK=0`.
 
 ```bash
 ../../scripts/before-snapshots.sh __snapshots__

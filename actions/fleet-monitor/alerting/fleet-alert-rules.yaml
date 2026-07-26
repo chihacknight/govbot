@@ -178,3 +178,60 @@ groups:
     noDataState: OK
     execErrState: Error
     isPaused: false
+  - uid: fleet-coverage-gap
+    title: Fleet coverage gap
+    condition: C
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 0
+        to: 0
+      datasourceUid: $GRAFANA_METRICS_DATASOURCE_UID
+      model:
+        editorMode: code
+        expr: last_over_time(fleet_collector_heartbeat_repos[6h]) - count(last_over_time(fleet_repo_data_commit_age_hours[6h]))
+        instant: true
+        intervalMs: 1000
+        maxDataPoints: 43200
+        range: false
+        refId: A
+    - refId: B
+      relativeTimeRange:
+        from: 0
+        to: 0
+      datasourceUid: __expr__
+      model:
+        type: reduce
+        reducer: last
+        expression: A
+        refId: B
+        settings:
+          mode: dropNN
+    - refId: C
+      relativeTimeRange:
+        from: 0
+        to: 0
+      datasourceUid: __expr__
+      model:
+        type: threshold
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 0
+        expression: B
+        refId: C
+    labels:
+      service: fleet-monitor
+    annotations:
+      summary: '{{ $values.B }} swept repos reported no data-commit age'
+      description: 'These repos were polled but shipped no freshness series at all, so the staleness rule
+        cannot see them: it resolves NoData to OK, which is right for a sweep that didn''t happen and
+        wrong for a repo that silently stopped reporting. A repo with zero commits on its data path —
+        the most stale a repo can be — looks exactly like this. Compare the freshness table''s row count
+        against the fleet size to find which.'
+      dashboard: $GRAFANA_DASHBOARD_URL/d/fleet-monitor-overview?from=now-24h&to=now
+    for: 10m
+    noDataState: OK
+    execErrState: Error
+    isPaused: false

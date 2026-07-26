@@ -517,7 +517,14 @@ def alerts(out_dir):
     show_default=True,
     help="Directory of committed alerting YAML to apply.",
 )
-def provision_alerts(alerting_dir):
+@click.option(
+    "--deadline-seconds",
+    type=int,
+    default=None,
+    help="How long to wait for the stack to evaluate the rules (default: two evaluation "
+         "intervals plus a margin). The offline suite passes 0 to poll exactly once.",
+)
+def provision_alerts(alerting_dir, deadline_seconds):
     """Apply the committed alert rules, contact point, and route to a real stack;
     skips without credentials.
 
@@ -555,9 +562,10 @@ def provision_alerts(alerting_dir):
         "GRAFANA_DASHBOARD_URL": os.environ.get("GRAFANA_DASHBOARD_URL", base).rstrip("/"),
         "GRAFANA_METRICS_DATASOURCE_UID": os.environ.get("GRAFANA_METRICS_DATASOURCE_UID", ""),
     }
+    deadline = {} if deadline_seconds is None else {"deadline_seconds": deadline_seconds}
     try:
         provision(alerting_dir, base, os.environ["GRAFANA_ALERTS_KEY"], values,
-                  echo=click.echo)
+                  echo=click.echo, **deadline)
     except RuntimeError as e:
         # RequestFailed and UnresolvedPlaceholder are both RuntimeErrors: a
         # rejected write, a stack that can't evaluate what it stored, and a

@@ -22,6 +22,7 @@ from dashboard import DASHBOARD_UID, LOOKBACK, STALE_HOURS
 RUN_FAILED_UID = "fleet-run-failed"
 STALE_UID = "fleet-data-stale"
 HEARTBEAT_UID = "fleet-collector-dead"
+COVERAGE_UID = "fleet-coverage-gap"
 
 # Evaluated far more often than the data changes (the collector ships hourly at
 # best), so a condition that clears is seen to clear quickly. The cost of a short
@@ -38,6 +39,15 @@ PENDING_PERIOD = "10m"
 # it, and that is the heartbeat rule's job to report — once — rather than 47
 # per-state pages all saying the same thing in a worse way.
 NO_DATA_STATE = "OK"
+
+# How many swept repos may report no data-commit age before the coverage rule
+# fires. Zero assumes every polled repo has at least one commit on its data path
+# in steady state — true of the fleet as configured, but it is an *assumption*,
+# not a measurement, and it is the one number here that was not derived from
+# observed behaviour. If the first real sweep shows a persistent non-zero gap,
+# raise this to the observed floor rather than deleting the rule: the point is to
+# notice the gap *changing*, and a rule that fires constantly notices nothing.
+COVERAGE_TOLERANCE = 0
 
 # The one label every fleet alert carries, and the only thing the fleet's
 # notification route matches on. That is what lets the route be grafted under a
@@ -226,6 +236,27 @@ def build_rule_group() -> dict:
                 ),
                 state_filtered=False,
             ),
+            _rule(
+                COVERAGE_UID,
+                "Fleet coverage gap",
+                # Swept repos, minus repos that reported an age. The collector
+                # publishes its own sweep size in the heartbeat, so the expected
+                # count is measured rather than hardcoded — a jurisdiction added
+                # to the pipeline-manager config raises both sides at once.
+                f"last_over_time(fleet_collector_heartbeat_repos[{LOOKBACK}]) - "
+                f"count(last_over_time(fleet_repo_data_commit_age_hours[{LOOKBACK}]))",
+                {"type": "gt", "params": [COVERAGE_TOLERANCE]},
+                summary="{{ $values.B }} swept repos reported no data-commit age",
+                description=(
+                    "These repos were polled but shipped no freshness series at all, so the "
+                    "staleness rule cannot see them: it resolves NoData to OK, which is right "
+                    "for a sweep that didn't happen and wrong for a repo that silently stopped "
+                    "reporting. A repo with zero commits on its data path — the most stale a "
+                    "repo can be — looks exactly like this. Compare the freshness table's row "
+                    "count against the fleet size to find which."
+                ),
+                state_filtered=False,
+            ),
         ],
     }
 
@@ -364,8 +395,6 @@ def _document(header: str, body: dict) -> str:
     is, what it queries, when it fires, what it says) and alphabetising that
     turns a reviewable document into a lookup table.
     """
-    import yaml
-
     return header + yaml.safe_dump(
         body, sort_keys=False, default_flow_style=False, width=100, allow_unicode=True
     )
