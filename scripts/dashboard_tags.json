@@ -1,25 +1,57 @@
 {
-  "description": "Demo keyword tag definitions for the Pages dashboard sample data. Mirrors the shape of the `tags:` section in govbot.yml (keyword-only mode). Real deployments should run `govbot tag` and let build_dashboard_data.py read the resulting tags/*.tag.json files instead.",
+  "description": "Keyword tag definitions used as a fallback by build_dashboard_data.py for any bill that produced no `govbot tag` embedding output (tags/*.tag.json). Tag names MUST stay identical to the keys in scripts/govbot-dashboard.yml so descriptions and the embedding/keyword taxonomies line up. Real deployments run `govbot tag` (embedding mode) via .github/workflows/deploy-docs.yml; this keyword set covers repos/sessions the tagger did not reach and the committed offline sample data.",
   "tags": {
     "health care": {
-      "description": "Health care, public health, and insurance coverage",
-      "include_keywords": ["health", "medicaid", "medicare", "insurance", "birthing", "pregnancy", "hospital", "medical"]
+      "description": "Health care, public health, insurance coverage, Medicaid/Medicare, hospitals, and medical services",
+      "include_keywords": ["health", "medicaid", "medicare", "insurance", "hospital", "medical", "prescription", "clinic", "provider", "mental health", "birthing"]
     },
-    "budget & taxes": {
-      "description": "Appropriations, taxation, fees, and public funds",
-      "include_keywords": ["appropriation", "appropriations", "tax", "fees", "revenue", "bonding", "budget", "funds"]
-    },
-    "environment & wildlife": {
-      "description": "Natural resources, wildlife, hunting, fishing, and energy",
-      "include_keywords": ["animal", "animals", "hunting", "fishing", "wildlife", "oil and gas", "snowmobile", "water", "energy", "environment"]
+    "housing": {
+      "description": "Housing affordability, tenants and landlords, evictions, homelessness, and zoning",
+      "include_keywords": ["housing", "rent", "rental", "tenant", "landlord", "eviction", "homeless", "zoning", "mortgage", "affordable housing"]
     },
     "education": {
-      "description": "Schools, universities, and education policy",
-      "include_keywords": ["education", "school", "schools", "university", "student", "teacher"]
+      "description": "Schools, universities, curriculum, teachers, students, and education policy",
+      "include_keywords": ["education", "school", "schools", "university", "college", "student", "teacher", "curriculum", "tuition", "classroom"]
+    },
+    "environment & climate": {
+      "description": "Environment, climate, clean energy, natural resources, water, wildlife, and pollution",
+      "include_keywords": ["environment", "climate", "emissions", "energy", "pollution", "wildlife", "water", "conservation", "renewable", "oil and gas", "hunting", "fishing"]
+    },
+    "labor & workers": {
+      "description": "Wages, workplace safety, unions, paid leave, unemployment, and employment protections",
+      "include_keywords": ["labor", "worker", "employee", "wage", "minimum wage", "union", "overtime", "paid leave", "unemployment", "workplace"]
+    },
+    "immigration": {
+      "description": "Immigration, refugees and asylum, citizenship, enforcement, and immigrant services",
+      "include_keywords": ["immigration", "immigrant", "refugee", "asylum", "citizenship", "deportation", "undocumented", "migrant", "visa"]
+    },
+    "criminal justice": {
+      "description": "Criminal law, sentencing, policing, prisons, bail, parole, and justice reform",
+      "include_keywords": ["criminal", "police", "policing", "prison", "incarceration", "sentencing", "bail", "parole", "probation", "felony"]
+    },
+    "elections & voting": {
+      "description": "Elections, voting rights, registration, ballots, redistricting, and campaign finance",
+      "include_keywords": ["election", "elections", "voting", "voter", "ballot", "registration", "redistricting", "campaign finance", "polling place"]
+    },
+    "budget & taxes": {
+      "description": "Appropriations, taxation, tax credits, fees, revenue, bonding, and public funds",
+      "include_keywords": ["appropriation", "appropriations", "tax", "taxes", "tax credit", "fees", "revenue", "bonding", "budget", "funds"]
+    },
+    "transportation": {
+      "description": "Roads, highways, transit, rail, vehicles, traffic safety, and infrastructure",
+      "include_keywords": ["transportation", "highway", "road", "transit", "rail", "vehicle", "traffic", "bridge", "driver license", "infrastructure", "snowmobile"]
+    },
+    "reproductive rights": {
+      "description": "Abortion, contraception, reproductive health care, pregnancy, and family planning",
+      "include_keywords": ["abortion", "reproductive", "contraception", "family planning", "pregnancy", "reproductive health", "fetal"]
+    },
+    "lgbtq": {
+      "description": "Rights and policies affecting LGBTQ people, gender identity, and sexual orientation",
+      "include_keywords": ["lgbtq", "transgender", "gender identity", "sexual orientation", "gender-affirming", "same-sex", "nonbinary"]
     },
     "government operations": {
-      "description": "Permitting, licensing, elections, and agency administration",
-      "include_keywords": ["permit", "permits", "license", "licenses", "registration", "election", "agency", "department"]
+      "description": "Permitting, licensing, agency administration, public records, procurement, and ethics",
+      "include_keywords": ["permit", "permits", "license", "licenses", "agency", "department", "public records", "procurement", "ethics", "administration"]
     }
   }
 }

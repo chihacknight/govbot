@@ -81,11 +81,38 @@
           "type": "string"
         },
         "examples": {
-          "description": "Example bill descriptions that would match this tag",
+          "description": "Example bill descriptions that would match this tag. Embedded alongside the description in semantic (embedding) tagging mode.",
           "type": "array",
           "items": {
             "type": "string"
           }
+        },
+        "include_keywords": {
+          "description": "Keywords that boost a bill's score toward this tag (and drive keyword-only mode when the embedding model is unavailable).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "exclude_keywords": {
+          "description": "Keywords that disqualify a bill from this tag when present.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "negative_examples": {
+          "description": "Example descriptions that should NOT match this tag; they subtract from the score in embedding mode.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "threshold": {
+          "description": "Minimum composite score for a bill to be assigned this tag (default 0.5).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
         }
       },
       "required": ["description"]

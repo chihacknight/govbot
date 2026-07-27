@@ -32,17 +32,49 @@ jobs:
         with:
           mdbook-version: 'latest'
 
-      # Fetch live legislation data and rebuild the dashboard's data.json
-      # before mdbook runs, so the fresh file is copied into the book.
-      # Failures fall back to the committed sample data instead of
-      # breaking the docs deploy.
+      # Install the govbot CLI so we can run the embedding tagger (`govbot tag`).
+      - name: Install govbot CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh | bash
+          echo "$HOME/.govbot/bin" >> "$GITHUB_PATH"
+
+      # The ~90MB all-MiniLM-L6-v2 ONNX model is downloaded once and reused
+      # across runs. Stable key => downloaded on the first run, restored after.
+      - name: Cache embedding model
+        uses: actions/cache@v4
+        with:
+          path: /tmp/govbot-model
+          key: govbot-minilm-onnx-v1
+
+      # Per-repo incremental state: the seen-bills ledger + a snapshot of the
+      # produced tag files. Keyed on the taxonomy hash so editing the topic list
+      # busts the cache (forces a full re-tag); the run-id suffix + restore-keys
+      # prefix means each run saves a fresh snapshot and restores the latest one.
+      - name: Cache incremental tag state
+        uses: actions/cache@v4
+        with:
+          path: /tmp/govbot-cache
+          key: govbot-tags-${{ hashFiles('scripts/govbot-dashboard.yml') }}-${{ github.run_id }}
+          restore-keys: |
+            govbot-tags-${{ hashFiles('scripts/govbot-dashboard.yml') }}-
+
+      # Fetch live legislation data, tag it with govbot's embedding model, and
+      # rebuild the dashboard's data.json before mdbook runs. Every stage that
+      # touches the network or the tagger degrades to a warning + the keyword
+      # fallback (scripts/dashboard_tags.json) or, ultimately, the committed
+      # sample data, so the docs deploy never breaks.
       - name: Build dashboard data from legislation repos
         env:
           GH_TOKEN: ${{ github.token }}
           DATA_ORG: govbot-openstates-scrapers
+          GOVBOT_DATA: /tmp/govbot-data
+          MODEL_DIR: /tmp/govbot-model
+          CACHE_DIR: /tmp/govbot-cache
+          DASHBOARD_CONFIG: ${{ github.workspace }}/scripts/govbot-dashboard.yml
+          FILTER_SCRIPT: ${{ github.workspace }}/scripts/filter_new_bills.py
         run: |
           set -uo pipefail
-          mkdir -p /tmp/govbot-data/repos
+          mkdir -p /tmp/govbot-data/repos /tmp/govbot-model /tmp/govbot-cache
           repos=$(gh repo list "$DATA_ORG" --limit 200 --json name --jq '.[].name' | grep -- '-legislation$') || true
           if [ -z "${repos:-}" ]; then
             echo "::warning::no *-legislation repos found in $DATA_ORG; keeping committed sample data"
@@ -52,6 +84,20 @@ jobs:
               git clone --quiet --depth 1 "https://github.com/$DATA_ORG/$r.git" "/tmp/govbot-data/repos/$r" \
                 || echo "::warning::failed to clone $DATA_ORG/$r"
             done
+
+            # Warm up the model in a single process BEFORE fanning out, so the
+            # parallel workers below don't race to download it. Empty stdin is
+            # fine: govbot tag downloads the model before reading any lines.
+            mkdir -p /tmp/govbot-warmup
+            cp "$DASHBOARD_CONFIG" /tmp/govbot-warmup/govbot.yml
+            ( cd /tmp/govbot-warmup && : | govbot tag --govbot-dir "$MODEL_DIR" ) \
+              || echo "::warning::embedding model warm-up failed; tagging may use keyword fallback"
+
+            # Tag each repo incrementally, 4 at a time. Repos are independent.
+            find /tmp/govbot-data/repos -mindepth 1 -maxdepth 1 -type d -name '*-legislation' -print0 \
+              | xargs -0 -r -P4 -I{} bash scripts/tag_dashboard_repo.sh {}
+            echo "tag files produced: $(find /tmp/govbot-data/repos -path '*/tags/*.tag.json' | wc -l)"
+
             python3 scripts/build_dashboard_data.py \
               --govbot-dir /tmp/govbot-data \
               --tags-config scripts/dashboard_tags.json \
