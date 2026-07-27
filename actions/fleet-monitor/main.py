@@ -579,6 +579,12 @@ def provision_alerts(alerting_dir, deadline_seconds):
         )
     except RuntimeError as e:
         raise click.ClickException(str(e)) from e
+    # The webhook is the credential this module is most careful about everywhere
+    # else, so it gets the same scheme check as the URLs above: Slack only issues
+    # https hooks, and a plain-http one has Grafana re-POST the hook path itself
+    # in cleartext on every alert, from its own egress where nobody will see it.
+    if not os.environ["SLACK_WEBHOOK_URL"].startswith("https://"):
+        raise click.ClickException("SLACK_WEBHOOK_URL must be https")
     values = {
         "SLACK_WEBHOOK_URL": os.environ["SLACK_WEBHOOK_URL"],
         "ALERT_EMAIL": os.environ["ALERT_EMAIL"],

@@ -27,8 +27,8 @@ import urllib.request
 import yaml
 
 from alerting import (CONTACT_POINT, CONTACT_POINTS_FILE, EVAL_INTERVAL, FOLDER,
-                      FOLDER_UID, POLICY_FILE, RULES_FILE, UnresolvedPlaceholder,
-                      PLACEHOLDER)
+                      FOLDER_UID, POLICY_FILE, ROUTE_LABEL, RULES_FILE,
+                      UnresolvedPlaceholder, PLACEHOLDER)
 from http_util import RequestFailed, request_with_retry
 
 # Editable in the UI after provisioning. The alternative is a maintainer meeting
@@ -41,6 +41,10 @@ from http_util import RequestFailed, request_with_retry
 PROVENANCE = {"X-Disable-Provenance": "true"}
 
 DURATION = re.compile(r"^(\d+)([smh])$")
+
+# `label<op>value`, anchored to the label name so an operator inside the value
+# cannot split it in the wrong place.
+LEGACY_MATCHER = re.compile(r"\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*(=~|!~|!=|=)\s*(.*)")
 
 # The top-level key each committed document must carry, checked before the first
 # write so a malformed one fails with a message rather than a KeyError halfway
@@ -67,6 +71,8 @@ def _seconds(duration) -> int:
     has to say which value was wrong, not print a traceback over a half-applied
     stack.
     """
+    if isinstance(duration, bool) or (isinstance(duration, int) and duration <= 0):
+        raise RuntimeError(f"{duration!r} is not a positive evaluation interval")
     if isinstance(duration, int):
         return duration
     match = DURATION.match(str(duration))
@@ -111,14 +117,23 @@ def check_stack_url(base, name, allow_path=False) -> str:
         )
     if not parsed.hostname:
         raise RuntimeError(f"{name} has no host: {base!r}")
-    if parsed.query or parsed.fragment or base.endswith(("?", "#")):
-        raise RuntimeError(f"{name} must be a bare origin: it carries a query or fragment")
+    try:
+        parsed.port
+    except ValueError:
+        raise RuntimeError(f"{name} has an unreadable port: {base!r}") from None
+    if parsed.query or parsed.fragment or parsed.params or base.endswith(("?", "#")):
+        # `params` too: urlunparse would silently drop a `;p` segment, so the
+        # deep link would point somewhere the operator did not configure.
+        raise RuntimeError(
+            f"{name} must be a bare origin: it carries a query, fragment, or path parameter"
+        )
     if parsed.path.strip("/") and not allow_path:
         raise RuntimeError(
             f"{name} must be a bare origin: the path {parsed.path!r} would make every "
             "API request 404, which reads as an empty stack"
         )
-    if parsed.scheme == "http" and urllib.request.getproxies().get("http"):
+    if parsed.scheme == "http" and urllib.request.getproxies().get("http") \
+            and not urllib.request.proxy_bypass(parsed.netloc):
         # The loopback exemption assumes nothing leaves the machine, and urllib
         # has no implicit localhost proxy bypass — with http_proxy set, the token
         # and the webhook go to the proxy host in cleartext.
@@ -306,6 +321,21 @@ def _check_shape(name, document):
         route = document["route"]
         if not isinstance(route, dict) or route.get("receiver") != CONTACT_POINT:
             _fail(name, f"'route.receiver' must be {CONTACT_POINT!r}")
+        # And it must match on exactly the fleet's own label. This route is
+        # grafted as the root's FIRST child, and a child with no matchers matches
+        # EVERY alert and stops there — so a policy file that lost its
+        # `object_matchers` in a bad merge or a half-copy would silently deliver
+        # the maintainers' entire alerting to this Slack webhook, and provisioning
+        # would report success. Anything grafted ahead of a stack's existing
+        # children has to be provably narrow, and this file is generated, so an
+        # exact match costs nothing.
+        if _matchers(route) != {(ROUTE_LABEL[0], "=", ROUTE_LABEL[1])}:
+            _fail(
+                name,
+                f"'route' must match exactly {ROUTE_LABEL[0]}={ROUTE_LABEL[1]} — it is grafted "
+                "as the root's first child, where a broader matcher swallows every alert on "
+                "the stack"
+            )
 
 
 def ensure_folder(stack):
@@ -328,13 +358,20 @@ def apply_contact_point(stack, document):
     Only integrations carrying this module's contact-point name are considered;
     another contact point's receivers are none of our business.
     """
+    points = stack.find("/api/v1/provisioning/contact-points") or []
+    if not isinstance(points, list):
+        raise RuntimeError(
+            f"unexpected contact-points response from the stack ({type(points).__name__}); "
+            "expected a list"
+        )
     on_stack = {
         point["uid"]: point
-        for point in (stack.find("/api/v1/provisioning/contact-points") or [])
+        for point in points
+        if isinstance(point, dict)
         # A uid is required, not assumed: a receiver returned without one would
         # otherwise key this dict under None and send a DELETE to `.../None` —
         # and mixing None with real uids makes the sort below raise instead.
-        if point.get("name") == CONTACT_POINT and point.get("uid")
+        and point.get("name") == CONTACT_POINT and point.get("uid")
     }
     applied, wanted = [], set()
     for point in document["contactPoints"]:
@@ -434,6 +471,15 @@ def read_policy_tree(stack):
             "is far likelier to be a response we don't recognise than a stack without one. "
             "Inspect /api/v1/provisioning/policies by hand."
         )
+    children = tree.get("routes") or []
+    if not isinstance(children, list) or any(not isinstance(c, dict) for c in children):
+        # Checked here, before any write: graft_route iterates these and a string
+        # would be walked character by character, raising AttributeError — not a
+        # RuntimeError, so it escapes the CLI's handler as a traceback.
+        raise RuntimeError(
+            "the stack's notification policy has a 'routes' value this module cannot read "
+            f"({type(children).__name__}). Inspect /api/v1/provisioning/policies by hand."
+        )
     return tree
 
 
@@ -444,13 +490,18 @@ def _matchers(route) -> set:
     string form Grafana still stores and serves back. Comparing only one of them
     means our own previous route can come back looking like somebody else's.
     """
-    normalised = {tuple(m) for m in route.get("object_matchers") or []}
+    normalised = set()
+    for triple in route.get("object_matchers") or []:
+        if isinstance(triple, (list, tuple)) and len(triple) == 3:
+            normalised.add(tuple(str(part) for part in triple))
     for raw in route.get("matchers") or []:
-        for op in ("=~", "!~", "!=", "="):
-            if op in raw:
-                key, value = raw.split(op, 1)
-                normalised.add((key.strip(), op, value.strip().strip('"')))
-                break
+        # Anchored to the label name rather than "first operator anywhere in the
+        # string": a value containing `!=` or `=~` would otherwise split in the
+        # wrong place and produce a triple resembling neither route.
+        match = LEGACY_MATCHER.match(str(raw))
+        if match:
+            key, op, value = match.groups()
+            normalised.add((key, op, value.strip().strip('"')))
     return normalised
 
 
@@ -482,11 +533,40 @@ def graft_route(stack, tree, route):
     delivery.
     """
     children = tree.get("routes") or []
+    mine = [child for child in children if _is_ours(child, route)]
     others = [child for child in children if not _is_ours(child, route)]
-    replaced = len(others) != len(children)
-    tree["routes"] = [route] + others
+
+    # A route we are replacing may have been extended in the UI — which is what
+    # X-Disable-Provenance exists to allow — so its children and mute timings
+    # come forward rather than being dropped on the floor.
+    inherited = {}
+    for child in mine:
+        for key in ("routes", "mute_time_intervals"):
+            if child.get(key) and not route.get(key):
+                inherited[key] = child[key]
+    grafted = {**route, **inherited}
+
+    tree["routes"] = [grafted] + others
     stack.write("/api/v1/provisioning/policies", tree, method="PUT")
-    return "replaced" if replaced else "added"
+
+    # Siblings preserved but now unreachable: ours sits first and does not set
+    # `continue`, so anything behind it matching the same alerts never fires. The
+    # module will not delete a route it did not write, but staying silent about
+    # one it has just disabled is the same harm by omission.
+    shadowed = [
+        child.get("receiver")
+        for child in others
+        if _matchers(child) and _matchers(child) <= _matchers(grafted)
+    ]
+    note = ""
+    if inherited:
+        note += f", carrying forward {'/'.join(sorted(inherited))}"
+    if shadowed:
+        note += (
+            f" — WARNING: {', '.join(sorted(set(shadowed)))} now sits behind the fleet route "
+            "and will no longer receive fleet alerts"
+        )
+    return ("replaced" if mine else "added") + note
 
 
 # Every health value Grafana reports for a rule it has actually run. A rule it

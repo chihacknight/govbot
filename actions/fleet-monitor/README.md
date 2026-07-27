@@ -394,7 +394,7 @@ datasource uid points at nothing, store it, and serve it back intact — the fai
 appears as `health: error` once evaluation runs, so a check that stops at the 200 is a
 check that passes while nothing works. Missing credentials exit 0 with a skip notice.
 
-Two behaviours worth knowing before you run it against someone else's stack:
+What to know before you run it against someone else's stack:
 
 - **The notification policy is grafted, never replaced.** Grafana's policy API has no
   partial update — a PUT swaps the entire root tree — so applying a root of our own would
@@ -410,17 +410,11 @@ Two behaviours worth knowing before you run it against someone else's stack:
   root's children in order and stops at the first match (`continue` defaults to false), so
   appending would put the fleet's route behind any ordinary "everything else goes here"
   catch-all sibling — every fleet alert delivered somewhere else, Slack and email silent,
-  and provisioning reporting success. A re-run replaces the fleet's own branch rather than
-  stacking a second one, identifying it by receiver **and** matchers, normalised across both
-  encodings Grafana serves back. An OR over the two deleted a maintainer's route that shared
-  only one — fleet alerts mirrored to their own on-call — and receiver alone deleted a second
-  route of theirs to this shared contact point. Both were reported as "replaced".
-- **A policy tree that can't be read, or has no root receiver, is a hard stop.** A 404 on
-  `/api/v1/provisioning/policies` means the token lacks notification-policy read scope, or
-  the base URL carries a path prefix — and writes may still land. So does an empty or
-  unfamiliar 200 body: every Grafana ships a default root receiver, so that is far likelier
-  to be a proxy or a gateway stub than a stack without a policy, and adopting it would make
-  the fleet's webhook that stack's catch-all for every alert it already runs.
+  and provisioning reporting success. Sitting first has a cost the run reports rather than
+  hides: a sibling matching the same alerts can no longer be reached, so provisioning names
+  it. And because the route is grafted ahead of everything, the committed policy file is
+  checked to match exactly `service=fleet-monitor` before it is applied — a route that lost
+  its matchers in a bad merge would match every alert on the stack and stop there.
 - **Everything is applied with `X-Disable-Provenance`,** so the rules stay editable in the
   UI. Without it Grafana marks API-provisioned resources read-only, and the first
   maintainer who tries to silence a rule meets a greyed-out form with no explanation. The
@@ -457,9 +451,12 @@ Two behaviours worth knowing before you run it against someone else's stack:
   the resolved webhook URL, itself a credential for posting to that channel. Credentials in
   the URL are refused too — every failed-request message embeds the URL it failed on, so one
   404 would put the token in a CI log — as are a query, a fragment, and a path prefix, which
-  would 404 every GET and make a populated stack read as empty.
-  `GRAFANA_DASHBOARD_URL` gets the same check when supplied: it is never contacted, so a
-  wrong value provisions cleanly and misdirects on-call staff indefinitely.
+  would 404 every GET and make a populated stack read as empty. `SLACK_WEBHOOK_URL` must be
+  https too: a plain-http hook has Grafana re-POST the hook path itself in cleartext on every
+  alert, from its own egress where nobody is watching. `GRAFANA_DASHBOARD_URL` gets the same
+  checks **bar the path prefix**, which a reverse-proxied Grafana needs for its links to
+  resolve and which is kept rather than refused; it is never contacted, so a wrong value
+  provisions cleanly and misdirects on-call staff indefinitely.
 
 One trust assumption worth stating. The deep link's state is `{{ urlquery $labels.state }}`,
 so a value carrying `&` or `#` cannot append or truncate query parameters. The Slack summary

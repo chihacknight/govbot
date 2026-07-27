@@ -2593,6 +2593,21 @@ for bad, why in (
     assert why in refused.output, (bad, refused.output)
     assert not calls, (bad, "sent a request before rejecting the base URL")
     assert "GLSA_secret" not in refused.output, refused.output
+# The loopback exemption assumes nothing leaves the machine, and urllib has no
+# implicit localhost proxy bypass — with http_proxy set and no_proxy not covering
+# it, the token and the webhook go to the proxy host in cleartext.
+proxied, calls = run({**CREDS, "GRAFANA_ALERTS_URL": "http://localhost:3000",
+                      "http_proxy": "http://proxy.example:8080", "no_proxy": None}, stack())
+assert proxied.exit_code != 0 and "http_proxy" in proxied.output, proxied.output
+assert not calls, "sent a request through a proxy before refusing"
+
+# A plain-http Slack webhook is refused: Grafana would re-POST the hook path
+# itself in cleartext on every alert, from its own egress.
+cleartext_hook, calls = run({**CREDS, "SLACK_WEBHOOK_URL": "http://hooks.example/x"}, stack())
+assert cleartext_hook.exit_code != 0 and "SLACK_WEBHOOK_URL" in cleartext_hook.output, \
+    cleartext_hook.output
+assert "hooks.example" not in cleartext_hook.output, cleartext_hook.output
+
 # An explicit dashboard URL gets the same treatment — it is never contacted, so
 # a wrong value provisions cleanly and misdirects on-call staff indefinitely.
 bad_link, calls = run({**CREDS, "GRAFANA_DASHBOARD_URL": "http://ui.example"}, stack())
@@ -2608,11 +2623,18 @@ assert check_stack_url("http://localhost:3000/", "X") == "http://localhost:3000"
 for filename, mangle in (
     (RULES_FILE, lambda d: d.update(groups=[{"name": "g", "rules": [{"title": "t"}]}])),
     (RULES_FILE, lambda d: d.update(groups="oops")),
+    (RULES_FILE, lambda d: d.update(groups=[{"name": "g", "rules": [{"uid": "u"}]}])),
     ("fleet-contact-points.yaml",
      lambda d: d.update(contactPoints=[{"name": CONTACT_POINT, "receivers": [{"type": "slack"}]}])),
     ("fleet-contact-points.yaml",
      lambda d: d.update(contactPoints=[{"name": "renamed", "receivers": []}])),
     ("fleet-notification-policy.yaml", lambda d: d.update(route={"receiver": "somewhere-else"})),
+    # A route that lost its matchers is grafted FIRST, where a child with none
+    # matches every alert on the stack and stops there — the maintainers' entire
+    # alerting delivered to this webhook, reported as success.
+    ("fleet-notification-policy.yaml", lambda d: d["route"].pop("object_matchers")),
+    ("fleet-notification-policy.yaml",
+     lambda d: d["route"].update(object_matchers=[["team", "=", "data"]])),
 ):
     with tempfile.TemporaryDirectory() as tmp:
         for f in Path("alerting").iterdir():
@@ -2648,6 +2670,18 @@ with tempfile.TemporaryDirectory() as tmp:
     assert "path separator" in traversal.output, traversal.output
     assert not any("folders/theirs" in c.full_url for c in traversal_calls), \
         [c.full_url for c in traversal_calls]
+
+# ...including a bare `..`, which survives quoting untouched and which Grafana's
+# router would normalise into a write on the collection itself.
+with tempfile.TemporaryDirectory() as tmp:
+    for f in Path("alerting").iterdir():
+        shutil.copy(f, tmp)
+    doc = yaml.safe_load(Path(tmp, "fleet-contact-points.yaml").read_text())
+    doc["contactPoints"][0]["receivers"][0]["uid"] = ".."
+    Path(tmp, "fleet-contact-points.yaml").write_text(yaml.safe_dump(doc, sort_keys=False))
+    dotdot, _ = run(CREDS, stack(contact_points=[{"uid": "..", "name": CONTACT_POINT}]),
+                    ("--alerting-dir", tmp, "--deadline-seconds", "0"))
+    assert dotdot.exit_code != 0 and "path separator" in dotdot.output, dotdot.output
 
 # A receiver the API returns without a uid must not become a DELETE to `.../None`
 # — nor make the removal sort raise on a mix of None and real uids.
@@ -2788,6 +2822,32 @@ assert {"receiver": CONTACT_POINT, "object_matchers": [["team", "=", "govbot-api
 assert len(tree["routes"]) == 3, tree["routes"]
 assert tree["routes"][0]["object_matchers"] == [[ROUTE_LABEL[0], "=", ROUTE_LABEL[1]]], tree
 assert "added" in kept.output, kept.output
+# Their mirror survives the graft but now sits BEHIND ours, which does not set
+# `continue` — so it can no longer receive fleet alerts. Refusing to delete a
+# route we did not write, then silently disabling it, is the same harm by
+# omission, so the run says so.
+assert "no longer receive fleet alerts" in kept.output, kept.output
+assert "their-oncall" in kept.output, kept.output
+
+# A fleet route a maintainer extended in the UI — the editing
+# X-Disable-Provenance exists to allow — keeps its children across a re-run.
+extended = {
+    "receiver": "their-default",
+    "routes": [{
+        "receiver": CONTACT_POINT,
+        "object_matchers": [[ROUTE_LABEL[0], "=", ROUTE_LABEL[1]]],
+        "routes": [{"receiver": "their-pager", "object_matchers": [["severity", "=", "critical"]]}],
+        "mute_time_intervals": ["weekends"],
+    }],
+}
+inherited, inherited_calls = run(CREDS, stack(policies=extended))
+assert inherited.exit_code == 0, inherited.output
+ours_now = json.loads(written(inherited_calls, "policies")[0].data)["routes"][0]
+assert ours_now["routes"] == [
+    {"receiver": "their-pager", "object_matchers": [["severity", "=", "critical"]]}
+], ours_now
+assert ours_now["mute_time_intervals"] == ["weekends"], ours_now
+assert "carrying forward" in inherited.output, inherited.output
 
 # Re-running replaces our own branch rather than stacking a second copy — even
 # when Grafana serves the existing one back in its other matcher encoding, where
@@ -2924,8 +2984,14 @@ named = [
 MID = (
     datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=30)
 ).isoformat().replace("+00:00", "Z")
+# Two pre-write stamps of clearly different ages, and ours falls between them:
+# the reference has to be the FRESHEST, not just "some stamp the stack had".
+OLDER = (
+    datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=2)
+).isoformat().replace("+00:00", "Z")
 not_listed, _ = run(CREDS, stack(
     baseline_rules={"data": {"groups": [{"file": "Theirs", "rules": [
+        {"uid": "slow", "health": "ok", "lastEvaluation": OLDER},
         {"uid": "unrelated", "health": "ok", "lastEvaluation": LATER}]}]}},
     rules=evaluated(when=MID),
 ))
@@ -2964,9 +3030,13 @@ assert UIDS[0] in absent.output, absent.output
 # labels, where Grafana never puts it (it is an alert *instance* label), so it
 # could never have rescued anything.
 
-by_title = {"data": {"groups": [{"file": "Fleet Monitor", "rules": named}]}}
-titled, _ = run(CREDS, stack(rules=by_title))
-assert titled.exit_code == 0, titled.output + str(titled.exception)
+# Each namespace shape a Grafana build might serve has to carry the scoping on
+# its own, or one arm is dead code the day the others change.
+for namespace in ({"file": "Fleet Monitor"}, {"file": "fleet-monitor"},
+                  {"folderUid": "fleet-monitor"}):
+    by_title = {"data": {"groups": [{**namespace, "rules": named}]}}
+    titled, _ = run(CREDS, stack(rules=by_title))
+    assert titled.exit_code == 0, (namespace, titled.output + str(titled.exception))
 
 # ...but only inside OUR folder. A maintainer-authored rule titled "Fleet data
 # stale" elsewhere on the stack — a plausible name for someone watching the same
