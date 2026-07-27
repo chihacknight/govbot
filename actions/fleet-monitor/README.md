@@ -335,7 +335,7 @@ Four rules, committed the same way the dashboard is — built as data by
   this one cannot also cover a live collector that has seen nothing for a day. Read a
   resolution of this rule against the board, not on its own — the rule description says so
   too, since that is where someone reads it at 3am.
-- **Paused jurisdictions never page.** Both jurisdiction rules filter `paused="false"` in
+- **Paused jurisdictions never page for a failed run or stale data.** Both jurisdiction rules filter `paused="false"` in
   the query, so an out-of-session state whose scrape fails doesn't reach the notification
   policy, let alone a phone. This is the same rule the dashboard renders as a dimmed tile,
   and the reason the metric carries the label at all.
@@ -367,9 +367,9 @@ Four rules, committed the same way the dashboard is — built as data by
 - **Every alert links into the board, filtered to the jurisdiction that fired it.** The
   link is absolute and carries a pinned time range: a notification is read in Slack or an
   inbox, where the dashboard's own relative `/d/…` row links resolve against the wrong
-  host, and `${__url_time_range}` has nothing to expand it. The heartbeat alert links to
-  the unfiltered board — its series carries no labels, so a `var-state=` there would filter
-  to nothing on the one alert that fires when everything else has gone quiet.
+  host, and `${__url_time_range}` has nothing to expand it. The two fleet-wide alerts — heartbeat and coverage — link to
+  the unfiltered board: their series carry no labels, so a `var-state=` there would filter
+  to nothing on exactly the alerts that fire when everything else has gone quiet.
 - **Nothing stack-specific and no credential is committed.** The datasource uid, the stack
   URL, the webhook, and the address are `$PLACEHOLDERS` resolved at provision time. A
   placeholder nobody supplies is a hard failure, never an empty string — Grafana accepts a
@@ -387,9 +387,9 @@ pipenv run python main.py provision-alerts
 ```
 
 It reads the committed files (not a fresh render — what you reviewed is what gets applied),
-resolves their placeholders, creates the `Fleet Monitor` folder, applies the contact point
-and the whole rule group, grafts the notification route, and then **waits for the stack to
-evaluate the rules**. That last step is the point: Grafana will accept a rule whose
+resolves their placeholders, creates the `Fleet Monitor` folder, applies the contact point,
+grafts the notification route, applies the whole rule group, and then **waits for the stack
+to evaluate the rules**. That last step is the point: Grafana will accept a rule whose
 datasource uid points at nothing, store it, and serve it back intact — the failure only
 appears as `health: error` once evaluation runs, so a check that stops at the 200 is a
 check that passes while nothing works. Missing credentials exit 0 with a skip notice.
@@ -411,12 +411,16 @@ Two behaviours worth knowing before you run it against someone else's stack:
   appending would put the fleet's route behind any ordinary "everything else goes here"
   catch-all sibling — every fleet alert delivered somewhere else, Slack and email silent,
   and provisioning reporting success. A re-run replaces the fleet's own branch rather than
-  stacking a second one, matching on receiver name as well as matchers because Grafana
-  accepts and serves back more than one matcher encoding.
-- **A policy tree that can't be read is a hard stop, not an empty tree.** A 404 on
+  stacking a second one, identifying it by receiver **and** matchers, normalised across both
+  encodings Grafana serves back. An OR over the two deleted a maintainer's route that shared
+  only one — fleet alerts mirrored to their own on-call — and receiver alone deleted a second
+  route of theirs to this shared contact point. Both were reported as "replaced".
+- **A policy tree that can't be read, or has no root receiver, is a hard stop.** A 404 on
   `/api/v1/provisioning/policies` means the token lacks notification-policy read scope, or
-  the base URL carries a path prefix — and writes may still land. Treating that as "no root
-  policy" would PUT the fleet's own receiver over a root nobody ever read.
+  the base URL carries a path prefix — and writes may still land. So does an empty or
+  unfamiliar 200 body: every Grafana ships a default root receiver, so that is far likelier
+  to be a proxy or a gateway stub than a stack without a policy, and adopting it would make
+  the fleet's webhook that stack's catch-all for every alert it already runs.
 - **Everything is applied with `X-Disable-Provenance`,** so the rules stay editable in the
   UI. Without it Grafana marks API-provisioned resources read-only, and the first
   maintainer who tries to silence a rule meets a greyed-out form with no explanation. The
@@ -434,15 +438,16 @@ Two behaviours worth knowing before you run it against someone else's stack:
   then 403s. Rules-first would leave them enabled with nothing routing them, every fleet
   alert falling through to the stack owner's own receiver, reproduced on every retry.
   Route-first fails with a route matching nothing, which is inert.
-- **A policy tree this module doesn't recognise is never overwritten.** The check is
-  positive: a root receiver, or a literally empty tree. Refusing only "children but no
-  receiver" let every *other* unrecognised 200 body through as "genuinely empty" — a proxy's
-  error JSON, a maintenance page — and the fleet's own receiver was then written over a root
-  nobody had read.
+- **A policy tree without a root receiver is never overwritten** — including an empty one.
+  Every Grafana ships a default root receiver, so an empty or unfamiliar 200 body is far
+  likelier to be a proxy, a gateway stub, or a build we don't recognise than a stack that
+  genuinely has no policy. Adopting it would make the fleet's webhook that stack's catch-all
+  for every alert it already runs.
 - **A route this module didn't write is not its to remove.** The fleet's own branch is
-  matched by receiver name alone. Matching on "our receiver *or* our matchers" also deleted
-  a maintainer's route that merely shared one of them — their alerts pointed at this shared
-  contact point, or fleet alerts mirrored to their on-call — and reported it as "replaced".
+  matched by receiver **and** matchers, normalised across both encodings Grafana serves. An
+  OR over the two deleted a maintainer's route that shared only one of them — fleet alerts
+  mirrored to their on-call — and receiver alone deleted a second route of theirs to this
+  shared contact point. Both were reported as "replaced".
 - **The prune only deletes integrations this module created** (`fleet-monitor-` uids).
   Anything else on the contact point was added through the UI, which is exactly what
   `X-Disable-Provenance` exists to allow; deleting it would make this command undo the
@@ -456,12 +461,13 @@ Two behaviours worth knowing before you run it against someone else's stack:
   `GRAFANA_DASHBOARD_URL` gets the same check when supplied: it is never contacted, so a
   wrong value provisions cleanly and misdirects on-call staff indefinitely.
 
-One trust assumption worth stating: `{{ $labels.state }}` is interpolated into the deep
-link's query string without URL-encoding, and `{{ $labels.workflow }}` into the Slack
-summary unescaped. Both come from the pipeline-manager config and the GitHub API for the
-project's own orgs — a jurisdiction code is two letters — so this is a trust boundary, not
-a live hole. If either ever carries untrusted text, wrap the link interpolation in Grafana's
-`urlquery`.
+One trust assumption worth stating. The deep link's state is `{{ urlquery $labels.state }}`,
+so a value carrying `&` or `#` cannot append or truncate query parameters. The Slack summary
+still interpolates `{{ $labels.workflow }}` unescaped, and Grafana renders Slack messages as
+mrkdwn — so a workflow name of `<https://evil.example|dashboard>` would become a clickable
+link in an alert the on-call trusts. Both labels come from the project's own committed fleet
+config today, so this is a boundary rather than a hole; if workflow names ever arrive from
+somewhere less controlled, strip mrkdwn punctuation at the shipper.
 
 Re-running is safe and idempotent: the rule group is one PUT keyed by folder and group
 name (so a rule deleted from the committed file actually disappears instead of lingering as

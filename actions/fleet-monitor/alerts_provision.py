@@ -22,6 +22,7 @@ import json
 import re
 import time
 import urllib.parse
+import urllib.request
 
 import yaml
 
@@ -77,7 +78,7 @@ def _seconds(duration) -> int:
     return int(match.group(1)) * {"s": 1, "m": 60, "h": 3600}[match.group(2)]
 
 
-def check_stack_url(base, name) -> str:
+def check_stack_url(base, name, allow_path=False) -> str:
     """A Grafana base URL this module is willing to talk to, trailing slash gone.
 
     Every request carries a bearer token and the contact-point body carries the
@@ -108,14 +109,25 @@ def check_stack_url(base, name) -> str:
             f"{name} carries credentials in the URL; put the token in "
             "GRAFANA_ALERTS_KEY instead — a failed request would print this URL"
         )
-    if parsed.query or parsed.fragment:
+    if not parsed.hostname:
+        raise RuntimeError(f"{name} has no host: {base!r}")
+    if parsed.query or parsed.fragment or base.endswith(("?", "#")):
         raise RuntimeError(f"{name} must be a bare origin: it carries a query or fragment")
-    if parsed.path.strip("/"):
+    if parsed.path.strip("/") and not allow_path:
         raise RuntimeError(
             f"{name} must be a bare origin: the path {parsed.path!r} would make every "
             "API request 404, which reads as an empty stack"
         )
-    return base.rstrip("/")
+    if parsed.scheme == "http" and urllib.request.getproxies().get("http"):
+        # The loopback exemption assumes nothing leaves the machine, and urllib
+        # has no implicit localhost proxy bypass — with http_proxy set, the token
+        # and the webhook go to the proxy host in cleartext.
+        raise RuntimeError(
+            f"{name} is plain http and an http_proxy is configured; the bearer token would "
+            "leave this machine in cleartext. Use https, or clear http_proxy."
+        )
+    path = parsed.path.rstrip("/") if allow_path else ""
+    return urllib.parse.urlunparse((parsed.scheme, parsed.netloc, path, "", "", ""))
 
 
 class Stack:
@@ -243,7 +255,57 @@ def _load(alerting_dir, name, values):
     # CLI's handler and prints a traceback over a half-applied stack.
     if not isinstance(document, dict) or REQUIRED_KEYS[name] not in document:
         raise RuntimeError(f"{name} is missing its top-level {REQUIRED_KEYS[name]!r} key")
+    _check_shape(name, document)
     return document
+
+
+def _fail(name, what):
+    raise RuntimeError(f"{name}: {what}")
+
+
+def _check_shape(name, document):
+    """Validate every field the writers will index, not just the top-level key.
+
+    Checking one key deep is not enough: `apply_rules` reaches `rule["uid"]` and
+    `apply_contact_point` reaches `receiver["type"]`, and a bare KeyError from
+    there is not a RuntimeError — it escapes the CLI's handler and prints a
+    traceback over a stack that has already had its folder, contact point, and
+    route written.
+    """
+    if name == RULES_FILE:
+        groups = document["groups"]
+        if not isinstance(groups, list) or not groups:
+            _fail(name, "'groups' must be a non-empty list")
+        for group in groups:
+            if not isinstance(group, dict) or not group.get("name"):
+                _fail(name, "every group needs a 'name'")
+            rules = group.get("rules")
+            if not isinstance(rules, list) or not rules:
+                _fail(name, f"group {group['name']!r} has no rules")
+            for rule in rules:
+                if not isinstance(rule, dict) or not rule.get("uid") or not rule.get("title"):
+                    _fail(name, f"every rule in {group['name']!r} needs a 'uid' and a 'title'")
+    elif name == CONTACT_POINTS_FILE:
+        points = document["contactPoints"]
+        if not isinstance(points, list) or not points:
+            _fail(name, "'contactPoints' must be a non-empty list")
+        for point in points:
+            if not isinstance(point, dict) or point.get("name") != CONTACT_POINT:
+                # The reconcile pass only ever looks at receivers named
+                # CONTACT_POINT, so a renamed document would create integrations
+                # no run could later find — or clean up.
+                _fail(name, f"every contact point must be named {CONTACT_POINT!r}")
+            receivers = point.get("receivers")
+            if not isinstance(receivers, list) or not receivers:
+                _fail(name, "every contact point needs at least one receiver")
+            for receiver in receivers:
+                if not isinstance(receiver, dict) or not receiver.get("uid") \
+                        or not receiver.get("type"):
+                    _fail(name, "every receiver needs a 'uid' and a 'type'")
+    else:
+        route = document["route"]
+        if not isinstance(route, dict) or route.get("receiver") != CONTACT_POINT:
+            _fail(name, f"'route.receiver' must be {CONTACT_POINT!r}")
 
 
 def ensure_folder(stack):
@@ -364,13 +426,36 @@ def read_policy_tree(stack):
     # webhook with no copy of what was destroyed. Every real Grafana ships a
     # default root receiver, so "neither key present" is far likelier to be a
     # body we don't recognise than a tree that is truly empty.
-    if not isinstance(tree, dict) or (not tree.get("receiver") and tree != {}):
+    if not isinstance(tree, dict) or not tree.get("receiver"):
         raise RuntimeError(
-            "the stack's notification policy is not a shape this module recognises "
-            f"(no root receiver; keys: {sorted(tree) if isinstance(tree, dict) else type(tree).__name__}). "
-            "Refusing to overwrite it. Inspect /api/v1/provisioning/policies by hand."
+            "the stack's notification policy has no root receiver "
+            f"(keys: {sorted(tree) if isinstance(tree, dict) else type(tree).__name__}). "
+            "Refusing to overwrite it — every Grafana ships a default root receiver, so this "
+            "is far likelier to be a response we don't recognise than a stack without one. "
+            "Inspect /api/v1/provisioning/policies by hand."
         )
     return tree
+
+
+def _matchers(route) -> set:
+    """A route's matchers, normalised across the encodings Grafana accepts.
+
+    ``object_matchers`` is the modern triple form; ``matchers`` is the legacy
+    string form Grafana still stores and serves back. Comparing only one of them
+    means our own previous route can come back looking like somebody else's.
+    """
+    normalised = {tuple(m) for m in route.get("object_matchers") or []}
+    for raw in route.get("matchers") or []:
+        for op in ("=~", "!~", "!=", "="):
+            if op in raw:
+                key, value = raw.split(op, 1)
+                normalised.add((key.strip(), op, value.strip().strip('"')))
+                break
+    return normalised
+
+
+def _is_ours(child, route) -> bool:
+    return child.get("receiver") == route["receiver"] and _matchers(child) == _matchers(route)
 
 
 def graft_route(stack, tree, route):
@@ -383,26 +468,21 @@ def graft_route(stack, tree, route):
     fleet alert before it ever reached the fleet's route — Slack and email
     silent, provisioning reporting success.
 
-    Replaces a previous fleet route rather than appending a second one, matching
-    on the receiver name alone. Receiver-only is deliberate: matching on "our
-    receiver OR our matchers" also deletes a maintainer's own route that merely
-    shares one of them — a `service=fleet-monitor` matcher pointing at *their*
-    on-call (a legitimate way to mirror fleet alerts), or their alerts routed to
-    this shared contact point. Both were silently dropped and reported as
-    "replaced". A route we did not write is not ours to remove.
+    Replaces a previous fleet route rather than appending a second one. A child
+    is ours only when its receiver *and* its matchers both match — an OR over
+    the two deletes a maintainer's own route that shares just one: a
+    `service=fleet-monitor` matcher pointing at *their* on-call (a legitimate
+    way to mirror fleet alerts), or a second route of theirs to this shared
+    contact point with different matchers. Both were silently dropped and
+    reported as "replaced". A route we did not write is not ours to remove.
 
     Grafana serves matchers back in more than one encoding (``matchers`` as well
-    as ``object_matchers``), which is why the match cannot be on matchers: a
-    stale twin in the other encoding would sit ahead of the new route and win
-    every delivery.
+    as ``object_matchers``), so the comparison normalises both — otherwise a
+    stale twin in the other encoding sits ahead of the new route and wins every
+    delivery.
     """
-    if tree == {}:
-        # A stack that genuinely has no root policy: ours becomes the root, with
-        # the fleet route as its only child. Nothing is being displaced —
-        # read_policy_tree has already refused anything less certain than this.
-        tree = {"receiver": route["receiver"], "routes": []}
     children = tree.get("routes") or []
-    others = [child for child in children if child.get("receiver") != route["receiver"]]
+    others = [child for child in children if not _is_ours(child, route)]
     replaced = len(others) != len(children)
     tree["routes"] = [route] + others
     stack.write("/api/v1/provisioning/policies", tree, method="PUT")
@@ -457,7 +537,11 @@ def _rules_by_identity(stack):
         # maintainer-authored rule titled "Fleet data stale" in another folder —
         # a plausible name for someone watching the same fleet — would satisfy
         # confirmation for a rule of ours the stack never scheduled.
-        ours = FOLDER in (group.get("folder"), group.get("file"), group.get("name"))
+        # `folderUid` when the build provides it, else `file` — the namespace
+        # field Grafana's Prometheus-compat API actually returns. NOT the group
+        # `name`: ours is "fleet-monitor", never the folder title, so that arm
+        # could only ever match somebody else's group.
+        ours = group.get("folderUid") == FOLDER_UID or group.get("file") in (FOLDER, FOLDER_UID)
         for rule in group.get("rules", []):
             if rule.get("uid"):
                 seen[rule["uid"]] = rule
@@ -485,7 +569,14 @@ def evaluation_baseline(stack, rules):
     prevent. Two stamps from one clock need no tolerance at all.
     """
     seen = _rules_by_identity(stack)
-    return {
+    # The stack's own clock, read from the freshest evaluation anywhere on it.
+    # Falling back to this host's clock for a rule the pre-write read didn't list
+    # reintroduces exactly the cross-machine skew this baseline exists to avoid —
+    # and NOT_LISTED is the normal state on a first-ever provisioning run, so
+    # that fallback would be the common path, not the rare one.
+    stamps = [when for rule in seen.values() if (when := _evaluated_at(rule))]
+    latest = max(stamps) if stamps else None
+    return latest, {
         # NOT_LISTED, not None: the ruler API transiently answers with no groups
         # at all while the scheduler reloads (a restart, a rule-group reload, a
         # Cloud rotation). Reading that as "never evaluated" would let the NEXT
@@ -497,7 +588,8 @@ def evaluation_baseline(stack, rules):
     }
 
 
-def confirm_rules(stack, rules, baseline, deadline_seconds=CONFIRM_DEADLINE_SECONDS):
+def confirm_rules(stack, rules, baseline, stack_now=None,
+                  deadline_seconds=CONFIRM_DEADLINE_SECONDS):
     """Prove the rules loaded AND that this stack has actually run them.
 
     Loading is not the same as working: Grafana accepts a rule whose datasource
@@ -519,7 +611,11 @@ def confirm_rules(stack, rules, baseline, deadline_seconds=CONFIRM_DEADLINE_SECO
     and ``NOT_LISTED`` for one the pre-write read did not see at all.
     """
     deadline = time.monotonic() + deadline_seconds
-    started = datetime.datetime.now(datetime.timezone.utc)
+    # The reference for a rule the pre-write read didn't list. The stack's own
+    # freshest evaluation when there was one; this host's clock only when the
+    # stack had nothing at all to compare against, where there is also nothing
+    # stale to be fooled by.
+    started = stack_now or datetime.datetime.now(datetime.timezone.utc)
     while True:
         by_identity = _rules_by_identity(stack)
         fresh = {}
@@ -603,9 +699,9 @@ def provision(alerting_dir, base, token, values, echo=print, sleep=time.sleep,
     wanted = {
         rule["uid"]: rule["title"] for group in document["groups"] for rule in group["rules"]
     }
-    baseline = evaluation_baseline(stack, wanted)
+    stack_now, baseline = evaluation_baseline(stack, wanted)
     rules = apply_rules(stack, document)
     echo(f"· rules: {len(rules)} applied")
-    confirm_rules(stack, rules, baseline, deadline_seconds=deadline_seconds)
+    confirm_rules(stack, rules, baseline, stack_now=stack_now, deadline_seconds=deadline_seconds)
     echo(f"✓ {len(rules)} rules provisioned and evaluating, delivering to the fleet-monitor contact point")
     return sorted(rules)

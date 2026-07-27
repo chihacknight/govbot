@@ -569,8 +569,13 @@ def provision_alerts(alerting_dir, deadline_seconds):
         # Validated like the API URL when supplied: it becomes the clickable link
         # in every notification and is never contacted, so a wrong value
         # provisions cleanly and sends on-call staff elsewhere indefinitely.
+        # `allow_path`: unlike the API base this one is never contacted, and a
+        # reverse-proxied Grafana served under /grafana needs the prefix for its
+        # links to resolve.
         dashboard_url = check_stack_url(
-            os.environ.get("GRAFANA_DASHBOARD_URL") or base, "GRAFANA_DASHBOARD_URL"
+            os.environ.get("GRAFANA_DASHBOARD_URL") or base,
+            "GRAFANA_DASHBOARD_URL",
+            allow_path=True,
         )
     except RuntimeError as e:
         raise click.ClickException(str(e)) from e

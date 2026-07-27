@@ -2335,7 +2335,7 @@ UNSET = object()
 
 
 def stack(datasources=(PROMETHEUS, LOKI), policies=UNSET, contact_points=None, rules=None,
-          missing_policies=False, baseline_rules=NEVER_EVALUATED, folder=None):
+          missing_policies=False, baseline_rules=NEVER_EVALUATED, folder=None, others=()):
     """A Grafana that answers reads and accepts every write.
 
     The FIRST ruler read is the pre-write baseline; every read after it is the
@@ -2363,7 +2363,9 @@ def stack(datasources=(PROMETHEUS, LOKI), policies=UNSET, contact_points=None, r
             reads.append(url)
             if len(reads) == 1:
                 return FakeResponse(json.dumps(baseline_rules).encode())
-            return FakeResponse(json.dumps(rules or evaluated()).encode())
+            answer = json.loads(json.dumps(rules or evaluated()))
+            answer["data"]["groups"] = list(answer["data"]["groups"]) + list(others)
+            return FakeResponse(json.dumps(answer).encode())
         # Folders, an unreadable policy tree, anything else: not there.
         raise urllib.error.HTTPError(url, 404, "Not Found", {}, None)
 
@@ -2394,8 +2396,10 @@ def written(calls, fragment, method=None):
 
 
 # A skipped run must touch nothing at all, not merely exit 0.
-for absent in CREDS:
-    skipped, calls = run({**CREDS, absent: None}, stack())
+# Unset AND empty: an unset CI secret renders as the empty string, not as an
+# absent variable, so both have to reach the same clean skip.
+for absent, blanked in [(k, v) for k in CREDS for v in (None, "")]:
+    skipped, calls = run({**CREDS, absent: blanked}, stack())
     assert skipped.exit_code == 0, (absent, skipped.output)
     assert absent in skipped.output, (absent, skipped.output)
     assert not calls, (absent, "a skipped run still talked to the stack")
@@ -2517,6 +2521,21 @@ with tempfile.TemporaryDirectory() as elsewhere:
 assert away.exit_code == 0, away.output + str(away.exception)
 assert "alert provisioning skipped" in away.output, away.output
 
+# ...and with credentials, from that same foreign cwd, it still applies the
+# module's own committed files rather than looking for `alerting/` beside the
+# caller. The skip above alone proves nothing: it returns before the default is
+# ever dereferenced.
+with tempfile.TemporaryDirectory() as elsewhere:
+    os.chdir(elsewhere)
+    try:
+        far, far_calls = run(CREDS, stack())
+    finally:
+        os.chdir(here)
+assert far.exit_code == 0, far.output + str(far.exception)
+applied_far = json.loads(written(far_calls, "rule-groups")[0].data)
+assert [r["uid"] for r in applied_far["rules"]] == UIDS, applied_far
+assert 'paused="false"' in applied_far["rules"][0]["data"][0]["model"]["expr"], applied_far
+
 # Every group in the committed file, not just the first — a second group would
 # otherwise render, pass the drift check, and exist in git and nowhere else while
 # provisioning reported success.
@@ -2560,6 +2579,11 @@ for bad, why in (
     ("https://svc:GLSA_secret@stack.grafana.net", "credentials in the URL"),
     # A query swallows the API path: https://stack/?x + /api/folders.
     ("https://stack.grafana.net/?x", "bare origin"),
+    # A trailing "?" parses as an EMPTY query, so the guard has to look at the
+    # raw string too — otherwise it survives into every request URL.
+    ("https://stack.grafana.net?", "bare origin"),
+    # A truncated CI secret: scheme fine, everything else empty.
+    ("https://", "no host"),
     # A path prefix 404s every GET, which find() reads as "not there yet" — a
     # stack that looks empty and gets overwritten.
     ("https://stack.grafana.net/grafana", "bare origin"),
@@ -2576,6 +2600,54 @@ assert bad_link.exit_code != 0 and "https" in bad_link.output, bad_link.output
 # ...and a local test stack over plain http is still allowed.
 from alerts_provision import check_stack_url
 assert check_stack_url("http://localhost:3000/", "X") == "http://localhost:3000"
+
+# The document's own shape is checked before the first write. Checking only the
+# top-level key is not enough: the writers reach rule["uid"] and receiver["type"],
+# and a bare KeyError from there escapes the CLI's handler and prints a traceback
+# over a stack that already has its folder, contact point, and route.
+for filename, mangle in (
+    (RULES_FILE, lambda d: d.update(groups=[{"name": "g", "rules": [{"title": "t"}]}])),
+    (RULES_FILE, lambda d: d.update(groups="oops")),
+    ("fleet-contact-points.yaml",
+     lambda d: d.update(contactPoints=[{"name": CONTACT_POINT, "receivers": [{"type": "slack"}]}])),
+    ("fleet-contact-points.yaml",
+     lambda d: d.update(contactPoints=[{"name": "renamed", "receivers": []}])),
+    ("fleet-notification-policy.yaml", lambda d: d.update(route={"receiver": "somewhere-else"})),
+):
+    with tempfile.TemporaryDirectory() as tmp:
+        for f in Path("alerting").iterdir():
+            shutil.copy(f, tmp)
+        doc = yaml.safe_load(Path(tmp, filename).read_text())
+        mangle(doc)
+        Path(tmp, filename).write_text(yaml.safe_dump(doc, sort_keys=False))
+        broken_doc, broken_calls = run(
+            CREDS, stack(), ("--alerting-dir", tmp, "--deadline-seconds", "0")
+        )
+        assert broken_doc.exit_code != 0, (filename, broken_doc.output)
+        assert filename in broken_doc.output, (filename, broken_doc.output)
+        assert not isinstance(broken_doc.exception, KeyError), broken_doc.exception
+        assert not [c for c in broken_calls if c.data is not None], \
+            (filename, "wrote to the stack before rejecting a malformed document")
+
+# A uid that would escape its path segment never reaches a URL: `..` and `/` are
+# refused outright, before quoting.
+with tempfile.TemporaryDirectory() as tmp:
+    for f in Path("alerting").iterdir():
+        shutil.copy(f, tmp)
+    doc = yaml.safe_load(Path(tmp, "fleet-contact-points.yaml").read_text())
+    doc["contactPoints"][0]["receivers"][0]["uid"] = "../../../../api/folders/theirs"
+    Path(tmp, "fleet-contact-points.yaml").write_text(yaml.safe_dump(doc, sort_keys=False))
+    # Present on the stack, so the write takes the update path — where the uid
+    # becomes a URL segment rather than living only in the body.
+    traversal, traversal_calls = run(
+        CREDS,
+        stack(contact_points=[{"uid": "../../../../api/folders/theirs", "name": CONTACT_POINT}]),
+        ("--alerting-dir", tmp, "--deadline-seconds", "0"),
+    )
+    assert traversal.exit_code != 0, traversal.output
+    assert "path separator" in traversal.output, traversal.output
+    assert not any("folders/theirs" in c.full_url for c in traversal_calls), \
+        [c.full_url for c in traversal_calls]
 
 # A receiver the API returns without a uid must not become a DELETE to `.../None`
 # — nor make the removal sort raise on a mix of None and real uids.
@@ -2628,7 +2700,14 @@ stale = existing + [
     {"uid": "fleet-monitor-webhook", "name": CONTACT_POINT, "type": "webhook"},
     {"uid": "someone-elses", "name": "their-oncall", "type": "slack"},
 ]
-stale = stale + [{"uid": "abc123xyz", "name": CONTACT_POINT, "type": "pagerduty"}]
+stale = stale + [
+    {"uid": "abc123xyz", "name": CONTACT_POINT, "type": "pagerduty"},
+    # Another contact point's receiver, carrying a uid that looks like ours and
+    # absent from our document — so only the NAME filter keeps it alive. The uid
+    # prefix would happily prune it, and deleting somebody else's delivery is
+    # the worst thing this command could do quietly.
+    {"uid": "fleet-monitor-pager", "name": "their-oncall", "type": "pagerduty"},
+]
 pruned, pruned_calls = run(CREDS, stack(contact_points=stale))
 assert pruned.exit_code == 0, pruned.output
 deletes = [c for c in pruned_calls if c.get_method() == "DELETE"]
@@ -2639,6 +2718,9 @@ assert "webhook removed" in pruned.output, pruned.output
 # exists so a maintainer can add one through the UI; deleting it on the next run
 # would make this command undo the editing that header is for.
 assert "pagerduty kept" in pruned.output, pruned.output
+assert not any("their-oncall" in str(c.full_url) for c in pruned_calls
+               if c.get_method() == "DELETE"), [c.full_url for c in deletes]
+assert len(deletes) == 1, [c.full_url for c in deletes]
 
 # The resolved webhook URL and address must never reach the terminal or an
 # exception message — the module's stated primary threat. Nothing leaks today;
@@ -2696,12 +2778,16 @@ mine_and_theirs = {
 kept, kept_calls = run(CREDS, stack(policies=mine_and_theirs))
 assert kept.exit_code == 0, kept.output
 tree = json.loads(written(kept_calls, "policies")[0].data)
+# BOTH survive: a child is ours only when receiver AND matchers both match, so a
+# maintainer's second route to the shared contact point (different matchers) and
+# their mirror of fleet alerts to their own on-call are each left alone.
 assert {"receiver": "their-oncall", "object_matchers": [[ROUTE_LABEL[0], "=", ROUTE_LABEL[1]]],
         "continue": True} in tree["routes"], tree["routes"]
-# Their route to our contact point IS displaced — it shares the receiver, so it
-# is indistinguishable from a previous version of ours — but nothing else is.
-assert len(tree["routes"]) == 2, tree["routes"]
-assert tree["routes"][0]["receiver"] == CONTACT_POINT, tree["routes"]
+assert {"receiver": CONTACT_POINT, "object_matchers": [["team", "=", "govbot-api"]]} \
+    in tree["routes"], tree["routes"]
+assert len(tree["routes"]) == 3, tree["routes"]
+assert tree["routes"][0]["object_matchers"] == [[ROUTE_LABEL[0], "=", ROUTE_LABEL[1]]], tree
+assert "added" in kept.output, kept.output
 
 # Re-running replaces our own branch rather than stacking a second copy — even
 # when Grafana serves the existing one back in its other matcher encoding, where
@@ -2751,17 +2837,19 @@ for unrecognised in (
     {"status": "error", "message": "upstream unavailable"},
     {"group_by": ["alertname"]},
     [],
+    # No adoption path at all: every Grafana ships a default root receiver, so an
+    # empty body is far likelier to be a proxy or a gateway stub than a stack
+    # without one — and adopting it makes the fleet's webhook that stack's
+    # catch-all for every alert it already runs.
+    {},
 ):
     headless, headless_calls = run(CREDS, stack(policies=unrecognised))
     assert headless.exit_code != 0, (unrecognised, headless.output)
-    assert "not a shape this module recognises" in headless.output, headless.output
+    assert "no root receiver" in headless.output, headless.output
     # ...and it refuses before writing anything at all, same as the 404 path.
     assert not [c for c in headless_calls if c.data is not None], \
         (unrecognised, [c.full_url for c in headless_calls if c.data is not None])
-# A literally empty tree is still fine to adopt: nothing is being displaced.
-fresh_stack, fresh_calls = run(CREDS, stack(policies={}))
-assert fresh_stack.exit_code == 0, fresh_stack.output + str(fresh_stack.exception)
-assert json.loads(written(fresh_calls, "policies")[0].data)["receiver"] == CONTACT_POINT
+
 
 print("✓ provision-alerts: route grafted FIRST under the stack's own root, replaced not "
       "duplicated in either matcher encoding, and refuses to write a tree it cannot read")
@@ -2816,6 +2904,56 @@ still_broken, _ = run(CREDS, stack(
 assert still_broken.exit_code != 0, still_broken.output
 assert "datasource not found" in still_broken.output, still_broken.output
 
+from alerting import build_rule_group
+
+named = [
+    {"name": rule["title"], "health": "ok", "lastEvaluation": LATER}
+    for rule in build_rule_group()["rules"]
+]
+
+# A rule the pre-write read did not LIST is not the same as one it listed as
+# never evaluated. The ruler API transiently answers with no groups while the
+# scheduler reloads, and reading that as "never evaluated" would let a stamp left
+# over from the previous definitions count as proof of this write.
+# The reference for that case is the STACK's own clock — its freshest evaluation
+# anywhere — not this host's. A host-clock comparison needs a skew tolerance, and
+# NOT_LISTED is the normal state on a first-ever run, so that fallback would be
+# the common path. Here an unrelated rule on the stack evaluated an hour ahead of
+# this host, and ours are stamped half an hour ahead: newer than the host clock,
+# older than the stack's, so only a stack-clock comparison refuses them.
+MID = (
+    datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=30)
+).isoformat().replace("+00:00", "Z")
+not_listed, _ = run(CREDS, stack(
+    baseline_rules={"data": {"groups": [{"file": "Theirs", "rules": [
+        {"uid": "unrelated", "health": "ok", "lastEvaluation": LATER}]}]}},
+    rules=evaluated(when=MID),
+))
+assert not_listed.exit_code != 0, not_listed.output
+assert f"0 of {len(UIDS)} rules had evaluated" in not_listed.output, not_listed.output
+
+# Partial is not success: the failure message reports the ratio, so the boundary
+# between "some" and "all" has to be exercised.
+half = {"data": {"groups": [{"file": "Fleet Monitor", "rules": [
+    {"uid": uid, "health": "ok", "lastEvaluation": LATER if i < 2 else "0001-01-01T00:00:00Z"}
+    for i, uid in enumerate(UIDS)
+]}]}}
+partial, _ = run(CREDS, stack(rules=half))
+assert partial.exit_code != 0, partial.output
+assert f"2 of {len(UIDS)} rules had evaluated" in partial.output, partial.output
+
+# Two rules sharing a title are not an identity — last-wins would silently
+# confirm off whichever came second.
+twins = [dict(r, uid=None) for r in named] + [
+    {"name": named[0]["name"], "health": "ok", "lastEvaluation": LATER}
+]
+ambiguous_titles = {"data": {"groups": [{"file": "Fleet Monitor", "rules": [
+    {k: v for k, v in r.items() if v is not None} for r in twins
+]}]}}
+ambiguous_run, _ = run(CREDS, stack(rules=ambiguous_titles))
+assert ambiguous_run.exit_code != 0, ambiguous_run.output
+assert "never appeared" in ambiguous_run.output, ambiguous_run.output
+
 # A rule the stack never lists at all is named in the failure.
 absent, _ = run(CREDS, stack(rules={"data": {"groups": []}}))
 assert absent.exit_code != 0 and "never appeared" in absent.output, absent.output
@@ -2825,20 +2963,20 @@ assert UIDS[0] in absent.output, absent.output
 # instead — the `__alert_rule_uid__` fallback this replaced looked in rule-level
 # labels, where Grafana never puts it (it is an alert *instance* label), so it
 # could never have rescued anything.
-from alerting import build_rule_group
 
-named = [
-    {"name": rule["title"], "health": "ok", "lastEvaluation": LATER}
-    for rule in build_rule_group()["rules"]
-]
-by_title = {"data": {"groups": [{"folder": "Fleet Monitor", "rules": named}]}}
+by_title = {"data": {"groups": [{"file": "Fleet Monitor", "rules": named}]}}
 titled, _ = run(CREDS, stack(rules=by_title))
 assert titled.exit_code == 0, titled.output + str(titled.exception)
 
 # ...but only inside OUR folder. A maintainer-authored rule titled "Fleet data
 # stale" elsewhere on the stack — a plausible name for someone watching the same
 # fleet — must not stand in for one of ours the stack never scheduled.
-elsewhere_titled = {"data": {"groups": [{"folder": "Their Dashboards", "rules": named}]}}
+# `file` is the namespace field the Prometheus-compat API actually returns; a
+# group NAME of "Fleet Monitor" must not count, since ours is named
+# "fleet-monitor" and that arm could only ever match somebody else's group.
+elsewhere_titled = {"data": {"groups": [
+    {"file": "Their Dashboards", "name": "Fleet Monitor", "rules": named}
+]}}
 foreign, _ = run(CREDS, stack(rules=elsewhere_titled))
 assert foreign.exit_code != 0, foreign.output
 assert "never appeared" in foreign.output, foreign.output
