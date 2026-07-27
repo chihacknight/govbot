@@ -423,13 +423,38 @@ Two behaviours worth knowing before you run it against someone else's stack:
   trade-off is real: nothing then stops an Editor on the stack from repointing the Slack
   webhook or deleting the fleet's route, and there is no scheduled re-apply, so that drift
   persists until someone re-runs the command. Re-running is the remedy, and it is cheap.
-- **The policy tree is read before anything is written.** It is the only step that can
-  refuse, and a refusal after the rules land would leave them enabled with no route
-  matching them — every fleet alert falling through to the stack owner's own receiver,
-  reproduced on every retry.
-- **`GRAFANA_ALERTS_URL` must be https.** Every request carries a bearer token, and the
-  contact-point body carries the resolved webhook URL, which is itself a credential for
-  posting to that channel.
+  The header goes on the root-policy PUT too, which is worth knowing: a stack whose
+  notification tree was previously provisioned and read-only becomes editable after one run
+  of this command. Omitting it there is worse, not better — Grafana would then mark their
+  tree read-only on our behalf, or reject the write outright if it is file-provisioned.
+- **The policy tree is read, and the route written, before the rules land.** The read is
+  the only one that can refuse and the policy write is the only one that can still fail
+  after every read has passed — Grafana 11 splits `alert.rules:write` from
+  `alert.notifications:write`, so a token holding only the first passes every check and
+  then 403s. Rules-first would leave them enabled with nothing routing them, every fleet
+  alert falling through to the stack owner's own receiver, reproduced on every retry.
+  Route-first fails with a route matching nothing, which is inert.
+- **A policy tree this module doesn't recognise is never overwritten.** The check is
+  positive: a root receiver, or a literally empty tree. Refusing only "children but no
+  receiver" let every *other* unrecognised 200 body through as "genuinely empty" — a proxy's
+  error JSON, a maintenance page — and the fleet's own receiver was then written over a root
+  nobody had read.
+- **A route this module didn't write is not its to remove.** The fleet's own branch is
+  matched by receiver name alone. Matching on "our receiver *or* our matchers" also deleted
+  a maintainer's route that merely shared one of them — their alerts pointed at this shared
+  contact point, or fleet alerts mirrored to their on-call — and reported it as "replaced".
+- **The prune only deletes integrations this module created** (`fleet-monitor-` uids).
+  Anything else on the contact point was added through the UI, which is exactly what
+  `X-Disable-Provenance` exists to allow; deleting it would make this command undo the
+  editing that header is for.
+- **`GRAFANA_ALERTS_URL` must be a bare https origin** (plain http is allowed only for a
+  loopback host). Every request carries a bearer token, and the contact-point body carries
+  the resolved webhook URL, itself a credential for posting to that channel. Credentials in
+  the URL are refused too — every failed-request message embeds the URL it failed on, so one
+  404 would put the token in a CI log — as are a query, a fragment, and a path prefix, which
+  would 404 every GET and make a populated stack read as empty.
+  `GRAFANA_DASHBOARD_URL` gets the same check when supplied: it is never contacted, so a
+  wrong value provisions cleanly and misdirects on-call staff indefinitely.
 
 One trust assumption worth stating: `{{ $labels.state }}` is interpolated into the deep
 link's query string without URL-encoding, and `{{ $labels.workflow }}` into the Slack
@@ -681,7 +706,10 @@ dashboard link with a pinned time range and no `var-org` while the label-less he
 rule carries no `var-state` at all, Slack and email are two integrations on one contact
 point with resolved notifications on, the route groups by `alertname` alone, the policy
 document is deliberately not a Grafana `policies:` document, rendering is deterministic,
-and the four placeholders are exactly the four the provisioner resolves. Two of those
+the coverage rule stands down while the dead-man is firing (a dead collector empties its
+short window at the same instant, and `or vector(0)` would otherwise report the whole fleet
+as having stopped reporting — two Slack messages for one outage, the louder one wrong about
+the cause), and the four placeholders are exactly the four the provisioner resolves. Two of those
 assertions are worth naming because the obvious version of each proves nothing. The
 staleness threshold is checked by *parsing `alerting.py`* and requiring that it imports
 `STALE_HOURS` and never binds it — comparing the built rule against the constant passes

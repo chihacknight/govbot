@@ -63,7 +63,7 @@ groups:
       summary: '{{ $labels.state }}: {{ $labels.workflow }} failed'
       description: The latest completed run of this workflow did not succeed, and the jurisdiction is
         in session. Open the run's log from the dashboard's log panel to see why.
-      dashboard: $GRAFANA_DASHBOARD_URL/d/fleet-monitor-overview?var-state={{ $labels.state }}&from=now-24h&to=now
+      dashboard: $GRAFANA_DASHBOARD_URL/d/fleet-monitor-overview?var-state={{ urlquery $labels.state }}&from=now-24h&to=now
     for: 10m
     noDataState: OK
     execErrState: Error
@@ -118,7 +118,7 @@ groups:
       description: Nothing has landed in this repo's data path for 48h, which is two missed daily cycles
         rather than one. The scrape may be succeeding and producing nothing — check the run log, not just
         the run status.
-      dashboard: $GRAFANA_DASHBOARD_URL/d/fleet-monitor-overview?var-state={{ $labels.state }}&from=now-24h&to=now
+      dashboard: $GRAFANA_DASHBOARD_URL/d/fleet-monitor-overview?var-state={{ urlquery $labels.state }}&from=now-24h&to=now
     for: 10m
     noDataState: OK
     execErrState: Error
@@ -189,8 +189,9 @@ groups:
       datasourceUid: $GRAFANA_METRICS_DATASOURCE_UID
       model:
         editorMode: code
-        expr: count(count by (state, org) (last_over_time(fleet_repo_data_commit_age_hours[24h]))) - (count(count
-          by (state, org) (last_over_time(fleet_repo_data_commit_age_hours[6h]))) or vector(0))
+        expr: (count(count by (state, org) (last_over_time(fleet_repo_data_commit_age_hours[24h]))) -
+          (count(count by (state, org) (last_over_time(fleet_repo_data_commit_age_hours[6h]))) or vector(0)))
+          unless absent_over_time(fleet_collector_heartbeat_repos[6h])
         instant: true
         intervalMs: 1000
         maxDataPoints: 43200

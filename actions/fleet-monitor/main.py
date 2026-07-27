@@ -512,9 +512,13 @@ def alerts(out_dir):
 @cli.command("provision-alerts")
 @click.option(
     "--alerting-dir",
-    type=click.Path(exists=True, file_okay=False, path_type=Path),
-    default="alerting",
-    show_default=True,
+    type=click.Path(file_okay=False, path_type=Path),
+    # Relative to this module, not to the caller's cwd. The committed directory
+    # is a property of the action, and `exists=True` on a cwd-relative default is
+    # validated by click BEFORE the command body — so running from anywhere else
+    # exited 2 with a path error instead of the documented credential-free skip.
+    default=Path(__file__).parent / "alerting",
+    show_default="the module's own alerting/ directory",
     help="Directory of committed alerting YAML to apply.",
 )
 @click.option(
@@ -551,21 +555,31 @@ def provision_alerts(alerting_dir, deadline_seconds):
         click.echo(f"alert provisioning skipped: missing {', '.join(missing)}")
         return
 
-    from alerts_provision import provision
+    from alerts_provision import check_stack_url, provision
 
     base = os.environ["GRAFANA_ALERTS_URL"]
-    values = {
-        "SLACK_WEBHOOK_URL": os.environ["SLACK_WEBHOOK_URL"],
-        "ALERT_EMAIL": os.environ["ALERT_EMAIL"],
+    deadline = {} if deadline_seconds is None else {"deadline_seconds": deadline_seconds}
+    try:
         # The stack that serves the UI is the stack being provisioned unless
         # someone says otherwise, so the deep links need no second variable.
         # `or base`, not a default: an unset CI secret renders as the EMPTY
         # STRING, and an empty base makes every alert link relative — which
         # resolves against slack.com wherever the notification is read.
-        "GRAFANA_DASHBOARD_URL": (os.environ.get("GRAFANA_DASHBOARD_URL") or base).rstrip("/"),
+        #
+        # Validated like the API URL when supplied: it becomes the clickable link
+        # in every notification and is never contacted, so a wrong value
+        # provisions cleanly and sends on-call staff elsewhere indefinitely.
+        dashboard_url = check_stack_url(
+            os.environ.get("GRAFANA_DASHBOARD_URL") or base, "GRAFANA_DASHBOARD_URL"
+        )
+    except RuntimeError as e:
+        raise click.ClickException(str(e)) from e
+    values = {
+        "SLACK_WEBHOOK_URL": os.environ["SLACK_WEBHOOK_URL"],
+        "ALERT_EMAIL": os.environ["ALERT_EMAIL"],
+        "GRAFANA_DASHBOARD_URL": dashboard_url,
         "GRAFANA_METRICS_DATASOURCE_UID": os.environ.get("GRAFANA_METRICS_DATASOURCE_UID", ""),
     }
-    deadline = {} if deadline_seconds is None else {"deadline_seconds": deadline_seconds}
     try:
         provision(alerting_dir, base, os.environ["GRAFANA_ALERTS_KEY"], values,
                   echo=click.echo, **deadline)

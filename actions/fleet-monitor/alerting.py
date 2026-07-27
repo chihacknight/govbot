@@ -100,7 +100,12 @@ def _dashboard_link(state_filtered: bool) -> str:
     """
     url = f"{DASHBOARD_BASE}/d/{DASHBOARD_UID}?"
     if state_filtered:
-        url += "var-state={{ $labels.state }}&"
+        # `urlquery`, not a bare interpolation: this expands at notification time
+        # from a metric label, and a value carrying `&` or `#` would otherwise
+        # append or truncate query parameters in the link that lands in Slack.
+        # Jurisdiction codes are two letters today; the encoding costs nothing
+        # and stops that from being load-bearing.
+        url += "var-state={{ urlquery $labels.state }}&"
     return url + LINK_RANGE
 
 
@@ -265,10 +270,19 @@ def build_rule_group() -> dict:
                 # would silence this rule in exactly its worst case: every repo
                 # gone at once, which is what a fleet-wide GitHub outage looks
                 # like while the heartbeat keeps ticking.
-                f"count(count by (state, org) "
+                #
+                # `unless absent_over_time(heartbeat)` because a dead collector
+                # empties the [6h] side at the same instant the heartbeat rule
+                # fires, and `or vector(0)` would then floor it to zero and
+                # report the whole fleet as having "stopped reporting" — two
+                # Slack messages for one outage, the louder of them wrong about
+                # the cause. The dead-man rule owns that case; this one stands
+                # down while it holds.
+                f"(count(count by (state, org) "
                 f"(last_over_time(fleet_repo_data_commit_age_hours[{COVERAGE_BASELINE}]))) - "
                 f"(count(count by (state, org) "
-                f"(last_over_time(fleet_repo_data_commit_age_hours[{LOOKBACK}]))) or vector(0))",
+                f"(last_over_time(fleet_repo_data_commit_age_hours[{LOOKBACK}]))) or vector(0))) "
+                f"unless absent_over_time(fleet_collector_heartbeat_repos[{LOOKBACK}])",
                 {"type": "gt", "params": [COVERAGE_TOLERANCE]},
                 summary="{{ $values.B }} repos stopped reporting a data-commit age",
                 description=(
