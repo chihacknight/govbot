@@ -118,6 +118,14 @@ Mock legislative data is available for offline development:
 - Contains: Wyoming (wy) and Guam (gu) sample data
 - Usage: `govbot logs --govbot-dir ./actions/govbot/mocks/govbot_data`
 
+## Pages Dashboard
+
+The GitHub Pages dashboard's topic taxonomy lives in `scripts/govbot-dashboard.yml`
+(the canonical `tags:` config the deploy workflow runs `govbot tag` against). Its topic
+names must stay in sync with the keyword fallback in `scripts/dashboard_tags.json`. See
+`docs/src/dashboard-guide.md` for the data flow; tagging in CI is incremental via
+`scripts/filter_new_bills.py` + `scripts/tag_dashboard_repo.sh`.
+
 ## govbot Development
 
 ```bash

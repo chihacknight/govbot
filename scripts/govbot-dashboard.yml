@@ -1,0 +1,173 @@
+# Canonical topic taxonomy for the GitHub Pages dashboard.
+#
+# The deploy workflow (.github/workflows/deploy-docs.yml) copies this file into
+# each cloned legislation repo as `govbot.yml` and runs `govbot tag`, which reads
+# these definitions and writes tags/*.tag.json next to each session's bills/.
+# `scripts/build_dashboard_data.py` then reads those tag files to power the
+# "Topics" filter and chart on the dashboard.
+#
+# IMPORTANT: the tag names (the keys under `tags:`) MUST stay identical to the
+# keys in `scripts/dashboard_tags.json`. build_dashboard_data.py sources each
+# topic's dashboard description from that JSON keyed by name, and falls back to
+# its keyword matching for any bill that produced no embedding tag. Mismatched
+# names would split the taxonomy and blank out descriptions.
+#
+# Each tag drives govbot's embedding tagger (all-MiniLM-L6-v2):
+#   description       - what the topic covers (embedded as the tag's meaning)
+#   examples          - sample bill summaries that should match (also embedded)
+#   include_keywords  - a keyword hit boosts the score / forces keyword-only mode
+#   threshold         - a bill is tagged when its composite score >= threshold
+#
+# Threshold note: govbot's composite embedding score runs high (a generic
+# "legislative" baseline lands ~0.6 for any bill/topic pair), so the default of
+# 0.5 would tag every bill with every topic. 0.72 keeps only confident matches;
+# bills below it fall back to keyword tags in build_dashboard_data.py. Tune this
+# against real dashboard output — the mock data is too sparse to calibrate on.
+$schema: https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json
+
+repos:
+  - all
+
+tags:
+  health care:
+    description: |
+      Health care, public health, insurance coverage, Medicaid and Medicare,
+      hospitals, clinics, providers, prescription drugs, and medical services.
+    examples:
+      - "Expands Medicaid eligibility and postpartum coverage"
+      - "Regulates hospital billing and health insurance networks"
+      - "Caps insulin copays and prescription drug prices"
+    include_keywords: [health, medicaid, medicare, insurance, hospital, medical, prescription, clinic, provider, mental health]
+    threshold: 0.72
+
+  housing:
+    description: |
+      Housing affordability, rental and tenant protections, evictions,
+      homelessness, zoning and land use, home ownership, and construction.
+    examples:
+      - "Caps annual rent increases and strengthens tenant protections"
+      - "Funds affordable housing construction and homelessness services"
+      - "Reforms zoning to allow more multifamily housing"
+    include_keywords: [housing, rent, rental, tenant, landlord, eviction, homeless, zoning, mortgage, affordable housing]
+    threshold: 0.72
+
+  education:
+    description: |
+      Schools, school funding, curriculum, teachers, universities and colleges,
+      student aid, and education policy from pre-K through higher education.
+    examples:
+      - "Increases per-pupil funding and teacher salaries"
+      - "Establishes charter school authorization standards"
+      - "Expands college tuition assistance and student loan relief"
+    include_keywords: [education, school, schools, university, college, student, teacher, curriculum, tuition, classroom]
+    threshold: 0.72
+
+  environment & climate:
+    description: |
+      Environmental protection, climate change, clean energy, emissions,
+      natural resources, water, wildlife, pollution, and conservation.
+    examples:
+      - "Sets clean energy targets and reduces carbon emissions"
+      - "Protects wetlands and regulates industrial pollution"
+      - "Manages wildlife, water rights, and public lands"
+    include_keywords: [environment, climate, emissions, energy, pollution, wildlife, water, conservation, renewable, "oil and gas"]
+    threshold: 0.72
+
+  labor & workers:
+    description: |
+      Wages, workplace safety, unions and collective bargaining, paid leave,
+      unemployment, worker classification, and employment protections.
+    examples:
+      - "Raises the minimum wage and guarantees paid sick leave"
+      - "Protects the right to organize and bargain collectively"
+      - "Sets workplace safety standards and overtime rules"
+    include_keywords: [labor, worker, employee, wage, minimum wage, union, overtime, "paid leave", unemployment, workplace]
+    threshold: 0.72
+
+  immigration:
+    description: |
+      Immigration, refugees and asylum, citizenship, immigration enforcement,
+      and services or protections for immigrant communities.
+    examples:
+      - "Provides legal services and protections for immigrants"
+      - "Restricts state cooperation with federal immigration enforcement"
+      - "Expands access to driver licenses regardless of status"
+    include_keywords: [immigration, immigrant, refugee, asylum, citizenship, deportation, undocumented, migrant, visa]
+    threshold: 0.72
+
+  criminal justice:
+    description: |
+      Criminal law and sentencing, policing, prisons and incarceration,
+      bail and pretrial, parole and probation, and criminal justice reform.
+    examples:
+      - "Reforms cash bail and reduces pretrial detention"
+      - "Sets policing standards and use-of-force limits"
+      - "Revises sentencing guidelines and expands parole eligibility"
+    include_keywords: [criminal, police, policing, prison, incarceration, sentencing, bail, parole, probation, felony]
+    threshold: 0.72
+
+  elections & voting:
+    description: |
+      Elections, voting rights and access, voter registration, ballots,
+      redistricting, campaign finance, and election administration.
+    examples:
+      - "Expands early voting and mail-in ballot access"
+      - "Sets voter registration and voter ID requirements"
+      - "Reforms redistricting and campaign finance disclosure"
+    include_keywords: [election, elections, voting, voter, ballot, registration, redistricting, "campaign finance", "polling place"]
+    threshold: 0.72
+
+  budget & taxes:
+    description: |
+      State budgets and appropriations, taxation, tax credits, fees,
+      revenue, bonding, and public funds.
+    examples:
+      - "Appropriates general funds for the biennial budget"
+      - "Adjusts income tax rates and creates a new tax credit"
+      - "Authorizes bonding and allocates public revenue"
+    include_keywords: [appropriation, appropriations, tax, taxes, "tax credit", fees, revenue, bonding, budget, funds]
+    threshold: 0.72
+
+  transportation:
+    description: |
+      Roads and highways, transit and rail, bridges, drivers and vehicles,
+      traffic safety, and transportation infrastructure and funding.
+    examples:
+      - "Funds highway repair and public transit expansion"
+      - "Sets traffic safety rules and vehicle registration fees"
+      - "Invests in bridges, rail, and road infrastructure"
+    include_keywords: [transportation, highway, road, transit, rail, vehicle, traffic, bridge, "driver license", infrastructure]
+    threshold: 0.72
+
+  reproductive rights:
+    description: |
+      Abortion, contraception, reproductive health care access, pregnancy,
+      and family planning services and restrictions.
+    examples:
+      - "Protects access to abortion and reproductive health care"
+      - "Restricts abortion after a set number of weeks"
+      - "Expands contraception coverage and family planning services"
+    include_keywords: [abortion, reproductive, contraception, "family planning", pregnancy, "reproductive health", fetal]
+    threshold: 0.72
+
+  lgbtq:
+    description: |
+      Rights, protections, and policies affecting LGBTQ people, including
+      gender identity, sexual orientation, and anti-discrimination measures.
+    examples:
+      - "Prohibits discrimination based on sexual orientation and gender identity"
+      - "Protects access to gender-affirming care"
+      - "Addresses transgender participation and recognition"
+    include_keywords: [lgbtq, transgender, "gender identity", "sexual orientation", "gender-affirming", "same-sex", nonbinary]
+    threshold: 0.72
+
+  government operations:
+    description: |
+      Permitting and licensing, agency administration, public records,
+      procurement, ethics, and the general operation of government.
+    examples:
+      - "Modernizes professional licensing and permit processing"
+      - "Strengthens public records and government ethics rules"
+      - "Reforms state procurement and agency administration"
+    include_keywords: [permit, permits, license, licenses, agency, department, "public records", procurement, ethics, administration]
+    threshold: 0.72
