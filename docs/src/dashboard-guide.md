@@ -31,12 +31,13 @@ OCD-files layout (`**/bills/<ID>/metadata.json`) or raw OpenStates scraper
 output (`_data/<locale>/bill_<uuid>.json`) — and joins topic tags from
 `govbot tag` output (`tags/*.tag.json`).
 
-On every Pages deploy (and on a daily 8am UTC schedule), the workflow shallow-clones
-every `*-legislation` repo from the
-[govbot-openstates-scrapers](https://github.com/govbot-openstates-scrapers)
-organization, tags the bills with govbot's embedding model, and rebuilds `data.json`
-from all of them, so the published dashboard covers every tracked jurisdiction. The
-topic taxonomy lives in
+On every Pages deploy (and on a daily 8am UTC schedule), the workflow runs
+`govbot clone all` to fetch govbot's processed dataset (the `chn-openstates-files`
+`*-legislation` repos, in govbot's OCD-files layout), tags the bills with govbot's
+embedding model, and rebuilds `data.json` from all of them, so the published
+dashboard covers every tracked jurisdiction. (The embedding tagger needs that
+layout — `govbot logs`/`govbot tag` read the per-bill `logs/` structure, which the
+raw OpenStates scraper repos don't have.) The topic taxonomy lives in
 [`scripts/govbot-dashboard.yml`](https://github.com/chihacknight/govbot/blob/main/scripts/govbot-dashboard.yml);
 `scripts/dashboard_tags.json` mirrors the same topic names as a keyword fallback for
 any bill the embedding tagger didn't reach.
