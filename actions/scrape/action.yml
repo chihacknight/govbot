@@ -207,6 +207,12 @@ runs:
         TAR_PATH="${GITHUB_WORKSPACE}/scrape-snapshot-nightly.tgz"
         SUMMARY_FILE="${GITHUB_WORKSPACE}/scrape-summary.json"
 
+        # Unlike "Build archive manifest"'s SNAP_DATE, this needs to be set on
+        # every run (including a fallback-only run with no fresh tarball) --
+        # it names this run's audit-summary artifact below.
+        AUDIT_DATE=$(date -u +'%Y-%m-%d')
+        echo "AUDIT_DATE=${AUDIT_DATE}" >> "$GITHUB_ENV"
+
         # Determine source type
         if [ "${{ env.SCRAPE_TARBALL }}" = "present" ]; then
           SOURCE="🕷️ Fresh scrape"
@@ -323,6 +329,49 @@ runs:
             echo "_...and $((SKIPPED_COUNT - 5)) more. Check logs for details._" >> $GITHUB_STEP_SUMMARY
           fi
         fi
+
+        # $GITHUB_STEP_SUMMARY above is only ever readable from the GitHub UI --
+        # there's no REST API or `gh` CLI path to it, so external tooling (audit
+        # scripts, this repo's own tamara-notes tracking) has no way to see it.
+        # Mirror the same data into a plain JSON file instead, uploaded below as
+        # a date-stamped artifact per run (not overwritten) -- artifacts *are*
+        # fetchable via the API, and keeping one per day means an audit can look
+        # back over recent history instead of only ever seeing the latest run.
+        jq -n \
+          --arg state "${{ inputs.state }}" \
+          --arg date "$AUDIT_DATE" \
+          --argjson bill_count "$([ "$BILL_COUNT" != "N/A" ] && echo "$BILL_COUNT" || echo null)" \
+          --argjson vote_event_count "$([ "$VOTE_EVENT_COUNT" != "N/A" ] && echo "$VOTE_EVENT_COUNT" || echo null)" \
+          --argjson event_count "$([ "$EVENT_COUNT" != "N/A" ] && echo "$EVENT_COUNT" || echo null)" \
+          --argjson metadata_total "$([ "$METADATA_TOTAL" != "N/A" ] && echo "$METADATA_TOTAL" || echo null)" \
+          --argjson file_count "$FILE_COUNT" \
+          --arg duration "$DURATION" \
+          --arg source "$SOURCE" \
+          --arg status "$STATUS" \
+          --arg failure_type "$FAILURE_TYPE" \
+          --argjson is_active_block "$IS_ACTIVE_BLOCK" \
+          --argjson error_count "$ERROR_COUNT" \
+          --arg errors "$ERRORS" \
+          --argjson skipped_count "$SKIPPED_COUNT" \
+          --arg skipped_items "$SKIPPED_ITEMS" \
+          '{
+            state: $state,
+            date: $date,
+            bills: $bill_count,
+            vote_events: $vote_event_count,
+            events: $event_count,
+            metadata_total: $metadata_total,
+            file_count: $file_count,
+            duration: $duration,
+            source: $source,
+            status: $status,
+            failure_type: $failure_type,
+            is_active_block: $is_active_block,
+            error_count: $error_count,
+            errors: (if $errors == "" then [] else ($errors | split("\n")) end),
+            skipped_count: $skipped_count,
+            skipped_items: (if $skipped_items == "" then [] else ($skipped_items | split("\n")) end)
+          }' > "${GITHUB_WORKSPACE}/audit-summary.json"
 
     - name: Fail action if scrape failed
       shell: bash
@@ -500,6 +549,26 @@ runs:
           echo "| Deletions | $DELETIONS |"
         } >> "$GITHUB_STEP_SUMMARY"
 
+        # Same reasoning as the "Write scrape summary" step's audit-summary.json --
+        # merge this step's numbers into the same file so an external audit only
+        # has to fetch one artifact per run, not reassemble data from two steps.
+        AUDIT_FILE="${GITHUB_WORKSPACE}/audit-summary.json"
+        if [ -f "$AUDIT_FILE" ]; then
+          jq \
+            --argjson old_distinct "$OLD_DISTINCT" \
+            --argjson new_distinct "$NEW_DISTINCT" \
+            --arg content_change "$CONTENT_CHANGE" \
+            --argjson insertions "$INSERTIONS" \
+            --argjson deletions "$DELETIONS" \
+            '. + {
+              distinct_bills_before: $old_distinct,
+              distinct_bills_after: $new_distinct,
+              content_change: $content_change,
+              insertions: $insertions,
+              deletions: $deletions
+            }' "$AUDIT_FILE" > "${AUDIT_FILE}.tmp" && mv "${AUDIT_FILE}.tmp" "$AUDIT_FILE"
+        fi
+
         # Commit if there are changes
         if git diff --staged --quiet; then
           echo "No changes to commit"
@@ -559,3 +628,26 @@ runs:
             exit 1
           fi
         fi
+
+    - name: Upload audit summary artifact (one per run, never overwritten)
+      # Runs even if an earlier step failed the job (e.g. "Fail action if
+      # scrape failed" on an active block) -- audit-summary.json is written
+      # in "Write scrape summary", well before that point, so it exists and
+      # is worth uploading in either case. This is the only way this data is
+      # fetchable outside the GitHub Actions UI (see the comment where the
+      # file is written).
+      #
+      # Named per-run (state + date + the run's own run_id) rather than a
+      # single rolling/overwritten artifact (unlike "Upload scraped artifact"
+      # above), and never overwritten -- a same-day retry or manual re-dispatch
+      # is itself useful history when hunting a bug (e.g. "it failed at 9am but
+      # the 2pm retry worked"), not just noise to collapse away. `retention-days`
+      # bounds how far back this goes automatically; a manual wipe-and-restart
+      # is also fine whenever this history stops being useful.
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: audit-summary-${{ inputs.state }}-${{ env.AUDIT_DATE }}-${{ github.run_id }}
+        path: ${{ github.workspace }}/audit-summary.json
+        retention-days: 30
+        if-no-files-found: warn
