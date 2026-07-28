@@ -527,7 +527,26 @@ runs:
             # In case of conflicts, keep our scraped files
             git checkout --ours "_data/${{ inputs.state }}/" 2>/dev/null || true
             git add "_data/${{ inputs.state }}/"
-            git commit --no-edit -m "🔄 Auto-merge: kept scraped data" || true
+
+            # git checkout --ours can silently no-op instead of resolving (see
+            # tamara-notes/scraper-status/critical-merge-conflict-corruption.md --
+            # this exact gap let GA commit 352 files full of literal, unresolved
+            # conflict markers for 5 days as if they were clean data). Verify the
+            # merge actually resolved and every bill JSON file still parses before
+            # committing; abort loudly instead of silently committing garbage.
+            UNMERGED=$(git diff --name-only --diff-filter=U)
+            BAD_JSON=$(find "_data/${{ inputs.state }}/" -type f -name '*.json' -print0 2>/dev/null \
+              | xargs -0 -I{} sh -c 'jq empty "$1" >/dev/null 2>&1 || echo "$1"' _ {})
+
+            if [ -n "$UNMERGED" ] || [ -n "$BAD_JSON" ]; then
+              echo "❌ Conflict resolution failed, aborting commit:" >&2
+              [ -n "$UNMERGED" ] && echo "Unmerged paths: $UNMERGED" >&2
+              [ -n "$BAD_JSON" ] && echo "Invalid JSON after resolution: $BAD_JSON" >&2
+              git merge --abort 2>/dev/null || true
+              exit 1
+            fi
+
+            git commit --no-edit -m "🔄 Auto-merge: kept scraped data"
           fi
 
           # Push with retries
