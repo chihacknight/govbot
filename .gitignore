@@ -121,5 +121,8 @@ target/
 
 sample_data/*
 
+# Claude Code local tool config (personal permission allowlists, not shared project config)
+.claude/
+
 
 
