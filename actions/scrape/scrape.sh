@@ -95,12 +95,6 @@ touch "$AUTOSAVE_FLAG"
             echo "✅ Auto-saved progress (attempt $i)"
             break
           fi
-          # A failed pull can leave conflict markers sitting in the working
-          # tree (unmerged, uncommitted) -- left alone, the final "Commit and
-          # push scraped files" step's `git add` would silently pick those up.
-          # Abort the merge so the working tree is clean for the next attempt
-          # or the final commit step, instead of leaving corrupted files behind.
-          git merge --abort 2>/dev/null || true
           echo "⚠️ Auto-save push failed (attempt $i), retrying..."
           sleep 5
         done
