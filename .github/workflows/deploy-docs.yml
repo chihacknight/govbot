@@ -58,15 +58,16 @@ jobs:
           restore-keys: |
             govbot-tags-${{ hashFiles('scripts/govbot-dashboard.yml') }}-
 
-      # Fetch live legislation data, tag it with govbot's embedding model, and
-      # rebuild the dashboard's data.json before mdbook runs. Every stage that
-      # touches the network or the tagger degrades to a warning + the keyword
-      # fallback (scripts/dashboard_tags.json) or, ultimately, the committed
-      # sample data, so the docs deploy never breaks.
+      # Fetch govbot's processed legislation dataset, tag it with the embedding
+      # model, and rebuild the dashboard's data.json before mdbook runs. We clone
+      # via `govbot clone` (the chn-openstates-files dataset) rather than the raw
+      # openstates scraper repos, because `govbot logs`/`govbot tag` require
+      # govbot's OCD-files layout (country:/state:/sessions/.../logs). Every stage
+      # that touches the network or the tagger degrades to a warning + the keyword
+      # fallback (scripts/dashboard_tags.json) or, ultimately, the committed sample
+      # data, so the docs deploy never breaks.
       - name: Build dashboard data from legislation repos
         env:
-          GH_TOKEN: ${{ github.token }}
-          DATA_ORG: govbot-openstates-scrapers
           GOVBOT_DATA: /tmp/govbot-data
           MODEL_DIR: /tmp/govbot-model
           CACHE_DIR: /tmp/govbot-cache
@@ -74,16 +75,17 @@ jobs:
           FILTER_SCRIPT: ${{ github.workspace }}/scripts/filter_new_bills.py
         run: |
           set -uo pipefail
-          mkdir -p /tmp/govbot-data/repos /tmp/govbot-model /tmp/govbot-cache
-          repos=$(gh repo list "$DATA_ORG" --limit 200 --json name --jq '.[].name' | grep -- '-legislation$') || true
-          if [ -z "${repos:-}" ]; then
-            echo "::warning::no *-legislation repos found in $DATA_ORG; keeping committed sample data"
+          mkdir -p /tmp/govbot-data /tmp/govbot-model /tmp/govbot-cache
+
+          # Clone/pull the full supported dataset (depth-50 shallow, from
+          # chn-openstates-files) into /tmp/govbot-data/repos in govbot format.
+          govbot clone all --govbot-dir /tmp/govbot-data --parallel 8 \
+            || echo "::warning::govbot clone reported errors; proceeding with whatever cloned"
+
+          if [ -z "$(ls -A /tmp/govbot-data/repos 2>/dev/null)" ]; then
+            echo "::warning::no legislation data cloned; keeping committed sample data"
           else
-            echo "cloning $(echo "$repos" | wc -l) repos from $DATA_ORG"
-            for r in $repos; do
-              git clone --quiet --depth 1 "https://github.com/$DATA_ORG/$r.git" "/tmp/govbot-data/repos/$r" \
-                || echo "::warning::failed to clone $DATA_ORG/$r"
-            done
+            echo "cloned $(find /tmp/govbot-data/repos -mindepth 1 -maxdepth 1 -type d | wc -l) repos"
 
             # Warm up the model in a single process BEFORE fanning out, so the
             # parallel workers below don't race to download it. Empty stdin is
@@ -101,7 +103,7 @@ jobs:
             python3 scripts/build_dashboard_data.py \
               --govbot-dir /tmp/govbot-data \
               --tags-config scripts/dashboard_tags.json \
-              --source-label "github.com/$DATA_ORG" \
+              --source-label "github.com/chn-openstates-files" \
               --output docs/src/dashboard/data.json \
               || {
                 echo "::warning::dashboard data build failed; keeping committed sample data"
