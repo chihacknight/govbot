@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../pipeline-manager/config.schema.json
+template_markers:
+  open: ✏️{
+  close: '}✏️'
+org:
+  username: govbot-data
+templates:
+  openstates-to-ocd-files:
+    folder-name: ✏️{ locale.key }✏️-legislation
+    fully_override_dirs:
+    - .github
+locales:
+  al:
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Alabama
+    disabled_jobs:
+      - extract-text # Exclude extract-text.yml workflow
+      - nightly.yml # Exclude nightly.yml.j2 — render.py's disable key is splitext of the on-disk name
+    labels:
+      - working
+  gu:
+    template: openstates-to-ocd-files
+    toolkit_branch: main
+    name: Guam

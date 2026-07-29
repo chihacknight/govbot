@@ -1,0 +1,17 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[pipenv]
+sort_pipfile = true
+
+[packages]
+click = "*"
+jsonschema = "*"
+pyyaml = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.11"

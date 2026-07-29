@@ -1,0 +1,25 @@
+# Minimal fleet: locks the discovery convention (any top-level YAML with a `locales`
+# mapping is a fleet — this one is deliberately .yaml, not .yml), custom
+# template_markers in the folder-name pattern, and the repo-name fallback when a
+# template has no folder-name (the bare locale code, matching render.py).
+template_markers:
+  open: '[['
+  close: ']]'
+org:
+  username: test-org
+templates:
+  bare: {}
+  marked:
+    folder-name: '[[ locale.key ]]-data'
+locales:
+  xx:
+    template: bare
+    name: Ex
+    managed: false # render.py skips unmanaged locales; this one must emit no record
+  yy:
+    template: marked
+    name: Wye
+  zz:
+    template: bare
+    name: Zed
+    runner: # blank value: parses to None, must fall back to ubuntu-latest

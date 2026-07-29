@@ -1,0 +1,3 @@
+# Fixture stub: only the file name matters to the config reader.
+name: OpenStates Scrape (paused)
+on: workflow_dispatch

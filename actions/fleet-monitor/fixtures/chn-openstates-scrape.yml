@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../pipeline-manager/config.schema.json
+# No template_markers block: exercises the ✏️{ }✏️ defaults in the reader.
+org:
+  username: govbot-openstates-scrapers
+templates:
+  openstates-scrape:
+    folder-name: ✏️{ locale.key }✏️-legislation
+    fully_override_dirs:
+    - .github
+  openstates-scrape-paused:
+    folder-name: ✏️{ locale.key }✏️-legislation
+    fully_override_dirs:
+    - .github
+locales:
+  ak:
+    template: openstates-scrape
+    name: Alaska
+    toolkit_branch: main
+  az:
+    template: openstates-scrape-paused
+    name: Arizona
+    toolkit_branch: main
+  wy:
+    template: openstates-scrape
+    name: Wyoming
+    toolkit_branch: main
+    runner: self-hosted
+    labels:
+    - working
