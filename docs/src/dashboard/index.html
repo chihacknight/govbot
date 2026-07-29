@@ -134,7 +134,8 @@
     display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
     margin: 18px 0 20px;
   }
-  .filters input[type="search"], .filters select, .filters .msel > button, .filters .clear-btn {
+  .filters input[type="search"], .filters select, .filters input[type="date"],
+  .filters .msel > button, .filters .clear-btn {
     height: 32px;
     padding: 0 10px;
     border: 1px solid var(--border);
@@ -145,6 +146,11 @@
   }
   .filters input[type="search"] { width: 220px; }
   .filters input[type="search"]::placeholder { color: var(--text-muted); }
+  .filters input[type="date"]:hover { background: var(--hover-wash); }
+  .filters input[type="date"] { color-scheme: light dark; }
+  .daterange-custom { display: inline-flex; align-items: center; gap: 6px; }
+  .daterange-custom[hidden] { display: none; }
+  .daterange-sep { color: var(--text-muted); font-size: 12.5px; }
   .msel { position: relative; }
   .msel > button { cursor: pointer; display: flex; align-items: center; gap: 6px; }
   .msel > button:hover, .filters select:hover, .clear-btn:hover { background: var(--hover-wash); }
@@ -188,6 +194,13 @@
   }
   .card h2 { font-size: 14px; font-weight: 600; margin: 0 0 2px; }
   .card .sub { color: var(--text-muted); font-size: 12px; margin: 0 0 12px; }
+
+  /* Section accent: a colored left border marks each of the three main
+     sections with its own hue so they read as distinct at a glance. */
+  .card--accent { border-left-width: 3px; }
+  .card--jurisdiction { border-left-color: var(--series-1); }  /* blue   */
+  .card--topic        { border-left-color: var(--series-5); }  /* purple */
+  .card--bills        { border-left-color: var(--series-3); }  /* amber  */
 
   .hbar-row {
     display: grid; grid-template-columns: 160px 1fr; gap: 10px;
@@ -243,7 +256,11 @@
   .chip .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 
   /* ---------- table ---------- */
-  .tablecard { overflow-x: auto; }
+  /* The rows scroll inside this capped-height box so the header row can freeze
+     at its top. Putting overflow here (rather than on the whole card) keeps the
+     scroll container tight around the table: `position: sticky` on the header
+     sticks to this box, not to a card edge that scrolls away with the page. */
+  .table-scroll { overflow: auto; max-height: 70vh; }
   table { border-collapse: collapse; width: 100%; }
   th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--gridline); vertical-align: top; }
   th {
@@ -321,19 +338,32 @@
     <select id="f-session" aria-label="Session"></select>
     <select id="f-chamber" aria-label="Chamber"></select>
     <div class="msel" id="f-tags"></div>
+    <select id="f-daterange" aria-label="Last action date range">
+      <option value="">Any date</option>
+      <option value="7d">Last 7 days</option>
+      <option value="30d">Last 30 days</option>
+      <option value="90d">Last 3 months</option>
+      <option value="365d">Last 12 months</option>
+      <option value="custom">Custom range…</option>
+    </select>
+    <span class="daterange-custom" id="f-daterange-custom" hidden>
+      <input type="date" id="f-date-from" aria-label="Last action from date">
+      <span class="daterange-sep">to</span>
+      <input type="date" id="f-date-to" aria-label="Last action to date">
+    </span>
     <button class="clear-btn" id="f-clear" disabled>Clear filters</button>
   </div>
 
   <div class="tiles" id="tiles"></div>
 
   <div class="grid2">
-    <div class="card">
+    <div class="card card--accent card--jurisdiction">
       <h2>Bills by jurisdiction</h2>
       <p class="sub">Click a bar to filter</p>
       <div id="chart-states" class="hbar-scroll"></div>
       <p class="pending-note" id="pending-note" hidden></p>
     </div>
-    <div class="card">
+    <div class="card card--accent card--topic">
       <h2>Bills by topic</h2>
       <p class="sub">Click a bar to filter · a bill can carry several topics</p>
       <div id="chart-tags" class="hbar-scroll"></div>
@@ -346,13 +376,15 @@
     <div id="chart-months"></div>
   </div>
 
-  <div class="card tablecard" style="margin-top:12px">
+  <div class="card card--accent card--bills" style="margin-top:12px">
     <h2 id="table-title">Bills</h2>
     <p class="sub">Click a column header to sort</p>
-    <table>
-      <thead><tr id="thead-row"></tr></thead>
-      <tbody id="tbody"></tbody>
-    </table>
+    <div class="table-scroll">
+      <table>
+        <thead><tr id="thead-row"></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
     <div class="empty" id="empty" hidden>No bills match the current filters.</div>
     <button class="clear-btn show-more" id="show-more" hidden></button>
   </div>
@@ -413,7 +445,8 @@
     data: null,
     stateNames: {},          // code -> display name
     tagColor: {},            // tag name -> css var (fixed, follows the entity)
-    filters: { search: "", states: new Set(), session: "", chamber: "", tags: new Set() },
+    filters: { search: "", states: new Set(), session: "", chamber: "", tags: new Set(),
+               dateFrom: "", dateTo: "" },
     sort: { key: "latest_action", dir: -1 },
     limit: PAGE_SIZE,
   };
@@ -454,6 +487,8 @@
       uniqueSorted(data.bills.map((b) => b.chamber).filter(Boolean)),
       (v) => { state.filters.chamber = v; render(); }, capitalize);
 
+    initDateRange();
+
     let searchTimer;
     $("f-search").addEventListener("input", (e) => {
       clearTimeout(searchTimer);
@@ -467,6 +502,7 @@
       state.filters.states.clear(); state.filters.tags.clear();
       state.filters.session = ""; $("f-session").value = "";
       state.filters.chamber = ""; $("f-chamber").value = "";
+      resetDateRange();
       syncMultiSelects(); render();
     });
     document.addEventListener("click", (e) => {
@@ -535,6 +571,14 @@
       if (f.session && b.session !== f.session) return false;
       if (f.chamber && b.chamber !== f.chamber) return false;
       if (f.tags.size && !b.tags.some((t) => f.tags.has(t))) return false;
+      // Date filter runs against the latest action date (YYYY-MM-DD strings
+      // compare lexicographically). Bills with no recorded action have no date
+      // to place, so a date filter excludes them.
+      if (f.dateFrom || f.dateTo) {
+        if (!b.latest_action) return false;
+        if (f.dateFrom && b.latest_action < f.dateFrom) return false;
+        if (f.dateTo && b.latest_action > f.dateTo) return false;
+      }
       if (f.search) {
         const hay = (b.id + " " + b.title + " " + b.sponsors.join(" ")).toLowerCase();
         if (!hay.includes(f.search)) return false;
@@ -545,7 +589,8 @@
 
   function anyFilterActive() {
     const f = state.filters;
-    return !!(f.search || f.states.size || f.tags.size || f.session || f.chamber);
+    return !!(f.search || f.states.size || f.tags.size || f.session || f.chamber
+              || f.dateFrom || f.dateTo);
   }
 
   /* ---------- render ---------- */
@@ -651,16 +696,27 @@
     container.textContent = "";
     const dated = bills.filter((b) => b.latest_action);
     const undated = bills.length - dated.length;
+    // Future-dated actions (a scheduled effective date, or a bad far-future
+    // source date) must not anchor the month axis: a single 2035 date would
+    // otherwise push the axis years out and blank the entire recent view.
+    // The data build already caps "latest action" at the snapshot date, so
+    // this is a belt-and-suspenders guard that also corrects any stale data
+    // still served before the next rebuild. Chart only months up to the
+    // current one; count anything beyond it separately.
+    const nowMonth = new Date().toISOString().slice(0, 7);
+    const charted = dated.filter((b) => b.latest_action.slice(0, 7) <= nowMonth);
+    const future = dated.length - charted.length;
     $("activity-sub").textContent = "Bills with their most recent action in each month" +
-      (undated ? " · " + fmt(undated) + " without recorded actions not shown" : "");
-    if (!dated.length) {
+      (undated ? " · " + fmt(undated) + " without recorded actions not shown" : "") +
+      (future ? " · " + fmt(future) + " with future-dated actions not shown" : "");
+    if (!charted.length) {
       const e = document.createElement("div");
       e.className = "empty";
       e.textContent = "No dated actions in the current selection.";
       return container.append(e);
     }
     const counts = {};
-    dated.forEach((b) => {
+    charted.forEach((b) => {
       const m = b.latest_action.slice(0, 7);
       counts[m] = (counts[m] || 0) + 1;
     });
@@ -904,6 +960,52 @@
     [$("f-states"), $("f-tags")].forEach((m) => m._sync && m._sync());
   }
 
+  /* ---------- last-action date range ---------- */
+
+  // A preset ("Last 30 days") is a relative window ending today; "Custom range"
+  // reveals two date inputs. Both feed the same dateFrom/dateTo filter strings.
+  function initDateRange() {
+    const sel = $("f-daterange");
+    const custom = $("f-daterange-custom");
+    const from = $("f-date-from");
+    const to = $("f-date-to");
+
+    sel.addEventListener("change", () => {
+      if (sel.value === "custom") {
+        custom.hidden = false;
+        applyCustomDates();
+      } else {
+        custom.hidden = true;
+        const days = parseInt(sel.value, 10);
+        if (days) {
+          state.filters.dateFrom = isoDaysAgo(days);
+          state.filters.dateTo = isoToday();
+        } else {
+          state.filters.dateFrom = "";
+          state.filters.dateTo = "";
+        }
+        render();
+      }
+    });
+    from.addEventListener("change", applyCustomDates);
+    to.addEventListener("change", applyCustomDates);
+
+    function applyCustomDates() {
+      state.filters.dateFrom = from.value || "";
+      state.filters.dateTo = to.value || "";
+      render();
+    }
+  }
+
+  function resetDateRange() {
+    state.filters.dateFrom = "";
+    state.filters.dateTo = "";
+    $("f-daterange").value = "";
+    $("f-date-from").value = "";
+    $("f-date-to").value = "";
+    $("f-daterange-custom").hidden = true;
+  }
+
   /* ---------- tooltip ---------- */
 
   function attachTooltip(el, contentFn) {
@@ -938,6 +1040,12 @@
     if (on) set.add(value); else set.delete(value);
   }
   function uniqueSorted(arr) { return [...new Set(arr)].sort(); }
+  function isoToday() { return new Date().toISOString().slice(0, 10); }
+  function isoDaysAgo(days) {
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    return d.toISOString().slice(0, 10);
+  }
   function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
   function fmt(n) { return n.toLocaleString("en-US"); }
   function niceCeil(v) {
