@@ -173,10 +173,20 @@ def session_for(metadata, metadata_path):
     return ""
 
 
-def summarize_bill(metadata, session_id, tags, code):
+def summarize_bill(metadata, session_id, tags, code, today):
     actions = metadata.get("actions") or []
-    dates = sorted(a["date"][:10] for a in actions if a.get("date"))
-    latest = max(actions, key=lambda a: a.get("date") or "") if actions else {}
+    # "Latest action" means the most recent action that has actually happened.
+    # Government data routinely carries future-scheduled actions — a bill's
+    # "Effective Date" set years out, or an occasional bad far-future source
+    # date (e.g. a "Final Reading" mis-keyed to 2035). Counting those as the
+    # latest action makes bills masquerade as recent activity: they sort to the
+    # top of the table and stretch the dashboard's month axis into empty future
+    # territory. Cap the candidate actions at the snapshot date so only actions
+    # that have occurred can be "latest"; future-dated ones are simply not the
+    # newest thing that has happened yet.
+    past = [a for a in actions if a.get("date") and a["date"][:10] <= today]
+    latest = max(past, key=lambda a: a["date"]) if past else {}
+    latest_date = latest.get("date", "")[:10] or None
     sponsors = [s.get("name", "") for s in metadata.get("sponsorships") or []]
     url = next((s["url"] for s in metadata.get("sources") or [] if s.get("url")), None)
     desc = latest.get("description")
@@ -186,7 +196,7 @@ def summarize_bill(metadata, session_id, tags, code):
         "id": metadata.get("identifier", ""),
         "title": (metadata.get("title") or "")[:MAX_TITLE],
         "chamber": parse_org_classification(metadata.get("from_organization")),
-        "latest_action": dates[-1] if dates else None,
+        "latest_action": latest_date,
         "latest_action_desc": desc[:MAX_ACTION_DESC] if desc else None,
         "sponsors": sponsors[:MAX_SPONSORS],
         "url": url,
@@ -211,6 +221,10 @@ def main():
     repos_dir = Path(args.govbot_dir) / "repos"
     if not repos_dir.is_dir():
         parser.error(f"no repos directory at {repos_dir} — run `govbot clone` first")
+
+    # Reference "today" (UTC) — actions dated after this are future-scheduled,
+    # not yet the latest action. Kept as one value so the whole build agrees.
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     compiled_tags = compile_keyword_tags(args.tags_config) if args.tags_config else []
     tag_descriptions = {}
@@ -252,7 +266,7 @@ def main():
             code, name = parse_jurisdiction(metadata.get("jurisdiction"), repo_code)
             state_names.setdefault(code, name)
             bills.append(summarize_bill(
-                metadata, session_for(metadata, metadata_path), tags, code))
+                metadata, session_for(metadata, metadata_path), tags, code, today))
             repo_bills += 1
         if repo_bills == 0:
             empty_repos[repo_code] = STATE_NAMES.get(repo_code, repo_code.upper())
