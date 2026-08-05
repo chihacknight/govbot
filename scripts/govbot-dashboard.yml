@@ -171,3 +171,15 @@ tags:
       - "Reforms state procurement and agency administration"
     include_keywords: [permit, permits, license, licenses, agency, department, "public records", procurement, ethics, administration]
     threshold: 0.72
+
+  technology & AI:
+    description: |
+      Artificial intelligence and automated decision systems, data centers,
+      cryptocurrency and blockchain, data privacy, cybersecurity, and
+      broadband and internet policy.
+    examples:
+      - "Regulates artificial intelligence and automated decision systems"
+      - "Sets siting, energy, and water use rules for data centers"
+      - "Governs cryptocurrency, digital assets, and blockchain"
+    include_keywords: ["artificial intelligence", "machine learning", "automated decision", deepfake, "data center", "data centers", cryptocurrency, crypto, blockchain, "digital asset", "digital assets", bitcoin, "data privacy", cybersecurity, broadband]
+    threshold: 0.72

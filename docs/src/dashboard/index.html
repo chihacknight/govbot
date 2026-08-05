@@ -195,12 +195,13 @@
   .card h2 { font-size: 14px; font-weight: 600; margin: 0 0 2px; }
   .card .sub { color: var(--text-muted); font-size: 12px; margin: 0 0 12px; }
 
-  /* Section accent: a colored left border marks each of the three main
-     sections with its own hue so they read as distinct at a glance. */
-  .card--accent { border-left-width: 3px; }
-  .card--jurisdiction { border-left-color: var(--series-1); }  /* blue   */
-  .card--topic        { border-left-color: var(--series-5); }  /* purple */
-  .card--bills        { border-left-color: var(--series-3); }  /* amber  */
+  /* Section accent: each main section carries its own colored border on all
+     four sides so the sections read as distinct blocks at a glance. */
+  .card--accent { border-width: 2px; }
+  .card--jurisdiction { border-color: var(--series-1); }  /* blue   */
+  .card--topic        { border-color: var(--series-5); }  /* purple */
+  .card--activity     { border-color: var(--series-2); }  /* green  */
+  .card--bills        { border-color: var(--series-3); }  /* amber  */
 
   .hbar-row {
     display: grid; grid-template-columns: 160px 1fr; gap: 10px;
@@ -370,7 +371,7 @@
     </div>
   </div>
 
-  <div class="card" id="activity-card">
+  <div class="card card--accent card--activity" id="activity-card">
     <h2>Activity by month</h2>
     <p class="sub" id="activity-sub">Bills with their most recent action in each month</p>
     <div id="chart-months"></div>
