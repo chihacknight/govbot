@@ -144,7 +144,18 @@ runs:
 
                       # Re-inject our _processing object if it exists
                       if [ -n "$OUR_PROCESSING" ] && [ "$OUR_PROCESSING" != "null" ] && [ "$OUR_PROCESSING" != "empty" ]; then
-                        jq --argjson proc "$OUR_PROCESSING" '.metadata._processing = $proc' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+                        # Merge in only our text_extraction_latest_update key, on top of
+                        # theirs' _processing object -- NOT a wholesale overwrite. Theirs
+                        # may have a freshly-bumped logs_latest_update (scraper added a new
+                        # bill version concurrently); overwriting the whole object with our
+                        # stale copy would silently defeat the skip-check that's supposed to
+                        # catch "bill changed, needs re-extraction."
+                        jq --argjson proc "$OUR_PROCESSING" '
+                          .metadata._processing = ((.metadata._processing // {}) +
+                            (if ($proc.text_extraction_latest_update // null) != null
+                             then {text_extraction_latest_update: $proc.text_extraction_latest_update}
+                             else {} end))
+                        ' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
                         echo "  ✓ Preserved extraction metadata in $file"
                       fi
                     done
@@ -177,7 +188,15 @@ runs:
                           OUR_PROCESSING=$(git show :2:"$file" | jq -c '.metadata._processing // empty' 2>/dev/null || echo "")
                           git checkout --theirs "$file" 2>/dev/null || true
                           if [ -n "$OUR_PROCESSING" ] && [ "$OUR_PROCESSING" != "null" ] && [ "$OUR_PROCESSING" != "empty" ]; then
-                            jq --argjson proc "$OUR_PROCESSING" '.metadata._processing = $proc' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+                            # See the comment on the equivalent block above: merge in only
+                            # our text_extraction_latest_update key, don't overwrite the
+                            # whole _processing object and clobber theirs' logs_latest_update.
+                            jq --argjson proc "$OUR_PROCESSING" '
+                              .metadata._processing = ((.metadata._processing // {}) +
+                                (if ($proc.text_extraction_latest_update // null) != null
+                                 then {text_extraction_latest_update: $proc.text_extraction_latest_update}
+                                 else {} end))
+                            ' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
                           fi
                         done
                         git checkout --ours "**/files/" .windycivi/ 2>/dev/null || true
@@ -369,7 +388,15 @@ runs:
 
               # Re-inject our _processing object if it exists
               if [ -n "$OUR_PROCESSING" ] && [ "$OUR_PROCESSING" != "null" ] && [ "$OUR_PROCESSING" != "empty" ]; then
-                jq --argjson proc "$OUR_PROCESSING" '.metadata._processing = $proc' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+                # See the comment on the equivalent block in the periodic auto-commit
+                # loop above: merge in only our text_extraction_latest_update key, don't
+                # overwrite the whole _processing object and clobber theirs' logs_latest_update.
+                jq --argjson proc "$OUR_PROCESSING" '
+                  .metadata._processing = ((.metadata._processing // {}) +
+                    (if ($proc.text_extraction_latest_update // null) != null
+                     then {text_extraction_latest_update: $proc.text_extraction_latest_update}
+                     else {} end))
+                ' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
                 echo "  ✓ Preserved extraction metadata in $file"
               fi
             done
@@ -409,7 +436,14 @@ runs:
                   OUR_PROCESSING=$(git show :2:"$file" | jq -c '.metadata._processing // empty' 2>/dev/null || echo "")
                   git checkout --theirs "$file" 2>/dev/null || true
                   if [ -n "$OUR_PROCESSING" ] && [ "$OUR_PROCESSING" != "null" ] && [ "$OUR_PROCESSING" != "empty" ]; then
-                    jq --argjson proc "$OUR_PROCESSING" '.metadata._processing = $proc' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+                    # See the comment on the equivalent block above: merge in only our
+                    # text_extraction_latest_update key, don't clobber theirs' logs_latest_update.
+                    jq --argjson proc "$OUR_PROCESSING" '
+                      .metadata._processing = ((.metadata._processing // {}) +
+                        (if ($proc.text_extraction_latest_update // null) != null
+                         then {text_extraction_latest_update: $proc.text_extraction_latest_update}
+                         else {} end))
+                    ' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
                   fi
                 done
                 git checkout --ours "**/files/" .windycivi/ 2>/dev/null || true
