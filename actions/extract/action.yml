@@ -76,6 +76,15 @@ runs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
 
+        # Large incremental pushes (many new PDFs/extracted text files per commit)
+        # can hit "fatal: the remote end hung up unexpectedly" with git's default
+        # 1MiB http.postBuffer, especially over HTTP/2. Seen repeatedly in practice
+        # on ma-legislation: periodic auto-commit pushes failing 3/3 retries and
+        # killing the job, discarding that run's extraction work on the next
+        # checkout's hard reset. Same fix that resolved it manually 2026-08-07.
+        git config --local http.postBuffer 524288000
+        git config --local http.version HTTP/1.1
+
         # Pull latest changes to ensure we have the most recent metadata with timestamps
         # This prevents race conditions where a previous run just committed updates
         echo "📥 Pulling latest changes to get updated metadata..."
@@ -320,6 +329,15 @@ runs:
         # Configure git
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
+
+        # Large incremental pushes (many new PDFs/extracted text files per commit)
+        # can hit "fatal: the remote end hung up unexpectedly" with git's default
+        # 1MiB http.postBuffer, especially over HTTP/2. Seen repeatedly in practice
+        # on ma-legislation: periodic auto-commit pushes failing 3/3 retries and
+        # killing the job, discarding that run's extraction work on the next
+        # checkout's hard reset. Same fix that resolved it manually 2026-08-07.
+        git config --local http.postBuffer 524288000
+        git config --local http.version HTTP/1.1
 
         # Add changes (bill text files in country:us/)
         git add country:us/ .windycivi/
