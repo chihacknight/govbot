@@ -497,9 +497,13 @@ def read_policy_tree(stack):
         # Ours — including one edited in the UI since, which apply_policy will
         # overwrite and say so.
         return tree
-    if tree["receiver"] == GRAFANA_DEFAULT_RECEIVER and not children:
-        # A fresh stack's untouched default. The default receiver WITH children
-        # is not fresh — somebody routed this stack — and falls through.
+    if tree["receiver"] == GRAFANA_DEFAULT_RECEIVER and all(
+            child.get("receiver") == CONTACT_POINT for child in children):
+        # A fresh stack's untouched default — or the footprint the graft-era
+        # design left behind: the default root with the fleet's route as its
+        # only child. Both are this module's to replace. The default receiver
+        # with any OTHER child is not fresh — somebody routed this stack — and
+        # falls through to the refusal.
         return tree
     named = ", ".join(sorted({str(child.get("receiver") or "?") for child in children}))
     raise RuntimeError(
@@ -525,12 +529,17 @@ def apply_policy(stack, tree, desired):
     """
     stack.write("/api/v1/provisioning/policies", desired, method="PUT")
     if tree.get("receiver") != desired["receiver"]:
+        if tree.get("routes"):
+            # What the graft-era design left behind, flattened into the owned
+            # root rather than refused as foreign.
+            return "replaced the graft-era tree (default root, fleet child route)"
         return "adopted a fresh stack's default tree"
     # Keys the committed tree sets, plus the ways a UI edit can extend a policy
     # without touching any of them. Not every key Grafana serves back — the read
     # can carry server-added fields (a provenance stamp, a default it fills in)
     # that would report drift nobody created.
-    watched = set(desired) | {"routes", "mute_time_intervals", "object_matchers", "matchers"}
+    watched = set(desired) | {"routes", "mute_time_intervals", "active_time_intervals",
+                              "object_matchers", "matchers"}
     drift = sorted(
         key for key in watched
         if (tree.get(key) or None) != (desired.get(key) or None)
@@ -742,14 +751,15 @@ def provision(alerting_dir, base, token, values, echo=print, sleep=time.sleep,
     for kind, action in apply_contact_point(stack, contact_points):
         echo(f"· contact point: {kind} {action}")
 
-    # The policy goes in BEFORE the rules. Ordering, not taste: the policy write
-    # is the one that can still fail after the reads pass — Grafana 11 splits
-    # `alert.rules:write` from `alert.notifications:write`, so a token holding
-    # only the first gets through every check here and then 403s. With the rules
-    # applied first that leaves them live and delivering to whatever receiver
-    # was there, reproduced on every retry. Policy-first means a failure leaves
-    # a tree routing alerts that do not exist yet, which is inert, and the rules
-    # simply never land.
+    # The policy goes in BEFORE the rules. Ordering, not taste: the notification
+    # writes (contact point, then policy) are the ones that can still fail after
+    # the reads pass — Grafana 11 splits `alert.rules:write` from
+    # `alert.notifications:write`, so a token holding only the first gets
+    # through every check here and then 403s at the first of them. With the
+    # rules applied first that leaves them live and delivering to whatever
+    # receiver was there, reproduced on every retry. Notifications-first means a
+    # failure leaves a tree routing alerts that do not exist yet, which is
+    # inert, and the rules simply never land.
     echo(f"· notification policy: {apply_policy(stack, tree, policy)}")
 
     # Read the stack's current evaluation times before writing, so "has it run

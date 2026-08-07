@@ -421,14 +421,15 @@ What to know before you run it:
   persists until someone re-runs the command. Re-running is the remedy, and it is cheap:
   the committed tree wins, and any UI edit it resets is named in the output rather than
   silently erased — the lasting place for a change is `alerting.py`, not the browser.
-- **The policy tree is read, and the policy written, before the rules land.** The read is
-  the only one that can refuse and the policy write is the only one that can still fail
-  after every read has passed — Grafana 11 splits `alert.rules:write` from
-  `alert.notifications:write`, so a token holding only the first passes every check and
-  then 403s. Rules-first would leave them enabled and delivering to whatever receiver was
-  there, reproduced on every retry. Policy-first fails with a tree routing alerts that do
-  not exist yet, which is inert. The contact point goes in ahead of both, because Grafana
-  refuses a root receiver that does not exist.
+- **The policy tree is read, and the notifications written, before the rules land.** The
+  read is the only one that can refuse, and the notification writes (contact point, then
+  policy) are the ones that can still fail after every read has passed — Grafana 11 splits
+  `alert.rules:write` from `alert.notifications:write`, so a token holding only the first
+  passes every check and then 403s at the first of them. Rules-first would leave them
+  enabled and delivering to whatever receiver was there, reproduced on every retry.
+  Notifications-first fails with a tree routing alerts that do not exist yet, which is
+  inert. The contact point goes in ahead of the policy because Grafana refuses a root
+  receiver that does not exist.
 - **A policy tree without a root receiver is never overwritten** — including an empty one.
   Every Grafana ships a default root receiver, so an empty or unfamiliar 200 body is far
   likelier to be a proxy, a gateway stub, or a build we don't recognise than a stack that

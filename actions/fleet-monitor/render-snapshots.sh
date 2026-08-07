@@ -2450,13 +2450,14 @@ assert group["interval"] == 300, group["interval"]
 assert all(r["folderUID"] == "fleet-monitor" for r in group["rules"]), group["rules"]
 assert all(r["ruleGroup"] == "fleet-monitor" for r in group["rules"]), group["rules"]
 
-# The policy is written BEFORE the rules. Ordering, not taste: the policy PUT is
-# the one that can still fail after every read has passed — Grafana 11 splits
-# alert.rules:write from alert.notifications:write, so a token holding only the
-# first gets through all the checks here and then 403s. Rules-first leaves them
+# The policy is written BEFORE the rules. Ordering, not taste: the notification
+# writes (contact point, then policy) are the ones that can still fail after
+# every read has passed — Grafana 11 splits alert.rules:write from
+# alert.notifications:write, so a token holding only the first gets through all
+# the checks here and then 403s at the first of them. Rules-first leaves them
 # live and delivering to whatever receiver was there, reproduced on every retry.
-# Policy-first fails with a tree routing alerts that do not exist yet, which is
-# inert.
+# Notifications-first fails with a tree routing alerts that do not exist yet,
+# which is inert.
 order = [c.full_url for c in ok_calls if c.data is not None]
 assert next(i for i, u in enumerate(order) if "policies" in u) \
     < next(i for i, u in enumerate(order) if "rule-groups" in u), order
@@ -2812,23 +2813,45 @@ assert json.loads(written(rerun_calls, "policies")[0].data) == tree, rerun.outpu
 # overwritten and NAMED, so the operator learns the lasting place for a change
 # is alerting.py, not the browser.
 edited = {**tree, "group_wait": "5m",
+          "active_time_intervals": ["maintenance"],
           "routes": [{"receiver": CONTACT_POINT,
                       "object_matchers": [["severity", "=", "critical"]]}]}
 drifted, drifted_calls = run(CREDS, stack(policies=edited))
 assert drifted.exit_code == 0, drifted.output
 assert "resetting" in drifted.output, drifted.output
 assert "group_wait" in drifted.output and "routes" in drifted.output, drifted.output
+# ...including the timing fields a UI form never sets but the API accepts —
+# naming only some of what was erased is the same silence with better manners.
+assert "active_time_intervals" in drifted.output, drifted.output
 # What lands is the committed tree, exactly — the drift is gone, not merged.
 assert json.loads(written(drifted_calls, "policies")[0].data) == tree, drifted.output
+
+# The graft-era design this replaced left dedicated stacks in one specific
+# shape: the default root with the fleet's route as a child. That is this
+# module's own footprint, not somebody's routing — replaced (flattened into the
+# owned root), never refused with a message blaming a third party.
+graft_era = {"receiver": "grafana-default-email",
+             "routes": [{"receiver": CONTACT_POINT,
+                         "object_matchers": [["service", "=", "fleet-monitor"]],
+                         "group_wait": "30s"}]}
+migrated, migrated_calls = run(CREDS, stack(policies=graft_era))
+assert migrated.exit_code == 0, migrated.output + str(migrated.exception)
+assert "graft-era" in migrated.output, migrated.output
+assert json.loads(written(migrated_calls, "policies")[0].data) == tree, migrated.output
 
 # A tree this module does not recognise is a hard stop BEFORE any write — never
 # a merge target. The PUT swaps the whole root, so "replace" against somebody
 # else's tree would destroy routing there is no local copy of. The
 # dedicated-stack assumption is checked on every run, not assumed.
 for foreign in (
-    # The default receiver WITH routes is not a fresh stack: somebody routed it.
+    # The default receiver with a foreign route is not a fresh stack: somebody
+    # routed it.
     {"receiver": "grafana-default-email",
      "routes": [{"receiver": "their-oncall", "object_matchers": [["team", "=", "data"]]}]},
+    # ...and a MIX of fleet and foreign children is not the graft's footprint
+    # either: the fleet's route being present must not vouch for its neighbour.
+    {"receiver": "grafana-default-email",
+     "routes": [{"receiver": CONTACT_POINT}, {"receiver": "their-oncall"}]},
     # A root receiver that is neither ours nor the untouched default.
     {"receiver": "their-default"},
     {"receiver": "their-default", "routes": [{"receiver": "their-oncall"}]},
@@ -2836,7 +2859,10 @@ for foreign in (
     occupied, occupied_calls = run(CREDS, stack(policies=foreign))
     assert occupied.exit_code != 0, (foreign, occupied.output)
     assert "not this module's to replace" in occupied.output, occupied.output
-    assert not [c for c in occupied_calls if c.data is not None], \
+    # No write of ANY kind — DELETEs carry no body, so `data is not None`
+    # alone would wave a pre-refusal DELETE through.
+    assert not [c for c in occupied_calls
+                if c.data is not None or c.get_method() == "DELETE"], \
         (foreign, [c.full_url for c in occupied_calls if c.data is not None])
 # The refusal names what it found — the operator decides from the message, not
 # from a second visit to the API.
@@ -2857,8 +2883,10 @@ assert not written(blind_calls, "policies"), "wrote a policy tree it could not r
 # alert falls through to the stack owner's own receiver — and each retry
 # reproduces the same half-applied state.
 # No write of any kind, rather than three named endpoints — the folder POST is
-# a write too, and enumerating endpoints lets a new one slip in ahead of the read.
-assert not [c for c in blind_calls if c.data is not None], \
+# a write too, and enumerating endpoints lets a new one slip in ahead of the
+# read. DELETEs carry no body, so the method check does what `data is not None`
+# alone cannot.
+assert not [c for c in blind_calls if c.data is not None or c.get_method() == "DELETE"], \
     [c.full_url for c in blind_calls if c.data is not None]
 
 # A tree that reads back with children but no root receiver is not an empty
@@ -2885,7 +2913,8 @@ for unrecognised in (
     assert headless.exit_code != 0, (unrecognised, headless.output)
     assert "no root receiver" in headless.output, headless.output
     # ...and it refuses before writing anything at all, same as the 404 path.
-    assert not [c for c in headless_calls if c.data is not None], \
+    assert not [c for c in headless_calls
+                if c.data is not None or c.get_method() == "DELETE"], \
         (unrecognised, [c.full_url for c in headless_calls if c.data is not None])
 
 
