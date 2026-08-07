@@ -486,7 +486,7 @@ def dashboard(out):
     help="Write the alerting YAML here instead of stdout (committed at alerting/).",
 )
 def alerts(out_dir):
-    """Emit the alert rules, contact point, and notification route as provisioning YAML.
+    """Emit the alert rules, contact point, and notification policy as provisioning YAML.
 
     Built as data (alerting.py) and committed rendered (alerting/*.yaml), same
     bargain as the dashboard: reviewable as code, and regenerating it is a diff
@@ -529,8 +529,8 @@ def alerts(out_dir):
          "intervals plus a margin). The offline suite passes 0 to poll exactly once.",
 )
 def provision_alerts(alerting_dir, deadline_seconds):
-    """Apply the committed alert rules, contact point, and route to a real stack;
-    skips without credentials.
+    """Apply the committed alert rules, contact point, and notification policy to a
+    real stack; skips without credentials.
 
     Provisioning is the check. The committed files are read from disk (not
     re-rendered), their $PLACEHOLDERS resolved from the environment, and the

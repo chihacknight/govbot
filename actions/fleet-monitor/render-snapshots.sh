@@ -1953,7 +1953,7 @@ from alerting import (CONTACT_POINT, CONTACT_POINTS_FILE, COVERAGE_BASELINE,
                       COVERAGE_TOLERANCE, COVERAGE_UID, EVAL_INTERVAL, FOLDER,
                       HEARTBEAT_UID, PENDING_PERIOD, POLICY_FILE, ROUTE_LABEL,
                       RULES_FILE, RUN_FAILED_UID, STALE_UID,
-                      build_contact_point, build_route, build_rule_group,
+                      build_contact_point, build_policy, build_rule_group,
                       placeholders, render_documents, UnresolvedPlaceholder)
 from alerts_provision import _load, _resolve
 
@@ -2147,22 +2147,25 @@ assert "@" not in repr(point), repr(point)
 #    run-failed rule for dozens at once. Grouped by the rule that is ONE message
 #    listing every affected state; grouped by state it is forty messages in a
 #    minute, which is how people learn to mute a channel.
-route = build_route()
-assert route["group_by"] == ["alertname"], route["group_by"]
-assert route["receiver"] == CONTACT_POINT, route
-assert route["object_matchers"] == [[ROUTE_LABEL[0], "=", ROUTE_LABEL[1]]], route
-assert (route["group_wait"], route["group_interval"], route["repeat_interval"]) \
-    == ("30s", "5m", "24h"), route
+policy = build_policy()
+assert policy["group_by"] == ["alertname"], policy["group_by"]
+assert policy["receiver"] == CONTACT_POINT, policy
+assert (policy["group_wait"], policy["group_interval"], policy["repeat_interval"]) \
+    == ("30s", "5m", "24h"), policy
+# The ROOT of a dedicated stack's tree, shape checked exactly: no matchers (the
+# root matches everything by construction, and Grafana silently ignores matchers
+# placed on it) and no children (a stray alert should land in the channel as a
+# visible surprise, not vanish down a default receiver nobody reads).
+assert "object_matchers" not in policy and "matchers" not in policy, policy
+assert "routes" not in policy, policy
 
-# 7. The committed documents. The policy one is deliberately NOT Grafana's
-#    `policies:` key: that key replaces the entire root notification tree, so a
-#    stack dropping this file into its provisioning directory would silently
-#    redirect every alert it already runs to this contact point.
+# 7. The committed documents. The policy one IS a real Grafana `policies:`
+#    document — the entire tree of a stack dedicated to the fleet monitor, in
+#    the same file-provisioning format as the other two artifacts.
 documents = render_documents()
 assert set(documents) == {RULES_FILE, CONTACT_POINTS_FILE, POLICY_FILE}, sorted(documents)
 policy_doc = yaml.safe_load(documents[POLICY_FILE])
-assert "policies" not in policy_doc, policy_doc
-assert policy_doc["route"]["receiver"] == CONTACT_POINT, policy_doc
+assert [p["receiver"] for p in policy_doc["policies"]] == [CONTACT_POINT], policy_doc
 assert yaml.safe_load(documents[RULES_FILE])["groups"][0]["folder"] == FOLDER, documents[RULES_FILE]
 for name, text in documents.items():
     # Reasoning survives in the artifact people actually open, not only in the
@@ -2271,7 +2274,7 @@ echo "✓ provision-alerts: skips cleanly when credentials are absent"
 
 # Offline proof of provisioning itself: a fake Grafana answers every read and
 # accepts every write, so the request shapes (verbs, bearer auth, the
-# provenance header, placeholder resolution, the grafted policy) and the
+# provenance header, placeholder resolution, the replaced policy tree) and the
 # refusal paths are all tested without an account. Every scenario drives the CLI
 # and passes --deadline-seconds 0, so the poll runs exactly once and the suite
 # never waits on a real clock. The real run is credential-gated below.
@@ -2353,7 +2356,9 @@ def stack(datasources=(PROMETHEUS, LOKI), policies=UNSET, contact_points=None, r
         if "/api/v1/provisioning/contact-points" in url:
             return FakeResponse(json.dumps(contact_points or []).encode())
         if url.endswith("/api/v1/provisioning/policies") and not missing_policies:
-            tree = {"receiver": "grafana-default"} if policies is UNSET else policies
+            # A fresh stack's untouched default — the exact receiver name
+            # Grafana creates, which is the only foreign tree ever adopted.
+            tree = {"receiver": "grafana-default-email"} if policies is UNSET else policies
             return FakeResponse(json.dumps(tree).encode())
         if "/api/folders/" in url:
             if folder is None:
@@ -2445,13 +2450,13 @@ assert group["interval"] == 300, group["interval"]
 assert all(r["folderUID"] == "fleet-monitor" for r in group["rules"]), group["rules"]
 assert all(r["ruleGroup"] == "fleet-monitor" for r in group["rules"]), group["rules"]
 
-# The route is written BEFORE the rules. Ordering, not taste: the policy PUT is
+# The policy is written BEFORE the rules. Ordering, not taste: the policy PUT is
 # the one that can still fail after every read has passed — Grafana 11 splits
 # alert.rules:write from alert.notifications:write, so a token holding only the
 # first gets through all the checks here and then 403s. Rules-first leaves them
-# live and unrouted, every fleet alert falling through to the stack owner's own
-# receiver, reproduced on every retry. Route-first fails with a route matching
-# nothing, which is inert.
+# live and delivering to whatever receiver was there, reproduced on every retry.
+# Policy-first fails with a tree routing alerts that do not exist yet, which is
+# inert.
 order = [c.full_url for c in ok_calls if c.data is not None]
 assert next(i for i, u in enumerate(order) if "policies" in u) \
     < next(i for i, u in enumerate(order) if "rule-groups" in u), order
@@ -2628,13 +2633,20 @@ for filename, mangle in (
      lambda d: d.update(contactPoints=[{"name": CONTACT_POINT, "receivers": [{"type": "slack"}]}])),
     ("fleet-contact-points.yaml",
      lambda d: d.update(contactPoints=[{"name": "renamed", "receivers": []}])),
-    ("fleet-notification-policy.yaml", lambda d: d.update(route={"receiver": "somewhere-else"})),
-    # A route that lost its matchers is grafted FIRST, where a child with none
-    # matches every alert on the stack and stops there — the maintainers' entire
-    # alerting delivered to this webhook, reported as success.
-    ("fleet-notification-policy.yaml", lambda d: d["route"].pop("object_matchers")),
     ("fleet-notification-policy.yaml",
-     lambda d: d["route"].update(object_matchers=[["team", "=", "data"]])),
+     lambda d: d.update(policies=[{"receiver": "somewhere-else"}])),
+    # The root matches every alert by construction and Grafana silently ignores
+    # matchers placed on it — a file carrying them promises a filter that does
+    # not exist, and provisioning it would report success.
+    ("fleet-notification-policy.yaml",
+     lambda d: d["policies"][0].update(object_matchers=[["service", "=", "fleet-monitor"]])),
+    # One tree per stack: a second entry, or a child route, means somebody is
+    # trying to route a stack that is supposed to be dedicated — a design
+    # change, not a provisioning input.
+    ("fleet-notification-policy.yaml",
+     lambda d: d["policies"].append({"receiver": CONTACT_POINT})),
+    ("fleet-notification-policy.yaml",
+     lambda d: d["policies"][0].update(routes=[{"receiver": "their-pager"}])),
 ):
     with tempfile.TemporaryDirectory() as tmp:
         for f in Path("alerting").iterdir():
@@ -2767,103 +2779,69 @@ for result in (ok, again, pruned, confused, none_at_all, blank):
 print("✓ provision-alerts: applies the committed file, one idempotent rule-group PUT, "
       "integrations created, updated, and pruned in place; no credential reaches the output")
 
-# The notification policy is GRAFTED, never swapped. Grafana's policy API has no
-# partial update — a PUT replaces the whole tree — so applying a root of our own
-# to the maintainers' stack would silently redirect every alert they already run
-# to this contact point.
-theirs = {
-    "receiver": "their-default",
-    "group_by": ["grafana_folder", "alertname"],
-    "routes": [{"receiver": "their-oncall", "object_matchers": [["team", "=", "data"]]}],
-}
-grafted, grafted_calls = run(CREDS, stack(policies=theirs))
-assert grafted.exit_code == 0, grafted.output
-tree = json.loads(written(grafted_calls, "policies")[0].data)
-assert tree["receiver"] == "their-default", tree
-assert tree["group_by"] == ["grafana_folder", "alertname"], tree
-assert {"receiver": "their-oncall", "object_matchers": [["team", "=", "data"]]} in tree["routes"]
-ours = [r for r in tree["routes"] if r["receiver"] == CONTACT_POINT]
-assert len(ours) == 1 and ours[0]["object_matchers"] == [[ROUTE_LABEL[0], "=", ROUTE_LABEL[1]]]
+# The notification policy is REPLACED WHOLE, never merged. The stack is
+# dedicated to the fleet monitor, so the committed tree is the entire root — and
+# the PUT only ever lands on a tree the module recognises: its own, or a fresh
+# stack's untouched default. (The fake serves that default.)
+fresh, fresh_calls = run(CREDS, stack())
+assert fresh.exit_code == 0, fresh.output + str(fresh.exception)
+tree = json.loads(written(fresh_calls, "policies")[0].data)
+assert tree["receiver"] == CONTACT_POINT, tree
+assert tree["group_by"] == ["alertname"], tree
+assert (tree["group_wait"], tree["group_interval"], tree["repeat_interval"]) \
+    == ("30s", "5m", "24h"), tree
+# The committed shape, exactly: no matchers, no children, and no orgId leaking
+# out of the file-provisioning wrapper into the API body.
+assert "object_matchers" not in tree and "matchers" not in tree, tree
+assert "routes" not in tree and "orgId" not in tree, tree
+assert "adopted" in fresh.output, fresh.output
 
-# FIRST, not last. Grafana walks a root's children in order and stops at the
-# first match (`continue` defaults to false), so a stack carrying the ordinary
-# "everything else goes here" catch-all child would swallow every fleet alert
-# before it ever reached the fleet's route — Slack and email silent, provisioning
-# reporting success.
-catchall = {"receiver": "their-default", "routes": [{"receiver": "their-catchall"}]}
-ordered, ordered_calls = run(CREDS, stack(policies=catchall))
-tree = json.loads(written(ordered_calls, "policies")[0].data)
-assert tree["routes"][0]["receiver"] == CONTACT_POINT, tree["routes"]
-assert {"receiver": "their-catchall"} in tree["routes"], tree["routes"]
+# The contact point is written BEFORE the policy: Grafana refuses a root
+# receiver that does not exist, so on a fresh stack the reverse order 400s.
+sequence = [c.full_url for c in fresh_calls if c.data is not None]
+assert next(i for i, u in enumerate(sequence) if "contact-points" in u) \
+    < next(i for i, u in enumerate(sequence) if "policies" in u), sequence
 
-# A route we did not write is not ours to remove. Matching on "our receiver OR
-# our matchers" also deleted a maintainer's own route that merely shared one of
-# them — and reported it as "replaced", the same word as the benign case.
-mine_and_theirs = {
-    "receiver": "their-default",
-    "routes": [
-        # Their alerts, routed to the shared fleet contact point.
-        {"receiver": CONTACT_POINT, "object_matchers": [["team", "=", "govbot-api"]]},
-        # Fleet alerts, mirrored to their on-call.
-        {"receiver": "their-oncall", "object_matchers": [[ROUTE_LABEL[0], "=", ROUTE_LABEL[1]]],
-         "continue": True},
-    ],
-}
-kept, kept_calls = run(CREDS, stack(policies=mine_and_theirs))
-assert kept.exit_code == 0, kept.output
-tree = json.loads(written(kept_calls, "policies")[0].data)
-# BOTH survive: a child is ours only when receiver AND matchers both match, so a
-# maintainer's second route to the shared contact point (different matchers) and
-# their mirror of fleet alerts to their own on-call are each left alone.
-assert {"receiver": "their-oncall", "object_matchers": [[ROUTE_LABEL[0], "=", ROUTE_LABEL[1]]],
-        "continue": True} in tree["routes"], tree["routes"]
-assert {"receiver": CONTACT_POINT, "object_matchers": [["team", "=", "govbot-api"]]} \
-    in tree["routes"], tree["routes"]
-assert len(tree["routes"]) == 3, tree["routes"]
-assert tree["routes"][0]["object_matchers"] == [[ROUTE_LABEL[0], "=", ROUTE_LABEL[1]]], tree
-assert "added" in kept.output, kept.output
-# Their mirror survives the graft but now sits BEHIND ours, which does not set
-# `continue` — so it can no longer receive fleet alerts. Refusing to delete a
-# route we did not write, then silently disabling it, is the same harm by
-# omission, so the run says so.
-assert "no longer receive fleet alerts" in kept.output, kept.output
-assert "their-oncall" in kept.output, kept.output
+# Re-running over our own unchanged tree is idempotent and quiet about it...
+rerun, rerun_calls = run(CREDS, stack(policies=json.loads(json.dumps(tree))))
+assert rerun.exit_code == 0, rerun.output
+assert "replaced" in rerun.output and "resetting" not in rerun.output, rerun.output
+assert json.loads(written(rerun_calls, "policies")[0].data) == tree, rerun.output
 
-# A fleet route a maintainer extended in the UI — the editing
-# X-Disable-Provenance exists to allow — keeps its children across a re-run.
-extended = {
-    "receiver": "their-default",
-    "routes": [{
-        "receiver": CONTACT_POINT,
-        "object_matchers": [[ROUTE_LABEL[0], "=", ROUTE_LABEL[1]]],
-        "routes": [{"receiver": "their-pager", "object_matchers": [["severity", "=", "critical"]]}],
-        "mute_time_intervals": ["weekends"],
-    }],
-}
-inherited, inherited_calls = run(CREDS, stack(policies=extended))
-assert inherited.exit_code == 0, inherited.output
-ours_now = json.loads(written(inherited_calls, "policies")[0].data)["routes"][0]
-assert ours_now["routes"] == [
-    {"receiver": "their-pager", "object_matchers": [["severity", "=", "critical"]]}
-], ours_now
-assert ours_now["mute_time_intervals"] == ["weekends"], ours_now
-assert "carrying forward" in inherited.output, inherited.output
+# ...and a UI edit — the editing X-Disable-Provenance exists to allow — is
+# overwritten and NAMED, so the operator learns the lasting place for a change
+# is alerting.py, not the browser.
+edited = {**tree, "group_wait": "5m",
+          "routes": [{"receiver": CONTACT_POINT,
+                      "object_matchers": [["severity", "=", "critical"]]}]}
+drifted, drifted_calls = run(CREDS, stack(policies=edited))
+assert drifted.exit_code == 0, drifted.output
+assert "resetting" in drifted.output, drifted.output
+assert "group_wait" in drifted.output and "routes" in drifted.output, drifted.output
+# What lands is the committed tree, exactly — the drift is gone, not merged.
+assert json.loads(written(drifted_calls, "policies")[0].data) == tree, drifted.output
 
-# Re-running replaces our own branch rather than stacking a second copy — even
-# when Grafana serves the existing one back in its other matcher encoding, where
-# comparing object_matchers alone would leave a stale twin AHEAD of the new route
-# and it would win every delivery.
-for existing_route in (
-    dict(ours[0], group_wait="stale"),
-    {"receiver": CONTACT_POINT, "matchers": ["service=fleet-monitor"], "group_wait": "stale"},
+# A tree this module does not recognise is a hard stop BEFORE any write — never
+# a merge target. The PUT swaps the whole root, so "replace" against somebody
+# else's tree would destroy routing there is no local copy of. The
+# dedicated-stack assumption is checked on every run, not assumed.
+for foreign in (
+    # The default receiver WITH routes is not a fresh stack: somebody routed it.
+    {"receiver": "grafana-default-email",
+     "routes": [{"receiver": "their-oncall", "object_matchers": [["team", "=", "data"]]}]},
+    # A root receiver that is neither ours nor the untouched default.
+    {"receiver": "their-default"},
+    {"receiver": "their-default", "routes": [{"receiver": "their-oncall"}]},
 ):
-    already = {**theirs, "routes": theirs["routes"] + [existing_route]}
-    rerun, rerun_calls = run(CREDS, stack(policies=already))
-    tree = json.loads(written(rerun_calls, "policies")[0].data)
-    mine = [r for r in tree["routes"] if r["receiver"] == CONTACT_POINT]
-    assert len(mine) == 1, (existing_route, tree["routes"])
-    assert mine[0]["group_wait"] == "30s", (existing_route, mine)
-    assert "replaced" in rerun.output, rerun.output
+    occupied, occupied_calls = run(CREDS, stack(policies=foreign))
+    assert occupied.exit_code != 0, (foreign, occupied.output)
+    assert "not this module's to replace" in occupied.output, occupied.output
+    assert not [c for c in occupied_calls if c.data is not None], \
+        (foreign, [c.full_url for c in occupied_calls if c.data is not None])
+# The refusal names what it found — the operator decides from the message, not
+# from a second visit to the API.
+assert "their-default" in occupied.output, occupied.output
+assert "their-oncall" in occupied.output, occupied.output
 
 # A policy tree that cannot be READ is a hard stop, not an empty tree. A 404 here
 # means the token lacks notification-policy read scope, or the base URL carries a
@@ -2911,8 +2889,8 @@ for unrecognised in (
         (unrecognised, [c.full_url for c in headless_calls if c.data is not None])
 
 
-print("✓ provision-alerts: route grafted FIRST under the stack's own root, replaced not "
-      "duplicated in either matcher encoding, and refuses to write a tree it cannot read")
+print("✓ provision-alerts: whole policy tree owned — a fresh default adopted, our own tree "
+      "replaced with UI drift named, and any other tree refused before a single write")
 
 # Storing a rule is not the same as being able to run it. Grafana accepts a rule
 # whose datasource uid points at nothing, serves it back intact, and only reports
@@ -3072,7 +3050,7 @@ print("✓ provision-alerts: waits for an evaluation stamped after its own write
 EOF
 
 # Same bargain as live-check and check-dashboard: the real run writes rules, a
-# contact point, and a notification route into a real stack — and the next
+# contact point, and the notification policy into a real stack — and the next
 # evaluation can deliver to a real Slack channel — so a bare render never does it
 # even on a machine that happens to have the credentials set. Opting in makes the
 # render the automated provisioning check.

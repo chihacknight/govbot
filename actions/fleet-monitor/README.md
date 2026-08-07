@@ -388,60 +388,51 @@ pipenv run python main.py provision-alerts
 
 It reads the committed files (not a fresh render — what you reviewed is what gets applied),
 resolves their placeholders, creates the `Fleet Monitor` folder, applies the contact point,
-grafts the notification route, applies the whole rule group, and then **waits for the stack
-to evaluate the rules**. That last step is the point: Grafana will accept a rule whose
+replaces the notification policy, applies the whole rule group, and then **waits for the
+stack to evaluate the rules**. That last step is the point: Grafana will accept a rule whose
 datasource uid points at nothing, store it, and serve it back intact — the failure only
 appears as `health: error` once evaluation runs, so a check that stops at the 200 is a
 check that passes while nothing works. Missing credentials exit 0 with a skip notice.
 
-What to know before you run it against someone else's stack:
+What to know before you run it:
 
-- **The notification policy is grafted, never replaced.** Grafana's policy API has no
-  partial update — a PUT swaps the entire root tree — so applying a root of our own would
-  silently redirect every alert that stack already runs to this contact point. Instead the
-  fleet's route is inserted as a child of whatever root is there, matched on the
-  `service=fleet-monitor` label every rule carries, and a re-run replaces that one branch
-  rather than adding a second. For the same reason
-  [alerting/fleet-notification-policy.yaml](alerting/fleet-notification-policy.yaml) is
-  deliberately **not** a Grafana `policies:` document: dropping such a file into a
-  self-hosted provisioning directory would do exactly the damage this avoids. The rules and
-  contact-point files are ordinary provisioning documents and can be dropped in as-is.
-- **The route is grafted FIRST, ahead of the root's existing children.** Grafana walks a
-  root's children in order and stops at the first match (`continue` defaults to false), so
-  appending would put the fleet's route behind any ordinary "everything else goes here"
-  catch-all sibling — every fleet alert delivered somewhere else, Slack and email silent,
-  and provisioning reporting success. Sitting first has a cost the run reports rather than
-  hides: a sibling matching the same alerts can no longer be reached, so provisioning names
-  it. And because the route is grafted ahead of everything, the committed policy file is
-  checked to match exactly `service=fleet-monitor` before it is applied — a route that lost
-  its matchers in a bad merge would match every alert on the stack and stop there.
+- **The stack is assumed dedicated, and the notification policy is replaced whole.** The
+  committed [fleet-notification-policy.yaml](alerting/fleet-notification-policy.yaml) is a
+  real Grafana `policies:` document carrying the *entire* tree: the fleet's contact point is
+  the root receiver, so every alert the stack produces — including a stray one — lands in
+  Slack and email as a visible surprise rather than vanishing down a default receiver
+  nobody reads. There are no matchers and no child routes, which is what deletes the whole
+  category of tree-merging bugs a shared stack would invite. All three files are ordinary
+  provisioning documents and can be dropped into a self-hosted provisioning directory
+  as-is — on a stack dedicated to the fleet monitor, which is the standing assumption.
+- **That assumption is checked on every run, not trusted.** Before writing anything,
+  provisioning reads the stack's policy tree and only proceeds over a tree it recognises:
+  its own (root receiver `fleet-monitor`), or a fresh stack's untouched default
+  (`grafana-default-email` with no child routes). Anything else — a renamed root, routes
+  somebody added under the default — is a hard stop that names what it found, with no
+  `--force` to pave over it: if the stack really is dedicated, reset its notification
+  policy to the default in the UI and re-run; if it isn't, this command is pointed at the
+  wrong stack.
 - **Everything is applied with `X-Disable-Provenance`,** so the rules stay editable in the
   UI. Without it Grafana marks API-provisioned resources read-only, and the first
   maintainer who tries to silence a rule meets a greyed-out form with no explanation. The
   trade-off is real: nothing then stops an Editor on the stack from repointing the Slack
-  webhook or deleting the fleet's route, and there is no scheduled re-apply, so that drift
-  persists until someone re-runs the command. Re-running is the remedy, and it is cheap.
-  The header goes on the root-policy PUT too, which is worth knowing: a stack whose
-  notification tree was previously provisioned and read-only becomes editable after one run
-  of this command. Omitting it there is worse, not better — Grafana would then mark their
-  tree read-only on our behalf, or reject the write outright if it is file-provisioned.
-- **The policy tree is read, and the route written, before the rules land.** The read is
+  webhook or rewiring the policy, and there is no scheduled re-apply, so that drift
+  persists until someone re-runs the command. Re-running is the remedy, and it is cheap:
+  the committed tree wins, and any UI edit it resets is named in the output rather than
+  silently erased — the lasting place for a change is `alerting.py`, not the browser.
+- **The policy tree is read, and the policy written, before the rules land.** The read is
   the only one that can refuse and the policy write is the only one that can still fail
   after every read has passed — Grafana 11 splits `alert.rules:write` from
   `alert.notifications:write`, so a token holding only the first passes every check and
-  then 403s. Rules-first would leave them enabled with nothing routing them, every fleet
-  alert falling through to the stack owner's own receiver, reproduced on every retry.
-  Route-first fails with a route matching nothing, which is inert.
+  then 403s. Rules-first would leave them enabled and delivering to whatever receiver was
+  there, reproduced on every retry. Policy-first fails with a tree routing alerts that do
+  not exist yet, which is inert. The contact point goes in ahead of both, because Grafana
+  refuses a root receiver that does not exist.
 - **A policy tree without a root receiver is never overwritten** — including an empty one.
   Every Grafana ships a default root receiver, so an empty or unfamiliar 200 body is far
   likelier to be a proxy, a gateway stub, or a build we don't recognise than a stack that
-  genuinely has no policy. Adopting it would make the fleet's webhook that stack's catch-all
-  for every alert it already runs.
-- **A route this module didn't write is not its to remove.** The fleet's own branch is
-  matched by receiver **and** matchers, normalised across both encodings Grafana serves. An
-  OR over the two deleted a maintainer's route that shared only one of them — fleet alerts
-  mirrored to their on-call — and receiver alone deleted a second route of theirs to this
-  shared contact point. Both were reported as "replaced".
+  genuinely has no policy. Adopting it would overwrite a tree nobody ever read.
 - **The prune only deletes integrations this module created** (`fleet-monitor-` uids).
   Anything else on the contact point was added through the UI, which is exactly what
   `X-Disable-Provenance` exists to allow; deleting it would make this command undo the
@@ -514,7 +505,8 @@ pipenv run python main.py check-dashboard
 pipenv run python main.py alerts
 pipenv run python main.py alerts --out-dir alerting
 
-# Apply the committed rules, contact point, and route to a real stack, then wait
+# Apply the committed rules, contact point, and notification policy to a real
+# stack, then wait
 # for it to evaluate them (needs GRAFANA_ALERTS_URL/KEY + SLACK_WEBHOOK_URL +
 # ALERT_EMAIL; exits 0 with a notice when they're absent):
 pipenv run python main.py provision-alerts
@@ -707,8 +699,10 @@ stay green), rules evaluate on a 5 m interval with a 10 m pending period, no-dat
 to OK while an execution error does not, every alert carries an absolute state-filtered
 dashboard link with a pinned time range and no `var-org` while the label-less heartbeat
 rule carries no `var-state` at all, Slack and email are two integrations on one contact
-point with resolved notifications on, the route groups by `alertname` alone, the policy
-document is deliberately not a Grafana `policies:` document, rendering is deterministic,
+point with resolved notifications on, the policy groups by `alertname` alone, the policy
+document is a real Grafana `policies:` document carrying the whole tree of a dedicated
+stack — root receiver `fleet-monitor`, no matchers, no child routes — rendering is
+deterministic,
 the coverage rule stands down while the dead-man is firing (a dead collector empties its
 short window at the same instant, and `or vector(0)` would otherwise report the whole fleet
 as having stopped reporting — two Slack messages for one outage, the louder one wrong about
@@ -731,10 +725,10 @@ with a sentinel only present in a doctored copy), sends one idempotent rule-grou
 the interval in seconds, carries bearer auth and `X-Disable-Provenance` on every write,
 ships no unresolved placeholder while leaving Grafana's own `{{ $labels.* }}` templating
 untouched, creates the integrations once, updates them in place thereafter and deletes the
-ones dropped from the file while leaving another contact point's receivers alone, grafts
-its route **first** under a stack's existing root policy (preserving that root's receiver,
-grouping, and unrelated children), replaces rather than duplicates its own branch in either
-matcher encoding, refuses to write a policy tree it could not read, and — the assertion the
+ones dropped from the file while leaving another contact point's receivers alone, replaces
+the notification policy **whole** — adopting a fresh stack's untouched default, overwriting
+its own previous tree with any UI drift named in the output, and hard-stopping before a
+single write on any tree it does not recognise — and — the assertion the
 whole check exists for — waits for an evaluation *newer than the one the stack had before
 this run wrote*: a rule the stack has merely stored (`health: unknown`, or `ok` with a
 zeroed `lastEvaluation`), a pass inherited from a previous run, and a stale failure from
@@ -746,13 +740,14 @@ enough to accept the evaluation that ran just *before* the write — the previou
 definitions, which is the exact false pass the check exists to prevent. It also asserts the
 deep link *resolves* to an absolute URL on the stack (an empty `GRAFANA_DASHBOARD_URL`
 falls back rather than producing a relative link, and a trailing slash doesn't double). It also refuses before writing anything when the policy tree
-can't be read or can't be interpreted, so a refusal never strands enabled, unrouted rules;
+can't be read, can't be interpreted, or isn't its to replace, so a refusal never strands
+enabled, unrouted rules;
 provisions a credential carrying a YAML metacharacter without a parse error; rejects a
 non-https stack URL before sending a request; applies every group in the file rather than
 the first; and never issues a DELETE for a receiver the API returned without a uid. Its
 credential-free skip touches the stack not at all. The real provisioning run is opt-in —
 `FLEET_MONITOR_ALERT_CHECK=1 ./render-snapshots.sh` on a credentialed machine — because
-idempotent is not side-effect-free: it writes a live contact point and route, and the next
+idempotent is not side-effect-free: it writes a live contact point and policy, and the next
 evaluation can deliver to a real Slack channel.
 
 ```bash

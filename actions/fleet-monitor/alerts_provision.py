@@ -6,11 +6,12 @@ path: read ``alerting/*.yaml``, resolve their placeholders, and PUT the result.
 
 Two things here are deliberate and easy to get wrong:
 
-* **The notification policy is grafted, never replaced.** Grafana's policy API
-  has no notion of a partial tree — a PUT to ``/policies`` swaps the whole root.
-  Applying our own root to the maintainers' stack would silently redirect every
-  alert they already run to this contact point, so the fleet's route is inserted
-  as a child of whatever root is already there.
+* **The notification policy is replaced whole, never merged.** The stack is
+  dedicated to the fleet monitor, so the committed tree IS the root. Grafana's
+  policy API has no notion of a partial tree — a PUT to ``/policies`` swaps the
+  whole root — and this module only issues that PUT over a tree it recognises:
+  its own, or a fresh stack's untouched default. Anything else is a hard stop
+  (see ``read_policy_tree``).
 * **Every write carries ``X-Disable-Provenance``.** Without it Grafana marks
   API-provisioned resources read-only in the UI, and the first maintainer who
   tries to mute a rule or fix a webhook finds a greyed-out form and no
@@ -27,7 +28,7 @@ import urllib.request
 import yaml
 
 from alerting import (CONTACT_POINT, CONTACT_POINTS_FILE, EVAL_INTERVAL, FOLDER,
-                      FOLDER_UID, POLICY_FILE, ROUTE_LABEL, RULES_FILE,
+                      FOLDER_UID, POLICY_FILE, RULES_FILE,
                       UnresolvedPlaceholder, PLACEHOLDER)
 from http_util import RequestFailed, request_with_retry
 
@@ -42,17 +43,13 @@ PROVENANCE = {"X-Disable-Provenance": "true"}
 
 DURATION = re.compile(r"^(\d+)([smh])$")
 
-# `label<op>value`, anchored to the label name so an operator inside the value
-# cannot split it in the wrong place.
-LEGACY_MATCHER = re.compile(r"\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*(=~|!~|!=|=)\s*(.*)")
-
 # The top-level key each committed document must carry, checked before the first
 # write so a malformed one fails with a message rather than a KeyError halfway
 # through a provisioning run.
 REQUIRED_KEYS = {
     RULES_FILE: "groups",
     CONTACT_POINTS_FILE: "contactPoints",
-    POLICY_FILE: "route",
+    POLICY_FILE: "policies",
 }
 
 # Integrations this module created, and the only ones it will delete. Anything
@@ -318,24 +315,24 @@ def _check_shape(name, document):
                         or not receiver.get("type"):
                     _fail(name, "every receiver needs a 'uid' and a 'type'")
     else:
-        route = document["route"]
-        if not isinstance(route, dict) or route.get("receiver") != CONTACT_POINT:
-            _fail(name, f"'route.receiver' must be {CONTACT_POINT!r}")
-        # And it must match on exactly the fleet's own label. This route is
-        # grafted as the root's FIRST child, and a child with no matchers matches
-        # EVERY alert and stops there — so a policy file that lost its
-        # `object_matchers` in a bad merge or a half-copy would silently deliver
-        # the maintainers' entire alerting to this Slack webhook, and provisioning
-        # would report success. Anything grafted ahead of a stack's existing
-        # children has to be provably narrow, and this file is generated, so an
-        # exact match costs nothing.
-        if _matchers(route) != {(ROUTE_LABEL[0], "=", ROUTE_LABEL[1])}:
-            _fail(
-                name,
-                f"'route' must match exactly {ROUTE_LABEL[0]}={ROUTE_LABEL[1]} — it is grafted "
-                "as the root's first child, where a broader matcher swallows every alert on "
-                "the stack"
-            )
+        policies = document["policies"]
+        if not isinstance(policies, list) or len(policies) != 1 \
+                or not isinstance(policies[0], dict):
+            _fail(name, "'policies' must be a list of exactly one tree — a stack has one root")
+        tree = policies[0]
+        if tree.get("receiver") != CONTACT_POINT:
+            _fail(name, f"the root receiver must be {CONTACT_POINT!r}")
+        # The root matches every alert by construction, and Grafana silently
+        # ignores matchers placed on it — so a file carrying them promises a
+        # filter that does not exist, and provisioning it would "succeed".
+        if tree.get("object_matchers") or tree.get("matchers"):
+            _fail(name, "the root policy matches every alert; Grafana ignores matchers on it")
+        # This module writes exactly one root and nothing under it. A child route
+        # in the file means somebody is trying to route a stack that is supposed
+        # to be dedicated — a design change, not a provisioning input.
+        if tree.get("routes"):
+            _fail(name, "the committed tree must have no child routes; the stack is dedicated "
+                        "and the root delivers everything")
 
 
 def ensure_folder(stack):
@@ -434,14 +431,29 @@ def apply_rules(stack, document):
     return applied
 
 
-def read_policy_tree(stack):
-    """The stack's existing root notification policy, or a hard failure.
+# What a stack nobody has routed yet looks like: Grafana creates this receiver
+# on every fresh instance, Cloud included, and the UI's "reset notification
+# policy" restores it. The only tree this module will replace besides its own.
+GRAFANA_DEFAULT_RECEIVER = "grafana-default-email"
 
-    Read BEFORE anything is written. The refusal below is only worth having if
-    it happens before the rules land: a run that applies four enabled rules and
-    then discovers it cannot read the policy tree leaves them live and unrouted,
-    so every fleet alert falls through to the stack owner's own receiver — and
-    every retry reproduces it.
+
+def read_policy_tree(stack):
+    """The stack's notification policy — ours or a fresh default, or a hard stop.
+
+    Read BEFORE anything is written. The refusals below are only worth having if
+    they happen before the rules land: a run that applies four enabled rules and
+    then discovers the policy tree is not its to replace leaves them live and
+    unrouted, so every fleet alert falls through to whatever receiver is there —
+    and every retry reproduces it.
+
+    This module owns the whole tree: the stack is dedicated to the fleet
+    monitor, so the committed policy is the entire root and applying it is a
+    plain PUT, no merging. What that ownership cannot survive is being pointed
+    at a stack that is NOT dedicated — the PUT swaps the whole tree — so a root
+    this module does not recognise is refused outright, never edited. (A merge
+    path existed and was retired: inserting a route into a tree of unknown shape
+    could not be made safe against arbitrary contents, and on a dedicated stack
+    there is nothing to merge with.)
     """
     tree = stack.find("/api/v1/provisioning/policies")
     if tree is None:
@@ -458,9 +470,9 @@ def read_policy_tree(stack):
     # on purpose: an earlier version refused only a tree with children and no
     # receiver, which let ANY other 200 body through as "genuinely empty" — a
     # proxy's {"status": "error"}, a maintenance page, a build that renamed the
-    # field. graft_route would then PUT the fleet's own receiver over a root
-    # nobody had read, sending every unmatched alert on that stack to this Slack
-    # webhook with no copy of what was destroyed. Every real Grafana ships a
+    # field. Adopting one of those would PUT the fleet's own receiver over a
+    # root nobody had read, with no copy of what was destroyed. Every real
+    # Grafana ships a
     # default root receiver, so "neither key present" is far likelier to be a
     # body we don't recognise than a tree that is truly empty.
     if not isinstance(tree, dict) or not tree.get("receiver"):
@@ -473,100 +485,59 @@ def read_policy_tree(stack):
         )
     children = tree.get("routes") or []
     if not isinstance(children, list) or any(not isinstance(c, dict) for c in children):
-        # Checked here, before any write: graft_route iterates these and a string
-        # would be walked character by character, raising AttributeError — not a
-        # RuntimeError, so it escapes the CLI's handler as a traceback.
+        # Checked here, before any write: the refusal message below names the
+        # child receivers, and a string here would be walked character by
+        # character, raising AttributeError — not a RuntimeError, so it escapes
+        # the CLI's handler as a traceback.
         raise RuntimeError(
             "the stack's notification policy has a 'routes' value this module cannot read "
             f"({type(children).__name__}). Inspect /api/v1/provisioning/policies by hand."
         )
-    return tree
+    if tree["receiver"] == CONTACT_POINT:
+        # Ours — including one edited in the UI since, which apply_policy will
+        # overwrite and say so.
+        return tree
+    if tree["receiver"] == GRAFANA_DEFAULT_RECEIVER and not children:
+        # A fresh stack's untouched default. The default receiver WITH children
+        # is not fresh — somebody routed this stack — and falls through.
+        return tree
+    named = ", ".join(sorted({str(child.get("receiver") or "?") for child in children}))
+    raise RuntimeError(
+        "the stack's notification policy is not this module's to replace: root receiver "
+        f"{tree['receiver']!r}"
+        + (f", child routes to {named}" if children else "")
+        + ". provision-alerts writes the WHOLE tree of a stack dedicated to the fleet "
+        "monitor. If this stack is dedicated, reset its notification policy to the default "
+        "in the Grafana UI and re-run; if it is not, do not run this command against it."
+    )
 
 
-def _matchers(route) -> set:
-    """A route's matchers, normalised across the encodings Grafana accepts.
+def apply_policy(stack, tree, desired):
+    """Replace the stack's policy tree with the committed one — whole, not merged.
 
-    ``object_matchers`` is the modern triple form; ``matchers`` is the legacy
-    string form Grafana still stores and serves back. Comparing only one of them
-    means our own previous route can come back looking like somebody else's.
+    ``tree`` is what ``read_policy_tree`` returned, and by then it is one of
+    exactly two things: a fresh stack's default, or a tree this module wrote
+    before — possibly edited in the UI since, which is the editing
+    ``X-Disable-Provenance`` exists to allow. Either way the committed file
+    wins. What matters is that resetting somebody's UI edit is SAID, not
+    silent, so the operator learns the lasting place for the change is
+    alerting.py.
     """
-    normalised = set()
-    for triple in route.get("object_matchers") or []:
-        if isinstance(triple, (list, tuple)) and len(triple) == 3:
-            normalised.add(tuple(str(part) for part in triple))
-    for raw in route.get("matchers") or []:
-        # Anchored to the label name rather than "first operator anywhere in the
-        # string": a value containing `!=` or `=~` would otherwise split in the
-        # wrong place and produce a triple resembling neither route.
-        match = LEGACY_MATCHER.match(str(raw))
-        if match:
-            key, op, value = match.groups()
-            normalised.add((key, op, value.strip().strip('"')))
-    return normalised
-
-
-def _is_ours(child, route) -> bool:
-    return child.get("receiver") == route["receiver"] and _matchers(child) == _matchers(route)
-
-
-def graft_route(stack, tree, route):
-    """Insert the fleet's route as the FIRST child of the stack's root policy.
-
-    First, not last, and that ordering is the whole correctness of this
-    function. Grafana walks a root's children in order and stops at the first
-    match, with ``continue`` defaulting to false, so a stack carrying the
-    ordinary "everything else goes here" catch-all child would swallow every
-    fleet alert before it ever reached the fleet's route — Slack and email
-    silent, provisioning reporting success.
-
-    Replaces a previous fleet route rather than appending a second one. A child
-    is ours only when its receiver *and* its matchers both match — an OR over
-    the two deletes a maintainer's own route that shares just one: a
-    `service=fleet-monitor` matcher pointing at *their* on-call (a legitimate
-    way to mirror fleet alerts), or a second route of theirs to this shared
-    contact point with different matchers. Both were silently dropped and
-    reported as "replaced". A route we did not write is not ours to remove.
-
-    Grafana serves matchers back in more than one encoding (``matchers`` as well
-    as ``object_matchers``), so the comparison normalises both — otherwise a
-    stale twin in the other encoding sits ahead of the new route and wins every
-    delivery.
-    """
-    children = tree.get("routes") or []
-    mine = [child for child in children if _is_ours(child, route)]
-    others = [child for child in children if not _is_ours(child, route)]
-
-    # A route we are replacing may have been extended in the UI — which is what
-    # X-Disable-Provenance exists to allow — so its children and mute timings
-    # come forward rather than being dropped on the floor.
-    inherited = {}
-    for child in mine:
-        for key in ("routes", "mute_time_intervals"):
-            if child.get(key) and not route.get(key):
-                inherited[key] = child[key]
-    grafted = {**route, **inherited}
-
-    tree["routes"] = [grafted] + others
-    stack.write("/api/v1/provisioning/policies", tree, method="PUT")
-
-    # Siblings preserved but now unreachable: ours sits first and does not set
-    # `continue`, so anything behind it matching the same alerts never fires. The
-    # module will not delete a route it did not write, but staying silent about
-    # one it has just disabled is the same harm by omission.
-    shadowed = [
-        child.get("receiver")
-        for child in others
-        if _matchers(child) and _matchers(child) <= _matchers(grafted)
-    ]
-    note = ""
-    if inherited:
-        note += f", carrying forward {'/'.join(sorted(inherited))}"
-    if shadowed:
-        note += (
-            f" — WARNING: {', '.join(sorted(set(shadowed)))} now sits behind the fleet route "
-            "and will no longer receive fleet alerts"
-        )
-    return ("replaced" if mine else "added") + note
+    stack.write("/api/v1/provisioning/policies", desired, method="PUT")
+    if tree.get("receiver") != desired["receiver"]:
+        return "adopted a fresh stack's default tree"
+    # Keys the committed tree sets, plus the ways a UI edit can extend a policy
+    # without touching any of them. Not every key Grafana serves back — the read
+    # can carry server-added fields (a provenance stamp, a default it fills in)
+    # that would report drift nobody created.
+    watched = set(desired) | {"routes", "mute_time_intervals", "object_matchers", "matchers"}
+    drift = sorted(
+        key for key in watched
+        if (tree.get(key) or None) != (desired.get(key) or None)
+    )
+    if drift:
+        return "replaced, resetting UI edits to " + ", ".join(drift)
+    return "replaced (no drift)"
 
 
 # Every health value Grafana reports for a rule it has actually run. A rule it
@@ -753,25 +724,33 @@ def provision(alerting_dir, base, token, values, echo=print, sleep=time.sleep,
         echo(f"· datasource: discovered {values['GRAFANA_METRICS_DATASOURCE_UID']}")
     contact_points = _load(alerting_dir, CONTACT_POINTS_FILE, values)
     document = _load(alerting_dir, RULES_FILE, values)
-    route = _load(alerting_dir, POLICY_FILE, values)["route"]
+    # The file-provisioning wrapper's orgId stays out of the API body — the
+    # policies endpoint takes the bare route object.
+    policy = {
+        key: value
+        for key, value in _load(alerting_dir, POLICY_FILE, values)["policies"][0].items()
+        if key != "orgId"
+    }
 
     # Read the policy tree first: it is the only read that can refuse, and a
     # refusal after the rules land would leave them enabled and unrouted.
     tree = read_policy_tree(stack)
 
     echo(f"· folder: {ensure_folder(stack)}")
+    # The contact point goes in before the policy: Grafana refuses a root
+    # receiver that does not exist, so on a fresh stack the reverse order 400s.
     for kind, action in apply_contact_point(stack, contact_points):
         echo(f"· contact point: {kind} {action}")
 
-    # The route goes in BEFORE the rules. Ordering, not taste: the policy write
+    # The policy goes in BEFORE the rules. Ordering, not taste: the policy write
     # is the one that can still fail after the reads pass — Grafana 11 splits
     # `alert.rules:write` from `alert.notifications:write`, so a token holding
     # only the first gets through every check here and then 403s. With the rules
-    # applied first that leaves them live and unrouted, every fleet alert falling
-    # through to the stack owner's own receiver, reproduced on every retry.
-    # Grafting first means a failure leaves a route matching nothing, which is
-    # inert, and the rules simply never land.
-    echo(f"· notification route: {graft_route(stack, tree, route)}")
+    # applied first that leaves them live and delivering to whatever receiver
+    # was there, reproduced on every retry. Policy-first means a failure leaves
+    # a tree routing alerts that do not exist yet, which is inert, and the rules
+    # simply never land.
+    echo(f"· notification policy: {apply_policy(stack, tree, policy)}")
 
     # Read the stack's current evaluation times before writing, so "has it run
     # our rules yet" is two stamps from one clock rather than a comparison
