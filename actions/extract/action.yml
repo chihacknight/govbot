@@ -341,6 +341,15 @@ runs:
         fi
 
     - name: Commit Changes
+      # Without this, a nonzero exit from the extraction step above (which
+      # happens on every run that hits even one permanently-failing bill --
+      # e.g. a dead PDF link or an unparseable scanned document -- see
+      # tamara-notes/scraper-status/not-working.md) skips this step entirely,
+      # silently discarding any progress that didn't make it into a periodic
+      # 30-min auto-save. Confirmed happening live 2026-08-08 on ma-legislation:
+      # a 14-minute run's entire output was lost this way, only caught and
+      # recovered by hand because someone was actively watching.
+      if: always()
       shell: bash
       run: |
         echo "📝 Committing extracted text files"
