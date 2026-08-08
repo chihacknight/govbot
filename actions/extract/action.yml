@@ -20,6 +20,23 @@ inputs:
     required: false
     default: ""
 
+outputs:
+  extracted-now:
+    description: "Bills successfully extracted this run"
+    value: ${{ steps.extract.outputs.extracted-now }}
+  total-bills:
+    description: "Total bills found"
+    value: ${{ steps.extract.outputs.total-bills }}
+  already-processed:
+    description: "Bills skipped because already extracted"
+    value: ${{ steps.extract.outputs.already-processed }}
+  unavailable:
+    description: "Bills durably marked unavailable (dead link / no text layer / placeholder)"
+    value: ${{ steps.extract.outputs.unavailable }}
+  errors:
+    description: "Genuine errors (not content-shaped failures)"
+    value: ${{ steps.extract.outputs.errors }}
+
 runs:
   using: "composite"
   steps:
@@ -272,24 +289,28 @@ runs:
 
         # Extract summary statistics for GitHub Actions summary (take last match only)
         TOTAL_BILLS=$(echo "$EXTRACTION_OUTPUT" | grep -oP 'Total bills: \K\d+' | tail -1 || echo "0")
-        PROCESSED=$(echo "$EXTRACTION_OUTPUT" | grep -oP 'Processed: \K\d+' | tail -1 || echo "0")
         SUCCESSFUL=$(echo "$EXTRACTION_OUTPUT" | grep -oP 'Successful: \K\d+' | tail -1 || echo "0")
         ERRORS=$(echo "$EXTRACTION_OUTPUT" | grep -oP 'Errors: \K\d+' | tail -1 || echo "0")
+        UNAVAILABLE=$(echo "$EXTRACTION_OUTPUT" | grep -oP 'Unavailable: \K\d+' | tail -1 || echo "0")
         SKIPPED=$(echo "$EXTRACTION_OUTPUT" | grep -oP 'Skipped \(already processed\): \K\d+' | tail -1 || echo "0")
         # Bill IDs that failed, printed by main.py under a "Failed bills:" header --
         # not written anywhere in the repo (see actions/extract/utils/common.py),
         # so the run summary is the only place these are visible.
         FAILED_BILLS=$(echo "$EXTRACTION_OUTPUT" | sed -n '/^Failed bills:$/,$p' | tail -n +2)
 
-        # Save stats to a file for easy display in caller workflow
-        echo "📊 Text Extraction Summary for ${{ inputs.state }}" > "${{ github.workspace }}/.extraction_summary.txt"
-        echo "========================================" >> "${{ github.workspace }}/.extraction_summary.txt"
-        echo "" >> "${{ github.workspace }}/.extraction_summary.txt"
-        echo "Total bills:                 $TOTAL_BILLS" >> "${{ github.workspace }}/.extraction_summary.txt"
-        echo "Processed:                   $PROCESSED" >> "${{ github.workspace }}/.extraction_summary.txt"
-        echo "Successful:                  $SUCCESSFUL" >> "${{ github.workspace }}/.extraction_summary.txt"
-        echo "Errors:                      $ERRORS" >> "${{ github.workspace }}/.extraction_summary.txt"
-        echo "Skipped (already processed): $SKIPPED" >> "${{ github.workspace }}/.extraction_summary.txt"
+        # Pass stats to the caller workflow via step outputs, not a file --
+        # a file sitting in the working directory can get silently clobbered
+        # by the Commit Changes step's own git pull/merge (confirmed live
+        # 2026-08-08: this exact file was accidentally tracked in git from
+        # some past commit, so a pull would overwrite our fresh numbers with
+        # a stale committed copy right before the caller workflow displayed
+        # them). Outputs are just process memory -> $GITHUB_OUTPUT, no git
+        # involved, nothing to clobber.
+        echo "extracted-now=$SUCCESSFUL" >> "$GITHUB_OUTPUT"
+        echo "total-bills=$TOTAL_BILLS" >> "$GITHUB_OUTPUT"
+        echo "already-processed=$SKIPPED" >> "$GITHUB_OUTPUT"
+        echo "unavailable=$UNAVAILABLE" >> "$GITHUB_OUTPUT"
+        echo "errors=$ERRORS" >> "$GITHUB_OUTPUT"
 
         # Create GitHub Actions summary
         {
@@ -297,11 +318,11 @@ runs:
           echo ""
           echo "| Metric | Count |"
           echo "|--------|-------|"
+          echo "| **Extracted now** | **$SUCCESSFUL** |"
           echo "| Total Bills | $TOTAL_BILLS |"
-          echo "| **Errors** | **$ERRORS** |"
-          echo "| Processed | $PROCESSED |"
-          echo "| Successful | $SUCCESSFUL |"
-          echo "| Skipped | $SKIPPED |"
+          echo "| Already processed | $SKIPPED |"
+          echo "| Unavailable | $UNAVAILABLE |"
+          echo "| Errors | $ERRORS |"
           echo ""
         } >> $GITHUB_STEP_SUMMARY
 
@@ -369,6 +390,11 @@ runs:
 
         # Add changes (bill text files in country:us/)
         git add country:us/ .windycivi/
+        # Conditional: only exists if extraction reached its final summary
+        # step (main.py can exit early via an unhandled exception before
+        # ever writing it) -- a plain `git add` on a missing path would fail
+        # the whole command and abort this step.
+        [ -f .extraction_unavailable.json ] && git add .extraction_unavailable.json
 
         # Commit if there are changes
         if git diff --staged --quiet; then

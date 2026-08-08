@@ -165,7 +165,7 @@ def download_congress_gov_content(url: str) -> str:
         return None
 
 
-def extract_bill_text_from_metadata(metadata_file: Path, files_dir: Path) -> bool:
+def extract_bill_text_from_metadata(metadata_file: Path, files_dir: Path):
     """
     Extract bill text for a single bill from its metadata.json file.
 
@@ -174,8 +174,22 @@ def extract_bill_text_from_metadata(metadata_file: Path, files_dir: Path) -> boo
         files_dir: Path to files/ directory for this bill
 
     Returns:
-        True if successful, False otherwise
+        (success, unavailable_reason) tuple.
+        - success: True if any document was extracted.
+        - unavailable_reason: when success is False, a short string
+          ("download_failed", "no_text_layer", "placeholder_only", or a
+          combination) if every failure was content-shaped (dead link,
+          unparseable document, JS-only placeholder) -- i.e. the kind of
+          failure that's about the source document, not our own system,
+          and safe to mark as durably unavailable rather than retried
+          every run. None if any failure was a local "save" error (a real
+          bug in our own write path, not the document's fault) or an
+          unhandled exception -- those should keep counting as real
+          errors, not get silently parked.
     """
+    had_save_error = False
+    content_failure_reasons = set()
+
     try:
         # Load metadata
         with open(metadata_file, "r", encoding="utf-8") as f:
@@ -206,7 +220,7 @@ def extract_bill_text_from_metadata(metadata_file: Path, files_dir: Path) -> boo
 
         if not arrays_to_process:
             # This is normal - not all bills have full text available
-            return True  # Don't count as error
+            return True, None  # Don't count as error
 
         success_count = 0
 
@@ -338,6 +352,28 @@ def extract_bill_text_from_metadata(metadata_file: Path, files_dir: Path) -> boo
                                 "item_note": item_note,
                             },
                         )
+                        content_failure_reasons.add("download_failed")
+                        continue
+
+                    if "pdf" in media_type.lower() and not extracted_text:
+                        # Downloaded a genuine PDF, but no library could pull
+                        # text out of it -- almost always a scanned/image-only
+                        # PDF with no text layer, which none of pdfplumber /
+                        # PyPDF2 / PyMuPDF can OCR. Distinct from a download
+                        # failure: the document exists and was fetched fine.
+                        print(f"   ❌ PDF has no extractable text: {url}")
+                        record_failed_bill(
+                            bill_id=bill_id,
+                            error_type="parsing",
+                            error_message="PDF downloaded but no text layer found (likely scanned/image-only)",
+                            url=url,
+                            metadata_file=str(metadata_file),
+                            additional_info={
+                                "media_type": media_type,
+                                "item_note": item_note,
+                            },
+                        )
+                        content_failure_reasons.add("no_text_layer")
                         continue
 
                     print(f"   📄 Downloaded {len(content)} {'bytes' if is_binary_content else 'characters'}")
@@ -380,6 +416,7 @@ def extract_bill_text_from_metadata(metadata_file: Path, files_dir: Path) -> boo
                                 "item_note": item_note,
                             },
                         )
+                        content_failure_reasons.add("parsing_failed")
                         continue
 
                     if "html" in media_type.lower() and extracted_data.get(
@@ -409,6 +446,7 @@ def extract_bill_text_from_metadata(metadata_file: Path, files_dir: Path) -> boo
                         print(f"   ✅ {file_extension.upper()} saved successfully")
                     except Exception as e:
                         print(f"   ❌ Error saving {file_extension.upper()}: {e}")
+                        had_save_error = True
                         continue
 
                     # Save extracted text -- a single clean read, no artificial
@@ -446,6 +484,7 @@ def extract_bill_text_from_metadata(metadata_file: Path, files_dir: Path) -> boo
                                 "text_filename": text_filename,
                             },
                         )
+                        had_save_error = True
                         continue
 
                     success_count += 1
@@ -469,12 +508,20 @@ def extract_bill_text_from_metadata(metadata_file: Path, files_dir: Path) -> boo
                         metadata_file=str(metadata_file),
                         additional_info={"item_note": item_note},
                     )
+                    content_failure_reasons.add("placeholder_only")
 
-        return success_count > 0
+        if success_count > 0:
+            return True, None
+        if had_save_error:
+            # A real bug in our own write path, not the source document's
+            # fault -- don't mark this bill as durably unavailable, let it
+            # keep counting as a genuine error so it gets noticed and retried.
+            return False, None
+        return False, "+".join(sorted(content_failure_reasons)) or "no_versions_found"
 
     except Exception as e:
         print(f"   ❌ Error processing {metadata_file}: {e}")
-        return False
+        return False, None
 
 
 def process_bills_in_batch(
@@ -505,6 +552,8 @@ def process_bills_in_batch(
     success_count = 0
     error_count = 0
     skipped_count = 0
+    unavailable_count = 0
+    unavailable_bills = []
 
     print(f"📊 Found {total_bills} bills to process for text extraction")
 
@@ -532,12 +581,29 @@ def process_bills_in_batch(
                 files_dir.mkdir(parents=True, exist_ok=True)
 
                 # Extract text for this bill
-                success = extract_bill_text_from_metadata(metadata_file, files_dir)
+                success, unavailable_reason = extract_bill_text_from_metadata(
+                    metadata_file, files_dir
+                )
 
                 if success:
                     success_count += 1
                     # Update processing timestamp
                     update_text_extraction_timestamp(metadata_file)
+                elif unavailable_reason:
+                    # A content-shaped failure (dead link, no text layer,
+                    # JS-only placeholder) -- durably mark it so future runs
+                    # stop retrying every cycle, without silently hiding it:
+                    # tracked separately from real errors and re-checked
+                    # periodically in case the source document changes.
+                    unavailable_count += 1
+                    mark_bill_unavailable(metadata_file, unavailable_reason)
+                    unavailable_bills.append(
+                        {
+                            "bill_id": metadata_file.parent.name,
+                            "reason": unavailable_reason,
+                            "metadata_file": str(metadata_file),
+                        }
+                    )
                 else:
                     error_count += 1
 
@@ -553,7 +619,8 @@ def process_bills_in_batch(
                 processed_count += 1
 
         print(
-            f"✅ Batch {batch_num} complete. Success: {success_count}, Errors: {error_count}, Skipped: {skipped_count}"
+            f"✅ Batch {batch_num} complete. Success: {success_count}, Errors: {error_count}, "
+            f"Unavailable: {unavailable_count}, Skipped: {skipped_count}"
         )
 
     failed_summary = get_failed_bills_summary()
@@ -568,8 +635,10 @@ def process_bills_in_batch(
         "processed": processed_count,
         "successful": success_count,
         "errors": error_count,
+        "unavailable": unavailable_count,
         "skipped": skipped_count,
         "failed_bills": failed_bills,
+        "unavailable_bills": unavailable_bills,
     }
 
 
@@ -613,8 +682,36 @@ def should_skip_bill_for_text_extraction(metadata_file: Path) -> bool:
 
         bill_id = metadata.get("identifier", metadata_file.parent.name)
 
-        # Check if text has already been extracted
         processing_info = metadata.get("_processing", {})
+        logs_timestamp = processing_info.get("logs_latest_update")
+
+        # Bills durably marked unavailable (dead link, no text layer, JS-only
+        # placeholder) skip the normal per-run retry, but not forever: if the
+        # source document has genuinely changed since we last checked (the
+        # scraper bumped logs_latest_update), or it's been more than 15 days
+        # since we last confirmed it's unavailable, give it another try --
+        # cheap insurance against a silently-fixed document (e.g. the state
+        # replaces a bad scan) that would otherwise never get picked up again.
+        unavailable_info = processing_info.get("text_extraction_unavailable")
+        if unavailable_info:
+            checked_at = unavailable_info.get("checked_at")
+            if logs_timestamp and checked_at and logs_timestamp > checked_at:
+                print(f"   🔍 {bill_id}: Bill updated since marked unavailable - processing")
+                return False
+            if checked_at:
+                days_since_check = (
+                    datetime.utcnow() - datetime.fromisoformat(checked_at.rstrip("Z"))
+                ).days
+                if days_since_check < 15:
+                    print(
+                        f"   ⏭️  {bill_id}: Marked unavailable "
+                        f"({unavailable_info.get('reason')}, checked {days_since_check}d ago) - skipping"
+                    )
+                    return True
+                print(f"   🔍 {bill_id}: Unavailable check is {days_since_check}d old - rechecking")
+                return False
+
+        # Check if text has already been extracted
         text_extraction_timestamp = processing_info.get("text_extraction_latest_update")
 
         if not text_extraction_timestamp:
@@ -623,7 +720,6 @@ def should_skip_bill_for_text_extraction(metadata_file: Path) -> bool:
             return False
 
         # Check if the bill has been updated since last text extraction
-        logs_timestamp = processing_info.get("logs_latest_update")
         if logs_timestamp and logs_timestamp > text_extraction_timestamp:
             # Bill has been updated since last text extraction - needs processing
             print(f"   🔍 {bill_id}: Bill updated since last extraction - processing")
@@ -679,3 +775,30 @@ def update_text_extraction_timestamp(metadata_file: Path) -> None:
 
     except Exception as e:
         print(f"   ⚠️ Error updating text extraction timestamp for {metadata_file}: {e}")
+
+
+def mark_bill_unavailable(metadata_file: Path, reason: str) -> None:
+    """
+    Record that this bill's text is durably unavailable for a content-shaped
+    reason (dead link, no text layer, JS-only placeholder) -- not a bug in
+    our own pipeline. See should_skip_bill_for_text_extraction for how this
+    gets honored (skipped for 15 days, or immediately re-tried if the bill's
+    own data changes in the meantime).
+    """
+    try:
+        with open(metadata_file, "r", encoding="utf-8") as f:
+            metadata = json.load(f)
+
+        if "_processing" not in metadata:
+            metadata["_processing"] = {}
+
+        metadata["_processing"]["text_extraction_unavailable"] = {
+            "reason": reason,
+            "checked_at": datetime.utcnow().isoformat() + "Z",
+        }
+
+        with open(metadata_file, "w", encoding="utf-8") as f:
+            json.dump(metadata, f, indent=2)
+
+    except Exception as e:
+        print(f"   ⚠️ Error marking bill unavailable for {metadata_file}: {e}")

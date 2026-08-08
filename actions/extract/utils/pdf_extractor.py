@@ -133,12 +133,19 @@ def extract_pdf(url: str, download_with_retry_func) -> Optional[dict]:
     Returns a dict with:
       - raw_bytes: the genuine, unmodified PDF bytes as downloaded (for
         storage, and for handing off to a vision-capable model later)
-      - text: plain extracted text (no section-splitting -- one clean read)
+      - text: plain extracted text (no section-splitting -- one clean
+        read), or None if the PDF downloaded fine but no library could
+        pull text out of it (most commonly: a scanned/image-only PDF
+        with no embedded text layer -- these three libraries don't do
+        OCR, so there's genuinely nothing more to try)
       - has_visual_markup: cheap geometry-based signal for whether this
         document likely contains redline (strikethrough/underline) markup
         that plain text extraction can't faithfully represent
 
-    Returns None if the download or every extraction library fails.
+    Returns None only if the download itself failed -- distinct from a
+    successful download with unparseable content (see "text" above),
+    since callers need to tell those apart to record an accurate failure
+    reason instead of a generic "download failed".
     """
     response = download_with_retry_func(url, max_retries=3, delay=1.0)
     if not response:
@@ -148,7 +155,6 @@ def extract_pdf(url: str, download_with_retry_func) -> Optional[dict]:
     text = _extract_pages_text(raw_bytes)
     if not text:
         print(f"   ⚠️ No PDF parsing libraries available or all failed")
-        return None
 
     return {
         "raw_bytes": raw_bytes,

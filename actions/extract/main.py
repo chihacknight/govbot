@@ -1,6 +1,7 @@
 import click
 from pathlib import Path
 import sys
+import json
 
 # Add the current directory to the path
 sys.path.append(str(Path(__file__).parent))
@@ -62,8 +63,19 @@ def main(state: str, data_folder: Path, incremental: bool = False):
         print(f"Processed: {stats['processed']}")
         print(f"Successful: {stats['successful']}")
         print(f"Errors: {stats['errors']}")
+        print(f"Unavailable: {stats.get('unavailable', 0)}")
         if stats.get("skipped", 0) > 0:
             print(f"Skipped (already processed): {stats['skipped']}")
+
+        unavailable_bills = stats.get("unavailable_bills", [])
+        if unavailable_bills:
+            unavailable_path = data_folder / ".extraction_unavailable.json"
+            try:
+                with open(unavailable_path, "w", encoding="utf-8") as f:
+                    json.dump(unavailable_bills, f, indent=2)
+                print(f"📝 Wrote {len(unavailable_bills)} unavailable bills to {unavailable_path}")
+            except Exception as e:
+                print(f"⚠️ Could not write {unavailable_path}: {e}")
 
         if stats["errors"] > 0:
             print(f"⚠️ {stats['errors']} bills had errors during processing")
