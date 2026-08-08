@@ -20,6 +20,23 @@ inputs:
     required: false
     default: ""
 
+outputs:
+  extracted-now:
+    description: "Bills successfully extracted this run"
+    value: ${{ steps.extract.outputs.extracted-now }}
+  total-bills:
+    description: "Total bills found"
+    value: ${{ steps.extract.outputs.total-bills }}
+  already-processed:
+    description: "Bills skipped because already extracted"
+    value: ${{ steps.extract.outputs.already-processed }}
+  unavailable:
+    description: "Bills durably marked unavailable (dead link / no text layer / placeholder)"
+    value: ${{ steps.extract.outputs.unavailable }}
+  errors:
+    description: "Genuine errors (not content-shaped failures)"
+    value: ${{ steps.extract.outputs.errors }}
+
 runs:
   using: "composite"
   steps:
@@ -281,18 +298,19 @@ runs:
         # so the run summary is the only place these are visible.
         FAILED_BILLS=$(echo "$EXTRACTION_OUTPUT" | sed -n '/^Failed bills:$/,$p' | tail -n +2)
 
-        # Save stats to a file for easy display in caller workflow.
-        # Extracted now (this run's actual new work) leads -- it's the
-        # number that answers "did anything happen," everything else is
-        # context for it.
-        echo "📊 Text Extraction Summary for ${{ inputs.state }}" > "${{ github.workspace }}/.extraction_summary.txt"
-        echo "========================================" >> "${{ github.workspace }}/.extraction_summary.txt"
-        echo "" >> "${{ github.workspace }}/.extraction_summary.txt"
-        echo "Extracted now:     $SUCCESSFUL" >> "${{ github.workspace }}/.extraction_summary.txt"
-        echo "Total bills:       $TOTAL_BILLS" >> "${{ github.workspace }}/.extraction_summary.txt"
-        echo "Already processed: $SKIPPED" >> "${{ github.workspace }}/.extraction_summary.txt"
-        echo "Unavailable:       $UNAVAILABLE" >> "${{ github.workspace }}/.extraction_summary.txt"
-        echo "Errors:            $ERRORS" >> "${{ github.workspace }}/.extraction_summary.txt"
+        # Pass stats to the caller workflow via step outputs, not a file --
+        # a file sitting in the working directory can get silently clobbered
+        # by the Commit Changes step's own git pull/merge (confirmed live
+        # 2026-08-08: this exact file was accidentally tracked in git from
+        # some past commit, so a pull would overwrite our fresh numbers with
+        # a stale committed copy right before the caller workflow displayed
+        # them). Outputs are just process memory -> $GITHUB_OUTPUT, no git
+        # involved, nothing to clobber.
+        echo "extracted-now=$SUCCESSFUL" >> "$GITHUB_OUTPUT"
+        echo "total-bills=$TOTAL_BILLS" >> "$GITHUB_OUTPUT"
+        echo "already-processed=$SKIPPED" >> "$GITHUB_OUTPUT"
+        echo "unavailable=$UNAVAILABLE" >> "$GITHUB_OUTPUT"
+        echo "errors=$ERRORS" >> "$GITHUB_OUTPUT"
 
         # Create GitHub Actions summary
         {
