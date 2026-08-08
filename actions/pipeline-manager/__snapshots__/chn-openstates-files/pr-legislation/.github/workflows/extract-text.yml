@@ -59,12 +59,23 @@ jobs:
       - name: Display extraction summary
         if: always()
         shell: bash
+        # Read from the action's own outputs, not a file on disk -- a file
+        # sitting in the working tree can get silently clobbered by the
+        # Commit Changes step's own git pull/merge (confirmed live
+        # 2026-08-08 on ma-legislation: this exact file had gotten
+        # accidentally tracked in git from a past commit, so a pull
+        # overwrote the fresh numbers with a stale committed copy right
+        # before this step ran). Outputs are just $GITHUB_OUTPUT, no git
+        # involved, nothing to clobber.
         run: |
-          if [ -f ".extraction_summary.txt" ]; then
-            cat .extraction_summary.txt
-          else
-            echo "⚠️  Summary file not found"
-          fi
+          echo "📊 Text Extraction Summary for pr"
+          echo "========================================"
+          echo ""
+          echo "Extracted now:     ${{ steps.extract.outputs.extracted-now }}"
+          echo "Total bills:       ${{ steps.extract.outputs.total-bills }}"
+          echo "Already processed: ${{ steps.extract.outputs.already-processed }}"
+          echo "Unavailable:       ${{ steps.extract.outputs.unavailable }}"
+          echo "Errors:            ${{ steps.extract.outputs.errors }}"
 
   # Auto-restart job if extraction was cancelled (timeout) or failed.
   #
