@@ -180,7 +180,7 @@ fn format_snapshot_with_script(script_path: &Path, output: &str) -> String {
 fn script_requires_test_data(script_path: &Path) -> bool {
     if let Ok(content) = fs::read_to_string(script_path) {
         // Commands that need test data (repos directory)
-        content.contains("govbot logs")
+        content.contains("govbot logs") || content.contains("govbot freshness")
     } else {
         false
     }

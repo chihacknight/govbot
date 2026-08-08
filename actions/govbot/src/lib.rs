@@ -7,6 +7,7 @@ pub mod config;
 pub mod embeddings;
 pub mod error;
 pub mod filter;
+pub mod freshness;
 pub mod git;
 pub mod locale_generated;
 pub mod pipeline;

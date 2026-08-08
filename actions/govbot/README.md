@@ -45,10 +45,36 @@ govbot logs                # stream legislative activity as JSON Lines
 govbot logs | govbot tag   # process and tag data
 govbot build               # generate RSS feeds
 govbot load                # load bill metadata into DuckDB
+govbot freshness           # per-jurisdiction data freshness (how far behind each is)
 govbot delete all          # remove all downloaded data
 govbot update              # update govbot to latest version
 govbot --help              # see all commands and options
 ```
+
+### Checking data freshness
+
+`govbot freshness` reports, for each cloned jurisdiction, how far behind the
+corpus it is — computed entirely from local data, so it works offline and its
+lags are measured against a corpus-derived frontier rather than the wall clock.
+
+```bash
+govbot freshness                 # table, most-stale-first
+govbot freshness wy il           # only specific jurisdictions
+govbot freshness --json | jq .   # one JSON object per jurisdiction
+```
+
+Each row carries two independent signals:
+
+- **ACT_LAG** — days the newest *legislative action* trails the corpus action
+  frontier (how current the real-world activity is).
+- **ING_LAG** — days the last *govbot ingestion* trails the corpus ingest
+  frontier (when govbot last wrote data for that jurisdiction).
+
+Reading them together separates the failure modes: a large `ACT_LAG` with a
+small `ING_LAG` means govbot is still ingesting but the upstream source is quiet
+(an out-of-session legislature, or a stalled scraper) — not a govbot bug. A
+large `ING_LAG` means govbot itself has not written new data for that
+jurisdiction, pointing to an ingestion-side stall.
 
 ## Contribute
 

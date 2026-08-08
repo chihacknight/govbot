@@ -210,6 +210,25 @@ enum Command {
         #[arg(long)]
         overwrite: bool,
     },
+
+    /// Report per-jurisdiction data freshness for the cloned corpus
+    /// Shows, per jurisdiction, the newest legislative action and the most recent
+    /// govbot ingestion, each with its lag behind the corpus-wide frontier. Reading
+    /// the two columns together separates a govbot-side ingestion stall (both old)
+    /// from an out-of-session / quiet upstream (old action, recent ingest).
+    Freshness {
+        /// Jurisdiction codes to include (e.g. `wy il ca`). Defaults to all present.
+        #[arg(num_args = 0..)]
+        codes: Vec<String>,
+
+        /// Emit one JSON object per jurisdiction instead of a table (jq-friendly)
+        #[arg(long)]
+        json: bool,
+
+        /// Govbot directory (default: $CWD/govbot_data/repos, or GOVBOT_DIR env var)
+        #[arg(long = "govbot-dir")]
+        govbot_dir: Option<String>,
+    },
 }
 
 
@@ -2290,6 +2309,107 @@ async fn run_update_command() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Format an optional timestamp as a `YYYY-MM-DD` date, or a placeholder when absent.
+fn fmt_date(ts: Option<chrono::DateTime<chrono::Utc>>) -> String {
+    ts.map(|t| t.format("%Y-%m-%d").to_string())
+        .unwrap_or_else(|| "-".to_string())
+}
+
+/// Format an optional lag in days, or a placeholder when there is nothing to measure.
+fn fmt_lag(days: Option<i64>) -> String {
+    days.map(|d| d.to_string())
+        .unwrap_or_else(|| "-".to_string())
+}
+
+async fn run_freshness_command(cmd: Command) -> anyhow::Result<()> {
+    let Command::Freshness {
+        codes,
+        json,
+        govbot_dir,
+    } = cmd
+    else {
+        unreachable!()
+    };
+
+    let git_dir = get_govbot_dir(govbot_dir)?;
+
+    // Allow either `wy il` or `wy,il`.
+    let filter: Vec<String> = codes
+        .iter()
+        .flat_map(|c| c.split(','))
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    let filter = if filter.is_empty() { None } else { Some(filter) };
+
+    let report = govbot::freshness::scan_corpus(&git_dir, filter.as_deref())?;
+
+    if report.jurisdictions.is_empty() {
+        eprintln!("No jurisdictions found in {}", git_dir.display());
+        eprintln!("Run `govbot clone all` first, or pass --govbot-dir.");
+        return Ok(());
+    }
+
+    let action_frontier = report.action_frontier;
+    let ingest_frontier = report.ingest_frontier;
+
+    if json {
+        for j in &report.jurisdictions {
+            let obj = serde_json::json!({
+                "code": j.code,
+                "repo": j.repo,
+                "bills": j.bills,
+                "actions": j.actions,
+                "newest_action": j.newest_action.map(|t| t.to_rfc3339()),
+                "action_lag_days": j.action_lag_days(action_frontier),
+                "last_ingest": j.last_ingest.map(|t| t.to_rfc3339()),
+                "ingest_lag_days": j.ingest_lag_days(ingest_frontier),
+            });
+            write_json_line(&serde_json::to_string(&obj)?)?;
+        }
+        return Ok(());
+    }
+
+    // Human-readable table. Lags are measured against the corpus-derived frontier,
+    // so the report is deterministic and needs no network or clock.
+    println!(
+        "Corpus freshness — {} jurisdiction(s)",
+        report.jurisdictions.len()
+    );
+    println!(
+        "  Action frontier: {}  (newest legislative action in corpus)",
+        fmt_date(action_frontier)
+    );
+    println!(
+        "  Ingest frontier: {}  (most recent govbot ingestion in corpus)",
+        fmt_date(ingest_frontier)
+    );
+    println!();
+    println!(
+        "{:<6} {:>8} {:>14} {:>8} {:>12} {:>8}",
+        "CODE", "BILLS", "NEWEST ACTION", "ACT_LAG", "LAST INGEST", "ING_LAG"
+    );
+    for j in &report.jurisdictions {
+        println!(
+            "{:<6} {:>8} {:>14} {:>8} {:>12} {:>8}",
+            j.code,
+            j.bills,
+            fmt_date(j.newest_action),
+            fmt_lag(j.action_lag_days(action_frontier)),
+            fmt_date(j.last_ingest),
+            fmt_lag(j.ingest_lag_days(ingest_frontier)),
+        );
+    }
+    println!();
+    println!("ACT_LAG = days the newest action trails the corpus action frontier.");
+    println!("ING_LAG = days the last govbot ingestion trails the corpus ingest frontier.");
+    println!("Large ACT_LAG with small ING_LAG => govbot is current; upstream is quiet");
+    println!("  (out of session or a stalled source). Large ING_LAG => govbot has not");
+    println!("  written new data for that jurisdiction — a likely ingestion-side stall.");
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
@@ -2315,6 +2435,9 @@ async fn main() -> anyhow::Result<()> {
         }
         Some(cmd @ Command::Build { .. }) => {
             run_build_command(cmd).await
+        }
+        Some(cmd @ Command::Freshness { .. }) => {
+            run_freshness_command(cmd).await
         }
         None => {
             let cwd = std::env::current_dir()?;

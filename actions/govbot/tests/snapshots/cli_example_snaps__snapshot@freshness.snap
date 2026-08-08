@@ -1,0 +1,21 @@
+---
+source: tests/cli_example_snaps.rs
+expression: "&formatted_stdout"
+---
+Command:
+govbot freshness
+
+Output:
+Corpus freshness — 2 jurisdiction(s)
+  Action frontier: 2025-12-01  (newest legislative action in corpus)
+  Ingest frontier: 2025-12-02  (most recent govbot ingestion in corpus)
+
+CODE      BILLS  NEWEST ACTION  ACT_LAG  LAST INGEST  ING_LAG
+wy           10     2025-12-01        0   2025-12-02        0
+gu            5              -        -   2025-11-27        5
+
+ACT_LAG = days the newest action trails the corpus action frontier.
+ING_LAG = days the last govbot ingestion trails the corpus ingest frontier.
+Large ACT_LAG with small ING_LAG => govbot is current; upstream is quiet
+  (out of session or a stalled source). Large ING_LAG => govbot has not
+  written new data for that jurisdiction — a likely ingestion-side stall.
