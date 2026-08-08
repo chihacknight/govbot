@@ -155,6 +155,33 @@ def download_with_retry(
             response.raise_for_status()
             return response
 
+        except requests.exceptions.HTTPError as e:
+            # malegislature.gov (and possibly other sites) sometimes returns a
+            # non-2xx status code -- e.g. 404 -- while still serving a genuine,
+            # complete PDF in the body. raise_for_status() above discards that
+            # response before anything gets a chance to look at the body.
+            # Confirmed live 2026-08-08: real %PDF- content sitting behind a
+            # 404 status for MA bills that were being wrongly recorded as
+            # totally missing. Only trust this for an unambiguous PDF magic
+            # byte match -- narrow enough that it can't accidentally let an
+            # actual error page (which would never start with %PDF-) through.
+            if e.response is not None and e.response.content[:5] == b"%PDF-":
+                print(
+                    f"   ⚠️ Got HTTP {e.response.status_code} but body is a "
+                    f"real PDF -- using it anyway"
+                )
+                return e.response
+
+            print(f"   ⚠️ Attempt {attempt + 1} failed: {e}")
+            _last_download_error = str(e)
+            if attempt < max_retries - 1:
+                wait_time = delay * (2**attempt) + random.uniform(1, 3)
+                print(f"   ⏳ Waiting {wait_time:.1f}s before retry...")
+                time.sleep(wait_time)
+            else:
+                print(f"   ❌ All {max_retries} attempts failed for {url}")
+                return None
+
         except requests.exceptions.RequestException as e:
             print(f"   ⚠️ Attempt {attempt + 1} failed: {e}")
             _last_download_error = str(e)
