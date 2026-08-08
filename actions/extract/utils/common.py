@@ -172,6 +172,16 @@ def download_with_retry(
                 )
                 return e.response
 
+            if e.response is not None and e.response.status_code == 404:
+                # A genuine 404 (no valid PDF body behind it, checked above)
+                # means the resource doesn't exist -- retrying with backoff
+                # won't change that, it just burns 3x the time on every one
+                # of these for nothing. Distinct from a timeout/connection
+                # error/5xx, which can be transient and are worth retrying.
+                print(f"   ❌ 404 Not Found, not retrying: {url}")
+                _last_download_error = str(e)
+                return None
+
             print(f"   ⚠️ Attempt {attempt + 1} failed: {e}")
             _last_download_error = str(e)
             if attempt < max_retries - 1:
