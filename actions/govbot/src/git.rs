@@ -17,8 +17,12 @@ use std::path::{Path, PathBuf};
 //
 // To use a custom URL template, set the environment variable:
 //   export GOVBOT_REPO_URL_TEMPLATE="https://gitlab.com/myorg/{locale}-data.git"
+// govbot-data is the maintained data org. The former org (chn-openstates-files,
+// since renamed to govbot-archive) has been archived and its format workflows
+// disabled, so it no longer receives fresh scraped data -- clone must not point
+// there. Override with GOVBOT_REPO_URL_TEMPLATE for a custom host/org.
 const DEFAULT_REPO_URL_TEMPLATE: &str =
-    "https://github.com/chn-openstates-files/{locale}-legislation.git";
+    "https://github.com/govbot-data/{locale}-legislation.git";
 
 /// Get the repository URL template from environment or use default
 fn get_repo_url_template() -> String {
@@ -69,8 +73,8 @@ fn extract_repo_org(template: &str) -> String {
             }
         }
     }
-    // Fallback: return default org
-    "chn-openstates-files".to_string()
+    // Fallback: return default org (matches DEFAULT_REPO_URL_TEMPLATE)
+    "govbot-data".to_string()
 }
 
 /// Build the repository name (used for local directory names)
