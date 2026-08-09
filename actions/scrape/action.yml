@@ -61,15 +61,38 @@ runs:
         mkdir -p "${RUNNER_TEMP}/scrape-snapshot-nightly"
         echo "Working root: ${RUNNER_TEMP}"
 
+    # A UTC day stamp so the scrape cache below can only be reused within the
+    # same calendar day (see the "Cache scrapes" step for the full rationale).
+    - name: Compute cache day stamp
+      id: cache-stamp
+      if: inputs.use-scrape-cache != 'true'
+      shell: bash
+      run: echo "day=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
     - name: Cache scrapes (best-effort)
       if: inputs.use-scrape-cache != 'true'
       uses: actions/cache@v6
       with:
         path: ${{ runner.temp }}/_working/_cache
-        key: cache-scrapes-${{ inputs.state }}-${{ github.sha }}
+        # This caches the scraper's HTTP download cache (openstates/scrapelib),
+        # which never revalidates -- once a URL is stored it is replayed verbatim
+        # on every later hit. States that pull a single static bulk file (the
+        # csv_bills scrapers: NJ, VA, ...) therefore get pinned to whatever that
+        # file said the first time it landed in the cache. NJ froze on a late-
+        # January 2026 snapshot for ~7 months exactly this way: every run restored
+        # the January cache through the old unbounded restore-keys
+        # (`cache-scrapes-<state>-`, then `cache-scrapes-`), replayed the stale bill
+        # file, and re-saved it forward -- so the daily scrape ran green while never
+        # seeing NJ's live data (which pub.njleg.state.nj.us rewrites daily).
+        #
+        # Scoping the key AND the restore-keys to a UTC day stamp means a run can
+        # only reuse a cache created earlier the *same* day (still a cheap win for
+        # within-day re-runs), while every new day starts cold and re-downloads the
+        # live file. Staleness is bounded to at most one day, and the scrape only
+        # runs daily anyway.
+        key: cache-scrapes-${{ inputs.state }}-${{ steps.cache-stamp.outputs.day }}-${{ github.sha }}
         restore-keys: |
-          cache-scrapes-${{ inputs.state }}-
-          cache-scrapes-
+          cache-scrapes-${{ inputs.state }}-${{ steps.cache-stamp.outputs.day }}-
 
     - name: Scrape data with Docker (resilient)
       if: inputs.use-scrape-cache != 'true'
