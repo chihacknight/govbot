@@ -431,10 +431,13 @@ def apply_rules(stack, document):
     return applied
 
 
-# What a stack nobody has routed yet looks like: Grafana creates this receiver
-# on every fresh instance, Cloud included, and the UI's "reset notification
-# policy" restores it. The only tree this module will replace besides its own.
-GRAFANA_DEFAULT_RECEIVER = "grafana-default-email"
+# What a stack nobody has routed yet looks like. Self-hosted Grafana ships the
+# first; Grafana Cloud stacks delegate alerting to the hosted (Mimir-based)
+# Alertmanager, whose blank config is a root receiver literally named "empty"
+# with no integrations at all — which is also why the contact-points listing on
+# such a stack reads []. Observed on the real stack this provisions into. The
+# only trees this module will replace besides its own.
+FRESH_STACK_RECEIVERS = ("grafana-default-email", "empty")
 
 
 def read_policy_tree(stack):
@@ -497,11 +500,11 @@ def read_policy_tree(stack):
         # Ours — including one edited in the UI since, which apply_policy will
         # overwrite and say so.
         return tree
-    if tree["receiver"] == GRAFANA_DEFAULT_RECEIVER and all(
+    if tree["receiver"] in FRESH_STACK_RECEIVERS and all(
             child.get("receiver") == CONTACT_POINT for child in children):
         # A fresh stack's untouched default — or the footprint the graft-era
         # design left behind: the default root with the fleet's route as its
-        # only child. Both are this module's to replace. The default receiver
+        # only child. Both are this module's to replace. A default receiver
         # with any OTHER child is not fresh — somebody routed this stack — and
         # falls through to the refusal.
         return tree

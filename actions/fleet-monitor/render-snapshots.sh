@@ -2803,6 +2803,14 @@ sequence = [c.full_url for c in fresh_calls if c.data is not None]
 assert next(i for i, u in enumerate(sequence) if "contact-points" in u) \
     < next(i for i, u in enumerate(sequence) if "policies" in u), sequence
 
+# Grafana Cloud's hosted (Mimir-based) Alertmanager ships a different blank
+# config: root receiver literally named "empty", no contact points at all —
+# seen on the real stack this provisions into. Adopted the same way.
+cloud_fresh, cloud_calls = run(CREDS, stack(policies={"receiver": "empty"}))
+assert cloud_fresh.exit_code == 0, cloud_fresh.output + str(cloud_fresh.exception)
+assert "adopted" in cloud_fresh.output, cloud_fresh.output
+assert json.loads(written(cloud_calls, "policies")[0].data) == tree, cloud_fresh.output
+
 # Re-running over our own unchanged tree is idempotent and quiet about it...
 rerun, rerun_calls = run(CREDS, stack(policies=json.loads(json.dumps(tree))))
 assert rerun.exit_code == 0, rerun.output
@@ -2852,6 +2860,9 @@ for foreign in (
     # either: the fleet's route being present must not vouch for its neighbour.
     {"receiver": "grafana-default-email",
      "routes": [{"receiver": CONTACT_POINT}, {"receiver": "their-oncall"}]},
+    # The Cloud blank-config receiver gets the same children rule as the
+    # self-hosted default.
+    {"receiver": "empty", "routes": [{"receiver": "their-oncall"}]},
     # A root receiver that is neither ours nor the untouched default.
     {"receiver": "their-default"},
     {"receiver": "their-default", "routes": [{"receiver": "their-oncall"}]},

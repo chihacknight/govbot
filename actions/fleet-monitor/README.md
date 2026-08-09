@@ -407,12 +407,14 @@ What to know before you run it:
   as-is — on a stack dedicated to the fleet monitor, which is the standing assumption.
 - **That assumption is checked on every run, not trusted.** Before writing anything,
   provisioning reads the stack's policy tree and only proceeds over a tree it recognises:
-  its own (root receiver `fleet-monitor`), or a fresh stack's untouched default
-  (`grafana-default-email` with no child routes). Anything else — a renamed root, routes
-  somebody added under the default — is a hard stop that names what it found, with no
-  `--force` to pave over it: if the stack really is dedicated, reset its notification
-  policy to the default in the UI and re-run; if it isn't, this command is pointed at the
-  wrong stack.
+  its own (root receiver `fleet-monitor`), or a fresh stack's untouched default with no
+  foreign child routes — `grafana-default-email` on self-hosted Grafana, or `empty`, the
+  blank config Grafana Cloud's hosted (Mimir-based) Alertmanager ships, where the
+  contact-points listing reads `[]`. Anything else — a renamed root, routes somebody
+  added under the default — is a hard stop that names what it found, with no `--force`
+  to pave over it: if the stack really is dedicated, reset its notification policy to
+  the default in the UI and re-run; if it isn't, this command is pointed at the wrong
+  stack.
 - **Everything is applied with `X-Disable-Provenance`,** so the rules stay editable in the
   UI. Without it Grafana marks API-provisioned resources read-only, and the first
   maintainer who tries to silence a rule meets a greyed-out form with no explanation. The
