@@ -2855,6 +2855,15 @@ assert cloud_fresh.exit_code == 0, cloud_fresh.output + str(cloud_fresh.exceptio
 assert "adopted" in cloud_fresh.output, cloud_fresh.output
 assert json.loads(written(cloud_calls, "policies")[0].data) == tree, cloud_fresh.output
 
+# Grafana normalises durations before serving them back — a committed 24h
+# returns as 1d, observed live — and a normalised echo of our own tree is not
+# a UI edit. Reporting one as "resetting UI edits" on every run teaches the
+# operator to ignore the message.
+echoed = {**tree, "repeat_interval": "1d"}
+normalised, _ = run(CREDS, stack(policies=echoed))
+assert normalised.exit_code == 0, normalised.output
+assert "resetting" not in normalised.output, normalised.output
+
 # Re-running over our own unchanged tree is idempotent and quiet about it...
 rerun, rerun_calls = run(CREDS, stack(policies=json.loads(json.dumps(tree))))
 assert rerun.exit_code == 0, rerun.output

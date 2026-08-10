@@ -546,6 +546,32 @@ def read_policy_tree(stack):
     )
 
 
+# One or more <int><unit> parts, the units Grafana's policy durations use.
+POLICY_DURATION = re.compile(r"(?:\d+[smhdw])+")
+POLICY_DURATION_PART = re.compile(r"(\d+)([smhdw])")
+
+
+def _policy_duration_seconds(value):
+    """A policy duration as seconds, or None for anything that isn't one."""
+    if not isinstance(value, str) or not POLICY_DURATION.fullmatch(value):
+        return None
+    units = {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800}
+    return sum(int(n) * units[u] for n, u in POLICY_DURATION_PART.findall(value))
+
+
+def _differs(ours, served):
+    """Whether a served value is a real edit, not a normalised echo of ours.
+
+    Grafana normalises durations before serving them back — a committed
+    ``24h`` returns as ``1d`` — and reporting that echo as a UI edit on every
+    run teaches the operator to ignore the one message that matters.
+    """
+    if ours == served:
+        return False
+    mine, theirs = _policy_duration_seconds(ours), _policy_duration_seconds(served)
+    return mine is None or theirs is None or mine != theirs
+
+
 def apply_policy(stack, tree, desired):
     """Replace the stack's policy tree with the committed one — whole, not merged.
 
@@ -572,7 +598,7 @@ def apply_policy(stack, tree, desired):
                               "object_matchers", "matchers"}
     drift = sorted(
         key for key in watched
-        if (tree.get(key) or None) != (desired.get(key) or None)
+        if _differs(desired.get(key) or None, tree.get(key) or None)
     )
     if drift:
         return "replaced, resetting UI edits to " + ", ".join(drift)
