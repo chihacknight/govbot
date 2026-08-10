@@ -1349,21 +1349,30 @@ if [ "$real_count" -lt 1 ]; then
 fi
 echo "✓ real-config smoke: $real_count records from ../pipeline-manager"
 
-# API budget: the sweep runs hourly, so one sweep must fit inside one hour of
-# the default GITHUB_TOKEN allowance (1000/hour). Not snapshotted — the count
-# moves with the fleet; this locks the ceiling, not the number.
+# API budget: one sweep of the real fleet, against the GITHUB_TOKEN ceiling of
+# 1000 requests/hour. Not snapshotted — the count moves with the fleet; this
+# locks the ceiling, not the number.
+#
+# It counts BOTH legs. The old check looked only at the metrics leg against a
+# flat 400, which understated a sweep by the logs leg's run-listing request per
+# workflow — and it fired for real when upstream added a third fleet config plus
+# a second production workflow, at which point the true cost was over the
+# ceiling, not merely over 400. Budget the whole sweep or the tripwire lies.
 pipenv run python3 - <<'EOF'
-from fleet_config import EXCLUDED_FLEETS, read_fleet
+from fleet_config import read_fleet
 from fleet_poller import DATA_PATHS, estimate_request_count
 
-# A flat ceiling goes stale the moment the fleet grows, so derive it from the
-# limit the sweep actually runs against. This counts BOTH legs: budgeting the
-# metrics leg alone understates a sweep and would let the real cost cross the
-# ceiling before anything complained.
+# GITHUB_TOKEN's documented limit for an Actions workflow, and the sweep runs
+# hourly, so one sweep must fit inside one hour's budget with room for the
+# archive downloads (one per NEW run, unpredictable and unbounded by config).
+# 80% leaves ~200 requests/hour for those; the measured fleet sits at ~62%.
 TOKEN_LIMIT_PER_HOUR = 1000
 HEADROOM = 0.8
+
 records = read_fleet("../pipeline-manager")
 metrics_requests = estimate_request_count(records)
+# The logs leg lists runs once per workflow; archive downloads are extra and
+# depend on how many runs actually finished, which is why the ceiling keeps 40%.
 logs_requests = sum(len(r["expected_workflows"]) for r in records)
 count = metrics_requests + logs_requests
 budget = int(TOKEN_LIMIT_PER_HOUR * HEADROOM)
@@ -1372,19 +1381,14 @@ assert count < budget, (
     f"{logs_requests} log listings) against a {TOKEN_LIMIT_PER_HOUR}/hour token limit; "
     "revisit the polling strategy or exclude a fleet"
 )
+utilisation = 100 * count / TOKEN_LIMIT_PER_HOUR
 print(f"✓ API budget: one sweep of the real fleet = {count} GitHub requests "
       f"({metrics_requests} metrics + {logs_requests} log listings) = "
-      f"{100 * count / TOKEN_LIMIT_PER_HOUR:.0f}% of the {TOKEN_LIMIT_PER_HOUR}/hour token limit")
-
-# The test fleet is skipped by default, but the config stays the authority:
-# opting out restores everything. Both directions are checked, because a skip
-# that could not be undone would make this module, not the config, the authority.
-fleets = {r["fleet"] for r in records}
-assert not fleets & set(EXCLUDED_FLEETS), sorted(fleets & set(EXCLUDED_FLEETS))
-everything = {r["fleet"] for r in read_fleet("../pipeline-manager", exclude_fleets=())}
-skipped = everything - fleets
-print(f"✓ fleet exclusion: monitoring {sorted(fleets)}"
-      + (f", skipping {sorted(skipped)}" if skipped else " (nothing to skip in this checkout)"))
+      f"{utilisation:.0f}% of the {TOKEN_LIMIT_PER_HOUR}/hour token limit")
+if utilisation > 60:
+    # Not a failure — a heads-up that the next fleet or workflow may not fit.
+    print(f"· note: the sweep is over 60% of the token budget; one more fleet or "
+          f"workflow would need a polling-strategy change")
 
 # Every real-fleet base template needs a DATA_PATHS entry, or the first live
 # sweep after a new template ships would fail at startup while snapshots
@@ -1392,6 +1396,467 @@ print(f"✓ fleet exclusion: monitoring {sorted(fleets)}"
 missing = {r["base_template"] for r in records} - DATA_PATHS.keys()
 assert not missing, f"real-fleet base template(s) missing from DATA_PATHS: {sorted(missing)}"
 print("✓ data paths: every real-fleet base template has a DATA_PATHS entry")
+
+# Non-production fleets stay out of the sweep by default. `chn-openstates-test`
+# mirrors the files fleet against govbot-test and its own header says some
+# locales are expected to fail — monitoring it would put permanent expected-red
+# on the board, page someone once alerting lands, and (with its 56 repos ×
+# 2 workflows) take the sweep over the token ceiling above.
+from fleet_config import EXCLUDED_FLEETS
+
+fleets = {r["fleet"] for r in records}
+assert not fleets & set(EXCLUDED_FLEETS), sorted(fleets & set(EXCLUDED_FLEETS))
+# ...but the config stays the authority: opting out restores everything, so the
+# skip is a visible, reversible statement about what is worth alerting on.
+everything = {r["fleet"] for r in read_fleet("../pipeline-manager", exclude_fleets=())}
+skipped = everything - fleets
+print(f"✓ fleet exclusion: monitoring {sorted(fleets)}"
+      + (f", skipping {sorted(skipped)}" if skipped else " (nothing to skip in this checkout)"))
+EOF
+
+# Dashboard: built as data, committed rendered. The checks below are the whole
+# test for it — there is no snapshot file, because the committed artifact
+# (dashboards/fleet-overview.json) IS the snapshot: the drift check further down
+# regenerates it and fails if the repo copy no longer matches the builder.
+pipenv run python3 - <<'EOF'
+import json
+import re
+
+from dashboard import (DEFAULT_LOGS_DATASOURCE, DEFAULT_METRICS_DATASOURCE,
+                       OBSERVED_MAX_SWEEP_GAP_HOURS, SCRAPE_WORKFLOW, build_dashboard,
+                       encode_dashboard)
+
+board = build_dashboard()
+panels = {p["title"]: p for p in board["panels"] if "title" in p}
+variables = {v["name"]: v for v in board["templating"]["list"]}
+
+
+def colors(node):
+    """Every colour named anywhere under a panel, however nested."""
+    found = []
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key == "color" and isinstance(value, str):
+                found.append(value)
+            elif key == "color" and isinstance(value, dict) and "fixedColor" in value:
+                found.append(value["fixedColor"])
+            else:
+                found.extend(colors(value))
+    elif isinstance(node, list):
+        for item in node:
+            found.extend(colors(item))
+    return found
+
+
+def datasource_uids(node):
+    found = []
+    if isinstance(node, dict):
+        if set(node) >= {"type", "uid"} and node["type"] in ("prometheus", "loki"):
+            found.append(node["uid"])
+        for value in node.values():
+            found.extend(datasource_uids(value))
+    elif isinstance(node, list):
+        for item in node:
+            found.extend(datasource_uids(item))
+    return found
+
+
+# 1. Datasources are pickers, not UIDs — a UID belongs to one stack, and the
+#    committed JSON has to import into any of them.
+assert variables["metrics"]["type"] == "datasource", variables["metrics"]
+assert variables["metrics"]["query"] == "prometheus", variables["metrics"]
+assert variables["logs"]["query"] == "loki", variables["logs"]
+# ...and each defaults to this fleet's own stack, because the import screen never
+# asks and Grafana's own fallback is the first datasource of the type in name
+# order — on Grafana Cloud as likely to be grafanacloud-usage as the real one.
+assert variables["metrics"]["current"]["value"] == DEFAULT_METRICS_DATASOURCE, variables["metrics"]
+assert variables["logs"]["current"]["value"] == DEFAULT_LOGS_DATASOURCE, variables["logs"]
+uids = datasource_uids(board["panels"])
+assert uids, "no panel datasource references found"
+assert set(uids) <= {"${metrics}", "${logs}"}, sorted(set(uids))
+
+# 2. A fresh stack must accept this as a NEW dashboard; a numeric id would
+#    collide with whatever holds it there.
+assert board["id"] is None, board["id"]
+assert board["uid"] == "fleet-monitor-overview", board["uid"]
+ids = [p["id"] for p in board["panels"]]
+assert len(ids) == len(set(ids)), ids
+
+# 2b. The collector sweeps hourly and an instant query looks back only 5
+#     minutes, so a bare selector leaves every metric panel empty for ~55
+#     minutes of each hour — a whole-board "No data" that every offline check
+#     here would otherwise pass. Observed on a real import; locked so it cannot
+#     come back.
+#
+#     Derived from the board, not a hand-written list of titles: a sixth metric
+#     panel added later must be covered too, or the same regression returns for
+#     it with a green suite. And the window is asserted against a measured sweep
+#     gap rather than against LOOKBACK itself — importing the constant under test
+#     would let LOOKBACK="1m" reintroduce the exact bug and stay green.
+#
+#     The gap is MEASURED, not the cron expression. The workflow says hourly;
+#     GitHub runs scheduled workflows best-effort and on a fork's non-default
+#     branch they drift hard — 25 consecutive sweeps showed a median of 2.0h and
+#     a max of 3.6h. Sizing the window off "0 * * * *" is what blanked the board
+#     a second time, so this asserts real headroom over the observed worst case.
+metric_panels = [
+    p for p in board["panels"]
+    if p.get("datasource", {}).get("uid") == "${metrics}"
+]
+assert len(metric_panels) == 3, [p.get("title") for p in metric_panels]
+for panel in metric_panels:
+    target = panel["targets"][0]
+    expr = target["expr"]
+    assert expr.startswith("last_over_time("), (panel["title"], expr)
+    window = re.search(r"\[(\d+)([smh])\]\)$", expr)
+    assert window, (panel["title"], expr)
+    hours = int(window.group(1)) * {"s": 1 / 3600, "m": 1 / 60, "h": 1}[window.group(2)]
+    assert hours >= 1.5 * OBSERVED_MAX_SWEEP_GAP_HOURS, (panel["title"], expr, hours)
+    # Still an instant vector, so the table transformations and the stat
+    # reducer keep working unchanged.
+    assert target["instant"] is True, (panel["title"], target)
+assert OBSERVED_MAX_SWEEP_GAP_HOURS >= 3.6, OBSERVED_MAX_SWEEP_GAP_HOURS
+
+# 3. One status grid per workflow — 112 tiles in a single panel shrank the text
+#    past legibility, so the split is the readability fix, not decoration.
+#    Scrapers is pinned to the top (the fleet's entry point, worth seeing without
+#    scrolling); every OTHER workflow is generated by Grafana's panel repeat and
+#    sits after the logs. Only the scrape may be named in dashboard.py: a
+#    hardcoded workflow list is how `extract-text.yml` shipped upstream and went
+#    unmonitored, and no offline check could have caught it.
+ordered = sorted((p["gridPos"]["y"], p["title"]) for p in board["panels"] if "title" in p)
+titles = [t for _, t in ordered]
+assert titles[0] == "Scrapers", titles
+assert titles.index("Data freshness") < titles.index("Run logs"), titles
+
+scrapers = panels["Scrapers"]
+assert f'workflow="{SCRAPE_WORKFLOW}"' in scrapers["targets"][0]["expr"], scrapers["targets"][0]
+assert "repeat" not in scrapers, scrapers.get("repeat")
+
+repeated = next(p for p in board["panels"] if p.get("repeat"))
+assert repeated["repeat"] == "other_workflow", repeated["repeat"]
+assert repeated["title"] == "$other_workflow", repeated["title"]
+# REGEX matcher, never exact. Grafana interpolates a multi-value variable into a
+# Prometheus query using the regex form — `(format.yml)`, parentheses included —
+# even where a repeat has scoped it to one value, so `workflow="$var"` compares
+# against a literal "(format.yml)" and matches nothing. That renders "No data"
+# under a title that interpolated as plain text and reads perfectly right, which
+# is exactly how it shipped. The rule is asserted over every panel below.
+assert 'workflow=~"$other_workflow"' in repeated["targets"][0]["expr"], repeated["targets"][0]
+for panel in board["panels"]:
+    for target in panel.get("targets", []):
+        assert '="$' not in target.get("expr", ""), (panel.get("title"), target.get("expr"))
+# After the logs, as laid out deliberately.
+assert repeated["gridPos"]["y"] > panels["Run logs"]["gridPos"]["y"], ordered
+# The repeat variable is every workflow EXCEPT the pinned one, excluded in the
+# query itself — otherwise the scrapers grid renders a second time at the bottom.
+other = variables["other_workflow"]
+assert other["type"] == "query", other
+assert f'workflow!="{SCRAPE_WORKFLOW}"' in other["query"]["query"], other["query"]
+assert other["multi"] and other["includeAll"], other
+
+for grid in (scrapers, repeated):
+    # A tile is its jurisdiction and nothing else: the workflow is the panel it
+    # sits in now, so repeating it per tile only shrank the identifying part.
+    assert grid["targets"][0]["legendFormat"] == "{{state}}", grid["targets"][0]
+    # ...rendered as large as the OK/FAILING beside it.
+    text = grid["options"]["text"]
+    assert text["titleSize"] == text["valueSize"], text
+    for target in grid["targets"]:
+        assert target["instant"] is True, target
+
+    # Paused jurisdictions live in the SAME grid (a separate panel was an empty
+    # box whenever the whole fleet was in session), dimmed via an override on
+    # the second query's frame — the only way Grafana will colour some tiles by
+    # value and leave others flat.
+    active, paused = grid["targets"]
+    assert 'paused="false"' in active["expr"], active["expr"]
+    assert 'paused="true"' in paused["expr"], paused["expr"]
+    assert paused["refId"] == "B", paused
+    options = grid["fieldConfig"]["defaults"]["mappings"][0]["options"]
+    assert options["0"] == {"color": "red", "index": 0, "text": "FAILING"}, options
+    assert options["1"] == {"color": "green", "index": 1, "text": "OK"}, options
+    override = next(
+        o for o in grid["fieldConfig"]["overrides"]
+        if o["matcher"] == {"id": "byFrameRefID", "options": "B"}
+    )
+    properties = {p["id"]: p["value"] for p in override["properties"]}
+    assert properties["color"] == {"fixedColor": "text", "mode": "fixed"}, properties
+    paused_options = properties["mappings"][0]["options"]
+    assert paused_options["0"]["text"].startswith("paused"), paused_options
+    assert paused_options["1"]["text"].startswith("paused"), paused_options
+    # A paused tile is never red, whatever its last run did.
+    assert "red" not in repr(properties).lower(), properties
+
+# 4. One full-width freshness table for the whole fleet, red exactly at the 48h
+#    alert line (one number, so dashboard and alert can never disagree), paused
+#    carried as a column rather than a second table, in-session rows first with
+#    the worst staleness on top, and every row linking to its own filtered view.
+fresh = panels["Data freshness"]
+assert "Data freshness · paused" not in panels, list(panels)
+assert fresh["gridPos"]["w"] == 24, fresh["gridPos"]
+target = fresh["targets"][0]
+assert "fleet_repo_data_commit_age_hours{" in target["expr"], target["expr"]
+assert target["instant"] is True and target["format"] == "table", target
+# No paused filter: one query covers the fleet.
+assert "paused=" not in target["expr"], target["expr"]
+# ...and the paused label survives as a column rather than being dropped.
+organize = next(t for t in fresh["transformations"] if t["id"] == "organize")
+assert not organize["options"]["excludeByName"].get("paused"), organize
+sort = next(t for t in fresh["transformations"] if t["id"] == "sortBy")["options"]["sort"]
+assert sort[0] == {"desc": False, "field": "paused"}, sort
+assert sort[1] == {"desc": True, "field": "Value"}, sort
+steps = fresh["fieldConfig"]["defaults"]["thresholds"]["steps"]
+assert {"color": "red", "value": 48} in steps, steps
+assert any(s["color"] == "green" and s["value"] is None for s in steps), steps
+# The paused column is a label, not a measurement: it must not be coloured by
+# the staleness thresholds.
+paused_column = next(
+    o for o in fresh["fieldConfig"]["overrides"] if o["matcher"]["options"] == "paused"
+)
+paused_properties = {p["id"]: p["value"] for p in paused_column["properties"]}
+assert paused_properties["custom.cellOptions"] == {"type": "auto"}, paused_properties
+assert "red" not in repr(paused_properties).lower(), paused_properties
+# The row link narrows the whole board through the single `state` picker. It is
+# an absolute dashboard path: a bare "?var=..." relative URL rewrote the address
+# bar and re-ran nothing, so the link looked live and did nothing.
+links = fresh["fieldConfig"]["defaults"]["links"]
+assert links, "no data link on the freshness table"
+assert links[0]["url"].startswith("/d/fleet-monitor-overview"), links
+assert "var-state=${__data.fields.state}" in links[0]["url"], links
+# The jurisdiction, not one of its two repos: var-org would hide the sibling.
+assert "var-org=" not in links[0]["url"], links
+# Carry the chosen time range through, so a drill-down does not silently reset it.
+assert "${__url_time_range}" in links[0]["url"], links
+
+# 5. The logs panel filters on every stream label the harvester ships, each as a
+#    regex matcher so multi-select "All" and a single pick both work. Run id
+#    and run URL are structured metadata, not labels, so they surface by
+#    expanding a line — log details must stay on.
+#
+#    One jurisdiction picker drives the whole board — grids, table, and logs —
+#    so the filter shown at the top is the filter applied everywhere.
+logs = panels["Run logs"]
+assert logs["type"] == "logs", logs["type"]
+for label in ("state", "org", "workflow", "outcome"):
+    assert f'{label}=~"${label}"' in logs["targets"][0]["expr"], logs["targets"][0]["expr"]
+assert "log_state" not in repr(board["templating"]), "a second jurisdiction picker came back"
+for title in ("Scrapers", "Data freshness", "$other_workflow"):
+    assert 'state=~"$state"' in panels[title]["targets"][0]["expr"], title
+assert logs["options"]["enableLogDetails"] is True, logs["options"]
+assert logs["options"]["sortOrder"] == "Descending", logs["options"]
+
+# 6. Pickers are label-driven (a new jurisdiction appears without a dashboard
+#    edit) and URL-synced, which is what makes a filtered view a shareable link.
+#    Each speaks its own datasource's variable-query dialect: a Prometheus-shaped
+#    query on the Loki picker leaves it empty, which blanks the logs panel.
+for name in ("state", "org", "workflow"):
+    variable = variables[name]
+    assert variable["type"] == "query", variable
+    assert variable["datasource"]["type"] == "prometheus", variable
+    assert variable["query"]["query"] == f"label_values(fleet_workflow_run_status, {name})", variable
+    # Editor-state keys are deliberately absent: a partial set opens the
+    # variable editor half-populated, and saving from there writes back an
+    # empty label_values() that resolves to nothing.
+    assert set(variable["query"]) == {"query", "refId"}, variable
+    assert variable["multi"] and variable["includeAll"], variable
+outcome = variables["outcome"]
+assert outcome["datasource"]["type"] == "loki", outcome
+# Loki's own dialect (type 1 = label values), scoped to fleet streams so another
+# producer's `outcome` label in the same logs instance can't leak into the picker.
+assert outcome["query"]["type"] == 1 and outcome["query"]["label"] == "outcome", outcome
+assert outcome["query"]["stream"] == '{state=~".+"}', outcome
+# Every picker needs an explicit allValue: blank, Grafana expands "All" to an
+# alternation of the options it resolved, and to the EMPTY STRING when it
+# resolved none — turning each =~ matcher into one that matches nothing. A
+# not-yet-populated picker would silently blank every panel that uses it.
+#
+# It must be ".+", not ".*": LogQL rejects a stream selector whose every matcher
+# is empty-compatible, so with all four pickers on All (the default on a fresh
+# import) ".*" makes the logs panel a parse error rather than an empty result.
+for name in ("state", "org", "workflow", "outcome", "other_workflow"):
+    assert variables[name]["allValue"] == ".+", variables[name]
+    assert variables[name].get("skipUrlSync") is not True, variables[name]
+
+# Proven on the rendered selector, not just the variable: interpolate every
+# picker to its All value and confirm the logs query still holds one matcher
+# that cannot match empty.
+interpolated = re.sub(r"\$(state|org|workflow|outcome)", ".+", logs["targets"][0]["expr"])
+matchers = re.findall(r'(\w+)\s*=~\s*"([^"]*)"', interpolated)
+assert matchers, interpolated
+assert any(not re.fullmatch(value, "") for _, value in matchers), interpolated
+
+# 7. Nothing volatile in the encoding — a timestamp or a run-varying id would
+#    make the committed artifact drift on every render. (Determinism itself is
+#    proven by the byte diff against the committed JSON further down, which is a
+#    real oracle; comparing encode_dashboard() to itself in one process is not.)
+encoded = encode_dashboard()
+assert not re.search(r"20\d\d-\d\d-\d\dT", encoded), "a timestamp leaked into the dashboard"
+print(f"✓ dashboard: {len(board['panels'])} panels, parameterized datasources, "
+      "scrapers before formatters, paused dimmed inline, logs filtered on all four labels")
+EOF
+
+# The committed dashboard must be exactly what the builder produces — otherwise
+# the JSON people import and the code reviewers read have quietly diverged.
+dashboard_tmp=$(mktemp)
+pipenv run python3 main.py dashboard > "$dashboard_tmp"
+if ! diff -u dashboards/fleet-overview.json "$dashboard_tmp"; then
+  echo "✗ dashboards/fleet-overview.json is stale; regenerate it:"
+  echo "    pipenv run python3 main.py dashboard --out dashboards/fleet-overview.json"
+  rm -f "$dashboard_tmp"
+  exit 1
+fi
+rm -f "$dashboard_tmp"
+echo "✓ dashboard: committed dashboards/fleet-overview.json matches the builder"
+
+# The import check pushes to a real stack, so like every other live path it must
+# self-skip without credentials; the offline suite locks that skip.
+dashboard_skip=$(env -u GRAFANA_DASHBOARD_URL -u GRAFANA_DASHBOARD_KEY \
+  pipenv run python3 main.py check-dashboard 2>&1)
+if ! echo "$dashboard_skip" | grep -q "dashboard check skipped"; then
+  echo "✗ check-dashboard without credentials should skip cleanly; got:"
+  echo "$dashboard_skip"
+  exit 1
+fi
+echo "✓ check-dashboard: skips cleanly when credentials are absent"
+
+# Offline proof of the import itself: a fake Grafana answers the push and the
+# read-back, so the request shape (endpoint, bearer auth, overwrite-by-uid) and
+# the rejection path are both tested without an account. The real import runs
+# opt-in below.
+pipenv run python3 - <<'EOF'
+import json
+import urllib.error
+import urllib.request
+from io import BytesIO
+
+from click.testing import CliRunner
+
+import main
+from dashboard import DASHBOARD_UID, build_dashboard
+
+CREDS = {"GRAFANA_DASHBOARD_URL": "https://stack.grafana.net/", "GRAFANA_DASHBOARD_KEY": "tok"}
+
+
+class FakeResponse(BytesIO):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
+
+def run(env, respond):
+    calls = []
+
+    def fake_urlopen(request, timeout=None):
+        calls.append(request)
+        return respond(request)
+
+    real, urllib.request.urlopen = urllib.request.urlopen, fake_urlopen
+    try:
+        return CliRunner().invoke(main.cli, ["check-dashboard"], env=env), calls
+    finally:
+        urllib.request.urlopen = real
+
+
+def happy(request):
+    if request.full_url.endswith("/api/dashboards/db"):
+        return FakeResponse(json.dumps({"uid": DASHBOARD_UID, "status": "success"}).encode())
+    return FakeResponse(json.dumps({"dashboard": build_dashboard()}).encode())
+
+
+ok, calls = run(CREDS, happy)
+assert ok.exit_code == 0, ok.output + str(ok.exception)
+posted, fetched = calls[0], calls[-1]
+assert posted.full_url == "https://stack.grafana.net/api/dashboards/db", posted.full_url
+assert posted.get_header("Authorization") == "Bearer tok", posted.header_items()
+body = json.loads(posted.data)
+assert body["dashboard"]["uid"] == DASHBOARD_UID, body["dashboard"]["uid"]
+# Idempotent by uid: a re-run updates the same dashboard rather than erroring or
+# littering copies across the stack.
+assert body["overwrite"] is True, body
+# A 200 on the push is not proof it renders, so the check reads it back by uid.
+assert fetched.full_url == f"https://stack.grafana.net/api/dashboards/uid/{DASHBOARD_UID}", (
+    fetched.full_url
+)
+
+
+def rejected(request):
+    raise urllib.error.HTTPError(request.full_url, 400, "Bad Request", {}, None)
+
+
+bad, _ = run(CREDS, rejected)
+assert bad.exit_code != 0, bad.output
+assert "400" in bad.output, bad.output
+
+# A push that succeeds but comes back missing panels is a failure, not a pass:
+# Grafana will happily store a payload it then renders as an empty dashboard.
+def truncated(request):
+    if request.full_url.endswith("/api/dashboards/db"):
+        return FakeResponse(json.dumps({"status": "success"}).encode())
+    return FakeResponse(json.dumps({"dashboard": {"panels": []}}).encode())
+
+
+empty, _ = run(CREDS, truncated)
+assert empty.exit_code != 0, empty.output
+assert "0 panels" in empty.output, empty.output
+
+
+# Panels alone are not proof of a working import. Every panel filters on
+# `=~"$state"` and points at `${metrics}`/`${logs}`, so a variable Grafana
+# declined to migrate leaves all five panels present and all five rendering
+# nothing — a blank board that a panel count reports as a clean import. This is
+# the check that was missing when a real import came back all "No data".
+def loads_as(dashboard):
+    def respond(request):
+        if request.full_url.endswith("/api/dashboards/db"):
+            return FakeResponse(json.dumps({"uid": DASHBOARD_UID, "status": "success"}).encode())
+        return FakeResponse(json.dumps({"dashboard": dashboard}).encode())
+
+    return respond
+
+
+board = build_dashboard()
+for dropped in ("state", "outcome", "metrics"):
+    mangled = json.loads(json.dumps(board))
+    mangled["templating"]["list"] = [
+        v for v in mangled["templating"]["list"] if v["name"] != dropped
+    ]
+    lost, _ = run(CREDS, loads_as(mangled))
+    assert lost.exit_code != 0, (dropped, lost.output)
+    assert dropped in lost.output, (dropped, lost.output)
+
+none_at_all = json.loads(json.dumps(board))
+none_at_all["templating"] = {"list": []}
+blank, _ = run(CREDS, loads_as(none_at_all))
+assert blank.exit_code != 0, blank.output
+
+
+# Presence by name is not enough — that is exactly how the first broken import
+# passed. A picker stripped of its all-value, or repointed at the wrong
+# datasource, resolves to nothing and blanks every panel that filters on it.
+def mangled(name, key, value):
+    copy = json.loads(json.dumps(board))
+    for variable in copy["templating"]["list"]:
+        if variable["name"] == name:
+            variable[key] = value
+    return copy
+
+
+for name, key, value in (
+    ("state", "allValue", ""),
+    ("outcome", "datasource", {"type": "prometheus", "uid": "${metrics}"}),
+):
+    hollow, _ = run(CREDS, loads_as(mangled(name, key, value)))
+    assert hollow.exit_code != 0, (name, key, hollow.output)
+    assert name in hollow.output, (name, key, hollow.output)
+
+intact, _ = run(CREDS, loads_as(board))
+assert intact.exit_code == 0, intact.output + str(intact.exception)
+assert f"{len(board['templating']['list'])} variables" in intact.output, intact.output
+print("✓ check-dashboard: pushes by uid, reads back panels AND variables, fails on rejection, "
+      "on a hollow import, on a dropped picker, and on one that survives in name only")
 EOF
 
 # Live check self-skips without credentials (exit 0, says so) — CI has no
@@ -1427,6 +1892,15 @@ if [ "${FLEET_MONITOR_LIVE_CHECK:-}" = "1" ]; then
   pipenv run python3 main.py live-check --config-dir ../pipeline-manager
 else
   echo "· live-check (real push + query-back) not run; opt in with FLEET_MONITOR_LIVE_CHECK=1"
+fi
+
+# Same bargain for the dashboard import: it writes a real dashboard into a real
+# stack, so a bare render never does it even on a machine with GRAFANA_DASHBOARD_*
+# set. Opting in makes the render the automated import check.
+if [ "${FLEET_MONITOR_DASHBOARD_CHECK:-}" = "1" ]; then
+  pipenv run python3 main.py check-dashboard
+else
+  echo "· check-dashboard (real import) not run; opt in with FLEET_MONITOR_DASHBOARD_CHECK=1"
 fi
 
 echo "✓ Snapshot generation complete. Output in $output_dir"
