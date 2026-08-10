@@ -1,0 +1,13 @@
+# Invalid fixture: `disabled_jobs` is a bare string, not a list. render.py accepts
+# the comma-string form; this reader requires a list and must say so rather than
+# silently exploding the string into characters. Locked by
+# __snapshots__/invalid-scalar-disabled-jobs-error.txt.
+org:
+  username: broken-org
+templates:
+  t:
+    folder-name: ✏️{ locale.key }✏️-legislation
+locales:
+  al:
+    template: t
+    disabled_jobs: nightly

@@ -52,7 +52,7 @@ Use these meta-prompts to guide architectural decisions and code quality.
 
 - **"Does this have an `action.yml`?"** - New actions must be GitHub Actions-compatible.
 
-- **"Where are the snapshots?"** - Each action manages snapshots via `render_snapshots.sh`. Add test data in `__snapshots__/`.
+- **"Where are the snapshots?"** - Each action manages snapshots via `render-snapshots.sh`. Add test data in `__snapshots__/`.
 
 - **"CLI-first, API-second"** - Prefer shell-composable tools. Unix pipe friendliness enables automation.
 
@@ -61,6 +61,7 @@ Use these meta-prompts to guide architectural decisions and code quality.
 ```
 actions/
   extract/      # Data extraction utilities
+  fleet-monitor/     # Observability for the scraper and data-repo fleets
   format/       # Data transformation and formatting
   govbot/       # CLI tool for interacting with government data
   pipeline-manager/  # Orchestrates data pipelines

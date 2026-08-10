@@ -1,0 +1,8 @@
+# Invalid fixture: `org` is a scalar, not a mapping (a plausible shorthand for
+# `org: {username: ...}`). Must fail loudly, not traceback. Locked by
+# __snapshots__/invalid-scalar-section-error.txt.
+org: myorg
+templates: {}
+locales:
+  ok:
+    template: whatever

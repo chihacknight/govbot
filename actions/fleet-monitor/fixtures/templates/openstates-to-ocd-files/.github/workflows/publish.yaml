@@ -1,0 +1,3 @@
+# Fixture stub: only the file name matters to the config reader (.yaml extension coverage).
+name: Publish
+on: workflow_dispatch

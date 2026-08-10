@@ -1,0 +1,1 @@
+Error: fleet-broken: template 'ghost' has no workflow files under fixtures-invalid/missing-workflows/templates/ghost/.github/workflows
