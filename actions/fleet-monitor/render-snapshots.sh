@@ -2338,7 +2338,8 @@ UNSET = object()
 
 
 def stack(datasources=(PROMETHEUS, LOKI), policies=UNSET, contact_points=None, rules=None,
-          missing_policies=False, baseline_rules=NEVER_EVALUATED, folder=None, others=()):
+          missing_policies=False, baseline_rules=NEVER_EVALUATED, folder=None, others=(),
+          folder_denied=False, folder_create_error=None):
     """A Grafana that answers reads and accepts every write.
 
     The FIRST ruler read is the pre-write baseline; every read after it is the
@@ -2350,6 +2351,8 @@ def stack(datasources=(PROMETHEUS, LOKI), policies=UNSET, contact_points=None, r
     def respond(request):
         url = request.full_url
         if request.get_method() != "GET":
+            if folder_create_error and url.endswith("/api/folders"):
+                raise urllib.error.HTTPError(url, folder_create_error, "refused", {}, None)
             return FakeResponse(b"{}")
         if url.endswith("/api/datasources"):
             return FakeResponse(json.dumps(list(datasources)).encode())
@@ -2361,6 +2364,10 @@ def stack(datasources=(PROMETHEUS, LOKI), policies=UNSET, contact_points=None, r
             tree = {"receiver": "grafana-default-email"} if policies is UNSET else policies
             return FakeResponse(json.dumps(tree).encode())
         if "/api/folders/" in url:
+            if folder_denied:
+                # Per-folder visibility: outside the token's scope, existing
+                # and nonexistent folders answer the same 403.
+                raise urllib.error.HTTPError(url, 403, "Forbidden", {}, None)
             if folder is None:
                 raise urllib.error.HTTPError(url, 404, "Not Found", {}, None)
             return FakeResponse(json.dumps(folder).encode())
@@ -2433,6 +2440,34 @@ existing_folder, folder_calls = run(CREDS, stack(folder={"uid": "fleet-monitor"}
 assert existing_folder.exit_code == 0, existing_folder.output
 assert not written(folder_calls, "/api/folders"), [c.full_url for c in folder_calls]
 assert "folder: present" in existing_folder.output, existing_folder.output
+
+# Grafana Cloud's per-folder visibility (the nested-folders permission model)
+# answers 403 for any folder outside the token's scope — including one that
+# does not exist; only an admin session gets the 404. Observed on a real stack.
+# The read cannot distinguish missing from hidden, so the CREATE does: it
+# succeeds on a fresh stack, and the creator administers the folder thereafter.
+denied, denied_calls = run(CREDS, stack(folder_denied=True))
+assert denied.exit_code == 0, denied.output + str(denied.exception)
+assert "folder: created" in denied.output, denied.output
+assert [json.loads(c.data) for c in written(denied_calls, "/api/folders")] \
+    == [{"uid": "fleet-monitor", "title": "Fleet Monitor"}], \
+    [c.full_url for c in denied_calls]
+# ...and a conflict on that create means the folder exists but is hidden — a
+# permission grant only a human can add, so the failure names it rather than
+# surfacing a bare HTTP 409 (or worse, retrying forever).
+hidden, hidden_calls = run(CREDS, stack(folder_denied=True, folder_create_error=409))
+assert hidden.exit_code != 0, hidden.output
+assert "cannot see it" in hidden.output, hidden.output
+assert "Permissions" in hidden.output, hidden.output
+assert not [c for c in hidden_calls if "rule-groups" in c.full_url], \
+    "wrote rules after failing to secure their folder"
+# Any OTHER failure on the create is not a hidden folder and surfaces as
+# itself — a 500 wrapped in the permissions message would send the operator to
+# a permissions tab with nothing wrong in it.
+crashed, _ = run(CREDS, stack(folder_denied=True, folder_create_error=500))
+assert crashed.exit_code != 0, crashed.output
+assert "cannot see it" not in crashed.output, crashed.output
+assert "500" in crashed.output, crashed.output
 
 # The datasource uid is the one thing that cannot be committed, so it is
 # discovered from the stack being provisioned.

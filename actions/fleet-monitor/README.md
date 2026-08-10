@@ -436,6 +436,14 @@ What to know before you run it:
   Every Grafana ships a default root receiver, so an empty or unfamiliar 200 body is far
   likelier to be a proxy, a gateway stub, or a build we don't recognise than a stack that
   genuinely has no policy. Adopting it would overwrite a tree nobody ever read.
+- **A 403 on the folder read is not fatal — the create disambiguates.** Grafana Cloud
+  stacks run per-folder visibility (the nested-folders permission model): the Editor basic
+  role carries no org-wide `folders:*`, and a folder outside the token's scope answers 403
+  whether it exists or not — a missing folder looks identical. So provisioning attempts the
+  create, which an Editor service account may do at the root; it then administers the
+  folder it created, and every later run reads it plainly. A conflict on that create means
+  the folder exists but is hidden from the token — the failure says to grant the service
+  account access on the folder rather than surfacing a bare 409.
 - **The prune only deletes integrations this module created** (`fleet-monitor-` uids).
   Anything else on the contact point was added through the UI, which is exactly what
   `X-Disable-Provenance` exists to allow; deleting it would make this command undo the

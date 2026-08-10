@@ -336,11 +336,38 @@ def _check_shape(name, document):
 
 
 def ensure_folder(stack):
-    """The rules' own folder, so they can be found — and removed — together."""
-    if stack.find(f"/api/folders/{FOLDER_UID}") is None:
+    """The rules' own folder, so they can be found — and removed — together.
+
+    A 403 on the read is handled by attempting the create, not by failing.
+    Grafana Cloud stacks run per-folder visibility (the nested-folders
+    permission model): the Editor basic role carries no org-wide ``folders:*``,
+    a folder outside the token's scope answers 403 whether it exists or not,
+    and a folder that does not exist answers the same 403 — observed on a real
+    stack, where only an admin session gets the 404. The create disambiguates:
+    an Editor service account may create folders at the root, it administers
+    what it creates (so every later run reads the folder plainly), and a
+    conflict means the folder exists but is hidden — which no retry fixes, so
+    it is named for a human instead.
+    """
+    try:
+        found = stack.find(f"/api/folders/{FOLDER_UID}")
+    except RequestFailed as e:
+        if e.status != 403:
+            raise
+        found = None
+    if found is not None:
+        return "present"
+    try:
         stack.write("/api/folders", {"uid": FOLDER_UID, "title": FOLDER})
-        return "created"
-    return "present"
+    except RequestFailed as e:
+        if e.status not in (409, 412):
+            raise
+        raise RuntimeError(
+            f"folder {FOLDER_UID!r} exists but this token cannot see it. Grant the "
+            f"service account access on the {FOLDER!r} folder (folder settings → "
+            "Permissions) and re-run."
+        ) from e
+    return "created"
 
 
 def apply_contact_point(stack, document):
