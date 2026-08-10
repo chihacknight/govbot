@@ -320,6 +320,54 @@ else:
 print("✓ http/push: retry policy (incl. exhausted quota), POST labeling, push wire format, guards")
 EOF
 
+# request_with_retry must strip the Authorization header on a cross-host redirect
+# but keep it on a same-host one. GitHub's log-archive endpoint 302-redirects to
+# Azure blob storage; a forwarded GitHub token makes Azure answer 403 (and leaks
+# the token). Proven end to end against two loopback servers (localhost vs
+# 127.0.0.1 = a host change), no external network.
+pipenv run python3 - <<'EOF'
+import http.server
+import threading
+
+from http_util import request_with_retry
+
+seen = {}
+
+class Target(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        seen["auth"] = self.headers.get("Authorization")
+        self.send_response(200); self.end_headers(); self.wfile.write(b"ok")
+    def log_message(self, *a): pass
+
+class Redirector(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        # same-host hop first (keep auth), then cross-host to the target (strip)
+        if self.path == "/same":
+            seen["same_auth"] = self.headers.get("Authorization")
+            self.send_response(200); self.end_headers(); self.wfile.write(b"ok"); return
+        self.send_response(302)
+        self.send_header("Location", f"http://127.0.0.1:{target_port}/blob")
+        self.end_headers()
+    def log_message(self, *a): pass
+
+target = http.server.HTTPServer(("127.0.0.1", 0), Target)
+target_port = target.server_address[1]
+redir = http.server.HTTPServer(("127.0.0.1", 0), Redirector)
+redir_port = redir.server_address[1]
+threading.Thread(target=target.serve_forever, daemon=True).start()
+threading.Thread(target=redir.serve_forever, daemon=True).start()
+
+auth = {"Authorization": "Bearer SECRET-TOKEN"}
+# Cross-host: localhost -> 127.0.0.1 is a host change, so auth must be dropped.
+request_with_retry(f"http://localhost:{redir_port}/logs", headers=auth)
+assert seen.get("auth") is None, f"Authorization leaked across a cross-host redirect: {seen}"
+# Same-host: no redirect, auth must survive (GitHub API calls rely on it).
+seen.clear()
+request_with_retry(f"http://127.0.0.1:{target_port}/blob", headers=auth)
+assert seen.get("auth") == "Bearer SECRET-TOKEN", f"auth must survive a direct request: {seen}"
+print("✓ http: Authorization is stripped on a cross-host redirect, kept on a direct request")
+EOF
+
 # The clean path: an errors-free sweep must exit 0 and produce exactly the
 # same series lines (the errored record contributes none), so exit-1 is
 # provably tied to poll errors, not to collect itself.
@@ -564,6 +612,719 @@ assert "HTTP 401" in combined, combined
 print("✓ run: a rejected Grafana key (HTTP 401) exits nonzero end to end")
 EOF
 
+# ── Logs: harvester + Loki shipper + watermark (task 0004) ──────────────────
+# The logs tracer bullet, all offline. Loki shipper (pure encoder), watermark
+# store (load/save), harvester (unpack archive → parse GitHub's line-timestamp
+# prefix → drop noise → volume policy → labeled batches, incremental against a
+# per-repo/workflow watermark), Loki push wire format, and the CLI logs leg
+# (fixture archives in → exact Loki push payload out, an idempotent re-run ships
+# nothing, a lost watermark recovers via the 24h look-back).
+logs_wm=$(mktemp)
+trap 'rm -f "$stderr_tmp" "$clean_records" "$clean_out" "$empty_records" "$bad_encode" "$logs_wm"' EXIT
+
+# Loki shipper: labeled batches in, exact Loki push JSON out. Labels are capped
+# at org/state/workflow/outcome; run identity rides in structured metadata, never
+# a label; streams and values are sorted so the bytes are deterministic; an
+# un-encodable batch (control char in a label, a missing key) is skipped and an
+# empty batch emits no stream — the same per-item resilience the metrics shipper has.
+pipenv run python3 - <<'EOF'
+import json
+from logs_shipper import encode_logs
+
+batches = [
+    {"labels": {"org": "o", "state": "wy", "workflow": "s.yml", "outcome": "failure"},
+     "entries": [{"timestamp_ns": 2, "line": "second", "metadata": {"run_id": 9}},
+                 {"timestamp_ns": 1, "line": "first", "metadata": {"run_id": 9}}]},
+    {"labels": {"org": "o", "state": "w\ny", "workflow": "s.yml", "outcome": "failure"},
+     "entries": [{"timestamp_ns": 1, "line": "x"}]},                # control char -> ValueError -> skipped
+    {"labels": {"org": "o", "state": "mi", "workflow": "s.yml"},    # no outcome -> KeyError -> skipped
+     "entries": [{"timestamp_ns": 1, "line": "x"}]},
+    {"labels": {"org": "o", "state": "ak", "workflow": "s.yml", "outcome": "failure"},
+     "entries": [{"timestamp_ns": [1], "line": "x"}]},              # structured ts -> TypeError -> skipped
+    {"labels": {"org": "o", "state": "nv", "workflow": "s.yml", "outcome": "success"},
+     "entries": []},                                                # empty -> no stream
+]
+obj = json.loads(encode_logs(batches))
+assert len(obj["streams"]) == 1, obj
+stream = obj["streams"][0]
+assert stream["stream"] == {"org": "o", "state": "wy", "workflow": "s.yml", "outcome": "failure"}, stream
+assert stream["values"][0] == ["1", "first", {"run_id": "9"}], stream["values"]  # sorted, ns as str, metadata stringified
+assert "run_id" not in stream["stream"], "run id must never be a label"
+payload = encode_logs(batches)
+assert "mi" not in payload and "ak" not in payload, "KeyError/TypeError batches must be skipped whole"
+assert ", " not in payload and '": ' not in payload, "payload must be compact + deterministic"
+assert encode_logs([]) == '{"streams":[]}'
+print("✓ logs shipper: labeled batches -> deterministic Loki JSON; run id in metadata, not labels")
+print("✓ logs shipper: un-encodable batches (ValueError/KeyError/TypeError) skipped; the rest ships")
+EOF
+
+# Watermark store: a missing/empty file reads as {} (a lost cache is a look-back,
+# not a crash); writes round-trip.
+pipenv run python3 - <<'EOF'
+import os, tempfile
+from watermark import load_watermarks, save_watermarks
+
+path = os.path.join(tempfile.mkdtemp(), "wm.json")
+assert load_watermarks(path) == {}, "missing file must read as empty"
+save_watermarks(path, {"o/r/w.yml": 42})
+assert load_watermarks(path) == {"o/r/w.yml": 42}
+open(path, "w").write("")
+assert load_watermarks(path) == {}, "empty file must read as empty, not error"
+# A truncated/garbled cache save must self-heal as the documented lost-cache
+# recovery (bounded look-back), never crash — a crash would re-persist the
+# corrupt file via the workflow's always-save and stay red every hour.
+open(path, "w").write('{"o/r/w.yml": 4')
+assert load_watermarks(path) == {}, "corrupt file must read as empty, not raise"
+print("✓ watermark: missing/empty/corrupt reads as {}, writes round-trip")
+EOF
+
+# Harvester, offline (GitHub is fake fetchers): unpack the archive (top-level
+# per-job .txt only, step folders ignored), parse GitHub's RFC3339 line-timestamp
+# prefix (incl. a 7-digit fractional part and trailing Z), drop
+# ##[group]/##[endgroup] noise, apply the volume policy (full logs for a failure,
+# the last ~100 lines for a success), advance the per-repo/workflow watermark only
+# across contiguous shipped runs (an in-progress run or a failed archive fetch
+# halts advance so the run retries next sweep), bound a cold start to a 24h
+# look-back, and never raise per repo.
+pipenv run python3 - <<'EOF'
+import io, zipfile
+from datetime import datetime, timezone
+
+from log_harvester import _to_ns, harvest_logs, parse_log_text, unpack_archive
+
+NOW = datetime(2026, 7, 21, 12, 0, 0, tzinfo=timezone.utc)
+
+def zip_of(members):
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as archive:
+        for name, text in members.items():
+            archive.writestr(name, text)
+    return buf.getvalue()
+
+assert _to_ns("2026-07-21T00:00:00Z") == 1784592000000000000
+assert _to_ns("2026-07-21T00:00:00.5000000Z") == 1784592000500000000
+assert _to_ns("nope") is None
+assert [n for n, _ in unpack_archive(zip_of({"1_j.txt": "x\n", "j/1_step.txt": "dup\n"}))] == ["1_j.txt"]
+parsed = parse_log_text("2026-07-21T11:00:00.0000000Z hi\ntail without ts\n", _to_ns("2026-07-21T11:00:00Z"))
+assert parsed[0] == (_to_ns("2026-07-21T11:00:00Z"), "hi"), parsed
+assert parsed[1] == (_to_ns("2026-07-21T11:00:00Z"), "tail without ts"), parsed
+# A bare timestamp with no trailing space is a stamp with an empty message
+# (noise-dropped downstream), never shipped verbatim as content.
+bare = parse_log_text("2026-07-21T11:00:05Z\n", 0)
+assert bare == [(_to_ns("2026-07-21T11:00:05Z"), "")], bare
+
+juris = [{"org": "o", "state": "wy", "repo": "r", "expected_workflows": ["w.yml"]}]
+FAIL = ("2026-07-21T11:00:00.0000000Z ##[group]setup\n"
+        "2026-07-21T11:00:01.0000000Z building\n"
+        "2026-07-21T11:00:02.0000000Z ##[endgroup]\n"
+        "2026-07-21T11:00:03.0000000Z ERROR: boom\n")
+def runs_fail(o, r, w):
+    return [{"id": 100, "status": "completed", "conclusion": "failure",
+             "created_at": "2026-07-21T11:00:00Z", "html_url": "u/100"}]
+batches, wm, errors = harvest_logs(juris, {}, runs_fail, lambda o, r, i: zip_of({"1_j.txt": FAIL}), NOW)
+assert errors == [] and len(batches) == 1, (errors, batches)
+assert batches[0]["labels"] == {"org": "o", "state": "wy", "workflow": "w.yml", "outcome": "failure"}
+assert batches[0]["watermark_key"] == "o/r/w.yml", "batch must name its watermark entry"
+assert [e["line"] for e in batches[0]["entries"]] == ["building", "ERROR: boom"], "group markers dropped, full logs kept"
+# Entries are stamped at COLLECTION time (NOW), not event time, with a per-stream
+# offset for ordering — Grafana Cloud silently discards event-time-stamped old
+# logs. The real event time is preserved as event_time metadata.
+collection_ns = int(NOW.timestamp()) * 1_000_000_000
+assert [e["timestamp_ns"] for e in batches[0]["entries"]] == [collection_ns, collection_ns + 1], \
+    f"entries must be stamped at collection time + offset: {[e['timestamp_ns'] for e in batches[0]['entries']]}"
+assert batches[0]["entries"][0]["metadata"] == {
+    "run_id": "100", "run_url": "u/100", "job": "1_j",
+    "event_time": "2026-07-21T11:00:01.000000000Z"}, batches[0]["entries"][0]["metadata"]
+assert batches[0]["entries"][1]["metadata"]["event_time"] == "2026-07-21T11:00:03.000000000Z"
+assert wm == {"o/r/w.yml": 100}
+
+big = "".join(f"2026-07-21T11:00:00.0000000Z line {i}\n" for i in range(250))
+def runs_ok(o, r, w):
+    return [{"id": 5, "status": "completed", "conclusion": "success",
+             "created_at": "2026-07-21T11:00:00Z", "html_url": "u"}]
+b2, _, _ = harvest_logs(juris, {}, runs_ok, lambda o, r, i: zip_of({"1.txt": big}), NOW)
+assert len(b2[0]["entries"]) == 100 and b2[0]["entries"][-1]["line"] == "line 249", "success tailed to 100"
+
+# A failure keeps FULL logs but bounded to the last ~MAX_FAILURE_BYTES: an
+# unbounded dump (a real 9 MB Florida run) times out the push and trips Loki's
+# rate limit. Over-cap failures are truncated to the tail (error/traceback) with
+# a marker; the last line — where the failure lands — always survives.
+from log_harvester import MAX_FAILURE_BYTES
+huge = "".join(f"2026-07-21T11:00:00.0000000Z filler line {i}\n" for i in range(200000))
+huge += "2026-07-21T11:00:09.0000000Z FATAL: the actual error\n"
+def runs_huge(o, r, w):
+    return [{"id": 9, "status": "completed", "conclusion": "failure",
+             "created_at": "2026-07-21T11:00:00Z", "html_url": "u"}]
+b_huge, _, _ = harvest_logs(juris, {}, runs_huge, lambda o, r, i: zip_of({"1.txt": huge}), NOW)
+kept_lines = [e["line"] for e in b_huge[0]["entries"]]
+kept_bytes = sum(len(line.encode()) + 1 for line in kept_lines)
+assert kept_bytes <= MAX_FAILURE_BYTES + 200, f"failure log not capped: {kept_bytes} bytes"
+assert len(kept_lines) < 200001, "an over-cap failure must be truncated, not shipped whole"
+assert kept_lines[-1] == "FATAL: the actual error", "the tail (the error) must survive the cap"
+assert kept_lines[0].startswith("[fleet-monitor]") and "dropped" in kept_lines[0], \
+    f"a truncation marker must lead the capped log: {kept_lines[0]}"
+print("✓ harvester: an oversized failure log is capped to the tail with a truncation marker")
+
+def runs_mix(o, r, w):
+    return [{"id": 10, "status": "completed", "conclusion": "success",
+             "created_at": "2026-07-21T11:00:00Z", "html_url": "u"},
+            {"id": 11, "status": "completed", "conclusion": "failure",
+             "created_at": "2026-07-21T11:30:00Z", "html_url": "u"},
+            {"id": 12, "status": "in_progress", "conclusion": None,
+             "created_at": "2026-07-21T11:45:00Z", "html_url": "u"}]
+b3, wm3, _ = harvest_logs(juris, {"o/r/w.yml": 10}, runs_mix,
+                          lambda o, r, i: zip_of({"1.txt": "2026-07-21T11:30:00.0000000Z x\n"}), NOW)
+assert {e["metadata"]["run_id"] for b in b3 for e in b["entries"]} == {"11"}, "only the new completed run ships"
+assert wm3 == {"o/r/w.yml": 11}, "watermark not advanced past the in-progress run"
+
+def runs_hist(o, r, w):
+    return [{"id": 1, "status": "completed", "conclusion": "failure",
+             "created_at": "2026-07-01T00:00:00Z", "html_url": "u"},   # 3 weeks old -> skip
+            {"id": 2, "status": "completed", "conclusion": "failure",
+             "created_at": "2026-07-21T06:00:00Z", "html_url": "u"}]   # 6h old -> ship
+b4, wm4, _ = harvest_logs(juris, {}, runs_hist,
+                          lambda o, r, i: zip_of({"1.txt": "2026-07-21T06:00:00.0000000Z x\n"}), NOW)
+assert {e["metadata"]["run_id"] for b in b4 for e in b["entries"]} == {"2"}, "cold start bounded to a 24h look-back"
+b5, wm5, _ = harvest_logs(juris, wm4, runs_hist, lambda o, r, i: zip_of({"1.txt": "x\n"}), NOW)
+assert b5 == [] and wm5 == wm4, "idempotent re-run with the same watermark ships nothing"
+
+def boom(o, r, i):
+    raise RuntimeError("archive 500")
+b6, wm6, e6 = harvest_logs(juris, {}, runs_hist, boom, NOW)
+assert b6 == [] and e6 and "archive 500" in e6[0], (b6, e6)
+assert wm6.get("o/r/w.yml", 0) == 0, "watermark held below a run whose archive fetch failed"
+
+# The look-back bounds every sweep, not just a cold start: with a warm watermark,
+# a new-by-id run created outside the window is skipped by the same policy the
+# cold start uses — so selection never wants a run the paged listing wouldn't fetch.
+def runs_warm(o, r, w):
+    return [{"id": 5, "status": "completed", "conclusion": "failure",
+             "created_at": "2026-07-01T00:00:00Z", "html_url": "u"},   # past wm but 3 weeks old
+            {"id": 6, "status": "completed", "conclusion": "failure",
+             "created_at": "2026-07-21T06:00:00Z", "html_url": "u"}]
+b7, wm7, _ = harvest_logs(juris, {"o/r/w.yml": 4}, runs_warm,
+                          lambda o, r, i: zip_of({"1.txt": "2026-07-21T06:00:00.0000000Z x\n"}), NOW)
+assert {e["metadata"]["run_id"] for b in b7 for e in b["entries"]} == {"6"}, b7
+assert wm7 == {"o/r/w.yml": 6}, wm7
+
+# A label the shipper would reject (control char) is a harvest-time error that
+# HOLDS the watermark — never a batch silently dropped after the watermark moved.
+bad_juris = [{"org": "o", "state": "w\ny", "repo": "r", "expected_workflows": ["w.yml"]}]
+b8, wm8, e8 = harvest_logs(bad_juris, {}, runs_hist,
+                           lambda o, r, i: zip_of({"1.txt": "x\n"}), NOW)
+assert b8 == [] and e8 and "control character" in e8[0], (b8, e8)
+assert wm8 == {}, "watermark must not advance for a batch the shipper would drop"
+print("✓ harvester: unpack/parse/noise/volume policy; incremental watermark; look-back bounds every sweep; per-repo error isolation")
+print("✓ harvester: a shipper-rejectable label errors at harvest time and holds the watermark")
+EOF
+
+# The live run listing pages until the harvest window is covered: stops on a
+# short page, stops once a page dips past the look-back boundary, and never
+# exceeds MAX_RUN_PAGES — so a burst of more than one page of new runs can't
+# leave a gap for the watermark to leap. Offline: request_json is monkeypatched.
+pipenv run python3 - <<'EOF'
+from datetime import datetime, timedelta, timezone
+
+import log_harvester
+
+# A fixed anchor, threaded into github_log_fetchers the way _collect_logs
+# threads the harvest now — pagination and selection must share one clock.
+ANCHOR = datetime(2026, 7, 21, 12, 0, 0, tzinfo=timezone.utc)
+
+def iso(hours_ago):
+    return (ANCHOR - timedelta(hours=hours_ago)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+pages_requested = []
+def fake_request_json(url, headers=None):
+    from urllib.parse import parse_qs, urlparse
+    page = int(parse_qs(urlparse(url).query)["page"][0])
+    pages_requested.append(page)
+    return {"workflow_runs": fake_request_json.pages.get(page, [])}
+log_harvester.request_json = fake_request_json
+
+full_recent = [{"id": 200 - i, "created_at": iso(1)} for i in range(30)]
+full_old = [{"id": 100 - i, "created_at": iso(30)} for i in range(30)]
+
+# Page 2's oldest run predates the boundary -> stop after 2 pages, keep both.
+fake_request_json.pages = {1: full_recent, 2: full_old, 3: full_recent}
+fetch_runs, _ = log_harvester.github_log_fetchers(ANCHOR)
+runs = fetch_runs("o", "r", "w.yml")
+assert pages_requested == [1, 2], pages_requested
+assert len(runs) == 60, len(runs)
+
+# A short page means no more runs -> one request.
+pages_requested.clear()
+fake_request_json.pages = {1: full_recent[:3]}
+assert len(fetch_runs("o", "r", "w.yml")) == 3
+assert pages_requested == [1], pages_requested
+
+# All pages full and recent -> the MAX_RUN_PAGES cap bounds the requests.
+pages_requested.clear()
+fake_request_json.pages = {p: full_recent for p in range(1, 10)}
+fetch_runs("o", "r", "w.yml")
+assert pages_requested == [1, 2, 3, 4], pages_requested
+
+# A missing/garbled created_at is not evidence of oldness: a full page whose
+# only unparseable stamp would have coerced "old" must page on, not stop —
+# stopping early would let the watermark leap runs that were never fetched.
+pages_requested.clear()
+one_bad = [dict(run) for run in full_recent]
+one_bad[7] = {"id": 193}                                 # no created_at at all
+fake_request_json.pages = {1: one_bad, 2: full_recent[:5]}
+assert len(fetch_runs("o", "r", "w.yml")) == 35
+assert pages_requested == [1, 2], "an unparseable stamp must not stop pagination"
+pages_requested.clear()
+all_bad = [{"id": 300 - i, "created_at": "garbled"} for i in range(30)]
+fake_request_json.pages = {1: all_bad, 2: full_recent[:5]}
+fetch_runs("o", "r", "w.yml")
+assert pages_requested == [1, 2], "a page with no parseable stamps pages on"
+print("✓ run listing: pages to the look-back boundary (anchored to the harvest now), stops on a")
+print("  short page, caps at MAX_RUN_PAGES; unparseable stamps never fake oldness")
+EOF
+
+# Loki push wire format + missing-env guard, offline (fake urlopen).
+pipenv run python3 - <<'EOF'
+import base64
+import urllib.request
+
+from logs_push import push_logs
+
+try:
+    push_logs("{}", env={})
+except RuntimeError as e:
+    assert "GRAFANA_LOGS_URL, GRAFANA_LOGS_USER, GRAFANA_LOGS_KEY" in str(e), e
+else:
+    raise AssertionError("push_logs with empty env should raise")
+
+class FakeResponse:
+    def read(self): return b""
+    def __enter__(self): return self
+    def __exit__(self, *args): return False
+
+calls = []
+def ok_urlopen(request, timeout=None):
+    calls.append(request)
+    return FakeResponse()
+urllib.request.urlopen = ok_urlopen
+
+push_logs('{"streams":[]}', env={"GRAFANA_LOGS_URL": "https://l.test/loki/api/v1/push",
+                                 "GRAFANA_LOGS_USER": "42", "GRAFANA_LOGS_KEY": "k"})
+request = calls[0]
+assert request.full_url == "https://l.test/loki/api/v1/push" and request.get_method() == "POST"
+# The body is gzip-compressed (log payloads are multi-MB); Loki decodes it via
+# Content-Encoding. Decompress to prove the payload round-trips.
+assert request.get_header("Content-encoding") == "gzip", request.header_items()
+import gzip as _gzip
+assert _gzip.decompress(request.data) == b'{"streams":[]}', request.data
+assert request.get_header("Authorization") == "Basic " + base64.b64encode(b"42:k").decode()
+assert request.get_header("Content-type") == "application/json", request.header_items()
+print("✓ logs push: Loki wire format (URL, POST, Basic auth, gzip json body) + missing-env guard")
+EOF
+
+# CLI logs leg: fixture archives in -> exact Loki push payload out (dry-run),
+# byte-identical from the fixed --timestamp. The fixture covers a failed run
+# (full logs, ##[group] noise dropped) and a successful run (tail); run/job ids
+# land in structured metadata while labels stay org/state/workflow/outcome.
+pipenv run python3 main.py collect --logs-only --dry-run \
+  --log-fixture fixtures/log-runs --timestamp 1784635200 \
+  > "$output_dir/logs-payload.json"
+pipenv run python3 - <<'EOF'
+import json
+
+obj = json.load(open("__snapshots__/logs-payload.json"))
+streams = {s["stream"]["outcome"]: s for s in obj["streams"]}
+assert set(streams) == {"failure", "success"}, streams
+fail_lines = [value[1] for value in streams["failure"]["values"]]
+assert "ERROR: HTTP 500 from source" in fail_lines, fail_lines
+assert "Traceback (most recent call last):" in fail_lines, fail_lines
+lines = [value[1] for s in obj["streams"] for value in s["values"]]
+assert not any("##[group]" in line or "##[endgroup]" in line for line in lines), "noise must be dropped"
+assert all(set(s["stream"]) == {"org", "state", "workflow", "outcome"} for s in obj["streams"]), "labels capped"
+assert all(value[2]["run_id"] for s in obj["streams"] for value in s["values"]), "run id in structured metadata"
+assert all(value[2]["job"] == "1_scrape" for s in obj["streams"] for value in s["values"]), \
+    "job identity (archive member name) in structured metadata"
+# Entries are stamped at collection time (the pinned --timestamp 1784635200 =
+# 1784635200000000000 ns), not their 2026-07-21 event time; the event time is
+# preserved as event_time metadata so it survives the collection-time stamping.
+assert all(int(value[0]) >= 1784635200000000000 for s in obj["streams"] for value in s["values"]), \
+    "entries must be stamped at collection time, not their older event time"
+assert all(value[2]["event_time"].startswith("2026-07-21T") for s in obj["streams"] for value in s["values"]), \
+    "original event time must be preserved as event_time metadata"
+print("✓ logs snapshot: fixture archives render to the exact Loki payload (collection-time stamps, event_time kept)")
+EOF
+
+# The log fixture's jurisdiction records are full fleet-record-shaped and
+# validate against the same schema as every other record crossing the module
+# boundary — drift between read_fleet output and what harvest_logs consumes
+# must not go uncaught.
+pipenv run python3 - <<'EOF'
+import json
+from pathlib import Path
+from jsonschema import validate
+
+schema = json.load(open("../../schemas/fleet-record.schema.json"))
+lines = Path("fixtures/log-runs/jurisdictions.jsonl").read_text().splitlines()
+for line in lines:
+    validate(instance=json.loads(line), schema=schema)
+print(f"✓ {len(lines)} log-fixture jurisdiction records validate against fleet-record.schema.json")
+EOF
+
+# Idempotency + recovery, end to end through the CLI with a fake Loki push:
+# the first collection ships and advances the watermark; a second collection of
+# the same window ships nothing (no run newer than the watermark); deleting the
+# watermark recovers via the 24h look-back rather than re-shipping the full
+# history. Driven in-process (CliRunner) so the fake urlopen counts real pushes.
+pipenv run python3 - "$logs_wm" <<'EOF'
+import os
+import sys
+import urllib.request
+
+from click.testing import CliRunner
+
+import main
+
+wm = sys.argv[1]
+if os.path.exists(wm):
+    os.remove(wm)
+
+pushes = []
+class FakeResponse:
+    def read(self): return b""
+    def __enter__(self): return self
+    def __exit__(self, *args): return False
+def fake_urlopen(request, timeout=None):
+    pushes.append(request.data)
+    return FakeResponse()
+urllib.request.urlopen = fake_urlopen
+
+env = {"GRAFANA_LOGS_URL": "https://l.test/loki/api/v1/push",
+       "GRAFANA_LOGS_USER": "42", "GRAFANA_LOGS_KEY": "k"}
+args = ["collect", "--logs-only", "--log-fixture", "fixtures/log-runs",
+        "--watermark-file", wm, "--timestamp", "1784635200"]
+
+# Pushes go per workflow (one payload per watermark entry): the fixture's two
+# repos are two watermark keys, so a shipping collection is exactly two pushes.
+r1 = CliRunner().invoke(main.cli, args, env=env)
+assert r1.exit_code == 0, (r1.output, r1.exception)
+assert len(pushes) == 2, f"first collection must push once per workflow, got {len(pushes)}"
+
+r2 = CliRunner().invoke(main.cli, args, env=env)
+assert r2.exit_code == 0, (r2.output, r2.exception)
+assert len(pushes) == 2, "a second collection of the same window must ship nothing (idempotent)"
+
+os.remove(wm)  # a lost Actions cache
+r3 = CliRunner().invoke(main.cli, args, env=env)
+assert r3.exit_code == 0, (r3.output, r3.exception)
+assert len(pushes) == 4, "a deleted watermark recovers via the look-back and ships the recent window again"
+print("✓ logs CLI: idempotent re-run ships nothing; a deleted watermark recovers via the 24h look-back")
+EOF
+
+# Per-workflow push isolation: one workflow's un-pushable payload fails only its
+# own logs and holds only its own watermark — the other workflow ships, its
+# watermark saves, and the run exits nonzero (a red run means the collector
+# needs attention, but it never un-ships the fleet's progress). The next sweep
+# retries only the failed workflow.
+pipenv run python3 - "$logs_wm" <<'EOF'
+import gzip
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+
+import email.message
+from click.testing import CliRunner
+
+import main
+
+wm = sys.argv[1]
+if os.path.exists(wm):
+    os.remove(wm)
+
+pushes = []
+class FakeResponse:
+    def read(self): return b""
+    def __enter__(self): return self
+    def __exit__(self, *args): return False
+def wy_fails_urlopen(request, timeout=None):
+    pushes.append(request.data)
+    if b'"state":"wy"' in gzip.decompress(request.data):  # bodies are gzipped
+        raise urllib.error.HTTPError(request.full_url, 413, "Payload Too Large",
+                                     email.message.Message(), None)
+    return FakeResponse()
+urllib.request.urlopen = wy_fails_urlopen
+
+env = {"GRAFANA_LOGS_URL": "https://l.test/loki/api/v1/push",
+       "GRAFANA_LOGS_USER": "42", "GRAFANA_LOGS_KEY": "k"}
+args = ["collect", "--logs-only", "--log-fixture", "fixtures/log-runs",
+        "--watermark-file", wm, "--timestamp", "1784635200"]
+
+r1 = CliRunner().invoke(main.cli, args, env=env)
+combined = r1.output + (r1.stderr or "")
+assert r1.exit_code != 0, "a failed per-workflow push must exit nonzero"
+assert "log push failed for 1 of 2 workflows" in combined, combined
+saved = json.load(open(wm))
+assert "govbot-openstates-scrapers/il-legislation/openstates-scrape.yml" in saved, saved
+assert "govbot-openstates-scrapers/wy-legislation/openstates-scrape.yml" not in saved, \
+    f"the failed workflow's watermark must hold: {saved}"
+
+# Next sweep, push healthy again: only the held workflow re-ships.
+def ok_urlopen(request, timeout=None):
+    pushes.append(request.data)
+    return FakeResponse()
+urllib.request.urlopen = ok_urlopen
+before = len(pushes)
+r2 = CliRunner().invoke(main.cli, args, env=env)
+assert r2.exit_code == 0, (r2.output, r2.exception)
+assert len(pushes) == before + 1, "only the failed workflow should re-ship"
+saved = json.load(open(wm))
+assert len(saved) == 2, saved
+os.remove(wm)
+print("✓ logs CLI: a failed workflow push holds only its own watermark; the rest ship and save")
+EOF
+
+# collect's exit contract covers the logs leg: per-repo harvest errors exit 1
+# (degraded must never look clean), unlike `run` which keeps them green.
+pipenv run python3 - <<'EOF'
+import json
+import tempfile
+from pathlib import Path
+
+from click.testing import CliRunner
+
+import main
+
+fixture = Path(tempfile.mkdtemp())
+(fixture / "runs").mkdir()
+(fixture / "jurisdictions.jsonl").write_text(json.dumps(
+    {"org": "o", "state": "w\ny", "repo": "r", "expected_workflows": ["w.yml"]}) + "\n")
+result = CliRunner().invoke(
+    main.cli, ["collect", "--logs-only", "--dry-run", "--log-fixture", str(fixture),
+               "--timestamp", "1784635200"])
+combined = result.output + (result.stderr or "")
+assert result.exit_code != 0, "collect --logs-only must exit nonzero on harvest errors"
+assert "log harvest errors on 1 target(s)" in combined, combined
+print("✓ collect --logs-only: per-repo harvest errors exit 1 (degraded never looks clean)")
+EOF
+
+# Combined mode (--metrics-only --logs-only): each leg runs to completion
+# regardless of the other's failure — partial data still ships (or prints)
+# first — and the failures merge into one exit-1 message. Dry-run: both payloads
+# print even though the poller fixture carries an errored repo.
+if pipenv run python3 main.py collect --metrics-only --logs-only --dry-run \
+    --poller-records fixtures/poller-records.jsonl --log-fixture fixtures/log-runs \
+    --timestamp 1784635200 > "$clean_out" 2> "$stderr_tmp"; then
+  echo "✗ combined collect with an errored poller record should exit nonzero"
+  exit 1
+fi
+if ! grep -q '^fleet_workflow_run,' "$clean_out" || ! grep -q '"streams":' "$clean_out"; then
+  echo "✗ combined dry-run must print BOTH the metrics payload and the logs payload; got:"
+  cat "$clean_out"
+  exit 1
+fi
+if ! grep -q 'poll errors on 1 of 5 repos' "$stderr_tmp"; then
+  echo "✗ combined collect should still report the poll errors; got:"
+  cat "$stderr_tmp"
+  exit 1
+fi
+echo "✓ collect combined mode: both payloads print, poll errors still exit 1"
+
+# Both legs failing at once: the single exit-1 message carries BOTH fragments,
+# proving the merge (not just one leg's failure surfacing). Metrics fails on the
+# errored poller record; logs fails on a bad-label jurisdiction. Dry-run, no
+# network. Driven in-process to read the merged ClickException message.
+pipenv run python3 - <<'EOF'
+import json
+import tempfile
+from pathlib import Path
+
+from click.testing import CliRunner
+
+import main
+
+fixture = Path(tempfile.mkdtemp())
+(fixture / "runs").mkdir()
+(fixture / "jurisdictions.jsonl").write_text(json.dumps(
+    {"org": "o", "state": "w\ny", "repo": "r", "expected_workflows": ["w.yml"]}) + "\n")
+result = CliRunner().invoke(main.cli, [
+    "collect", "--metrics-only", "--logs-only", "--dry-run",
+    "--poller-records", "fixtures/poller-records.jsonl",
+    "--log-fixture", str(fixture), "--timestamp", "1784635200"])
+combined = result.output + (result.stderr or "")
+assert result.exit_code != 0, combined
+assert "poll errors on 1 of 5 repos" in combined, f"metrics fragment missing: {combined}"
+assert "log harvest errors on 1 target(s)" in combined, f"logs fragment missing: {combined}"
+print("✓ collect combined mode: both legs failing merge into one exit-1 message")
+EOF
+
+# Combined push mode with Loki down: the metrics leg must still ship before the
+# logs failure exits 1 — one leg's failure never silences the other's data.
+pipenv run python3 - "$clean_records" "$logs_wm" <<'EOF'
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+
+import email.message
+from click.testing import CliRunner
+
+import main
+
+clean_records, wm = sys.argv[1], sys.argv[2]
+if os.path.exists(wm):
+    os.remove(wm)
+
+influx_pushes, loki_pushes = [], []
+class FakeResponse:
+    def read(self): return b""
+    def __enter__(self): return self
+    def __exit__(self, *args): return False
+def loki_down_urlopen(request, timeout=None):
+    # Distinguish the legs by endpoint, not body — the Loki body is now gzipped.
+    # 413 (fail-fast 4xx) rather than 5xx: the real retry path would sleep for
+    # real here, since the CLI cannot inject a fake sleep.
+    if "/loki/" in request.full_url:
+        loki_pushes.append(request.data)
+        raise urllib.error.HTTPError(request.full_url, 413, "Payload Too Large",
+                                     email.message.Message(), None)
+    influx_pushes.append(request.data)
+    return FakeResponse()
+urllib.request.urlopen = loki_down_urlopen
+
+result = CliRunner().invoke(main.cli, [
+    "collect", "--metrics-only", "--logs-only",
+    "--poller-records", clean_records, "--log-fixture", "fixtures/log-runs",
+    "--watermark-file", wm, "--timestamp", "1784635200",
+], env={
+    "GRAFANA_PUSH_URL": "https://push.test/api/v1/push/influx/write",
+    "GRAFANA_PUSH_USER": "123456", "GRAFANA_PUSH_KEY": "metrics-key",
+    "GRAFANA_LOGS_URL": "https://l.test/loki/api/v1/push",
+    "GRAFANA_LOGS_USER": "42", "GRAFANA_LOGS_KEY": "logs-key",
+})
+combined = result.output + (result.stderr or "")
+assert result.exit_code != 0, "a failed logs leg must still exit nonzero in combined mode"
+assert len(influx_pushes) == 1, "the metrics leg must ship even when the logs leg fails"
+assert loki_pushes, "the logs leg must have attempted its pushes"
+assert "log push failed" in combined, combined
+saved = json.load(open(wm))
+assert saved == {}, f"no watermark may advance when every Loki push failed: {saved}"
+os.remove(wm)
+print("✓ collect combined mode: metrics ship even when Loki is down; failures merge into exit 1")
+EOF
+
+# probe-loki: a bad credential (HTTP 401 on every push) exits nonzero without any
+# ingest-window verdict — a failed push says nothing about the window.
+pipenv run python3 - <<'EOF'
+import email.message
+import urllib.error
+import urllib.request
+
+from click.testing import CliRunner
+
+import main
+
+
+def unauthorized_urlopen(request, timeout=None):
+    raise urllib.error.HTTPError(request.full_url, 401, "Unauthorized",
+                                 email.message.Message(), None)
+
+
+urllib.request.urlopen = unauthorized_urlopen
+result = CliRunner().invoke(main.cli, ["probe-loki"], env={
+    "GRAFANA_LOGS_URL": "https://l.test/loki/api/v1/push",
+    "GRAFANA_LOGS_USER": "42", "GRAFANA_LOGS_KEY": "bad-key"})
+combined = result.output + (result.stderr or "")
+assert result.exit_code != 0, combined
+assert "push failed (HTTP 401)" in combined and "every probe push failed" in combined, combined
+assert "queryable" not in combined and "ingest window" not in combined, \
+    f"a failed push must not produce a window verdict: {combined}"
+print("✓ probe-loki: a bad credential exits nonzero with no ingest-window verdict")
+EOF
+
+# probe-loki query-back: the truth-teller. Push succeeds (204) for every age, but
+# only ages ≤2h are queryable; the probe must report the ~2h window and name the
+# older ages as silently discarded — NOT trust the 204. Offline: a fake urlopen
+# 204s pushes and answers query_range with data only for age ≤ 2.
+pipenv run python3 - <<'EOF'
+import re
+import urllib.parse
+import urllib.request
+
+from click.testing import CliRunner
+
+import main
+
+
+class Resp:
+    def __init__(self, body):
+        self._body = body
+    def read(self):
+        return self._body
+    def __enter__(self):
+        return self
+    def __exit__(self, *args):
+        return False
+
+
+def fake_urlopen(request, timeout=None):
+    if request.data is not None:          # a push (POST) — accept with 204/empty
+        return Resp(b"")
+    query = urllib.parse.parse_qs(urllib.parse.urlparse(request.full_url).query)["query"][0]
+    age = int(re.search(r'age_hours="(\d+)"', query).group(1))
+    # Simulate Grafana Cloud silently dropping anything older than 2h.
+    if age <= 2:
+        return Resp(b'{"data":{"result":[{"values":[["1","x"]]}]}}')
+    return Resp(b'{"data":{"result":[]}}')
+
+
+urllib.request.urlopen = fake_urlopen
+result = CliRunner().invoke(main.cli, ["probe-loki"], env={
+    "GRAFANA_LOGS_URL": "https://l.test/loki/api/v1/push",
+    "GRAFANA_LOGS_USER": "42", "GRAFANA_LOGS_KEY": "rw-key"})
+combined = result.output + (result.stderr or "")
+assert result.exit_code == 0, combined
+assert " 1h old: accepted AND queryable" in combined, combined
+assert " 3h old: pushed (204) but silently discarded" in combined, combined
+assert "ingest window ≈ 2h" in combined, combined
+print("✓ probe-loki: query-back detects silent discard and reports the real ~2h window")
+EOF
+
+# A malformed config on the logs-only path fails with a clean CLI error line,
+# the same contract as list-fleet and the metrics poll — never a raw traceback.
+bad_config_dir=$(ls -d fixtures-invalid/*/ | head -1)
+if pipenv run python3 main.py collect --logs-only --config-dir "$bad_config_dir" \
+    > /dev/null 2> "$stderr_tmp"; then
+  echo "✗ collect --logs-only with a broken config should exit nonzero"
+  exit 1
+fi
+if ! grep -q '^Error:' "$stderr_tmp"; then
+  echo "✗ collect --logs-only should fail with a clean Error: line; stderr was:"
+  cat "$stderr_tmp"
+  exit 1
+fi
+echo "✓ collect --logs-only: a malformed config fails with a clean Error: line"
+
+# The orchestrator `run` wires the logs leg only when a log source is present: a
+# dry-run with the fixture prints the metrics + heartbeat payload AND the Loki
+# stream payload; a metrics-only run (no log source) omits it — the run-payload
+# snapshot above carries no streams.
+run_with_logs=$(pipenv run python3 main.py run --dry-run --poller-records "$clean_records" \
+  --log-fixture fixtures/log-runs --timestamp 1784635200 2> /dev/null)
+if ! echo "$run_with_logs" | grep -q '^fleet_collector_heartbeat '; then
+  echo "✗ run --log-fixture must still ship metrics + heartbeat"
+  exit 1
+fi
+if ! echo "$run_with_logs" | grep -q '"streams":'; then
+  echo "✗ run --log-fixture must also ship the harvested logs"
+  exit 1
+fi
+if grep -q '"streams":' "$output_dir/run-payload.txt"; then
+  echo "✗ a metrics-only run (no log source) must not emit a logs payload"
+  exit 1
+fi
+echo "✓ run: the logs leg ships when a log source is present, and is skipped otherwise"
+
 # live-check's query-back proof derives expected series names AND counts from
 # the payload it pushed; the accounting is locked against the snapshot payload
 # (which includes an escaped-space tag value the parser must not trip on).
@@ -596,18 +1357,23 @@ from fleet_config import EXCLUDED_FLEETS, read_fleet
 from fleet_poller import DATA_PATHS, estimate_request_count
 
 # A flat ceiling goes stale the moment the fleet grows, so derive it from the
-# limit the sweep actually runs against and leave headroom for the archive
-# downloads the logs leg will add.
+# limit the sweep actually runs against. This counts BOTH legs: budgeting the
+# metrics leg alone understates a sweep and would let the real cost cross the
+# ceiling before anything complained.
 TOKEN_LIMIT_PER_HOUR = 1000
 HEADROOM = 0.8
 records = read_fleet("../pipeline-manager")
-count = estimate_request_count(records)
+metrics_requests = estimate_request_count(records)
+logs_requests = sum(len(r["expected_workflows"]) for r in records)
+count = metrics_requests + logs_requests
 budget = int(TOKEN_LIMIT_PER_HOUR * HEADROOM)
 assert count < budget, (
-    f"fleet sweep now costs {count} GitHub requests/hour against a "
-    f"{TOKEN_LIMIT_PER_HOUR}/hour token limit; revisit the polling strategy or exclude a fleet"
+    f"fleet sweep now costs {count} GitHub requests/hour ({metrics_requests} metrics + "
+    f"{logs_requests} log listings) against a {TOKEN_LIMIT_PER_HOUR}/hour token limit; "
+    "revisit the polling strategy or exclude a fleet"
 )
-print(f"✓ API budget: one sweep of the real fleet = {count} GitHub requests = "
+print(f"✓ API budget: one sweep of the real fleet = {count} GitHub requests "
+      f"({metrics_requests} metrics + {logs_requests} log listings) = "
       f"{100 * count / TOKEN_LIMIT_PER_HOUR:.0f}% of the {TOKEN_LIMIT_PER_HOUR}/hour token limit")
 
 # The test fleet is skipped by default, but the config stays the authority:
@@ -640,6 +1406,17 @@ if ! echo "$skip_output" | grep -q "live check skipped"; then
   exit 1
 fi
 echo "✓ live-check: skips cleanly when credentials are absent"
+
+# The Loki ingest-window probe self-skips without credentials the same way, so a
+# credential-free render stays offline; the real probe runs only with GRAFANA_LOGS_*.
+probe_skip=$(env -u GRAFANA_LOGS_URL -u GRAFANA_LOGS_USER -u GRAFANA_LOGS_KEY \
+  pipenv run python3 main.py probe-loki 2>&1)
+if ! echo "$probe_skip" | grep -q "loki probe skipped"; then
+  echo "✗ probe-loki without credentials should skip cleanly; got:"
+  echo "$probe_skip"
+  exit 1
+fi
+echo "✓ probe-loki: skips cleanly when credentials are absent"
 
 # The real push-and-query proof is opt-in: a bare render must stay offline,
 # deterministic, and side-effect-free even on a machine that happens to have
