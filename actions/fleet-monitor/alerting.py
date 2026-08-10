@@ -112,10 +112,18 @@ def _dashboard_link(state_filtered: bool) -> str:
 
 
 def _query(expr: str) -> dict:
-    """The PromQL half of a rule: an instant query over the look-back window."""
+    """The PromQL half of a rule: an instant query over the look-back window.
+
+    The relative window is 600s→0 even though the query is instant. Grafana
+    validates the range on the datasource query regardless —
+    ``[alerting.alert-rule.invalidRelativeTime]`` rejects ``From == To``,
+    observed live on Grafana Cloud — and 600s is what the UI itself writes for
+    alert queries. The PromQL's own ``[6h]``/``[24h]`` look-backs do the real
+    work; this range exists to satisfy the validator.
+    """
     return {
         "refId": "A",
-        "relativeTimeRange": {"from": 0, "to": 0},
+        "relativeTimeRange": {"from": 600, "to": 0},
         "datasourceUid": "$GRAFANA_METRICS_DATASOURCE_UID",
         "model": {
             "editorMode": "code",

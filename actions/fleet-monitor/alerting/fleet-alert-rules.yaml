@@ -20,7 +20,7 @@ groups:
     data:
     - refId: A
       relativeTimeRange:
-        from: 0
+        from: 600
         to: 0
       datasourceUid: $GRAFANA_METRICS_DATASOURCE_UID
       model:
@@ -74,7 +74,7 @@ groups:
     data:
     - refId: A
       relativeTimeRange:
-        from: 0
+        from: 600
         to: 0
       datasourceUid: $GRAFANA_METRICS_DATASOURCE_UID
       model:
@@ -129,7 +129,7 @@ groups:
     data:
     - refId: A
       relativeTimeRange:
-        from: 0
+        from: 600
         to: 0
       datasourceUid: $GRAFANA_METRICS_DATASOURCE_UID
       model:
@@ -184,7 +184,7 @@ groups:
     data:
     - refId: A
       relativeTimeRange:
-        from: 0
+        from: 600
         to: 0
       datasourceUid: $GRAFANA_METRICS_DATASOURCE_UID
       model:

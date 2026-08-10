@@ -2098,6 +2098,15 @@ assert coverage_expr == (
 #     messages for one outage, and the louder one wrong about the cause.
 assert "unless absent_over_time" in coverage_expr, coverage_expr
 
+# 3d. The datasource query carries a non-degenerate relative window. Grafana
+#     validates it even on an instant query — [alerting.alert-rule.
+#     invalidRelativeTime] rejects From == To, observed live on Grafana Cloud,
+#     where 0/0 failed the whole rule-group PUT — and 600s is what the UI
+#     itself writes. The PromQL's own [6h]/[24h] look-backs do the real work.
+for uid, rule in rules.items():
+    assert rule["data"][0]["relativeTimeRange"] == {"from": 600, "to": 0}, \
+        (uid, rule["data"][0])
+
 # 4. Triage is one click: every alert carries a link into the board, filtered to
 #    the jurisdiction that alerted. Absolute, because a notification is read in
 #    Slack or an inbox — the relative path the board's own row links use resolves
