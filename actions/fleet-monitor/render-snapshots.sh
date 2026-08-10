@@ -2394,6 +2394,12 @@ def stack(datasources=(PROMETHEUS, LOKI), policies=UNSET, contact_points=None, r
 
 
 def run(env, respond, extra_args=("--deadline-seconds", "0")):
+    # The offline scenarios must not inherit this shell's real exports. A
+    # developer machine legitimately carries GRAFANA_METRICS_DATASOURCE_UID
+    # (the live-check instructions say to export it, and one did — failing the
+    # discovery assertions) or GRAFANA_DASHBOARD_URL. None UNSETS a variable
+    # in CliRunner; a scenario that wants one set supplies it and overrides.
+    env = {"GRAFANA_METRICS_DATASOURCE_UID": None, "GRAFANA_DASHBOARD_URL": None, **env}
     calls = []
 
     def fake_urlopen(request, timeout=None):
