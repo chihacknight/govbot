@@ -479,6 +479,128 @@ def dashboard(out):
         click.echo(text, nl=False)
 
 
+@cli.command("alerts")
+@click.option(
+    "--out-dir",
+    type=click.Path(file_okay=False, path_type=Path),
+    help="Write the alerting YAML here instead of stdout (committed at alerting/).",
+)
+def alerts(out_dir):
+    """Emit the alert rules, contact point, and notification policy as provisioning YAML.
+
+    Built as data (alerting.py) and committed rendered (alerting/*.yaml), same
+    bargain as the dashboard: reviewable as code, and regenerating it is a diff
+    rather than an export from somebody's browser. Stack-specific values — the
+    datasource uid, the stack URL, the Slack webhook, the alert address — are
+    $PLACEHOLDERS resolved by `provision-alerts`, so the committed files carry no
+    credentials and apply to any stack.
+    """
+    from alerting import render_documents
+
+    documents = render_documents()
+    if out_dir:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for name, text in documents.items():
+            (out_dir / name).write_text(text)
+        click.echo(f"wrote {len(documents)} files to {out_dir}", err=True)
+        return
+    for name, text in documents.items():
+        click.echo(f"# ===== {name} =====")
+        click.echo(text, nl=False)
+
+
+@cli.command("provision-alerts")
+@click.option(
+    "--alerting-dir",
+    type=click.Path(file_okay=False, path_type=Path),
+    # Relative to this module, not to the caller's cwd. The committed directory
+    # is a property of the action, and `exists=True` on a cwd-relative default is
+    # validated by click BEFORE the command body — so running from anywhere else
+    # exited 2 with a path error instead of the documented credential-free skip.
+    default=Path(__file__).parent / "alerting",
+    show_default="the module's own alerting/ directory",
+    help="Directory of committed alerting YAML to apply.",
+)
+@click.option(
+    "--deadline-seconds",
+    type=int,
+    default=None,
+    help="How long to wait for the stack to evaluate the rules (default: two evaluation "
+         "intervals plus a margin). The offline suite passes 0 to poll exactly once.",
+)
+def provision_alerts(alerting_dir, deadline_seconds):
+    """Apply the committed alert rules, contact point, and notification policy to a
+    real stack; skips without credentials.
+
+    Provisioning is the check. The committed files are read from disk (not
+    re-rendered), their $PLACEHOLDERS resolved from the environment, and the
+    result applied through Grafana's provisioning API — then the stack is polled
+    until it has actually *evaluated* the rules, because Grafana will happily
+    store a rule pointing at a datasource that does not exist and only report
+    `health: error` once it tries to run it.
+
+    Needs GRAFANA_ALERTS_URL (the stack base URL) and GRAFANA_ALERTS_KEY (a
+    service-account token with alerting write), plus SLACK_WEBHOOK_URL and
+    ALERT_EMAIL for the contact point. GRAFANA_METRICS_DATASOURCE_UID pins the
+    datasource when a stack has more than one Prometheus; otherwise it is
+    discovered. GRAFANA_DASHBOARD_URL overrides the base used in alert deep
+    links, which defaults to the stack URL. Exits 0 with a skip notice when
+    credentials are absent, so an offline run passes without a Grafana account.
+    """
+    import os
+
+    names = ["GRAFANA_ALERTS_URL", "GRAFANA_ALERTS_KEY", "SLACK_WEBHOOK_URL", "ALERT_EMAIL"]
+    missing = [name for name in names if not os.environ.get(name)]
+    if missing:
+        click.echo(f"alert provisioning skipped: missing {', '.join(missing)}")
+        return
+
+    from alerts_provision import check_stack_url, provision
+
+    base = os.environ["GRAFANA_ALERTS_URL"]
+    deadline = {} if deadline_seconds is None else {"deadline_seconds": deadline_seconds}
+    try:
+        # The stack that serves the UI is the stack being provisioned unless
+        # someone says otherwise, so the deep links need no second variable.
+        # `or base`, not a default: an unset CI secret renders as the EMPTY
+        # STRING, and an empty base makes every alert link relative — which
+        # resolves against slack.com wherever the notification is read.
+        #
+        # Validated like the API URL when supplied: it becomes the clickable link
+        # in every notification and is never contacted, so a wrong value
+        # provisions cleanly and sends on-call staff elsewhere indefinitely.
+        # `allow_path`: unlike the API base this one is never contacted, and a
+        # reverse-proxied Grafana served under /grafana needs the prefix for its
+        # links to resolve.
+        dashboard_url = check_stack_url(
+            os.environ.get("GRAFANA_DASHBOARD_URL") or base,
+            "GRAFANA_DASHBOARD_URL",
+            allow_path=True,
+        )
+    except RuntimeError as e:
+        raise click.ClickException(str(e)) from e
+    # The webhook is the credential this module is most careful about everywhere
+    # else, so it gets the same scheme check as the URLs above: Slack only issues
+    # https hooks, and a plain-http one has Grafana re-POST the hook path itself
+    # in cleartext on every alert, from its own egress where nobody will see it.
+    if not os.environ["SLACK_WEBHOOK_URL"].startswith("https://"):
+        raise click.ClickException("SLACK_WEBHOOK_URL must be https")
+    values = {
+        "SLACK_WEBHOOK_URL": os.environ["SLACK_WEBHOOK_URL"],
+        "ALERT_EMAIL": os.environ["ALERT_EMAIL"],
+        "GRAFANA_DASHBOARD_URL": dashboard_url,
+        "GRAFANA_METRICS_DATASOURCE_UID": os.environ.get("GRAFANA_METRICS_DATASOURCE_UID", ""),
+    }
+    try:
+        provision(alerting_dir, base, os.environ["GRAFANA_ALERTS_KEY"], values,
+                  echo=click.echo, **deadline)
+    except RuntimeError as e:
+        # RequestFailed and UnresolvedPlaceholder are both RuntimeErrors: a
+        # rejected write, a stack that can't evaluate what it stored, and a
+        # placeholder nobody supplied all end the run the same way.
+        raise click.ClickException(str(e)) from e
+
+
 @cli.command("check-dashboard")
 def check_dashboard():
     """Import the committed dashboard into a real stack and read it back; skips

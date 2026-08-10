@@ -37,9 +37,25 @@ class _StripAuthOnCrossHostRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         new = super().redirect_request(req, fp, code, msg, headers, newurl)
         if new is not None:
-            origin = urllib.parse.urlparse(req.full_url).hostname
-            target = urllib.parse.urlparse(newurl).hostname
-            if origin != target:
+            # Scheme and port, not just host: a same-host https→http redirect
+            # would otherwise forward a bearer token in cleartext.
+            def identity(url):
+                parsed = urllib.parse.urlparse(url)
+                # Default ports normalised, or a redirect that merely spells out
+                # ":443" would read as cross-origin and drop the token on a hop
+                # that never left the host.
+                try:
+                    port = parsed.port or {"https": 443, "http": 80}.get(parsed.scheme)
+                except ValueError:
+                    # "host:notaport" — an authority we cannot parse is not an
+                    # origin we can match, so a fresh object() stands in and
+                    # compares equal to nothing, dropping the header. Letting
+                    # this raise would surface inside urlopen as a retried
+                    # network error: a bad redirect reported as a timeout.
+                    return object()
+                return (parsed.scheme, parsed.hostname, port)
+
+            if identity(req.full_url) != identity(newurl):
                 for key in [k for k in new.headers if k.lower() == "authorization"]:
                     del new.headers[key]
         return new
@@ -86,19 +102,22 @@ def request_with_retry(
     *,
     data=None,
     headers=None,
+    method=None,
     timeout=DEFAULT_TIMEOUT,
     max_retries=DEFAULT_MAX_RETRIES,
     sleep=time.sleep,
 ):
     """Return the response body (bytes) for a request, retrying transient failures.
 
-    ``data`` (bytes) switches the request to POST. ``sleep`` is injectable so
-    tests never wait.
+    ``data`` (bytes) switches the request to POST; ``method`` overrides that,
+    which is what the alert provisioning API needs — its update endpoints are
+    PUT, and a PUT sent as a POST creates a duplicate instead of replacing.
+    ``sleep`` is injectable so tests never wait.
     """
-    method = "POST" if data is not None else "GET"
+    method = method or ("POST" if data is not None else "GET")
     last_error = None
     for attempt in range(max_retries):
-        request = urllib.request.Request(url, data=data, headers=headers or {})
+        request = urllib.request.Request(url, data=data, headers=headers or {}, method=method)
         try:
             with urllib.request.urlopen(request, timeout=timeout) as response:
                 return response.read()

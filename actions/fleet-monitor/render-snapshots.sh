@@ -365,7 +365,40 @@ assert seen.get("auth") is None, f"Authorization leaked across a cross-host redi
 seen.clear()
 request_with_retry(f"http://127.0.0.1:{target_port}/blob", headers=auth)
 assert seen.get("auth") == "Bearer SECRET-TOKEN", f"auth must survive a direct request: {seen}"
-print("✓ http: Authorization is stripped on a cross-host redirect, kept on a direct request")
+
+# The comparison is (scheme, host, port), not host alone: a SAME-host redirect
+# that downgrades https to http would otherwise forward a bearer token in
+# cleartext. Asserted on the comparison itself — a live https downgrade needs a
+# certificate, and the handler's decision is the whole behaviour.
+import urllib.request
+
+from http_util import _StripAuthOnCrossHostRedirect
+
+
+def forwards_auth(origin, target):
+    """Whether the real handler carries Authorization on this hop."""
+    request = urllib.request.Request(origin, headers={"Authorization": "Bearer SECRET-TOKEN"})
+    followed = _StripAuthOnCrossHostRedirect().redirect_request(
+        request, None, 302, "Found", {}, target
+    )
+    return followed is not None and followed.get_header("Authorization") is not None
+
+
+base = "https://stack.grafana.net/api/x"
+assert not forwards_auth(base, "http://stack.grafana.net/api/y"), "token forwarded on https→http"
+assert not forwards_auth(base, "https://stack.grafana.net:8443/api/y"), "token forwarded on a port change"
+assert not forwards_auth(base, "https://elsewhere.example/api/y"), "token forwarded cross-host"
+# ...but a redirect that merely spells out the default port never left the
+# origin, and dropping the token there breaks provisioning on a 401.
+assert forwards_auth(base, "https://stack.grafana.net:443/api/y"), "token dropped on an explicit :443"
+assert forwards_auth("https://stack.grafana.net:443/api/x", "https://stack.grafana.net/api/y")
+# An authority we cannot parse is not an origin we can match, so the header goes.
+# Letting urlparse's ValueError escape would surface inside urlopen as a retried
+# network error — a bad redirect reported as a timeout.
+assert not forwards_auth(base, "https://stack.grafana.net:notaport/api/y")
+
+print("✓ http: Authorization is stripped on a cross-host redirect and on a scheme or port "
+      "change, kept on a direct request and across an explicit default port")
 EOF
 
 # The clean path: an errors-free sweep must exit 0 and produce exactly the
@@ -1901,6 +1934,1232 @@ if [ "${FLEET_MONITOR_DASHBOARD_CHECK:-}" = "1" ]; then
   pipenv run python3 main.py check-dashboard
 else
   echo "· check-dashboard (real import) not run; opt in with FLEET_MONITOR_DASHBOARD_CHECK=1"
+fi
+
+# Alerting: built as data, committed rendered — the same bargain as the
+# dashboard, and with the same oracle. There is no snapshot file because the
+# committed alerting/*.yaml ARE the snapshot; the drift check below regenerates
+# them and fails if the repo copies no longer match the builder.
+pipenv run python3 - <<'EOF'
+import ast
+import re
+from pathlib import Path
+
+import yaml
+
+from dashboard import (DASHBOARD_UID, LOOKBACK as LOOKBACK_WINDOW,
+                       OBSERVED_MAX_SWEEP_GAP_HOURS, STALE_HOURS)
+from alerting import (CONTACT_POINT, CONTACT_POINTS_FILE, COVERAGE_BASELINE,
+                      COVERAGE_TOLERANCE, COVERAGE_UID, EVAL_INTERVAL, FOLDER,
+                      HEARTBEAT_UID, PENDING_PERIOD, POLICY_FILE, ROUTE_LABEL,
+                      RULES_FILE, RUN_FAILED_UID, STALE_UID,
+                      build_contact_point, build_policy, build_rule_group,
+                      placeholders, render_documents, UnresolvedPlaceholder)
+from alerts_provision import _load, _resolve
+
+group = build_rule_group()
+rules = {r["uid"]: r for r in group["rules"]}
+assert set(rules) == {RUN_FAILED_UID, STALE_UID, HEARTBEAT_UID, COVERAGE_UID}, sorted(rules)
+
+
+def condition(rule):
+    """The evaluator a rule fires on, found through the rule's own `condition`."""
+    node = next(q for q in rule["data"] if q["refId"] == rule["condition"])
+    assert node["model"]["type"] == "threshold", node["model"]
+    return node["model"]["conditions"][0]["evaluator"]
+
+
+# 1. Paused jurisdictions never page. An out-of-session state whose scrape fails
+#    is the legislative calendar, not a fault — the PRD's whole reason the metric
+#    carries a `paused` label at all. Filtered in the query, so a paused state
+#    doesn't even reach the notification policy.
+for uid in (RUN_FAILED_UID, STALE_UID):
+    exprs = [q["model"]["expr"] for q in rules[uid]["data"] if "expr" in q.get("model", {})]
+    assert exprs and all('paused="false"' in e for e in exprs), (uid, exprs)
+# The heartbeat series carries no labels at all, so it filters on nothing.
+dead_expr = rules[HEARTBEAT_UID]["data"][0]["model"]["expr"]
+assert "paused" not in dead_expr and "state" not in dead_expr, dead_expr
+
+# 2. Thresholds, as explicit expression nodes rather than numbers buried in a
+#    PromQL string — the number a rule fires on is the thing a reviewer most
+#    wants to see, and the thing that must not drift from the dashboard.
+assert condition(rules[RUN_FAILED_UID]) == {"type": "lt", "params": [1]}, rules[RUN_FAILED_UID]
+assert condition(rules[STALE_UID]) == {"type": "gt", "params": [STALE_HOURS]}, rules[STALE_UID]
+assert condition(rules[HEARTBEAT_UID]) == {"type": "gt", "params": [0]}, rules[HEARTBEAT_UID]
+assert condition(rules[COVERAGE_UID]) == {"type": "gt", "params": [COVERAGE_TOLERANCE]}, \
+    rules[COVERAGE_UID]
+for uid, rule in rules.items():
+    types = [q["model"].get("type") for q in rule["data"]]
+    assert types == [None, "reduce", "threshold"], (uid, types)
+
+# 2b. The 48 is the dashboard's, IMPORTED and not restated. Asserting the value
+#     proves nothing — `condition(...) == {"params": [STALE_HOURS]}` compares the
+#     builder's output against the same constant the builder consumed, and passes
+#     just as happily if alerting.py declares its own 48. (Nor does an identity
+#     check help: CPython interns small ints, so a restated 48 `is` the imported
+#     one.) So the assertion is on the source itself — alerting.py must import the
+#     name and must never bind it.
+source = Path("alerting.py").read_text()
+tree = ast.parse(source)
+imported = {
+    alias.name
+    for node in ast.walk(tree)
+    if isinstance(node, ast.ImportFrom) and node.module == "dashboard"
+    for alias in node.names
+}
+assert "STALE_HOURS" in imported, sorted(imported)
+bound = {
+    target.id
+    for node in ast.walk(tree)
+    if isinstance(node, ast.Assign)
+    for target in node.targets
+    if isinstance(target, ast.Name)
+}
+assert "STALE_HOURS" not in bound, "alerting.py restates STALE_HOURS instead of importing it"
+assert STALE_HOURS == 48, STALE_HOURS
+# The coverage rule's two numbers, pinned as literals for the same reason: an
+# assertion that compares the built rule against the constant the builder used
+# passes just as happily when the constant changes.
+assert COVERAGE_TOLERANCE == 0, COVERAGE_TOLERANCE
+assert COVERAGE_BASELINE == "24h", COVERAGE_BASELINE
+
+# 3. When a rule fires, and what it does when the data isn't there.
+assert group["interval"] == EVAL_INTERVAL == "5m", group["interval"]
+for uid, rule in rules.items():
+    assert rule["for"] == PENDING_PERIOD == "10m", (uid, rule["for"])
+    # A missing series means the collector didn't ship it — the heartbeat rule's
+    # job to report once, rather than 47 per-state pages saying it worse.
+    assert rule["noDataState"] == "OK", (uid, rule["noDataState"])
+    # An execution error is NOT no-data: a datasource that has gone away has to
+    # be visible as a broken rule rather than a healthy one.
+    assert rule["execErrState"] == "Error", (uid, rule["execErrState"])
+    assert rule["isPaused"] is False, uid
+
+# 3b. The dead-man window is sized against the MEASURED sweep gap, never the
+#     workflow's cron expression. GitHub runs scheduled workflows best-effort and
+#     25 consecutive sweeps showed a median of 2.0h and a max of 3.6h, so the
+#     PRD's literal "3 hours" sits BELOW the routine worst case and would page on
+#     an ordinary long gap. Asserted against the measurement, not against the
+#     window constant — importing the constant under test would let it shrink
+#     back to 3h and stay green.
+window = re.search(r"\[(\d+)([smh])\]", dead_expr)
+assert window, dead_expr
+hours = int(window.group(1)) * {"s": 1 / 3600, "m": 1 / 60, "h": 1}[window.group(2)]
+assert hours >= 1.5 * OBSERVED_MAX_SWEEP_GAP_HOURS, (dead_expr, hours)
+assert OBSERVED_MAX_SWEEP_GAP_HOURS >= 3.6, OBSERVED_MAX_SWEEP_GAP_HOURS
+
+# 3c. noDataState OK is right for a sweep that did not happen and WRONG for a
+#     repo that silently stopped reporting — and the two are indistinguishable
+#     per-series. The heartbeat only covers the collector's own series, so
+#     without this fourth rule a repo with zero commits on its data path (the
+#     most stale a repo can be: fleet_poller returns None on a 409 "Git
+#     Repository is empty", and metrics_shipper then emits no age series at all)
+#     stays green forever while the other 46 report normally.
+coverage_expr = rules[COVERAGE_UID]["data"][0]["model"]["expr"]
+assert "fleet_repo_data_commit_age_hours" in coverage_expr, coverage_expr
+#     The fleet is compared against ITSELF a day ago, never against a count of
+#     what someone expected it to be. A hardcoded size goes stale; the collector's
+#     heartbeat (the version this replaced) counts paused repos too, so a paused
+#     repo that reports nothing would page — breaking the one rule the whole
+#     design turns on.
+assert f"[{COVERAGE_BASELINE}]" in coverage_expr and f"[{LOOKBACK_WINDOW}]" in coverage_expr, \
+    coverage_expr
+#     The heartbeat appears only as the `unless` guard, never as the expected
+#     count: counting against it needs every polled repo to have a data-path
+#     commit (an assumption, not a measurement) and pages on a paused repo.
+assert "count(last_over_time(fleet_collector_heartbeat_repos" not in coverage_expr, coverage_expr
+assert coverage_expr.count("fleet_collector_heartbeat_repos") == 1, coverage_expr
+assert re.search(r"\b112\b|\b47\b|\b56\b", coverage_expr) is None, \
+    ("the fleet size is hardcoded in the coverage rule", coverage_expr)
+#     Repos, not series: `paused` is a label, so a jurisdiction going out of
+#     session starts a SECOND series for the same repo and both stay resolvable
+#     for a whole look-back. Counting series would read the legislative calendar
+#     turning over as coverage appearing and then vanishing, in batches.
+assert coverage_expr.count("count by (state, org)") == 2, coverage_expr
+#     A count over no series at all is an EMPTY vector, not zero, and an empty
+#     right-hand side makes the whole subtraction empty — which noDataState
+#     resolves to OK. Without this floor the rule is silent in exactly its worst
+#     case: every repo gone at once.
+#
+#     Asserted as a SHAPE, not as a bag of ingredients. Both operand order and
+#     the floor's placement are load-bearing and neither shows up in a substring
+#     check: swap the windows and the difference is always ≤ 0, so the rule can
+#     never fire; move `or vector(0)` to the left operand and the case it exists
+#     for is silent again. Both mutations keep every ingredient present.
+metric = "fleet_repo_data_commit_age_hours"
+counted = f"count(count by (state, org) (last_over_time({metric}[%s])))"
+assert coverage_expr == (
+    f"({counted % COVERAGE_BASELINE} - ({counted % LOOKBACK_WINDOW} or vector(0))) "
+    f"unless absent_over_time(fleet_collector_heartbeat_repos[{LOOKBACK_WINDOW}])"
+), coverage_expr
+#     A dead collector empties the [6h] side at the same instant the heartbeat
+#     rule fires; without the `unless` guard `or vector(0)` floors it and this
+#     rule reports the whole fleet as having "stopped reporting" — two Slack
+#     messages for one outage, and the louder one wrong about the cause.
+assert "unless absent_over_time" in coverage_expr, coverage_expr
+
+# 3d. The datasource query carries a non-degenerate relative window. Grafana
+#     validates it even on an instant query — [alerting.alert-rule.
+#     invalidRelativeTime] rejects From == To, observed live on Grafana Cloud,
+#     where 0/0 failed the whole rule-group PUT — and 600s is what the UI
+#     itself writes. The PromQL's own [6h]/[24h] look-backs do the real work.
+for uid, rule in rules.items():
+    assert rule["data"][0]["relativeTimeRange"] == {"from": 600, "to": 0}, \
+        (uid, rule["data"][0])
+
+# 4. Triage is one click: every alert carries a link into the board, filtered to
+#    the jurisdiction that alerted. Absolute, because a notification is read in
+#    Slack or an inbox — the relative path the board's own row links use resolves
+#    against slack.com there.
+for uid, rule in rules.items():
+    assert rule["labels"] == dict([ROUTE_LABEL]), (uid, rule["labels"])
+    link = rule["annotations"]["dashboard"]
+    assert link.startswith(f"$GRAFANA_DASHBOARD_URL/d/{DASHBOARD_UID}"), (uid, link)
+    # Pinned range: `${__url_time_range}` is a dashboard macro with nothing to
+    # expand it in an annotation, and "the last 24h from whenever you click"
+    # shows a different window to every reader.
+    assert "from=now-24h&to=now" in link, (uid, link)
+    assert "${__url_time_range}" not in link, (uid, link)
+for uid in (RUN_FAILED_UID, STALE_UID):
+    link = rules[uid]["annotations"]["dashboard"]
+    assert "var-state={{ urlquery $labels.state }}" in link, (uid, link)
+    # Not var-org — a jurisdiction has two repos, and naming one hides the other.
+    assert "var-org=" not in link, (uid, link)
+    # The state has to be in the message too: "a run failed" without saying whose
+    # is not something anyone can act on at 3am.
+    assert "{{ $labels.state }}" in rules[uid]["annotations"]["summary"], uid
+# The fleet-wide rules have no state label to interpolate, so a var-state there
+# would render `var-state=` — a filter matching nothing, on the alerts that fire
+# when everything else has gone quiet.
+for uid in (HEARTBEAT_UID, COVERAGE_UID):
+    link = rules[uid]["annotations"]["dashboard"]
+    assert "$labels" not in link, (uid, link)
+    assert "var-state" not in link, (uid, link)
+
+# 5. Slack and email as two integrations on ONE contact point, so the PRD's
+#    later GitHub-issue delivery is a third entry rather than a second route to
+#    keep in step forever.
+point = build_contact_point()
+kinds = {r["type"]: r for r in point["receivers"]}
+assert set(kinds) == {"slack", "email"}, sorted(kinds)
+assert kinds["slack"]["settings"]["url"] == "$SLACK_WEBHOOK_URL", kinds["slack"]
+assert kinds["email"]["settings"]["addresses"] == "$ALERT_EMAIL", kinds["email"]
+for receiver in point["receivers"]:
+    # A channel that only ever fills with red and never visibly clears is a
+    # channel people mute.
+    assert receiver["disableResolveMessage"] is False, receiver
+# Nothing that could only have come from a real workspace or a real inbox.
+assert "hooks.slack.com" not in repr(point), repr(point)
+assert "@" not in repr(point), repr(point)
+
+# 6. 47 jurisdictions share the same scrapers, so one upstream break trips the
+#    run-failed rule for dozens at once. Grouped by the rule that is ONE message
+#    listing every affected state; grouped by state it is forty messages in a
+#    minute, which is how people learn to mute a channel.
+policy = build_policy()
+assert policy["group_by"] == ["alertname"], policy["group_by"]
+assert policy["receiver"] == CONTACT_POINT, policy
+assert (policy["group_wait"], policy["group_interval"], policy["repeat_interval"]) \
+    == ("30s", "5m", "24h"), policy
+# The ROOT of a dedicated stack's tree, shape checked exactly: no matchers (the
+# root matches everything by construction, and Grafana silently ignores matchers
+# placed on it) and no children (a stray alert should land in the channel as a
+# visible surprise, not vanish down a default receiver nobody reads).
+assert "object_matchers" not in policy and "matchers" not in policy, policy
+assert "routes" not in policy, policy
+
+# 7. The committed documents. The policy one IS a real Grafana `policies:`
+#    document — the entire tree of a stack dedicated to the fleet monitor, in
+#    the same file-provisioning format as the other two artifacts.
+documents = render_documents()
+assert set(documents) == {RULES_FILE, CONTACT_POINTS_FILE, POLICY_FILE}, sorted(documents)
+policy_doc = yaml.safe_load(documents[POLICY_FILE])
+assert [p["receiver"] for p in policy_doc["policies"]] == [CONTACT_POINT], policy_doc
+assert yaml.safe_load(documents[RULES_FILE])["groups"][0]["folder"] == FOLDER, documents[RULES_FILE]
+for name, text in documents.items():
+    # Reasoning survives in the artifact people actually open, not only in the
+    # builder they may never look at.
+    assert text.startswith("#"), (name, text[:40])
+# Deterministic, or the committed copy is not a meaningful diff.
+assert render_documents() == documents
+
+# 8. Placeholders: exactly four, resolved at provision time. A committed webhook
+#    URL is a committed credential; a committed datasource uid belongs to one
+#    stack and makes the file unimportable anywhere else.
+found = set()
+for text in documents.values():
+    found |= placeholders(text)
+assert found == {"GRAFANA_METRICS_DATASOURCE_UID", "GRAFANA_DASHBOARD_URL",
+                 "SLACK_WEBHOOK_URL", "ALERT_EMAIL"}, sorted(found)
+# ...and the resolver that actually runs in provisioning is the one asserted
+# against — not a text-level helper the production path no longer calls, which is
+# how a contract stays green while the code under it rots.
+resolved = _resolve(
+    {"url": "$SLACK_WEBHOOK_URL", "summary": "{{ $labels.state }}", "to": "$ALERT_EMAIL"},
+    {"SLACK_WEBHOOK_URL": "https://hooks.example/x", "ALERT": "x", "ALERT_EMAIL": "right"},
+    set(),
+)
+# Grafana's own templating is lower-case and survives untouched — expanding it
+# would turn every alert message into a literal.
+assert resolved["summary"] == "{{ $labels.state }}", resolved
+# A prefix is not a partial match: $ALERT must not eat $ALERT_EMAIL.
+assert resolved["to"] == "right", resolved
+assert resolved["url"] == "https://hooks.example/x", resolved
+# A placeholder nobody supplied is a hard stop, not an empty string: Grafana
+# accepts a contact point with a blank webhook URL, then accepts alerts routed to
+# it and drops them — a setup that looks provisioned and never reaches anyone.
+# Asserted through _load, so the refusal is proven on the real file, not a stub.
+try:
+    _load(Path("alerting"), CONTACT_POINTS_FILE, {})
+except UnresolvedPlaceholder as e:
+    assert "SLACK_WEBHOOK_URL" in str(e), str(e)
+else:
+    raise AssertionError("an unresolved placeholder was substituted away silently")
+# An empty string is not a supplied value. Grafana accepts a contact point whose
+# webhook URL is empty, then accepts alerts routed to it and drops them — a setup
+# that looks provisioned, reports healthy, and never reaches anyone. The CLI's
+# credential gate refuses an empty env var; this is the same refusal one layer
+# down, for any other caller of provision().
+seen = set()
+resolved_empty = _resolve({"url": "$SLACK_WEBHOOK_URL"}, {"SLACK_WEBHOOK_URL": ""}, seen)
+assert seen == {"SLACK_WEBHOOK_URL"}, seen
+assert resolved_empty["url"] == "$SLACK_WEBHOOK_URL", resolved_empty
+
+# 8b. Positive, not a blacklist: every credential-bearing setting in the
+#     committed contact point must STILL be a bare placeholder. The blacklist
+#     this replaced (a handful of hosts and four TLDs) missed .gov, .io, any
+#     upper-case address, and any non-Slack webhook — and advertising it as a
+#     guard is how a weak check becomes a reason not to look.
+committed = yaml.safe_load(Path("alerting", CONTACT_POINTS_FILE).read_text())
+settings = [
+    value
+    for contact_point in committed["contactPoints"]
+    for receiver in contact_point["receivers"]
+    for value in receiver["settings"].values()
+]
+assert settings, committed
+for value in settings:
+    assert re.fullmatch(r"\$[A-Z][A-Z0-9_]*", str(value)), (
+        "a committed contact-point setting is not a bare placeholder", value
+    )
+
+print(f"✓ alerting: {len(rules)} rules, paused filtered out, thresholds shared with the "
+      "dashboard, dead-man sized on the measured sweep gap, no credentials committed")
+EOF
+
+# The committed alerting files must be exactly what the builder produces —
+# otherwise the YAML people provision and the code reviewers read have diverged.
+# stderr is kept rather than discarded: under `set -e` a crash in the builder
+# would otherwise kill the whole render with no diagnostic at all.
+alerts_tmp=$(mktemp -d)
+alerts_err=$(mktemp)
+if ! pipenv run python3 main.py alerts --out-dir "$alerts_tmp" 2>"$alerts_err"; then
+  echo "✗ main.py alerts failed:"
+  cat "$alerts_err"
+  rm -rf "$alerts_tmp" "$alerts_err"
+  exit 1
+fi
+if ! diff -ru alerting "$alerts_tmp"; then
+  echo "✗ alerting/ is stale; regenerate it:"
+  echo "    pipenv run python3 main.py alerts --out-dir alerting"
+  rm -rf "$alerts_tmp" "$alerts_err"
+  exit 1
+fi
+rm -rf "$alerts_tmp" "$alerts_err"
+echo "✓ alerting: committed alerting/*.yaml matches the builder"
+
+# Provisioning writes to a real stack, so like every other live path it must
+# self-skip without credentials; the offline suite locks that skip. Explicitly
+# unset rather than merely absent — a developer machine may export its own
+# SLACK_WEBHOOK_URL, and at least one does.
+alerts_skip=$(env -u GRAFANA_ALERTS_URL -u GRAFANA_ALERTS_KEY -u SLACK_WEBHOOK_URL \
+  -u ALERT_EMAIL pipenv run python3 main.py provision-alerts 2>&1)
+if ! echo "$alerts_skip" | grep -q "alert provisioning skipped"; then
+  echo "✗ provision-alerts without credentials should skip cleanly; got:"
+  echo "$alerts_skip"
+  exit 1
+fi
+echo "✓ provision-alerts: skips cleanly when credentials are absent"
+
+# Offline proof of provisioning itself: a fake Grafana answers every read and
+# accepts every write, so the request shapes (verbs, bearer auth, the
+# provenance header, placeholder resolution, the replaced policy tree) and the
+# refusal paths are all tested without an account. Every scenario drives the CLI
+# and passes --deadline-seconds 0, so the poll runs exactly once and the suite
+# never waits on a real clock. The real run is credential-gated below.
+pipenv run python3 - <<'EOF'
+import datetime
+import json
+import shutil
+import tempfile
+import urllib.error
+import urllib.request
+from io import BytesIO
+from pathlib import Path
+
+from click.testing import CliRunner
+
+import yaml
+
+import main
+from alerting import (CONTACT_POINT, COVERAGE_UID, HEARTBEAT_UID, PLACEHOLDER,
+                      ROUTE_LABEL, RULES_FILE, RUN_FAILED_UID, STALE_UID)
+from alerts_provision import CONFIRM_DEADLINE_SECONDS, _seconds
+
+CREDS = {
+    "GRAFANA_ALERTS_URL": "https://stack.grafana.net/",
+    "GRAFANA_ALERTS_KEY": "tok",
+    "SLACK_WEBHOOK_URL": "https://hooks.example/x",
+    "ALERT_EMAIL": "alerts@example.org",
+}
+PROMETHEUS = {"uid": "prom-uid", "type": "prometheus", "name": "grafanacloud-govbot-prom"}
+LOKI = {"uid": "loki-uid", "type": "loki", "name": "grafanacloud-govbot-logs"}
+UIDS = [RUN_FAILED_UID, STALE_UID, HEARTBEAT_UID, COVERAGE_UID]
+LATER = (
+    datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
+).isoformat().replace("+00:00", "Z")
+
+
+class FakeResponse(BytesIO):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
+
+EARLIER = (
+    datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1)
+).isoformat().replace("+00:00", "Z")
+
+
+def evaluated(health="ok", when=LATER, **extra):
+    """The ruler API's view of rules this stack has actually run."""
+    return {"data": {"groups": [{"rules": [
+        {"uid": uid, "health": health, "lastEvaluation": when, **extra} for uid in UIDS
+    ]}]}}
+
+
+NEVER_EVALUATED = {"data": {"groups": []}}
+
+
+UNSET = object()
+
+
+def stack(datasources=(PROMETHEUS, LOKI), policies=UNSET, contact_points=None, rules=None,
+          missing_policies=False, baseline_rules=NEVER_EVALUATED, folder=None, others=(),
+          folder_denied=False, folder_create_error=None):
+    """A Grafana that answers reads and accepts every write.
+
+    The FIRST ruler read is the pre-write baseline; every read after it is the
+    confirmation poll. That ordering is the point of the check under test, so the
+    fake has to reproduce it rather than serve one answer forever.
+    """
+    reads = []
+
+    def respond(request):
+        url = request.full_url
+        if request.get_method() != "GET":
+            if folder_create_error and url.endswith("/api/folders"):
+                raise urllib.error.HTTPError(url, folder_create_error, "refused", {}, None)
+            return FakeResponse(b"{}")
+        if url.endswith("/api/datasources"):
+            return FakeResponse(json.dumps(list(datasources)).encode())
+        if "/api/v1/provisioning/contact-points" in url:
+            return FakeResponse(json.dumps(contact_points or []).encode())
+        if url.endswith("/api/v1/provisioning/policies") and not missing_policies:
+            # A fresh stack's untouched default — the exact receiver name
+            # Grafana creates, which is the only foreign tree ever adopted.
+            tree = {"receiver": "grafana-default-email"} if policies is UNSET else policies
+            return FakeResponse(json.dumps(tree).encode())
+        if "/api/folders/" in url:
+            if folder_denied:
+                # Per-folder visibility: outside the token's scope, existing
+                # and nonexistent folders answer the same 403.
+                raise urllib.error.HTTPError(url, 403, "Forbidden", {}, None)
+            if folder is None:
+                raise urllib.error.HTTPError(url, 404, "Not Found", {}, None)
+            return FakeResponse(json.dumps(folder).encode())
+        if "/api/prometheus/grafana/api/v1/rules" in url:
+            reads.append(url)
+            if len(reads) == 1:
+                return FakeResponse(json.dumps(baseline_rules).encode())
+            answer = json.loads(json.dumps(rules or evaluated()))
+            answer["data"]["groups"] = list(answer["data"]["groups"]) + list(others)
+            return FakeResponse(json.dumps(answer).encode())
+        # Folders, an unreadable policy tree, anything else: not there.
+        raise urllib.error.HTTPError(url, 404, "Not Found", {}, None)
+
+    return respond
+
+
+def run(env, respond, extra_args=("--deadline-seconds", "0")):
+    # The offline scenarios must not inherit this shell's real exports. A
+    # developer machine legitimately carries GRAFANA_METRICS_DATASOURCE_UID
+    # (the live-check instructions say to export it, and one did — failing the
+    # discovery assertions) or GRAFANA_DASHBOARD_URL. None UNSETS a variable
+    # in CliRunner; a scenario that wants one set supplies it and overrides.
+    env = {"GRAFANA_METRICS_DATASOURCE_UID": None, "GRAFANA_DASHBOARD_URL": None, **env}
+    calls = []
+
+    def fake_urlopen(request, timeout=None):
+        calls.append(request)
+        return respond(request)
+
+    real, urllib.request.urlopen = urllib.request.urlopen, fake_urlopen
+    try:
+        result = CliRunner().invoke(main.cli, ["provision-alerts", *extra_args], env=env)
+    finally:
+        urllib.request.urlopen = real
+    return result, calls
+
+
+def written(calls, fragment, method=None):
+    return [
+        c for c in calls
+        if c.data is not None and fragment in c.full_url
+        and (method is None or c.get_method() == method)
+    ]
+
+
+# A skipped run must touch nothing at all, not merely exit 0.
+# Unset AND empty: an unset CI secret renders as the empty string, not as an
+# absent variable, so both have to reach the same clean skip.
+for absent, blanked in [(k, v) for k in CREDS for v in (None, "")]:
+    skipped, calls = run({**CREDS, absent: blanked}, stack())
+    assert skipped.exit_code == 0, (absent, skipped.output)
+    assert absent in skipped.output, (absent, skipped.output)
+    assert not calls, (absent, "a skipped run still talked to the stack")
+
+ok, ok_calls = run(CREDS, stack())
+assert ok.exit_code == 0, ok.output + str(ok.exception)
+for call in [c for c in ok_calls if c.data is not None]:
+    assert call.get_header("Authorization") == "Bearer tok", call.full_url
+    # Without this header Grafana marks everything it provisions read-only, and
+    # the first maintainer who tries to silence a rule meets a greyed-out form.
+    assert call.get_header("X-disable-provenance") == "true", call.full_url
+    # Nothing ships with an unresolved placeholder — checked against the pattern
+    # the module itself defines, not three literal prefixes: a fifth placeholder
+    # the provisioner forgets to resolve has to fail this, not slip past it.
+    left = PLACEHOLDER.findall(call.data.decode())
+    assert not left, (call.full_url, left)
+
+# The rules live in their own folder, so a maintainer can find — and remove —
+# all of them by finding one thing. Without the POST the rule-group PUT to
+# /api/v1/provisioning/folder/fleet-monitor/... 404s on a real stack.
+folders = written(ok_calls, "/api/folders")
+assert [json.loads(c.data) for c in folders] == [{"uid": "fleet-monitor", "title": "Fleet Monitor"}], \
+    [c.full_url for c in folders]
+# ...and a stack that already has it creates nothing.
+existing_folder, folder_calls = run(CREDS, stack(folder={"uid": "fleet-monitor"}))
+assert existing_folder.exit_code == 0, existing_folder.output
+assert not written(folder_calls, "/api/folders"), [c.full_url for c in folder_calls]
+assert "folder: present" in existing_folder.output, existing_folder.output
+
+# Grafana Cloud's per-folder visibility (the nested-folders permission model)
+# answers 403 for any folder outside the token's scope — including one that
+# does not exist; only an admin session gets the 404. Observed on a real stack.
+# The read cannot distinguish missing from hidden, so the CREATE does: it
+# succeeds on a fresh stack, and the creator administers the folder thereafter.
+denied, denied_calls = run(CREDS, stack(folder_denied=True))
+assert denied.exit_code == 0, denied.output + str(denied.exception)
+assert "folder: created" in denied.output, denied.output
+assert [json.loads(c.data) for c in written(denied_calls, "/api/folders")] \
+    == [{"uid": "fleet-monitor", "title": "Fleet Monitor"}], \
+    [c.full_url for c in denied_calls]
+# ...and a conflict on that create means the folder exists but is hidden — a
+# permission grant only a human can add, so the failure names it rather than
+# surfacing a bare HTTP 409 (or worse, retrying forever).
+hidden, hidden_calls = run(CREDS, stack(folder_denied=True, folder_create_error=409))
+assert hidden.exit_code != 0, hidden.output
+assert "cannot see it" in hidden.output, hidden.output
+assert "Permissions" in hidden.output, hidden.output
+assert not [c for c in hidden_calls if "rule-groups" in c.full_url], \
+    "wrote rules after failing to secure their folder"
+# Any OTHER failure on the create is not a hidden folder and surfaces as
+# itself — a 500 wrapped in the permissions message would send the operator to
+# a permissions tab with nothing wrong in it.
+crashed, _ = run(CREDS, stack(folder_denied=True, folder_create_error=500))
+assert crashed.exit_code != 0, crashed.output
+assert "cannot see it" not in crashed.output, crashed.output
+assert "500" in crashed.output, crashed.output
+
+# The datasource uid is the one thing that cannot be committed, so it is
+# discovered from the stack being provisioned.
+group = json.loads(written(ok_calls, "rule-groups")[0].data)
+assert [r["data"][0]["datasourceUid"] for r in group["rules"]] == ["prom-uid"] * len(UIDS), group
+# The whole group in one idempotent PUT: separate creates would duplicate on a
+# second run, and a rule dropped from the committed file would linger on the
+# stack as an orphan nobody remembers creating.
+assert len(written(ok_calls, "rule-groups")) == 1, [c.full_url for c in written(ok_calls, "rule-groups")]
+assert written(ok_calls, "rule-groups")[0].get_method() == "PUT"
+assert [r["uid"] for r in group["rules"]] == UIDS, group
+# Seconds, not "5m" — the group API takes a number.
+assert group["interval"] == 300, group["interval"]
+# Grafana's provisioning API requires these per rule, not just on the group.
+assert all(r["folderUID"] == "fleet-monitor" for r in group["rules"]), group["rules"]
+assert all(r["ruleGroup"] == "fleet-monitor" for r in group["rules"]), group["rules"]
+
+# The policy is written BEFORE the rules. Ordering, not taste: the notification
+# writes (contact point, then policy) are the ones that can still fail after
+# every read has passed — Grafana 11 splits alert.rules:write from
+# alert.notifications:write, so a token holding only the first gets through all
+# the checks here and then 403s at the first of them. Rules-first leaves them
+# live and delivering to whatever receiver was there, reproduced on every retry.
+# Notifications-first fails with a tree routing alerts that do not exist yet,
+# which is inert.
+order = [c.full_url for c in ok_calls if c.data is not None]
+assert next(i for i, u in enumerate(order) if "policies" in u) \
+    < next(i for i, u in enumerate(order) if "rule-groups" in u), order
+# Grafana's own templating survives substitution untouched.
+assert "{{ $labels.state }}" in json.dumps(group), group
+
+# The deep link resolves to a real absolute URL on the stack being provisioned —
+# asserted on the RESOLVED value, not just on the placeholder's presence. A link
+# that resolves to the empty string, to a trailing double slash, or to some other
+# host is still a link, and still passes an unresolved-placeholder scan.
+links = {r["annotations"]["dashboard"] for r in group["rules"]}
+assert all(link.startswith("https://stack.grafana.net/d/fleet-monitor-overview?") for link in links), \
+    links
+# GRAFANA_ALERTS_URL carries a trailing slash in these credentials; the join must
+# not double it.
+assert not any("net//d/" in link for link in links), links
+# ...and an explicit dashboard URL overrides the stack URL, for a UI served
+# elsewhere.
+elsewhere, calls = run({**CREDS, "GRAFANA_DASHBOARD_URL": "https://ui.example/"}, stack())
+overridden = json.loads(written(calls, "rule-groups")[0].data)["rules"][0]
+assert overridden["annotations"]["dashboard"].startswith("https://ui.example/d/"), overridden
+# An unset CI secret renders as the EMPTY STRING, not as an absent variable, and
+# an empty base would make every alert link relative — resolving against
+# slack.com wherever the notification is read.
+blank, calls = run({**CREDS, "GRAFANA_DASHBOARD_URL": ""}, stack())
+fallback = json.loads(written(calls, "rule-groups")[0].data)["rules"][0]
+assert fallback["annotations"]["dashboard"].startswith("https://stack.grafana.net/d/"), fallback
+
+# What gets applied is the file on disk, not a fresh render of the builder —
+# which is what the README promises and what makes reviewing the committed YAML
+# worth anything. Proven with a sentinel only present in the file.
+with tempfile.TemporaryDirectory() as tmp:
+    for name in Path("alerting").iterdir():
+        shutil.copy(name, tmp)
+    doctored = Path(tmp, RULES_FILE)
+    doctored.write_text(doctored.read_text().replace('paused="false"', 'paused="SENTINEL"'))
+    sentinel, calls = run(CREDS, stack(), ("--alerting-dir", tmp, "--deadline-seconds", "0"))
+    assert sentinel.exit_code == 0, sentinel.output + str(sentinel.exception)
+    applied = json.loads(written(calls, "rule-groups")[0].data)
+    exprs = [q["model"].get("expr", "") for r in applied["rules"] for q in r["data"]]
+    assert any('paused="SENTINEL"' in expr for expr in exprs), \
+        ("provision-alerts re-rendered the rules instead of applying the committed file", exprs)
+
+# The stdout form the README documents, not only --out-dir.
+printed = CliRunner().invoke(main.cli, ["alerts"])
+assert printed.exit_code == 0, printed.output + str(printed.exception)
+for name in (RULES_FILE, "fleet-contact-points.yaml", "fleet-notification-policy.yaml"):
+    assert f"# ===== {name} =====" in printed.output, name
+assert len([d for d in yaml.safe_load_all(
+    "\n".join(l for l in printed.output.splitlines() if not l.startswith("# ====="))
+)]) >= 1, printed.output
+
+# The committed directory belongs to the module, not the caller's cwd. Click
+# validates a path default BEFORE the command body, so a cwd-relative
+# `exists=True` default made provision-alerts exit 2 with a path error from
+# anywhere else instead of the documented credential-free skip.
+import os
+here = os.getcwd()
+with tempfile.TemporaryDirectory() as elsewhere:
+    os.chdir(elsewhere)
+    try:
+        away = CliRunner().invoke(
+            main.cli, ["provision-alerts"], env={k: None for k in CREDS}
+        )
+    finally:
+        os.chdir(here)
+assert away.exit_code == 0, away.output + str(away.exception)
+assert "alert provisioning skipped" in away.output, away.output
+
+# ...and with credentials, from that same foreign cwd, it still applies the
+# module's own committed files rather than looking for `alerting/` beside the
+# caller. The skip above alone proves nothing: it returns before the default is
+# ever dereferenced.
+with tempfile.TemporaryDirectory() as elsewhere:
+    os.chdir(elsewhere)
+    try:
+        far, far_calls = run(CREDS, stack())
+    finally:
+        os.chdir(here)
+assert far.exit_code == 0, far.output + str(far.exception)
+applied_far = json.loads(written(far_calls, "rule-groups")[0].data)
+assert [r["uid"] for r in applied_far["rules"]] == UIDS, applied_far
+assert 'paused="false"' in applied_far["rules"][0]["data"][0]["model"]["expr"], applied_far
+
+# Every group in the committed file, not just the first — a second group would
+# otherwise render, pass the drift check, and exist in git and nowhere else while
+# provisioning reported success.
+with tempfile.TemporaryDirectory() as tmp:
+    for name in Path("alerting").iterdir():
+        shutil.copy(name, tmp)
+    doc = yaml.safe_load(Path(tmp, RULES_FILE).read_text())
+    second = json.loads(json.dumps(doc["groups"][0]))
+    second["name"] = "fleet-monitor-slow"
+    second["rules"] = second["rules"][:1]
+    second["rules"][0]["uid"] = "fleet-second-group"
+    doc["groups"].append(second)
+    Path(tmp, RULES_FILE).write_text(yaml.safe_dump(doc, sort_keys=False))
+    multi, calls = run(CREDS, stack(), ("--alerting-dir", tmp, "--deadline-seconds", "0"))
+    groups_put = [c.full_url.rsplit("/", 1)[-1] for c in written(calls, "rule-groups")]
+    assert groups_put == ["fleet-monitor", "fleet-monitor-slow"], groups_put
+
+# A credential carrying a YAML metacharacter must still provision. Placeholders
+# are resolved into the PARSED document precisely so this cannot become a parse
+# error — whose message would quote a window of the offending line, i.e. print
+# the resolved Slack webhook URL to stderr and into the CI log that keeps it.
+awkward = {**CREDS, "SLACK_WEBHOOK_URL": "https://hooks.example/x: {y} #z",
+           "ALERT_EMAIL": "Ops: oncall@example.org"}
+metachar, calls = run(awkward, stack())
+assert metachar.exit_code == 0, metachar.output + str(metachar.exception)
+sent = [json.loads(c.data) for c in written(calls, "contact-points")]
+assert any(b["settings"].get("url") == awkward["SLACK_WEBHOOK_URL"] for b in sent), sent
+assert any(b["settings"].get("addresses") == awkward["ALERT_EMAIL"] for b in sent), sent
+
+# The base URL carries a bearer token and, in the contact-point body, the Slack
+# webhook URL. Four ways that goes wrong, all refused before a single request:
+for bad, why in (
+    # Plain http puts the token and the webhook on the wire in the clear.
+    ("http://stack.grafana.net", "https"),
+    ("stack.grafana.net", "https"),
+    # A file:// base with a loopback host would otherwise slip through the
+    # loopback exemption and make urlopen read local files as API responses.
+    ("file://localhost/etc/passwd", "https"),
+    # Credentials in the URL reach the CI log: every RequestFailed message
+    # embeds the URL it failed on.
+    ("https://svc:GLSA_secret@stack.grafana.net", "credentials in the URL"),
+    # A query swallows the API path: https://stack/?x + /api/folders.
+    ("https://stack.grafana.net/?x", "bare origin"),
+    # A trailing "?" parses as an EMPTY query, so the guard has to look at the
+    # raw string too — otherwise it survives into every request URL.
+    ("https://stack.grafana.net?", "bare origin"),
+    # A truncated CI secret: scheme fine, everything else empty.
+    ("https://", "no host"),
+    # A path prefix 404s every GET, which find() reads as "not there yet" — a
+    # stack that looks empty and gets overwritten.
+    ("https://stack.grafana.net/grafana", "bare origin"),
+):
+    refused, calls = run({**CREDS, "GRAFANA_ALERTS_URL": bad}, stack())
+    assert refused.exit_code != 0, (bad, refused.output)
+    assert why in refused.output, (bad, refused.output)
+    assert not calls, (bad, "sent a request before rejecting the base URL")
+    assert "GLSA_secret" not in refused.output, refused.output
+# The loopback exemption assumes nothing leaves the machine, and urllib has no
+# implicit localhost proxy bypass — with http_proxy set and no_proxy not covering
+# it, the token and the webhook go to the proxy host in cleartext.
+proxied, calls = run({**CREDS, "GRAFANA_ALERTS_URL": "http://localhost:3000",
+                      "http_proxy": "http://proxy.example:8080", "no_proxy": None}, stack())
+assert proxied.exit_code != 0 and "http_proxy" in proxied.output, proxied.output
+assert not calls, "sent a request through a proxy before refusing"
+
+# A plain-http Slack webhook is refused: Grafana would re-POST the hook path
+# itself in cleartext on every alert, from its own egress.
+cleartext_hook, calls = run({**CREDS, "SLACK_WEBHOOK_URL": "http://hooks.example/x"}, stack())
+assert cleartext_hook.exit_code != 0 and "SLACK_WEBHOOK_URL" in cleartext_hook.output, \
+    cleartext_hook.output
+assert "hooks.example" not in cleartext_hook.output, cleartext_hook.output
+
+# An explicit dashboard URL gets the same treatment — it is never contacted, so
+# a wrong value provisions cleanly and misdirects on-call staff indefinitely.
+bad_link, calls = run({**CREDS, "GRAFANA_DASHBOARD_URL": "http://ui.example"}, stack())
+assert bad_link.exit_code != 0 and "https" in bad_link.output, bad_link.output
+# ...and a local test stack over plain http is still allowed.
+from alerts_provision import check_stack_url
+assert check_stack_url("http://localhost:3000/", "X") == "http://localhost:3000"
+
+# The document's own shape is checked before the first write. Checking only the
+# top-level key is not enough: the writers reach rule["uid"] and receiver["type"],
+# and a bare KeyError from there escapes the CLI's handler and prints a traceback
+# over a stack that already has its folder, contact point, and route.
+for filename, mangle in (
+    (RULES_FILE, lambda d: d.update(groups=[{"name": "g", "rules": [{"title": "t"}]}])),
+    (RULES_FILE, lambda d: d.update(groups="oops")),
+    (RULES_FILE, lambda d: d.update(groups=[{"name": "g", "rules": [{"uid": "u"}]}])),
+    ("fleet-contact-points.yaml",
+     lambda d: d.update(contactPoints=[{"name": CONTACT_POINT, "receivers": [{"type": "slack"}]}])),
+    ("fleet-contact-points.yaml",
+     lambda d: d.update(contactPoints=[{"name": "renamed", "receivers": []}])),
+    ("fleet-notification-policy.yaml",
+     lambda d: d.update(policies=[{"receiver": "somewhere-else"}])),
+    # The root matches every alert by construction and Grafana silently ignores
+    # matchers placed on it — a file carrying them promises a filter that does
+    # not exist, and provisioning it would report success.
+    ("fleet-notification-policy.yaml",
+     lambda d: d["policies"][0].update(object_matchers=[["service", "=", "fleet-monitor"]])),
+    # One tree per stack: a second entry, or a child route, means somebody is
+    # trying to route a stack that is supposed to be dedicated — a design
+    # change, not a provisioning input.
+    ("fleet-notification-policy.yaml",
+     lambda d: d["policies"].append({"receiver": CONTACT_POINT})),
+    ("fleet-notification-policy.yaml",
+     lambda d: d["policies"][0].update(routes=[{"receiver": "their-pager"}])),
+):
+    with tempfile.TemporaryDirectory() as tmp:
+        for f in Path("alerting").iterdir():
+            shutil.copy(f, tmp)
+        doc = yaml.safe_load(Path(tmp, filename).read_text())
+        mangle(doc)
+        Path(tmp, filename).write_text(yaml.safe_dump(doc, sort_keys=False))
+        broken_doc, broken_calls = run(
+            CREDS, stack(), ("--alerting-dir", tmp, "--deadline-seconds", "0")
+        )
+        assert broken_doc.exit_code != 0, (filename, broken_doc.output)
+        assert filename in broken_doc.output, (filename, broken_doc.output)
+        assert not isinstance(broken_doc.exception, KeyError), broken_doc.exception
+        assert not [c for c in broken_calls if c.data is not None], \
+            (filename, "wrote to the stack before rejecting a malformed document")
+
+# A uid that would escape its path segment never reaches a URL: `..` and `/` are
+# refused outright, before quoting.
+with tempfile.TemporaryDirectory() as tmp:
+    for f in Path("alerting").iterdir():
+        shutil.copy(f, tmp)
+    doc = yaml.safe_load(Path(tmp, "fleet-contact-points.yaml").read_text())
+    doc["contactPoints"][0]["receivers"][0]["uid"] = "../../../../api/folders/theirs"
+    Path(tmp, "fleet-contact-points.yaml").write_text(yaml.safe_dump(doc, sort_keys=False))
+    # Present on the stack, so the write takes the update path — where the uid
+    # becomes a URL segment rather than living only in the body.
+    traversal, traversal_calls = run(
+        CREDS,
+        stack(contact_points=[{"uid": "../../../../api/folders/theirs", "name": CONTACT_POINT}]),
+        ("--alerting-dir", tmp, "--deadline-seconds", "0"),
+    )
+    assert traversal.exit_code != 0, traversal.output
+    assert "path separator" in traversal.output, traversal.output
+    assert not any("folders/theirs" in c.full_url for c in traversal_calls), \
+        [c.full_url for c in traversal_calls]
+
+# ...including a bare `..`, which survives quoting untouched and which Grafana's
+# router would normalise into a write on the collection itself.
+with tempfile.TemporaryDirectory() as tmp:
+    for f in Path("alerting").iterdir():
+        shutil.copy(f, tmp)
+    doc = yaml.safe_load(Path(tmp, "fleet-contact-points.yaml").read_text())
+    doc["contactPoints"][0]["receivers"][0]["uid"] = ".."
+    Path(tmp, "fleet-contact-points.yaml").write_text(yaml.safe_dump(doc, sort_keys=False))
+    dotdot, _ = run(CREDS, stack(contact_points=[{"uid": "..", "name": CONTACT_POINT}]),
+                    ("--alerting-dir", tmp, "--deadline-seconds", "0"))
+    assert dotdot.exit_code != 0 and "path separator" in dotdot.output, dotdot.output
+
+# A receiver the API returns without a uid must not become a DELETE to `.../None`
+# — nor make the removal sort raise on a mix of None and real uids.
+uidless = [
+    {"uid": "fleet-monitor-slack", "name": CONTACT_POINT, "type": "slack"},
+    {"name": CONTACT_POINT, "type": "webhook"},
+]
+odd, odd_calls = run(CREDS, stack(contact_points=uidless))
+assert odd.exit_code == 0, odd.output + str(odd.exception)
+assert not [c for c in odd_calls if c.get_method() == "DELETE" and c.full_url.endswith("None")], \
+    [c.full_url for c in odd_calls if c.get_method() == "DELETE"]
+
+# An explicit uid wins, for a stack with more than one Prometheus.
+pinned, pinned_calls = run({**CREDS, "GRAFANA_METRICS_DATASOURCE_UID": "chosen"}, stack())
+assert json.loads(written(pinned_calls, "rule-groups")[0].data)["rules"][0]["data"][0]["datasourceUid"] \
+    == "chosen"
+assert not any(c.full_url.endswith("/api/datasources") for c in pinned_calls), \
+    "asked the stack for a datasource it was already told about"
+
+# Two Prometheus datasources and no instruction is a stop, not a coin flip: the
+# wrong one provisions rules that evaluate against nothing forever while
+# reporting perfect health.
+usage = {"uid": "other", "type": "prometheus", "name": "grafanacloud-usage"}
+confused, _ = run(CREDS, stack(datasources=(PROMETHEUS, LOKI, usage)))
+assert confused.exit_code != 0 and "grafanacloud-usage" in confused.output, confused.output
+assert "GRAFANA_METRICS_DATASOURCE_UID" in confused.output, confused.output
+none_at_all, _ = run(CREDS, stack(datasources=(LOKI,)))
+assert none_at_all.exit_code != 0 and "no Prometheus datasource" in none_at_all.output
+
+# Integrations are created once and updated in place after that, keyed by their
+# stable uids — never a second copy of the same Slack webhook.
+points = written(ok_calls, "contact-points")
+assert [c.get_method() for c in points] == ["POST", "POST"], [c.get_method() for c in points]
+bodies = [json.loads(c.data) for c in points]
+assert {b["type"] for b in bodies} == {"slack", "email"}, bodies
+assert any(b["settings"].get("url") == CREDS["SLACK_WEBHOOK_URL"] for b in bodies), bodies
+assert any(b["settings"].get("addresses") == CREDS["ALERT_EMAIL"] for b in bodies), bodies
+existing = [
+    {"uid": "fleet-monitor-slack", "name": CONTACT_POINT, "type": "slack"},
+    {"uid": "fleet-monitor-email", "name": CONTACT_POINT, "type": "email"},
+]
+again, again_calls = run(CREDS, stack(contact_points=existing))
+assert [c.get_method() for c in written(again_calls, "contact-points")] == ["PUT", "PUT"], again.output
+
+# An integration dropped from the committed file has to disappear from the stack
+# too, or removing the email receiver leaves it emailing the old address forever
+# with nothing left in the repo to explain why. Another contact point's
+# receivers are none of our business and must survive.
+stale = existing + [
+    {"uid": "fleet-monitor-webhook", "name": CONTACT_POINT, "type": "webhook"},
+    {"uid": "someone-elses", "name": "their-oncall", "type": "slack"},
+]
+stale = stale + [
+    {"uid": "abc123xyz", "name": CONTACT_POINT, "type": "pagerduty"},
+    # Another contact point's receiver, carrying a uid that looks like ours and
+    # absent from our document — so only the NAME filter keeps it alive. The uid
+    # prefix would happily prune it, and deleting somebody else's delivery is
+    # the worst thing this command could do quietly.
+    {"uid": "fleet-monitor-pager", "name": "their-oncall", "type": "pagerduty"},
+]
+pruned, pruned_calls = run(CREDS, stack(contact_points=stale))
+assert pruned.exit_code == 0, pruned.output
+deletes = [c for c in pruned_calls if c.get_method() == "DELETE"]
+assert [c.full_url.rsplit("/", 1)[-1] for c in deletes] == ["fleet-monitor-webhook"], \
+    [c.full_url for c in deletes]
+assert "webhook removed" in pruned.output, pruned.output
+# ...but an integration this module did not create is KEPT. X-Disable-Provenance
+# exists so a maintainer can add one through the UI; deleting it on the next run
+# would make this command undo the editing that header is for.
+assert "pagerduty kept" in pruned.output, pruned.output
+assert not any("their-oncall" in str(c.full_url) for c in pruned_calls
+               if c.get_method() == "DELETE"), [c.full_url for c in deletes]
+assert len(deletes) == 1, [c.full_url for c in deletes]
+
+# The resolved webhook URL and address must never reach the terminal or an
+# exception message — the module's stated primary threat. Nothing leaks today;
+# this is what keeps a debug echo of a request body from ever passing.
+for result in (ok, again, pruned, confused, none_at_all, blank):
+    for secret in (CREDS["SLACK_WEBHOOK_URL"], CREDS["ALERT_EMAIL"]):
+        assert secret not in result.output, (secret, result.output)
+        assert secret not in str(result.exception or ""), secret
+
+print("✓ provision-alerts: applies the committed file, one idempotent rule-group PUT, "
+      "integrations created, updated, and pruned in place; no credential reaches the output")
+
+# The notification policy is REPLACED WHOLE, never merged. The stack is
+# dedicated to the fleet monitor, so the committed tree is the entire root — and
+# the PUT only ever lands on a tree the module recognises: its own, or a fresh
+# stack's untouched default. (The fake serves that default.)
+fresh, fresh_calls = run(CREDS, stack())
+assert fresh.exit_code == 0, fresh.output + str(fresh.exception)
+tree = json.loads(written(fresh_calls, "policies")[0].data)
+assert tree["receiver"] == CONTACT_POINT, tree
+assert tree["group_by"] == ["alertname"], tree
+assert (tree["group_wait"], tree["group_interval"], tree["repeat_interval"]) \
+    == ("30s", "5m", "24h"), tree
+# The committed shape, exactly: no matchers, no children, and no orgId leaking
+# out of the file-provisioning wrapper into the API body.
+assert "object_matchers" not in tree and "matchers" not in tree, tree
+assert "routes" not in tree and "orgId" not in tree, tree
+assert "adopted" in fresh.output, fresh.output
+
+# The contact point is written BEFORE the policy: Grafana refuses a root
+# receiver that does not exist, so on a fresh stack the reverse order 400s.
+sequence = [c.full_url for c in fresh_calls if c.data is not None]
+assert next(i for i, u in enumerate(sequence) if "contact-points" in u) \
+    < next(i for i, u in enumerate(sequence) if "policies" in u), sequence
+
+# Grafana Cloud's hosted (Mimir-based) Alertmanager ships a different blank
+# config: root receiver literally named "empty", no contact points at all —
+# seen on the real stack this provisions into. Adopted the same way.
+cloud_fresh, cloud_calls = run(CREDS, stack(policies={"receiver": "empty"}))
+assert cloud_fresh.exit_code == 0, cloud_fresh.output + str(cloud_fresh.exception)
+assert "adopted" in cloud_fresh.output, cloud_fresh.output
+assert json.loads(written(cloud_calls, "policies")[0].data) == tree, cloud_fresh.output
+
+# Grafana normalises durations before serving them back — a committed 24h
+# returns as 1d, observed live — and a normalised echo of our own tree is not
+# a UI edit. Reporting one as "resetting UI edits" on every run teaches the
+# operator to ignore the message.
+echoed = {**tree, "repeat_interval": "1d"}
+normalised, _ = run(CREDS, stack(policies=echoed))
+assert normalised.exit_code == 0, normalised.output
+assert "resetting" not in normalised.output, normalised.output
+
+# Re-running over our own unchanged tree is idempotent and quiet about it...
+rerun, rerun_calls = run(CREDS, stack(policies=json.loads(json.dumps(tree))))
+assert rerun.exit_code == 0, rerun.output
+assert "replaced" in rerun.output and "resetting" not in rerun.output, rerun.output
+assert json.loads(written(rerun_calls, "policies")[0].data) == tree, rerun.output
+
+# ...and a UI edit — the editing X-Disable-Provenance exists to allow — is
+# overwritten and NAMED, so the operator learns the lasting place for a change
+# is alerting.py, not the browser.
+edited = {**tree, "group_wait": "5m",
+          "active_time_intervals": ["maintenance"],
+          "routes": [{"receiver": CONTACT_POINT,
+                      "object_matchers": [["severity", "=", "critical"]]}]}
+drifted, drifted_calls = run(CREDS, stack(policies=edited))
+assert drifted.exit_code == 0, drifted.output
+assert "resetting" in drifted.output, drifted.output
+assert "group_wait" in drifted.output and "routes" in drifted.output, drifted.output
+# ...including the timing fields a UI form never sets but the API accepts —
+# naming only some of what was erased is the same silence with better manners.
+assert "active_time_intervals" in drifted.output, drifted.output
+# What lands is the committed tree, exactly — the drift is gone, not merged.
+assert json.loads(written(drifted_calls, "policies")[0].data) == tree, drifted.output
+
+# The graft-era design this replaced left dedicated stacks in one specific
+# shape: the default root with the fleet's route as a child. That is this
+# module's own footprint, not somebody's routing — replaced (flattened into the
+# owned root), never refused with a message blaming a third party.
+graft_era = {"receiver": "grafana-default-email",
+             "routes": [{"receiver": CONTACT_POINT,
+                         "object_matchers": [["service", "=", "fleet-monitor"]],
+                         "group_wait": "30s"}]}
+migrated, migrated_calls = run(CREDS, stack(policies=graft_era))
+assert migrated.exit_code == 0, migrated.output + str(migrated.exception)
+assert "graft-era" in migrated.output, migrated.output
+assert json.loads(written(migrated_calls, "policies")[0].data) == tree, migrated.output
+
+# A tree this module does not recognise is a hard stop BEFORE any write — never
+# a merge target. The PUT swaps the whole root, so "replace" against somebody
+# else's tree would destroy routing there is no local copy of. The
+# dedicated-stack assumption is checked on every run, not assumed.
+for foreign in (
+    # The default receiver with a foreign route is not a fresh stack: somebody
+    # routed it.
+    {"receiver": "grafana-default-email",
+     "routes": [{"receiver": "their-oncall", "object_matchers": [["team", "=", "data"]]}]},
+    # ...and a MIX of fleet and foreign children is not the graft's footprint
+    # either: the fleet's route being present must not vouch for its neighbour.
+    {"receiver": "grafana-default-email",
+     "routes": [{"receiver": CONTACT_POINT}, {"receiver": "their-oncall"}]},
+    # The Cloud blank-config receiver gets the same children rule as the
+    # self-hosted default.
+    {"receiver": "empty", "routes": [{"receiver": "their-oncall"}]},
+    # A root receiver that is neither ours nor the untouched default.
+    {"receiver": "their-default"},
+    {"receiver": "their-default", "routes": [{"receiver": "their-oncall"}]},
+):
+    occupied, occupied_calls = run(CREDS, stack(policies=foreign))
+    assert occupied.exit_code != 0, (foreign, occupied.output)
+    assert "not this module's to replace" in occupied.output, occupied.output
+    # No write of ANY kind — DELETEs carry no body, so `data is not None`
+    # alone would wave a pre-refusal DELETE through.
+    assert not [c for c in occupied_calls
+                if c.data is not None or c.get_method() == "DELETE"], \
+        (foreign, [c.full_url for c in occupied_calls if c.data is not None])
+# The refusal names what it found — the operator decides from the message, not
+# from a second visit to the API.
+assert "their-default" in occupied.output, occupied.output
+assert "their-oncall" in occupied.output, occupied.output
+
+# A policy tree that cannot be READ is a hard stop, not an empty tree. A 404 here
+# means the token lacks notification-policy read scope, or the base URL carries a
+# path prefix — cases where writes may still land. Treating it as empty would PUT
+# the fleet's own receiver over a root nobody ever read, sending every unmatched
+# alert on that stack to this Slack webhook with no copy of what was destroyed.
+blind, blind_calls = run(CREDS, stack(missing_policies=True))
+assert blind.exit_code != 0, blind.output
+assert "notification policy" in blind.output, blind.output
+assert not written(blind_calls, "policies"), "wrote a policy tree it could not read first"
+# ...and it refuses BEFORE writing any rules. A refusal after they land leaves
+# four enabled rules on the stack with no route matching them, so every fleet
+# alert falls through to the stack owner's own receiver — and each retry
+# reproduces the same half-applied state.
+# No write of any kind, rather than three named endpoints — the folder POST is
+# a write too, and enumerating endpoints lets a new one slip in ahead of the
+# read. DELETEs carry no body, so the method check does what `data is not None`
+# alone cannot.
+assert not [c for c in blind_calls if c.data is not None or c.get_method() == "DELETE"], \
+    [c.full_url for c in blind_calls if c.data is not None]
+
+# A tree that reads back with children but no root receiver is not an empty
+# tree — it could be a proxy's JSON error body, or a build that omits the field.
+# Synthesising a root over it destroys those children with no local copy.
+# The rule is POSITIVE: recognisable as a policy tree, or we do not touch it.
+# Refusing only "children but no receiver" let every OTHER unrecognised 200 body
+# through as "genuinely empty" — a proxy's error JSON, a maintenance page, a
+# build that renamed the field — and the fleet's own receiver was then PUT over a
+# root nobody had read. Every real Grafana ships a default root receiver, so
+# "neither key" is far likelier to be a body we don't understand.
+for unrecognised in (
+    {"routes": [{"receiver": "their-oncall"}]},
+    {"status": "error", "message": "upstream unavailable"},
+    {"group_by": ["alertname"]},
+    [],
+    # No adoption path at all: every Grafana ships a default root receiver, so an
+    # empty body is far likelier to be a proxy or a gateway stub than a stack
+    # without one — and adopting it makes the fleet's webhook that stack's
+    # catch-all for every alert it already runs.
+    {},
+):
+    headless, headless_calls = run(CREDS, stack(policies=unrecognised))
+    assert headless.exit_code != 0, (unrecognised, headless.output)
+    assert "no root receiver" in headless.output, headless.output
+    # ...and it refuses before writing anything at all, same as the 404 path.
+    assert not [c for c in headless_calls
+                if c.data is not None or c.get_method() == "DELETE"], \
+        (unrecognised, [c.full_url for c in headless_calls if c.data is not None])
+
+
+print("✓ provision-alerts: whole policy tree owned — a fresh default adopted, our own tree "
+      "replaced with UI drift named, and any other tree refused before a single write")
+
+# Storing a rule is not the same as being able to run it. Grafana accepts a rule
+# whose datasource uid points at nothing, serves it back intact, and only reports
+# the failure once evaluation runs — so a check that stops at the 200 is a check
+# that passes while nothing works.
+broken = evaluated(health="error", lastError="datasource not found")
+failed, _ = run(CREDS, stack(rules=broken))
+assert failed.exit_code != 0, failed.output
+assert UIDS[0] in failed.output and "datasource not found" in failed.output, failed.output
+
+# ...and health alone is not that evidence. A rule the stack has merely STORED
+# reports health "unknown" — older builds default it to "ok" — with a zeroed
+# lastEvaluation, seconds after the PUT and long before the group's first tick.
+# This is the case that made the original check useless: it passed instantly on
+# rules pointing at a datasource that did not exist.
+for stored in (
+    evaluated(health="unknown", when=LATER),
+    evaluated(health="ok", when="0001-01-01T00:00:00Z"),
+    evaluated(health="ok", when=None),
+):
+    unevaluated, _ = run(CREDS, stack(rules=stored))
+    assert unevaluated.exit_code != 0, (stored["data"]["groups"][0]["rules"][0], unevaluated.output)
+    assert f"0 of {len(UIDS)} rules had evaluated" in unevaluated.output, unevaluated.output
+
+# The baseline is the stack's OWN last-evaluation time, read before the write,
+# and the confirmation must be strictly newer than it. Comparing against this
+# host's clock instead needs a skew tolerance, and any tolerance wide enough for
+# a laptop a few minutes fast is also wide enough to accept the evaluation that
+# ran just BEFORE the write — the previous rule definitions, which is the exact
+# false pass this check exists to prevent.
+unchanged, _ = run(CREDS, stack(baseline_rules=evaluated(when=LATER), rules=evaluated(when=LATER)))
+assert unchanged.exit_code != 0, unchanged.output
+assert f"0 of {len(UIDS)} rules had evaluated" in unchanged.output, unchanged.output
+# ...and one tick later, the same stack passes.
+ticked, _ = run(CREDS, stack(baseline_rules=evaluated(when=EARLIER), rules=evaluated(when=LATER)))
+assert ticked.exit_code == 0, ticked.output + str(ticked.exception)
+
+# The guard the other way round: a `health: error` left over from the previous
+# configuration must not fail the run that corrected it. Its stamp is the
+# baseline's, so it is not evidence about the rules this run just wrote.
+stale_error = evaluated(health="error", when=EARLIER, lastError="datasource not found")
+corrected, _ = run(CREDS, stack(baseline_rules=stale_error, rules=stale_error))
+assert "provisioned, but the stack cannot evaluate" not in corrected.output, corrected.output
+# ...but the same error re-recorded AFTER the write is real, and fails.
+still_broken, _ = run(CREDS, stack(
+    baseline_rules=stale_error,
+    rules=evaluated(health="error", when=LATER, lastError="datasource not found"),
+))
+assert still_broken.exit_code != 0, still_broken.output
+assert "datasource not found" in still_broken.output, still_broken.output
+
+from alerting import build_rule_group
+
+named = [
+    {"name": rule["title"], "health": "ok", "lastEvaluation": LATER}
+    for rule in build_rule_group()["rules"]
+]
+
+# A rule the pre-write read did not LIST is not the same as one it listed as
+# never evaluated. The ruler API transiently answers with no groups while the
+# scheduler reloads, and reading that as "never evaluated" would let a stamp left
+# over from the previous definitions count as proof of this write.
+# The reference for that case is the STACK's own clock — its freshest evaluation
+# anywhere — not this host's. A host-clock comparison needs a skew tolerance, and
+# NOT_LISTED is the normal state on a first-ever run, so that fallback would be
+# the common path. Here an unrelated rule on the stack evaluated an hour ahead of
+# this host, and ours are stamped half an hour ahead: newer than the host clock,
+# older than the stack's, so only a stack-clock comparison refuses them.
+MID = (
+    datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=30)
+).isoformat().replace("+00:00", "Z")
+# Two pre-write stamps of clearly different ages, and ours falls between them:
+# the reference has to be the FRESHEST, not just "some stamp the stack had".
+OLDER = (
+    datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=2)
+).isoformat().replace("+00:00", "Z")
+not_listed, _ = run(CREDS, stack(
+    baseline_rules={"data": {"groups": [{"file": "Theirs", "rules": [
+        {"uid": "slow", "health": "ok", "lastEvaluation": OLDER},
+        {"uid": "unrelated", "health": "ok", "lastEvaluation": LATER}]}]}},
+    rules=evaluated(when=MID),
+))
+assert not_listed.exit_code != 0, not_listed.output
+assert f"0 of {len(UIDS)} rules had evaluated" in not_listed.output, not_listed.output
+
+# Partial is not success: the failure message reports the ratio, so the boundary
+# between "some" and "all" has to be exercised.
+half = {"data": {"groups": [{"file": "Fleet Monitor", "rules": [
+    {"uid": uid, "health": "ok", "lastEvaluation": LATER if i < 2 else "0001-01-01T00:00:00Z"}
+    for i, uid in enumerate(UIDS)
+]}]}}
+partial, _ = run(CREDS, stack(rules=half))
+assert partial.exit_code != 0, partial.output
+assert f"2 of {len(UIDS)} rules had evaluated" in partial.output, partial.output
+
+# Two rules sharing a title are not an identity — last-wins would silently
+# confirm off whichever came second.
+twins = [dict(r, uid=None) for r in named] + [
+    {"name": named[0]["name"], "health": "ok", "lastEvaluation": LATER}
+]
+ambiguous_titles = {"data": {"groups": [{"file": "Fleet Monitor", "rules": [
+    {k: v for k, v in r.items() if v is not None} for r in twins
+]}]}}
+ambiguous_run, _ = run(CREDS, stack(rules=ambiguous_titles))
+assert ambiguous_run.exit_code != 0, ambiguous_run.output
+assert "never appeared" in ambiguous_run.output, ambiguous_run.output
+
+# A rule the stack never lists at all is named in the failure.
+absent, _ = run(CREDS, stack(rules={"data": {"groups": []}}))
+assert absent.exit_code != 0 and "never appeared" in absent.output, absent.output
+assert UIDS[0] in absent.output, absent.output
+
+# A stack whose ruler response omits the per-rule uid is identified by title
+# instead — the `__alert_rule_uid__` fallback this replaced looked in rule-level
+# labels, where Grafana never puts it (it is an alert *instance* label), so it
+# could never have rescued anything.
+
+# Each namespace shape a Grafana build might serve has to carry the scoping on
+# its own, or one arm is dead code the day the others change.
+for namespace in ({"file": "Fleet Monitor"}, {"file": "fleet-monitor"},
+                  {"folderUid": "fleet-monitor"}):
+    by_title = {"data": {"groups": [{**namespace, "rules": named}]}}
+    titled, _ = run(CREDS, stack(rules=by_title))
+    assert titled.exit_code == 0, (namespace, titled.output + str(titled.exception))
+
+# ...but only inside OUR folder. A maintainer-authored rule titled "Fleet data
+# stale" elsewhere on the stack — a plausible name for someone watching the same
+# fleet — must not stand in for one of ours the stack never scheduled.
+# `file` is the namespace field the Prometheus-compat API actually returns; a
+# group NAME of "Fleet Monitor" must not count, since ours is named
+# "fleet-monitor" and that arm could only ever match somebody else's group.
+elsewhere_titled = {"data": {"groups": [
+    {"file": "Their Dashboards", "name": "Fleet Monitor", "rules": named}
+]}}
+foreign, _ = run(CREDS, stack(rules=elsewhere_titled))
+assert foreign.exit_code != 0, foreign.output
+assert "never appeared" in foreign.output, foreign.output
+
+# The default deadline has to outlast a freshly written group's first tick, or
+# every healthy provisioning run times out.
+assert CONFIRM_DEADLINE_SECONDS > _seconds("5m"), CONFIRM_DEADLINE_SECONDS
+
+# An evaluation interval that cannot be parsed names itself, rather than dying of
+# a KeyError or a TypeError from mid-parse — this runs after the folder and the
+# contact points are already written, so the message is all a maintainer has.
+assert _seconds(60) == 60 and _seconds("90s") == 90 and _seconds("2h") == 7200
+for bad in ("300", "1h30m", "", "5 m", None):
+    try:
+        _seconds(bad)
+    except RuntimeError as e:
+        assert repr(bad) in str(e), (bad, str(e))
+    else:
+        raise AssertionError(f"_seconds({bad!r}) silently accepted a value it cannot read")
+
+print("✓ provision-alerts: waits for an evaluation stamped after its own write — a stored-only "
+      "rule, a stale pass, and a stale failure are all refused")
+EOF
+
+# Same bargain as live-check and check-dashboard: the real run writes rules, a
+# contact point, and the notification policy into a real stack — and the next
+# evaluation can deliver to a real Slack channel — so a bare render never does it
+# even on a machine that happens to have the credentials set. Opting in makes the
+# render the automated provisioning check.
+#
+# Idempotent is not side-effect-free, which is why this is opt-IN despite
+# converging on exactly what is committed.
+if [ "${FLEET_MONITOR_ALERT_CHECK:-}" = "1" ]; then
+  pipenv run python3 main.py provision-alerts
+else
+  echo "· provision-alerts (real provisioning) not run; opt in with FLEET_MONITOR_ALERT_CHECK=1"
 fi
 
 echo "✓ Snapshot generation complete. Output in $output_dir"
