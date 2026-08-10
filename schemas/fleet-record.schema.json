@@ -32,6 +32,10 @@
       "type": "string",
       "description": "The pipeline-manager template the locale uses"
     },
+    "base_template": {
+      "type": "string",
+      "description": "template with any -paused suffix stripped: the locale's durable identity, stable across session pauses"
+    },
     "paused": {
       "type": "boolean",
       "description": "True when the template name ends in -paused (out-of-session)"
@@ -54,6 +58,7 @@
     "org",
     "repo",
     "template",
+    "base_template",
     "paused",
     "runner",
     "expected_workflows"

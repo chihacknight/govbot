@@ -8,11 +8,153 @@ import yaml
 sys.path.append(str(Path(__file__).parent))
 
 from fleet_config import read_fleet
+from metrics_shipper import encode_metrics
 
 
 @click.group()
 def cli():
     """Fleet monitor: observability for the govbot scraper and data-repo fleets."""
+
+
+@cli.command("collect")
+@click.option(
+    "--config-dir",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    help="Pipeline-manager config directory to poll (required unless --poller-records).",
+)
+@click.option(
+    "--metrics-only",
+    is_flag=True,
+    required=True,
+    help="Collect metrics only. Required until the log harvester exists (task 0004).",
+)
+@click.option("--dry-run", is_flag=True, help="Print the encoded payload instead of pushing.")
+@click.option(
+    "--poller-records",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="JSONL file of pre-built poller records; skips the GitHub poll (used by snapshots).",
+)
+@click.option(
+    "--timestamp",
+    type=int,
+    default=None,
+    help="Epoch-seconds timestamp for every series (default: the records' polled_at, else now).",
+)
+def collect(config_dir, metrics_only, dry_run, poller_records, timestamp):
+    """Poll the fleet and push (or print) Grafana Cloud metric payloads.
+
+    Exits 1 when any repo had poll errors — partial data still ships (or
+    prints), but a degraded sweep must never look like a clean one.
+    """
+    if poller_records is not None:
+        records = [
+            json.loads(line)
+            for line in poller_records.read_text().splitlines()
+            if line.strip()
+        ]
+    elif config_dir is not None:
+        records = _poll_live(config_dir)
+    else:
+        raise click.ClickException("pass --config-dir (live poll) or --poller-records (fixture)")
+
+    errored = _report_poll_errors(records)
+    payload = _encode(records, timestamp if timestamp is not None else _default_timestamp(records))
+
+    if not payload:
+        # An all-null sweep emitting nothing is indistinguishable, stack-side,
+        # from the monitor never running — that must not read as clean, in
+        # push mode or on the dry-run path operators use to verify a sweep.
+        raise click.ClickException(
+            "nothing to push: payload is empty"
+            + (f" (poll errors on {len(errored)} of {len(records)} repos)" if errored else "")
+        )
+    if dry_run:
+        click.echo(payload, nl=False)
+    else:
+        _push(payload)
+    if errored:
+        raise click.ClickException(f"poll errors on {len(errored)} of {len(records)} repos")
+
+
+def _expected_series(payload):
+    """Per-metric series counts in a line-protocol payload — what a query-back
+    proof should find. Metric name = <measurement>_<field>; field strings never
+    contain spaces (values are numeric), so splitting the last two spaces off a
+    line isolates them even when a tag value carries an escaped space."""
+    counts = {
+        "fleet_workflow_run_status": 0,
+        "fleet_workflow_run_hours_since_success": 0,
+        "fleet_repo_data_commit_age_hours": 0,
+    }
+    for line in payload.splitlines():
+        measurement = line.split(",", 1)[0]
+        fields = line.rsplit(" ", 2)[-2]
+        for field in fields.split(","):
+            name = f"{measurement}_{field.split('=', 1)[0]}"
+            if name in counts:
+                counts[name] += 1
+    return counts
+
+
+def _encode(records, timestamp):
+    """encode_metrics with its ValueError (e.g. control chars in a tag value)
+    surfaced as a clean CLI error instead of a traceback."""
+    try:
+        return encode_metrics(records, timestamp)
+    except ValueError as e:
+        raise click.ClickException(str(e)) from e
+
+
+def _report_poll_errors(records):
+    """Echo every per-repo poll error to stderr; return the errored records."""
+    errored = [r for r in records if r.get("errors")]
+    for record in errored:
+        for error in record["errors"]:
+            click.echo(f"poll error: {record['org']}/{record['repo']}: {error}", err=True)
+    return errored
+
+
+def _default_timestamp(records):
+    """Series timestamp when --timestamp is absent: the records' own polled_at
+    (so replayed --poller-records files keep honest fetch times), else now."""
+    import time
+    from datetime import datetime
+
+    stamps = [r["polled_at"] for r in records if r.get("polled_at")]
+    if stamps:
+        return int(datetime.fromisoformat(max(stamps).replace("Z", "+00:00")).timestamp())
+    return int(time.time())
+
+
+def _poll_live(config_dir):
+    """Read the fleet config and poll GitHub for every repo's current state."""
+    import os
+
+    if not os.environ.get("GITHUB_TOKEN"):
+        raise click.ClickException(
+            "GITHUB_TOKEN is required for live polls: one sweep of the current fleet "
+            "costs ~336 requests and the unauthenticated GitHub limit is 60/hour"
+        )
+    try:
+        jurisdictions = read_fleet(config_dir)
+    except (ValueError, yaml.YAMLError) as e:
+        raise click.ClickException(str(e)) from e
+    from fleet_poller import poll_fleet
+
+    try:
+        return poll_fleet(jurisdictions)
+    except ValueError as e:
+        raise click.ClickException(str(e)) from e
+
+
+def _push(payload):
+    from metrics_push import push_metrics
+
+    try:
+        push_metrics(payload)
+    except RuntimeError as e:
+        raise click.ClickException(str(e)) from e
+    click.echo(f"pushed {len(payload.splitlines())} series lines", err=True)
 
 
 @cli.command("list-fleet")
@@ -30,6 +172,86 @@ def list_fleet(config_dir: Path):
         raise click.ClickException(str(e)) from e
     for record in records:
         click.echo(json.dumps(record, ensure_ascii=False))
+
+
+@cli.command("live-check")
+@click.option(
+    "--config-dir",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    required=True,
+    help="Pipeline-manager config directory to poll and push.",
+)
+def live_check(config_dir):
+    """Poll, push, then query Grafana for every shipped metric; skips without credentials.
+
+    End-to-end proof against the live stack: runs a real collect (GitHub poll +
+    Grafana push), then asks the stack's Prometheus query API for all three
+    shipped metric names, retrying for up to a minute — Grafana Cloud ingestion
+    lags a push by seconds, so an instant query would flake false-negative on a
+    fresh stack. Refuses an empty payload, and exits 1 after the proof when any
+    repo had poll errors: a degraded sweep must never look like a clean one.
+    Needs all six GRAFANA_{PUSH,QUERY}_{URL,USER,KEY} env vars; exits 0 with a
+    skip notice otherwise, so offline runs (CI) pass without a Grafana account.
+    """
+    import base64
+    import os
+    import time
+    import urllib.parse
+
+    names = [
+        f"GRAFANA_{role}_{part}" for role in ("PUSH", "QUERY") for part in ("URL", "USER", "KEY")
+    ]
+    missing = [name for name in names if not os.environ.get(name)]
+    if missing:
+        click.echo(f"live check skipped: missing {', '.join(missing)}")
+        return
+
+    from http_util import request_json
+
+    records = _poll_live(config_dir)
+    errored = _report_poll_errors(records)
+    pushed_at = int(time.time())
+    payload = _encode(records, pushed_at)
+    if not payload:
+        raise click.ClickException("nothing to push: payload is empty")
+    _push(payload)
+
+    credentials = f"{os.environ['GRAFANA_QUERY_USER']}:{os.environ['GRAFANA_QUERY_KEY']}"
+    auth = {"Authorization": "Basic " + base64.b64encode(credentials.encode()).decode()}
+    deadline = time.monotonic() + 60
+    for metric, want in _expected_series(payload).items():
+        if want == 0:
+            # Legitimately absent from this payload (e.g. a bootstrapped fleet
+            # where nothing has succeeded yet) — nothing to prove, not a failure.
+            click.echo(f"· live check: {metric} absent from this payload, skipped")
+            continue
+        while True:
+            # timestamp(<metric>) returns each series' raw sample time, so the
+            # proof only accepts samples stamped at/after THIS run's payload
+            # timestamp — a previous push inside Prometheus's 5-minute instant
+            # lookback can't satisfy it. The count must reach what this payload
+            # shipped: a partially ingested push (some series rejected) fails.
+            query = urllib.parse.urlencode({"query": f"timestamp({metric})"})
+            result = request_json(
+                f"{os.environ['GRAFANA_QUERY_URL'].rstrip('/')}/api/v1/query?{query}",
+                headers=auth,
+            )
+            series = result.get("data", {}).get("result", [])
+            fresh = [s for s in series if float(s["value"][1]) >= pushed_at]
+            if len(fresh) >= want:
+                click.echo(
+                    f"✓ live check: {len(fresh)}/{want} {metric} series from this push queryable"
+                )
+                break
+            if time.monotonic() >= deadline:
+                raise click.ClickException(
+                    f"push succeeded but {metric} has {len(fresh)} of {want} expected "
+                    "fresh series after 60s"
+                )
+            time.sleep(5)
+    if errored:
+        # The proof ran, but a degraded sweep must never look like a clean one.
+        raise click.ClickException(f"poll errors on {len(errored)} of {len(records)} repos")
 
 
 if __name__ == "__main__":
