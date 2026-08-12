@@ -1,0 +1,10 @@
+# Invalid fixture: template `t` is a scalar, not a mapping (a plausible shorthand
+# for `t: {folder-name: ...}`). Must fail loudly, not traceback out of _repo_name.
+# Locked by __snapshots__/invalid-scalar-template-error.txt.
+org:
+  username: broken-org
+templates:
+  t: some-scalar
+locales:
+  al:
+    template: t

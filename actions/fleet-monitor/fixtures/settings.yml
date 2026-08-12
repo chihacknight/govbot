@@ -1,0 +1,3 @@
+# Not a fleet config (no `locales` mapping): discovery must skip it — this file
+# contributes no records to __snapshots__/fleet.jsonl.
+retention_days: 14

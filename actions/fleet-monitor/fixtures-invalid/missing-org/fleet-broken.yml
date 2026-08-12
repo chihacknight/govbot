@@ -1,0 +1,9 @@
+# Invalid fixture: no org block, which pipeline-manager's config.schema.json requires.
+# Must fail loudly. Locked by __snapshots__/invalid-missing-org-error.txt.
+templates:
+  good-template:
+    folder-name: ✏️{ locale.key }✏️-legislation
+locales:
+  ok:
+    template: good-template
+    name: Okay
