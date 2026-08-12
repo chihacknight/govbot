@@ -1,0 +1,62 @@
+# Hourly fleet sweep: poll every fleet repo's GitHub state and push metrics plus
+# a collector heartbeat to Grafana Cloud. Read-only on GitHub (the default token
+# covers all reads); the single secret is the Grafana Cloud write key. The push
+# endpoint and instance ID are non-secret per-fork config, supplied as repo
+# variables — see actions/fleet-monitor/README.md "Running the hourly workflow".
+name: Fleet Monitor
+
+on:
+  schedule:
+    - cron: "0 * * * *" # Hourly, on the hour (UTC)
+  workflow_dispatch: # Manual sweep (fork bring-up and one-off checks)
+
+# Read-only: the collector only reads GitHub and pushes to Grafana; it never
+# writes to the repo.
+permissions:
+  contents: read
+
+# One sweep at a time. A hung run is bounded by timeout-minutes well inside the
+# hour, and this group keeps a manual dispatch from overlapping a scheduled run;
+# cancel-in-progress is false so a running sweep is never killed mid-push.
+concurrency:
+  group: fleet-monitor
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    name: "📡 Sweep fleet, push metrics + heartbeat"
+    runs-on: ubuntu-latest
+    # A healthy sweep is a couple of minutes (~336 requests, 8 concurrent); this
+    # ceiling kills a hung run long before the next hour's schedule fires.
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout govbot
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: actions/fleet-monitor
+        run: |
+          pip install pipenv
+          pipenv install --deploy
+
+      - name: Sweep the fleet and push metrics
+        working-directory: actions/fleet-monitor
+        env:
+          # GitHub's auto-provided default token (not a maintainer-set secret):
+          # public reads only, ~336 requests/sweep (limit 1000/hr). It is the only
+          # way to populate the GITHUB_TOKEN env the poller needs; the one secret a
+          # fork maintainer sets is GRAFANA_PUSH_KEY below.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Endpoint + instance ID are non-secret per-fork config (repo variables).
+          GRAFANA_PUSH_URL: ${{ vars.GRAFANA_PUSH_URL }}
+          GRAFANA_PUSH_USER: ${{ vars.GRAFANA_PUSH_USER }}
+          # The one secret: the Grafana Cloud metrics:write access-policy token.
+          GRAFANA_PUSH_KEY: ${{ secrets.GRAFANA_PUSH_KEY }}
+        run: |
+          pipenv run python main.py run --config-dir ../pipeline-manager
