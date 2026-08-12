@@ -9,7 +9,8 @@ import yaml
 
 sys.path.append(str(Path(__file__).parent))
 
-from fleet_config import read_fleet
+from dashboard import DASHBOARD_PATH, encode_dashboard
+from fleet_config import EXCLUDED_FLEETS, read_fleet
 from log_harvester import github_log_fetchers, harvest_logs
 from logs_shipper import encode_logs
 from metrics_shipper import encode_heartbeat, encode_metrics
@@ -52,8 +53,17 @@ def cli():
     help="Epoch-seconds timestamp for every series (default: the records' polled_at, "
          "else now); also anchors the log harvester's look-back window.",
 )
+@click.option(
+    "--exclude-fleet",
+    "exclude_fleets",
+    multiple=True,
+    default=EXCLUDED_FLEETS,
+    show_default=True,
+    help="Fleet config stem to skip (repeatable). Pass --exclude-fleet= to monitor every "
+         "fleet discovery finds, including non-production ones.",
+)
 def collect(config_dir, metrics_only, logs_only, dry_run, poller_records, log_fixture,
-            watermark_file, timestamp):
+            watermark_file, timestamp, exclude_fleets):
     """Poll the fleet and push (or print) Grafana Cloud metric and/or log payloads.
 
     Both legs share collect's exit contract — a degraded sweep must never look
@@ -71,13 +81,14 @@ def collect(config_dir, metrics_only, logs_only, dry_run, poller_records, log_fi
     failures = []
     if metrics_only:
         try:
-            _collect_metrics(config_dir, poller_records, dry_run, timestamp)
+            _collect_metrics(config_dir, poller_records, dry_run, timestamp,
+                             exclude_fleets)
         except click.ClickException as e:
             failures.append(e.message)
     if logs_only:
         try:
             log_errors = _collect_logs(config_dir, log_fixture, watermark_file, dry_run,
-                                       _harvest_now(timestamp))
+                                       _harvest_now(timestamp), exclude_fleets)
             if log_errors:
                 failures.append(f"log harvest errors on {len(log_errors)} target(s)")
         except click.ClickException as e:
@@ -86,11 +97,11 @@ def collect(config_dir, metrics_only, logs_only, dry_run, poller_records, log_fi
         raise click.ClickException("; ".join(failures))
 
 
-def _collect_metrics(config_dir, poller_records, dry_run, timestamp):
+def _collect_metrics(config_dir, poller_records, dry_run, timestamp, exclude_fleets):
     """collect's metrics leg: poll, encode, ship (or print). Raises ClickException
     on poll errors — after shipping what it has — so the caller decides whether
     that failure stands alone or merges with the logs leg's."""
-    records = _load_records(config_dir, poller_records)
+    records = _load_records(config_dir, poller_records, exclude_fleets)
 
     errored = _report_poll_errors(records)
     payload = _encode(records, timestamp if timestamp is not None else _default_timestamp(records))
@@ -140,7 +151,17 @@ def _collect_metrics(config_dir, poller_records, dry_run, timestamp):
     help="Epoch-seconds timestamp for every series (default: the records' polled_at, "
          "else now); also anchors the log harvester's look-back window.",
 )
-def run(config_dir, dry_run, poller_records, log_fixture, watermark_file, timestamp):
+@click.option(
+    "--exclude-fleet",
+    "exclude_fleets",
+    multiple=True,
+    default=EXCLUDED_FLEETS,
+    show_default=True,
+    help="Fleet config stem to skip (repeatable). Pass --exclude-fleet= to monitor every "
+         "fleet discovery finds, including non-production ones.",
+)
+def run(config_dir, dry_run, poller_records, log_fixture, watermark_file, timestamp,
+        exclude_fleets):
     """Unattended hourly sweep: poll the fleet, ship metrics + a heartbeat + logs.
 
     The orchestrator the hourly workflow invokes. Wires config reader → poller →
@@ -159,7 +180,7 @@ def run(config_dir, dry_run, poller_records, log_fixture, watermark_file, timest
     live harvest, or ``--log-fixture`` offline); a metrics-only invocation
     (``--poller-records`` alone) skips it.
     """
-    records = _load_records(config_dir, poller_records)
+    records = _load_records(config_dir, poller_records, exclude_fleets)
 
     errored = _report_poll_errors(records)
     series_timestamp = timestamp if timestamp is not None else _default_timestamp(records)
@@ -176,10 +197,10 @@ def run(config_dir, dry_run, poller_records, log_fixture, watermark_file, timest
 
     if config_dir is not None or log_fixture is not None:
         _collect_logs(config_dir, log_fixture, watermark_file, dry_run,
-                      _harvest_now(timestamp))
+                      _harvest_now(timestamp), exclude_fleets)
 
 
-def _load_records(config_dir, poller_records):
+def _load_records(config_dir, poller_records, exclude_fleets=EXCLUDED_FLEETS):
     """Records for a sweep: a pre-built --poller-records fixture (offline) or a
     live poll of --config-dir. Shared by ``collect`` and ``run``."""
     if poller_records is not None:
@@ -189,7 +210,7 @@ def _load_records(config_dir, poller_records):
             if line.strip()
         ]
     if config_dir is not None:
-        return _poll_live(config_dir)
+        return _poll_live(config_dir, exclude_fleets)
     raise click.ClickException("pass --config-dir (live poll) or --poller-records (fixture)")
 
 
@@ -245,7 +266,7 @@ def _default_timestamp(records):
     return int(time.time())
 
 
-def _poll_live(config_dir):
+def _poll_live(config_dir, exclude_fleets=EXCLUDED_FLEETS):
     """Read the fleet config and poll GitHub for every repo's current state."""
     import os
 
@@ -255,7 +276,7 @@ def _poll_live(config_dir):
             "costs ~336 requests and the unauthenticated GitHub limit is 60/hour"
         )
     try:
-        jurisdictions = read_fleet(config_dir)
+        jurisdictions = read_fleet(config_dir, exclude_fleets)
     except (ValueError, yaml.YAMLError) as e:
         raise click.ClickException(str(e)) from e
     from fleet_poller import poll_fleet
@@ -289,7 +310,7 @@ def _harvest_now(timestamp):
     return datetime.now(timezone.utc)
 
 
-def _log_sources(config_dir, log_fixture, now):
+def _log_sources(config_dir, log_fixture, now, exclude_fleets=EXCLUDED_FLEETS):
     """Resolve (jurisdictions, fetch_runs, fetch_archive) for the logs leg: an
     offline fixture directory, or a live GitHub harvest of the fleet config.
     ``now`` is the harvest anchor, threaded into the live fetchers so pagination
@@ -300,7 +321,7 @@ def _log_sources(config_dir, log_fixture, now):
         # Same clean-error contract as _poll_live and list-fleet: a malformed
         # config is a CLI error line, never a raw traceback.
         try:
-            jurisdictions = read_fleet(config_dir)
+            jurisdictions = read_fleet(config_dir, exclude_fleets)
         except (ValueError, yaml.YAMLError) as e:
             raise click.ClickException(str(e)) from e
         fetch_runs, fetch_archive = github_log_fetchers(now)
@@ -335,7 +356,7 @@ def _load_log_fixture(directory):
     return jurisdictions, fetch_runs, fetch_archive
 
 
-def _collect_logs(config_dir, log_fixture, watermark_file, dry_run, now):
+def _collect_logs(config_dir, log_fixture, watermark_file, dry_run, now, exclude_fleets):
     """Harvest new-run logs and print (dry-run) or push them to Loki. Returns the
     per-repo harvest errors so ``collect`` can turn them into a nonzero exit while
     ``run`` keeps them green.
@@ -356,7 +377,8 @@ def _collect_logs(config_dir, log_fixture, watermark_file, dry_run, now):
     a red run means the collector needs attention, but it never un-ships the
     fleet's progress.
     """
-    jurisdictions, fetch_runs, fetch_archive = _log_sources(config_dir, log_fixture, now)
+    jurisdictions, fetch_runs, fetch_archive = _log_sources(config_dir, log_fixture, now,
+                                                            exclude_fleets)
     watermarks = (
         load_watermarks(watermark_file, warn=lambda message: click.echo(message, err=True))
         if watermark_file
@@ -414,14 +436,137 @@ def _collect_logs(config_dir, log_fixture, watermark_file, dry_run, now):
     required=True,
     help="Directory holding pipeline-manager config YAMLs and their templates/ folder.",
 )
-def list_fleet(config_dir: Path):
+@click.option(
+    "--exclude-fleet",
+    "exclude_fleets",
+    multiple=True,
+    default=EXCLUDED_FLEETS,
+    show_default=True,
+    help="Fleet config stem to skip (repeatable). Pass --exclude-fleet= to monitor every "
+         "fleet discovery finds, including non-production ones.",
+)
+def list_fleet(config_dir: Path, exclude_fleets):
     """Print one JSON Lines jurisdiction record per locale per fleet."""
     try:
-        records = read_fleet(config_dir)
+        records = read_fleet(config_dir, exclude_fleets)
     except (ValueError, yaml.YAMLError) as e:
         raise click.ClickException(str(e)) from e
     for record in records:
         click.echo(json.dumps(record, ensure_ascii=False))
+
+
+@cli.command("dashboard")
+@click.option(
+    "--out",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help=f"Write the dashboard JSON here instead of stdout (committed at {DASHBOARD_PATH}).",
+)
+def dashboard(out):
+    """Emit the fleet-overview dashboard JSON, ready to import into any stack.
+
+    The dashboard is built as data (dashboard.py) and committed rendered
+    (dashboards/fleet-overview.json) so it reviews as code and imports as JSON.
+    Datasource references are variables, not UIDs, so the same file imports into
+    any Grafana Cloud stack; nothing here is specific to the account it was
+    developed against.
+    """
+    text = encode_dashboard()
+    if out:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(text)
+        click.echo(f"wrote {out}", err=True)
+    else:
+        click.echo(text, nl=False)
+
+
+@cli.command("check-dashboard")
+def check_dashboard():
+    """Import the committed dashboard into a real stack and read it back; skips
+    without credentials.
+
+    A dashboard that only ever renders in the browser it was built in is not
+    reproducible, so the check is the import itself: POST the JSON to the
+    stack's dashboards API, then GET it by uid. The read-back matters — Grafana
+    answers the push before it has stored anything renderable, and a payload it
+    quietly mangles still returns 200.
+
+    Needs GRAFANA_DASHBOARD_URL (the stack base URL) and GRAFANA_DASHBOARD_KEY
+    (a service-account token with dashboards write; bearer-authed, unlike the
+    Basic-auth push endpoints). Exits 0 with a skip notice otherwise, so an
+    offline run passes without a Grafana account.
+    """
+    import os
+
+    names = ["GRAFANA_DASHBOARD_URL", "GRAFANA_DASHBOARD_KEY"]
+    missing = [name for name in names if not os.environ.get(name)]
+    if missing:
+        click.echo(f"dashboard check skipped: missing {', '.join(missing)}")
+        return
+
+    from dashboard import DASHBOARD_UID, build_dashboard
+    from http_util import RequestFailed, request_json, request_with_retry
+
+    base = os.environ["GRAFANA_DASHBOARD_URL"].rstrip("/")
+    auth = {"Authorization": f"Bearer {os.environ['GRAFANA_DASHBOARD_KEY']}"}
+    board = build_dashboard()
+    payload = json.dumps({
+        "dashboard": board,
+        # Idempotent by uid: re-running the check updates the same dashboard
+        # instead of erroring on the second run or littering copies.
+        "overwrite": True,
+        "message": "fleet-monitor import check",
+    }).encode()
+    try:
+        request_with_retry(
+            f"{base}/api/dashboards/db",
+            data=payload,
+            headers={**auth, "Content-Type": "application/json"},
+        )
+    except RequestFailed as e:
+        raise click.ClickException(f"dashboard import rejected: {e}") from e
+
+    try:
+        loaded = request_json(f"{base}/api/dashboards/uid/{DASHBOARD_UID}", headers=auth)
+    except RequestFailed as e:
+        raise click.ClickException(f"dashboard imported but does not load back: {e}") from e
+    panels = loaded.get("dashboard", {}).get("panels", [])
+    if len(panels) != len(board["panels"]):
+        raise click.ClickException(
+            f"dashboard loaded with {len(panels)} panels, expected {len(board['panels'])}"
+        )
+    # Panels alone are not proof. Every panel filters on `=~"$state"` and points
+    # at `${metrics}`/`${logs}`, so a variable Grafana declined to migrate leaves
+    # all five panels present and all five rendering nothing — a blank board that
+    # a panel count reports as a clean import.
+    stored = {
+        v.get("name"): v
+        for v in loaded.get("dashboard", {}).get("templating", {}).get("list", [])
+    }
+    want = {v["name"] for v in board["templating"]["list"]}
+    if want - set(stored):
+        raise click.ClickException(
+            f"dashboard imported without variable(s) {', '.join(sorted(want - set(stored)))}; "
+            "panels would render empty"
+        )
+    # Presence by name is not enough — that is precisely how the first broken
+    # import passed. A picker stripped of its all-value, or repointed at the
+    # wrong datasource, resolves to nothing and blanks every panel that filters
+    # on it while the name sits there looking fine. Only the fields that decide
+    # whether a picker resolves are compared; the query object itself is left
+    # alone, since Grafana may legitimately normalise it on store.
+    for variable in board["templating"]["list"]:
+        landed = stored[variable["name"]]
+        for field in ("allValue", "datasource"):
+            if field in variable and landed.get(field) != variable[field]:
+                raise click.ClickException(
+                    f"variable {variable['name']} imported with {field}="
+                    f"{landed.get(field)!r}, expected {variable[field]!r}; "
+                    "it would resolve to nothing and blank every panel using it"
+                )
+    click.echo(
+        f"✓ dashboard imports and loads back with all {len(panels)} panels "
+        f"and {len(want)} variables"
+    )
 
 
 @cli.command("live-check")

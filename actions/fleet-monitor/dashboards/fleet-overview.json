@@ -1,0 +1,648 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${metrics}"
+      },
+      "description": "Latest completed scrape per jurisdiction \u2014 the fleet's entry point. Red is actionable; a dimmed tile is out of session, where a failing run is the calendar, not a fault.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "FAILING"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "OK"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "noValue": "no data"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "text",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "color": "text",
+                        "index": 0,
+                        "text": "paused \u00b7 last run failed"
+                      },
+                      "1": {
+                        "color": "text",
+                        "index": 1,
+                        "text": "paused \u00b7 last run ok"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {
+          "titleSize": 18,
+          "valueSize": 18
+        },
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+          },
+          "editorMode": "code",
+          "expr": "last_over_time(fleet_workflow_run_status{workflow=\"openstates-scrape.yml\", paused=\"false\", state=~\"$state\", org=~\"$org\"}[6h])",
+          "instant": true,
+          "legendFormat": "{{state}}",
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+          },
+          "editorMode": "code",
+          "expr": "last_over_time(fleet_workflow_run_status{workflow=\"openstates-scrape.yml\", paused=\"true\", state=~\"$state\", org=~\"$org\"}[6h])",
+          "instant": true,
+          "legendFormat": "{{state}}",
+          "range": false,
+          "refId": "B"
+        }
+      ],
+      "title": "Scrapers",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${metrics}"
+      },
+      "description": "Hours since the last commit touching each repo's data path, in-session repos first. Red above 48h \u2014 the same line the staleness alert fires on. A paused repo is stale by the session calendar, not by fault; read the paused column before reacting to its colour.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "color-text"
+            }
+          },
+          "links": [
+            {
+              "title": "Filter to ${__data.fields.state}",
+              "url": "/d/fleet-monitor-overview?var-state=${__data.fields.state}&${__url_time_range}"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 48
+              }
+            ]
+          },
+          "unit": "h"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Hours since data commit"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "paused"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "In session"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "auto"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "false": {
+                        "color": "text",
+                        "index": 0,
+                        "text": "yes"
+                      },
+                      "true": {
+                        "color": "text",
+                        "index": 1,
+                        "text": "paused"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "id": 2,
+      "options": {
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+          },
+          "editorMode": "code",
+          "expr": "last_over_time(fleet_repo_data_commit_age_hours{state=~\"$state\", org=~\"$org\"}[6h])",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Data freshness",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": false,
+                "field": "paused"
+              },
+              {
+                "desc": true,
+                "field": "Value"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${logs}"
+      },
+      "description": "Harvested run logs. Failures ship in full (capped at 256 KB); successes ship their last ~100 lines. Expand a line for its run id and a link to the run.",
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "id": 3,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${logs}"
+          },
+          "editorMode": "code",
+          "expr": "{state=~\"$state\", org=~\"$org\", workflow=~\"$workflow\", outcome=~\"$outcome\"}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Run logs",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${metrics}"
+      },
+      "description": "Latest completed run per jurisdiction for this workflow. One grid per workflow the fleet runs besides the scrape, generated from the metric's own labels \u2014 a workflow added to the pipeline-manager config appears here on its next sweep, with no dashboard edit.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "FAILING"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "OK"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "noValue": "no data"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "text",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "color": "text",
+                        "index": 0,
+                        "text": "paused \u00b7 last run failed"
+                      },
+                      "1": {
+                        "color": "text",
+                        "index": 1,
+                        "text": "paused \u00b7 last run ok"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 38
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {
+          "titleSize": 18,
+          "valueSize": 18
+        },
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "repeat": "other_workflow",
+      "repeatDirection": "v",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+          },
+          "editorMode": "code",
+          "expr": "last_over_time(fleet_workflow_run_status{workflow=~\"$other_workflow\", paused=\"false\", state=~\"$state\", org=~\"$org\"}[6h])",
+          "instant": true,
+          "legendFormat": "{{state}}",
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+          },
+          "editorMode": "code",
+          "expr": "last_over_time(fleet_workflow_run_status{workflow=~\"$other_workflow\", paused=\"true\", state=~\"$state\", org=~\"$org\"}[6h])",
+          "instant": true,
+          "legendFormat": "{{state}}",
+          "range": false,
+          "refId": "B"
+        }
+      ],
+      "title": "$other_workflow",
+      "type": "stat"
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 39,
+  "tags": [
+    "fleet-monitor"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "grafanacloud-govbot-prom",
+          "value": "grafanacloud-govbot-prom"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Metrics datasource",
+        "multi": false,
+        "name": "metrics",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "text": "grafanacloud-govbot-logs",
+          "value": "grafanacloud-govbot-logs"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Logs datasource",
+        "multi": false,
+        "name": "logs",
+        "options": [],
+        "query": "loki",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "allValue": ".+",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${metrics}"
+        },
+        "definition": "label_values(fleet_workflow_run_status, state)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Jurisdiction",
+        "multi": true,
+        "name": "state",
+        "options": [],
+        "query": {
+          "query": "label_values(fleet_workflow_run_status, state)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".+",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${metrics}"
+        },
+        "definition": "label_values(fleet_workflow_run_status, org)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Org",
+        "multi": true,
+        "name": "org",
+        "options": [],
+        "query": {
+          "query": "label_values(fleet_workflow_run_status, org)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".+",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${metrics}"
+        },
+        "definition": "label_values(fleet_workflow_run_status, workflow)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Workflow",
+        "multi": true,
+        "name": "workflow",
+        "options": [],
+        "query": {
+          "query": "label_values(fleet_workflow_run_status, workflow)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".+",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "loki",
+          "uid": "${logs}"
+        },
+        "definition": "label_values({state=~\".+\"}, outcome)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Log outcome",
+        "multi": true,
+        "name": "outcome",
+        "options": [],
+        "query": {
+          "label": "outcome",
+          "refId": "LokiVariableQueryEditor-VariableQuery",
+          "stream": "{state=~\".+\"}",
+          "type": 1
+        },
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".+",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${metrics}"
+        },
+        "definition": "label_values(fleet_workflow_run_status{workflow!=\"openstates-scrape.yml\"}, workflow)",
+        "hide": 2,
+        "includeAll": true,
+        "label": "Other workflows",
+        "multi": true,
+        "name": "other_workflow",
+        "options": [],
+        "query": {
+          "query": "label_values(fleet_workflow_run_status{workflow!=\"openstates-scrape.yml\"}, workflow)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timezone": "utc",
+  "title": "Fleet Monitor",
+  "uid": "fleet-monitor-overview",
+  "version": 0
+}
