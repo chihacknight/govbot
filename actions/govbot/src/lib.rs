@@ -12,6 +12,7 @@ pub mod locale_generated;
 pub mod pipeline;
 pub mod processor;
 pub mod publish;
+pub mod query;
 pub mod rss;
 pub mod selectors;
 pub mod types;
@@ -26,6 +27,7 @@ pub use filter::{FilterAlias, FilterManager, FilterResult, LogFilter};
 pub use locale::WorkingLocale;
 pub use locale_generated as locale;
 pub use processor::PipelineProcessor;
+pub use query::{QueryKind, QueryRequest, QueryResponse};
 pub use types::{LogContent, LogEntry, Metadata, VoteEventResult};
 
 /// Re-export commonly used types for convenience

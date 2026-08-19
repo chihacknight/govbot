@@ -89,6 +89,71 @@ enum Command {
         list: bool,
     },
 
+    /// Query cloned legislation and get back a bounded, cited JSON answer.
+    ///
+    /// Unlike `logs`, which streams every matching record, `query` caps its output
+    /// and reports what it left out. Every row carries the repository, commit, and
+    /// path it came from. Every response reports what the data does and does not
+    /// cover, so an empty result is never mistaken for an absence of action.
+    ///
+    /// Jurisdictions may be given as Open Civic Data identifiers or as locale
+    /// codes: `ocd-jurisdiction/country:us/state:il/government`,
+    /// `ocd-division/country:us/state:il/sldl:4`, or simply `il`.
+    Query {
+        /// What to ask for: bills | votes | people | coverage
+        #[arg(value_parser = ["bills", "votes", "people", "coverage"])]
+        kind: String,
+
+        /// Jurisdictions, as OCD ids or locale codes (default: everything cloned)
+        #[arg(long = "jurisdiction", num_args = 0.., value_delimiter = ',')]
+        jurisdictions: Vec<String>,
+
+        /// Restrict to one legislative session
+        #[arg(long)]
+        session: Option<String>,
+
+        /// Restrict to one bill, by identifier
+        #[arg(long)]
+        identifier: Option<String>,
+
+        /// A legislator name to match against sponsors and voters
+        #[arg(long)]
+        person: Option<String>,
+
+        /// A tag from govbot.yml, used to rank and filter by relevance
+        #[arg(long)]
+        tag: Option<String>,
+
+        /// Minimum tag score (default: the tag's own threshold)
+        #[arg(long = "min-score")]
+        min_score: Option<f64>,
+
+        /// How sure a name match must be before anything is attributed
+        #[arg(long = "min-confidence", default_value = "medium",
+              value_parser = ["any", "medium", "high", "exact"])]
+        min_confidence: String,
+
+        /// Free-text match against identifier, title, abstract, and subjects
+        #[arg(long)]
+        text: Option<String>,
+
+        /// Restrict to bills carrying this subject
+        #[arg(long)]
+        subject: Option<String>,
+
+        /// Maximum rows to return (default: 20)
+        #[arg(long, default_value = "20")]
+        limit: usize,
+
+        /// Directory containing repositories (default: $CWD/govbot_data/repos)
+        #[arg(long = "govbot-dir")]
+        govbot_dir: Option<String>,
+
+        /// Directory `govbot tag` wrote to (default: current directory)
+        #[arg(long = "tags-dir")]
+        tags_dir: Option<String>,
+    },
+
     /// Process and display pipeline log files
     Logs {
         /// Repos to output (default: `all`) `--repos="il,ca"`
@@ -1388,6 +1453,101 @@ async fn run_load_command(cmd: Command) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Run `govbot query`.
+///
+/// Resolves jurisdictions, hands off to `govbot::query`, and prints one JSON object.
+/// Stdout carries JSON and nothing else, so this can be piped straight into `jq` or
+/// read by a program; progress and warnings go to stderr.
+async fn run_query_command(cmd: Command) -> anyhow::Result<()> {
+    let Command::Query {
+        kind,
+        jurisdictions,
+        session,
+        identifier,
+        person,
+        tag,
+        min_score,
+        min_confidence,
+        text,
+        subject,
+        limit,
+        govbot_dir,
+        tags_dir,
+    } = cmd else {
+        unreachable!()
+    };
+
+    let repos_dir = get_govbot_dir(govbot_dir)?;
+    if !repos_dir.exists() {
+        anyhow::bail!(
+            "No cloned data at {}. Run `govbot clone <jurisdiction>` first.",
+            repos_dir.display()
+        );
+    }
+
+    let kind = govbot::query::QueryKind::parse(&kind)
+        .ok_or_else(|| anyhow::anyhow!("Unknown query type: {}", kind))?;
+
+    let min_confidence = govbot::query::Confidence::parse(&min_confidence)
+        .ok_or_else(|| anyhow::anyhow!("Unknown confidence level: {}", min_confidence))?;
+
+    // No jurisdiction given means everything already on disk. That keeps the common
+    // case short, and it never implies we hold data we do not.
+    let resolved: Vec<govbot::query::Jurisdiction> = if jurisdictions.is_empty() {
+        govbot::git::get_available_locales(&repos_dir)
+            .map_err(|e| anyhow::anyhow!("{}", e))?
+            .iter()
+            .map(govbot::query::Jurisdiction::new)
+            .collect()
+    } else {
+        let mut resolved = Vec::new();
+        for raw in &jurisdictions {
+            let jurisdiction = govbot::query::ocd::parse_jurisdiction(raw).ok_or_else(|| {
+                anyhow::anyhow!(
+                    "Could not read {:?} as a jurisdiction. Use a locale code such as `il`, \
+                     or an Open Civic Data id such as \
+                     `ocd-jurisdiction/country:us/state:il/government`.",
+                    raw
+                )
+            })?;
+            resolved.push(jurisdiction);
+        }
+        resolved
+    };
+
+    if resolved.is_empty() {
+        anyhow::bail!(
+            "Nothing cloned at {} yet. Run `govbot clone <jurisdiction>` first.",
+            repos_dir.display()
+        );
+    }
+
+    let tags_dir = match tags_dir {
+        Some(dir) => PathBuf::from(dir),
+        None => std::env::current_dir()?,
+    };
+
+    let request = govbot::query::QueryRequest {
+        kind,
+        repos_dir,
+        tags_dir,
+        jurisdictions: resolved,
+        session,
+        identifier,
+        person,
+        tag,
+        min_score,
+        min_confidence,
+        text,
+        subject,
+        limit,
+    };
+
+    let response = govbot::query::run(&request)?;
+    println!("{}", serde_json::to_string_pretty(&response)?);
+    Ok(())
+}
+
 /// Extract country, state, and session_id from a log path
 /// Path format: .../country:us/state:il/sessions/104th/bills/...
 fn extract_path_info(path: &str) -> Option<(String, String, String)> {
@@ -2300,6 +2460,9 @@ async fn main() -> anyhow::Result<()> {
         }
         Some(cmd @ Command::Delete { .. }) => {
             run_delete_command(cmd).await
+        }
+        Some(cmd @ Command::Query { .. }) => {
+            run_query_command(cmd).await
         }
         Some(cmd @ Command::Logs { .. }) => {
             run_logs_command(cmd).await
