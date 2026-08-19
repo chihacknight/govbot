@@ -241,7 +241,7 @@ def write_action_logs(
             }
 
             with open(log_filepath, "a", encoding="utf-8") as f:
-                f.write(json.dumps(action_log, f, indent=2) + "\n")
+                f.write(json.dumps(action_log, indent=2) + "\n")
 
 
 def write_vote_event_log(vote_event: dict[str, Any], log_folder: Union[str, Path]) -> None:
