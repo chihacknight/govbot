@@ -1,0 +1,329 @@
+[
+  {
+    "id": 1,
+    "jsonrpc": "2.0",
+    "result": {
+      "capabilities": {
+        "prompts": {
+          "listChanged": true
+        },
+        "resources": {
+          "listChanged": true
+        },
+        "tools": {
+          "listChanged": true
+        }
+      },
+      "instructions": "<5535 characters>",
+      "protocolVersion": "2025-06-18",
+      "serverInfo": {
+        "name": "govbot",
+        "version": "<version>"
+      }
+    }
+  },
+  {
+    "id": 2,
+    "jsonrpc": "2.0",
+    "result": {
+      "tools": [
+        {
+          "description": "Create a folder on this computer for tracking legislation. You own it \u2014 it holds the data cloned so far and a plain-text file describing the topics you care about, and it can be published to GitHub or deleted at any time.",
+          "execution": {
+            "taskSupport": "forbidden"
+          },
+          "inputSchema": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "properties": {},
+            "type": "object"
+          },
+          "name": "setup_workspace",
+          "title": "Create your legislation workspace"
+        },
+        {
+          "description": "Report which jurisdictions have been cloned, how many bills and recorded votes each has, and what questions that data can and cannot answer.",
+          "execution": {
+            "taskSupport": "forbidden"
+          },
+          "inputSchema": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "additionalProperties": false,
+            "properties": {
+              "jurisdictions": {
+                "description": "Jurisdictions to report on, as locale codes (`il`, `usa`) or Open Civic Data ids. Omit for everything already cloned.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "name": "check_local_data",
+          "title": "See what data is on this computer"
+        },
+        {
+          "description": "Download legislation for one or more jurisdictions from public git repositories to this computer. No account, no API key, and no record of what you look up \u2014 every later question is answered from the local copy.",
+          "execution": {
+            "taskSupport": "forbidden"
+          },
+          "inputSchema": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "additionalProperties": false,
+            "properties": {
+              "jurisdictions": {
+                "description": "Jurisdictions to clone, as locale codes: two-letter state codes (`il`, `wy`), `usa` for Congress, or `dc`, `pr`, `gu`, `vi`, `mp`.",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "type": "array"
+              }
+            },
+            "required": [
+              "jurisdictions"
+            ],
+            "type": "object"
+          },
+          "name": "clone_government_data",
+          "title": "Privately clone government data"
+        },
+        {
+          "description": "Write the topics you care about into your workspace as reusable definitions. They are saved as plain YAML you can read, edit, and re-run yourself.",
+          "execution": {
+            "taskSupport": "forbidden"
+          },
+          "inputSchema": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "additionalProperties": false,
+            "properties": {
+              "topics": {
+                "description": "The topics to save.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "description": "What this topic covers. Embedded and compared against every bill.",
+                      "type": "string"
+                    },
+                    "examples": {
+                      "description": "Two or three sentences describing bills that should match.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "exclude_keywords": {
+                      "description": "Terms that disqualify a bill from this topic.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "include_keywords": {
+                      "description": "Distinctive terms. Keep this tight: one keyword hit alone lifts a bill to the threshold, so a loose list turns semantic matching into keyword matching.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "name": {
+                      "description": "A short name for the topic, e.g. 'renter protections'.",
+                      "type": "string"
+                    },
+                    "negative_examples": {
+                      "description": "Bills on this subject but on the other side of it. This is what turns a subject into a position \u2014 include them whenever the person expressed a direction, not just an interest.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "threshold": {
+                      "description": "Score a bill must reach. Use 0.72 with no negative_examples, or 0.55 with them \u2014 negative examples lower every score by about 0.17, so 0.72 alongside them matches nothing.",
+                      "maximum": 1,
+                      "minimum": 0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "description"
+                  ],
+                  "type": "object"
+                },
+                "minItems": 1,
+                "type": "array"
+              }
+            },
+            "required": [
+              "topics"
+            ],
+            "type": "object"
+          },
+          "name": "save_my_values",
+          "title": "Save what you care about"
+        },
+        {
+          "description": "Score bills against your saved topics using an AI model that runs on this computer. Your topics and the bill text never leave the machine, and there is no per-use cost.",
+          "execution": {
+            "taskSupport": "forbidden"
+          },
+          "inputSchema": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "additionalProperties": false,
+            "properties": {
+              "jurisdictions": {
+                "description": "Jurisdictions to score. Omit for everything cloned.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "limit": {
+                "description": "Bills to score per jurisdiction. Scoring runs at roughly 25 bills per second, so keep this in the hundreds for an interactive answer.",
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "name": "tag_with_local_ai",
+          "title": "Tag legislation with a local AI model"
+        },
+        {
+          "description": "Search the legislation on this computer: bills, roll-call votes, the people named in the data, or a report of what the data covers. Every result carries the repository, commit, and file path it came from.",
+          "execution": {
+            "taskSupport": "forbidden"
+          },
+          "inputSchema": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "additionalProperties": false,
+            "properties": {
+              "identifier": {
+                "description": "A single bill, e.g. `HB1234`.",
+                "type": "string"
+              },
+              "jurisdictions": {
+                "description": "Locale codes (`il`, `usa`) or Open Civic Data ids such as `ocd-jurisdiction/country:us/state:il/government` or `ocd-division/country:us/state:il/sldl:4`. Omit for everything cloned.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "limit": {
+                "description": "Rows to return (default 20).",
+                "exclusiveMinimum": 0,
+                "maximum": 100,
+                "type": "integer"
+              },
+              "min_confidence": {
+                "description": "How certain a name match must be before anything is attributed to that person. Defaults to medium.",
+                "enum": [
+                  "any",
+                  "medium",
+                  "high",
+                  "exact"
+                ],
+                "type": "string"
+              },
+              "min_score": {
+                "description": "Lowest topic score to include. Defaults to the topic's threshold.",
+                "type": "number"
+              },
+              "person": {
+                "description": "A legislator's name, matched against sponsors and voters. If it comes back ambiguous, ask which person is meant rather than choosing.",
+                "type": "string"
+              },
+              "session": {
+                "description": "A single legislative session.",
+                "type": "string"
+              },
+              "subject": {
+                "description": "A subject term the jurisdiction assigned.",
+                "type": "string"
+              },
+              "tag": {
+                "description": "A topic from save_my_values. Ranks and filters results by score.",
+                "type": "string"
+              },
+              "text": {
+                "description": "Words that must all appear in the bill, matched as whole words.",
+                "type": "string"
+              },
+              "type": {
+                "description": "bills: legislation. votes: roll calls. people: the names present in the data. coverage: what the data can and cannot answer.",
+                "enum": [
+                  "bills",
+                  "votes",
+                  "people",
+                  "coverage"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "type": "object"
+          },
+          "name": "query",
+          "title": "Search cloned legislation"
+        }
+      ]
+    }
+  },
+  {
+    "id": 3,
+    "jsonrpc": "2.0",
+    "result": {
+      "resources": [
+        {
+          "description": "The topics recorded as yours, and the jurisdictions being tracked. Open this to check whether it describes what you actually meant.",
+          "mimeType": "application/yaml",
+          "name": "values",
+          "title": "Your saved values",
+          "uri": "govbot://workspace/govbot.yml"
+        },
+        {
+          "description": "What this folder is, how to run it yourself, and how to publish it.",
+          "mimeType": "text/markdown",
+          "name": "readme",
+          "title": "About your workspace",
+          "uri": "govbot://workspace/README.md"
+        },
+        {
+          "description": "Which jurisdictions are cloned, how much legislation each has, and whether it publishes individual votes.",
+          "mimeType": "text/plain",
+          "name": "coverage",
+          "title": "What your local data covers",
+          "uri": "govbot://workspace/coverage"
+        }
+      ]
+    }
+  },
+  {
+    "id": 4,
+    "jsonrpc": "2.0",
+    "result": {
+      "prompts": [
+        {
+          "arguments": [
+            {
+              "description": "Your state, e.g. Illinois \u2014 optional, Claude will ask if omitted.",
+              "name": "state",
+              "required": false
+            },
+            {
+              "description": "What you care about, in your own words \u2014 optional.",
+              "name": "values",
+              "required": false
+            }
+          ],
+          "description": "Walk through finding your representatives and comparing their record against what you care about.",
+          "name": "who_are_my_reps",
+          "title": "Who represents me, and how do they vote?"
+        }
+      ]
+    }
+  }
+]
