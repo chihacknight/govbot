@@ -139,7 +139,7 @@
                       "type": "array"
                     },
                     "threshold": {
-                      "description": "Score a bill must reach. Use 0.72; the 0.5 default tags everything.",
+                      "description": "Score a bill must reach. Use 0.72 with no negative_examples, or 0.55 with them \u2014 negative examples lower every score by about 0.17, so 0.72 alongside them matches nothing.",
                       "maximum": 1,
                       "minimum": 0,
                       "type": "number"

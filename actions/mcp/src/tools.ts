@@ -206,7 +206,9 @@ const tagSchema = z.object({
     .min(0)
     .max(1)
     .optional()
-    .describe("Score a bill must reach. Use 0.72; the 0.5 default tags everything."),
+    .describe(
+      "Score a bill must reach. Use 0.72 with no negative_examples, or 0.55 with them — negative examples lower every score by about 0.17, so 0.72 alongside them matches nothing.",
+    ),
 });
 
 export const saveValuesSchema = {
