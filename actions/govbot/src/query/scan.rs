@@ -199,11 +199,67 @@ impl VoteEventRecord {
 }
 
 /// Resolve the commit a repository is currently on, for citations.
+///
+/// Tries libgit2 first, then falls back to reading git's own files. The fallback
+/// is not redundant: libgit2 refuses to open a repository declaring an extension
+/// it does not recognise, and `--filter=blob:none` partial clones declare
+/// `extensions.partialClone`. Those clones are exactly what someone fetching a
+/// large jurisdiction ends up with, and a citation without a commit is a citation
+/// nobody can check.
 pub fn head_commit(repo_path: &Path) -> Option<String> {
+    if let Some(sha) = head_commit_via_libgit2(repo_path) {
+        return Some(sha);
+    }
+    head_commit_from_files(repo_path)
+}
+
+fn head_commit_via_libgit2(repo_path: &Path) -> Option<String> {
     let repo = git2::Repository::open(repo_path).ok()?;
     let head = repo.head().ok()?;
     let commit = head.peel_to_commit().ok()?;
-    Some(commit.id().to_string()[..7].to_string())
+    Some(short_sha(&commit.id().to_string()))
+}
+
+/// Read `HEAD` and resolve it through loose refs and then `packed-refs`.
+fn head_commit_from_files(repo_path: &Path) -> Option<String> {
+    let git_dir = repo_path.join(".git");
+    let head = std::fs::read_to_string(git_dir.join("HEAD")).ok()?;
+    let head = head.trim();
+
+    // A detached HEAD holds the object id directly.
+    let Some(reference) = head.strip_prefix("ref: ") else {
+        return is_object_id(head).then(|| short_sha(head));
+    };
+
+    if let Ok(contents) = std::fs::read_to_string(git_dir.join(reference)) {
+        let sha = contents.trim();
+        if is_object_id(sha) {
+            return Some(short_sha(sha));
+        }
+    }
+
+    // Shallow and freshly cloned repositories usually keep refs packed.
+    let packed = std::fs::read_to_string(git_dir.join("packed-refs")).ok()?;
+    for line in packed.lines() {
+        if line.starts_with('#') || line.starts_with('^') {
+            continue;
+        }
+        let Some((sha, name)) = line.split_once(' ') else {
+            continue;
+        };
+        if name.trim() == reference && is_object_id(sha) {
+            return Some(short_sha(sha));
+        }
+    }
+    None
+}
+
+fn is_object_id(value: &str) -> bool {
+    value.len() >= 7 && value.chars().all(|c| c.is_ascii_hexdigit())
+}
+
+fn short_sha(sha: &str) -> String {
+    sha.chars().take(7).collect()
 }
 
 /// Strip the `~` prefix govbot's upstream uses for pseudo-JSON blobs and pull one
@@ -505,6 +561,46 @@ mod tests {
         let value = serde_json::json!("not json at all");
         assert_eq!(pseudo_json_field(Some(&value), "classification"), "");
         assert_eq!(pseudo_json_field(None, "classification"), "");
+    }
+
+    #[test]
+    fn recognises_object_ids() {
+        assert!(is_object_id("9be2e4f61f0000000000000000000000000000aa"));
+        assert!(is_object_id("598ea01"));
+        assert!(!is_object_id("ref: refs/heads/main"));
+        assert!(!is_object_id("abc"));
+        assert_eq!(short_sha("9be2e4f61f00000"), "9be2e4f");
+    }
+
+    /// The fallback exists because libgit2 will not open a partial clone, which is
+    /// what `--filter=blob:none` produces.
+    #[test]
+    fn reads_head_from_git_files_including_packed_refs() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let git = dir.path().join(".git");
+        std::fs::create_dir_all(git.join("refs/heads")).expect("mkdir");
+
+        std::fs::write(git.join("HEAD"), "ref: refs/heads/main\n").expect("write");
+        std::fs::write(
+            git.join("packed-refs"),
+            "# pack-refs with: peeled fully-peeled sorted\n\
+             9be2e4f61f0000000000000000000000000000aa refs/heads/main\n",
+        )
+        .expect("write");
+        assert_eq!(head_commit_from_files(dir.path()).as_deref(), Some("9be2e4f"));
+
+        // A loose ref wins over packed-refs.
+        std::fs::write(
+            git.join("refs/heads/main"),
+            "1111111000000000000000000000000000000000\n",
+        )
+        .expect("write");
+        assert_eq!(head_commit_from_files(dir.path()).as_deref(), Some("1111111"));
+
+        // Detached HEAD.
+        std::fs::write(git.join("HEAD"), "2222222000000000000000000000000000000000\n")
+            .expect("write");
+        assert_eq!(head_commit_from_files(dir.path()).as_deref(), Some("2222222"));
     }
 
     #[test]

@@ -1572,13 +1572,33 @@ fn extract_path_info(path: &str) -> Option<(String, String, String)> {
 /// Download a file from a URL to a local path
 fn download_file(url: &str, path: &std::path::Path) -> anyhow::Result<()> {
     eprintln!("Downloading {}...", url);
-    let response = reqwest::blocking::get(url)?;
-    if !response.status().is_success() {
-        return Err(anyhow::anyhow!("Failed to download {}: HTTP {}", url, response.status()));
-    }
-    let mut file = std::fs::File::create(path)?;
-    std::io::copy(&mut response.bytes()?.as_ref(), &mut file)?;
-    Ok(())
+
+    // `reqwest::blocking` builds its own tokio runtime and panics when that runtime
+    // is dropped inside an async context — which is where every caller here sits,
+    // since the commands are `async fn` under `#[tokio::main]`. Doing the download
+    // on a plain thread keeps the blocking runtime out of the async one.
+    //
+    // Without this, `govbot tag` panics the first time it runs on any machine that
+    // does not already have the embedding model cached:
+    //
+    //     Cannot drop a runtime in a context where blocking is not allowed.
+    let url = url.to_string();
+    let path = path.to_path_buf();
+    std::thread::spawn(move || -> anyhow::Result<()> {
+        let response = reqwest::blocking::get(&url)?;
+        if !response.status().is_success() {
+            return Err(anyhow::anyhow!(
+                "Failed to download {}: HTTP {}",
+                url,
+                response.status()
+            ));
+        }
+        let mut file = std::fs::File::create(&path)?;
+        std::io::copy(&mut response.bytes()?.as_ref(), &mut file)?;
+        Ok(())
+    })
+    .join()
+    .map_err(|_| anyhow::anyhow!("Download thread panicked"))?
 }
 
 /// Ensure embedding model and tokenizer exist; if missing, download them from Hugging Face.
