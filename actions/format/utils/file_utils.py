@@ -221,55 +221,27 @@ def slugify(text: str, max_length=100):
 def write_action_logs(
     actions: list[dict[str, Any]], bill_identifier: str, sources: list[dict[str, Any]], session_id: str, log_folder: Union[str, Path]
 ) -> None:
+        """
+    Writes all action logs for a given bill into a single "action_logs.jsonl" file.
     """
-    Writes one JSON file per action for a bill.
+        log_filepath = Path(log_folder / "action_logs.jsonl")
+        for action in actions:
+            action_log = {
+                "action": {
+                    "description": action.get("description", "no_description"),
+                    "occurred_at": action.get("date", "no_date"),
+                    "jurisdiction_id": action.get("organization_id", "no_jurisdiction"),
+                    "session_id": session_id,
+                    "entity_type": "bill",
+                    "classifications": action.get("classification", []),
+                    "related_entities": action.get("related_entities", []),
+                    "sources": sources,
+                },
+                "bill_id": bill_identifier
+            }
 
-    If the action has a classification, file is named:
-        {timestamp}.classification.{classification}.{org_class}.json
-    Otherwise:
-        {timestamp}_{slugified_description}.json
-    """
-    for action in actions:
-        date = action.get("date")
-        desc = action.get("description", "no_description")
-        timestamp = format_timestamp(date) if date else "unknown"
-
-        classifications = action.get("classification", [])
-        org_id = action.get("organization_id", "")
-
-        if classifications and classifications[0] in TRACKER_CLASSIFICATIONS:
-            classification = classifications[0]
-            # Extract org classification like "lower" or "upper" from string: '~{"classification": "lower"}'
-            org_class = "unknown"
-            if "classification" in org_id:
-                try:
-                    org_dict = json.loads(org_id.strip("~"))
-                    org_class = org_dict.get("classification", "unknown")
-                except Exception:
-                    pass
-
-            filename = f"{timestamp}.classification.{classification}.{org_class}.json"
-        else:
-            slug = slugify(desc)
-            filename = f"{timestamp}_{slug}.json"
-
-        output_file = Path(log_folder) / filename
-        action_log = {
-            "action": {
-                "description": action.get("description", "no_description"),
-                "occurred_at": action.get("date", "no_date"),
-                "jurisdiction_id": action.get("organization_id", "no_jurisdiction"),
-                "session_id": session_id,
-                "entity_type": "bill",
-                "classifications": action.get("classification", []),
-                "related_entities": action.get("related_entities", []),
-                "sources": sources,
-            },
-            "bill_id": bill_identifier
-        }
-
-        with open(output_file, "w", encoding="utf-8") as f:
-            json.dump(action_log, f, indent=2)
+            with open(log_filepath, "a", encoding="utf-8") as f:
+                f.write(json.dumps(action_log, f, indent=2) + "\n")
 
 
 def write_vote_event_log(vote_event: dict[str, Any], log_folder: Union[str, Path]) -> None:
