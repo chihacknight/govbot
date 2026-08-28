@@ -122,21 +122,21 @@ Mock legislative data is available for offline development:
 
 ## Pages Dashboard
 
-The GitHub Pages dashboard's topic taxonomy lives in `scripts/govbot-dashboard.yml`
-(the canonical `tags:` config the deploy workflow runs `govbot tag` against). Its topic
-names must stay in sync with the keyword fallback in `scripts/dashboard_tags.json`. See
-`docs/src/dashboard-guide.md` for the data flow; tagging in CI is incremental via
-`scripts/filter_new_bills.py` + `scripts/tag_dashboard_repo.sh`.
+The GitHub Pages dashboard is a **committee-hearings & witness-slips** page for Illinois
+and Washington. Its data comes from `actions/scrape-hearings/`, which taps ilga.gov and
+leg.wa.gov directly (not OpenStates), writing `docs/src/dashboard/hearings.json` + an RSS
+feed `hearings.xml` (schema: `schemas/govbot.hearings.schema.json`). The `deploy-docs.yml`
+workflow rebuilds these on the twice-daily schedule (08:00/20:00 UTC); only upcoming
+hearings are shown and a scrape outage keeps the committed sample. Witness-slip *counts*
+are best-effort (optional in the schema). Parsers are offline-snapshot-tested:
+`python3 actions/scrape-hearings/test_scrape_hearings.py`. See
+`docs/src/dashboard-guide.md` for the data flow.
 
-The dashboard also shows **live committee hearings & witness slips** for Illinois and
-Washington, from a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov and
-leg.wa.gov directly (not OpenStates), writing `docs/src/dashboard/hearings.json`
-(schema: `schemas/govbot.hearings.schema.json`). The `deploy-docs.yml` workflow rebuilds
-it on the twice-daily schedule (08:00/20:00 UTC). Hearings are a rolling near-future
-window, not point-in-time bill metadata, so they never touch the bill `data.json`, and a
-hearings outage keeps the committed sample. Witness-slip *counts* are best-effort
-(optional in the schema). Parsers are offline-snapshot-tested:
-`python3 actions/scrape-hearings/test_scrape_hearings.py`.
+**Bill-tagging tooling (not on the dashboard anymore):** the topic-tagging pipeline —
+`scripts/build_dashboard_data.py`, `scripts/govbot-dashboard.yml` (taxonomy, kept in sync
+with the `scripts/dashboard_tags.json` keyword fallback), `scripts/filter_new_bills.py` +
+`scripts/tag_dashboard_repo.sh`, and `govbot tag` — still lives in the repo and can be run
+manually to build a bill `data.json`, but the Pages deploy no longer runs it.
 
 ## govbot Development
 
