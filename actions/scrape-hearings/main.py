@@ -600,6 +600,44 @@ def to_rss(doc):
             + ET.tostring(rss, encoding="unicode") + "\n")
 
 
+# --------------------------------------------------------------------------- #
+# govbot bill enrichment
+# --------------------------------------------------------------------------- #
+def _norm_bill_id(s):
+    return re.sub(r"[^A-Z0-9]", "", (s or "").upper())
+
+
+def enrich_from_govbot(hearings, data_path):
+    """Cross-reference each hearing's bills against govbot's own bill dataset
+    (docs/src/dashboard/data.json) and attach the govbot title + topic tags where
+    the bill is tracked. IL and WA are both scraped by govbot, so their hearing
+    bills resolve to real govbot records. Fail-soft: a missing/partial data.json
+    (e.g. the offline sample) simply means no enrichment."""
+    try:
+        data = json.loads(Path(data_path).read_text())
+    except (OSError, json.JSONDecodeError):
+        return 0
+    index = {}
+    for b in data.get("bills", []):
+        st = (b.get("state") or "").lower()
+        index[(st, _norm_bill_id(b.get("id")))] = b
+    matched = 0
+    for h in hearings:
+        for bill in h.get("bills", []):
+            rec = index.get((h["jurisdiction"], _norm_bill_id(bill["id"])))
+            if not rec:
+                continue
+            title = (rec.get("title") or "").strip()
+            if title:
+                bill["govbot_title"] = title
+            tags = [t for t in (rec.get("tags") or []) if t]
+            if tags:
+                bill["govbot_tags"] = tags
+            if title or tags:
+                matched += 1
+    return matched
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--jurisdictions", default="il,wa",
@@ -615,6 +653,9 @@ def main():
     ap.add_argument("--output", "-o", default="-", help="Output path (default: stdout)")
     ap.add_argument("--rss", default=None,
                     help="Also write an RSS 2.0 feed of the hearings to this path")
+    ap.add_argument("--dashboard-data", default="docs/src/dashboard/data.json",
+                    help="govbot bill dataset (data.json) used to enrich hearing "
+                         "bills with their govbot title + topic tags")
     args = ap.parse_args()
 
     now = (datetime.strptime(args.now, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
@@ -636,6 +677,11 @@ def main():
         resolve_wa_committee_urls(hearings)  # WA committee pages from the index
         verify_committee_urls(hearings)      # drop any link that 404s / soft-404s
         source = "ilga.gov + leg.wa.gov (govbot scrape-hearings)"
+
+    if args.dashboard_data:
+        n = enrich_from_govbot(hearings, args.dashboard_data)
+        if n:
+            print(f"enriched {n} hearing bills from govbot data", file=sys.stderr)
 
     doc = assemble(hearings, codes, source, now)
     text = json.dumps(doc, indent=2, ensure_ascii=False) + "\n"

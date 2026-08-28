@@ -118,6 +118,33 @@ class PastFilter(unittest.TestCase):
         self.assertEqual(ids, {"today", "future", "undated"})
 
 
+class GovbotEnrichment(unittest.TestCase):
+    def test_matches_bills_and_attaches_title_tags(self):
+        import tempfile, os
+        fake = {"bills": [
+            {"state": "il", "id": "HB 1643", "title": "Restorative justice pilot",
+             "tags": ["criminal justice"]},
+            {"state": "il", "id": "HB25", "title": "Housing credit", "tags": ["housing"]},
+        ]}
+        f = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False)
+        json.dump(fake, f); f.close()
+        try:
+            hearings = main.build_from_fixtures(RAW)
+            matched = main.enrich_from_govbot(hearings, f.name)
+        finally:
+            os.unlink(f.name)
+        self.assertEqual(matched, 2)
+        bills = {b["id"]: b for h in hearings for b in h["bills"]}
+        self.assertEqual(bills["HB1643"]["govbot_title"], "Restorative justice pilot")
+        self.assertEqual(bills["HB25"]["govbot_tags"], ["housing"])
+        # a bill govbot doesn't track gets no enrichment
+        self.assertNotIn("govbot_title", bills["SB1486"])
+
+    def test_missing_data_is_noop(self):
+        hearings = main.build_from_fixtures(RAW)
+        self.assertEqual(main.enrich_from_govbot(hearings, "/no/such/data.json"), 0)
+
+
 class Snapshot(unittest.TestCase):
     def test_offline_build_matches_snapshot(self):
         from datetime import datetime, timezone

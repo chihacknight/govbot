@@ -95,3 +95,9 @@ into `docs/src/dashboard/hearings.json` + an RSS feed `hearings.xml`
 `docs/src/dashboard/participation.json` (schema `schemas/govbot.participation.schema.json`).
 The Pages deploy rebuilds the hearings feed on the same twice-daily schedule. See that
 page's own notes and `actions/scrape-hearings/README.md` for details.
+
+The hearings page also **uses govbot's own bill data**: at build time each hearing's
+bills are cross-referenced against `data.json` (govbot tracks Illinois & Washington
+bills), and where a match is found the bill shows its **govbot title and topic tags** plus
+a **"via govbot ↗"** link that opens that bill in the Legislation Dashboard tab
+(`index.html#q=<bill>`).

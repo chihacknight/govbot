@@ -566,6 +566,16 @@
     code.textContent = "python3 scripts/build_dashboard_data.py";
     footer.append(code, document.createTextNode(" after `govbot clone` / `govbot tag`."));
 
+    // Deep-link support: the hearings page links bills here as index.html#q=HB1643
+    // (or ?q=), so a "via govbot" click lands pre-filtered on that bill.
+    const deep = (location.hash.match(/[#&]q=([^&]+)/) || location.search.match(/[?&]q=([^&]+)/));
+    if (deep) {
+      try {
+        const q = decodeURIComponent(deep[1]).trim();
+        if (q) { state.filters.search = q.toLowerCase(); $("f-search").value = q; }
+      } catch (e) { /* ignore malformed */ }
+    }
+
     render();
   }
 

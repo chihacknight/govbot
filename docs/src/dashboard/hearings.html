@@ -342,7 +342,16 @@
   }
   .h-committee { font-weight: 550; }
   .h-loc { color: var(--text-muted); font-size: 12.5px; margin-top: 1px; }
-  .h-bills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+  .h-bills { display: flex; flex-direction: column; gap: 6px; margin-top: 7px; }
+  .bill-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+  .bill-title { font-size: 12.5px; color: var(--text-secondary); }
+  .bill-tags { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+  .bill-tag {
+    font-size: 11px; color: var(--text-muted);
+    background: var(--hover-wash); border-radius: 5px; padding: 1px 6px;
+  }
+  .gov-link { font-size: 11.5px; font-weight: 600; color: var(--series-1); text-decoration: none; white-space: nowrap; }
+  .gov-link:hover { text-decoration: underline; }
   .bill-chip {
     display: inline-flex; align-items: center; gap: 7px;
     padding: 2px 8px; border: 1px solid var(--border); border-radius: 7px;
@@ -659,15 +668,29 @@
     if (h.location) main.append(eln("div", "h-loc", h.location));
 
     if (h.bills && h.bills.length) {
-      const chips = eln("div", "h-bills");
+      const list = eln("div", "h-bills");
       h.bills.forEach((b) => {
+        const row = eln("div", "bill-row");
         const chip = eln("a", "bill-chip");
         chip.href = b.url || h.details_url || "#"; chip.target = "_blank"; chip.rel = "noopener";
         chip.append(eln("span", "chip-id", b.id));
         if (b.slips) chip.append(slipBar(b.slips));
-        chips.append(chip);
+        row.append(chip);
+        if (b.govbot_title) row.append(eln("span", "bill-title", b.govbot_title));
+        if (b.govbot_tags && b.govbot_tags.length) {
+          const tags = eln("span", "bill-tags");
+          b.govbot_tags.forEach((t) => tags.append(eln("span", "bill-tag", t)));
+          row.append(tags);
+        }
+        if (b.govbot_title || (b.govbot_tags && b.govbot_tags.length)) {
+          const g = eln("a", "gov-link", "via govbot ↗");
+          g.href = "index.html#q=" + encodeURIComponent(b.id);
+          g.title = "View " + b.id + " in the govbot Legislation Dashboard";
+          row.append(g);
+        }
+        list.append(row);
       });
-      main.append(chips);
+      main.append(list);
     }
 
     const actions = eln("div", "h-actions");

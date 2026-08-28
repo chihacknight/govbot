@@ -35,7 +35,11 @@
         {
           "id": "HB1643",
           "slips": null,
-          "url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=1643&GAID=18&SessionID=114"
+          "url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=1643&GAID=18&SessionID=114",
+          "govbot_title": "Restorative Justice and Public Safety pilot program",
+          "govbot_tags": [
+            "criminal justice"
+          ]
         }
       ],
       "details_url": "https://ilga.gov/House/hearings/details/3114/23224",
@@ -62,7 +66,12 @@
             "opponents": 318,
             "no_position": 45
           },
-          "url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=25&GAID=18&SessionID=114"
+          "url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=25&GAID=18&SessionID=114",
+          "govbot_title": "Affordable Housing Special Assessment Program",
+          "govbot_tags": [
+            "housing",
+            "budget & taxes"
+          ]
         },
         {
           "id": "SB1486",
@@ -71,12 +80,20 @@
             "opponents": 510,
             "no_position": 8
           },
-          "url": "https://ilga.gov/legislation/BillStatus?DocTypeID=SB&DocNum=1486&GAID=18&SessionID=114"
+          "url": "https://ilga.gov/legislation/BillStatus?DocTypeID=SB&DocNum=1486&GAID=18&SessionID=114",
+          "govbot_title": "Illinois Works apprenticeship expansion",
+          "govbot_tags": [
+            "labor & workers"
+          ]
         },
         {
           "id": "HB3049",
           "slips": null,
-          "url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=3049&GAID=18&SessionID=114"
+          "url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=3049&GAID=18&SessionID=114",
+          "govbot_title": "Clean Energy Community Grants",
+          "govbot_tags": [
+            "environment & climate"
+          ]
         }
       ],
       "details_url": "https://ilga.gov/House/hearings/details/3201/24010",
