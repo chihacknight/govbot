@@ -350,7 +350,10 @@
   .slipbar { position: relative; }
   .slipbar .slip-seg { flex: 1 1 auto; }
   .slip-count { color: var(--text-muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
-  .file-link { display: inline-block; margin-top: 7px; font-size: 13px; font-weight: 550; }
+  .h-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 7px; }
+  .file-link { font-size: 13px; font-weight: 550; }
+  .committee-link { font-size: 13px; font-weight: 500; color: var(--text-secondary); text-decoration: none; }
+  .committee-link:hover { color: var(--series-1); text-decoration: underline; }
   @media (max-width: 620px) {
     .hearing-row { grid-template-columns: 1fr; }
     .hgroup-portal { margin-left: 0; }
@@ -1265,12 +1268,19 @@
       main.append(chips);
     }
 
+    const actions = eln("div", "h-actions");
     if (h.status !== "canceled" && h.witness_slip_url) {
       const file = eln("a", "file-link",
         PARTICIPATION[participationFor(h)] || "File a slip ↗");
       file.href = h.witness_slip_url; file.target = "_blank"; file.rel = "noopener";
-      main.append(file);
+      actions.append(file);
     }
+    if (h.committee_url) {
+      const cmte = eln("a", "committee-link", "About the committee ↗");
+      cmte.href = h.committee_url; cmte.target = "_blank"; cmte.rel = "noopener";
+      actions.append(cmte);
+    }
+    if (actions.childNodes.length) main.append(actions);
     row.append(main);
     return row;
   }

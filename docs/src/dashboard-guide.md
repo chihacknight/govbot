@@ -101,6 +101,11 @@ Sources, per [`schemas/govbot.hearings.schema.json`](https://github.com/chihackn
 | Illinois | `ilga.gov` Hearings JSON API | witness slip |
 | Washington | `leg.wa.gov` CommitteeMeetingService (SOAP/XML) | committee sign-in |
 
+Only **upcoming** hearings are shown (anything before today is dropped). Each
+committee links to its official page — Illinois to the committee roster, Washington
+to the committee's `leg.wa.gov` page, resolved from that site's own committee index
+(and every link is checked before it ships, so a wrong guess is never published).
+
 **Witness-slip counts are best-effort.** Many capitols only expose slip totals while
 a slip window is open (a canceled hearing's slip page returns an error), so
 `bills[].slips` is optional and usually absent; the reliable signal is the hearing

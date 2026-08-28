@@ -17,7 +17,7 @@
   ],
   "counts": {
     "il": 2,
-    "wa": 8
+    "wa": 7
   },
   "hearings": [
     {
@@ -39,6 +39,7 @@
         }
       ],
       "details_url": "https://ilga.gov/House/hearings/details/3114/23224",
+      "committee_url": "https://ilga.gov/House/committees/members/3114",
       "witness_slip_url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=1643&GAID=18&SessionID=114",
       "source": "ilga.gov"
     },
@@ -71,24 +72,9 @@
         }
       ],
       "details_url": "https://ilga.gov/House/hearings/details/3201/24010",
+      "committee_url": "https://ilga.gov/House/committees/members/3201",
       "witness_slip_url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=25&GAID=18&SessionID=114",
       "source": "ilga.gov"
-    },
-    {
-      "id": "wa-other-33550",
-      "jurisdiction": "wa",
-      "chamber": "other",
-      "committee": "Citizen Commission for Performance Measurement of Tax Preferences",
-      "title": "View meeting materials: https://jlarc.azureedge.net/documents/Agendas/Citizen%20Commission/2026/August_4_2026_Agenda.pdf\n\nWatch meeting and provide testimony: https://www.tvw.org/watch/?clientID=9375922947&eventID=2026081049\n- Sign up to testify in person or via Zoom: https://app.leg.wa.gov/csi/Agency\n- Submit written testimony by email (jlarc@leg.wa.gov) or to PO Box 40910, Olympia, WA 98504. \n\nFor more information:\nVisit the Citizen Commission for Performance Measurement of Tax Preferences website: leg.wa.gov/committees/CitizenCommission",
-      "scheduled_iso": "2026-08-04T10:00:00",
-      "scheduled_display": "2026-08-04T10:00:00",
-      "timezone": "America/Los_Angeles",
-      "location": "Senate Hearing Rm 3 and Virtual · J.A. Cherberg Building · Olympia",
-      "status": "scheduled",
-      "bills": [],
-      "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33550",
-      "witness_slip_url": "https://app.leg.wa.gov/csi/",
-      "source": "leg.wa.gov"
     },
     {
       "id": "wa-other-33551",
@@ -103,6 +89,7 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33551",
+      "committee_url": null,
       "witness_slip_url": "https://app.leg.wa.gov/csi/",
       "source": "leg.wa.gov"
     },
@@ -119,6 +106,7 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/34139",
+      "committee_url": null,
       "witness_slip_url": "https://app.leg.wa.gov/csi/",
       "source": "leg.wa.gov"
     },
@@ -135,6 +123,7 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/34140",
+      "committee_url": null,
       "witness_slip_url": "https://app.leg.wa.gov/csi/",
       "source": "leg.wa.gov"
     },
@@ -151,6 +140,7 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33488",
+      "committee_url": null,
       "witness_slip_url": "https://app.leg.wa.gov/csi/",
       "source": "leg.wa.gov"
     },
@@ -167,6 +157,7 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33497",
+      "committee_url": null,
       "witness_slip_url": "https://app.leg.wa.gov/csi/",
       "source": "leg.wa.gov"
     },
@@ -183,6 +174,7 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33498",
+      "committee_url": null,
       "witness_slip_url": "https://app.leg.wa.gov/csi/",
       "source": "leg.wa.gov"
     },
@@ -199,6 +191,7 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33820",
+      "committee_url": null,
       "witness_slip_url": "https://app.leg.wa.gov/csi/",
       "source": "leg.wa.gov"
     }

@@ -72,6 +72,52 @@ class WashingtonParser(unittest.TestCase):
         self.assertEqual(main.parse_wa_meetings("not xml"), [])
 
 
+class WashingtonCommittee(unittest.TestCase):
+    def setUp(self):
+        # Inject a fake leg.wa.gov index so matching is tested without network.
+        main._wa_index_cache["loaded"] = True
+        main._wa_index_cache["entries"] = [
+            (main._cmte_tokens("Select Committee on Pension Policy (SCPP)"),
+             "https://leg.wa.gov/.../joint/scpp/"),
+            (main._cmte_tokens("Joint Legislative Audit & Review Committee (JLARC)"),
+             "https://leg.wa.gov/.../joint/jlarc/"),
+            (main._cmte_tokens("Senate Transportation Committee"),
+             "https://leg.wa.gov/.../senate/tran/"),
+        ]
+
+    def tearDown(self):
+        main._wa_index_cache["loaded"] = False
+        main._wa_index_cache["entries"] = []
+
+    def test_matches_despite_reordered_acronym(self):
+        # SOAP name has the acronym in front; index has it in parentheses.
+        self.assertIn("jlarc", main.wa_committee_url(
+            "JLARC - Joint Legislative Audit & Review Committee"))
+
+    def test_matches_subset_with_parenthetical_acronym(self):
+        self.assertIn("scpp", main.wa_committee_url("Select Committee on Pension Policy"))
+
+    def test_no_false_match(self):
+        # "Joint Transportation" must not match "Senate Transportation".
+        self.assertIsNone(main.wa_committee_url("Joint Transportation Committee"))
+
+
+class PastFilter(unittest.TestCase):
+    def test_past_hearings_dropped_future_kept(self):
+        from datetime import datetime, timezone
+        base = {"jurisdiction": "il", "chamber": "house", "committee": "C",
+                "status": "scheduled", "bills": [], "source": "ilga.gov"}
+        hearings = [
+            {**base, "id": "past", "scheduled_iso": "2026-08-01T10:00:00"},
+            {**base, "id": "today", "scheduled_iso": "2026-08-28T09:00:00"},
+            {**base, "id": "future", "scheduled_iso": "2026-09-10T10:00:00"},
+            {**base, "id": "undated", "scheduled_iso": None},
+        ]
+        doc = main.assemble(hearings, ["il"], "src", datetime(2026, 8, 28, tzinfo=timezone.utc))
+        ids = {h["id"] for h in doc["hearings"]}
+        self.assertEqual(ids, {"today", "future", "undated"})
+
+
 class Snapshot(unittest.TestCase):
     def test_offline_build_matches_snapshot(self):
         from datetime import datetime, timezone

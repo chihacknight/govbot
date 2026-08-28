@@ -96,6 +96,7 @@
           }
         },
         "details_url": { "type": "string", "description": "Official hearing/agenda detail page." },
+        "committee_url": { "type": ["string", "null"], "description": "Official page for the committee itself (IL: committee roster; WA: leg.wa.gov committee 'about' page). Null when no reliable page resolves." },
         "witness_slip_url": { "type": "string", "description": "Deep link to the official portal to file a slip / sign in for this hearing or bill." },
         "source": { "type": "string", "description": "Origin host, e.g. ilga.gov or leg.wa.gov." }
       }

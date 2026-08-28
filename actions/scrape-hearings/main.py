@@ -53,9 +53,10 @@ FETCH_TIMEOUT = 15
 # as used by ilga.gov's own Hearings API and witness-slip URLs.
 IL_GA_ID = 18
 IL_SESSION_ID = 114
-# Rolling window: a few days back (to keep just-passed items visible) through
-# ~6 weeks out. Committee calendars rarely post further than that.
-WINDOW_BACK_DAYS = 3
+# Rolling window: from today through ~6 weeks out. Only upcoming hearings are
+# shown (past ones are filtered in assemble), and committee calendars rarely
+# post further than this.
+WINDOW_BACK_DAYS = 0
 WINDOW_FWD_DAYS = 45
 
 # Jurisdiction participation portals (where a resident actually files/​signs in).
@@ -150,6 +151,12 @@ def il_details_url(chamber, committee_id, hearing_id):
     return f"https://ilga.gov/{seg}/hearings/details/{committee_id}/{hearing_id}"
 
 
+def il_committee_url(chamber, committee_id):
+    """The official ILGA committee page (members/roster) for a committee id."""
+    seg = "House" if chamber == "house" else "Senate"
+    return f"https://ilga.gov/{seg}/committees/members/{committee_id}"
+
+
 def _il_time_to_iso(raw):
     """'8/31/2026 10:00 AM' -> '2026-08-31T10:00:00' (naive local), else None."""
     for fmt in ("%m/%d/%Y %I:%M %p", "%m/%d/%Y %I:%M:%S %p", "%m/%d/%Y"):
@@ -198,6 +205,7 @@ def parse_il_hearings(json_text, chamber):
             "status": "canceled" if canceled else "scheduled",
             "bills": bills,
             "details_url": il_details_url(chamber, committee_id, hearing_id),
+            "committee_url": il_committee_url(chamber, committee_id),
             "witness_slip_url": (bills[0]["url"] if bills else "https://my.ilga.gov/"),
             "source": "ilga.gov",
         })
@@ -249,6 +257,37 @@ def enrich_il_slips(hearings):
         list(pool.map(one, targets[:60]))  # cap: be polite to ilga.gov
 
 
+# Markers of a "soft 404": leg.wa.gov serves an unknown committee slug as
+# HTTP 200 with a "Page not found" body, and ilga.gov has its own error page, so
+# a status-code check alone is not enough — we inspect the returned page too.
+_NOT_FOUND_MARKERS = ("page not found", "general assembly - error")
+
+
+def committee_url_ok(url):
+    html = fetch_text(url)
+    if not html:
+        return False
+    low = html.lower()
+    return not any(m in low for m in _NOT_FOUND_MARKERS)
+
+
+def verify_committee_urls(hearings):
+    """Live check: null out any committee_url that doesn't resolve to a real
+    committee page (guards against guessed slugs and soft-404s), so a broken
+    link never ships. One request per distinct URL, cached, run in parallel."""
+    urls = {h["committee_url"] for h in hearings if h.get("committee_url")}
+    if not urls:
+        return
+    status = {}
+    def probe(u):
+        status[u] = committee_url_ok(u)
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        list(pool.map(probe, urls))
+    for h in hearings:
+        if h.get("committee_url") and not status.get(h["committee_url"]):
+            h["committee_url"] = None
+
+
 # --------------------------------------------------------------------------- #
 # Washington — leg.wa.gov CommitteeMeetingService (SOAP/XML)
 # --------------------------------------------------------------------------- #
@@ -277,6 +316,64 @@ def wa_chamber(agency):
     if "house" in a:
         return "house"
     return "other"
+
+
+# leg.wa.gov committee URLs use acronym slugs (scpp, jlarc, tran) that can't be
+# derived from the committee name, so we resolve them from leg.wa.gov's own
+# committee index instead of guessing. Fetched once per run and cached.
+WA_COMMITTEE_INDEX_URL = "https://leg.wa.gov/about-the-legislature/committees/"
+_wa_index_cache = {"loaded": False, "entries": []}
+
+
+def _cmte_tokens(name):
+    return set(re.findall(r"[a-z0-9]+", (name or "").lower()))
+
+
+def wa_committee_index():
+    """[(token_set, absolute_url), ...] parsed from leg.wa.gov's committee list."""
+    if _wa_index_cache["loaded"]:
+        return _wa_index_cache["entries"]
+    _wa_index_cache["loaded"] = True
+    html = fetch_text(WA_COMMITTEE_INDEX_URL)
+    if not html:
+        return []
+    entries = []
+    seen = set()
+    pattern = (r'<a[^>]+href="([^"]*committees/(?:joint|senate|house)/[a-z0-9-]+/[^"]*)"'
+               r'[^>]*>(.*?)</a>')
+    for href, text in re.findall(pattern, html, re.S | re.I):
+        name = re.sub(r"<[^>]+>", "", text)
+        name = re.sub(r"\s+", " ", name).strip()
+        if not name or href in seen:
+            continue
+        seen.add(href)
+        url = href if href.startswith("http") else "https://leg.wa.gov" + href
+        entries.append((_cmte_tokens(name), url))
+    _wa_index_cache["entries"] = entries
+    return entries
+
+
+def wa_committee_url(name):
+    """Match a committee name to its leg.wa.gov page via the index, tolerating
+    reordering and an acronym in parentheses (token-subset match). None if no
+    confident match — better no link than a wrong one."""
+    want = _cmte_tokens(name)
+    if len(want) < 3:
+        return None
+    best, best_diff = None, 99
+    for tokens, url in wa_committee_index():
+        if want <= tokens or tokens <= want:
+            diff = len(tokens ^ want)
+            if diff < best_diff:
+                best, best_diff = url, diff
+    return best
+
+
+def resolve_wa_committee_urls(hearings):
+    """Fill committee_url for WA hearings from the leg.wa.gov index (live)."""
+    for h in hearings:
+        if h["jurisdiction"] == "wa" and not h.get("committee_url"):
+            h["committee_url"] = wa_committee_url(h.get("committee"))
 
 
 def parse_wa_meetings(xml_text):
@@ -316,6 +413,7 @@ def parse_wa_meetings(xml_text):
             "status": "canceled" if canceled else "scheduled",
             "bills": [],
             "details_url": f"https://app.leg.wa.gov/committeeschedules/Home/Agenda/{agenda_id}",
+            "committee_url": None,  # filled live from the leg.wa.gov index (pure parse stays offline)
             "witness_slip_url": "https://app.leg.wa.gov/csi/",
             "source": "leg.wa.gov",
             "_agenda_id": agenda_id,
@@ -403,6 +501,12 @@ def build_from_fixtures(fixtures_dir):
 # assembly
 # --------------------------------------------------------------------------- #
 def assemble(hearings, jurisdictions, source, now):
+    # Only upcoming hearings: drop anything whose date is before today. A hearing
+    # with an unparseable time (scheduled_iso None) is kept — we can't prove it's
+    # past. "Today" uses the build date so a hearing earlier today still shows.
+    today = now.strftime("%Y-%m-%d")
+    hearings = [h for h in hearings
+                if not h.get("scheduled_iso") or h["scheduled_iso"][:10] >= today]
     used = [j for j in jurisdictions if any(h["jurisdiction"] == j for h in hearings)] \
         or jurisdictions
     hearings = sorted(hearings, key=lambda h: (
@@ -529,6 +633,8 @@ def main():
             hearings.extend(fetch_il(begin, end, with_slips=args.slips))
         if "wa" in codes:
             hearings.extend(fetch_wa(begin, end))
+        resolve_wa_committee_urls(hearings)  # WA committee pages from the index
+        verify_committee_urls(hearings)      # drop any link that 404s / soft-404s
         source = "ilga.gov + leg.wa.gov (govbot scrape-hearings)"
 
     doc = assemble(hearings, codes, source, now)
