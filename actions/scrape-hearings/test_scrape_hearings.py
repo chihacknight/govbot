@@ -78,5 +78,24 @@ class Snapshot(unittest.TestCase):
             self.assertTrue(REQUIRED.issubset(h), f"{h.get('id')} missing fields")
 
 
+class RssFeed(unittest.TestCase):
+    def test_feed_is_well_formed_and_complete(self):
+        import xml.etree.ElementTree as ET
+        doc = json.loads(EXPECTED.read_text())
+        xml = main.to_rss(doc)
+        root = ET.fromstring(xml)  # raises if malformed
+        items = root.findall(".//item")
+        self.assertEqual(len(items), len(doc["hearings"]))
+        # every item carries a title, link and stable guid
+        for it in items:
+            self.assertTrue((it.findtext("title") or "").strip())
+            self.assertTrue((it.findtext("guid") or "").strip())
+
+    def test_canceled_hearing_flagged_in_title(self):
+        doc = json.loads(EXPECTED.read_text())
+        xml = main.to_rss(doc)
+        self.assertIn("[CANCELED]", xml)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

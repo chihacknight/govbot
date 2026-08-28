@@ -108,10 +108,19 @@ itself plus the deep link to file. The Pages deploy rebuilds `hearings.json` on 
 **twice-daily** schedule (08:00 and 20:00 UTC) alongside `data.json`, keeping the
 last-good committed sample if a scrape produces nothing.
 
+### Subscribe by feed (RSS)
+
+The same run also writes `hearings.xml`, an RSS 2.0 feed of the upcoming hearings
+(one item per hearing, with the committee, date, bills, and a link to participate).
+Anyone can subscribe to
+`https://chihacknight.github.io/govbot/dashboard/hearings.xml` in a feed reader to
+follow hearings without opening the dashboard; the panel links it as "Subscribe (RSS)".
+
 ```bash
-# Live:
+# Live (writes both the dashboard JSON and the RSS feed):
 python3 actions/scrape-hearings/main.py --jurisdictions il,wa \
-  --output docs/src/dashboard/hearings.json
+  --output docs/src/dashboard/hearings.json \
+  --rss docs/src/dashboard/hearings.xml
 
 # Offline, from fixtures (no network) — also how the snapshot test runs:
 python3 actions/scrape-hearings/main.py \

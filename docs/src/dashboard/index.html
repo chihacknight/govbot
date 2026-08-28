@@ -298,7 +298,14 @@
     display: flex; align-items: flex-start; justify-content: space-between;
     gap: 12px; flex-wrap: wrap;
   }
+  .hearings-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .hearings-asof { align-self: center; }
+  .rss-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12.5px; font-weight: 550; text-decoration: none;
+    color: var(--series-3); white-space: nowrap;
+  }
+  .rss-link:hover { text-decoration: underline; }
   .hearings-groups { margin-top: 14px; display: flex; flex-direction: column; gap: 18px; }
   .hgroup-head {
     display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
@@ -419,7 +426,13 @@
         <h2>Committee hearings &amp; witness slips</h2>
         <p class="sub">Upcoming hearings where the public can weigh in · Illinois &amp; Washington</p>
       </div>
-      <span class="asof hearings-asof" id="hearings-asof"></span>
+      <div class="hearings-meta">
+        <span class="asof hearings-asof" id="hearings-asof"></span>
+        <a class="rss-link" href="hearings.xml" title="Subscribe to upcoming hearings in a feed reader">
+          <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"/></svg>
+          Subscribe (RSS)
+        </a>
+      </div>
     </div>
     <div id="hearings-body" class="hearings-groups"></div>
   </section>

@@ -391,6 +391,80 @@ def assemble(hearings, jurisdictions, source, now):
     }
 
 
+# --------------------------------------------------------------------------- #
+# RSS feed
+# --------------------------------------------------------------------------- #
+# Public URL where the dashboard (and this feed) live, so readers resolve links.
+DASHBOARD_URL = "https://chihacknight.github.io/govbot/dashboard/"
+FEED_URL = DASHBOARD_URL + "hearings.xml"
+
+
+def _pretty_when(h):
+    """Human 'Aug 4, 2026, 10:00 AM' from scheduled_iso, else the raw display."""
+    s = h.get("scheduled_iso") or ""
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})", s)
+    if not m:
+        return h.get("scheduled_display") or "Time TBA"
+    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
+              "Oct", "Nov", "Dec"]
+    hh = int(m.group(4))
+    ampm = "PM" if hh >= 12 else "AM"
+    hh = (hh + 11) % 12 + 1
+    return (f"{months[int(m.group(2)) - 1]} {int(m.group(3))}, {m.group(1)}, "
+            f"{hh}:{m.group(5)} {ampm}")
+
+
+def to_rss(doc):
+    """Render the hearings document as an RSS 2.0 feed (one item per hearing).
+
+    Pure/deterministic given `doc`. Feed readers subscribe to this to get
+    upcoming committee hearings without visiting the dashboard.
+    """
+    from email.utils import format_datetime
+    built = datetime.strptime(doc["generated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(
+        tzinfo=timezone.utc)
+    built_822 = format_datetime(built)
+    names = {j["code"]: j["name"] for j in doc.get("jurisdictions", [])}
+
+    rss = ET.Element("rss", {"version": "2.0",
+                             "xmlns:atom": "http://www.w3.org/2005/Atom"})
+    ch = ET.SubElement(rss, "channel")
+    ET.SubElement(ch, "title").text = "govbot — Upcoming committee hearings & witness slips"
+    ET.SubElement(ch, "link").text = DASHBOARD_URL
+    ET.SubElement(ch, "description").text = (
+        "Upcoming legislative committee hearings where the public can weigh in "
+        "(Illinois & Washington), refreshed twice daily by govbot.")
+    ET.SubElement(ch, "language").text = "en-us"
+    ET.SubElement(ch, "lastBuildDate").text = built_822
+    ET.SubElement(ch, "atom:link", {"href": FEED_URL, "rel": "self",
+                                    "type": "application/rss+xml"})
+
+    for h in doc.get("hearings", []):
+        state = names.get(h["jurisdiction"], h["jurisdiction"].upper())
+        bills = ", ".join(b["id"] for b in h.get("bills", []))
+        status = " [CANCELED]" if h.get("status") == "canceled" else ""
+        title = f"{state} · {h.get('committee', 'Committee')} — {_pretty_when(h)}{status}"
+
+        parts = []
+        if bills:
+            parts.append(f"Bills: {bills}.")
+        if h.get("location"):
+            parts.append(h["location"] + ".")
+        if h.get("status") != "canceled" and h.get("witness_slip_url"):
+            parts.append(f"Participate: {h['witness_slip_url']}")
+
+        item = ET.SubElement(ch, "item")
+        ET.SubElement(item, "title").text = title
+        ET.SubElement(item, "link").text = h.get("details_url") or DASHBOARD_URL
+        ET.SubElement(item, "description").text = " ".join(parts) or title
+        ET.SubElement(item, "category").text = state
+        ET.SubElement(item, "guid", {"isPermaLink": "false"}).text = h["id"]
+        ET.SubElement(item, "pubDate").text = built_822
+
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+            + ET.tostring(rss, encoding="unicode") + "\n")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--jurisdictions", default="il,wa",
@@ -403,6 +477,8 @@ def main():
                     help="Override generated_at (ISO, e.g. 2026-08-28T00:00:00Z) "
                          "— used for deterministic snapshots")
     ap.add_argument("--output", "-o", default="-", help="Output path (default: stdout)")
+    ap.add_argument("--rss", default=None,
+                    help="Also write an RSS 2.0 feed of the hearings to this path")
     args = ap.parse_args()
 
     now = (datetime.strptime(args.now, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
@@ -432,6 +508,10 @@ def main():
         print(f"wrote {len(doc['hearings'])} hearings "
               f"({', '.join(f'{k}:{v}' for k, v in doc['counts'].items()) or 'none'}) "
               f"to {args.output}", file=sys.stderr)
+
+    if args.rss:
+        Path(args.rss).write_text(to_rss(doc))
+        print(f"wrote RSS feed to {args.rss}", file=sys.stderr)
     return 0
 
 

@@ -128,15 +128,17 @@ jobs:
           python3 actions/scrape-hearings/main.py \
             --jurisdictions il,wa \
             --output /tmp/hearings.json \
+            --rss /tmp/hearings.xml \
             || echo "::warning::hearings scrape reported errors"
           if [ -s /tmp/hearings.json ] && \
              [ "$(python3 -c 'import json,sys; print(len(json.load(open("/tmp/hearings.json"))["hearings"]))' 2>/dev/null || echo 0)" -gt 0 ]; then
             mv /tmp/hearings.json docs/src/dashboard/hearings.json
-            echo "hearings.json refreshed"
+            [ -s /tmp/hearings.xml ] && mv /tmp/hearings.xml docs/src/dashboard/hearings.xml
+            echo "hearings.json + hearings.xml refreshed"
           else
-            echo "::warning::no hearings scraped; keeping committed sample hearings.json"
+            echo "::warning::no hearings scraped; keeping committed sample hearings.json + hearings.xml"
           fi
-          ls -lh docs/src/dashboard/hearings.json
+          ls -lh docs/src/dashboard/hearings.json docs/src/dashboard/hearings.xml
 
       - name: Build docs
         run: mdbook build docs
