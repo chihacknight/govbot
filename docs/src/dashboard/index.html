@@ -358,6 +358,54 @@
     .hearing-row { grid-template-columns: 1fr; }
     .hgroup-portal { margin-left: 0; }
   }
+
+  /* ---------- fireworks logo ---------- */
+  :root { --fw1: #29ABE2; --fw2: #ED2E38; --fw3: #1B87B8; --fw4: #eda100; }
+  .brand-logo-fx { position: relative; display: inline-flex; width: 40px; height: 40px; flex: none; }
+  .brand-logo-fx .brand-logo { position: relative; z-index: 1; width: 40px; height: 40px;
+    border-radius: 9px; border: 1px solid var(--border); display: block; }
+  .fireworks { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+  .fireworks i {
+    position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px;
+    border-radius: 50%; background: var(--c);
+    transform: rotate(var(--a)) translateY(0) scale(0.2); opacity: 0;
+    animation: fw-burst 2.6s var(--d) infinite ease-out;
+  }
+  @keyframes fw-burst {
+    0%   { transform: rotate(var(--a)) translateY(-2px)  scale(0.2); opacity: 0; }
+    12%  { opacity: 1; }
+    55%  { transform: rotate(var(--a)) translateY(-24px) scale(1);   opacity: 0.9; }
+    75%  { transform: rotate(var(--a)) translateY(-30px) scale(0.7); opacity: 0; }
+    100% { transform: rotate(var(--a)) translateY(-30px) scale(0.4); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .fireworks { display: none; } }
+
+  /* ---------- participation directory ---------- */
+  .p-search {
+    align-self: center; min-width: 180px; padding: 7px 11px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface-1); color: var(--text-primary); font-size: 13px;
+  }
+  .participation-grid {
+    margin-top: 14px; display: grid; gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+  .pstate {
+    border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px;
+    background: var(--surface-1); display: flex; flex-direction: column; gap: 6px;
+  }
+  .pstate-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .pstate-name { font-weight: 600; }
+  .pstate-live { font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+    color: var(--series-2); border: 1px solid var(--series-2); border-radius: 999px; padding: 1px 7px; }
+  .pstate-kind {
+    display: inline-block; align-self: flex-start; font-size: 12px; font-weight: 550;
+    color: var(--text-secondary); background: var(--hover-wash);
+    border-radius: 6px; padding: 2px 8px;
+  }
+  .pstate-how { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+  .pstate-link { font-size: 12.5px; font-weight: 550; margin-top: auto; }
+  .pstate-link.is-offline { color: var(--text-muted); }
 </style>
 <script>
   // Apply a saved theme choice before first paint to avoid a flash of the
@@ -376,7 +424,21 @@
   <header class="top">
     <div class="brandbar">
       <a class="brand" href="../index.html" aria-label="govbot home">
-        <img class="brand-logo" src="govbot-logo.png" width="40" height="40" alt="" aria-hidden="true">
+        <span class="brand-logo-fx" aria-hidden="true">
+          <span class="fireworks">
+            <i style="--a:0deg;--c:var(--fw1);--d:0s"></i>
+            <i style="--a:36deg;--c:var(--fw2);--d:.1s"></i>
+            <i style="--a:72deg;--c:var(--fw3);--d:.2s"></i>
+            <i style="--a:108deg;--c:var(--fw4);--d:.3s"></i>
+            <i style="--a:144deg;--c:var(--fw1);--d:.4s"></i>
+            <i style="--a:180deg;--c:var(--fw2);--d:.5s"></i>
+            <i style="--a:216deg;--c:var(--fw3);--d:.15s"></i>
+            <i style="--a:252deg;--c:var(--fw4);--d:.25s"></i>
+            <i style="--a:288deg;--c:var(--fw1);--d:.35s"></i>
+            <i style="--a:324deg;--c:var(--fw2);--d:.45s"></i>
+          </span>
+          <img class="brand-logo" src="govbot-logo.png" width="40" height="40" alt="">
+        </span>
         <span class="brand-name">gov<span class="bot">bot</span></span>
       </a>
       <div class="theme-toggle" role="group" aria-label="Color theme">
@@ -388,7 +450,8 @@
     <div class="title-row">
       <h1>Committee Hearings &amp; Witness Slips</h1>
     </div>
-    <p>Upcoming legislative committee hearings where the public can weigh in — Illinois &amp; Washington.
+    <p>Upcoming legislative committee hearings where the public can weigh in — live for Illinois &amp; Washington,
+       with a how-to-participate directory for every state.
        <a class="docs-link" href="../index.html">govbot docs</a> ·
        <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
   </header>
@@ -407,6 +470,17 @@
   </section>
 
   <p class="empty" id="hearings-empty" hidden>Loading committee hearings…</p>
+
+  <section class="card card--accent" id="participation-card" hidden>
+    <div class="hearings-head">
+      <div>
+        <h2>Weigh in — by state</h2>
+        <p class="sub">How the public participates in legislation in each state, with a link to the official portal. Illinois &amp; Washington show live hearings above.</p>
+      </div>
+      <input type="search" id="p-search" class="p-search" placeholder="Filter states…" aria-label="Filter states">
+    </div>
+    <div id="participation-grid" class="participation-grid"></div>
+  </section>
 
   <footer id="footer"></footer>
   <p class="chn-credit">
@@ -644,8 +718,66 @@
     return wrap;
   }
 
+  /* ---------- participation directory (all states) ---------- */
+
+  const KIND_LABEL = {
+    witness_slip: "Witness slip",
+    request_to_speak: "Request to Speak",
+    committee_sign_in: "Committee sign-in",
+    written_testimony: "Written testimony",
+    position_letter: "Position letter",
+    appearance_form: "Appearance form",
+    public_comment: "Public comment",
+    contact_only: "Contact the committee",
+  };
+  const LIVE_STATES = { il: true, wa: true };
+  let participation = [];
+
+  function loadParticipation() {
+    fetch("participation.json")
+      .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then((data) => { participation = (data && data.jurisdictions) || []; renderParticipation(""); })
+      .catch(() => {});
+  }
+
+  function renderParticipation(filter) {
+    if (!participation.length) return;
+    const grid = $("participation-grid");
+    grid.textContent = "";
+    const q = (filter || "").trim().toLowerCase();
+    const rows = participation.filter((j) =>
+      !q || j.name.toLowerCase().includes(q) ||
+      (KIND_LABEL[j.participation] || "").toLowerCase().includes(q));
+    rows.forEach((j) => {
+      const card = eln("div", "pstate");
+      const top = eln("div", "pstate-top");
+      top.append(eln("span", "pstate-name", j.name));
+      if (LIVE_STATES[j.code]) top.append(eln("span", "pstate-live", "Live hearings"));
+      card.append(top);
+      card.append(eln("span", "pstate-kind", KIND_LABEL[j.participation] || j.participation));
+      if (j.how_to) card.append(eln("div", "pstate-how", j.how_to));
+      if (j.portal_url) {
+        const a = eln("a", "pstate-link" + (j.online ? "" : " is-offline"),
+          (j.online ? "Go to portal ↗" : "How to participate ↗"));
+        a.href = j.portal_url; a.target = "_blank"; a.rel = "noopener";
+        card.append(a);
+      }
+      grid.append(card);
+    });
+    $("participation-card").hidden = rows.length === 0 && !q ? true : false;
+  }
+
+  {
+    let pt;
+    const ps = $("p-search");
+    if (ps) ps.addEventListener("input", (e) => {
+      clearTimeout(pt);
+      pt = setTimeout(() => renderParticipation(e.target.value), 120);
+    });
+  }
+
   loadHearings();
-  loadHearings();
+  loadParticipation();
 })();
 </script>
 </body>

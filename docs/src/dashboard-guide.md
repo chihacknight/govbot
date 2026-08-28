@@ -16,6 +16,12 @@ by the existing GitHub Pages workflow.
   sign in to testify.
 - Only **upcoming** hearings are shown; an "Updated" stamp gives the build time, and
   a **Subscribe (RSS)** link offers the same list as a feed.
+- **Weigh in — by state** — a directory of every U.S. jurisdiction with how the public
+  participates there (witness slip, Request to Speak, position letter, written
+  testimony, public comment, committee testimony, …) and a link to the official
+  portal. Illinois & Washington are the two states with live hearings above; the rest
+  are directory entries. Data: `docs/src/dashboard/participation.json` (static
+  reference, schema `schemas/govbot.participation.schema.json`).
 
 ## Where the data comes from
 
