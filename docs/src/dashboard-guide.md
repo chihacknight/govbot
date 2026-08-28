@@ -81,3 +81,23 @@ tag when its `final_score` meets the tag's configured threshold. Commit the rege
 The Pages workflow does the same across all repos but per-repo (so tags land inside each
 clone) and incrementally — see `scripts/tag_dashboard_repo.sh` and
 `scripts/filter_new_bills.py`.
+
+## Committee Hearings & Witness Slips (separate page)
+
+A second page, **[Committee Hearings & Witness Slips →](./dashboard/hearings.html)**, sits
+alongside this one (a tab bar at the top links the two). It lists upcoming committee
+hearings where the public can weigh in — live for Illinois & Washington, plus a
+how-to-participate directory for every state. It is an entirely separate pipeline from the
+bill data: hearings are live artifacts each statehouse publishes on its own endpoint (not
+OpenStates), scraped by [`actions/scrape-hearings`](https://github.com/chihacknight/govbot/blob/main/actions/scrape-hearings/)
+into `docs/src/dashboard/hearings.json` + an RSS feed `hearings.xml`
+(schema `schemas/govbot.hearings.schema.json`), and the state directory is a static
+`docs/src/dashboard/participation.json` (schema `schemas/govbot.participation.schema.json`).
+The Pages deploy rebuilds the hearings feed on the same twice-daily schedule. See that
+page's own notes and `actions/scrape-hearings/README.md` for details.
+
+The hearings page also **uses govbot's own bill data**: at build time each hearing's
+bills are cross-referenced against `data.json` (govbot tracks Illinois & Washington
+bills), and where a match is found the bill shows its **govbot title and topic tags** plus
+a **"via govbot ↗"** link that opens that bill in the Legislation Dashboard tab
+(`index.html#q=<bill>`).

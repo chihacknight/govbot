@@ -1,0 +1,224 @@
+{
+  "generated_at": "2026-08-28T00:00:00Z",
+  "source": "actions/scrape-hearings fixtures (offline sample)",
+  "jurisdictions": [
+    {
+      "code": "il",
+      "name": "Illinois",
+      "participation": "witness_slip",
+      "portal_url": "https://my.ilga.gov/"
+    },
+    {
+      "code": "wa",
+      "name": "Washington",
+      "participation": "committee_sign_in",
+      "portal_url": "https://app.leg.wa.gov/csi/"
+    }
+  ],
+  "counts": {
+    "il": 2,
+    "wa": 7
+  },
+  "hearings": [
+    {
+      "id": "il-house-3114-23224",
+      "jurisdiction": "il",
+      "chamber": "house",
+      "committee": "Restorative Justice & Public Safety Committee",
+      "title": "SUBJECT MATTER:  HB 1643",
+      "scheduled_iso": "2026-08-31T10:00:00",
+      "scheduled_display": "8/31/2026 10:00 AM",
+      "timezone": "America/Chicago",
+      "location": "C-600, 6th Floor and Virtual Room 1 · Michael A. Bilandic Building · Chicago , IL",
+      "status": "canceled",
+      "bills": [
+        {
+          "id": "HB1643",
+          "slips": null,
+          "url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=1643&GAID=18&SessionID=114",
+          "govbot_title": "Restorative Justice and Public Safety pilot program",
+          "govbot_tags": [
+            "criminal justice"
+          ]
+        }
+      ],
+      "details_url": "https://ilga.gov/House/hearings/details/3114/23224",
+      "committee_url": "https://ilga.gov/House/committees/members/3114",
+      "witness_slip_url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=1643&GAID=18&SessionID=114",
+      "source": "ilga.gov"
+    },
+    {
+      "id": "il-house-3201-24010",
+      "jurisdiction": "il",
+      "chamber": "house",
+      "committee": "Housing Committee",
+      "title": "SUBJECT MATTER:  HB 25, SB 1486, HB3049",
+      "scheduled_iso": "2026-09-09T14:00:00",
+      "scheduled_display": "9/9/2026 2:00 PM",
+      "timezone": "America/Chicago",
+      "location": "Room 118 · Capitol Building · Springfield , IL",
+      "status": "scheduled",
+      "bills": [
+        {
+          "id": "HB25",
+          "slips": {
+            "proponents": 1204,
+            "opponents": 318,
+            "no_position": 45
+          },
+          "url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=25&GAID=18&SessionID=114",
+          "govbot_title": "Affordable Housing Special Assessment Program",
+          "govbot_tags": [
+            "housing",
+            "budget & taxes"
+          ]
+        },
+        {
+          "id": "SB1486",
+          "slips": {
+            "proponents": 42,
+            "opponents": 510,
+            "no_position": 8
+          },
+          "url": "https://ilga.gov/legislation/BillStatus?DocTypeID=SB&DocNum=1486&GAID=18&SessionID=114",
+          "govbot_title": "Illinois Works apprenticeship expansion",
+          "govbot_tags": [
+            "labor & workers"
+          ]
+        },
+        {
+          "id": "HB3049",
+          "slips": null,
+          "url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=3049&GAID=18&SessionID=114",
+          "govbot_title": "Clean Energy Community Grants",
+          "govbot_tags": [
+            "environment & climate"
+          ]
+        }
+      ],
+      "details_url": "https://ilga.gov/House/hearings/details/3201/24010",
+      "committee_url": "https://ilga.gov/House/committees/members/3201",
+      "witness_slip_url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=25&GAID=18&SessionID=114",
+      "source": "ilga.gov"
+    },
+    {
+      "id": "wa-other-33551",
+      "jurisdiction": "wa",
+      "chamber": "other",
+      "committee": "Citizen Commission for Performance Measurement of Tax Preferences",
+      "title": "Full agenda will be available seven days prior to the meeting.\"",
+      "scheduled_iso": "2026-09-15T10:00:00",
+      "scheduled_display": "2026-09-15T10:00:00",
+      "timezone": "America/Los_Angeles",
+      "location": "Senate Hearing Rm 3 and Virtual · J.A. Cherberg Building · Olympia",
+      "status": "scheduled",
+      "bills": [],
+      "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33551",
+      "committee_url": "https://leg.wa.gov/about-the-legislature/committees/joint/citizen-commission-for-performance-measurement-of-tax-preferences/",
+      "witness_slip_url": "https://app.leg.wa.gov/csi/",
+      "source": "leg.wa.gov"
+    },
+    {
+      "id": "wa-other-34139",
+      "jurisdiction": "wa",
+      "chamber": "other",
+      "committee": "Select Committee on Pension Policy",
+      "title": "To view committee meetings or access the committee meeting documents, visit the Legislature's committee schedules, agendas, and documents website: https://app.leg.wa.gov/committeeschedules  See https://app.leg.wa.gov/CSI/Joint for how to register for remote public testimony.",
+      "scheduled_iso": "2026-09-15T10:00:00",
+      "scheduled_display": "2026-09-15T10:00:00",
+      "timezone": "America/Los_Angeles",
+      "location": "Senate Hearing Rm 1 · J.A. Cherberg Building · Olympia",
+      "status": "scheduled",
+      "bills": [],
+      "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/34139",
+      "committee_url": "https://leg.wa.gov/about-the-legislature/committees/joint/scpp/",
+      "witness_slip_url": "https://app.leg.wa.gov/csi/",
+      "source": "leg.wa.gov"
+    },
+    {
+      "id": "wa-other-34140",
+      "jurisdiction": "wa",
+      "chamber": "other",
+      "committee": "Select Committee on Pension Policy",
+      "title": "To view committee meetings or access the committee meeting documents, visit the Legislature's committee schedules, agendas, and documents website: https://app.leg.wa.gov/committeeschedules  See https://app.leg.wa.gov/CSI/Joint for how to register for remote public testimony.",
+      "scheduled_iso": "2026-09-15T13:00:00",
+      "scheduled_display": "2026-09-15T13:00:00",
+      "timezone": "America/Los_Angeles",
+      "location": "Senate Hearing Rm 1 · J.A. Cherberg Building · Olympia",
+      "status": "scheduled",
+      "bills": [],
+      "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/34140",
+      "committee_url": "https://leg.wa.gov/about-the-legislature/committees/joint/scpp/",
+      "witness_slip_url": "https://app.leg.wa.gov/csi/",
+      "source": "leg.wa.gov"
+    },
+    {
+      "id": "wa-other-33488",
+      "jurisdiction": "wa",
+      "chamber": "other",
+      "committee": "JLARC - Joint Legislative Audit & Review Committee",
+      "title": "To view committee meetings or access the committee meeting documents, visit the Legislature's committee schedules, agendas, and documents website: https://app.leg.wa.gov/committeeschedules  See https://app.leg.wa.gov/CSI/Joint for how to register for remote public testimony.",
+      "scheduled_iso": "2026-09-16T10:00:00",
+      "scheduled_display": "2026-09-16T10:00:00",
+      "timezone": "America/Los_Angeles",
+      "location": "Senate Hearing Rm 4 and Virtual · J.A. Cherberg Building · Olympia",
+      "status": "scheduled",
+      "bills": [],
+      "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33488",
+      "committee_url": "https://leg.wa.gov/about-the-legislature/committees/joint/jlarc/",
+      "witness_slip_url": "https://app.leg.wa.gov/csi/",
+      "source": "leg.wa.gov"
+    },
+    {
+      "id": "wa-other-33497",
+      "jurisdiction": "wa",
+      "chamber": "other",
+      "committee": "Committee to Hear SAO Performance Audits",
+      "title": "Other · Committee to Hear SAO Performance Audits",
+      "scheduled_iso": "2026-09-16T13:00:00",
+      "scheduled_display": "2026-09-16T13:00:00",
+      "timezone": "America/Los_Angeles",
+      "location": "Senate Hearing Rm 4 and Virtual · J.A. Cherberg Building · Olympia",
+      "status": "scheduled",
+      "bills": [],
+      "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33497",
+      "committee_url": "https://leg.wa.gov/about-the-legislature/committees/joint/sao-audit-committee/",
+      "witness_slip_url": "https://app.leg.wa.gov/csi/",
+      "source": "leg.wa.gov"
+    },
+    {
+      "id": "wa-other-33498",
+      "jurisdiction": "wa",
+      "chamber": "other",
+      "committee": "Committee to Hear SAO Performance Audits",
+      "title": "Other · Committee to Hear SAO Performance Audits",
+      "scheduled_iso": "2026-10-07T13:00:00",
+      "scheduled_display": "2026-10-07T13:00:00",
+      "timezone": "America/Los_Angeles",
+      "location": "Senate Hearing Rm 4 and Virtual · J.A. Cherberg Building · Olympia",
+      "status": "scheduled",
+      "bills": [],
+      "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33498",
+      "committee_url": "https://leg.wa.gov/about-the-legislature/committees/joint/sao-audit-committee/",
+      "witness_slip_url": "https://app.leg.wa.gov/csi/",
+      "source": "leg.wa.gov"
+    },
+    {
+      "id": "wa-other-33820",
+      "jurisdiction": "wa",
+      "chamber": "other",
+      "committee": "Joint Transportation Committee",
+      "title": "To view committee meetings or access the committee meeting documents, visit the Legislature's committee schedules, agendas, and documents website: https://app.leg.wa.gov/committeeschedules  See https://app.leg.wa.gov/CSI/Joint for how to register for remote public testimony.",
+      "scheduled_iso": "2026-10-14T09:30:00",
+      "scheduled_display": "2026-10-14T09:30:00",
+      "timezone": "America/Los_Angeles",
+      "location": "Senate Hearing Rm 1 · J.A. Cherberg Building · Olympia",
+      "status": "scheduled",
+      "bills": [],
+      "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33820",
+      "committee_url": null,
+      "witness_slip_url": "https://app.leg.wa.gov/csi/",
+      "source": "leg.wa.gov"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/chihacknight/govbot/schemas/govbot.participation.schema.json",
+  "title": "Public-Participation Directory",
+  "description": "Static reference directory of how the public weighs in on legislation in each U.S. jurisdiction (witness slip, Request to Speak, position letter, written testimony, public comment, etc.), with a link to the official portal. Consumed by docs/src/dashboard/index.html to show a 'how to weigh in — by state' directory alongside the live committee-hearings feed. Reference data, updated by hand as portals change — not scraped.",
+  "type": "object",
+  "required": ["jurisdictions"],
+  "additionalProperties": false,
+  "properties": {
+    "source": { "type": "string" },
+    "jurisdictions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "name", "participation", "portal_url"],
+        "additionalProperties": false,
+        "properties": {
+          "code": { "type": "string", "pattern": "^[a-z]{2,3}$" },
+          "name": { "type": "string" },
+          "participation": {
+            "type": "string",
+            "enum": ["witness_slip", "request_to_speak", "committee_sign_in",
+                     "written_testimony", "position_letter", "appearance_form",
+                     "public_comment", "contact_only"]
+          },
+          "online": { "type": "boolean", "description": "Whether participation can be done online." },
+          "portal_url": { "type": "string", "format": "uri", "description": "Official portal / how-to-participate page." },
+          "how_to": { "type": "string", "description": "One-sentence explanation of how a resident weighs in." }
+        }
+      }
+    }
+  }
+}

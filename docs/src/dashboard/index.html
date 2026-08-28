@@ -98,6 +98,19 @@
   .asof .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--series-2); flex: none; }
   .asof b { color: var(--text-primary); font-weight: 600; }
 
+  /* ---------- top tabs ---------- */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .tab {
+    padding: 8px 15px; text-decoration: none; color: var(--text-secondary);
+    font-weight: 550; font-size: 14px; border: 1px solid transparent; border-bottom: none;
+    border-radius: 8px 8px 0 0; margin-bottom: -1px;
+  }
+  .tab:hover { color: var(--text-primary); background: var(--hover-wash); }
+  .tab[aria-current="page"] {
+    color: var(--text-primary); background: var(--surface-1);
+    border-color: var(--border); border-bottom: 1px solid var(--surface-1);
+  }
+
   /* ---------- brand bar + theme toggle ---------- */
   .brandbar {
     display: flex; align-items: center; justify-content: space-between;
@@ -307,6 +320,10 @@
 </head>
 <body>
 <div class="wrap">
+  <nav class="tabs" aria-label="Dashboards">
+    <a class="tab" href="index.html" aria-current="page">Legislation Dashboard</a>
+    <a class="tab" href="hearings.html">Committee Hearings &amp; Witness Slips</a>
+  </nav>
   <header class="top">
     <div class="brandbar">
       <a class="brand" href="../index.html" aria-label="govbot home">
@@ -548,6 +565,16 @@
     const code = document.createElement("code");
     code.textContent = "python3 scripts/build_dashboard_data.py";
     footer.append(code, document.createTextNode(" after `govbot clone` / `govbot tag`."));
+
+    // Deep-link support: the hearings page links bills here as index.html#q=HB1643
+    // (or ?q=), so a "via govbot" click lands pre-filtered on that bill.
+    const deep = (location.hash.match(/[#&]q=([^&]+)/) || location.search.match(/[?&]q=([^&]+)/));
+    if (deep) {
+      try {
+        const q = decodeURIComponent(deep[1]).trim();
+        if (q) { state.filters.search = q.toLowerCase(); $("f-search").value = q; }
+      } catch (e) { /* ignore malformed */ }
+    }
 
     render();
   }

@@ -127,6 +127,17 @@ names must stay in sync with the keyword fallback in `scripts/dashboard_tags.jso
 `docs/src/dashboard-guide.md` for the data flow; tagging in CI is incremental via
 `scripts/filter_new_bills.py` + `scripts/tag_dashboard_repo.sh`.
 
+The Pages site has **two dashboards**, linked by a tab bar:
+`docs/src/dashboard/index.html` (the Legislation Dashboard above) and
+`docs/src/dashboard/hearings.html` (**Committee Hearings & Witness Slips**). The hearings
+page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov and leg.wa.gov
+directly (not OpenStates), writing `docs/src/dashboard/hearings.json` + RSS `hearings.xml`
+(schema `schemas/govbot.hearings.schema.json`), plus a static 56-jurisdiction participation
+directory `docs/src/dashboard/participation.json` (schema
+`schemas/govbot.participation.schema.json`). `deploy-docs.yml` rebuilds both the bill
+`data.json` and the hearings feed on the twice-daily schedule. Hearings parsers are
+offline-snapshot-tested: `python3 actions/scrape-hearings/test_scrape_hearings.py`.
+
 ## govbot Development
 
 ```bash

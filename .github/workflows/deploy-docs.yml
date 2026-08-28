@@ -8,8 +8,10 @@ on:
       - "docs/**"
       - ".github/workflows/deploy-docs.yml"
   schedule:
-    # Refresh dashboard data daily, after the 6am UTC scrapes
-    - cron: "0 8 * * *"
+    # Refresh twice daily: 08:00 UTC (after the 6am UTC bill scrapes) and 20:00
+    # UTC (afternoon, to catch same-day committee-hearing postings). The bill
+    # data.json and the live hearings.json are both rebuilt on each run.
+    - cron: "0 8,20 * * *"
   workflow_dispatch:
 
 permissions:
@@ -113,6 +115,31 @@ jobs:
               }
           fi
           ls -lh docs/src/dashboard/data.json
+
+      # Live committee hearings + witness-slip windows (IL: ilga.gov, WA:
+      # leg.wa.gov). This is a rolling near-future window, separate from the
+      # daily bill snapshot, so it has its own file. The scraper is fail-soft
+      # (a source outage yields zero hearings, never a crash); we only replace
+      # the committed sample when the fresh run actually produced hearings, so
+      # a total outage keeps the last-good sample rather than blanking the panel.
+      - name: Build committee hearings feed
+        run: |
+          set -uo pipefail
+          python3 actions/scrape-hearings/main.py \
+            --jurisdictions il,wa \
+            --output /tmp/hearings.json \
+            --rss /tmp/hearings.xml \
+            --dashboard-data docs/src/dashboard/data.json \
+            || echo "::warning::hearings scrape reported errors"
+          if [ -s /tmp/hearings.json ] && \
+             [ "$(python3 -c 'import json,sys; print(len(json.load(open("/tmp/hearings.json"))["hearings"]))' 2>/dev/null || echo 0)" -gt 0 ]; then
+            mv /tmp/hearings.json docs/src/dashboard/hearings.json
+            [ -s /tmp/hearings.xml ] && mv /tmp/hearings.xml docs/src/dashboard/hearings.xml
+            echo "hearings.json + hearings.xml refreshed"
+          else
+            echo "::warning::no hearings scraped; keeping committed sample hearings.json + hearings.xml"
+          fi
+          ls -lh docs/src/dashboard/hearings.json docs/src/dashboard/hearings.xml
 
       - name: Build docs
         run: mdbook build docs
