@@ -1,0 +1,41 @@
+name: "Scrape Committee Hearings"
+description: "Fetch upcoming committee hearings and best-effort witness-slip counts (IL, WA) into the dashboard hearings feed."
+
+inputs:
+  jurisdictions:
+    description: "Comma-separated jurisdiction codes to scrape (e.g. il,wa)"
+    required: false
+    default: "il,wa"
+  output:
+    description: "Path to write the hearings JSON document"
+    required: false
+    default: "docs/src/dashboard/hearings.json"
+  no-slips:
+    description: "Skip best-effort witness-slip count enrichment"
+    required: false
+    default: "false"
+
+outputs:
+  hearings-path:
+    description: "Path to the written hearings document"
+    value: "${{ inputs.output }}"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.11"
+
+    # Fail-soft: a source outage degrades to zero hearings for that jurisdiction,
+    # never a non-zero exit. The caller decides whether an empty document should
+    # replace the committed sample (the Pages deploy keeps the sample on empty).
+    - name: Scrape hearings
+      shell: bash
+      run: |
+        set -uo pipefail
+        ARGS=(--jurisdictions "${{ inputs.jurisdictions }}" --output "${{ inputs.output }}")
+        if [ "${{ inputs.no-slips }}" = "true" ]; then ARGS+=(--no-slips); fi
+        python3 "${{ github.action_path }}/main.py" "${ARGS[@]}" \
+          || echo "::warning::scrape-hearings reported errors; output may be partial"

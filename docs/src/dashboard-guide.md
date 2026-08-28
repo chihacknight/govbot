@@ -10,6 +10,7 @@ site by the existing GitHub Pages workflow.
 ## What it shows
 
 - **Stat tiles** — bill count, jurisdictions, sessions, and share of bills with topic tags
+- **Committee hearings & witness slips** — upcoming hearings where the public can weigh in (Illinois & Washington), with bill chips, witness-slip counts where available, and a deep link to the official portal to file
 - **Bills by jurisdiction** and **bills by topic** bar charts (click a bar to filter)
 - **Activity by month** — bills by the month of their most recent recorded action
 - **Bills table** — sortable, with topic chips and links to each bill's official source
@@ -81,3 +82,44 @@ tag when its `final_score` meets the tag's configured threshold. Commit the rege
 The Pages workflow does the same across all repos but per-repo (so tags land inside each
 clone) and incrementally — see `scripts/tag_dashboard_repo.sh` and
 `scripts/filter_new_bills.py`.
+
+## Committee hearings & witness slips
+
+The hearings panel reads a second file, `hearings.json`, produced by the
+[`scrape-hearings`](https://github.com/chihacknight/govbot/blob/main/actions/scrape-hearings/)
+action. This is a **separate pipeline** from the bill data: committee hearings are
+live artifacts each statehouse publishes on its own machine-readable endpoint —
+govbot does *not* get them from OpenStates — and they describe near-future activity,
+not point-in-time bill metadata. So they live in their own file with their own
+"Updated" stamp and are fetched independently: a hearings outage never blocks the
+bills dashboard.
+
+Sources, per [`schemas/govbot.hearings.schema.json`](https://github.com/chihacknight/govbot/blob/main/schemas/govbot.hearings.schema.json):
+
+| Jurisdiction | Source | Public participation |
+|---|---|---|
+| Illinois | `ilga.gov` Hearings JSON API | witness slip |
+| Washington | `leg.wa.gov` CommitteeMeetingService (SOAP/XML) | committee sign-in |
+
+**Witness-slip counts are best-effort.** Many capitols only expose slip totals while
+a slip window is open (a canceled hearing's slip page returns an error), so
+`bills[].slips` is optional and usually absent; the reliable signal is the hearing
+itself plus the deep link to file. The Pages deploy rebuilds `hearings.json` on the
+**twice-daily** schedule (08:00 and 20:00 UTC) alongside `data.json`, keeping the
+last-good committed sample if a scrape produces nothing.
+
+```bash
+# Live:
+python3 actions/scrape-hearings/main.py --jurisdictions il,wa \
+  --output docs/src/dashboard/hearings.json
+
+# Offline, from fixtures (no network) — also how the snapshot test runs:
+python3 actions/scrape-hearings/main.py \
+  --from-fixtures actions/scrape-hearings/__snapshots__/raw \
+  --now 2026-08-28T00:00:00Z -o -
+python3 actions/scrape-hearings/test_scrape_hearings.py
+```
+
+Adding a jurisdiction means adding its source endpoint + parser to
+`actions/scrape-hearings/main.py` and an entry to `JURISDICTIONS` there; the schema
+and dashboard panel already generalize across jurisdictions.

@@ -292,6 +292,62 @@
   }
   .chn-credit svg { flex: none; }
   .chn-credit a { color: var(--text-secondary); }
+  /* ---------- committee hearings & witness slips ---------- */
+  .card--hearings { margin-top: 12px; }
+  .hearings-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+  }
+  .hearings-asof { align-self: center; }
+  .hearings-groups { margin-top: 14px; display: flex; flex-direction: column; gap: 18px; }
+  .hgroup-head {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    padding-bottom: 6px; margin-bottom: 8px; border-bottom: 1px solid var(--gridline);
+  }
+  .hgroup-name { font-weight: 650; font-size: 15px; }
+  .hgroup-count { color: var(--text-muted); font-size: 12.5px; }
+  .hgroup-portal { margin-left: auto; font-size: 13px; white-space: nowrap; }
+  .hearing-row {
+    display: grid; grid-template-columns: 190px 1fr; gap: 4px 18px;
+    padding: 10px 0; border-bottom: 1px solid var(--gridline);
+  }
+  .hearing-row:last-child { border-bottom: 0; }
+  .hearing-row.is-canceled { opacity: 0.62; }
+  .h-when { color: var(--text-secondary); font-size: 13px; }
+  .h-when b { color: var(--text-primary); font-weight: 600; }
+  .h-badge {
+    display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; color: var(--series-6);
+    border: 1px solid var(--series-6);
+  }
+  .h-committee { font-weight: 550; }
+  .h-loc { color: var(--text-muted); font-size: 12.5px; margin-top: 1px; }
+  .h-bills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+  .bill-chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 2px 8px; border: 1px solid var(--border); border-radius: 7px;
+    background: var(--surface-1); text-decoration: none; color: var(--text-primary);
+    font-size: 12.5px;
+  }
+  .bill-chip:hover { background: var(--hover-wash); }
+  .chip-id { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .slipbar {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding-left: 7px; border-left: 1px solid var(--border);
+  }
+  .slipbar { min-width: 64px; }
+  .slip-seg { height: 7px; border-radius: 2px; display: inline-block; min-width: 3px; }
+  .slip-for { background: var(--series-2); }
+  .slip-against { background: var(--series-6); }
+  .slip-neutral { background: var(--text-muted); }
+  .slipbar { position: relative; }
+  .slipbar .slip-seg { flex: 1 1 auto; }
+  .slip-count { color: var(--text-muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .file-link { display: inline-block; margin-top: 7px; font-size: 13px; font-weight: 550; }
+  @media (max-width: 620px) {
+    .hearing-row { grid-template-columns: 1fr; }
+    .hgroup-portal { margin-left: 0; }
+  }
 </style>
 <script>
   // Apply a saved theme choice before first paint to avoid a flash of the
@@ -356,6 +412,17 @@
   </div>
 
   <div class="tiles" id="tiles"></div>
+
+  <section class="card card--accent card--hearings" id="hearings-card" hidden>
+    <div class="hearings-head">
+      <div>
+        <h2>Committee hearings &amp; witness slips</h2>
+        <p class="sub">Upcoming hearings where the public can weigh in · Illinois &amp; Washington</p>
+      </div>
+      <span class="asof hearings-asof" id="hearings-asof"></span>
+    </div>
+    <div id="hearings-body" class="hearings-groups"></div>
+  </section>
 
   <div class="grid2">
     <div class="card card--accent card--jurisdiction">
@@ -1097,6 +1164,153 @@
     for (const [k, v] of Object.entries(attrs || {})) el.setAttribute(k, v);
     return el;
   }
+
+  /* ---------- committee hearings & witness slips ---------- */
+
+  // Loaded independently of data.json: a hearings outage must never block the
+  // bills dashboard. hearings.json is a rolling near-future window built by
+  // actions/scrape-hearings (IL: ilga.gov, WA: leg.wa.gov), refreshed by the
+  // twice-daily Pages deploy — a different cadence and source than the bill
+  // snapshot, so it carries its own "updated" stamp.
+  function loadHearings() {
+    fetch("hearings.json")
+      .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(renderHearings)
+      .catch(() => {}); // silent: card stays hidden, bills dashboard unaffected
+  }
+
+  function eln(tag, cls, text) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  function renderHearings(data) {
+    const hearings = (data && data.hearings) || [];
+    if (!hearings.length) return;
+    const card = $("hearings-card");
+    const body = $("hearings-body");
+    body.textContent = "";
+
+    const asof = formatAsOf(data.generated_at);
+    if (asof) $("hearings-asof").textContent = "Updated " + asof;
+
+    const portals = {};
+    (data.jurisdictions || []).forEach((j) => { portals[j.code] = j; });
+
+    const byJur = {};
+    hearings.forEach((h) => { (byJur[h.jurisdiction] = byJur[h.jurisdiction] || []).push(h); });
+
+    Object.keys(byJur).sort().forEach((code) => {
+      const juris = portals[code] || { name: code.toUpperCase() };
+      const group = eln("div", "hgroup");
+      const head = eln("div", "hgroup-head");
+      head.append(eln("span", "hgroup-name", juris.name));
+      head.append(eln("span", "hgroup-count", byJur[code].length + " scheduled"));
+      if (juris.portal_url) {
+        const p = eln("a", "hgroup-portal", PARTICIPATION[juris.participation] || "Official portal");
+        p.href = juris.portal_url; p.target = "_blank"; p.rel = "noopener";
+        head.append(p);
+      }
+      group.append(head);
+      byJur[code].forEach((h) => group.append(hearingRow(h)));
+      body.append(group);
+    });
+
+    card.hidden = false;
+  }
+
+  const PARTICIPATION = {
+    witness_slip: "File a witness slip ↗",
+    committee_sign_in: "Sign in to testify ↗",
+    written_testimony: "Submit testimony ↗",
+    public_comment: "Comment ↗",
+  };
+
+  function hearingRow(h) {
+    const row = eln("div", "hearing-row" + (h.status === "canceled" ? " is-canceled" : ""));
+
+    const when = eln("div", "h-when");
+    when.append(eln("b", null, hearingWhen(h)));
+    if (h.status === "canceled") when.append(eln("span", "h-badge", "Canceled"));
+    row.append(when);
+
+    const main = eln("div", "h-main");
+    main.append(eln("div", "h-committee", h.committee || "Committee"));
+    if (h.location) main.append(eln("div", "h-loc", h.location));
+
+    if (h.bills && h.bills.length) {
+      const chips = eln("div", "h-bills");
+      h.bills.forEach((b) => {
+        const chip = eln("a", "bill-chip");
+        chip.href = h.details_url || "#"; chip.target = "_blank"; chip.rel = "noopener";
+        chip.append(eln("span", "chip-id", b.id));
+        if (b.slips) chip.append(slipBar(b.slips));
+        chips.append(chip);
+      });
+      main.append(chips);
+    }
+
+    if (h.status !== "canceled" && h.witness_slip_url) {
+      const file = eln("a", "file-link",
+        PARTICIPATION[participationFor(h)] || "File a slip ↗");
+      file.href = h.witness_slip_url; file.target = "_blank"; file.rel = "noopener";
+      main.append(file);
+    }
+    row.append(main);
+    return row;
+  }
+
+  function participationFor(h) {
+    return h.jurisdiction === "wa" ? "committee_sign_in" : "witness_slip";
+  }
+
+  // Source times are local wall-clock (naive ISO) with a tz name. Format
+  // ISO-looking strings ourselves from their parts — never via Date(), which
+  // would re-interpret the naive time in the viewer's zone — and fall back to
+  // the source's own display string (already friendly for IL).
+  function hearingWhen(h) {
+    let disp = prettyLocal(h.scheduled_display) || prettyLocal(h.scheduled_iso)
+      || h.scheduled_display || h.scheduled_iso || "Time TBA";
+    const zone = TZ_ABBR[h.timezone];
+    return zone ? disp + " " + zone : disp;
+  }
+  function prettyLocal(s) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s || "");
+    if (!m) return null;
+    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    let hh = Number(m[4]);
+    const ampm = hh >= 12 ? "PM" : "AM";
+    hh = ((hh + 11) % 12) + 1;
+    return months[Number(m[2]) - 1] + " " + Number(m[3]) + ", " + m[1] +
+      ", " + hh + ":" + m[5] + " " + ampm;
+  }
+  const TZ_ABBR = {
+    "America/Chicago": "CT",
+    "America/Los_Angeles": "PT",
+  };
+
+  function slipBar(s) {
+    const total = (s.proponents || 0) + (s.opponents || 0) + (s.no_position || 0);
+    const wrap = eln("span", "slipbar");
+    wrap.title = fmt(s.proponents) + " for · " + fmt(s.opponents) + " against · " +
+      fmt(s.no_position) + " no position";
+    if (total > 0) {
+      [["for", s.proponents], ["against", s.opponents], ["neutral", s.no_position]]
+        .forEach(([k, v]) => {
+          if (!v) return;
+          const seg = eln("span", "slip-seg slip-" + k);
+          seg.style.flex = String(v);
+          wrap.append(seg);
+        });
+    }
+    const label = eln("span", "slip-count", fmt(total));
+    wrap.append(label);
+    return wrap;
+  }
+
+  loadHearings();
 })();
 </script>
 </body>

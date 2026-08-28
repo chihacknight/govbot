@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/chihacknight/govbot/schemas/govbot.hearings.schema.json",
+  "title": "Committee Hearings & Witness-Slip Feed",
+  "description": "Aggregate document produced by actions/scrape-hearings and consumed by docs/src/dashboard/index.html. One document holds the upcoming committee hearings for every supported jurisdiction, the bills each hearing covers, and (best-effort) witness-slip counts. Unlike the bill dataset this is not point-in-time bill metadata — it is a rolling window of near-future committee activity, refreshed by the Pages deploy (twice daily).",
+  "type": "object",
+  "required": ["generated_at", "source", "jurisdictions", "hearings"],
+  "additionalProperties": false,
+  "properties": {
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC timestamp when this document was built (data-lineage marker for the dashboard 'as of' badge)."
+    },
+    "source": {
+      "type": "string",
+      "description": "Human-readable provenance shown in the dashboard footer."
+    },
+    "jurisdictions": {
+      "type": "array",
+      "description": "Jurisdictions whose hearings this document covers, with the citizen-participation portal for filing.",
+      "items": {
+        "type": "object",
+        "required": ["code", "name", "participation", "portal_url"],
+        "additionalProperties": false,
+        "properties": {
+          "code": { "type": "string", "pattern": "^[a-z]{2}$", "description": "Two-letter jurisdiction code (e.g. il, wa)." },
+          "name": { "type": "string" },
+          "participation": {
+            "type": "string",
+            "description": "How the public weighs in on a hearing in this jurisdiction.",
+            "enum": ["witness_slip", "committee_sign_in", "written_testimony", "public_comment"]
+          },
+          "portal_url": { "type": "string", "format": "uri", "description": "Official portal where a resident files a slip / signs in / comments." }
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "description": "Hearing count per jurisdiction code (convenience for the dashboard).",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "hearings": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Hearing" }
+    }
+  },
+  "definitions": {
+    "Hearing": {
+      "type": "object",
+      "required": ["id", "jurisdiction", "chamber", "committee", "status", "bills", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable identifier: <jurisdiction>-<chamber>-<committeeId>-<hearingId> (IL) or wa-<chamber>-<agendaId> (WA). Idempotent across runs."
+        },
+        "jurisdiction": { "type": "string", "pattern": "^[a-z]{2}$" },
+        "chamber": { "type": "string", "enum": ["house", "senate", "joint", "other"] },
+        "committee": { "type": "string", "description": "Committee name." },
+        "title": { "type": "string", "description": "Subject matter / agenda line as published." },
+        "scheduled_iso": {
+          "type": ["string", "null"],
+          "description": "Local wall-clock start time as naive ISO 8601 (YYYY-MM-DDTHH:MM:SS), no offset applied. Pair with `timezone` for display. Null when the source time was unparseable. Sort within a jurisdiction lexicographically."
+        },
+        "scheduled_display": { "type": "string", "description": "Source-formatted start time string for direct display." },
+        "timezone": { "type": "string", "description": "IANA tz name the local time is in (e.g. America/Chicago)." },
+        "location": { "type": "string", "description": "Room · Building · City, as available." },
+        "status": {
+          "type": "string",
+          "enum": ["scheduled", "canceled"],
+          "description": "Canceled hearings are kept (they close a slip window) but flagged."
+        },
+        "bills": {
+          "type": "array",
+          "description": "Bills on the agenda for this hearing.",
+          "items": {
+            "type": "object",
+            "required": ["id"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "description": "Compact bill id, e.g. HB1643, SB25." },
+              "slips": {
+                "type": ["object", "null"],
+                "description": "Best-effort aggregate witness-slip counts. Null/absent is the common case — many capitols only expose counts while a slip window is open, so consumers must treat this as optional.",
+                "required": ["proponents", "opponents", "no_position"],
+                "additionalProperties": false,
+                "properties": {
+                  "proponents": { "type": "integer", "minimum": 0 },
+                  "opponents": { "type": "integer", "minimum": 0 },
+                  "no_position": { "type": "integer", "minimum": 0 }
+                }
+              }
+            }
+          }
+        },
+        "details_url": { "type": "string", "description": "Official hearing/agenda detail page." },
+        "witness_slip_url": { "type": "string", "description": "Deep link to the official portal to file a slip / sign in for this hearing or bill." },
+        "source": { "type": "string", "description": "Origin host, e.g. ilga.gov or leg.wa.gov." }
+      }
+    }
+  }
+}
