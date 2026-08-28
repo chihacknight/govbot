@@ -1257,7 +1257,7 @@
       const chips = eln("div", "h-bills");
       h.bills.forEach((b) => {
         const chip = eln("a", "bill-chip");
-        chip.href = h.details_url || "#"; chip.target = "_blank"; chip.rel = "noopener";
+        chip.href = b.url || h.details_url || "#"; chip.target = "_blank"; chip.rel = "noopener";
         chip.append(eln("span", "chip-id", b.id));
         if (b.slips) chip.append(slipBar(b.slips));
         chips.append(chip);

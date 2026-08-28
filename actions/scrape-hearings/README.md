@@ -34,8 +34,9 @@ enrichment is bounded and parallel, and any failure simply leaves `slips` null.
 # Live (what the Pages deploy runs, twice daily):
 python3 main.py --jurisdictions il,wa --output docs/src/dashboard/hearings.json
 
-# Skip slip enrichment (faster, hearings only):
-python3 main.py --no-slips -o -
+# Attempt best-effort slip-count enrichment (opt-in; IL totals endpoint is
+# currently unreliable, so counts are usually absent):
+python3 main.py --slips -o -
 
 # Offline, deterministic — rebuild from fixtures (no network):
 python3 main.py --from-fixtures __snapshots__/raw --now 2026-08-28T00:00:00Z -o -

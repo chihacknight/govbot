@@ -28,7 +28,7 @@ class IllinoisParser(unittest.TestCase):
         self.assertEqual(h["status"], "scheduled")
         self.assertEqual([b["id"] for b in h["bills"]], ["HB25", "SB1486", "HB3049"])
         self.assertEqual(h["scheduled_iso"], "2026-09-09T14:00:00")
-        self.assertIn("WitnessSlips", h["witness_slip_url"])
+        self.assertIn("BillStatus", h["witness_slip_url"])
 
     def test_canceled_hearing_flagged(self):
         hearings = main.parse_il_hearings((RAW / "il_house.json").read_text(), "house")
@@ -36,6 +36,17 @@ class IllinoisParser(unittest.TestCase):
 
     def test_bad_json_is_empty_not_crash(self):
         self.assertEqual(main.parse_il_hearings("<html>nope</html>", "house"), [])
+
+    def test_bill_links_use_reliable_bill_status_page(self):
+        # Regression: the direct WitnessSlips endpoint returns an error page, so
+        # user-facing links must point at the always-200 Bill Status page.
+        hearings = main.parse_il_hearings((RAW / "il_active.json").read_text(), "house")
+        h = hearings[0]
+        self.assertIn("BillStatus", h["witness_slip_url"])
+        self.assertNotIn("WitnessSlips", h["witness_slip_url"])
+        for b in h["bills"]:
+            self.assertIn("BillStatus", b["url"])
+            self.assertIn(b["id"].replace("HB", "").replace("SB", ""), b["url"])
 
 
 class WitnessSlips(unittest.TestCase):

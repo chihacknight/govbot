@@ -34,11 +34,12 @@
       "bills": [
         {
           "id": "HB1643",
-          "slips": null
+          "slips": null,
+          "url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=1643&GAID=18&SessionID=114"
         }
       ],
       "details_url": "https://ilga.gov/House/hearings/details/3114/23224",
-      "witness_slip_url": "https://ilga.gov/Legislation/BillStatus/WitnessSlips?GAID=18&DocNum=1643&DocTypeID=HB&LegId=0&SessionID=114",
+      "witness_slip_url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=1643&GAID=18&SessionID=114",
       "source": "ilga.gov"
     },
     {
@@ -59,7 +60,8 @@
             "proponents": 1204,
             "opponents": 318,
             "no_position": 45
-          }
+          },
+          "url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=25&GAID=18&SessionID=114"
         },
         {
           "id": "SB1486",
@@ -67,15 +69,17 @@
             "proponents": 42,
             "opponents": 510,
             "no_position": 8
-          }
+          },
+          "url": "https://ilga.gov/legislation/BillStatus?DocTypeID=SB&DocNum=1486&GAID=18&SessionID=114"
         },
         {
           "id": "HB3049",
-          "slips": null
+          "slips": null,
+          "url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=3049&GAID=18&SessionID=114"
         }
       ],
       "details_url": "https://ilga.gov/House/hearings/details/3201/24010",
-      "witness_slip_url": "https://ilga.gov/Legislation/BillStatus/WitnessSlips?GAID=18&DocNum=25&DocTypeID=HB&LegId=0&SessionID=114",
+      "witness_slip_url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=25&GAID=18&SessionID=114",
       "source": "ilga.gov"
     },
     {

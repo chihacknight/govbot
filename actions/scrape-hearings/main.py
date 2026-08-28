@@ -118,9 +118,24 @@ def il_hearings_url(chamber, begin, end):
             f"&BeginDate={begin:%-m/%-d/%Y}&EndDate={end:%-m/%-d/%Y}")
 
 
-def il_witness_slip_url(bill_id):
-    """The official witness-slip page for a bill. LegId=0 is ilga.gov's own
-    placeholder on bill-status pages; the resident resolves the live bill there."""
+def il_bill_status_url(bill_id):
+    """The official Bill Status page for a bill — a reliable, always-200 page
+    that carries the working "Witness Slips" button. We link here rather than
+    to the WitnessSlips deep link, which returns an error page (HTTP 500) when
+    hit directly without a live session."""
+    m = re.match(r"([A-Z]+)(\d+)", bill_id)
+    if not m:
+        return "https://my.ilga.gov/"
+    doctype, num = m.group(1), m.group(2)
+    return (f"https://ilga.gov/legislation/BillStatus"
+            f"?DocTypeID={doctype}&DocNum={num}"
+            f"&GAID={IL_GA_ID}&SessionID={IL_SESSION_ID}")
+
+
+def il_slips_scrape_url(bill_id):
+    """The witness-slip totals page (used only for best-effort count scraping,
+    an opt-in step). It is not linked to users because it 500s when opened
+    directly; see il_bill_status_url for the user-facing link."""
     m = re.match(r"([A-Z]+)(\d+)", bill_id)
     if not m:
         return "https://my.ilga.gov/"
@@ -168,7 +183,7 @@ def parse_il_hearings(json_text, chamber):
         location = join_location(r.get("room") or r.get("Room") or "",
                                  r.get("building") or r.get("Building") or "",
                                  r.get("city") or r.get("City") or "")
-        bills = [{"id": bid, "slips": None}
+        bills = [{"id": bid, "slips": None, "url": il_bill_status_url(bid)}
                  for bid in extract_bill_ids(subject + " " + committee)]
         out.append({
             "id": f"il-{chamber}-{committee_id}-{hearing_id}",
@@ -183,8 +198,7 @@ def parse_il_hearings(json_text, chamber):
             "status": "canceled" if canceled else "scheduled",
             "bills": bills,
             "details_url": il_details_url(chamber, committee_id, hearing_id),
-            "witness_slip_url": (il_witness_slip_url(bills[0]["id"]) if bills
-                                 else "https://my.ilga.gov/"),
+            "witness_slip_url": (bills[0]["url"] if bills else "https://my.ilga.gov/"),
             "source": "ilga.gov",
         })
     return out
@@ -227,7 +241,7 @@ def enrich_il_slips(hearings):
     if not targets:
         return
     def one(bill):
-        html = fetch_text(il_witness_slip_url(bill["id"]))
+        html = fetch_text(il_slips_scrape_url(bill["id"]))
         counts = parse_slip_counts(html) if html else None
         if counts:
             bill["slips"] = counts
@@ -328,15 +342,33 @@ def parse_wa_items(xml_text):
     return list(ids)
 
 
+def wa_bill_url(bill_id, year):
+    """Official Washington bill-summary page for a bill id (e.g. HB1234)."""
+    m = re.match(r"([A-Z]+)(\d+)", bill_id)
+    if not m:
+        return "https://app.leg.wa.gov/csi/"
+    return (f"https://app.leg.wa.gov/billsummary?BillNumber={m.group(2)}"
+            f"&Year={year}&Initiative=false")
+
+
+def _wa_year(hearing):
+    iso = hearing.get("scheduled_iso") or ""
+    return iso[:4] if iso[:4].isdigit() else "2025"
+
+
+def wa_bills(ids, hearing):
+    year = _wa_year(hearing)
+    return [{"id": bid, "slips": None, "url": wa_bill_url(bid, year)} for bid in ids]
+
+
 def fetch_wa(begin, end):
     text = fetch_text(wa_meetings_url(begin, end))
     if not text:
         return []
-    meetings = [m for m in parse_wa_meetings(text) if m["status"] != "canceled"
-                or True]  # keep canceled too; flagged
+    meetings = parse_wa_meetings(text)  # keep canceled too; flagged in status
     def items(m):
         xml = fetch_text(wa_items_url(m["_agenda_id"]))
-        m["bills"] = [{"id": bid, "slips": None} for bid in parse_wa_items(xml)] if xml else []
+        m["bills"] = wa_bills(parse_wa_items(xml), m) if xml else []
         m.pop("_agenda_id", None)
     with ThreadPoolExecutor(max_workers=6) as pool:
         list(pool.map(items, meetings))
@@ -361,8 +393,7 @@ def build_from_fixtures(fixtures_dir):
         for m in parse_wa_meetings(wa_path.read_text()):
             items_file = d / f"wa_items_{m['_agenda_id']}.xml"
             if items_file.exists():
-                m["bills"] = [{"id": b, "slips": None}
-                              for b in parse_wa_items(items_file.read_text())]
+                m["bills"] = wa_bills(parse_wa_items(items_file.read_text()), m)
             m.pop("_agenda_id", None)
             hearings.append(m)
     return hearings
@@ -471,8 +502,9 @@ def main():
                     help="Comma-separated codes to scrape live (default: il,wa)")
     ap.add_argument("--from-fixtures", default=None,
                     help="Build offline from a raw fixtures dir (no network)")
-    ap.add_argument("--no-slips", action="store_true",
-                    help="Skip best-effort witness-slip count enrichment")
+    ap.add_argument("--slips", action="store_true",
+                    help="Attempt best-effort witness-slip count enrichment "
+                         "(opt-in; the IL totals endpoint is currently unreliable)")
     ap.add_argument("--now", default=None,
                     help="Override generated_at (ISO, e.g. 2026-08-28T00:00:00Z) "
                          "— used for deterministic snapshots")
@@ -494,7 +526,7 @@ def main():
         end = now + timedelta(days=WINDOW_FWD_DAYS)
         hearings = []
         if "il" in codes:
-            hearings.extend(fetch_il(begin, end, with_slips=not args.no_slips))
+            hearings.extend(fetch_il(begin, end, with_slips=args.slips))
         if "wa" in codes:
             hearings.extend(fetch_wa(begin, end))
         source = "ilga.gov + leg.wa.gov (govbot scrape-hearings)"

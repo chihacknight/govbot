@@ -80,6 +80,7 @@
             "additionalProperties": false,
             "properties": {
               "id": { "type": "string", "description": "Compact bill id, e.g. HB1643, SB25." },
+              "url": { "type": "string", "description": "Official page for this bill (IL: Bill Status; WA: bill summary)." },
               "slips": {
                 "type": ["object", "null"],
                 "description": "Best-effort aggregate witness-slip counts. Null/absent is the common case — many capitols only expose counts while a slip window is open, so consumers must treat this as optional.",

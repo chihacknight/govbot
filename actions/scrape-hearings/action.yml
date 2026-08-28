@@ -10,8 +10,8 @@ inputs:
     description: "Path to write the hearings JSON document"
     required: false
     default: "docs/src/dashboard/hearings.json"
-  no-slips:
-    description: "Skip best-effort witness-slip count enrichment"
+  slips:
+    description: "Attempt best-effort witness-slip count enrichment (opt-in; the IL totals endpoint is currently unreliable)"
     required: false
     default: "false"
 
@@ -36,6 +36,6 @@ runs:
       run: |
         set -uo pipefail
         ARGS=(--jurisdictions "${{ inputs.jurisdictions }}" --output "${{ inputs.output }}")
-        if [ "${{ inputs.no-slips }}" = "true" ]; then ARGS+=(--no-slips); fi
+        if [ "${{ inputs.slips }}" = "true" ]; then ARGS+=(--slips); fi
         python3 "${{ github.action_path }}/main.py" "${ARGS[@]}" \
           || echo "::warning::scrape-hearings reported errors; output may be partial"
