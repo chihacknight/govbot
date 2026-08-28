@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>govbot — Legislation Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20200%20200%22%3E%3Cpolygon%20points%3D%2282%2C68.8%20100%2C8%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22100%2C8%20118%2C68.8%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C68.8%20179.7%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22179.7%2C54%20136%2C100%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%22136%2C100%20179.7%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22179.7%2C146%20118%2C131.2%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C131.2%20100%2C192%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22100%2C192%2082%2C131.2%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%2282%2C131.2%2020.3%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%2220.3%2C146%2064%2C100%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%2264%2C100%2020.3%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%2220.3%2C54%2082%2C68.8%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3C/svg%3E">
+<style>
+  :root {
+    --page:           #f9f9f7;
+    --surface-1:      #fcfcfb;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1: #2a78d6;
+    --series-2: #1baf7a;
+    --series-3: #eda100;
+    --series-4: #008300;
+    --series-5: #4a3aa7;
+    --series-6: #e34948;
+    --series-7: #e87ba4;
+    --series-8: #eb6834;
+    --bar-track: transparent;
+    --hover-wash: rgba(11,11,11,0.04);
+  }
+  /* Dark palette. Applied when the OS prefers dark AND the user hasn't
+     forced a choice, OR when the user explicitly picks dark via the toggle.
+     The two selectors carry identical values on purpose (plain CSS can't
+     share a declaration block across a media-query boundary). */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      --page:           #0d0d0d;
+      --surface-1:      #1a1a19;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1: #3987e5;
+      --series-2: #199e70;
+      --series-3: #c98500;
+      --series-4: #008300;
+      --series-5: #9085e9;
+      --series-6: #e66767;
+      --series-7: #d55181;
+      --series-8: #d95926;
+      --hover-wash: rgba(255,255,255,0.06);
+    }
+  }
+  :root[data-theme="dark"] {
+    --page:           #0d0d0d;
+    --surface-1:      #1a1a19;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1: #3987e5;
+    --series-2: #199e70;
+    --series-3: #c98500;
+    --series-4: #008300;
+    --series-5: #9085e9;
+    --series-6: #e66767;
+    --series-7: #d55181;
+    --series-8: #d95926;
+    --hover-wash: rgba(255,255,255,0.06);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--text-primary);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  a { color: var(--series-1); }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 20px 48px; }
+
+  header.top { margin-bottom: 20px; }
+  header.top .title-row {
+    display: flex; align-items: center; gap: 12px;
+    flex-wrap: wrap; margin: 0 0 4px;
+  }
+  header.top h1 { font-size: 22px; font-weight: 650; margin: 0; }
+  header.top p  { margin: 0; color: var(--text-secondary); }
+  header.top .docs-link { font-size: 13px; }
+  .asof {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px;
+    border: 1px solid var(--border); border-radius: 999px;
+    font-size: 12.5px; color: var(--text-secondary);
+  }
+  .asof .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--series-2); flex: none; }
+  .asof b { color: var(--text-primary); font-weight: 600; }
+
+  /* ---------- top tabs ---------- */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .tab {
+    padding: 8px 15px; text-decoration: none; color: var(--text-secondary);
+    font-weight: 550; font-size: 14px; border: 1px solid transparent; border-bottom: none;
+    border-radius: 8px 8px 0 0; margin-bottom: -1px;
+  }
+  .tab:hover { color: var(--text-primary); background: var(--hover-wash); }
+  .tab[aria-current="page"] {
+    color: var(--text-primary); background: var(--surface-1);
+    border-color: var(--border); border-bottom: 1px solid var(--surface-1);
+  }
+
+  /* ---------- brand bar + theme toggle ---------- */
+  .brandbar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 16px;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 9px;
+    text-decoration: none; color: var(--text-primary);
+  }
+  .brand .brand-logo {
+    flex: none; display: block; width: 40px; height: 40px;
+    border-radius: 9px; border: 1px solid var(--border);
+  }
+  .brand .brand-name { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+  .brand .brand-name .bot { color: var(--series-1); }
+
+  .theme-toggle {
+    display: inline-flex; align-items: center; flex: none;
+    border: 1px solid var(--border); border-radius: 999px;
+    background: var(--surface-1); padding: 2px;
+  }
+  .theme-toggle button {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 28px; min-width: 34px; padding: 0 11px;
+    border: none; background: transparent; border-radius: 999px;
+    color: var(--text-secondary); font: inherit; font-size: 12.5px; line-height: 1;
+    cursor: pointer;
+  }
+  .theme-toggle button:hover { color: var(--text-primary); }
+  .theme-toggle button[aria-pressed="true"] { background: var(--series-1); color: #fff; }
+
+  /* ---------- filter row ---------- */
+  .filters {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    margin: 18px 0 20px;
+  }
+  .filters input[type="search"], .filters select, .filters input[type="date"],
+  .filters .msel > button, .filters .clear-btn {
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface-1);
+    color: var(--text-primary);
+    font: inherit;
+  }
+  .filters input[type="search"] { width: 220px; }
+  .filters input[type="search"]::placeholder { color: var(--text-muted); }
+  .filters input[type="date"]:hover { background: var(--hover-wash); }
+  .filters input[type="date"] { color-scheme: light dark; }
+  .daterange-custom { display: inline-flex; align-items: center; gap: 6px; }
+  .daterange-custom[hidden] { display: none; }
+  .daterange-sep { color: var(--text-muted); font-size: 12.5px; }
+  .msel { position: relative; }
+  .msel > button { cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .msel > button:hover, .filters select:hover, .clear-btn:hover { background: var(--hover-wash); }
+  .msel > button .caret { color: var(--text-muted); font-size: 10px; }
+  .msel .panel {
+    position: absolute; z-index: 30; top: 36px; left: 0;
+    min-width: 220px; max-height: 300px; overflow-y: auto;
+    background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    padding: 6px;
+    display: none;
+  }
+  .msel.open .panel { display: block; }
+  .msel .panel label {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 6px; cursor: pointer;
+  }
+  .msel .panel label:hover { background: var(--hover-wash); }
+  .msel .panel .count { margin-left: auto; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .clear-btn { cursor: pointer; color: var(--text-secondary); }
+  .clear-btn[disabled] { opacity: 0.45; cursor: default; }
+
+  /* ---------- stat tiles ---------- */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .tile {
+    background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .tile .label { color: var(--text-secondary); font-size: 13px; margin-bottom: 4px; }
+  .tile .value { font-size: 26px; font-weight: 600; }
+
+  /* ---------- cards & charts ---------- */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  @media (max-width: 800px) { .grid2 { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px;
+  }
+  .card h2 { font-size: 14px; font-weight: 600; margin: 0 0 2px; }
+  .card .sub { color: var(--text-muted); font-size: 12px; margin: 0 0 12px; }
+
+  /* Section accent: each main section carries its own colored border on all
+     four sides so the sections read as distinct blocks at a glance. */
+  .card--accent { border-width: 2px; }
+  .card--jurisdiction { border-color: var(--series-1); }  /* blue   */
+  .card--topic        { border-color: var(--series-5); }  /* purple */
+  .card--activity     { border-color: var(--series-2); }  /* green  */
+  .card--bills        { border-color: var(--series-3); }  /* amber  */
+
+  .hbar-row {
+    display: grid; grid-template-columns: 160px 1fr; gap: 10px;
+    align-items: center; padding: 3px 4px; border-radius: 6px; cursor: pointer;
+  }
+  .hbar-row:hover, .hbar-row:focus-visible { background: var(--hover-wash); outline: none; }
+  .hbar-row.dim { opacity: 0.45; }
+  .hbar-row .lbl {
+    color: var(--text-secondary); font-size: 12.5px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right;
+  }
+  .hbar-row .track { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .hbar-row .bar {
+    height: 16px; min-width: 2px;
+    background: var(--series-1);
+    border-radius: 0 4px 4px 0;   /* rounded data-end, square at baseline */
+    flex: 0 0 auto;
+  }
+  .hbar-row .val { color: var(--text-secondary); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .hbar-scroll { max-height: 460px; overflow-y: auto; }
+  .pending-note {
+    margin: 12px 0 0; padding-top: 10px;
+    border-top: 1px solid var(--gridline);
+    font-size: 12px; color: var(--text-muted); line-height: 1.5;
+  }
+  .pending-note b { color: var(--text-secondary); font-weight: 600; }
+
+  svg .grid-line { stroke: var(--gridline); stroke-width: 1; }
+  svg .base-line { stroke: var(--baseline); stroke-width: 1; }
+  svg .tick { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  svg .col { fill: var(--series-1); }
+  svg .col-hit { fill: transparent; cursor: default; }
+  svg .col-hit:hover + .col, svg .col.lift { filter: brightness(1.12); }
+  svg .peak-lbl { fill: var(--text-secondary); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  svg .col-lbl { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+
+  .tooltip {
+    position: fixed; z-index: 50; pointer-events: none;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    padding: 8px 10px; font-size: 12.5px; display: none; max-width: 280px;
+  }
+  .tooltip .tt-val { font-weight: 650; font-size: 14px; }
+  .tooltip .tt-lbl { color: var(--text-secondary); }
+
+  /* ---------- tag chips ---------- */
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 1px 8px 1px 6px; margin: 1px 2px 1px 0;
+    font-size: 11.5px; color: var(--text-secondary); white-space: nowrap;
+  }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+
+  /* ---------- table ---------- */
+  /* The rows scroll inside this capped-height box so the header row can freeze
+     at its top. Putting overflow here (rather than on the whole card) keeps the
+     scroll container tight around the table: `position: sticky` on the header
+     sticks to this box, not to a card edge that scrolls away with the page. */
+  .table-scroll { overflow: auto; max-height: 70vh; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--gridline); vertical-align: top; }
+  th {
+    color: var(--text-secondary); font-size: 12px; font-weight: 600;
+    cursor: pointer; user-select: none; white-space: nowrap;
+    position: sticky; top: 0; background: var(--surface-1);
+  }
+  th .arrow { color: var(--text-muted); font-size: 10px; }
+  tbody tr:hover { background: var(--hover-wash); }
+  td.num, td.date { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td .bill-id { font-weight: 600; white-space: nowrap; }
+  td .bill-title { color: var(--text-secondary); }
+  td .action-desc { color: var(--text-muted); font-size: 12px; }
+  .empty { color: var(--text-muted); padding: 24px; text-align: center; }
+  .show-more { margin: 12px auto 0; display: block; }
+  /* The `hidden` attribute must win over the display:block above (author CSS
+     otherwise overrides the UA stylesheet's [hidden]{display:none}), or the
+     "Show more" button stays visible with stale text once a filter narrows
+     the results below one page. */
+  .show-more[hidden] { display: none; }
+  .show-more, .show-more:hover { cursor: pointer; }
+
+  footer { margin-top: 28px; color: var(--text-muted); font-size: 12.5px; }
+  footer code { background: var(--surface-1); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; }
+  .chn-credit {
+    margin: 10px 0 0; display: flex; align-items: center; gap: 7px;
+    color: var(--text-muted); font-size: 12.5px;
+  }
+  .chn-credit svg { flex: none; }
+  .chn-credit a { color: var(--text-secondary); }
+  /* ---------- committee hearings & witness slips ---------- */
+  .card--hearings { margin-top: 12px; }
+  .hearings-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+  }
+  .hearings-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .hearings-asof { align-self: center; }
+  .rss-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12.5px; font-weight: 550; text-decoration: none;
+    color: var(--series-3); white-space: nowrap;
+  }
+  .rss-link:hover { text-decoration: underline; }
+  .hearings-groups { margin-top: 14px; display: flex; flex-direction: column; gap: 18px; }
+  .hgroup-head {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    padding-bottom: 6px; margin-bottom: 8px; border-bottom: 1px solid var(--gridline);
+  }
+  .hgroup-name { font-weight: 650; font-size: 15px; }
+  .hgroup-count { color: var(--text-muted); font-size: 12.5px; }
+  .hgroup-portal { margin-left: auto; font-size: 13px; white-space: nowrap; }
+  .hearing-row {
+    display: grid; grid-template-columns: 190px 1fr; gap: 4px 18px;
+    padding: 10px 0; border-bottom: 1px solid var(--gridline);
+  }
+  .hearing-row:last-child { border-bottom: 0; }
+  .hearing-row.is-canceled { opacity: 0.62; }
+  .h-when { color: var(--text-secondary); font-size: 13px; }
+  .h-when b { color: var(--text-primary); font-weight: 600; }
+  .h-badge {
+    display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; color: var(--series-6);
+    border: 1px solid var(--series-6);
+  }
+  .h-committee { font-weight: 550; }
+  .h-loc { color: var(--text-muted); font-size: 12.5px; margin-top: 1px; }
+  .h-bills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+  .bill-chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 2px 8px; border: 1px solid var(--border); border-radius: 7px;
+    background: var(--surface-1); text-decoration: none; color: var(--text-primary);
+    font-size: 12.5px;
+  }
+  .bill-chip:hover { background: var(--hover-wash); }
+  .chip-id { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .slipbar {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding-left: 7px; border-left: 1px solid var(--border);
+  }
+  .slipbar { min-width: 64px; }
+  .slip-seg { height: 7px; border-radius: 2px; display: inline-block; min-width: 3px; }
+  .slip-for { background: var(--series-2); }
+  .slip-against { background: var(--series-6); }
+  .slip-neutral { background: var(--text-muted); }
+  .slipbar { position: relative; }
+  .slipbar .slip-seg { flex: 1 1 auto; }
+  .slip-count { color: var(--text-muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .h-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 7px; }
+  .file-link { font-size: 13px; font-weight: 550; }
+  .committee-link { font-size: 13px; font-weight: 500; color: var(--text-secondary); text-decoration: none; }
+  .committee-link:hover { color: var(--series-1); text-decoration: underline; }
+  @media (max-width: 620px) {
+    .hearing-row { grid-template-columns: 1fr; }
+    .hgroup-portal { margin-left: 0; }
+  }
+
+  /* ---------- fireworks logo ---------- */
+  :root { --fw1: #29ABE2; --fw2: #ED2E38; --fw3: #1B87B8; --fw4: #eda100; }
+  .brand-logo-fx { position: relative; display: inline-flex; width: 40px; height: 40px; flex: none; }
+  .brand-logo-fx .brand-logo { position: relative; z-index: 1; width: 40px; height: 40px;
+    border-radius: 9px; border: 1px solid var(--border); display: block; }
+  .fireworks { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+  .fireworks i {
+    position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px;
+    border-radius: 50%; background: var(--c);
+    transform: rotate(var(--a)) translateY(0) scale(0.2); opacity: 0;
+    animation: fw-burst 2.6s var(--d) infinite ease-out;
+  }
+  @keyframes fw-burst {
+    0%   { transform: rotate(var(--a)) translateY(-2px)  scale(0.2); opacity: 0; }
+    12%  { opacity: 1; }
+    55%  { transform: rotate(var(--a)) translateY(-24px) scale(1);   opacity: 0.9; }
+    75%  { transform: rotate(var(--a)) translateY(-30px) scale(0.7); opacity: 0; }
+    100% { transform: rotate(var(--a)) translateY(-30px) scale(0.4); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .fireworks { display: none; } }
+
+  /* ---------- participation directory ---------- */
+  .p-search {
+    align-self: center; min-width: 180px; padding: 7px 11px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface-1); color: var(--text-primary); font-size: 13px;
+  }
+  .participation-grid {
+    margin-top: 14px; display: grid; gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+  .pstate {
+    border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px;
+    background: var(--surface-1); display: flex; flex-direction: column; gap: 6px;
+  }
+  .pstate-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .pstate-name { font-weight: 600; }
+  .pstate-live { font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+    color: var(--series-2); border: 1px solid var(--series-2); border-radius: 999px; padding: 1px 7px; }
+  .pstate-kind {
+    display: inline-block; align-self: flex-start; font-size: 12px; font-weight: 550;
+    color: var(--text-secondary); background: var(--hover-wash);
+    border-radius: 6px; padding: 2px 8px;
+  }
+  .pstate-how { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+  .pstate-link { font-size: 12.5px; font-weight: 550; margin-top: auto; }
+  .pstate-link.is-offline { color: var(--text-muted); }
+</style>
+<script>
+  // Apply a saved theme choice before first paint to avoid a flash of the
+  // wrong palette. "auto" (or nothing saved) falls through to the CSS
+  // prefers-color-scheme default.
+  (function () {
+    try {
+      var t = localStorage.getItem("govbot-theme");
+      if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+<div class="wrap">
+  <nav class="tabs" aria-label="Dashboards">
+    <a class="tab" href="index.html">Legislation Dashboard</a>
+    <a class="tab" href="hearings.html" aria-current="page">Committee Hearings &amp; Witness Slips</a>
+  </nav>
+  <header class="top">
+    <div class="brandbar">
+      <a class="brand" href="../index.html" aria-label="govbot home">
+        <span class="brand-logo-fx" aria-hidden="true">
+          <span class="fireworks">
+            <i style="--a:0deg;--c:var(--fw1);--d:0s"></i>
+            <i style="--a:36deg;--c:var(--fw2);--d:.1s"></i>
+            <i style="--a:72deg;--c:var(--fw3);--d:.2s"></i>
+            <i style="--a:108deg;--c:var(--fw4);--d:.3s"></i>
+            <i style="--a:144deg;--c:var(--fw1);--d:.4s"></i>
+            <i style="--a:180deg;--c:var(--fw2);--d:.5s"></i>
+            <i style="--a:216deg;--c:var(--fw3);--d:.15s"></i>
+            <i style="--a:252deg;--c:var(--fw4);--d:.25s"></i>
+            <i style="--a:288deg;--c:var(--fw1);--d:.35s"></i>
+            <i style="--a:324deg;--c:var(--fw2);--d:.45s"></i>
+          </span>
+          <img class="brand-logo" src="govbot-logo.png" width="40" height="40" alt="">
+        </span>
+        <span class="brand-name">gov<span class="bot">bot</span></span>
+      </a>
+      <div class="theme-toggle" role="group" aria-label="Color theme">
+        <button type="button" data-theme-choice="light" title="Light theme" aria-label="Light theme" aria-pressed="false">☀</button>
+        <button type="button" data-theme-choice="auto"  title="Match system" aria-label="Match system theme" aria-pressed="false">Auto</button>
+        <button type="button" data-theme-choice="dark"  title="Dark theme"  aria-label="Dark theme" aria-pressed="false">☾</button>
+      </div>
+    </div>
+    <div class="title-row">
+      <h1>Committee Hearings &amp; Witness Slips</h1>
+    </div>
+    <p>Upcoming legislative committee hearings where the public can weigh in — live for Illinois &amp; Washington,
+       with a how-to-participate directory for every state.
+       <a class="docs-link" href="../index.html">govbot docs</a> ·
+       <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
+  </header>
+
+  <section class="card card--accent card--hearings" id="hearings-card" hidden>
+    <div class="hearings-head">
+      <div class="hearings-meta">
+        <span class="asof hearings-asof" id="hearings-asof"></span>
+        <a class="rss-link" href="hearings.xml" title="Subscribe to upcoming hearings in a feed reader">
+          <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"/></svg>
+          Subscribe (RSS)
+        </a>
+      </div>
+    </div>
+    <div id="hearings-body" class="hearings-groups"></div>
+  </section>
+
+  <p class="empty" id="hearings-empty" hidden>Loading committee hearings…</p>
+
+  <section class="card card--accent" id="participation-card" hidden>
+    <div class="hearings-head">
+      <div>
+        <h2>Weigh in — by state</h2>
+        <p class="sub">How the public participates in legislation in each state, with a link to the official portal. Illinois &amp; Washington show live hearings above.</p>
+      </div>
+      <input type="search" id="p-search" class="p-search" placeholder="Filter states…" aria-label="Filter states">
+    </div>
+    <div id="participation-grid" class="participation-grid"></div>
+  </section>
+
+  <footer id="footer"></footer>
+  <p class="chn-credit">
+    <svg viewBox="0 0 200 200" width="15" height="15" aria-hidden="true" focusable="false">
+      <polygon points="82,68.8 100,8 100,100"    fill="#1B87B8"/>
+      <polygon points="100,8 118,68.8 100,100"   fill="#29ABE2"/>
+      <polygon points="118,68.8 179.7,54 100,100" fill="#C81820"/>
+      <polygon points="179.7,54 136,100 100,100"  fill="#ED2E38"/>
+      <polygon points="136,100 179.7,146 100,100" fill="#1B87B8"/>
+      <polygon points="179.7,146 118,131.2 100,100" fill="#29ABE2"/>
+      <polygon points="118,131.2 100,192 100,100" fill="#C81820"/>
+      <polygon points="100,192 82,131.2 100,100"  fill="#ED2E38"/>
+      <polygon points="82,131.2 20.3,146 100,100" fill="#1B87B8"/>
+      <polygon points="20.3,146 64,100 100,100"   fill="#29ABE2"/>
+      <polygon points="64,100 20.3,54 100,100"    fill="#C81820"/>
+      <polygon points="20.3,54 82,68.8 100,100"   fill="#ED2E38"/>
+    </svg>
+    A <a href="https://chihacknight.org/">Chi Hack Night</a> project
+  </p>
+</div>
+
+<script>
+"use strict";
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // ----- color theme toggle (light / dark / auto) -----
+  (function initTheme() {
+    const root = document.documentElement;
+    const buttons = Array.from(document.querySelectorAll(".theme-toggle button"));
+    const saved = () => {
+      const t = root.getAttribute("data-theme");
+      return t === "light" || t === "dark" ? t : "auto";
+    };
+    function apply(choice) {
+      if (choice === "auto") root.removeAttribute("data-theme");
+      else root.setAttribute("data-theme", choice);
+      try {
+        if (choice === "auto") localStorage.removeItem("govbot-theme");
+        else localStorage.setItem("govbot-theme", choice);
+      } catch (e) {}
+      buttons.forEach((b) =>
+        b.setAttribute("aria-pressed", String(b.dataset.themeChoice === choice)));
+    }
+    buttons.forEach((b) => b.addEventListener("click", () => apply(b.dataset.themeChoice)));
+    apply(saved());
+  })();
+
+  // ISO "2026-07-05T21:02:28Z" -> "July 5, 2026, 21:02 UTC"; robust to a
+  // bare date or a bad value (falls back to the raw string, then null).
+  function formatAsOf(iso) {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d)) return typeof iso === "string" ? iso : null;
+    const months = ["January","February","March","April","May","June",
+                    "July","August","September","October","November","December"];
+    let s = months[d.getUTCMonth()] + " " + d.getUTCDate() + ", " + d.getUTCFullYear();
+    if (/T\d/.test(iso)) {
+      s += ", " + String(d.getUTCHours()).padStart(2, "0") +
+           ":" + String(d.getUTCMinutes()).padStart(2, "0") + " UTC";
+      // Central Time equivalent for this Chicago-based project. Using the
+      // America/Chicago zone (rather than a fixed -6 offset) makes the label
+      // self-correct across daylight saving, so it renders CST or CDT honestly.
+      const central = centralTime(d);
+      if (central) s += " (" + central + ")";
+    }
+    return s;
+  }
+  // "16:15 CDT" for the given Date in America/Chicago, or null if Intl can't
+  // resolve the zone (very old engines) — the UTC label still stands alone.
+  function centralTime(d) {
+    try {
+      return new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/Chicago", hour: "2-digit", minute: "2-digit",
+        hour12: false, timeZoneName: "short",
+      }).format(d);
+    } catch (e) {
+      return null;
+    }
+  }
+  function fmt(n) { return n.toLocaleString("en-US"); }
+
+  /* ---------- committee hearings & witness slips ---------- */
+
+  // Loaded independently of data.json: a hearings outage must never block the
+  // bills dashboard. hearings.json is a rolling near-future window built by
+  // actions/scrape-hearings (IL: ilga.gov, WA: leg.wa.gov), refreshed by the
+  // twice-daily Pages deploy — a different cadence and source than the bill
+  // snapshot, so it carries its own "updated" stamp.
+  function loadHearings() {
+    fetch("hearings.json")
+      .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(renderHearings)
+      .catch(() => { const e = $("hearings-empty"); if (e) { e.hidden = false;
+        e.textContent = "Couldn\u2019t load committee hearings right now. Please try again shortly."; } });
+  }
+
+  function eln(tag, cls, text) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  function renderHearings(data) {
+    const hearings = (data && data.hearings) || [];
+    if (!hearings.length) { const e = $("hearings-empty"); if (e) e.hidden = false; return; }
+    const card = $("hearings-card");
+    const body = $("hearings-body");
+    body.textContent = "";
+
+    const asof = formatAsOf(data.generated_at);
+    if (asof) $("hearings-asof").textContent = "Updated " + asof;
+
+    const portals = {};
+    (data.jurisdictions || []).forEach((j) => { portals[j.code] = j; });
+
+    const byJur = {};
+    hearings.forEach((h) => { (byJur[h.jurisdiction] = byJur[h.jurisdiction] || []).push(h); });
+
+    Object.keys(byJur).sort().forEach((code) => {
+      const juris = portals[code] || { name: code.toUpperCase() };
+      const group = eln("div", "hgroup");
+      const head = eln("div", "hgroup-head");
+      head.append(eln("span", "hgroup-name", juris.name));
+      head.append(eln("span", "hgroup-count", byJur[code].length + " scheduled"));
+      if (juris.portal_url) {
+        const p = eln("a", "hgroup-portal", PARTICIPATION[juris.participation] || "Official portal");
+        p.href = juris.portal_url; p.target = "_blank"; p.rel = "noopener";
+        head.append(p);
+      }
+      group.append(head);
+      byJur[code].forEach((h) => group.append(hearingRow(h)));
+      body.append(group);
+    });
+
+    card.hidden = false;
+    const f = $("footer");
+    if (f) f.textContent = "Committee hearings from " + (data.source || "official sources") + ", refreshed twice daily.";
+  }
+
+  const PARTICIPATION = {
+    witness_slip: "File a witness slip ↗",
+    committee_sign_in: "Sign in to testify ↗",
+    written_testimony: "Submit testimony ↗",
+    public_comment: "Comment ↗",
+  };
+
+  function hearingRow(h) {
+    const row = eln("div", "hearing-row" + (h.status === "canceled" ? " is-canceled" : ""));
+
+    const when = eln("div", "h-when");
+    when.append(eln("b", null, hearingWhen(h)));
+    if (h.status === "canceled") when.append(eln("span", "h-badge", "Canceled"));
+    row.append(when);
+
+    const main = eln("div", "h-main");
+    main.append(eln("div", "h-committee", h.committee || "Committee"));
+    if (h.location) main.append(eln("div", "h-loc", h.location));
+
+    if (h.bills && h.bills.length) {
+      const chips = eln("div", "h-bills");
+      h.bills.forEach((b) => {
+        const chip = eln("a", "bill-chip");
+        chip.href = b.url || h.details_url || "#"; chip.target = "_blank"; chip.rel = "noopener";
+        chip.append(eln("span", "chip-id", b.id));
+        if (b.slips) chip.append(slipBar(b.slips));
+        chips.append(chip);
+      });
+      main.append(chips);
+    }
+
+    const actions = eln("div", "h-actions");
+    if (h.status !== "canceled" && h.witness_slip_url) {
+      const file = eln("a", "file-link",
+        PARTICIPATION[participationFor(h)] || "File a slip ↗");
+      file.href = h.witness_slip_url; file.target = "_blank"; file.rel = "noopener";
+      actions.append(file);
+    }
+    if (h.committee_url) {
+      const cmte = eln("a", "committee-link", "About the committee ↗");
+      cmte.href = h.committee_url; cmte.target = "_blank"; cmte.rel = "noopener";
+      actions.append(cmte);
+    }
+    if (actions.childNodes.length) main.append(actions);
+    row.append(main);
+    return row;
+  }
+
+  function participationFor(h) {
+    return h.jurisdiction === "wa" ? "committee_sign_in" : "witness_slip";
+  }
+
+  // Source times are local wall-clock (naive ISO) with a tz name. Format
+  // ISO-looking strings ourselves from their parts — never via Date(), which
+  // would re-interpret the naive time in the viewer's zone — and fall back to
+  // the source's own display string (already friendly for IL).
+  function hearingWhen(h) {
+    let disp = prettyLocal(h.scheduled_display) || prettyLocal(h.scheduled_iso)
+      || h.scheduled_display || h.scheduled_iso || "Time TBA";
+    const zone = TZ_ABBR[h.timezone];
+    return zone ? disp + " " + zone : disp;
+  }
+  function prettyLocal(s) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s || "");
+    if (!m) return null;
+    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    let hh = Number(m[4]);
+    const ampm = hh >= 12 ? "PM" : "AM";
+    hh = ((hh + 11) % 12) + 1;
+    return months[Number(m[2]) - 1] + " " + Number(m[3]) + ", " + m[1] +
+      ", " + hh + ":" + m[5] + " " + ampm;
+  }
+  const TZ_ABBR = {
+    "America/Chicago": "CT",
+    "America/Los_Angeles": "PT",
+  };
+
+  function slipBar(s) {
+    const total = (s.proponents || 0) + (s.opponents || 0) + (s.no_position || 0);
+    const wrap = eln("span", "slipbar");
+    wrap.title = fmt(s.proponents) + " for · " + fmt(s.opponents) + " against · " +
+      fmt(s.no_position) + " no position";
+    if (total > 0) {
+      [["for", s.proponents], ["against", s.opponents], ["neutral", s.no_position]]
+        .forEach(([k, v]) => {
+          if (!v) return;
+          const seg = eln("span", "slip-seg slip-" + k);
+          seg.style.flex = String(v);
+          wrap.append(seg);
+        });
+    }
+    const label = eln("span", "slip-count", fmt(total));
+    wrap.append(label);
+    return wrap;
+  }
+
+  /* ---------- participation directory (all states) ---------- */
+
+  const KIND_LABEL = {
+    witness_slip: "Witness slip",
+    request_to_speak: "Request to Speak",
+    committee_sign_in: "Committee sign-in",
+    written_testimony: "Written testimony",
+    position_letter: "Position letter",
+    appearance_form: "Appearance form",
+    public_comment: "Public comment",
+    contact_only: "Contact the committee",
+  };
+  const LIVE_STATES = { il: true, wa: true };
+  let participation = [];
+
+  function loadParticipation() {
+    fetch("participation.json")
+      .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then((data) => { participation = (data && data.jurisdictions) || []; renderParticipation(""); })
+      .catch(() => {});
+  }
+
+  function renderParticipation(filter) {
+    if (!participation.length) return;
+    const grid = $("participation-grid");
+    grid.textContent = "";
+    const q = (filter || "").trim().toLowerCase();
+    const rows = participation.filter((j) =>
+      !q || j.name.toLowerCase().includes(q) ||
+      (KIND_LABEL[j.participation] || "").toLowerCase().includes(q));
+    rows.forEach((j) => {
+      const card = eln("div", "pstate");
+      const top = eln("div", "pstate-top");
+      top.append(eln("span", "pstate-name", j.name));
+      if (LIVE_STATES[j.code]) top.append(eln("span", "pstate-live", "Live hearings"));
+      card.append(top);
+      card.append(eln("span", "pstate-kind", KIND_LABEL[j.participation] || j.participation));
+      if (j.how_to) card.append(eln("div", "pstate-how", j.how_to));
+      if (j.portal_url) {
+        const a = eln("a", "pstate-link" + (j.online ? "" : " is-offline"),
+          (j.online ? "Go to portal ↗" : "How to participate ↗"));
+        a.href = j.portal_url; a.target = "_blank"; a.rel = "noopener";
+        card.append(a);
+      }
+      grid.append(card);
+    });
+    $("participation-card").hidden = rows.length === 0 && !q ? true : false;
+  }
+
+  {
+    let pt;
+    const ps = $("p-search");
+    if (ps) ps.addEventListener("input", (e) => {
+      clearTimeout(pt);
+      pt = setTimeout(() => renderParticipation(e.target.value), 120);
+    });
+  }
+
+  loadHearings();
+  loadParticipation();
+})();
+</script>
+</body>
+</html>

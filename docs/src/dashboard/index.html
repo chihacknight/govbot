@@ -98,6 +98,19 @@
   .asof .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--series-2); flex: none; }
   .asof b { color: var(--text-primary); font-weight: 600; }
 
+  /* ---------- top tabs ---------- */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .tab {
+    padding: 8px 15px; text-decoration: none; color: var(--text-secondary);
+    font-weight: 550; font-size: 14px; border: 1px solid transparent; border-bottom: none;
+    border-radius: 8px 8px 0 0; margin-bottom: -1px;
+  }
+  .tab:hover { color: var(--text-primary); background: var(--hover-wash); }
+  .tab[aria-current="page"] {
+    color: var(--text-primary); background: var(--surface-1);
+    border-color: var(--border); border-bottom: 1px solid var(--surface-1);
+  }
+
   /* ---------- brand bar + theme toggle ---------- */
   .brandbar {
     display: flex; align-items: center; justify-content: space-between;
@@ -292,120 +305,6 @@
   }
   .chn-credit svg { flex: none; }
   .chn-credit a { color: var(--text-secondary); }
-  /* ---------- committee hearings & witness slips ---------- */
-  .card--hearings { margin-top: 12px; }
-  .hearings-head {
-    display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 12px; flex-wrap: wrap;
-  }
-  .hearings-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .hearings-asof { align-self: center; }
-  .rss-link {
-    display: inline-flex; align-items: center; gap: 5px;
-    font-size: 12.5px; font-weight: 550; text-decoration: none;
-    color: var(--series-3); white-space: nowrap;
-  }
-  .rss-link:hover { text-decoration: underline; }
-  .hearings-groups { margin-top: 14px; display: flex; flex-direction: column; gap: 18px; }
-  .hgroup-head {
-    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
-    padding-bottom: 6px; margin-bottom: 8px; border-bottom: 1px solid var(--gridline);
-  }
-  .hgroup-name { font-weight: 650; font-size: 15px; }
-  .hgroup-count { color: var(--text-muted); font-size: 12.5px; }
-  .hgroup-portal { margin-left: auto; font-size: 13px; white-space: nowrap; }
-  .hearing-row {
-    display: grid; grid-template-columns: 190px 1fr; gap: 4px 18px;
-    padding: 10px 0; border-bottom: 1px solid var(--gridline);
-  }
-  .hearing-row:last-child { border-bottom: 0; }
-  .hearing-row.is-canceled { opacity: 0.62; }
-  .h-when { color: var(--text-secondary); font-size: 13px; }
-  .h-when b { color: var(--text-primary); font-weight: 600; }
-  .h-badge {
-    display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 999px;
-    font-size: 11px; font-weight: 600; color: var(--series-6);
-    border: 1px solid var(--series-6);
-  }
-  .h-committee { font-weight: 550; }
-  .h-loc { color: var(--text-muted); font-size: 12.5px; margin-top: 1px; }
-  .h-bills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
-  .bill-chip {
-    display: inline-flex; align-items: center; gap: 7px;
-    padding: 2px 8px; border: 1px solid var(--border); border-radius: 7px;
-    background: var(--surface-1); text-decoration: none; color: var(--text-primary);
-    font-size: 12.5px;
-  }
-  .bill-chip:hover { background: var(--hover-wash); }
-  .chip-id { font-weight: 600; font-variant-numeric: tabular-nums; }
-  .slipbar {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding-left: 7px; border-left: 1px solid var(--border);
-  }
-  .slipbar { min-width: 64px; }
-  .slip-seg { height: 7px; border-radius: 2px; display: inline-block; min-width: 3px; }
-  .slip-for { background: var(--series-2); }
-  .slip-against { background: var(--series-6); }
-  .slip-neutral { background: var(--text-muted); }
-  .slipbar { position: relative; }
-  .slipbar .slip-seg { flex: 1 1 auto; }
-  .slip-count { color: var(--text-muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
-  .h-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 7px; }
-  .file-link { font-size: 13px; font-weight: 550; }
-  .committee-link { font-size: 13px; font-weight: 500; color: var(--text-secondary); text-decoration: none; }
-  .committee-link:hover { color: var(--series-1); text-decoration: underline; }
-  @media (max-width: 620px) {
-    .hearing-row { grid-template-columns: 1fr; }
-    .hgroup-portal { margin-left: 0; }
-  }
-
-  /* ---------- fireworks logo ---------- */
-  :root { --fw1: #29ABE2; --fw2: #ED2E38; --fw3: #1B87B8; --fw4: #eda100; }
-  .brand-logo-fx { position: relative; display: inline-flex; width: 40px; height: 40px; flex: none; }
-  .brand-logo-fx .brand-logo { position: relative; z-index: 1; width: 40px; height: 40px;
-    border-radius: 9px; border: 1px solid var(--border); display: block; }
-  .fireworks { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
-  .fireworks i {
-    position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px;
-    border-radius: 50%; background: var(--c);
-    transform: rotate(var(--a)) translateY(0) scale(0.2); opacity: 0;
-    animation: fw-burst 2.6s var(--d) infinite ease-out;
-  }
-  @keyframes fw-burst {
-    0%   { transform: rotate(var(--a)) translateY(-2px)  scale(0.2); opacity: 0; }
-    12%  { opacity: 1; }
-    55%  { transform: rotate(var(--a)) translateY(-24px) scale(1);   opacity: 0.9; }
-    75%  { transform: rotate(var(--a)) translateY(-30px) scale(0.7); opacity: 0; }
-    100% { transform: rotate(var(--a)) translateY(-30px) scale(0.4); opacity: 0; }
-  }
-  @media (prefers-reduced-motion: reduce) { .fireworks { display: none; } }
-
-  /* ---------- participation directory ---------- */
-  .p-search {
-    align-self: center; min-width: 180px; padding: 7px 11px;
-    border: 1px solid var(--border); border-radius: 8px;
-    background: var(--surface-1); color: var(--text-primary); font-size: 13px;
-  }
-  .participation-grid {
-    margin-top: 14px; display: grid; gap: 10px;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  }
-  .pstate {
-    border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px;
-    background: var(--surface-1); display: flex; flex-direction: column; gap: 6px;
-  }
-  .pstate-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-  .pstate-name { font-weight: 600; }
-  .pstate-live { font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
-    color: var(--series-2); border: 1px solid var(--series-2); border-radius: 999px; padding: 1px 7px; }
-  .pstate-kind {
-    display: inline-block; align-self: flex-start; font-size: 12px; font-weight: 550;
-    color: var(--text-secondary); background: var(--hover-wash);
-    border-radius: 6px; padding: 2px 8px;
-  }
-  .pstate-how { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
-  .pstate-link { font-size: 12.5px; font-weight: 550; margin-top: auto; }
-  .pstate-link.is-offline { color: var(--text-muted); }
 </style>
 <script>
   // Apply a saved theme choice before first paint to avoid a flash of the
@@ -421,24 +320,14 @@
 </head>
 <body>
 <div class="wrap">
+  <nav class="tabs" aria-label="Dashboards">
+    <a class="tab" href="index.html" aria-current="page">Legislation Dashboard</a>
+    <a class="tab" href="hearings.html">Committee Hearings &amp; Witness Slips</a>
+  </nav>
   <header class="top">
     <div class="brandbar">
       <a class="brand" href="../index.html" aria-label="govbot home">
-        <span class="brand-logo-fx" aria-hidden="true">
-          <span class="fireworks">
-            <i style="--a:0deg;--c:var(--fw1);--d:0s"></i>
-            <i style="--a:36deg;--c:var(--fw2);--d:.1s"></i>
-            <i style="--a:72deg;--c:var(--fw3);--d:.2s"></i>
-            <i style="--a:108deg;--c:var(--fw4);--d:.3s"></i>
-            <i style="--a:144deg;--c:var(--fw1);--d:.4s"></i>
-            <i style="--a:180deg;--c:var(--fw2);--d:.5s"></i>
-            <i style="--a:216deg;--c:var(--fw3);--d:.15s"></i>
-            <i style="--a:252deg;--c:var(--fw4);--d:.25s"></i>
-            <i style="--a:288deg;--c:var(--fw1);--d:.35s"></i>
-            <i style="--a:324deg;--c:var(--fw2);--d:.45s"></i>
-          </span>
-          <img class="brand-logo" src="govbot-logo.png" width="40" height="40" alt="">
-        </span>
+        <img class="brand-logo" src="govbot-logo.png" width="40" height="40" alt="" aria-hidden="true">
         <span class="brand-name">gov<span class="bot">bot</span></span>
       </a>
       <div class="theme-toggle" role="group" aria-label="Color theme">
@@ -448,39 +337,75 @@
       </div>
     </div>
     <div class="title-row">
-      <h1>Committee Hearings &amp; Witness Slips</h1>
+      <h1>Legislation Dashboard</h1>
+      <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
     </div>
-    <p>Upcoming legislative committee hearings where the public can weigh in — live for Illinois &amp; Washington,
-       with a how-to-participate directory for every state.
+    <p>Bills across states and territories, filterable by jurisdiction, session, chamber, and topic tags.
        <a class="docs-link" href="../index.html">govbot docs</a> ·
        <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
   </header>
 
-  <section class="card card--accent card--hearings" id="hearings-card" hidden>
-    <div class="hearings-head">
-      <div class="hearings-meta">
-        <span class="asof hearings-asof" id="hearings-asof"></span>
-        <a class="rss-link" href="hearings.xml" title="Subscribe to upcoming hearings in a feed reader">
-          <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"/></svg>
-          Subscribe (RSS)
-        </a>
-      </div>
-    </div>
-    <div id="hearings-body" class="hearings-groups"></div>
-  </section>
+  <div class="card" id="loading">
+    <h2>Loading bill data…</h2>
+    <p class="sub">The full dataset covers 50+ jurisdictions and can take a few seconds on slower connections.</p>
+  </div>
 
-  <p class="empty" id="hearings-empty" hidden>Loading committee hearings…</p>
+  <div class="filters" id="filters">
+    <input type="search" id="f-search" placeholder="Search title or bill number…" aria-label="Search bills">
+    <div class="msel" id="f-states"></div>
+    <select id="f-session" aria-label="Session"></select>
+    <select id="f-chamber" aria-label="Chamber"></select>
+    <div class="msel" id="f-tags"></div>
+    <select id="f-daterange" aria-label="Last action date range">
+      <option value="">Any date</option>
+      <option value="7d">Last 7 days</option>
+      <option value="30d">Last 30 days</option>
+      <option value="90d">Last 3 months</option>
+      <option value="365d">Last 12 months</option>
+      <option value="custom">Custom range…</option>
+    </select>
+    <span class="daterange-custom" id="f-daterange-custom" hidden>
+      <input type="date" id="f-date-from" aria-label="Last action from date">
+      <span class="daterange-sep">to</span>
+      <input type="date" id="f-date-to" aria-label="Last action to date">
+    </span>
+    <button class="clear-btn" id="f-clear" disabled>Clear filters</button>
+  </div>
 
-  <section class="card card--accent" id="participation-card" hidden>
-    <div class="hearings-head">
-      <div>
-        <h2>Weigh in — by state</h2>
-        <p class="sub">How the public participates in legislation in each state, with a link to the official portal. Illinois &amp; Washington show live hearings above.</p>
-      </div>
-      <input type="search" id="p-search" class="p-search" placeholder="Filter states…" aria-label="Filter states">
+  <div class="tiles" id="tiles"></div>
+
+  <div class="grid2">
+    <div class="card card--accent card--jurisdiction">
+      <h2>Bills by jurisdiction</h2>
+      <p class="sub">Click a bar to filter</p>
+      <div id="chart-states" class="hbar-scroll"></div>
+      <p class="pending-note" id="pending-note" hidden></p>
     </div>
-    <div id="participation-grid" class="participation-grid"></div>
-  </section>
+    <div class="card card--accent card--topic">
+      <h2>Bills by topic</h2>
+      <p class="sub">Click a bar to filter · a bill can carry several topics</p>
+      <div id="chart-tags" class="hbar-scroll"></div>
+    </div>
+  </div>
+
+  <div class="card card--accent card--activity" id="activity-card">
+    <h2>Activity by month</h2>
+    <p class="sub" id="activity-sub">Bills with their most recent action in each month</p>
+    <div id="chart-months"></div>
+  </div>
+
+  <div class="card card--accent card--bills" style="margin-top:12px">
+    <h2 id="table-title">Bills</h2>
+    <p class="sub">Click a column header to sort</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr id="thead-row"></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="empty" hidden>No bills match the current filters.</div>
+    <button class="clear-btn show-more" id="show-more" hidden></button>
+  </div>
 
   <footer id="footer"></footer>
   <p class="chn-credit">
@@ -502,10 +427,15 @@
   </p>
 </div>
 
+<div class="tooltip" id="tooltip"></div>
+
 <script>
 "use strict";
 (function () {
   const $ = (id) => document.getElementById(id);
+  const SERIES = ["--series-1","--series-2","--series-3","--series-4",
+                  "--series-5","--series-6","--series-7","--series-8"];
+  const PAGE_SIZE = 100;
 
   // ----- color theme toggle (light / dark / auto) -----
   (function initTheme() {
@@ -529,6 +459,624 @@
     apply(saved());
   })();
 
+  const state = {
+    data: null,
+    stateNames: {},          // code -> display name
+    tagColor: {},            // tag name -> css var (fixed, follows the entity)
+    filters: { search: "", states: new Set(), session: "", chamber: "", tags: new Set(),
+               dateFrom: "", dateTo: "" },
+    sort: { key: "latest_action", dir: -1 },
+    limit: PAGE_SIZE,
+  };
+
+  fetch("data.json")
+    .then((r) => { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.json(); })
+    .then(init)
+    .catch((err) => {
+      $("loading").remove();
+      const div = document.createElement("div");
+      div.className = "card";
+      const h = document.createElement("h2");
+      h.textContent = "Could not load data.json";
+      const p = document.createElement("p");
+      p.className = "sub";
+      p.textContent = "If you opened this file directly, serve it over HTTP instead " +
+        "(e.g. `python3 -m http.server` in this folder). Error: " + err.message;
+      div.append(h, p);
+      document.querySelector(".wrap").prepend(div);
+    });
+
+  function init(data) {
+    $("loading").remove();
+    state.data = data;
+    data.states.forEach((s) => { state.stateNames[s.code] = s.name; });
+    // Fixed slot per tag from the full dataset order — filtering never repaints.
+    data.tags.forEach((t, i) => { state.tagColor[t.name] = SERIES[i % SERIES.length]; });
+
+    buildMultiSelect($("f-states"), "All jurisdictions",
+      data.states.map((s) => ({ value: s.code, label: s.name })),
+      state.filters.states, countBillsByState());
+    buildMultiSelect($("f-tags"), "All topics",
+      data.tags.map((t) => ({ value: t.name, label: t.name, title: t.description })),
+      state.filters.tags, countBillsByTag());
+    buildSelect($("f-session"), "All sessions",
+      uniqueSorted(data.bills.map((b) => b.session)), (v) => { state.filters.session = v; render(); });
+    buildSelect($("f-chamber"), "All chambers",
+      uniqueSorted(data.bills.map((b) => b.chamber).filter(Boolean)),
+      (v) => { state.filters.chamber = v; render(); }, capitalize);
+
+    initDateRange();
+
+    let searchTimer;
+    $("f-search").addEventListener("input", (e) => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        state.filters.search = e.target.value.trim().toLowerCase();
+        render();
+      }, 150); // debounced: each render scans the full dataset
+    });
+    $("f-clear").addEventListener("click", () => {
+      state.filters.search = ""; $("f-search").value = "";
+      state.filters.states.clear(); state.filters.tags.clear();
+      state.filters.session = ""; $("f-session").value = "";
+      state.filters.chamber = ""; $("f-chamber").value = "";
+      resetDateRange();
+      syncMultiSelects(); render();
+    });
+    document.addEventListener("click", (e) => {
+      document.querySelectorAll(".msel.open").forEach((m) => {
+        if (!m.contains(e.target)) m.classList.remove("open");
+      });
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") document.querySelectorAll(".msel.open").forEach((m) => m.classList.remove("open"));
+    });
+
+    // "Data as of" badge — generated_at is when this snapshot was built
+    // (the daily deploy re-clones the source repos), so it is the honest
+    // freshness marker for the whole dashboard.
+    const asof = formatAsOf(data.generated_at);
+    if (asof) {
+      $("asof-text").innerHTML = "";
+      $("asof-text").append(document.createTextNode("Data as of "));
+      const b = document.createElement("b");
+      b.textContent = asof;
+      $("asof-text").append(b);
+      $("asof").hidden = false;
+    }
+
+    // Jurisdictions whose upstream scraper has published no bills yet.
+    const empty = data.empty_jurisdictions || [];
+    if (empty.length) {
+      const note = $("pending-note");
+      note.textContent = "";
+      const b = document.createElement("b");
+      b.textContent = empty.length + (empty.length === 1 ? " jurisdiction has" : " jurisdictions have")
+        + " no scraped data yet: ";
+      note.append(b, document.createTextNode(
+        empty.map((e) => e.name).join(", ") +
+        ". Their upstream scrapers haven't published bills — they'll appear here automatically once data lands."));
+      note.hidden = false;
+    }
+
+    const footer = $("footer");
+    footer.textContent = "Snapshot built " + (data.generated_at || "n/a") + " from " +
+      (data.source || "govbot repos") + ". Regenerate with ";
+    const code = document.createElement("code");
+    code.textContent = "python3 scripts/build_dashboard_data.py";
+    footer.append(code, document.createTextNode(" after `govbot clone` / `govbot tag`."));
+
+    render();
+  }
+
+  /* ---------- filtering ---------- */
+
+  function countBillsByState() {
+    const m = {};
+    state.data.bills.forEach((b) => { m[b.state] = (m[b.state] || 0) + 1; });
+    return m;
+  }
+  function countBillsByTag() {
+    const m = {};
+    state.data.bills.forEach((b) => b.tags.forEach((t) => { m[t] = (m[t] || 0) + 1; }));
+    return m;
+  }
+
+  function filteredBills() {
+    const f = state.filters;
+    return state.data.bills.filter((b) => {
+      if (f.states.size && !f.states.has(b.state)) return false;
+      if (f.session && b.session !== f.session) return false;
+      if (f.chamber && b.chamber !== f.chamber) return false;
+      if (f.tags.size && !b.tags.some((t) => f.tags.has(t))) return false;
+      // Date filter runs against the latest action date (YYYY-MM-DD strings
+      // compare lexicographically). Bills with no recorded action have no date
+      // to place, so a date filter excludes them.
+      if (f.dateFrom || f.dateTo) {
+        if (!b.latest_action) return false;
+        if (f.dateFrom && b.latest_action < f.dateFrom) return false;
+        if (f.dateTo && b.latest_action > f.dateTo) return false;
+      }
+      if (f.search) {
+        const hay = (b.id + " " + b.title + " " + b.sponsors.join(" ")).toLowerCase();
+        if (!hay.includes(f.search)) return false;
+      }
+      return true;
+    });
+  }
+
+  function anyFilterActive() {
+    const f = state.filters;
+    return !!(f.search || f.states.size || f.tags.size || f.session || f.chamber
+              || f.dateFrom || f.dateTo);
+  }
+
+  /* ---------- render ---------- */
+
+  function render() {
+    const bills = filteredBills();
+    state.limit = PAGE_SIZE;
+    $("f-clear").disabled = !anyFilterActive();
+    renderTiles(bills);
+    renderStateChart(bills);
+    renderTagChart(bills);
+    renderMonthChart(bills);
+    renderTable(bills);
+  }
+
+  function renderTiles(bills) {
+    const tiles = $("tiles");
+    tiles.textContent = "";
+    const sessions = new Set(bills.map((b) => b.session + "|" + b.state));
+    const jurisdictions = new Set(bills.map((b) => b.state));
+    const tagged = bills.filter((b) => b.tags.length).length;
+    [
+      ["Bills", fmt(bills.length)],
+      ["Jurisdictions", fmt(jurisdictions.size)],
+      ["Sessions", fmt(sessions.size)],
+      ["With topic tags", bills.length ? Math.round(100 * tagged / bills.length) + "%" : "—"],
+    ].forEach(([label, value]) => {
+      const t = document.createElement("div");
+      t.className = "tile";
+      const l = document.createElement("div"); l.className = "label"; l.textContent = label;
+      const v = document.createElement("div"); v.className = "value"; v.textContent = value;
+      t.append(l, v);
+      tiles.append(t);
+    });
+  }
+
+  // Horizontal bars: one series, slot-1 blue; value label at the data end
+  // (the relief channel for the tooltip); click toggles the filter.
+  function renderHBars(container, rows, selectedSet, onToggle, nameFor) {
+    container.textContent = "";
+    const max = Math.max(1, ...rows.map((r) => r.count));
+    rows.forEach((r) => {
+      const row = document.createElement("div");
+      row.className = "hbar-row";
+      row.tabIndex = 0;
+      row.setAttribute("role", "button");
+      if (selectedSet.size && !selectedSet.has(r.key)) row.classList.add("dim");
+      const lbl = document.createElement("div");
+      lbl.className = "lbl";
+      lbl.textContent = nameFor(r.key);
+      lbl.title = nameFor(r.key);
+      const track = document.createElement("div");
+      track.className = "track";
+      const bar = document.createElement("div");
+      bar.className = "bar";
+      bar.style.width = (100 * r.count / max * 0.82) + "%";
+      const val = document.createElement("div");
+      val.className = "val";
+      val.textContent = fmt(r.count);
+      track.append(bar, val);
+      row.append(lbl, track);
+      const toggle = () => onToggle(r.key);
+      row.addEventListener("click", toggle);
+      row.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+      attachTooltip(row, () => [fmt(r.count) + (r.count === 1 ? " bill" : " bills"), nameFor(r.key)]);
+      container.append(row);
+    });
+    if (!rows.length) {
+      const e = document.createElement("div");
+      e.className = "empty";
+      e.textContent = "No data for the current filters.";
+      container.append(e);
+    }
+  }
+
+  function renderStateChart(bills) {
+    const counts = {};
+    bills.forEach((b) => { counts[b.state] = (counts[b.state] || 0) + 1; });
+    const rows = Object.entries(counts)
+      .map(([key, count]) => ({ key, count }))
+      .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
+    renderHBars($("chart-states"), rows, state.filters.states, (code) => {
+      toggleSet(state.filters.states, code);
+      syncMultiSelects(); render();
+    }, (code) => state.stateNames[code] || code.toUpperCase());
+  }
+
+  function renderTagChart(bills) {
+    const counts = {};
+    bills.forEach((b) => b.tags.forEach((t) => { counts[t] = (counts[t] || 0) + 1; }));
+    const rows = Object.entries(counts)
+      .map(([key, count]) => ({ key, count }))
+      .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
+    renderHBars($("chart-tags"), rows, state.filters.tags, (tag) => {
+      toggleSet(state.filters.tags, tag);
+      syncMultiSelects(); render();
+    }, (t) => t);
+  }
+
+  // Column chart (SVG): monthly count of bills by latest action date.
+  function renderMonthChart(bills) {
+    const container = $("chart-months");
+    container.textContent = "";
+    const dated = bills.filter((b) => b.latest_action);
+    const undated = bills.length - dated.length;
+    // Future-dated actions (a scheduled effective date, or a bad far-future
+    // source date) must not anchor the month axis: a single 2035 date would
+    // otherwise push the axis years out and blank the entire recent view.
+    // The data build already caps "latest action" at the snapshot date, so
+    // this is a belt-and-suspenders guard that also corrects any stale data
+    // still served before the next rebuild. Chart only months up to the
+    // current one; count anything beyond it separately.
+    const nowMonth = new Date().toISOString().slice(0, 7);
+    const charted = dated.filter((b) => b.latest_action.slice(0, 7) <= nowMonth);
+    const future = dated.length - charted.length;
+    $("activity-sub").textContent = "Bills with their most recent action in each month" +
+      (undated ? " · " + fmt(undated) + " without recorded actions not shown" : "") +
+      (future ? " · " + fmt(future) + " with future-dated actions not shown" : "");
+    if (!charted.length) {
+      const e = document.createElement("div");
+      e.className = "empty";
+      e.textContent = "No dated actions in the current selection.";
+      return container.append(e);
+    }
+    const counts = {};
+    charted.forEach((b) => {
+      const m = b.latest_action.slice(0, 7);
+      counts[m] = (counts[m] || 0) + 1;
+    });
+    // Continuous month axis from first to last observed month.
+    const keys = Object.keys(counts).sort();
+    let months = [];
+    for (let [y, m] = keys[0].split("-").map(Number); ; ) {
+      const key = y + "-" + String(m).padStart(2, "0");
+      months.push({ key, count: counts[key] || 0 });
+      if (key === keys[keys.length - 1]) break;
+      if (++m > 12) { m = 1; y++; }
+    }
+    // A single stale action date can stretch the axis across decades.
+    if (months.length > 24) {
+      const dropped = months.slice(0, -24).reduce((s, m) => s + m.count, 0);
+      months = months.slice(-24);
+      $("activity-sub").textContent += " · showing last 24 months" +
+        (dropped ? " (" + fmt(dropped) + " earlier bills not charted)" : "");
+    }
+
+    const W = 1100, plotH = 190, axisH = 26, H = plotH + axisH;
+    const padL = 52, padR = 8, padT = 14;
+    const innerW = W - padL - padR, innerH = plotH - padT;
+    const maxV = Math.max(...months.map((m) => m.count));
+    const yMax = niceCeil(maxV);
+    const band = innerW / months.length;
+    const barW = Math.min(24, Math.max(3, band - 2)); // 2px surface gap between columns
+    const svg = mkSvg("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", role: "img",
+      "aria-label": "Column chart of bills by month of latest action" });
+    // gridlines + y ticks at clean numbers
+    [0.5, 1].forEach((frac) => {
+      const v = Math.round(yMax * frac);
+      const y = padT + innerH - (v / yMax) * innerH;
+      svg.append(mkSvg("line", { class: "grid-line", x1: padL, x2: W - padR, y1: y, y2: y }));
+      const t = mkSvg("text", { class: "tick", x: padL - 6, y: y + 4, "text-anchor": "end" });
+      t.textContent = fmt(v);
+      svg.append(t);
+    });
+    const baseY = padT + innerH;
+    svg.append(mkSvg("line", { class: "base-line", x1: padL, x2: W - padR, y1: baseY, y2: baseY }));
+
+    const peak = months.reduce((a, b) => (b.count > a.count ? b : a));
+    const labelEvery = Math.max(1, Math.ceil(months.length / 14));
+    // Only place a value atop every bar when the columns are wide enough that
+    // the numbers won't collide; otherwise fall back to labelling just the peak.
+    const valueEvery = band >= 30 ? 1 : labelEvery;
+    months.forEach((m, i) => {
+      const x = padL + i * band + (band - barW) / 2;
+      const h = (m.count / yMax) * innerH;
+      const y = baseY - h;
+      if (m.count > 0) {
+        const r = Math.min(4, barW / 2, h);
+        // rounded cap, square baseline
+        const col = mkSvg("path", { class: "col", d:
+          `M${x},${baseY} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + barW - r},${y} ` +
+          `Q${x + barW},${y} ${x + barW},${y + r} L${x + barW},${baseY} Z` });
+        svg.append(col);
+        if (m === peak || i % valueEvery === 0) {
+          const cls = m === peak ? "peak-lbl" : "col-lbl";
+          const pl = mkSvg("text", { class: cls, x: x + barW / 2, y: y - 5, "text-anchor": "middle" });
+          pl.textContent = fmt(m.count);
+          svg.append(pl);
+        }
+      }
+      // hit target spans the full band and plot height
+      const hit = mkSvg("rect", { class: "col-hit", x: padL + i * band, y: padT, width: band, height: innerH });
+      attachTooltip(hit, () => [fmt(m.count) + (m.count === 1 ? " bill" : " bills"), monthLabel(m.key)]);
+      svg.append(hit);
+      if (i % labelEvery === 0) {
+        const t = mkSvg("text", { class: "tick", x: padL + i * band + band / 2, y: H - 8, "text-anchor": "middle" });
+        t.textContent = monthLabel(m.key);
+        svg.append(t);
+      }
+    });
+    container.append(svg);
+  }
+
+  /* ---------- table ---------- */
+
+  const COLS = [
+    { key: "id",            label: "Bill" },
+    { key: "state",         label: "Jurisdiction" },
+    { key: "session",       label: "Session" },
+    { key: "title",         label: "Title & latest action" },
+    { key: "tags",          label: "Topics", sortable: false },
+    { key: "latest_action", label: "Last action" },
+  ];
+
+  function renderTable(bills) {
+    $("table-title").textContent = "Bills (" + fmt(bills.length) + ")";
+    const thead = $("thead-row");
+    thead.textContent = "";
+    COLS.forEach((c) => {
+      const th = document.createElement("th");
+      th.textContent = c.label + " ";
+      if (c.sortable !== false) {
+        const arrow = document.createElement("span");
+        arrow.className = "arrow";
+        arrow.textContent = state.sort.key === c.key ? (state.sort.dir > 0 ? "▲" : "▼") : "";
+        th.append(arrow);
+        th.addEventListener("click", () => {
+          state.sort.dir = state.sort.key === c.key ? -state.sort.dir : (c.key === "latest_action" ? -1 : 1);
+          state.sort.key = c.key;
+          renderTable(filteredBills());
+        });
+      } else {
+        th.style.cursor = "default";
+      }
+      thead.append(th);
+    });
+
+    const sorted = bills.slice().sort((a, b) => {
+      const k = state.sort.key;
+      const av = a[k] ?? "", bv = b[k] ?? "";
+      if (av === bv) return a.id.localeCompare(b.id);
+      if (av === "") return 1;          // nulls last regardless of direction
+      if (bv === "") return -1;
+      return (av < bv ? -1 : 1) * state.sort.dir;
+    });
+
+    const tbody = $("tbody");
+    tbody.textContent = "";
+    $("empty").hidden = sorted.length > 0;
+    sorted.slice(0, state.limit).forEach((b) => {
+      const tr = document.createElement("tr");
+
+      const tdId = document.createElement("td");
+      const idSpan = document.createElement(b.url ? "a" : "span");
+      idSpan.className = "bill-id";
+      idSpan.textContent = b.id;
+      if (b.url) { idSpan.href = b.url; idSpan.target = "_blank"; idSpan.rel = "noopener"; }
+      tdId.append(idSpan);
+
+      const tdState = document.createElement("td");
+      tdState.textContent = state.stateNames[b.state] || (b.state || "").toUpperCase();
+
+      const tdSession = document.createElement("td");
+      tdSession.className = "num";
+      tdSession.textContent = b.session;
+
+      const tdTitle = document.createElement("td");
+      const titleDiv = document.createElement("div");
+      titleDiv.className = "bill-title";
+      titleDiv.textContent = b.title;
+      tdTitle.append(titleDiv);
+      if (b.latest_action_desc) {
+        const act = document.createElement("div");
+        act.className = "action-desc";
+        act.textContent = b.latest_action_desc;
+        tdTitle.append(act);
+      }
+
+      const tdTags = document.createElement("td");
+      b.tags.forEach((t) => {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        const dot = document.createElement("span");
+        dot.className = "dot";
+        dot.style.background = "var(" + (state.tagColor[t] || SERIES[0]) + ")";
+        chip.append(dot, document.createTextNode(t));
+        tdTags.append(chip);
+      });
+
+      const tdDate = document.createElement("td");
+      tdDate.className = "date";
+      tdDate.textContent = b.latest_action || "—";
+
+      tr.append(tdId, tdState, tdSession, tdTitle, tdTags, tdDate);
+      tbody.append(tr);
+    });
+
+    const more = $("show-more");
+    if (sorted.length > state.limit) {
+      more.hidden = false;
+      more.textContent = "Show " + fmt(Math.min(PAGE_SIZE, sorted.length - state.limit)) +
+        " more of " + fmt(sorted.length - state.limit) + " remaining";
+      more.onclick = () => { state.limit += PAGE_SIZE; renderTable(filteredBills()); };
+    } else {
+      more.hidden = true;
+    }
+  }
+
+  /* ---------- controls ---------- */
+
+  function buildSelect(el, allLabel, values, onChange, labelFn) {
+    el.textContent = "";
+    const all = document.createElement("option");
+    all.value = "";
+    all.textContent = allLabel;
+    el.append(all);
+    values.forEach((v) => {
+      const o = document.createElement("option");
+      o.value = v;
+      o.textContent = labelFn ? labelFn(v) : v;
+      el.append(o);
+    });
+    el.addEventListener("change", () => onChange(el.value));
+  }
+
+  function buildMultiSelect(root, allLabel, options, selectedSet, counts) {
+    root.textContent = "";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.setAttribute("aria-haspopup", "listbox");
+    const btnLabel = document.createElement("span");
+    const caret = document.createElement("span");
+    caret.className = "caret";
+    caret.textContent = "▾";
+    btn.append(btnLabel, caret);
+    const panel = document.createElement("div");
+    panel.className = "panel";
+    options.forEach((opt) => {
+      const label = document.createElement("label");
+      if (opt.title) label.title = opt.title;
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.value = opt.value;
+      cb.addEventListener("change", () => {
+        toggleSet(selectedSet, opt.value, cb.checked);
+        root._sync();
+        render();
+      });
+      const name = document.createElement("span");
+      name.textContent = opt.label;
+      const count = document.createElement("span");
+      count.className = "count";
+      count.textContent = fmt(counts[opt.value] || 0);
+      label.append(cb, name, count);
+      panel.append(label);
+    });
+    btn.addEventListener("click", () => root.classList.toggle("open"));
+    root._sync = () => {
+      btnLabel.textContent = selectedSet.size ? selectedSet.size + " selected" : allLabel;
+      panel.querySelectorAll("input").forEach((cb) => { cb.checked = selectedSet.has(cb.value); });
+    };
+    root._sync();
+    root.append(btn, panel);
+  }
+
+  function syncMultiSelects() {
+    [$("f-states"), $("f-tags")].forEach((m) => m._sync && m._sync());
+  }
+
+  /* ---------- last-action date range ---------- */
+
+  // A preset ("Last 30 days") is a relative window ending today; "Custom range"
+  // reveals two date inputs. Both feed the same dateFrom/dateTo filter strings.
+  function initDateRange() {
+    const sel = $("f-daterange");
+    const custom = $("f-daterange-custom");
+    const from = $("f-date-from");
+    const to = $("f-date-to");
+
+    sel.addEventListener("change", () => {
+      if (sel.value === "custom") {
+        custom.hidden = false;
+        applyCustomDates();
+      } else {
+        custom.hidden = true;
+        const days = parseInt(sel.value, 10);
+        if (days) {
+          state.filters.dateFrom = isoDaysAgo(days);
+          state.filters.dateTo = isoToday();
+        } else {
+          state.filters.dateFrom = "";
+          state.filters.dateTo = "";
+        }
+        render();
+      }
+    });
+    from.addEventListener("change", applyCustomDates);
+    to.addEventListener("change", applyCustomDates);
+
+    function applyCustomDates() {
+      state.filters.dateFrom = from.value || "";
+      state.filters.dateTo = to.value || "";
+      render();
+    }
+  }
+
+  function resetDateRange() {
+    state.filters.dateFrom = "";
+    state.filters.dateTo = "";
+    $("f-daterange").value = "";
+    $("f-date-from").value = "";
+    $("f-date-to").value = "";
+    $("f-daterange-custom").hidden = true;
+  }
+
+  /* ---------- tooltip ---------- */
+
+  function attachTooltip(el, contentFn) {
+    const tip = $("tooltip");
+    const show = (e) => {
+      const [value, label] = contentFn();
+      tip.textContent = "";
+      const v = document.createElement("div"); v.className = "tt-val"; v.textContent = value;
+      const l = document.createElement("div"); l.className = "tt-lbl"; l.textContent = label;
+      tip.append(v, l);
+      tip.style.display = "block";
+      move(e);
+    };
+    const move = (e) => {
+      const x = Math.min(e.clientX + 12, window.innerWidth - tip.offsetWidth - 8);
+      const y = Math.min(e.clientY + 12, window.innerHeight - tip.offsetHeight - 8);
+      tip.style.left = x + "px";
+      tip.style.top = y + "px";
+    };
+    const hide = () => { tip.style.display = "none"; };
+    el.addEventListener("pointerenter", show);
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointerleave", hide);
+    el.addEventListener("focus", (e) => show({ clientX: 100, clientY: 100 }));
+    el.addEventListener("blur", hide);
+  }
+
+  /* ---------- utilities ---------- */
+
+  function toggleSet(set, value, forceOn) {
+    const on = forceOn !== undefined ? forceOn : !set.has(value);
+    if (on) set.add(value); else set.delete(value);
+  }
+  function uniqueSorted(arr) { return [...new Set(arr)].sort(); }
+  function isoToday() { return new Date().toISOString().slice(0, 10); }
+  function isoDaysAgo(days) {
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    return d.toISOString().slice(0, 10);
+  }
+  function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function fmt(n) { return n.toLocaleString("en-US"); }
+  function niceCeil(v) {
+    if (v <= 5) return v;
+    const mag = Math.pow(10, Math.floor(Math.log10(v)));
+    for (const m of [1, 2, 2.5, 5, 10]) if (v <= m * mag) return Math.ceil(m * mag);
+    return v;
+  }
+  function monthLabel(key) {
+    const [y, m] = key.split("-");
+    const names = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return names[Number(m) - 1] + " " + y;
+  }
   // ISO "2026-07-05T21:02:28Z" -> "July 5, 2026, 21:02 UTC"; robust to a
   // bare date or a bad value (falls back to the raw string, then null).
   function formatAsOf(iso) {
@@ -561,223 +1109,11 @@
       return null;
     }
   }
-  function fmt(n) { return n.toLocaleString("en-US"); }
-
-  /* ---------- committee hearings & witness slips ---------- */
-
-  // Loaded independently of data.json: a hearings outage must never block the
-  // bills dashboard. hearings.json is a rolling near-future window built by
-  // actions/scrape-hearings (IL: ilga.gov, WA: leg.wa.gov), refreshed by the
-  // twice-daily Pages deploy — a different cadence and source than the bill
-  // snapshot, so it carries its own "updated" stamp.
-  function loadHearings() {
-    fetch("hearings.json")
-      .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(renderHearings)
-      .catch(() => { const e = $("hearings-empty"); if (e) { e.hidden = false;
-        e.textContent = "Couldn\u2019t load committee hearings right now. Please try again shortly."; } });
+  function mkSvg(tag, attrs) {
+    const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (const [k, v] of Object.entries(attrs || {})) el.setAttribute(k, v);
+    return el;
   }
-
-  function eln(tag, cls, text) {
-    const n = document.createElement(tag);
-    if (cls) n.className = cls;
-    if (text != null) n.textContent = text;
-    return n;
-  }
-
-  function renderHearings(data) {
-    const hearings = (data && data.hearings) || [];
-    if (!hearings.length) { const e = $("hearings-empty"); if (e) e.hidden = false; return; }
-    const card = $("hearings-card");
-    const body = $("hearings-body");
-    body.textContent = "";
-
-    const asof = formatAsOf(data.generated_at);
-    if (asof) $("hearings-asof").textContent = "Updated " + asof;
-
-    const portals = {};
-    (data.jurisdictions || []).forEach((j) => { portals[j.code] = j; });
-
-    const byJur = {};
-    hearings.forEach((h) => { (byJur[h.jurisdiction] = byJur[h.jurisdiction] || []).push(h); });
-
-    Object.keys(byJur).sort().forEach((code) => {
-      const juris = portals[code] || { name: code.toUpperCase() };
-      const group = eln("div", "hgroup");
-      const head = eln("div", "hgroup-head");
-      head.append(eln("span", "hgroup-name", juris.name));
-      head.append(eln("span", "hgroup-count", byJur[code].length + " scheduled"));
-      if (juris.portal_url) {
-        const p = eln("a", "hgroup-portal", PARTICIPATION[juris.participation] || "Official portal");
-        p.href = juris.portal_url; p.target = "_blank"; p.rel = "noopener";
-        head.append(p);
-      }
-      group.append(head);
-      byJur[code].forEach((h) => group.append(hearingRow(h)));
-      body.append(group);
-    });
-
-    card.hidden = false;
-    const f = $("footer");
-    if (f) f.textContent = "Committee hearings from " + (data.source || "official sources") + ", refreshed twice daily.";
-  }
-
-  const PARTICIPATION = {
-    witness_slip: "File a witness slip ↗",
-    committee_sign_in: "Sign in to testify ↗",
-    written_testimony: "Submit testimony ↗",
-    public_comment: "Comment ↗",
-  };
-
-  function hearingRow(h) {
-    const row = eln("div", "hearing-row" + (h.status === "canceled" ? " is-canceled" : ""));
-
-    const when = eln("div", "h-when");
-    when.append(eln("b", null, hearingWhen(h)));
-    if (h.status === "canceled") when.append(eln("span", "h-badge", "Canceled"));
-    row.append(when);
-
-    const main = eln("div", "h-main");
-    main.append(eln("div", "h-committee", h.committee || "Committee"));
-    if (h.location) main.append(eln("div", "h-loc", h.location));
-
-    if (h.bills && h.bills.length) {
-      const chips = eln("div", "h-bills");
-      h.bills.forEach((b) => {
-        const chip = eln("a", "bill-chip");
-        chip.href = b.url || h.details_url || "#"; chip.target = "_blank"; chip.rel = "noopener";
-        chip.append(eln("span", "chip-id", b.id));
-        if (b.slips) chip.append(slipBar(b.slips));
-        chips.append(chip);
-      });
-      main.append(chips);
-    }
-
-    const actions = eln("div", "h-actions");
-    if (h.status !== "canceled" && h.witness_slip_url) {
-      const file = eln("a", "file-link",
-        PARTICIPATION[participationFor(h)] || "File a slip ↗");
-      file.href = h.witness_slip_url; file.target = "_blank"; file.rel = "noopener";
-      actions.append(file);
-    }
-    if (h.committee_url) {
-      const cmte = eln("a", "committee-link", "About the committee ↗");
-      cmte.href = h.committee_url; cmte.target = "_blank"; cmte.rel = "noopener";
-      actions.append(cmte);
-    }
-    if (actions.childNodes.length) main.append(actions);
-    row.append(main);
-    return row;
-  }
-
-  function participationFor(h) {
-    return h.jurisdiction === "wa" ? "committee_sign_in" : "witness_slip";
-  }
-
-  // Source times are local wall-clock (naive ISO) with a tz name. Format
-  // ISO-looking strings ourselves from their parts — never via Date(), which
-  // would re-interpret the naive time in the viewer's zone — and fall back to
-  // the source's own display string (already friendly for IL).
-  function hearingWhen(h) {
-    let disp = prettyLocal(h.scheduled_display) || prettyLocal(h.scheduled_iso)
-      || h.scheduled_display || h.scheduled_iso || "Time TBA";
-    const zone = TZ_ABBR[h.timezone];
-    return zone ? disp + " " + zone : disp;
-  }
-  function prettyLocal(s) {
-    const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s || "");
-    if (!m) return null;
-    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    let hh = Number(m[4]);
-    const ampm = hh >= 12 ? "PM" : "AM";
-    hh = ((hh + 11) % 12) + 1;
-    return months[Number(m[2]) - 1] + " " + Number(m[3]) + ", " + m[1] +
-      ", " + hh + ":" + m[5] + " " + ampm;
-  }
-  const TZ_ABBR = {
-    "America/Chicago": "CT",
-    "America/Los_Angeles": "PT",
-  };
-
-  function slipBar(s) {
-    const total = (s.proponents || 0) + (s.opponents || 0) + (s.no_position || 0);
-    const wrap = eln("span", "slipbar");
-    wrap.title = fmt(s.proponents) + " for · " + fmt(s.opponents) + " against · " +
-      fmt(s.no_position) + " no position";
-    if (total > 0) {
-      [["for", s.proponents], ["against", s.opponents], ["neutral", s.no_position]]
-        .forEach(([k, v]) => {
-          if (!v) return;
-          const seg = eln("span", "slip-seg slip-" + k);
-          seg.style.flex = String(v);
-          wrap.append(seg);
-        });
-    }
-    const label = eln("span", "slip-count", fmt(total));
-    wrap.append(label);
-    return wrap;
-  }
-
-  /* ---------- participation directory (all states) ---------- */
-
-  const KIND_LABEL = {
-    witness_slip: "Witness slip",
-    request_to_speak: "Request to Speak",
-    committee_sign_in: "Committee sign-in",
-    written_testimony: "Written testimony",
-    position_letter: "Position letter",
-    appearance_form: "Appearance form",
-    public_comment: "Public comment",
-    contact_only: "Contact the committee",
-  };
-  const LIVE_STATES = { il: true, wa: true };
-  let participation = [];
-
-  function loadParticipation() {
-    fetch("participation.json")
-      .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then((data) => { participation = (data && data.jurisdictions) || []; renderParticipation(""); })
-      .catch(() => {});
-  }
-
-  function renderParticipation(filter) {
-    if (!participation.length) return;
-    const grid = $("participation-grid");
-    grid.textContent = "";
-    const q = (filter || "").trim().toLowerCase();
-    const rows = participation.filter((j) =>
-      !q || j.name.toLowerCase().includes(q) ||
-      (KIND_LABEL[j.participation] || "").toLowerCase().includes(q));
-    rows.forEach((j) => {
-      const card = eln("div", "pstate");
-      const top = eln("div", "pstate-top");
-      top.append(eln("span", "pstate-name", j.name));
-      if (LIVE_STATES[j.code]) top.append(eln("span", "pstate-live", "Live hearings"));
-      card.append(top);
-      card.append(eln("span", "pstate-kind", KIND_LABEL[j.participation] || j.participation));
-      if (j.how_to) card.append(eln("div", "pstate-how", j.how_to));
-      if (j.portal_url) {
-        const a = eln("a", "pstate-link" + (j.online ? "" : " is-offline"),
-          (j.online ? "Go to portal ↗" : "How to participate ↗"));
-        a.href = j.portal_url; a.target = "_blank"; a.rel = "noopener";
-        card.append(a);
-      }
-      grid.append(card);
-    });
-    $("participation-card").hidden = rows.length === 0 && !q ? true : false;
-  }
-
-  {
-    let pt;
-    const ps = $("p-search");
-    if (ps) ps.addEventListener("input", (e) => {
-      clearTimeout(pt);
-      pt = setTimeout(() => renderParticipation(e.target.value), 120);
-    });
-  }
-
-  loadHearings();
-  loadParticipation();
 })();
 </script>
 </body>

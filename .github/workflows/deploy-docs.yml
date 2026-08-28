@@ -8,8 +8,9 @@ on:
       - "docs/**"
       - ".github/workflows/deploy-docs.yml"
   schedule:
-    # Refresh the committee-hearings feed twice daily: 08:00 UTC (morning) and
-    # 20:00 UTC (afternoon, to catch same-day committee-hearing postings).
+    # Refresh twice daily: 08:00 UTC (after the 6am UTC bill scrapes) and 20:00
+    # UTC (afternoon, to catch same-day committee-hearing postings). The bill
+    # data.json and the live hearings.json are both rebuilt on each run.
     - cron: "0 8,20 * * *"
   workflow_dispatch:
 
@@ -33,8 +34,91 @@ jobs:
         with:
           mdbook-version: 'latest'
 
+      # Install the govbot CLI so we can run the embedding tagger (`govbot tag`).
+      - name: Install govbot CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh | bash
+          echo "$HOME/.govbot/bin" >> "$GITHUB_PATH"
+
+      # The ~90MB all-MiniLM-L6-v2 ONNX model is downloaded once and reused
+      # across runs. Stable key => downloaded on the first run, restored after.
+      - name: Cache embedding model
+        uses: actions/cache@v4
+        with:
+          path: /tmp/govbot-model
+          key: govbot-minilm-onnx-v1
+
+      # Per-repo incremental state: the seen-bills ledger + a snapshot of the
+      # produced tag files. Keyed on the taxonomy hash so editing the topic list
+      # busts the cache (forces a full re-tag); the run-id suffix + restore-keys
+      # prefix means each run saves a fresh snapshot and restores the latest one.
+      - name: Cache incremental tag state
+        uses: actions/cache@v4
+        with:
+          path: /tmp/govbot-cache
+          key: govbot-tags-${{ hashFiles('scripts/govbot-dashboard.yml') }}-${{ github.run_id }}
+          restore-keys: |
+            govbot-tags-${{ hashFiles('scripts/govbot-dashboard.yml') }}-
+
+      # Fetch govbot's processed legislation dataset, tag it with the embedding
+      # model, and rebuild the dashboard's data.json before mdbook runs. We clone
+      # via `govbot clone` (the chn-openstates-files dataset) rather than the raw
+      # openstates scraper repos, because `govbot logs`/`govbot tag` require
+      # govbot's OCD-files layout (country:/state:/sessions/.../logs). Every stage
+      # that touches the network or the tagger degrades to a warning + the keyword
+      # fallback (scripts/dashboard_tags.json) or, ultimately, the committed sample
+      # data, so the docs deploy never breaks.
+      - name: Build dashboard data from legislation repos
+        env:
+          GOVBOT_DATA: /tmp/govbot-data
+          MODEL_DIR: /tmp/govbot-model
+          CACHE_DIR: /tmp/govbot-cache
+          DASHBOARD_CONFIG: ${{ github.workspace }}/scripts/govbot-dashboard.yml
+          FILTER_SCRIPT: ${{ github.workspace }}/scripts/filter_new_bills.py
+        run: |
+          set -uo pipefail
+          mkdir -p /tmp/govbot-data /tmp/govbot-model /tmp/govbot-cache
+
+          # Clone/pull the full supported dataset (depth-50 shallow, from
+          # chn-openstates-files) into /tmp/govbot-data/repos in govbot format.
+          govbot clone all --govbot-dir /tmp/govbot-data --parallel 8 \
+            || echo "::warning::govbot clone reported errors; proceeding with whatever cloned"
+
+          if [ -z "$(ls -A /tmp/govbot-data/repos 2>/dev/null)" ]; then
+            echo "::warning::no legislation data cloned; keeping committed sample data"
+          else
+            echo "cloned $(find /tmp/govbot-data/repos -mindepth 1 -maxdepth 1 -type d | wc -l) repos"
+
+            # Warm up the model in a single process BEFORE fanning out, so the
+            # parallel workers below don't race to download it. Empty stdin is
+            # fine: govbot tag downloads the model before reading any lines.
+            mkdir -p /tmp/govbot-warmup
+            cp "$DASHBOARD_CONFIG" /tmp/govbot-warmup/govbot.yml
+            ( cd /tmp/govbot-warmup && : | govbot tag --govbot-dir "$MODEL_DIR" ) \
+              || echo "::warning::embedding model warm-up failed; tagging may use keyword fallback"
+
+            # Tag each repo incrementally, 4 at a time. Repos are independent.
+            find /tmp/govbot-data/repos -mindepth 1 -maxdepth 1 -type d -name '*-legislation' -print0 \
+              | xargs -0 -r -P4 -I{} bash scripts/tag_dashboard_repo.sh {}
+            echo "tag files produced: $(find /tmp/govbot-data/repos -path '*/tags/*.tag.json' | wc -l)"
+
+            python3 scripts/build_dashboard_data.py \
+              --govbot-dir /tmp/govbot-data \
+              --tags-config scripts/dashboard_tags.json \
+              --source-label "github.com/chn-openstates-files" \
+              --output docs/src/dashboard/data.json \
+              || {
+                echo "::warning::dashboard data build failed; keeping committed sample data"
+                echo "::group::repo layout sample (for debugging)"
+                find /tmp/govbot-data/repos -mindepth 1 -maxdepth 5 -not -path '*/.git*' | sort | head -300 || true
+                echo "::endgroup::"
+              }
+          fi
+          ls -lh docs/src/dashboard/data.json
+
       # Live committee hearings + witness-slip windows (IL: ilga.gov, WA:
-      # leg.wa.gov) — the dashboard's only data source. The scraper is fail-soft
+      # leg.wa.gov). This is a rolling near-future window, separate from the
+      # daily bill snapshot, so it has its own file. The scraper is fail-soft
       # (a source outage yields zero hearings, never a crash); we only replace
       # the committed sample when the fresh run actually produced hearings, so
       # a total outage keeps the last-good sample rather than blanking the panel.
