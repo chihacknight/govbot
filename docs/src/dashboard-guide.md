@@ -1,27 +1,26 @@
-# Legislation Dashboard
+# Committee Hearings Dashboard
 
 **[Open the dashboard →](./dashboard/index.html)**
 
-A static, client-side dashboard over bill data from every tracked jurisdiction,
-filterable by state/territory, session, chamber, topic tag, and free-text search.
-It is plain HTML/JS with no external dependencies, deployed as part of this docs
-site by the existing GitHub Pages workflow.
+A static, client-side page listing **upcoming committee hearings and witness-slip
+windows** for Illinois and Washington — where the public can weigh in on a bill. It
+is plain HTML/JS with no external dependencies, deployed as part of this docs site
+by the existing GitHub Pages workflow.
 
 ## What it shows
 
-- **Stat tiles** — bill count, jurisdictions, sessions, and share of bills with topic tags
-- **Committee hearings & witness slips** — upcoming hearings where the public can weigh in (Illinois & Washington), with bill chips, witness-slip counts where available, and a deep link to the official portal to file
-- **Bills by jurisdiction** and **bills by topic** bar charts (click a bar to filter)
-- **Activity by month** — bills by the month of their most recent recorded action
-- **Bills table** — sortable, with topic chips and links to each bill's official source
+- **Committee hearings & witness slips** — upcoming hearings (Illinois & Washington),
+  grouped by state, each with its date/time, location, the bills on the agenda
+  (with witness-slip counts where available), a link to that bill and to the
+  committee's official page, and a deep link to the official portal to file a slip /
+  sign in to testify.
+- Only **upcoming** hearings are shown; an "Updated" stamp gives the build time, and
+  a **Subscribe (RSS)** link offers the same list as a feed.
 
-All charts, tiles, and the table re-render against the same filtered slice, so the
-numbers always agree. A "Data as of" badge under the title shows when the snapshot
-was built.
-
-Jurisdictions whose upstream scraper repo cloned but published no bills yet are
-listed as pending under the jurisdiction chart (rather than silently omitted), and
-appear automatically once their `*-legislation` repo starts carrying data.
+> The underlying bill dataset (`data.json`, built by `scripts/build_dashboard_data.py`)
+> is still produced by the deploy workflow for data users and downstream consumers;
+> this page focuses on the live hearings layer built from it. See the
+> [govbot repo](https://github.com/chihacknight/govbot) for the bill data.
 
 ## Where the data comes from
 

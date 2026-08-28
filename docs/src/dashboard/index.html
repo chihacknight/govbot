@@ -386,49 +386,15 @@
       </div>
     </div>
     <div class="title-row">
-      <h1>Legislation Dashboard</h1>
-      <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
+      <h1>Committee Hearings &amp; Witness Slips</h1>
     </div>
-    <p>Bills across states and territories, filterable by jurisdiction, session, chamber, and topic tags.
+    <p>Upcoming legislative committee hearings where the public can weigh in — Illinois &amp; Washington.
        <a class="docs-link" href="../index.html">govbot docs</a> ·
        <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
   </header>
 
-  <div class="card" id="loading">
-    <h2>Loading bill data…</h2>
-    <p class="sub">The full dataset covers 50+ jurisdictions and can take a few seconds on slower connections.</p>
-  </div>
-
-  <div class="filters" id="filters">
-    <input type="search" id="f-search" placeholder="Search title or bill number…" aria-label="Search bills">
-    <div class="msel" id="f-states"></div>
-    <select id="f-session" aria-label="Session"></select>
-    <select id="f-chamber" aria-label="Chamber"></select>
-    <div class="msel" id="f-tags"></div>
-    <select id="f-daterange" aria-label="Last action date range">
-      <option value="">Any date</option>
-      <option value="7d">Last 7 days</option>
-      <option value="30d">Last 30 days</option>
-      <option value="90d">Last 3 months</option>
-      <option value="365d">Last 12 months</option>
-      <option value="custom">Custom range…</option>
-    </select>
-    <span class="daterange-custom" id="f-daterange-custom" hidden>
-      <input type="date" id="f-date-from" aria-label="Last action from date">
-      <span class="daterange-sep">to</span>
-      <input type="date" id="f-date-to" aria-label="Last action to date">
-    </span>
-    <button class="clear-btn" id="f-clear" disabled>Clear filters</button>
-  </div>
-
-  <div class="tiles" id="tiles"></div>
-
   <section class="card card--accent card--hearings" id="hearings-card" hidden>
     <div class="hearings-head">
-      <div>
-        <h2>Committee hearings &amp; witness slips</h2>
-        <p class="sub">Upcoming hearings where the public can weigh in · Illinois &amp; Washington</p>
-      </div>
       <div class="hearings-meta">
         <span class="asof hearings-asof" id="hearings-asof"></span>
         <a class="rss-link" href="hearings.xml" title="Subscribe to upcoming hearings in a feed reader">
@@ -440,38 +406,7 @@
     <div id="hearings-body" class="hearings-groups"></div>
   </section>
 
-  <div class="grid2">
-    <div class="card card--accent card--jurisdiction">
-      <h2>Bills by jurisdiction</h2>
-      <p class="sub">Click a bar to filter</p>
-      <div id="chart-states" class="hbar-scroll"></div>
-      <p class="pending-note" id="pending-note" hidden></p>
-    </div>
-    <div class="card card--accent card--topic">
-      <h2>Bills by topic</h2>
-      <p class="sub">Click a bar to filter · a bill can carry several topics</p>
-      <div id="chart-tags" class="hbar-scroll"></div>
-    </div>
-  </div>
-
-  <div class="card card--accent card--activity" id="activity-card">
-    <h2>Activity by month</h2>
-    <p class="sub" id="activity-sub">Bills with their most recent action in each month</p>
-    <div id="chart-months"></div>
-  </div>
-
-  <div class="card card--accent card--bills" style="margin-top:12px">
-    <h2 id="table-title">Bills</h2>
-    <p class="sub">Click a column header to sort</p>
-    <div class="table-scroll">
-      <table>
-        <thead><tr id="thead-row"></tr></thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-    <div class="empty" id="empty" hidden>No bills match the current filters.</div>
-    <button class="clear-btn show-more" id="show-more" hidden></button>
-  </div>
+  <p class="empty" id="hearings-empty" hidden>Loading committee hearings…</p>
 
   <footer id="footer"></footer>
   <p class="chn-credit">
@@ -493,15 +428,10 @@
   </p>
 </div>
 
-<div class="tooltip" id="tooltip"></div>
-
 <script>
 "use strict";
 (function () {
   const $ = (id) => document.getElementById(id);
-  const SERIES = ["--series-1","--series-2","--series-3","--series-4",
-                  "--series-5","--series-6","--series-7","--series-8"];
-  const PAGE_SIZE = 100;
 
   // ----- color theme toggle (light / dark / auto) -----
   (function initTheme() {
@@ -525,624 +455,6 @@
     apply(saved());
   })();
 
-  const state = {
-    data: null,
-    stateNames: {},          // code -> display name
-    tagColor: {},            // tag name -> css var (fixed, follows the entity)
-    filters: { search: "", states: new Set(), session: "", chamber: "", tags: new Set(),
-               dateFrom: "", dateTo: "" },
-    sort: { key: "latest_action", dir: -1 },
-    limit: PAGE_SIZE,
-  };
-
-  fetch("data.json")
-    .then((r) => { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.json(); })
-    .then(init)
-    .catch((err) => {
-      $("loading").remove();
-      const div = document.createElement("div");
-      div.className = "card";
-      const h = document.createElement("h2");
-      h.textContent = "Could not load data.json";
-      const p = document.createElement("p");
-      p.className = "sub";
-      p.textContent = "If you opened this file directly, serve it over HTTP instead " +
-        "(e.g. `python3 -m http.server` in this folder). Error: " + err.message;
-      div.append(h, p);
-      document.querySelector(".wrap").prepend(div);
-    });
-
-  function init(data) {
-    $("loading").remove();
-    state.data = data;
-    data.states.forEach((s) => { state.stateNames[s.code] = s.name; });
-    // Fixed slot per tag from the full dataset order — filtering never repaints.
-    data.tags.forEach((t, i) => { state.tagColor[t.name] = SERIES[i % SERIES.length]; });
-
-    buildMultiSelect($("f-states"), "All jurisdictions",
-      data.states.map((s) => ({ value: s.code, label: s.name })),
-      state.filters.states, countBillsByState());
-    buildMultiSelect($("f-tags"), "All topics",
-      data.tags.map((t) => ({ value: t.name, label: t.name, title: t.description })),
-      state.filters.tags, countBillsByTag());
-    buildSelect($("f-session"), "All sessions",
-      uniqueSorted(data.bills.map((b) => b.session)), (v) => { state.filters.session = v; render(); });
-    buildSelect($("f-chamber"), "All chambers",
-      uniqueSorted(data.bills.map((b) => b.chamber).filter(Boolean)),
-      (v) => { state.filters.chamber = v; render(); }, capitalize);
-
-    initDateRange();
-
-    let searchTimer;
-    $("f-search").addEventListener("input", (e) => {
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => {
-        state.filters.search = e.target.value.trim().toLowerCase();
-        render();
-      }, 150); // debounced: each render scans the full dataset
-    });
-    $("f-clear").addEventListener("click", () => {
-      state.filters.search = ""; $("f-search").value = "";
-      state.filters.states.clear(); state.filters.tags.clear();
-      state.filters.session = ""; $("f-session").value = "";
-      state.filters.chamber = ""; $("f-chamber").value = "";
-      resetDateRange();
-      syncMultiSelects(); render();
-    });
-    document.addEventListener("click", (e) => {
-      document.querySelectorAll(".msel.open").forEach((m) => {
-        if (!m.contains(e.target)) m.classList.remove("open");
-      });
-    });
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") document.querySelectorAll(".msel.open").forEach((m) => m.classList.remove("open"));
-    });
-
-    // "Data as of" badge — generated_at is when this snapshot was built
-    // (the daily deploy re-clones the source repos), so it is the honest
-    // freshness marker for the whole dashboard.
-    const asof = formatAsOf(data.generated_at);
-    if (asof) {
-      $("asof-text").innerHTML = "";
-      $("asof-text").append(document.createTextNode("Data as of "));
-      const b = document.createElement("b");
-      b.textContent = asof;
-      $("asof-text").append(b);
-      $("asof").hidden = false;
-    }
-
-    // Jurisdictions whose upstream scraper has published no bills yet.
-    const empty = data.empty_jurisdictions || [];
-    if (empty.length) {
-      const note = $("pending-note");
-      note.textContent = "";
-      const b = document.createElement("b");
-      b.textContent = empty.length + (empty.length === 1 ? " jurisdiction has" : " jurisdictions have")
-        + " no scraped data yet: ";
-      note.append(b, document.createTextNode(
-        empty.map((e) => e.name).join(", ") +
-        ". Their upstream scrapers haven't published bills — they'll appear here automatically once data lands."));
-      note.hidden = false;
-    }
-
-    const footer = $("footer");
-    footer.textContent = "Snapshot built " + (data.generated_at || "n/a") + " from " +
-      (data.source || "govbot repos") + ". Regenerate with ";
-    const code = document.createElement("code");
-    code.textContent = "python3 scripts/build_dashboard_data.py";
-    footer.append(code, document.createTextNode(" after `govbot clone` / `govbot tag`."));
-
-    render();
-  }
-
-  /* ---------- filtering ---------- */
-
-  function countBillsByState() {
-    const m = {};
-    state.data.bills.forEach((b) => { m[b.state] = (m[b.state] || 0) + 1; });
-    return m;
-  }
-  function countBillsByTag() {
-    const m = {};
-    state.data.bills.forEach((b) => b.tags.forEach((t) => { m[t] = (m[t] || 0) + 1; }));
-    return m;
-  }
-
-  function filteredBills() {
-    const f = state.filters;
-    return state.data.bills.filter((b) => {
-      if (f.states.size && !f.states.has(b.state)) return false;
-      if (f.session && b.session !== f.session) return false;
-      if (f.chamber && b.chamber !== f.chamber) return false;
-      if (f.tags.size && !b.tags.some((t) => f.tags.has(t))) return false;
-      // Date filter runs against the latest action date (YYYY-MM-DD strings
-      // compare lexicographically). Bills with no recorded action have no date
-      // to place, so a date filter excludes them.
-      if (f.dateFrom || f.dateTo) {
-        if (!b.latest_action) return false;
-        if (f.dateFrom && b.latest_action < f.dateFrom) return false;
-        if (f.dateTo && b.latest_action > f.dateTo) return false;
-      }
-      if (f.search) {
-        const hay = (b.id + " " + b.title + " " + b.sponsors.join(" ")).toLowerCase();
-        if (!hay.includes(f.search)) return false;
-      }
-      return true;
-    });
-  }
-
-  function anyFilterActive() {
-    const f = state.filters;
-    return !!(f.search || f.states.size || f.tags.size || f.session || f.chamber
-              || f.dateFrom || f.dateTo);
-  }
-
-  /* ---------- render ---------- */
-
-  function render() {
-    const bills = filteredBills();
-    state.limit = PAGE_SIZE;
-    $("f-clear").disabled = !anyFilterActive();
-    renderTiles(bills);
-    renderStateChart(bills);
-    renderTagChart(bills);
-    renderMonthChart(bills);
-    renderTable(bills);
-  }
-
-  function renderTiles(bills) {
-    const tiles = $("tiles");
-    tiles.textContent = "";
-    const sessions = new Set(bills.map((b) => b.session + "|" + b.state));
-    const jurisdictions = new Set(bills.map((b) => b.state));
-    const tagged = bills.filter((b) => b.tags.length).length;
-    [
-      ["Bills", fmt(bills.length)],
-      ["Jurisdictions", fmt(jurisdictions.size)],
-      ["Sessions", fmt(sessions.size)],
-      ["With topic tags", bills.length ? Math.round(100 * tagged / bills.length) + "%" : "—"],
-    ].forEach(([label, value]) => {
-      const t = document.createElement("div");
-      t.className = "tile";
-      const l = document.createElement("div"); l.className = "label"; l.textContent = label;
-      const v = document.createElement("div"); v.className = "value"; v.textContent = value;
-      t.append(l, v);
-      tiles.append(t);
-    });
-  }
-
-  // Horizontal bars: one series, slot-1 blue; value label at the data end
-  // (the relief channel for the tooltip); click toggles the filter.
-  function renderHBars(container, rows, selectedSet, onToggle, nameFor) {
-    container.textContent = "";
-    const max = Math.max(1, ...rows.map((r) => r.count));
-    rows.forEach((r) => {
-      const row = document.createElement("div");
-      row.className = "hbar-row";
-      row.tabIndex = 0;
-      row.setAttribute("role", "button");
-      if (selectedSet.size && !selectedSet.has(r.key)) row.classList.add("dim");
-      const lbl = document.createElement("div");
-      lbl.className = "lbl";
-      lbl.textContent = nameFor(r.key);
-      lbl.title = nameFor(r.key);
-      const track = document.createElement("div");
-      track.className = "track";
-      const bar = document.createElement("div");
-      bar.className = "bar";
-      bar.style.width = (100 * r.count / max * 0.82) + "%";
-      const val = document.createElement("div");
-      val.className = "val";
-      val.textContent = fmt(r.count);
-      track.append(bar, val);
-      row.append(lbl, track);
-      const toggle = () => onToggle(r.key);
-      row.addEventListener("click", toggle);
-      row.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
-      attachTooltip(row, () => [fmt(r.count) + (r.count === 1 ? " bill" : " bills"), nameFor(r.key)]);
-      container.append(row);
-    });
-    if (!rows.length) {
-      const e = document.createElement("div");
-      e.className = "empty";
-      e.textContent = "No data for the current filters.";
-      container.append(e);
-    }
-  }
-
-  function renderStateChart(bills) {
-    const counts = {};
-    bills.forEach((b) => { counts[b.state] = (counts[b.state] || 0) + 1; });
-    const rows = Object.entries(counts)
-      .map(([key, count]) => ({ key, count }))
-      .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
-    renderHBars($("chart-states"), rows, state.filters.states, (code) => {
-      toggleSet(state.filters.states, code);
-      syncMultiSelects(); render();
-    }, (code) => state.stateNames[code] || code.toUpperCase());
-  }
-
-  function renderTagChart(bills) {
-    const counts = {};
-    bills.forEach((b) => b.tags.forEach((t) => { counts[t] = (counts[t] || 0) + 1; }));
-    const rows = Object.entries(counts)
-      .map(([key, count]) => ({ key, count }))
-      .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
-    renderHBars($("chart-tags"), rows, state.filters.tags, (tag) => {
-      toggleSet(state.filters.tags, tag);
-      syncMultiSelects(); render();
-    }, (t) => t);
-  }
-
-  // Column chart (SVG): monthly count of bills by latest action date.
-  function renderMonthChart(bills) {
-    const container = $("chart-months");
-    container.textContent = "";
-    const dated = bills.filter((b) => b.latest_action);
-    const undated = bills.length - dated.length;
-    // Future-dated actions (a scheduled effective date, or a bad far-future
-    // source date) must not anchor the month axis: a single 2035 date would
-    // otherwise push the axis years out and blank the entire recent view.
-    // The data build already caps "latest action" at the snapshot date, so
-    // this is a belt-and-suspenders guard that also corrects any stale data
-    // still served before the next rebuild. Chart only months up to the
-    // current one; count anything beyond it separately.
-    const nowMonth = new Date().toISOString().slice(0, 7);
-    const charted = dated.filter((b) => b.latest_action.slice(0, 7) <= nowMonth);
-    const future = dated.length - charted.length;
-    $("activity-sub").textContent = "Bills with their most recent action in each month" +
-      (undated ? " · " + fmt(undated) + " without recorded actions not shown" : "") +
-      (future ? " · " + fmt(future) + " with future-dated actions not shown" : "");
-    if (!charted.length) {
-      const e = document.createElement("div");
-      e.className = "empty";
-      e.textContent = "No dated actions in the current selection.";
-      return container.append(e);
-    }
-    const counts = {};
-    charted.forEach((b) => {
-      const m = b.latest_action.slice(0, 7);
-      counts[m] = (counts[m] || 0) + 1;
-    });
-    // Continuous month axis from first to last observed month.
-    const keys = Object.keys(counts).sort();
-    let months = [];
-    for (let [y, m] = keys[0].split("-").map(Number); ; ) {
-      const key = y + "-" + String(m).padStart(2, "0");
-      months.push({ key, count: counts[key] || 0 });
-      if (key === keys[keys.length - 1]) break;
-      if (++m > 12) { m = 1; y++; }
-    }
-    // A single stale action date can stretch the axis across decades.
-    if (months.length > 24) {
-      const dropped = months.slice(0, -24).reduce((s, m) => s + m.count, 0);
-      months = months.slice(-24);
-      $("activity-sub").textContent += " · showing last 24 months" +
-        (dropped ? " (" + fmt(dropped) + " earlier bills not charted)" : "");
-    }
-
-    const W = 1100, plotH = 190, axisH = 26, H = plotH + axisH;
-    const padL = 52, padR = 8, padT = 14;
-    const innerW = W - padL - padR, innerH = plotH - padT;
-    const maxV = Math.max(...months.map((m) => m.count));
-    const yMax = niceCeil(maxV);
-    const band = innerW / months.length;
-    const barW = Math.min(24, Math.max(3, band - 2)); // 2px surface gap between columns
-    const svg = mkSvg("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", role: "img",
-      "aria-label": "Column chart of bills by month of latest action" });
-    // gridlines + y ticks at clean numbers
-    [0.5, 1].forEach((frac) => {
-      const v = Math.round(yMax * frac);
-      const y = padT + innerH - (v / yMax) * innerH;
-      svg.append(mkSvg("line", { class: "grid-line", x1: padL, x2: W - padR, y1: y, y2: y }));
-      const t = mkSvg("text", { class: "tick", x: padL - 6, y: y + 4, "text-anchor": "end" });
-      t.textContent = fmt(v);
-      svg.append(t);
-    });
-    const baseY = padT + innerH;
-    svg.append(mkSvg("line", { class: "base-line", x1: padL, x2: W - padR, y1: baseY, y2: baseY }));
-
-    const peak = months.reduce((a, b) => (b.count > a.count ? b : a));
-    const labelEvery = Math.max(1, Math.ceil(months.length / 14));
-    // Only place a value atop every bar when the columns are wide enough that
-    // the numbers won't collide; otherwise fall back to labelling just the peak.
-    const valueEvery = band >= 30 ? 1 : labelEvery;
-    months.forEach((m, i) => {
-      const x = padL + i * band + (band - barW) / 2;
-      const h = (m.count / yMax) * innerH;
-      const y = baseY - h;
-      if (m.count > 0) {
-        const r = Math.min(4, barW / 2, h);
-        // rounded cap, square baseline
-        const col = mkSvg("path", { class: "col", d:
-          `M${x},${baseY} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + barW - r},${y} ` +
-          `Q${x + barW},${y} ${x + barW},${y + r} L${x + barW},${baseY} Z` });
-        svg.append(col);
-        if (m === peak || i % valueEvery === 0) {
-          const cls = m === peak ? "peak-lbl" : "col-lbl";
-          const pl = mkSvg("text", { class: cls, x: x + barW / 2, y: y - 5, "text-anchor": "middle" });
-          pl.textContent = fmt(m.count);
-          svg.append(pl);
-        }
-      }
-      // hit target spans the full band and plot height
-      const hit = mkSvg("rect", { class: "col-hit", x: padL + i * band, y: padT, width: band, height: innerH });
-      attachTooltip(hit, () => [fmt(m.count) + (m.count === 1 ? " bill" : " bills"), monthLabel(m.key)]);
-      svg.append(hit);
-      if (i % labelEvery === 0) {
-        const t = mkSvg("text", { class: "tick", x: padL + i * band + band / 2, y: H - 8, "text-anchor": "middle" });
-        t.textContent = monthLabel(m.key);
-        svg.append(t);
-      }
-    });
-    container.append(svg);
-  }
-
-  /* ---------- table ---------- */
-
-  const COLS = [
-    { key: "id",            label: "Bill" },
-    { key: "state",         label: "Jurisdiction" },
-    { key: "session",       label: "Session" },
-    { key: "title",         label: "Title & latest action" },
-    { key: "tags",          label: "Topics", sortable: false },
-    { key: "latest_action", label: "Last action" },
-  ];
-
-  function renderTable(bills) {
-    $("table-title").textContent = "Bills (" + fmt(bills.length) + ")";
-    const thead = $("thead-row");
-    thead.textContent = "";
-    COLS.forEach((c) => {
-      const th = document.createElement("th");
-      th.textContent = c.label + " ";
-      if (c.sortable !== false) {
-        const arrow = document.createElement("span");
-        arrow.className = "arrow";
-        arrow.textContent = state.sort.key === c.key ? (state.sort.dir > 0 ? "▲" : "▼") : "";
-        th.append(arrow);
-        th.addEventListener("click", () => {
-          state.sort.dir = state.sort.key === c.key ? -state.sort.dir : (c.key === "latest_action" ? -1 : 1);
-          state.sort.key = c.key;
-          renderTable(filteredBills());
-        });
-      } else {
-        th.style.cursor = "default";
-      }
-      thead.append(th);
-    });
-
-    const sorted = bills.slice().sort((a, b) => {
-      const k = state.sort.key;
-      const av = a[k] ?? "", bv = b[k] ?? "";
-      if (av === bv) return a.id.localeCompare(b.id);
-      if (av === "") return 1;          // nulls last regardless of direction
-      if (bv === "") return -1;
-      return (av < bv ? -1 : 1) * state.sort.dir;
-    });
-
-    const tbody = $("tbody");
-    tbody.textContent = "";
-    $("empty").hidden = sorted.length > 0;
-    sorted.slice(0, state.limit).forEach((b) => {
-      const tr = document.createElement("tr");
-
-      const tdId = document.createElement("td");
-      const idSpan = document.createElement(b.url ? "a" : "span");
-      idSpan.className = "bill-id";
-      idSpan.textContent = b.id;
-      if (b.url) { idSpan.href = b.url; idSpan.target = "_blank"; idSpan.rel = "noopener"; }
-      tdId.append(idSpan);
-
-      const tdState = document.createElement("td");
-      tdState.textContent = state.stateNames[b.state] || (b.state || "").toUpperCase();
-
-      const tdSession = document.createElement("td");
-      tdSession.className = "num";
-      tdSession.textContent = b.session;
-
-      const tdTitle = document.createElement("td");
-      const titleDiv = document.createElement("div");
-      titleDiv.className = "bill-title";
-      titleDiv.textContent = b.title;
-      tdTitle.append(titleDiv);
-      if (b.latest_action_desc) {
-        const act = document.createElement("div");
-        act.className = "action-desc";
-        act.textContent = b.latest_action_desc;
-        tdTitle.append(act);
-      }
-
-      const tdTags = document.createElement("td");
-      b.tags.forEach((t) => {
-        const chip = document.createElement("span");
-        chip.className = "chip";
-        const dot = document.createElement("span");
-        dot.className = "dot";
-        dot.style.background = "var(" + (state.tagColor[t] || SERIES[0]) + ")";
-        chip.append(dot, document.createTextNode(t));
-        tdTags.append(chip);
-      });
-
-      const tdDate = document.createElement("td");
-      tdDate.className = "date";
-      tdDate.textContent = b.latest_action || "—";
-
-      tr.append(tdId, tdState, tdSession, tdTitle, tdTags, tdDate);
-      tbody.append(tr);
-    });
-
-    const more = $("show-more");
-    if (sorted.length > state.limit) {
-      more.hidden = false;
-      more.textContent = "Show " + fmt(Math.min(PAGE_SIZE, sorted.length - state.limit)) +
-        " more of " + fmt(sorted.length - state.limit) + " remaining";
-      more.onclick = () => { state.limit += PAGE_SIZE; renderTable(filteredBills()); };
-    } else {
-      more.hidden = true;
-    }
-  }
-
-  /* ---------- controls ---------- */
-
-  function buildSelect(el, allLabel, values, onChange, labelFn) {
-    el.textContent = "";
-    const all = document.createElement("option");
-    all.value = "";
-    all.textContent = allLabel;
-    el.append(all);
-    values.forEach((v) => {
-      const o = document.createElement("option");
-      o.value = v;
-      o.textContent = labelFn ? labelFn(v) : v;
-      el.append(o);
-    });
-    el.addEventListener("change", () => onChange(el.value));
-  }
-
-  function buildMultiSelect(root, allLabel, options, selectedSet, counts) {
-    root.textContent = "";
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.setAttribute("aria-haspopup", "listbox");
-    const btnLabel = document.createElement("span");
-    const caret = document.createElement("span");
-    caret.className = "caret";
-    caret.textContent = "▾";
-    btn.append(btnLabel, caret);
-    const panel = document.createElement("div");
-    panel.className = "panel";
-    options.forEach((opt) => {
-      const label = document.createElement("label");
-      if (opt.title) label.title = opt.title;
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.value = opt.value;
-      cb.addEventListener("change", () => {
-        toggleSet(selectedSet, opt.value, cb.checked);
-        root._sync();
-        render();
-      });
-      const name = document.createElement("span");
-      name.textContent = opt.label;
-      const count = document.createElement("span");
-      count.className = "count";
-      count.textContent = fmt(counts[opt.value] || 0);
-      label.append(cb, name, count);
-      panel.append(label);
-    });
-    btn.addEventListener("click", () => root.classList.toggle("open"));
-    root._sync = () => {
-      btnLabel.textContent = selectedSet.size ? selectedSet.size + " selected" : allLabel;
-      panel.querySelectorAll("input").forEach((cb) => { cb.checked = selectedSet.has(cb.value); });
-    };
-    root._sync();
-    root.append(btn, panel);
-  }
-
-  function syncMultiSelects() {
-    [$("f-states"), $("f-tags")].forEach((m) => m._sync && m._sync());
-  }
-
-  /* ---------- last-action date range ---------- */
-
-  // A preset ("Last 30 days") is a relative window ending today; "Custom range"
-  // reveals two date inputs. Both feed the same dateFrom/dateTo filter strings.
-  function initDateRange() {
-    const sel = $("f-daterange");
-    const custom = $("f-daterange-custom");
-    const from = $("f-date-from");
-    const to = $("f-date-to");
-
-    sel.addEventListener("change", () => {
-      if (sel.value === "custom") {
-        custom.hidden = false;
-        applyCustomDates();
-      } else {
-        custom.hidden = true;
-        const days = parseInt(sel.value, 10);
-        if (days) {
-          state.filters.dateFrom = isoDaysAgo(days);
-          state.filters.dateTo = isoToday();
-        } else {
-          state.filters.dateFrom = "";
-          state.filters.dateTo = "";
-        }
-        render();
-      }
-    });
-    from.addEventListener("change", applyCustomDates);
-    to.addEventListener("change", applyCustomDates);
-
-    function applyCustomDates() {
-      state.filters.dateFrom = from.value || "";
-      state.filters.dateTo = to.value || "";
-      render();
-    }
-  }
-
-  function resetDateRange() {
-    state.filters.dateFrom = "";
-    state.filters.dateTo = "";
-    $("f-daterange").value = "";
-    $("f-date-from").value = "";
-    $("f-date-to").value = "";
-    $("f-daterange-custom").hidden = true;
-  }
-
-  /* ---------- tooltip ---------- */
-
-  function attachTooltip(el, contentFn) {
-    const tip = $("tooltip");
-    const show = (e) => {
-      const [value, label] = contentFn();
-      tip.textContent = "";
-      const v = document.createElement("div"); v.className = "tt-val"; v.textContent = value;
-      const l = document.createElement("div"); l.className = "tt-lbl"; l.textContent = label;
-      tip.append(v, l);
-      tip.style.display = "block";
-      move(e);
-    };
-    const move = (e) => {
-      const x = Math.min(e.clientX + 12, window.innerWidth - tip.offsetWidth - 8);
-      const y = Math.min(e.clientY + 12, window.innerHeight - tip.offsetHeight - 8);
-      tip.style.left = x + "px";
-      tip.style.top = y + "px";
-    };
-    const hide = () => { tip.style.display = "none"; };
-    el.addEventListener("pointerenter", show);
-    el.addEventListener("pointermove", move);
-    el.addEventListener("pointerleave", hide);
-    el.addEventListener("focus", (e) => show({ clientX: 100, clientY: 100 }));
-    el.addEventListener("blur", hide);
-  }
-
-  /* ---------- utilities ---------- */
-
-  function toggleSet(set, value, forceOn) {
-    const on = forceOn !== undefined ? forceOn : !set.has(value);
-    if (on) set.add(value); else set.delete(value);
-  }
-  function uniqueSorted(arr) { return [...new Set(arr)].sort(); }
-  function isoToday() { return new Date().toISOString().slice(0, 10); }
-  function isoDaysAgo(days) {
-    const d = new Date();
-    d.setDate(d.getDate() - days);
-    return d.toISOString().slice(0, 10);
-  }
-  function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-  function fmt(n) { return n.toLocaleString("en-US"); }
-  function niceCeil(v) {
-    if (v <= 5) return v;
-    const mag = Math.pow(10, Math.floor(Math.log10(v)));
-    for (const m of [1, 2, 2.5, 5, 10]) if (v <= m * mag) return Math.ceil(m * mag);
-    return v;
-  }
-  function monthLabel(key) {
-    const [y, m] = key.split("-");
-    const names = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    return names[Number(m) - 1] + " " + y;
-  }
   // ISO "2026-07-05T21:02:28Z" -> "July 5, 2026, 21:02 UTC"; robust to a
   // bare date or a bad value (falls back to the raw string, then null).
   function formatAsOf(iso) {
@@ -1175,11 +487,7 @@
       return null;
     }
   }
-  function mkSvg(tag, attrs) {
-    const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
-    for (const [k, v] of Object.entries(attrs || {})) el.setAttribute(k, v);
-    return el;
-  }
+  function fmt(n) { return n.toLocaleString("en-US"); }
 
   /* ---------- committee hearings & witness slips ---------- */
 
@@ -1192,7 +500,8 @@
     fetch("hearings.json")
       .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(renderHearings)
-      .catch(() => {}); // silent: card stays hidden, bills dashboard unaffected
+      .catch(() => { const e = $("hearings-empty"); if (e) { e.hidden = false;
+        e.textContent = "Couldn\u2019t load committee hearings right now. Please try again shortly."; } });
   }
 
   function eln(tag, cls, text) {
@@ -1204,7 +513,7 @@
 
   function renderHearings(data) {
     const hearings = (data && data.hearings) || [];
-    if (!hearings.length) return;
+    if (!hearings.length) { const e = $("hearings-empty"); if (e) e.hidden = false; return; }
     const card = $("hearings-card");
     const body = $("hearings-body");
     body.textContent = "";
@@ -1235,6 +544,8 @@
     });
 
     card.hidden = false;
+    const f = $("footer");
+    if (f) f.textContent = "Committee hearings from " + (data.source || "official sources") + ", refreshed twice daily.";
   }
 
   const PARTICIPATION = {
@@ -1333,6 +644,7 @@
     return wrap;
   }
 
+  loadHearings();
   loadHearings();
 })();
 </script>
