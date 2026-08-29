@@ -98,18 +98,22 @@
   .asof .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--series-2); flex: none; }
   .asof b { color: var(--text-primary); font-weight: 600; }
 
-  /* ---------- top tabs ---------- */
+  /* ---------- top tabs (each tab has its own accent color) ---------- */
   .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
   .tab {
     padding: 8px 15px; text-decoration: none; color: var(--text-secondary);
     font-weight: 550; font-size: 14px; border: 1px solid transparent; border-bottom: none;
-    border-radius: 8px 8px 0 0; margin-bottom: -1px;
+    border-top: 3px solid transparent; border-radius: 8px 8px 0 0; margin-bottom: -1px;
   }
-  .tab:hover { color: var(--text-primary); background: var(--hover-wash); }
+  .tab-legis    { --tab-accent: var(--series-1); }  /* blue */
+  .tab-hearings { --tab-accent: var(--series-3); }  /* gold */
+  .tab:hover { color: var(--tab-accent); background: var(--hover-wash); }
   .tab[aria-current="page"] {
     color: var(--text-primary); background: var(--surface-1);
     border-color: var(--border); border-bottom: 1px solid var(--surface-1);
+    border-top-color: var(--tab-accent);
   }
+  .tab:not([aria-current="page"]) { border-top-color: color-mix(in srgb, var(--tab-accent) 45%, transparent); }
 
   /* ---------- brand bar + theme toggle ---------- */
   .brandbar {
@@ -313,12 +317,31 @@
   }
   .hearings-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .hearings-asof { align-self: center; }
+  .rss-wrap { position: relative; display: inline-flex; }
   .rss-link {
-    display: inline-flex; align-items: center; gap: 5px;
-    font-size: 12.5px; font-weight: 550; text-decoration: none;
-    color: var(--series-3); white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+    font: inherit; font-size: 12.5px; font-weight: 550; text-decoration: none;
+    color: var(--series-3); white-space: nowrap; background: none; border: none; padding: 0;
   }
   .rss-link:hover { text-decoration: underline; }
+  .rss-pop {
+    position: absolute; top: 26px; right: 0; z-index: 40; width: 300px; max-width: 84vw;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.22); padding: 12px 13px; text-align: left;
+  }
+  .rss-pop-title { margin: 0 0 3px; font-weight: 650; font-size: 13px; color: var(--text-primary); }
+  .rss-pop-sub { margin: 0 0 9px; font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+  .rss-pop-row { display: flex; gap: 6px; }
+  .rss-pop-row input {
+    flex: 1; min-width: 0; font: inherit; font-size: 12px; padding: 6px 8px;
+    border: 1px solid var(--border); border-radius: 7px; background: var(--page); color: var(--text-primary);
+  }
+  .rss-copy {
+    cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; padding: 6px 11px;
+    border: 1px solid var(--border); border-radius: 7px; background: var(--series-1); color: #fff;
+  }
+  .rss-copy:hover { filter: brightness(1.08); }
+  .rss-open { display: inline-block; margin-top: 9px; font-size: 12px; color: var(--text-secondary); }
   .hearings-groups { margin-top: 14px; display: flex; flex-direction: column; gap: 18px; }
   .hgroup-head {
     display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
@@ -444,8 +467,8 @@
 <body>
 <div class="wrap">
   <nav class="tabs" aria-label="Dashboards">
-    <a class="tab" href="index.html">Legislation Dashboard</a>
-    <a class="tab" href="hearings.html" aria-current="page">Committee Hearings &amp; Witness Slips</a>
+    <a class="tab tab-legis" href="index.html">Legislation Dashboard</a>
+    <a class="tab tab-hearings" href="hearings.html" aria-current="page">Committee Hearings &amp; Witness Slips</a>
   </nav>
   <header class="top">
     <div class="brandbar">
@@ -486,10 +509,22 @@
     <div class="hearings-head">
       <div class="hearings-meta">
         <span class="asof hearings-asof" id="hearings-asof"></span>
-        <a class="rss-link" href="hearings.xml" title="Subscribe to upcoming hearings in a feed reader">
-          <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"/></svg>
-          Subscribe (RSS)
-        </a>
+        <span class="rss-wrap">
+          <button type="button" class="rss-link" id="rss-btn" aria-haspopup="dialog" aria-expanded="false"
+                  title="Subscribe to upcoming hearings in a feed reader">
+            <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"/></svg>
+            Subscribe (RSS)
+          </button>
+          <div class="rss-pop" id="rss-pop" role="dialog" aria-label="Subscribe by RSS" hidden>
+            <p class="rss-pop-title">Follow upcoming hearings in a feed reader</p>
+            <p class="rss-pop-sub">Copy this link and paste it into a reader like Feedly, Inoreader, or NetNewsWire.</p>
+            <div class="rss-pop-row">
+              <input type="text" id="rss-url" readonly aria-label="Feed URL">
+              <button type="button" class="rss-copy" id="rss-copy">Copy</button>
+            </div>
+            <a class="rss-open" id="rss-open" href="hearings.xml" target="_blank" rel="noopener">Open the raw feed ↗</a>
+          </div>
+        </span>
       </div>
     </div>
     <div id="hearings-body" class="hearings-groups"></div>
@@ -815,6 +850,29 @@
       pt = setTimeout(() => renderParticipation(e.target.value), 120);
     });
   }
+
+  /* ---------- RSS subscribe popover ---------- */
+  (function rssPopover() {
+    const btn = $("rss-btn"), pop = $("rss-pop"), urlInput = $("rss-url");
+    if (!btn || !pop) return;
+    // Absolute feed URL, resolved from wherever the page is hosted.
+    const feedUrl = new URL("hearings.xml", location.href).href;
+    urlInput.value = feedUrl;
+    $("rss-open").href = feedUrl;
+    function openPop() {
+      pop.hidden = false; btn.setAttribute("aria-expanded", "true");
+      urlInput.focus(); urlInput.select();
+    }
+    function closePop() { pop.hidden = true; btn.setAttribute("aria-expanded", "false"); }
+    btn.addEventListener("click", (e) => { e.preventDefault(); pop.hidden ? openPop() : closePop(); });
+    $("rss-copy").addEventListener("click", () => {
+      const done = () => { const c = $("rss-copy"); c.textContent = "Copied!"; setTimeout(() => (c.textContent = "Copy"), 1400); };
+      if (navigator.clipboard) navigator.clipboard.writeText(feedUrl).then(done, () => { urlInput.select(); done(); });
+      else { urlInput.select(); try { document.execCommand("copy"); } catch (e) {} done(); }
+    });
+    document.addEventListener("click", (e) => { if (!pop.hidden && !pop.contains(e.target) && e.target !== btn && !btn.contains(e.target)) closePop(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePop(); });
+  })();
 
   loadHearings();
   loadParticipation();
