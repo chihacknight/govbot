@@ -98,18 +98,22 @@
   .asof .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--series-2); flex: none; }
   .asof b { color: var(--text-primary); font-weight: 600; }
 
-  /* ---------- top tabs ---------- */
+  /* ---------- top tabs (each tab has its own accent color) ---------- */
   .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
   .tab {
     padding: 8px 15px; text-decoration: none; color: var(--text-secondary);
     font-weight: 550; font-size: 14px; border: 1px solid transparent; border-bottom: none;
-    border-radius: 8px 8px 0 0; margin-bottom: -1px;
+    border-top: 3px solid transparent; border-radius: 8px 8px 0 0; margin-bottom: -1px;
   }
-  .tab:hover { color: var(--text-primary); background: var(--hover-wash); }
+  .tab-legis    { --tab-accent: var(--series-1); }  /* blue */
+  .tab-hearings { --tab-accent: var(--series-3); }  /* gold */
+  .tab:hover { color: var(--tab-accent); background: var(--hover-wash); }
   .tab[aria-current="page"] {
     color: var(--text-primary); background: var(--surface-1);
     border-color: var(--border); border-bottom: 1px solid var(--surface-1);
+    border-top-color: var(--tab-accent);
   }
+  .tab:not([aria-current="page"]) { border-top-color: color-mix(in srgb, var(--tab-accent) 45%, transparent); }
 
   /* ---------- brand bar + theme toggle ---------- */
   .brandbar {
@@ -305,6 +309,70 @@
   }
   .chn-credit svg { flex: none; }
   .chn-credit a { color: var(--text-secondary); }
+
+  /* narrower Topics column; chips wrap inside it */
+  th.col-tags, td.col-tags { max-width: 150px; width: 150px; }
+  td.col-tags { white-space: normal; }
+  /* compact Details column */
+  th.col-details, td.col-details { width: 1%; white-space: nowrap; text-align: right; }
+  .details-btn {
+    cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 550;
+    color: var(--series-1); background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 7px; padding: 4px 11px;
+  }
+  .details-btn:hover { background: var(--hover-wash); border-color: var(--series-1); }
+
+  /* ---------- bill details modal ---------- */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 100; display: flex; justify-content: center;
+    align-items: flex-start; padding: 5vh 16px; overflow-y: auto;
+    background: rgba(0,0,0,0.45); opacity: 0; transition: opacity 0.18s ease;
+  }
+  .modal-overlay.open { opacity: 1; }
+  .modal-overlay[hidden] { display: none; }  /* author display:flex would otherwise beat [hidden] */
+  @media (prefers-reduced-motion: reduce) { .modal-overlay, .modal-card { transition: none !important; } }
+  .modal-card {
+    width: 100%; max-width: 760px; background: var(--page); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+    transform: translateY(12px) scale(0.98); opacity: 0; transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+  .modal-overlay.open .modal-card { transform: translateY(0) scale(1); opacity: 1; }
+  .modal-head {
+    display: flex; align-items: flex-start; gap: 12px; justify-content: space-between;
+    padding: 18px 20px 12px; border-bottom: 1px solid var(--gridline);
+    position: sticky; top: 0; background: var(--page); border-radius: 14px 14px 0 0;
+  }
+  .modal-head h2 { margin: 6px 0 0; font-size: 19px; font-weight: 650; }
+  .modal-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .m-chip {
+    font-size: 11px; font-weight: 650; letter-spacing: 0.02em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary);
+  }
+  .m-chip.is-law { color: var(--series-4); border-color: var(--series-4); }
+  .modal-close {
+    flex: none; cursor: pointer; width: 32px; height: 32px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary);
+    font-size: 18px; line-height: 1;
+  }
+  .modal-close:hover { background: var(--hover-wash); color: var(--text-primary); }
+  .modal-body { padding: 8px 20px 22px; }
+  .m-section { margin-top: 18px; }
+  .m-section > h3 {
+    margin: 0 0 8px; font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--text-muted);
+  }
+  .m-plain { color: var(--text-primary); line-height: 1.5; }
+  .m-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .m-list li { font-size: 13px; color: var(--text-secondary); }
+  .m-list li b { color: var(--text-primary); font-weight: 600; }
+  .m-actions-list { counter-reset: a; max-height: 230px; overflow-y: auto; padding-right: 6px; }
+  .m-act { display: flex; gap: 10px; font-size: 12.5px; padding: 3px 0; border-bottom: 1px solid var(--gridline); }
+  .m-act .d { color: var(--text-muted); white-space: nowrap; min-width: 88px; font-variant-numeric: tabular-nums; }
+  .m-links { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+  .m-links a { font-size: 13px; font-weight: 550; }
+  .m-muted { color: var(--text-muted); font-size: 13px; }
+  .m-tags { display: inline-flex; flex-wrap: wrap; gap: 5px; }
+  .m-loading { padding: 30px 0; text-align: center; color: var(--text-muted); }
 </style>
 <script>
   // Apply a saved theme choice before first paint to avoid a flash of the
@@ -321,8 +389,8 @@
 <body>
 <div class="wrap">
   <nav class="tabs" aria-label="Dashboards">
-    <a class="tab" href="index.html" aria-current="page">Legislation Dashboard</a>
-    <a class="tab" href="hearings.html">Committee Hearings &amp; Witness Slips</a>
+    <a class="tab tab-legis" href="index.html" aria-current="page">Legislation Dashboard</a>
+    <a class="tab tab-hearings" href="hearings.html">Committee Hearings &amp; Witness Slips</a>
   </nav>
   <header class="top">
     <div class="brandbar">
@@ -428,6 +496,7 @@
 </div>
 
 <div class="tooltip" id="tooltip"></div>
+<div class="modal-overlay" id="bill-modal" hidden role="dialog" aria-modal="true" aria-labelledby="bill-modal-title"></div>
 
 <script>
 "use strict";
@@ -831,6 +900,7 @@
     { key: "title",         label: "Title & latest action" },
     { key: "tags",          label: "Topics", sortable: false },
     { key: "latest_action", label: "Last action" },
+    { key: "details",       label: "", sortable: false },
   ];
 
   function renderTable(bills) {
@@ -839,6 +909,7 @@
     thead.textContent = "";
     COLS.forEach((c) => {
       const th = document.createElement("th");
+      th.className = "col-" + c.key;
       th.textContent = c.label + " ";
       if (c.sortable !== false) {
         const arrow = document.createElement("span");
@@ -898,6 +969,7 @@
       }
 
       const tdTags = document.createElement("td");
+      tdTags.className = "col-tags";
       b.tags.forEach((t) => {
         const chip = document.createElement("span");
         chip.className = "chip";
@@ -912,7 +984,15 @@
       tdDate.className = "date";
       tdDate.textContent = b.latest_action || "—";
 
-      tr.append(tdId, tdState, tdSession, tdTitle, tdTags, tdDate);
+      const tdDetails = document.createElement("td");
+      tdDetails.className = "col-details";
+      const dBtn = document.createElement("button");
+      dBtn.className = "details-btn";
+      dBtn.textContent = "Details";
+      dBtn.addEventListener("click", () => openDetails(b));
+      tdDetails.append(dBtn);
+
+      tr.append(tdId, tdState, tdSession, tdTitle, tdTags, tdDate, tdDetails);
       tbody.append(tr);
     });
 
@@ -1123,6 +1203,194 @@
     const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
     for (const [k, v] of Object.entries(attrs || {})) el.setAttribute(k, v);
     return el;
+  }
+
+  /* ---------- bill details modal (live govbot record) ---------- */
+
+  function mkel(tag, cls, text) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function mchip(text, cls) { return mkel("span", "m-chip" + (cls ? " " + cls : ""), text); }
+  function mlink(label, url) {
+    const a = mkel("a", null, label);
+    a.href = url; a.target = "_blank"; a.rel = "noopener";
+    return a;
+  }
+  function addSection(body, title, node) {
+    const s = mkel("div", "m-section");
+    s.append(mkel("h3", null, title), node);
+    body.append(s);
+  }
+  function chamberLabel(c) {
+    return { lower: "House", upper: "Senate", house: "House", senate: "Senate" }[c] || null;
+  }
+  function personChamber(pid) {
+    if (!pid || pid[0] !== "~") return null;
+    try { return chamberLabel(JSON.parse(pid.slice(1)).chamber); } catch (e) { return null; }
+  }
+  function govbotRepo(state) { return (state === "usa" ? "usa" : state) + "-legislation"; }
+  function govbotMetaUrl(b) {
+    return "https://raw.githubusercontent.com/govbot-data/" + govbotRepo(b.state) +
+      "/main/country:us/state:" + b.state + "/sessions/" + encodeURIComponent(b.session) +
+      "/bills/" + encodeURIComponent(b.id) + "/metadata.json";
+  }
+  function govbotRecordUrl(b) {
+    return "https://github.com/govbot-data/" + govbotRepo(b.state) +
+      "/tree/main/country:us/state:" + b.state + "/sessions/" + encodeURIComponent(b.session) +
+      "/bills/" + encodeURIComponent(b.id);
+  }
+  function collectLinks(rows) {
+    const out = [];
+    (rows || []).forEach((v) => (v.links || []).forEach((l) => {
+      if (l.url) out.push({ label: (v.note || "Document") + (l.media_type ? " · " + l.media_type : ""), url: l.url });
+    }));
+    return out;
+  }
+  function plainSummary(b, meta) {
+    const abs = meta && meta.abstracts && meta.abstracts[0] && meta.abstracts[0].abstract;
+    if (abs) return abs;
+    const desc = (b.latest_action_desc || "").trim();
+    const when = b.latest_action ? " (" + b.latest_action + ")" : "";
+    return b.title + (desc ? ". Most recent action" + when + ": " + desc + "." : ".");
+  }
+
+  // Cross-reference the committee-hearings feed so the modal can show whether a
+  // bill is on an upcoming calendar (ties the two dashboards together).
+  let hearingsIndex = null;
+  function normId(s) { return (s || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); }
+  fetch("hearings.json")
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null)
+    .then((d) => {
+      hearingsIndex = {};
+      ((d && d.hearings) || []).forEach((h) =>
+        (h.bills || []).forEach((bl) => { hearingsIndex[h.jurisdiction + ":" + normId(bl.id)] = h; }));
+    });
+
+  let modalKey = 0;
+  function openDetails(b) {
+    const overlay = $("bill-modal");
+    const myKey = ++modalKey;
+    overlay.textContent = "";
+    const card = mkel("div", "modal-card");
+
+    const head = mkel("div", "modal-head");
+    const htxt = mkel("div");
+    const chips = mkel("div", "modal-chips");
+    chips.append(mchip(b.id));
+    const ch = chamberLabel(b.chamber); if (ch) chips.append(mchip(ch));
+    if (b.session) chips.append(mchip(b.session));
+    const law = /public act|governor approved|chaptered|signed into law/i.test(b.latest_action_desc || "");
+    if (law) chips.append(mchip("Became law", "is-law"));
+    htxt.append(chips);
+    const h2 = mkel("h2", null, b.title || b.id); h2.id = "bill-modal-title"; htxt.append(h2);
+    head.append(htxt);
+    const close = mkel("button", "modal-close", "✕");
+    close.setAttribute("aria-label", "Close"); close.addEventListener("click", closeDetails);
+    head.append(close);
+    card.append(head);
+
+    const body = mkel("div", "modal-body");
+    body.append(mkel("div", "m-loading", "Loading bill details from govbot…"));
+    card.append(body);
+
+    overlay.append(card);
+    overlay.hidden = false;
+    requestAnimationFrame(() => overlay.classList.add("open"));
+    overlay.onclick = (e) => { if (e.target === overlay) closeDetails(); };
+    document.addEventListener("keydown", escClose);
+
+    fetch(govbotMetaUrl(b))
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null)
+      .then((meta) => { if (myKey === modalKey) renderDetailsBody(body, b, meta); });
+  }
+
+  function closeDetails() {
+    const o = $("bill-modal");
+    o.classList.remove("open");
+    document.removeEventListener("keydown", escClose);
+    setTimeout(() => { o.hidden = true; o.textContent = ""; }, 200);
+  }
+  function escClose(e) { if (e.key === "Escape") closeDetails(); }
+
+  function renderDetailsBody(body, b, meta) {
+    body.textContent = "";
+    if (!meta) {
+      body.append(mkel("p", "m-muted",
+        "The full govbot record couldn’t be loaded for this bill — showing the basics; use the links below for the official source."));
+    }
+    addSection(body, "In brief", mkel("p", "m-plain", plainSummary(b, meta)));
+
+    if (meta && meta.sponsorships && meta.sponsorships.length) {
+      const people = meta.sponsorships.filter((s) => s.name && s.entity_type !== "organization");
+      const chief = people.filter((s) => s.primary);
+      const co = people.filter((s) => !s.primary);
+      const sponsorLi = (s, role) => {
+        const li = mkel("li");
+        li.append(mkel("b", null, s.name));
+        const bits = [personChamber(s.person_id), role].filter(Boolean);
+        if (bits.length) li.append(document.createTextNode(" · " + bits.join(" · ")));
+        return li;
+      };
+      if (chief.length) {
+        const ul = mkel("ul", "m-list"); chief.forEach((s) => ul.append(sponsorLi(s, "chief")));
+        addSection(body, "Sponsors", ul);
+      }
+      if (co.length) {
+        const ul = mkel("ul", "m-list"); co.forEach((s) => ul.append(sponsorLi(s, null)));
+        addSection(body, "Co-sponsors · " + co.length, ul);
+      }
+    }
+
+    if (b.tags && b.tags.length) {
+      const t = mkel("span", "m-tags");
+      b.tags.forEach((x) => t.append(mkel("span", "chip", x)));
+      addSection(body, "govbot topics", t);
+    }
+
+    const syn = meta && meta.abstracts && meta.abstracts[0] && meta.abstracts[0].abstract;
+    if (syn) addSection(body, "Official synopsis", mkel("p", "m-muted", syn));
+
+    if (hearingsIndex) {
+      const h = hearingsIndex[b.state + ":" + normId(b.id)];
+      const node = mkel("p", "m-muted");
+      if (h) {
+        node.textContent = "On the " + (h.committee || "committee") + " calendar" +
+          (h.scheduled_display ? " — " + h.scheduled_display : "") + ". See the Committee Hearings tab.";
+      } else {
+        node.textContent = "No committee has this bill on an upcoming calendar we can read.";
+      }
+      addSection(body, "Hearings", node);
+    }
+
+    if (meta && meta.actions && meta.actions.length) {
+      const wrap = mkel("div", "m-actions-list");
+      meta.actions.slice().reverse().forEach((a) => {
+        const row = mkel("div", "m-act");
+        row.append(mkel("span", "d", (a.date || "").slice(0, 10)), mkel("span", null, a.description || ""));
+        wrap.append(row);
+      });
+      addSection(body, "Latest actions · " + meta.actions.length, wrap);
+    }
+
+    const texts = collectLinks(meta && meta.versions).concat(collectLinks(meta && meta.documents));
+    if (texts.length) {
+      const d = mkel("div", "m-links");
+      texts.forEach((t) => d.append(mlink(t.label, t.url)));
+      addSection(body, "Bill text", d);
+    }
+
+    const links = mkel("div", "m-links");
+    if (b.url) links.append(mlink("Official source ↗", b.url));
+    links.append(mlink("govbot record ↗", govbotRecordUrl(b)));
+    links.append(mlink("Open States ↗",
+      "https://openstates.org/" + b.state + "/bills/" + encodeURIComponent(b.session) + "/" + encodeURIComponent(b.id) + "/"));
+    (meta && meta.sources || []).forEach((s) => { if (s.url) links.append(mlink((s.note || "Source") + " ↗", s.url)); });
+    addSection(body, "Sources", links);
   }
 })();
 </script>
