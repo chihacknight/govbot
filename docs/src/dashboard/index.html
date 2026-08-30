@@ -393,6 +393,17 @@
   .m-muted { color: var(--text-muted); font-size: 13px; }
   .m-tags { display: inline-flex; flex-wrap: wrap; gap: 5px; }
   .m-loading { padding: 30px 0; text-align: center; color: var(--text-muted); }
+  /* Details modal: all non-link text reads at full contrast (white in dark
+     theme, near-black in light) — only anchors keep their link color. This wins
+     over the muted/secondary colors set above via source order. */
+  .modal-card { color: var(--text-primary); }
+  .modal-card .m-section > h3,
+  .modal-card .m-list li,
+  .modal-card .m-act .d,
+  .modal-card .m-muted,
+  .modal-card .m-loading,
+  .modal-card .m-chip { color: var(--text-primary); }
+  .modal-card .m-chip.is-law { color: var(--text-primary); }  /* keep green border */
 </style>
 <script>
   // Apply a saved theme choice before first paint to avoid a flash of the
