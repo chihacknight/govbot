@@ -25,6 +25,7 @@
     --series-8: #eb6834;
     --bar-track: transparent;
     --hover-wash: rgba(11,11,11,0.04);
+    --row-alt: rgba(11,11,11,0.028);
   }
   /* Dark palette. Applied when the OS prefers dark AND the user hasn't
      forced a choice, OR when the user explicitly picks dark via the toggle.
@@ -49,6 +50,7 @@
       --series-7: #d55181;
       --series-8: #d95926;
       --hover-wash: rgba(255,255,255,0.06);
+      --row-alt: rgba(255,255,255,0.04);
     }
   }
   :root[data-theme="dark"] {
@@ -69,6 +71,7 @@
     --series-7: #d55181;
     --series-8: #d95926;
     --hover-wash: rgba(255,255,255,0.06);
+    --row-alt: rgba(255,255,255,0.04);
   }
 
   * { box-sizing: border-box; }
@@ -346,10 +349,23 @@
   .rss-copy:hover { filter: brightness(1.08); }
   .rss-open { display: inline-block; margin-top: 9px; font-size: 12px; color: var(--text-secondary); }
   .hearings-groups { margin-top: 14px; display: flex; flex-direction: column; gap: 18px; }
+  /* Each state's hearings sit in their own card with a per-state colored border
+     (--hg-accent, set per group in JS) so the sections read as distinct blocks. */
+  .hgroup {
+    border: 2px solid var(--hg-accent, var(--series-1));
+    border-radius: 10px; padding: 12px 14px 4px;
+    background: var(--surface-1);
+  }
   .hgroup-head {
     display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
-    padding-bottom: 6px; margin-bottom: 8px; border-bottom: 1px solid var(--gridline);
+    padding-bottom: 8px; margin-bottom: 4px;
+    border-bottom: 2px solid var(--hg-accent, var(--gridline));
   }
+  .hgroup-name { border-left: 4px solid var(--hg-accent, var(--series-1)); padding-left: 8px; }
+  /* Zebra the hearing rows inside each state card for readability. The rows live
+     in their own wrapper so :nth-child counts rows only (not the header). */
+  .hgroup-rows .hearing-row { padding-left: 8px; padding-right: 8px; border-radius: 6px; }
+  .hgroup-rows .hearing-row:nth-child(even) { background: var(--row-alt); }
   .hgroup-name { font-weight: 650; font-size: 15px; }
   .hgroup-count { color: var(--text-muted); font-size: 12.5px; }
   .hgroup-portal { margin-left: auto; font-size: 13px; white-space: nowrap; }
@@ -449,8 +465,15 @@
     border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px;
     background: var(--surface-1); display: flex; flex-direction: column; gap: 6px;
   }
-  .pstate-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .pstate-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .pstate-idcol { display: flex; align-items: center; gap: 8px; min-width: 0; }
   .pstate-name { font-weight: 600; }
+  /* Each state card leads with its flag. Sized small; hidden gracefully if the
+     image can't load so the name still reads. */
+  .pstate-flag {
+    width: 28px; height: auto; flex: none; border-radius: 3px;
+    border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+  }
   .pstate-live { font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
     color: var(--series-2); border: 1px solid var(--series-2); border-radius: 999px; padding: 1px 7px; }
   .pstate-kind {
@@ -659,6 +682,10 @@
     return n;
   }
 
+  // Per-state accent colors for the hearings section cards, cycled by group order.
+  const HG_ACCENTS = ["--series-1", "--series-3", "--series-2", "--series-5",
+                      "--series-6", "--series-8", "--series-7", "--series-4"];
+
   function renderHearings(data) {
     const hearings = (data && data.hearings) || [];
     if (!hearings.length) { const e = $("hearings-empty"); if (e) e.hidden = false; return; }
@@ -675,9 +702,11 @@
     const byJur = {};
     hearings.forEach((h) => { (byJur[h.jurisdiction] = byJur[h.jurisdiction] || []).push(h); });
 
-    Object.keys(byJur).sort().forEach((code) => {
+    Object.keys(byJur).sort().forEach((code, gi) => {
       const juris = portals[code] || { name: code.toUpperCase() };
       const group = eln("div", "hgroup");
+      // Per-state accent for the card border / header rule, cycling the palette.
+      group.style.setProperty("--hg-accent", "var(" + HG_ACCENTS[gi % HG_ACCENTS.length] + ")");
       const head = eln("div", "hgroup-head");
       head.append(eln("span", "hgroup-name", juris.name));
       head.append(eln("span", "hgroup-count", byJur[code].length + " scheduled"));
@@ -688,7 +717,10 @@
         head.append(p);
       }
       group.append(head);
-      byJur[code].forEach((h) => group.append(hearingRow(h)));
+      // Rows live in their own wrapper so zebra :nth-child counts rows, not head.
+      const rows = eln("div", "hgroup-rows");
+      byJur[code].forEach((h) => rows.append(hearingRow(h)));
+      group.append(rows);
       body.append(group);
     });
 
@@ -824,6 +856,18 @@
   const LIVE_STATES = { il: true, wa: true };
   let participation = [];
 
+  // Local flag asset per jurisdiction (offline, committed under flags/). DC has
+  // no flagcdn entry, so it's a hand-authored SVG; everything else is a small PNG.
+  function flagSrc(code) { return code === "dc" ? "flags/dc.svg" : "flags/" + code + ".png"; }
+  function mkFlag(code, name) {
+    const img = eln("img", "pstate-flag");
+    img.src = flagSrc(code);
+    img.alt = name + " flag";
+    img.width = 28; img.loading = "lazy"; img.decoding = "async";
+    img.addEventListener("error", () => img.remove());  // degrade: name still reads
+    return img;
+  }
+
   function loadParticipation() {
     fetch("participation.json")
       .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
@@ -842,7 +886,11 @@
     rows.forEach((j) => {
       const card = eln("div", "pstate");
       const top = eln("div", "pstate-top");
-      top.append(eln("span", "pstate-name", j.name));
+      const idcol = eln("div", "pstate-idcol");
+      const flag = mkFlag(j.code, j.name);
+      if (flag) idcol.append(flag);
+      idcol.append(eln("span", "pstate-name", j.name));
+      top.append(idcol);
       if (LIVE_STATES[j.code]) top.append(eln("span", "pstate-live", "Live hearings"));
       card.append(top);
       card.append(eln("span", "pstate-kind", KIND_LABEL[j.participation] || j.participation));
