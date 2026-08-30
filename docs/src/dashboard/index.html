@@ -1179,13 +1179,6 @@
     return d.toISOString().slice(0, 10);
   }
   function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-  // ["a"] -> "a"; ["a","b"] -> "a and b"; ["a","b","c"] -> "a, b, and c"
-  function listPhrase(arr) {
-    const a = arr.filter(Boolean);
-    if (a.length <= 1) return a.join("");
-    if (a.length === 2) return a[0] + " and " + a[1];
-    return a.slice(0, -1).join(", ") + ", and " + a[a.length - 1];
-  }
   function fmt(n) { return n.toLocaleString("en-US"); }
   function niceCeil(v) {
     if (v <= 5) return v;
@@ -1325,18 +1318,13 @@
     const abs = meta && meta.abstracts && meta.abstracts[0] && meta.abstracts[0].abstract;
     if (abs && abs.trim()) return abs.trim();
     // No official abstract. The title is already the modal heading, so don't
-    // just echo it back here — describe what we do know (type, session, topics,
-    // and current status) so the section still answers "what is this about".
-    const bits = [];
-    const ch = chamberLabel(b.chamber);
-    bits.push("No official summary is available for this " +
-      (ch ? ch.toLowerCase() + " bill" : "bill") +
-      (b.session ? " (" + b.session + " session)" : "") + ".");
-    if (b.tags && b.tags.length) bits.push("It's tagged " + listPhrase(b.tags) + ".");
+    // echo it back — say plainly that no summary exists, then the latest action.
+    // (The full history still renders in the "Latest actions" section below.)
+    let s = "No official summary is available for this bill.";
     const desc = (b.latest_action_desc || "").trim();
-    if (desc) bits.push("Most recent action" +
-      (b.latest_action ? " (" + b.latest_action + ")" : "") + ": " + desc + ".");
-    return bits.join(" ");
+    if (desc) s += " Most recent action" +
+      (b.latest_action ? " (" + b.latest_action + ")" : "") + ": " + desc + ".";
+    return s;
   }
 
   // Cross-reference the committee-hearings feed so the modal can show whether a
