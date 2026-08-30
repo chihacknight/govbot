@@ -38,6 +38,7 @@ Usage:
 
 import argparse
 import json
+import os
 import re
 import sys
 import urllib.request
@@ -68,6 +69,10 @@ JURISDICTIONS = {
     "wa": {
         "code": "wa", "name": "Washington", "participation": "committee_sign_in",
         "portal_url": "https://app.leg.wa.gov/csi/",
+    },
+    "us": {
+        "code": "us", "name": "USA (Federal)", "participation": "public_comment",
+        "portal_url": "https://www.regulations.gov/",
     },
 }
 
@@ -474,6 +479,110 @@ def fetch_wa(begin, end):
 
 
 # --------------------------------------------------------------------------- #
+# USA (Federal) — open comment periods from Regulations.gov
+# --------------------------------------------------------------------------- #
+# Federal "hearings" are open public-comment periods (agencies also post public
+# hearings on the same dockets). The Regulations.gov API needs a key; supply one
+# via REGULATIONS_GOV_API_KEY (free from api.data.gov). Without a key it uses the
+# shared DEMO_KEY, which is heavily rate-limited, so any failure falls back to a
+# small committed seed (federal_seed.json) — federal is thus never empty.
+REGS_API = "https://api.regulations.gov/v4/documents"
+REGS_DOC_URL = "https://www.regulations.gov/document/"
+REGS_COMMENT_URL = "https://www.regulations.gov/commenton/"
+FEDERAL_SEED = Path(__file__).with_name("federal_seed.json")
+
+# A handful of agency codes → readable names; unknown codes fall back to the code.
+AGENCY_NAMES = {
+    "CMS": "Centers for Medicare & Medicaid Services",
+    "USCIS": "U.S. Citizenship and Immigration Services",
+    "BLM": "Bureau of Land Management",
+    "HHS": "Department of Health and Human Services",
+    "FAA": "Federal Aviation Administration",
+    "EPA": "Environmental Protection Agency",
+    "FDA": "Food and Drug Administration",
+    "DOL": "Department of Labor",
+    "ED": "Department of Education",
+    "IRS": "Internal Revenue Service",
+    "DHS": "Department of Homeland Security",
+    "DOE": "Department of Energy",
+    "FWS": "U.S. Fish and Wildlife Service",
+    "OSHA": "Occupational Safety and Health Administration",
+}
+
+
+def _fed_pretty_date(iso):
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})", iso or "")
+    if not m:
+        return ""
+    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
+              "Oct", "Nov", "Dec"]
+    return f"{months[int(m.group(2)) - 1]} {int(m.group(3))}, {m.group(1)}"
+
+
+def _fed_record(doc_id, agency_id, title, comment_end, url=None, comment_url=None):
+    """Map one open federal comment period into a hearing record."""
+    agency = AGENCY_NAMES.get((agency_id or "").upper(), agency_id or "Federal agency")
+    disp = _fed_pretty_date(comment_end)
+    details = url or (REGS_DOC_URL + doc_id)
+    return {
+        "id": f"us-{doc_id}",
+        "jurisdiction": "us",
+        "chamber": "federal",
+        "committee": agency,
+        "title": title,
+        "scheduled_iso": comment_end or None,
+        "scheduled_display": ("Comments due " + disp) if disp else "Open for comment",
+        "timezone": None,
+        "location": "Online · Regulations.gov",
+        "status": "open",
+        "bills": [{"id": doc_id, "title": title, "url": details, "slips": None}],
+        "details_url": details,
+        "committee_url": None,
+        "witness_slip_url": comment_url or url or (REGS_COMMENT_URL + doc_id),
+        "source": "regulations.gov",
+    }
+
+
+def federal_from_seed():
+    """Committed placeholder comment periods, used offline and whenever the live
+    Regulations.gov fetch is unavailable. Each seed row carries its own links so
+    it never points at a fabricated document id."""
+    try:
+        rows = json.loads(FEDERAL_SEED.read_text())
+    except (OSError, json.JSONDecodeError):
+        return []
+    return [_fed_record(r["doc_id"], r.get("agency_id"), r.get("title", ""),
+                        r.get("comment_end"), url=r.get("url"),
+                        comment_url=r.get("comment_url")) for r in rows]
+
+
+def fetch_us(use_api=True, limit=12):
+    """Open federal comment periods, soonest-closing first. Live from the
+    Regulations.gov API when reachable, else the committed seed."""
+    if use_api:
+        key = os.environ.get("REGULATIONS_GOV_API_KEY") or "DEMO_KEY"
+        url = (f"{REGS_API}?filter[openForComment]=true&sort=commentEndDate"
+               f"&page[size]={limit}&api_key={key}")
+        text = fetch_text(url)
+        if text:
+            try:
+                data = json.loads(text)
+                recs = []
+                for it in data.get("data", []):
+                    a = it.get("attributes", {})
+                    doc_id = it.get("id", "")
+                    if not doc_id:
+                        continue
+                    recs.append(_fed_record(doc_id, a.get("agencyId"),
+                                            a.get("title", ""), a.get("commentEndDate")))
+                if recs:
+                    return recs
+            except (json.JSONDecodeError, TypeError):
+                pass
+    return federal_from_seed()
+
+
+# --------------------------------------------------------------------------- #
 # offline (snapshot) build — no network
 # --------------------------------------------------------------------------- #
 def build_from_fixtures(fixtures_dir):
@@ -494,6 +603,8 @@ def build_from_fixtures(fixtures_dir):
                 m["bills"] = wa_bills(parse_wa_items(items_file.read_text()), m)
             m.pop("_agenda_id", None)
             hearings.append(m)
+    # Federal comment periods come from the committed seed offline (deterministic).
+    hearings.extend(federal_from_seed())
     return hearings
 
 
@@ -507,10 +618,14 @@ def assemble(hearings, jurisdictions, source, now):
     today = now.strftime("%Y-%m-%d")
     hearings = [h for h in hearings
                 if not h.get("scheduled_iso") or h["scheduled_iso"][:10] >= today]
+    # USA (Federal) leads, then the rest alphabetically — the dashboard shows the
+    # federal comment periods above the state hearings.
+    rank = lambda code: (0 if code == "us" else 1, code)
     used = [j for j in jurisdictions if any(h["jurisdiction"] == j for h in hearings)] \
-        or jurisdictions
+        or list(jurisdictions)
+    used = sorted(used, key=rank)
     hearings = sorted(hearings, key=lambda h: (
-        h["jurisdiction"], h["scheduled_iso"] or "9999", h["id"]))
+        rank(h["jurisdiction"]), h["scheduled_iso"] or "9999", h["id"]))
     counts = {}
     for h in hearings:
         counts[h["jurisdiction"]] = counts.get(h["jurisdiction"], 0) + 1
@@ -754,8 +869,9 @@ def enrich_from_govbot(hearings, data_path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--jurisdictions", default="il,wa",
-                    help="Comma-separated codes to scrape live (default: il,wa)")
+    ap.add_argument("--jurisdictions", default="il,wa,us",
+                    help="Comma-separated codes to scrape live (default: il,wa,us; "
+                         "'us' = federal comment periods from Regulations.gov)")
     ap.add_argument("--from-fixtures", default=None,
                     help="Build offline from a raw fixtures dir (no network)")
     ap.add_argument("--slips", action="store_true",
@@ -784,7 +900,7 @@ def main():
     if args.from_fixtures:
         hearings = build_from_fixtures(args.from_fixtures)
         source = "fixtures (offline snapshot)"
-        codes = ["il", "wa"]
+        codes = ["us", "il", "wa"]
     else:
         codes = [c.strip().lower() for c in args.jurisdictions.split(",") if c.strip()]
         begin = now - timedelta(days=WINDOW_BACK_DAYS)
@@ -796,7 +912,9 @@ def main():
             hearings.extend(fetch_wa(begin, end))
         resolve_wa_committee_urls(hearings)  # WA committee pages from the index
         verify_committee_urls(hearings)      # drop any link that 404s / soft-404s
-        source = "ilga.gov + leg.wa.gov (govbot scrape-hearings)"
+        if "us" in codes:                    # federal comment periods (Regulations.gov)
+            hearings.extend(fetch_us())
+        source = "ilga.gov + leg.wa.gov + regulations.gov (govbot scrape-hearings)"
 
     if args.dashboard_data:
         n = enrich_from_govbot(hearings, args.dashboard_data)

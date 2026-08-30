@@ -3,6 +3,12 @@
   "source": "fixtures (offline snapshot)",
   "jurisdictions": [
     {
+      "code": "us",
+      "name": "USA (Federal)",
+      "participation": "public_comment",
+      "portal_url": "https://www.regulations.gov/"
+    },
+    {
       "code": "il",
       "name": "Illinois",
       "participation": "witness_slip",
@@ -16,10 +22,107 @@
     }
   ],
   "counts": {
+    "us": 4,
     "il": 2,
     "wa": 7
   },
   "hearings": [
+    {
+      "id": "us-USCIS-2025-H1B-FEE",
+      "jurisdiction": "us",
+      "chamber": "federal",
+      "committee": "U.S. Citizenship and Immigration Services",
+      "title": "Fee for Certain H-1B Petitions",
+      "scheduled_iso": "2026-09-14T23:59:59Z",
+      "scheduled_display": "Comments due Sep 14, 2026",
+      "timezone": null,
+      "location": "Online · Regulations.gov",
+      "status": "open",
+      "bills": [
+        {
+          "id": "USCIS-2025-H1B-FEE",
+          "title": "Fee for Certain H-1B Petitions",
+          "url": "https://www.regulations.gov/search?filter=Fee%20for%20Certain%20H-1B%20Petitions",
+          "slips": null
+        }
+      ],
+      "details_url": "https://www.regulations.gov/search?filter=Fee%20for%20Certain%20H-1B%20Petitions",
+      "committee_url": null,
+      "witness_slip_url": "https://www.regulations.gov/search?filter=Fee%20for%20Certain%20H-1B%20Petitions",
+      "source": "regulations.gov"
+    },
+    {
+      "id": "us-HHS-2025-VACCINE-RFI",
+      "jurisdiction": "us",
+      "chamber": "federal",
+      "committee": "Department of Health and Human Services",
+      "title": "Request for Information: Categories Used in Federal Vaccine Recommendations and the Role of Shared Clinical Decision-Making",
+      "scheduled_iso": "2026-09-20T23:59:59Z",
+      "scheduled_display": "Comments due Sep 20, 2026",
+      "timezone": null,
+      "location": "Online · Regulations.gov",
+      "status": "open",
+      "bills": [
+        {
+          "id": "HHS-2025-VACCINE-RFI",
+          "title": "Request for Information: Categories Used in Federal Vaccine Recommendations and the Role of Shared Clinical Decision-Making",
+          "url": "https://www.regulations.gov/search?filter=Vaccine%20Recommendations%20Shared%20Clinical%20Decision-Making",
+          "slips": null
+        }
+      ],
+      "details_url": "https://www.regulations.gov/search?filter=Vaccine%20Recommendations%20Shared%20Clinical%20Decision-Making",
+      "committee_url": null,
+      "witness_slip_url": "https://www.regulations.gov/search?filter=Vaccine%20Recommendations%20Shared%20Clinical%20Decision-Making",
+      "source": "regulations.gov"
+    },
+    {
+      "id": "us-CMS-1832-P",
+      "jurisdiction": "us",
+      "chamber": "federal",
+      "committee": "Centers for Medicare & Medicaid Services",
+      "title": "Medicare and Medicaid Programs: CY 2027 Payment Policies Under the Physician Fee Schedule and Other Changes to Part B Payment and Coverage Policies; Medicare Shared Savings Program Requirements; and Medicare Prescription Drug Inflation Rebate Program",
+      "scheduled_iso": "2026-09-21T23:59:59Z",
+      "scheduled_display": "Comments due Sep 21, 2026",
+      "timezone": null,
+      "location": "Online · Regulations.gov",
+      "status": "open",
+      "bills": [
+        {
+          "id": "CMS-1832-P",
+          "title": "Medicare and Medicaid Programs: CY 2027 Payment Policies Under the Physician Fee Schedule and Other Changes to Part B Payment and Coverage Policies; Medicare Shared Savings Program Requirements; and Medicare Prescription Drug Inflation Rebate Program",
+          "url": "https://www.regulations.gov/search?filter=Physician%20Fee%20Schedule%20CY%202027",
+          "slips": null
+        }
+      ],
+      "details_url": "https://www.regulations.gov/search?filter=Physician%20Fee%20Schedule%20CY%202027",
+      "committee_url": null,
+      "witness_slip_url": "https://www.regulations.gov/search?filter=Physician%20Fee%20Schedule%20CY%202027",
+      "source": "regulations.gov"
+    },
+    {
+      "id": "us-BLM-2025-OIL-GAS",
+      "jurisdiction": "us",
+      "chamber": "federal",
+      "committee": "Bureau of Land Management",
+      "title": "Oil and Gas Leasing",
+      "scheduled_iso": "2026-09-24T23:59:59Z",
+      "scheduled_display": "Comments due Sep 24, 2026",
+      "timezone": null,
+      "location": "Online · Regulations.gov",
+      "status": "open",
+      "bills": [
+        {
+          "id": "BLM-2025-OIL-GAS",
+          "title": "Oil and Gas Leasing",
+          "url": "https://www.regulations.gov/search?filter=Oil%20and%20Gas%20Leasing",
+          "slips": null
+        }
+      ],
+      "details_url": "https://www.regulations.gov/search?filter=Oil%20and%20Gas%20Leasing",
+      "committee_url": null,
+      "witness_slip_url": "https://www.regulations.gov/search?filter=Oil%20and%20Gas%20Leasing",
+      "source": "regulations.gov"
+    },
     {
       "id": "il-house-3114-23224",
       "jurisdiction": "il",

@@ -149,7 +149,7 @@ class Snapshot(unittest.TestCase):
     def test_offline_build_matches_snapshot(self):
         from datetime import datetime, timezone
         hearings = main.build_from_fixtures(RAW)
-        doc = main.assemble(hearings, ["il", "wa"], "fixtures (offline snapshot)",
+        doc = main.assemble(hearings, ["us", "il", "wa"], "fixtures (offline snapshot)",
                             datetime(2026, 8, 28, tzinfo=timezone.utc))
         expected = json.loads(EXPECTED.read_text())
         self.assertEqual(doc, expected,
@@ -249,6 +249,26 @@ class JurisdictionAndHearingFeeds(unittest.TestCase):
             list(main.hearing_feeds(self.doc))
         self.assertEqual(len(names), len(set(names)))
         self.assertEqual(set(main.all_feeds(self.doc)), set(names))
+
+
+class Federal(unittest.TestCase):
+    def test_seed_records_are_wellformed(self):
+        recs = main.fetch_us(use_api=False)
+        self.assertTrue(recs, "federal seed should not be empty")
+        for h in recs:
+            self.assertEqual(h["jurisdiction"], "us")
+            self.assertTrue(REQUIRED.issubset(h), f"{h.get('id')} missing fields")
+            self.assertEqual(h["source"], "regulations.gov")
+            # the docket title rides along on the single bill so the UI shows it
+            self.assertTrue(h["bills"][0].get("title"))
+
+    def test_us_sorts_first(self):
+        from datetime import datetime, timezone
+        hearings = main.build_from_fixtures(RAW)
+        doc = main.assemble(hearings, ["us", "il", "wa"], "x",
+                            datetime(2026, 8, 28, tzinfo=timezone.utc))
+        self.assertEqual(doc["hearings"][0]["jurisdiction"], "us")
+        self.assertEqual(doc["jurisdictions"][0]["code"], "us")
 
 
 if __name__ == "__main__":

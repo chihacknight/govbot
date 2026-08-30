@@ -692,7 +692,8 @@
     const byJur = {};
     hearings.forEach((h) => { (byJur[h.jurisdiction] = byJur[h.jurisdiction] || []).push(h); });
 
-    Object.keys(byJur).sort().forEach((code, gi) => {
+    // USA (Federal) leads, then states alphabetically.
+    Object.keys(byJur).sort((a, b) => (b === "us") - (a === "us") || a.localeCompare(b)).forEach((code, gi) => {
       const juris = portals[code] || { name: code.toUpperCase() };
       const group = eln("div", "hgroup");
       // Per-state accent for the card border / header rule, cycling the palette.
@@ -747,7 +748,8 @@
         chip.append(eln("span", "chip-id", b.id));
         if (b.slips) chip.append(slipBar(b.slips));
         row.append(chip);
-        if (b.govbot_title) row.append(eln("span", "bill-title", b.govbot_title));
+        const billTitle = b.govbot_title || b.title;   // b.title carries the federal docket title
+        if (billTitle) row.append(eln("span", "bill-title", billTitle));
         if (b.govbot_tags && b.govbot_tags.length) {
           const tags = eln("span", "bill-tags");
           b.govbot_tags.forEach((t) => tags.append(eln("span", "bill-tag", t)));
@@ -784,6 +786,7 @@
   }
 
   function participationFor(h) {
+    if (h.jurisdiction === "us") return "public_comment";
     return h.jurisdiction === "wa" ? "committee_sign_in" : "witness_slip";
   }
 
@@ -792,6 +795,9 @@
   // would re-interpret the naive time in the viewer's zone — and fall back to
   // the source's own display string (already friendly for IL).
   function hearingWhen(h) {
+    // Federal items already carry a human "Comments due …" string; show it as-is
+    // rather than reformatting the deadline into a wall-clock time.
+    if (h.jurisdiction === "us") return h.scheduled_display || "Open for comment";
     let disp = prettyLocal(h.scheduled_display) || prettyLocal(h.scheduled_iso)
       || h.scheduled_display || h.scheduled_iso || "Time TBA";
     const zone = TZ_ABBR[h.timezone];
@@ -843,7 +849,7 @@
     public_comment: "Public comment",
     contact_only: "Contact the committee",
   };
-  const LIVE_STATES = { il: true, wa: true };
+  const LIVE_STATES = { us: true, il: true, wa: true };
   let participation = [];
 
   // Local flag asset per jurisdiction (offline, committed under flags/). DC has
