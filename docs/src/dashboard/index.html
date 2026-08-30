@@ -25,6 +25,7 @@
     --series-8: #eb6834;
     --bar-track: transparent;
     --hover-wash: rgba(11,11,11,0.04);
+    --row-alt: rgba(11,11,11,0.028);
   }
   /* Dark palette. Applied when the OS prefers dark AND the user hasn't
      forced a choice, OR when the user explicitly picks dark via the toggle.
@@ -49,6 +50,7 @@
       --series-7: #d55181;
       --series-8: #d95926;
       --hover-wash: rgba(255,255,255,0.06);
+      --row-alt: rgba(255,255,255,0.04);
     }
   }
   :root[data-theme="dark"] {
@@ -69,6 +71,7 @@
     --series-7: #d55181;
     --series-8: #d95926;
     --hover-wash: rgba(255,255,255,0.06);
+    --row-alt: rgba(255,255,255,0.04);
   }
 
   * { box-sizing: border-box; }
@@ -163,6 +166,15 @@
   }
   .filters input[type="search"] { width: 220px; }
   .filters input[type="search"]::placeholder { color: var(--text-muted); }
+  /* Search field with a leading magnifying-glass icon. The wrapper is the
+     positioning context; the icon sits inside the field's left padding and
+     ignores pointer events so clicks land on the input. */
+  .search-wrap { position: relative; display: inline-flex; align-items: center; }
+  .search-wrap .search-icon {
+    position: absolute; left: 9px; color: var(--text-muted);
+    pointer-events: none; flex: none;
+  }
+  .filters .search-wrap input[type="search"] { padding-left: 30px; }
   .filters input[type="date"]:hover { background: var(--hover-wash); }
   .filters input[type="date"] { color-scheme: light dark; }
   .daterange-custom { display: inline-flex; align-items: center; gap: 6px; }
@@ -287,6 +299,10 @@
     position: sticky; top: 0; background: var(--surface-1);
   }
   th .arrow { color: var(--text-muted); font-size: 10px; }
+  /* Zebra striping keys off the rendered row position (:nth-child), not the
+     underlying data index, so the alternating bands stay consistent after any
+     filter narrows the visible rows. Placed before :hover so hover still wins. */
+  tbody tr:nth-child(even) { background: var(--row-alt); }
   tbody tr:hover { background: var(--hover-wash); }
   td.num, td.date { font-variant-numeric: tabular-nums; white-space: nowrap; }
   td .bill-id { font-weight: 600; white-space: nowrap; }
@@ -313,12 +329,13 @@
   /* narrower Topics column; chips wrap inside it */
   th.col-tags, td.col-tags { max-width: 150px; width: 150px; }
   td.col-tags { white-space: normal; }
-  /* compact Details column */
-  th.col-details, td.col-details { width: 1%; white-space: nowrap; text-align: right; }
+  /* Details button now lives inside the "Title & latest action" cell, below the
+     title/action text rather than in its own column. */
   .details-btn {
     cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 550;
     color: var(--series-1); background: var(--surface-1);
     border: 1px solid var(--border); border-radius: 7px; padding: 4px 11px;
+    margin-top: 8px;
   }
   .details-btn:hover { background: var(--hover-wash); border-color: var(--series-1); }
 
@@ -419,7 +436,13 @@
   </div>
 
   <div class="filters" id="filters">
-    <input type="search" id="f-search" placeholder="Search title or bill number…" aria-label="Search bills">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+        <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle>
+        <line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+      </svg>
+      <input type="search" id="f-search" placeholder="Search title or bill number…" aria-label="Search bills">
+    </div>
     <div class="msel" id="f-states"></div>
     <select id="f-session" aria-label="Session"></select>
     <select id="f-chamber" aria-label="Chamber"></select>
@@ -900,7 +923,6 @@
     { key: "title",         label: "Title & latest action" },
     { key: "tags",          label: "Topics", sortable: false },
     { key: "latest_action", label: "Last action" },
-    { key: "details",       label: "", sortable: false },
   ];
 
   function renderTable(bills) {
@@ -967,6 +989,13 @@
         act.textContent = b.latest_action_desc;
         tdTitle.append(act);
       }
+      // Details lives here (under the title/action text) rather than in its own
+      // column, keeping the row compact and the button near the bill it opens.
+      const dBtn = document.createElement("button");
+      dBtn.className = "details-btn";
+      dBtn.textContent = "Details";
+      dBtn.addEventListener("click", () => openDetails(b));
+      tdTitle.append(dBtn);
 
       const tdTags = document.createElement("td");
       tdTags.className = "col-tags";
@@ -984,15 +1013,7 @@
       tdDate.className = "date";
       tdDate.textContent = b.latest_action || "—";
 
-      const tdDetails = document.createElement("td");
-      tdDetails.className = "col-details";
-      const dBtn = document.createElement("button");
-      dBtn.className = "details-btn";
-      dBtn.textContent = "Details";
-      dBtn.addEventListener("click", () => openDetails(b));
-      tdDetails.append(dBtn);
-
-      tr.append(tdId, tdState, tdSession, tdTitle, tdTags, tdDate, tdDetails);
+      tr.append(tdId, tdState, tdSession, tdTitle, tdTags, tdDate);
       tbody.append(tr);
     });
 
