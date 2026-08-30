@@ -387,6 +387,9 @@
   .m-act .d { color: var(--text-muted); white-space: nowrap; min-width: 88px; font-variant-numeric: tabular-nums; }
   .m-links { display: flex; flex-wrap: wrap; gap: 8px 14px; }
   .m-links a { font-size: 13px; font-weight: 550; }
+  /* De-emphasized source link: a bare directory/index URL that doesn't point
+     straight at the bill. */
+  .m-links a.m-src-weak { color: var(--text-muted); font-weight: 450; }
   .m-muted { color: var(--text-muted); font-size: 13px; }
   .m-tags { display: inline-flex; flex-wrap: wrap; gap: 5px; }
   .m-loading { padding: 30px 0; text-align: center; color: var(--text-muted); }
@@ -1253,22 +1256,63 @@
     try { return chamberLabel(JSON.parse(pid.slice(1)).chamber); } catch (e) { return null; }
   }
   function govbotRepo(state) { return (state === "usa" ? "usa" : state) + "-legislation"; }
+  // The govbot data repos name each bill's directory after the identifier with
+  // all whitespace removed ("H 5502" -> "H5502", "B 1-38" -> "B1-38"), while the
+  // dashboard keeps the spaced display id. Build the path from the stripped form
+  // or the raw metadata.json fetch 404s and the modal falls back to a bare title.
+  function billDirId(id) { return String(id || "").replace(/\s+/g, ""); }
   function govbotMetaUrl(b) {
     return "https://raw.githubusercontent.com/govbot-data/" + govbotRepo(b.state) +
       "/main/country:us/state:" + b.state + "/sessions/" + encodeURIComponent(b.session) +
-      "/bills/" + encodeURIComponent(b.id) + "/metadata.json";
+      "/bills/" + encodeURIComponent(billDirId(b.id)) + "/metadata.json";
   }
   function govbotRecordUrl(b) {
     return "https://github.com/govbot-data/" + govbotRepo(b.state) +
       "/tree/main/country:us/state:" + b.state + "/sessions/" + encodeURIComponent(b.session) +
-      "/bills/" + encodeURIComponent(b.id);
+      "/bills/" + encodeURIComponent(billDirId(b.id));
+  }
+  // Friendly name for a MIME type so link labels read "PDF"/"HTML" rather than
+  // "application/pdf"/"text/html".
+  function mediaLabel(mt) {
+    return ({
+      "application/pdf": "PDF", "text/html": "HTML", "text/plain": "Text",
+      "application/rtf": "RTF", "application/msword": "DOC",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
+    })[mt] || mt;
   }
   function collectLinks(rows) {
     const out = [];
     (rows || []).forEach((v) => (v.links || []).forEach((l) => {
-      if (l.url) out.push({ label: (v.note || "Document") + (l.media_type ? " · " + l.media_type : ""), url: l.url });
+      if (l.url) out.push({ label: (v.note || "Document") + (l.media_type ? " · " + mediaLabel(l.media_type) : ""), url: l.url });
     }));
     return out;
+  }
+  // Host without a leading "www." — used to label a source link when its note
+  // is empty, so the reader can see where the link goes.
+  function urlHost(u) {
+    try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return null; }
+  }
+  // A bare directory/index URL (host root, or a trailing-slash path with no file
+  // and no query) points at a site landing page, not the bill — e.g. NJ's
+  // "pub.njleg.state.nj.us/leg-databases/". These get de-emphasized below.
+  function isIndexLink(u) {
+    try {
+      const x = new URL(u);
+      if (x.search) return false;
+      const p = x.pathname;
+      if (p === "" || p === "/") return true;
+      const last = p.split("/").filter(Boolean).pop() || "";
+      return p.endsWith("/") && !/\.[a-z0-9]{2,5}$/i.test(last);
+    } catch (e) { return false; }
+  }
+  // Same underlying target, ignoring protocol, "www.", and a trailing slash —
+  // so a source that just repeats the official URL isn't listed twice.
+  function sameTarget(a, b) {
+    try {
+      const norm = (u) => { const x = new URL(u);
+        return x.hostname.replace(/^www\./, "") + x.pathname.replace(/\/$/, "") + x.search; };
+      return norm(a) === norm(b);
+    } catch (e) { return a === b; }
   }
   function plainSummary(b, meta) {
     const abs = meta && meta.abstracts && meta.abstracts[0] && meta.abstracts[0].abstract;
@@ -1409,8 +1453,20 @@
     if (b.url) links.append(mlink("Official source ↗", b.url));
     links.append(mlink("govbot record ↗", govbotRecordUrl(b)));
     links.append(mlink("Open States ↗",
-      "https://openstates.org/" + b.state + "/bills/" + encodeURIComponent(b.session) + "/" + encodeURIComponent(b.id) + "/"));
-    (meta && meta.sources || []).forEach((s) => { if (s.url) links.append(mlink((s.note || "Source") + " ↗", s.url)); });
+      "https://openstates.org/" + b.state + "/bills/" + encodeURIComponent(b.session) + "/" + encodeURIComponent(billDirId(b.id)) + "/"));
+    // Upstream scraper sources usually arrive with an empty note, so label each
+    // by its host (what the link points at), skip any that merely repeat the
+    // official source, and de-emphasize bare directory/index links.
+    (meta && meta.sources || []).forEach((s) => {
+      if (!s.url) return;
+      if (b.url && sameTarget(s.url, b.url)) return;
+      const weak = isIndexLink(s.url);
+      let label = (s.note && s.note.trim()) || urlHost(s.url) || "Source";
+      if (weak) label += " · site index";
+      const a = mlink(label + " ↗", s.url);
+      if (weak) a.className = "m-src-weak";
+      links.append(a);
+    });
     addSection(body, "Sources", links);
   }
 })();
