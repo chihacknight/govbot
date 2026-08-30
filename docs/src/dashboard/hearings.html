@@ -873,6 +873,9 @@
     const rows = participation.filter((j) =>
       !q || j.name.toLowerCase().includes(q) ||
       (KIND_LABEL[j.participation] || "").toLowerCase().includes(q));
+    // Pin USA (Federal) to the front — Regulations.gov carries live federal
+    // comment periods & hearings — keeping the rest of the list in place.
+    rows.sort((a, b) => (b.code === "us") - (a.code === "us"));
     rows.forEach((j) => {
       const card = eln("div", "pstate");
       const top = eln("div", "pstate-top");
