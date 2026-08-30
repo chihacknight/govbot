@@ -181,5 +181,38 @@ class RssFeed(unittest.TestCase):
         self.assertIn("[CANCELED]", xml)
 
 
+class BillFeeds(unittest.TestCase):
+    def _distinct_bills(self, doc):
+        keys = set()
+        for h in doc["hearings"]:
+            for b in h.get("bills", []):
+                keys.add((h["jurisdiction"], main._norm_bill_id(b["id"])))
+        return keys
+
+    def test_one_wellformed_feed_per_distinct_bill(self):
+        import xml.etree.ElementTree as ET
+        doc = json.loads(EXPECTED.read_text())
+        feeds = main.bill_feeds(doc)
+        self.assertEqual(len(feeds), len(self._distinct_bills(doc)))
+        for fname, xml in feeds.items():
+            self.assertTrue(fname.endswith(".xml"))
+            root = ET.fromstring(xml)  # raises if malformed
+            self.assertTrue(root.findall(".//item"))
+
+    def test_feed_lists_only_that_bills_hearings(self):
+        doc = json.loads(EXPECTED.read_text())
+        feeds = main.bill_feeds(doc)
+        for h in doc["hearings"]:
+            for b in h.get("bills", []):
+                fname = main.bill_feed_name(h["jurisdiction"], b["id"])
+                self.assertIn(fname, feeds)
+                # the hearing's committee title appears in its bill's feed
+                self.assertIn(h["id"], feeds[fname])
+
+    def test_feed_name_normalizes_id(self):
+        self.assertEqual(main.bill_feed_name("il", "HB 1643"), "il-HB1643.xml")
+        self.assertEqual(main.bill_feed_name("wa", "SB-5001"), "wa-SB5001.xml")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

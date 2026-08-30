@@ -549,55 +549,108 @@ def _pretty_when(h):
             f"{hh}:{m.group(5)} {ampm}")
 
 
-def to_rss(doc):
-    """Render the hearings document as an RSS 2.0 feed (one item per hearing).
-
-    Pure/deterministic given `doc`. Feed readers subscribe to this to get
-    upcoming committee hearings without visiting the dashboard.
-    """
+def _feed_prelude(doc):
+    """Shared (built_822, names) derived from a hearings doc for feed rendering."""
     from email.utils import format_datetime
     built = datetime.strptime(doc["generated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(
         tzinfo=timezone.utc)
-    built_822 = format_datetime(built)
     names = {j["code"]: j["name"] for j in doc.get("jurisdictions", [])}
+    return format_datetime(built), names
 
+
+def _add_item(ch, h, state, built_822):
+    """Append one <item> for hearing `h` to channel `ch`."""
+    bills = ", ".join(b["id"] for b in h.get("bills", []))
+    status = " [CANCELED]" if h.get("status") == "canceled" else ""
+    title = f"{state} · {h.get('committee', 'Committee')} — {_pretty_when(h)}{status}"
+
+    parts = []
+    if bills:
+        parts.append(f"Bills: {bills}.")
+    if h.get("location"):
+        parts.append(h["location"] + ".")
+    if h.get("status") != "canceled" and h.get("witness_slip_url"):
+        parts.append(f"Participate: {h['witness_slip_url']}")
+
+    item = ET.SubElement(ch, "item")
+    ET.SubElement(item, "title").text = title
+    ET.SubElement(item, "link").text = h.get("details_url") or DASHBOARD_URL
+    ET.SubElement(item, "description").text = " ".join(parts) or title
+    ET.SubElement(item, "category").text = state
+    ET.SubElement(item, "guid", {"isPermaLink": "false"}).text = h["id"]
+    ET.SubElement(item, "pubDate").text = built_822
+
+
+def _feed_xml(title, description, self_url, hearings, names, built_822):
+    """Render an RSS 2.0 channel (one <item> per hearing) as a string."""
     rss = ET.Element("rss", {"version": "2.0",
                              "xmlns:atom": "http://www.w3.org/2005/Atom"})
     ch = ET.SubElement(rss, "channel")
-    ET.SubElement(ch, "title").text = "govbot — Upcoming committee hearings & witness slips"
+    ET.SubElement(ch, "title").text = title
     ET.SubElement(ch, "link").text = DASHBOARD_URL
-    ET.SubElement(ch, "description").text = (
-        "Upcoming legislative committee hearings where the public can weigh in "
-        "(Illinois & Washington), refreshed twice daily by govbot.")
+    ET.SubElement(ch, "description").text = description
     ET.SubElement(ch, "language").text = "en-us"
     ET.SubElement(ch, "lastBuildDate").text = built_822
-    ET.SubElement(ch, "atom:link", {"href": FEED_URL, "rel": "self",
+    ET.SubElement(ch, "atom:link", {"href": self_url, "rel": "self",
                                     "type": "application/rss+xml"})
-
-    for h in doc.get("hearings", []):
+    for h in hearings:
         state = names.get(h["jurisdiction"], h["jurisdiction"].upper())
-        bills = ", ".join(b["id"] for b in h.get("bills", []))
-        status = " [CANCELED]" if h.get("status") == "canceled" else ""
-        title = f"{state} · {h.get('committee', 'Committee')} — {_pretty_when(h)}{status}"
-
-        parts = []
-        if bills:
-            parts.append(f"Bills: {bills}.")
-        if h.get("location"):
-            parts.append(h["location"] + ".")
-        if h.get("status") != "canceled" and h.get("witness_slip_url"):
-            parts.append(f"Participate: {h['witness_slip_url']}")
-
-        item = ET.SubElement(ch, "item")
-        ET.SubElement(item, "title").text = title
-        ET.SubElement(item, "link").text = h.get("details_url") or DASHBOARD_URL
-        ET.SubElement(item, "description").text = " ".join(parts) or title
-        ET.SubElement(item, "category").text = state
-        ET.SubElement(item, "guid", {"isPermaLink": "false"}).text = h["id"]
-        ET.SubElement(item, "pubDate").text = built_822
-
+        _add_item(ch, h, state, built_822)
     return ('<?xml version="1.0" encoding="UTF-8"?>\n'
             + ET.tostring(rss, encoding="unicode") + "\n")
+
+
+def to_rss(doc):
+    """Render the whole hearings document as an RSS 2.0 feed (one item per
+    hearing). Pure/deterministic given `doc`. Feed readers subscribe to this to
+    get every upcoming committee hearing without visiting the dashboard.
+    """
+    built_822, names = _feed_prelude(doc)
+    return _feed_xml(
+        "govbot — Upcoming committee hearings & witness slips",
+        "Upcoming legislative committee hearings where the public can weigh in "
+        "(Illinois & Washington), refreshed twice daily by govbot.",
+        FEED_URL, doc.get("hearings", []), names, built_822)
+
+
+def bill_feed_name(jurisdiction, bill_id):
+    """Deterministic per-bill feed filename, e.g. ('il', 'HB 1643') -> 'il-HB1643.xml'.
+    The hearings page recomputes this exact name to link each bill to its feed,
+    so both sides must normalize identically (see _norm_bill_id)."""
+    return f"{jurisdiction}-{_norm_bill_id(bill_id)}.xml"
+
+
+def bill_feeds(doc):
+    """One RSS feed per distinct bill that appears in any hearing.
+
+    Returns {filename: xml_string}. Each feed lists just the hearings that
+    reference that bill, so a reader can follow a single bill instead of the
+    whole calendar. Pure/deterministic given `doc`.
+    """
+    built_822, names = _feed_prelude(doc)
+    # Group hearings by (jurisdiction, normalized id); keep the first display id
+    # seen so the human-facing title reads naturally.
+    groups = {}
+    for h in doc.get("hearings", []):
+        for b in h.get("bills", []):
+            key = (h["jurisdiction"], _norm_bill_id(b["id"]))
+            g = groups.get(key)
+            if g is None:
+                g = groups[key] = {"jur": h["jurisdiction"], "id": b["id"], "hearings": []}
+            g["hearings"].append(h)
+
+    feeds = {}
+    for g in groups.values():
+        state = names.get(g["jur"], g["jur"].upper())
+        disp = g["id"]
+        fname = bill_feed_name(g["jur"], disp)
+        self_url = DASHBOARD_URL + "hearings/" + fname
+        feeds[fname] = _feed_xml(
+            f"govbot — {state} {disp}: upcoming committee hearings",
+            f"Upcoming committee hearings featuring {state} {disp}, "
+            f"refreshed twice daily by govbot.",
+            self_url, g["hearings"], names, built_822)
+    return feeds
 
 
 # --------------------------------------------------------------------------- #
@@ -653,6 +706,10 @@ def main():
     ap.add_argument("--output", "-o", default="-", help="Output path (default: stdout)")
     ap.add_argument("--rss", default=None,
                     help="Also write an RSS 2.0 feed of the hearings to this path")
+    ap.add_argument("--rss-bills-dir", default=None,
+                    help="Also write one RSS 2.0 feed per bill into this directory "
+                         "(filenames like il-HB1643.xml), so readers can follow a "
+                         "single bill instead of the whole calendar")
     ap.add_argument("--dashboard-data", default="docs/src/dashboard/data.json",
                     help="govbot bill dataset (data.json) used to enrich hearing "
                          "bills with their govbot title + topic tags")
@@ -696,6 +753,14 @@ def main():
     if args.rss:
         Path(args.rss).write_text(to_rss(doc))
         print(f"wrote RSS feed to {args.rss}", file=sys.stderr)
+
+    if args.rss_bills_dir:
+        outdir = Path(args.rss_bills_dir)
+        outdir.mkdir(parents=True, exist_ok=True)
+        feeds = bill_feeds(doc)
+        for fname, xml in feeds.items():
+            (outdir / fname).write_text(xml)
+        print(f"wrote {len(feeds)} per-bill RSS feeds to {outdir}", file=sys.stderr)
     return 0
 
 
