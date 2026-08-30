@@ -10,8 +10,10 @@
     --page:           #f9f9f7;
     --surface-1:      #fcfcfb;
     --text-primary:   #0b0b0b;
-    --text-secondary: #52514e;
-    --text-muted:     #898781;
+    /* Non-link text is full-contrast (not gray) in both themes: secondary and
+       muted fold into primary here (light) and into white in the dark blocks. */
+    --text-secondary: #0b0b0b;
+    --text-muted:     #0b0b0b;
     --gridline:       #e1e0d9;
     --baseline:       #c3c2b7;
     --border:         rgba(11,11,11,0.10);
@@ -36,8 +38,10 @@
       --page:           #0d0d0d;
       --surface-1:      #1a1a19;
       --text-primary:   #ffffff;
-      --text-secondary: #c3c2b7;
-      --text-muted:     #898781;
+      /* Dark theme: non-link text is white, not gray (secondary/muted folded
+         into primary). Light theme below keeps its softer hierarchy. */
+      --text-secondary: #ffffff;
+      --text-muted:     #ffffff;
       --gridline:       #2c2c2a;
       --baseline:       #383835;
       --border:         rgba(255,255,255,0.10);
@@ -57,8 +61,8 @@
     --page:           #0d0d0d;
     --surface-1:      #1a1a19;
     --text-primary:   #ffffff;
-    --text-secondary: #c3c2b7;
-    --text-muted:     #898781;
+    --text-secondary: #ffffff;
+    --text-muted:     #ffffff;
     --gridline:       #2c2c2a;
     --baseline:       #383835;
     --border:         rgba(255,255,255,0.10);
@@ -324,7 +328,7 @@
     color: var(--text-muted); font-size: 12.5px;
   }
   .chn-credit svg { flex: none; }
-  .chn-credit a { color: var(--text-secondary); }
+  .chn-credit a { color: var(--series-1); }
 
   /* narrower Topics column; chips wrap inside it */
   th.col-tags, td.col-tags { max-width: 150px; width: 150px; }
@@ -389,7 +393,7 @@
   .m-links a { font-size: 13px; font-weight: 550; }
   /* De-emphasized source link: a bare directory/index URL that doesn't point
      straight at the bill. */
-  .m-links a.m-src-weak { color: var(--text-muted); font-weight: 450; }
+  .m-links a.m-src-weak { color: var(--series-1); font-weight: 450; }
   .m-muted { color: var(--text-muted); font-size: 13px; }
   .m-tags { display: inline-flex; flex-wrap: wrap; gap: 5px; }
   .m-loading { padding: 30px 0; text-align: center; color: var(--text-muted); }
@@ -1428,9 +1432,6 @@
       b.tags.forEach((x) => t.append(mkel("span", "chip", x)));
       addSection(body, "govbot topics", t);
     }
-
-    const syn = meta && meta.abstracts && meta.abstracts[0] && meta.abstracts[0].abstract;
-    if (syn) addSection(body, "Official synopsis", mkel("p", "m-muted", syn));
 
     if (hearingsIndex) {
       const h = hearingsIndex[b.state + ":" + normId(b.id)];

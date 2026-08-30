@@ -123,11 +123,16 @@ jobs:
       # the committed sample when the fresh run actually produced hearings, so
       # a total outage keeps the last-good sample rather than blanking the panel.
       - name: Build committee hearings feed
+        env:
+          # Optional: a Regulations.gov / api.data.gov key enables live federal
+          # comment periods. Without it the build falls back to the committed
+          # federal seed (DEMO_KEY is too rate-limited to rely on in CI).
+          REGULATIONS_GOV_API_KEY: ${{ secrets.REGULATIONS_GOV_API_KEY }}
         run: |
           set -uo pipefail
           rm -rf /tmp/hearings_feeds
           python3 actions/scrape-hearings/main.py \
-            --jurisdictions il,wa \
+            --jurisdictions il,wa,us \
             --output /tmp/hearings.json \
             --rss /tmp/hearings.xml \
             --rss-feeds-dir /tmp/hearings_feeds \

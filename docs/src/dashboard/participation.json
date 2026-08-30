@@ -387,11 +387,11 @@
     },
     {
       "code": "us",
-      "name": "United States",
-      "participation": "written_testimony",
+      "name": "USA (Federal)",
+      "participation": "public_comment",
       "online": true,
-      "portal_url": "https://www.congress.gov/",
-      "how_to": "Congress does not use witness slips. House and Senate committees take written testimony for noticed hearings, and you can write your members on any bill."
+      "portal_url": "https://www.regulations.gov/",
+      "how_to": "Federal agencies post open comment periods and public hearings on Regulations.gov — search a docket, then submit a comment or register for a hearing. Congress itself takes written testimony for noticed committee hearings."
     },
     {
       "code": "ut",

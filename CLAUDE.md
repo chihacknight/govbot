@@ -131,7 +131,10 @@ The Pages site has **two dashboards**, linked by a tab bar:
 `docs/src/dashboard/index.html` (the Legislation Dashboard above) and
 `docs/src/dashboard/hearings.html` (**Committee Hearings & Witness Slips**). The hearings
 page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov and leg.wa.gov
-directly (not OpenStates), writing `docs/src/dashboard/hearings.json` + a whole-calendar
+directly (not OpenStates), plus **USA (Federal)** open comment periods from the
+Regulations.gov API (needs `REGULATIONS_GOV_API_KEY`; falls back to the committed
+`actions/scrape-hearings/federal_seed.json` when unset/unreachable) — federal leads the
+list, above the states. It writes `docs/src/dashboard/hearings.json` + a whole-calendar
 RSS `hearings.xml` + granular RSS feeds under `docs/src/dashboard/hearings/` — per bill
 (`<jurisdiction>-<NORMALIZED_ID>.xml`), per jurisdiction (`<code>.xml`), and per hearing
 (`hearing-<id>.xml`) — so a reader can follow one bill, a whole state, or a single hearing

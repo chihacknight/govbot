@@ -10,8 +10,15 @@ sources directly:
 
 | Jurisdiction | Source | Notes |
 |---|---|---|
+| USA (`us`) | `api.regulations.gov` v4 (open comment periods) | federal dockets open for public comment, soonest-closing first; leads the list |
 | Illinois (`il`) | `ilga.gov` Hearings JSON API | per chamber, date range; bills parsed from the subject line |
 | Washington (`wa`) | `leg.wa.gov` CommitteeMeetingService (SOAP/XML) | agenda items fetched per meeting for bill ids |
+
+**Federal (`us`) needs an API key.** Set `REGULATIONS_GOV_API_KEY` (free from
+[api.data.gov](https://api.data.gov/signup/)) for live data; the shared `DEMO_KEY`
+is too rate-limited to rely on. When the key is missing or the API is unreachable,
+the build falls back to `federal_seed.json` — a small committed set of current
+comment periods — so the federal section is never empty.
 
 ## Why not the dashboard's bill pipeline?
 
@@ -32,7 +39,7 @@ enrichment is bounded and parallel, and any failure simply leaves `slips` null.
 
 ```bash
 # Live (what the Pages deploy runs, twice daily):
-python3 main.py --jurisdictions il,wa --output docs/src/dashboard/hearings.json
+python3 main.py --jurisdictions il,wa,us --output docs/src/dashboard/hearings.json
 
 # Also emit RSS: one whole-calendar feed (--rss) plus granular feeds
 # (--rss-feeds-dir) so a reader can follow a single bill, a whole state, or one
@@ -40,7 +47,7 @@ python3 main.py --jurisdictions il,wa --output docs/src/dashboard/hearings.json
 #   per bill:        <jurisdiction>-<NORMALIZED_ID>.xml   (e.g. il-HB1643.xml)
 #   per jurisdiction: <code>.xml                          (e.g. wa.xml)
 #   per hearing:     hearing-<id>.xml                     (e.g. hearing-wa-other-33551.xml)
-python3 main.py --jurisdictions il,wa \
+python3 main.py --jurisdictions il,wa,us \
   --output docs/src/dashboard/hearings.json \
   --rss docs/src/dashboard/hearings.xml \
   --rss-feeds-dir docs/src/dashboard/hearings

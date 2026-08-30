@@ -10,8 +10,10 @@
     --page:           #f9f9f7;
     --surface-1:      #fcfcfb;
     --text-primary:   #0b0b0b;
-    --text-secondary: #52514e;
-    --text-muted:     #898781;
+    /* Non-link text is full-contrast (not gray) in both themes: secondary and
+       muted fold into primary here (light) and into white in the dark blocks. */
+    --text-secondary: #0b0b0b;
+    --text-muted:     #0b0b0b;
     --gridline:       #e1e0d9;
     --baseline:       #c3c2b7;
     --border:         rgba(11,11,11,0.10);
@@ -36,8 +38,10 @@
       --page:           #0d0d0d;
       --surface-1:      #1a1a19;
       --text-primary:   #ffffff;
-      --text-secondary: #c3c2b7;
-      --text-muted:     #898781;
+      /* Dark theme: non-link text is white, not gray (secondary/muted folded
+         into primary). Light theme below keeps its softer hierarchy. */
+      --text-secondary: #ffffff;
+      --text-muted:     #ffffff;
       --gridline:       #2c2c2a;
       --baseline:       #383835;
       --border:         rgba(255,255,255,0.10);
@@ -57,8 +61,8 @@
     --page:           #0d0d0d;
     --surface-1:      #1a1a19;
     --text-primary:   #ffffff;
-    --text-secondary: #c3c2b7;
-    --text-muted:     #898781;
+    --text-secondary: #ffffff;
+    --text-muted:     #ffffff;
     --gridline:       #2c2c2a;
     --baseline:       #383835;
     --border:         rgba(255,255,255,0.10);
@@ -331,7 +335,7 @@
     color: var(--text-muted); font-size: 12.5px;
   }
   .chn-credit svg { flex: none; }
-  .chn-credit a { color: var(--text-secondary); }
+  .chn-credit a { color: var(--series-1); }
   /* ---------- committee hearings & witness slips ---------- */
   .card--hearings { margin-top: 12px; }
   .hearings-head {
@@ -367,7 +371,7 @@
     border: 1px solid var(--border); border-radius: 7px; background: var(--series-1); color: #fff;
   }
   .rss-copy:hover { filter: brightness(1.08); }
-  .rss-open { display: inline-block; margin-top: 9px; font-size: 12px; color: var(--text-secondary); }
+  .rss-open { display: inline-block; margin-top: 9px; font-size: 12px; color: var(--series-1); }
   .hearings-groups { margin-top: 14px; display: flex; flex-direction: column; gap: 18px; }
   /* Each state's hearings sit in their own card with a per-state colored border
      (--hg-accent, set per group in JS) so the sections read as distinct blocks. */
@@ -443,7 +447,7 @@
   .slip-count { color: var(--text-muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
   .h-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 7px; }
   .file-link { font-size: 13px; font-weight: 550; }
-  .committee-link { font-size: 13px; font-weight: 500; color: var(--text-secondary); text-decoration: none; }
+  .committee-link { font-size: 13px; font-weight: 500; color: var(--series-1); text-decoration: none; }
   .committee-link:hover { color: var(--series-1); text-decoration: underline; }
   @media (max-width: 620px) {
     .hearing-row { grid-template-columns: 1fr; }
@@ -482,7 +486,7 @@
   }
   .pstate-how { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
   .pstate-link { font-size: 12.5px; font-weight: 550; margin-top: auto; }
-  .pstate-link.is-offline { color: var(--text-muted); }
+  .pstate-link.is-offline { color: var(--series-1); }
 </style>
 <script>
   // Apply a saved theme choice before first paint to avoid a flash of the
@@ -688,7 +692,8 @@
     const byJur = {};
     hearings.forEach((h) => { (byJur[h.jurisdiction] = byJur[h.jurisdiction] || []).push(h); });
 
-    Object.keys(byJur).sort().forEach((code, gi) => {
+    // USA (Federal) leads, then states alphabetically.
+    Object.keys(byJur).sort((a, b) => (b === "us") - (a === "us") || a.localeCompare(b)).forEach((code, gi) => {
       const juris = portals[code] || { name: code.toUpperCase() };
       const group = eln("div", "hgroup");
       // Per-state accent for the card border / header rule, cycling the palette.
@@ -743,7 +748,8 @@
         chip.append(eln("span", "chip-id", b.id));
         if (b.slips) chip.append(slipBar(b.slips));
         row.append(chip);
-        if (b.govbot_title) row.append(eln("span", "bill-title", b.govbot_title));
+        const billTitle = b.govbot_title || b.title;   // b.title carries the federal docket title
+        if (billTitle) row.append(eln("span", "bill-title", billTitle));
         if (b.govbot_tags && b.govbot_tags.length) {
           const tags = eln("span", "bill-tags");
           b.govbot_tags.forEach((t) => tags.append(eln("span", "bill-tag", t)));
@@ -780,6 +786,7 @@
   }
 
   function participationFor(h) {
+    if (h.jurisdiction === "us") return "public_comment";
     return h.jurisdiction === "wa" ? "committee_sign_in" : "witness_slip";
   }
 
@@ -788,6 +795,9 @@
   // would re-interpret the naive time in the viewer's zone — and fall back to
   // the source's own display string (already friendly for IL).
   function hearingWhen(h) {
+    // Federal items already carry a human "Comments due …" string; show it as-is
+    // rather than reformatting the deadline into a wall-clock time.
+    if (h.jurisdiction === "us") return h.scheduled_display || "Open for comment";
     let disp = prettyLocal(h.scheduled_display) || prettyLocal(h.scheduled_iso)
       || h.scheduled_display || h.scheduled_iso || "Time TBA";
     const zone = TZ_ABBR[h.timezone];
@@ -839,7 +849,7 @@
     public_comment: "Public comment",
     contact_only: "Contact the committee",
   };
-  const LIVE_STATES = { il: true, wa: true };
+  const LIVE_STATES = { us: true, il: true, wa: true };
   let participation = [];
 
   // Local flag asset per jurisdiction (offline, committed under flags/). DC has
@@ -869,6 +879,9 @@
     const rows = participation.filter((j) =>
       !q || j.name.toLowerCase().includes(q) ||
       (KIND_LABEL[j.participation] || "").toLowerCase().includes(q));
+    // Pin USA (Federal) to the front — Regulations.gov carries live federal
+    // comment periods & hearings — keeping the rest of the list in place.
+    rows.sort((a, b) => (b.code === "us") - (a.code === "us"));
     rows.forEach((j) => {
       const card = eln("div", "pstate");
       const top = eln("div", "pstate-top");
