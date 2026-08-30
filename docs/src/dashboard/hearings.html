@@ -25,6 +25,7 @@
     --series-8: #eb6834;
     --bar-track: transparent;
     --hover-wash: rgba(11,11,11,0.04);
+    --row-alt: rgba(11,11,11,0.028);
   }
   /* Dark palette. Applied when the OS prefers dark AND the user hasn't
      forced a choice, OR when the user explicitly picks dark via the toggle.
@@ -49,6 +50,7 @@
       --series-7: #d55181;
       --series-8: #d95926;
       --hover-wash: rgba(255,255,255,0.06);
+      --row-alt: rgba(255,255,255,0.04);
     }
   }
   :root[data-theme="dark"] {
@@ -69,6 +71,7 @@
     --series-7: #d55181;
     --series-8: #d95926;
     --hover-wash: rgba(255,255,255,0.06);
+    --row-alt: rgba(255,255,255,0.04);
   }
 
   * { box-sizing: border-box; }
@@ -324,8 +327,11 @@
     color: var(--series-3); white-space: nowrap; background: none; border: none; padding: 0;
   }
   .rss-link:hover { text-decoration: underline; }
+  /* One shared popover reused by the "all hearings" button and every per-bill
+     RSS link. JS positions it (fixed to the viewport) under whichever trigger
+     opened it, so it doesn't need a positioned ancestor. */
   .rss-pop {
-    position: absolute; top: 26px; right: 0; z-index: 40; width: 300px; max-width: 84vw;
+    position: fixed; z-index: 40; width: 300px; max-width: 84vw;
     background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
     box-shadow: 0 12px 30px rgba(0,0,0,0.22); padding: 12px 13px; text-align: left;
   }
@@ -343,10 +349,23 @@
   .rss-copy:hover { filter: brightness(1.08); }
   .rss-open { display: inline-block; margin-top: 9px; font-size: 12px; color: var(--text-secondary); }
   .hearings-groups { margin-top: 14px; display: flex; flex-direction: column; gap: 18px; }
+  /* Each state's hearings sit in their own card with a per-state colored border
+     (--hg-accent, set per group in JS) so the sections read as distinct blocks. */
+  .hgroup {
+    border: 2px solid var(--hg-accent, var(--series-1));
+    border-radius: 10px; padding: 12px 14px 4px;
+    background: var(--surface-1);
+  }
   .hgroup-head {
     display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
-    padding-bottom: 6px; margin-bottom: 8px; border-bottom: 1px solid var(--gridline);
+    padding-bottom: 8px; margin-bottom: 4px;
+    border-bottom: 2px solid var(--hg-accent, var(--gridline));
   }
+  .hgroup-name { border-left: 4px solid var(--hg-accent, var(--series-1)); padding-left: 8px; }
+  /* Zebra the hearing rows inside each state card for readability. The rows live
+     in their own wrapper so :nth-child counts rows only (not the header). */
+  .hgroup-rows .hearing-row { padding-left: 8px; padding-right: 8px; border-radius: 6px; }
+  .hgroup-rows .hearing-row:nth-child(even) { background: var(--row-alt); }
   .hgroup-name { font-weight: 650; font-size: 15px; }
   .hgroup-count { color: var(--text-muted); font-size: 12.5px; }
   .hgroup-portal { margin-left: auto; font-size: 13px; white-space: nowrap; }
@@ -375,6 +394,13 @@
   }
   .gov-link { font-size: 11.5px; font-weight: 600; color: var(--series-1); text-decoration: none; white-space: nowrap; }
   .gov-link:hover { text-decoration: underline; }
+  /* Per-bill "subscribe to this bill's hearings" trigger. */
+  .bill-rss {
+    display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
+    font: inherit; font-size: 11.5px; font-weight: 600; color: var(--series-3);
+    background: none; border: none; padding: 0; white-space: nowrap;
+  }
+  .bill-rss:hover { text-decoration: underline; }
   .bill-chip {
     display: inline-flex; align-items: center; gap: 7px;
     padding: 2px 8px; border: 1px solid var(--border); border-radius: 7px;
@@ -439,8 +465,15 @@
     border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px;
     background: var(--surface-1); display: flex; flex-direction: column; gap: 6px;
   }
-  .pstate-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .pstate-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .pstate-idcol { display: flex; align-items: center; gap: 8px; min-width: 0; }
   .pstate-name { font-weight: 600; }
+  /* Each state card leads with its flag. Sized small; hidden gracefully if the
+     image can't load so the name still reads. */
+  .pstate-flag {
+    width: 28px; height: auto; flex: none; border-radius: 3px;
+    border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+  }
   .pstate-live { font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
     color: var(--series-2); border: 1px solid var(--series-2); border-radius: 999px; padding: 1px 7px; }
   .pstate-kind {
@@ -511,19 +544,10 @@
         <span class="asof hearings-asof" id="hearings-asof"></span>
         <span class="rss-wrap">
           <button type="button" class="rss-link" id="rss-btn" aria-haspopup="dialog" aria-expanded="false"
-                  title="Subscribe to upcoming hearings in a feed reader">
+                  title="Subscribe to all upcoming hearings in a feed reader">
             <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"/></svg>
-            Subscribe (RSS)
+            Subscribe to all (RSS)
           </button>
-          <div class="rss-pop" id="rss-pop" role="dialog" aria-label="Subscribe by RSS" hidden>
-            <p class="rss-pop-title">Follow upcoming hearings in a feed reader</p>
-            <p class="rss-pop-sub">Copy this link and paste it into a reader like Feedly, Inoreader, or NetNewsWire.</p>
-            <div class="rss-pop-row">
-              <input type="text" id="rss-url" readonly aria-label="Feed URL">
-              <button type="button" class="rss-copy" id="rss-copy">Copy</button>
-            </div>
-            <a class="rss-open" id="rss-open" href="hearings.xml" target="_blank" rel="noopener">Open the raw feed ↗</a>
-          </div>
         </span>
       </div>
     </div>
@@ -561,6 +585,18 @@
     </svg>
     A <a href="https://chihacknight.org/">Chi Hack Night</a> project
   </p>
+
+  <!-- One popover shared by the "all hearings" button and every per-bill RSS
+       link; JS fills its text/URL and positions it under the active trigger. -->
+  <div class="rss-pop" id="rss-pop" role="dialog" aria-label="Subscribe by RSS" hidden>
+    <p class="rss-pop-title" id="rss-pop-title"></p>
+    <p class="rss-pop-sub" id="rss-pop-sub"></p>
+    <div class="rss-pop-row">
+      <input type="text" id="rss-url" readonly aria-label="Feed URL">
+      <button type="button" class="rss-copy" id="rss-copy">Copy</button>
+    </div>
+    <a class="rss-open" id="rss-open" target="_blank" rel="noopener">Open the raw feed ↗</a>
+  </div>
 </div>
 
 <script>
@@ -646,6 +682,10 @@
     return n;
   }
 
+  // Per-state accent colors for the hearings section cards, cycled by group order.
+  const HG_ACCENTS = ["--series-1", "--series-3", "--series-2", "--series-5",
+                      "--series-6", "--series-8", "--series-7", "--series-4"];
+
   function renderHearings(data) {
     const hearings = (data && data.hearings) || [];
     if (!hearings.length) { const e = $("hearings-empty"); if (e) e.hidden = false; return; }
@@ -662,19 +702,25 @@
     const byJur = {};
     hearings.forEach((h) => { (byJur[h.jurisdiction] = byJur[h.jurisdiction] || []).push(h); });
 
-    Object.keys(byJur).sort().forEach((code) => {
+    Object.keys(byJur).sort().forEach((code, gi) => {
       const juris = portals[code] || { name: code.toUpperCase() };
       const group = eln("div", "hgroup");
+      // Per-state accent for the card border / header rule, cycling the palette.
+      group.style.setProperty("--hg-accent", "var(" + HG_ACCENTS[gi % HG_ACCENTS.length] + ")");
       const head = eln("div", "hgroup-head");
       head.append(eln("span", "hgroup-name", juris.name));
       head.append(eln("span", "hgroup-count", byJur[code].length + " scheduled"));
+      head.append(jurisdictionRssTrigger(code, juris.name));
       if (juris.portal_url) {
         const p = eln("a", "hgroup-portal", PARTICIPATION[juris.participation] || "Official portal");
         p.href = juris.portal_url; p.target = "_blank"; p.rel = "noopener";
         head.append(p);
       }
       group.append(head);
-      byJur[code].forEach((h) => group.append(hearingRow(h)));
+      // Rows live in their own wrapper so zebra :nth-child counts rows, not head.
+      const rows = eln("div", "hgroup-rows");
+      byJur[code].forEach((h) => rows.append(hearingRow(h)));
+      group.append(rows);
       body.append(group);
     });
 
@@ -723,6 +769,7 @@
           g.title = "View " + b.id + " in the govbot Legislation Dashboard";
           row.append(g);
         }
+        row.append(billRssTrigger(h, b));
         list.append(row);
       });
       main.append(list);
@@ -740,6 +787,7 @@
       cmte.href = h.committee_url; cmte.target = "_blank"; cmte.rel = "noopener";
       actions.append(cmte);
     }
+    actions.append(hearingRssTrigger(h));
     if (actions.childNodes.length) main.append(actions);
     row.append(main);
     return row;
@@ -808,6 +856,18 @@
   const LIVE_STATES = { il: true, wa: true };
   let participation = [];
 
+  // Local flag asset per jurisdiction (offline, committed under flags/). DC has
+  // no flagcdn entry, so it's a hand-authored SVG; everything else is a small PNG.
+  function flagSrc(code) { return code === "dc" ? "flags/dc.svg" : "flags/" + code + ".png"; }
+  function mkFlag(code, name) {
+    const img = eln("img", "pstate-flag");
+    img.src = flagSrc(code);
+    img.alt = name + " flag";
+    img.width = 28; img.loading = "lazy"; img.decoding = "async";
+    img.addEventListener("error", () => img.remove());  // degrade: name still reads
+    return img;
+  }
+
   function loadParticipation() {
     fetch("participation.json")
       .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
@@ -826,7 +886,11 @@
     rows.forEach((j) => {
       const card = eln("div", "pstate");
       const top = eln("div", "pstate-top");
-      top.append(eln("span", "pstate-name", j.name));
+      const idcol = eln("div", "pstate-idcol");
+      const flag = mkFlag(j.code, j.name);
+      if (flag) idcol.append(flag);
+      idcol.append(eln("span", "pstate-name", j.name));
+      top.append(idcol);
       if (LIVE_STATES[j.code]) top.append(eln("span", "pstate-live", "Live hearings"));
       card.append(top);
       card.append(eln("span", "pstate-kind", KIND_LABEL[j.participation] || j.participation));
@@ -851,27 +915,121 @@
     });
   }
 
-  /* ---------- RSS subscribe popover ---------- */
-  (function rssPopover() {
-    const btn = $("rss-btn"), pop = $("rss-pop"), urlInput = $("rss-url");
-    if (!btn || !pop) return;
-    // Absolute feed URL, resolved from wherever the page is hosted.
-    const feedUrl = new URL("hearings.xml", location.href).href;
-    urlInput.value = feedUrl;
-    $("rss-open").href = feedUrl;
-    function openPop() {
-      pop.hidden = false; btn.setAttribute("aria-expanded", "true");
+  /* ---------- per-bill RSS subscribe ---------- */
+
+  // These three must mirror bill_feed_name / jurisdiction_feed_name /
+  // hearing_feed_name in actions/scrape-hearings/main.py so each link resolves
+  // to the feed the build actually wrote.
+  function billFeedName(jur, id) {
+    return jur + "-" + (id || "").toUpperCase().replace(/[^A-Z0-9]/g, "") + ".xml";
+  }
+  function jurisdictionFeedName(code) { return code + ".xml"; }
+  function hearingFeedName(id) {
+    return "hearing-" + (id || "").replace(/[^A-Za-z0-9._-]/g, "-") + ".xml";
+  }
+  function mkRssSvg() {
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("width", "12"); svg.setAttribute("height", "12");
+    svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");
+    const p = document.createElementNS(NS, "path");
+    p.setAttribute("fill", "currentColor");
+    p.setAttribute("d", "M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z");
+    svg.append(p);
+    return svg;
+  }
+  // Build an RSS-subscribe trigger button. `optsFn` returns the popover payload
+  // lazily (so location.href is read at click time).
+  function mkRssBtn(label, title, optsFn) {
+    const btn = eln("button", "bill-rss");
+    btn.type = "button";
+    btn.setAttribute("aria-haspopup", "dialog");
+    btn.setAttribute("aria-expanded", "false");
+    btn.title = title;
+    btn.setAttribute("aria-label", title);
+    btn.append(mkRssSvg(), document.createTextNode(label));
+    btn.addEventListener("click", (e) => { e.preventDefault(); toggleRss(btn, optsFn()); });
+    return btn;
+  }
+  function billRssTrigger(h, b) {
+    return mkRssBtn("RSS", "Subscribe to hearings for " + b.id + " (RSS)", () => ({
+      title: "Follow " + b.id + " hearings",
+      sub: "A feed of upcoming committee hearings for this bill. Copy it into a reader like Feedly, Inoreader, or NetNewsWire.",
+      url: new URL("hearings/" + billFeedName(h.jurisdiction, b.id), location.href).href,
+    }));
+  }
+  function jurisdictionRssTrigger(code, name) {
+    return mkRssBtn("RSS", "Subscribe to all " + name + " hearings (RSS)", () => ({
+      title: "Follow all " + name + " hearings",
+      sub: "Every upcoming " + name + " committee hearing in one feed. Copy it into your reader.",
+      url: new URL("hearings/" + jurisdictionFeedName(code), location.href).href,
+    }));
+  }
+  function hearingRssTrigger(h) {
+    return mkRssBtn("Subscribe (RSS)", "Subscribe to this hearing (RSS)", () => ({
+      title: "Follow this hearing",
+      sub: "This one committee hearing; the item updates if it's rescheduled or canceled. Copy it into your reader.",
+      url: new URL("hearings/" + hearingFeedName(h.id), location.href).href,
+    }));
+  }
+
+  /* ---------- shared RSS popover (all-feed button + every per-bill link) ---------- */
+  const rssPop = (function () {
+    const pop = $("rss-pop"), urlInput = $("rss-url");
+    let current = null;  // trigger the popover is currently open for
+
+    function open(trigger, opts) {
+      $("rss-pop-title").textContent = opts.title;
+      $("rss-pop-sub").textContent = opts.sub;
+      urlInput.value = opts.url;
+      $("rss-open").href = opts.url;
+      pop.hidden = false;
+      // Position under the trigger, clamped to the viewport (fixed positioning).
+      const r = trigger.getBoundingClientRect();
+      const left = Math.max(8, Math.min(r.left, window.innerWidth - pop.offsetWidth - 8));
+      const top = Math.max(8, Math.min(r.bottom + 6, window.innerHeight - pop.offsetHeight - 8));
+      pop.style.left = left + "px";
+      pop.style.top = top + "px";
+      current = trigger;
+      trigger.setAttribute("aria-expanded", "true");
       urlInput.focus(); urlInput.select();
     }
-    function closePop() { pop.hidden = true; btn.setAttribute("aria-expanded", "false"); }
-    btn.addEventListener("click", (e) => { e.preventDefault(); pop.hidden ? openPop() : closePop(); });
+    function close() {
+      if (current) current.setAttribute("aria-expanded", "false");
+      pop.hidden = true; current = null;
+    }
+    function toggle(trigger, opts) {
+      if (!pop.hidden && current === trigger) return close();
+      close(); open(trigger, opts);
+    }
     $("rss-copy").addEventListener("click", () => {
       const done = () => { const c = $("rss-copy"); c.textContent = "Copied!"; setTimeout(() => (c.textContent = "Copy"), 1400); };
-      if (navigator.clipboard) navigator.clipboard.writeText(feedUrl).then(done, () => { urlInput.select(); done(); });
+      const val = urlInput.value;
+      if (navigator.clipboard) navigator.clipboard.writeText(val).then(done, () => { urlInput.select(); done(); });
       else { urlInput.select(); try { document.execCommand("copy"); } catch (e) {} done(); }
     });
-    document.addEventListener("click", (e) => { if (!pop.hidden && !pop.contains(e.target) && e.target !== btn && !btn.contains(e.target)) closePop(); });
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePop(); });
+    document.addEventListener("click", (e) => {
+      if (pop.hidden || pop.contains(e.target)) return;
+      if (current && (e.target === current || current.contains(e.target))) return;
+      close();
+    });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+    window.addEventListener("resize", close);
+    return { toggle };
+  })();
+  function toggleRss(trigger, opts) { rssPop.toggle(trigger, opts); }
+
+  // "Subscribe to all" button — the whole-calendar feed.
+  (function () {
+    const btn = $("rss-btn");
+    if (btn) btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      toggleRss(btn, {
+        title: "Follow all upcoming hearings",
+        sub: "Copy this link into a reader like Feedly, Inoreader, or NetNewsWire.",
+        url: new URL("hearings.xml", location.href).href,
+      });
+    });
   })();
 
   loadHearings();

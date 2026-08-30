@@ -181,5 +181,75 @@ class RssFeed(unittest.TestCase):
         self.assertIn("[CANCELED]", xml)
 
 
+class BillFeeds(unittest.TestCase):
+    def _distinct_bills(self, doc):
+        keys = set()
+        for h in doc["hearings"]:
+            for b in h.get("bills", []):
+                keys.add((h["jurisdiction"], main._norm_bill_id(b["id"])))
+        return keys
+
+    def test_one_wellformed_feed_per_distinct_bill(self):
+        import xml.etree.ElementTree as ET
+        doc = json.loads(EXPECTED.read_text())
+        feeds = main.bill_feeds(doc)
+        self.assertEqual(len(feeds), len(self._distinct_bills(doc)))
+        for fname, xml in feeds.items():
+            self.assertTrue(fname.endswith(".xml"))
+            root = ET.fromstring(xml)  # raises if malformed
+            self.assertTrue(root.findall(".//item"))
+
+    def test_feed_lists_only_that_bills_hearings(self):
+        doc = json.loads(EXPECTED.read_text())
+        feeds = main.bill_feeds(doc)
+        for h in doc["hearings"]:
+            for b in h.get("bills", []):
+                fname = main.bill_feed_name(h["jurisdiction"], b["id"])
+                self.assertIn(fname, feeds)
+                # the hearing's committee title appears in its bill's feed
+                self.assertIn(h["id"], feeds[fname])
+
+    def test_feed_name_normalizes_id(self):
+        self.assertEqual(main.bill_feed_name("il", "HB 1643"), "il-HB1643.xml")
+        self.assertEqual(main.bill_feed_name("wa", "SB-5001"), "wa-SB5001.xml")
+
+
+class JurisdictionAndHearingFeeds(unittest.TestCase):
+    def setUp(self):
+        self.doc = json.loads(EXPECTED.read_text())
+
+    def test_one_feed_per_jurisdiction(self):
+        import xml.etree.ElementTree as ET
+        feeds = main.jurisdiction_feeds(self.doc)
+        codes = {h["jurisdiction"] for h in self.doc["hearings"]}
+        self.assertEqual(set(feeds), {main.jurisdiction_feed_name(c) for c in codes})
+        for code in codes:
+            xml = feeds[main.jurisdiction_feed_name(code)]
+            root = ET.fromstring(xml)
+            n = sum(h["jurisdiction"] == code for h in self.doc["hearings"])
+            self.assertEqual(len(root.findall(".//item")), n)
+
+    def test_one_feed_per_hearing_single_item(self):
+        import xml.etree.ElementTree as ET
+        feeds = main.hearing_feeds(self.doc)
+        self.assertEqual(len(feeds), len(self.doc["hearings"]))
+        for h in self.doc["hearings"]:
+            xml = feeds[main.hearing_feed_name(h["id"])]
+            self.assertEqual(len(ET.fromstring(xml).findall(".//item")), 1)
+
+    def test_hearing_feed_name_is_prefixed_and_safe(self):
+        self.assertEqual(main.hearing_feed_name("wa-other-33551"),
+                         "hearing-wa-other-33551.xml")
+        self.assertEqual(main.hearing_feed_name("il/house 1"), "hearing-il-house-1.xml")
+
+    def test_all_feeds_names_are_unique_across_types(self):
+        # bill, jurisdiction, and hearing filenames must never collide.
+        names = list(main.bill_feeds(self.doc)) + \
+            list(main.jurisdiction_feeds(self.doc)) + \
+            list(main.hearing_feeds(self.doc))
+        self.assertEqual(len(names), len(set(names)))
+        self.assertEqual(set(main.all_feeds(self.doc)), set(names))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -34,6 +34,17 @@ enrichment is bounded and parallel, and any failure simply leaves `slips` null.
 # Live (what the Pages deploy runs, twice daily):
 python3 main.py --jurisdictions il,wa --output docs/src/dashboard/hearings.json
 
+# Also emit RSS: one whole-calendar feed (--rss) plus granular feeds
+# (--rss-feeds-dir) so a reader can follow a single bill, a whole state, or one
+# hearing instead of the entire calendar. Filenames the hearings page recomputes:
+#   per bill:        <jurisdiction>-<NORMALIZED_ID>.xml   (e.g. il-HB1643.xml)
+#   per jurisdiction: <code>.xml                          (e.g. wa.xml)
+#   per hearing:     hearing-<id>.xml                     (e.g. hearing-wa-other-33551.xml)
+python3 main.py --jurisdictions il,wa \
+  --output docs/src/dashboard/hearings.json \
+  --rss docs/src/dashboard/hearings.xml \
+  --rss-feeds-dir docs/src/dashboard/hearings
+
 # Attempt best-effort slip-count enrichment (opt-in; IL totals endpoint is
 # currently unreliable, so counts are usually absent):
 python3 main.py --slips -o -
