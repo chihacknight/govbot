@@ -1318,13 +1318,9 @@
     const abs = meta && meta.abstracts && meta.abstracts[0] && meta.abstracts[0].abstract;
     if (abs && abs.trim()) return abs.trim();
     // No official abstract. The title is already the modal heading, so don't
-    // echo it back — say plainly that no summary exists, then the latest action.
-    // (The full history still renders in the "Latest actions" section below.)
-    let s = "No official summary is available for this bill.";
-    const desc = (b.latest_action_desc || "").trim();
-    if (desc) s += " Most recent action" +
-      (b.latest_action ? " (" + b.latest_action + ")" : "") + ": " + desc + ".";
-    return s;
+    // echo it back — just say plainly that no summary exists. Actions belong in
+    // their own "Latest actions" section, not here.
+    return "No official summary is available for this bill.";
   }
 
   // Cross-reference the committee-hearings feed so the modal can show whether a

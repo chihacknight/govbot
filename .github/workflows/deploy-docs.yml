@@ -125,25 +125,25 @@ jobs:
       - name: Build committee hearings feed
         run: |
           set -uo pipefail
-          rm -rf /tmp/hearings_bills
+          rm -rf /tmp/hearings_feeds
           python3 actions/scrape-hearings/main.py \
             --jurisdictions il,wa \
             --output /tmp/hearings.json \
             --rss /tmp/hearings.xml \
-            --rss-bills-dir /tmp/hearings_bills \
+            --rss-feeds-dir /tmp/hearings_feeds \
             --dashboard-data docs/src/dashboard/data.json \
             || echo "::warning::hearings scrape reported errors"
           if [ -s /tmp/hearings.json ] && \
              [ "$(python3 -c 'import json,sys; print(len(json.load(open("/tmp/hearings.json"))["hearings"]))' 2>/dev/null || echo 0)" -gt 0 ]; then
             mv /tmp/hearings.json docs/src/dashboard/hearings.json
             [ -s /tmp/hearings.xml ] && mv /tmp/hearings.xml docs/src/dashboard/hearings.xml
-            # Replace the whole per-bill feed directory so feeds for bills that
-            # dropped out of the window don't linger as stale files.
+            # Replace the whole granular-feed directory so feeds for bills/hearings
+            # that dropped out of the window don't linger as stale files.
             rm -rf docs/src/dashboard/hearings
-            [ -d /tmp/hearings_bills ] && mv /tmp/hearings_bills docs/src/dashboard/hearings
-            echo "hearings.json + hearings.xml + per-bill feeds refreshed"
+            [ -d /tmp/hearings_feeds ] && mv /tmp/hearings_feeds docs/src/dashboard/hearings
+            echo "hearings.json + hearings.xml + granular feeds refreshed"
           else
-            echo "::warning::no hearings scraped; keeping committed sample hearings.json + hearings.xml + per-bill feeds"
+            echo "::warning::no hearings scraped; keeping committed sample hearings.json + hearings.xml + granular feeds"
           fi
           ls -lh docs/src/dashboard/hearings.json docs/src/dashboard/hearings.xml
           ls -1 docs/src/dashboard/hearings/ 2>/dev/null | head -5 || true

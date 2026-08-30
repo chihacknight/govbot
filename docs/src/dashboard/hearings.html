@@ -681,6 +681,7 @@
       const head = eln("div", "hgroup-head");
       head.append(eln("span", "hgroup-name", juris.name));
       head.append(eln("span", "hgroup-count", byJur[code].length + " scheduled"));
+      head.append(jurisdictionRssTrigger(code, juris.name));
       if (juris.portal_url) {
         const p = eln("a", "hgroup-portal", PARTICIPATION[juris.participation] || "Official portal");
         p.href = juris.portal_url; p.target = "_blank"; p.rel = "noopener";
@@ -754,6 +755,7 @@
       cmte.href = h.committee_url; cmte.target = "_blank"; cmte.rel = "noopener";
       actions.append(cmte);
     }
+    actions.append(hearingRssTrigger(h));
     if (actions.childNodes.length) main.append(actions);
     row.append(main);
     return row;
@@ -867,10 +869,15 @@
 
   /* ---------- per-bill RSS subscribe ---------- */
 
-  // Must mirror _norm_bill_id / bill_feed_name in actions/scrape-hearings/main.py
-  // so the link resolves to the feed the build actually wrote.
+  // These three must mirror bill_feed_name / jurisdiction_feed_name /
+  // hearing_feed_name in actions/scrape-hearings/main.py so each link resolves
+  // to the feed the build actually wrote.
   function billFeedName(jur, id) {
     return jur + "-" + (id || "").toUpperCase().replace(/[^A-Z0-9]/g, "") + ".xml";
+  }
+  function jurisdictionFeedName(code) { return code + ".xml"; }
+  function hearingFeedName(id) {
+    return "hearing-" + (id || "").replace(/[^A-Za-z0-9._-]/g, "-") + ".xml";
   }
   function mkRssSvg() {
     const NS = "http://www.w3.org/2000/svg";
@@ -883,23 +890,39 @@
     svg.append(p);
     return svg;
   }
-  function billRssTrigger(h, b) {
+  // Build an RSS-subscribe trigger button. `optsFn` returns the popover payload
+  // lazily (so location.href is read at click time).
+  function mkRssBtn(label, title, optsFn) {
     const btn = eln("button", "bill-rss");
     btn.type = "button";
     btn.setAttribute("aria-haspopup", "dialog");
     btn.setAttribute("aria-expanded", "false");
-    btn.title = "Subscribe to hearings for " + b.id + " (RSS)";
-    btn.setAttribute("aria-label", btn.title);
-    btn.append(mkRssSvg(), document.createTextNode("RSS"));
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      toggleRss(btn, {
-        title: "Follow " + b.id + " hearings",
-        sub: "A feed of upcoming committee hearings for this bill. Copy it into a reader like Feedly, Inoreader, or NetNewsWire.",
-        url: new URL("hearings/" + billFeedName(h.jurisdiction, b.id), location.href).href,
-      });
-    });
+    btn.title = title;
+    btn.setAttribute("aria-label", title);
+    btn.append(mkRssSvg(), document.createTextNode(label));
+    btn.addEventListener("click", (e) => { e.preventDefault(); toggleRss(btn, optsFn()); });
     return btn;
+  }
+  function billRssTrigger(h, b) {
+    return mkRssBtn("RSS", "Subscribe to hearings for " + b.id + " (RSS)", () => ({
+      title: "Follow " + b.id + " hearings",
+      sub: "A feed of upcoming committee hearings for this bill. Copy it into a reader like Feedly, Inoreader, or NetNewsWire.",
+      url: new URL("hearings/" + billFeedName(h.jurisdiction, b.id), location.href).href,
+    }));
+  }
+  function jurisdictionRssTrigger(code, name) {
+    return mkRssBtn("RSS", "Subscribe to all " + name + " hearings (RSS)", () => ({
+      title: "Follow all " + name + " hearings",
+      sub: "Every upcoming " + name + " committee hearing in one feed. Copy it into your reader.",
+      url: new URL("hearings/" + jurisdictionFeedName(code), location.href).href,
+    }));
+  }
+  function hearingRssTrigger(h) {
+    return mkRssBtn("Subscribe (RSS)", "Subscribe to this hearing (RSS)", () => ({
+      title: "Follow this hearing",
+      sub: "This one committee hearing; the item updates if it's rescheduled or canceled. Copy it into your reader.",
+      url: new URL("hearings/" + hearingFeedName(h.id), location.href).href,
+    }));
   }
 
   /* ---------- shared RSS popover (all-feed button + every per-bill link) ---------- */

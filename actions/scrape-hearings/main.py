@@ -653,6 +653,67 @@ def bill_feeds(doc):
     return feeds
 
 
+def jurisdiction_feed_name(code):
+    """Per-state feed filename, e.g. 'wa' -> 'wa.xml'. No hyphen, so it never
+    collides with a per-bill '<jur>-<ID>.xml' or a per-hearing 'hearing-*.xml'."""
+    return f"{code}.xml"
+
+
+def jurisdiction_feeds(doc):
+    """One RSS feed per jurisdiction (all of that state's upcoming hearings), so
+    a state whose hearings list no individual bills (e.g. WA committee meetings)
+    is still followable. Returns {filename: xml_string}."""
+    built_822, names = _feed_prelude(doc)
+    by_code = {}
+    for h in doc.get("hearings", []):
+        by_code.setdefault(h["jurisdiction"], []).append(h)
+    feeds = {}
+    for code, hearings in by_code.items():
+        state = names.get(code, code.upper())
+        fname = jurisdiction_feed_name(code)
+        feeds[fname] = _feed_xml(
+            f"govbot — {state}: upcoming committee hearings",
+            f"All upcoming {state} legislative committee hearings, "
+            f"refreshed twice daily by govbot.",
+            DASHBOARD_URL + "hearings/" + fname, hearings, names, built_822)
+    return feeds
+
+
+def hearing_feed_name(hearing_id):
+    """Per-hearing feed filename, e.g. 'wa-other-33551' -> 'hearing-wa-other-33551.xml'.
+    The 'hearing-' prefix keeps it distinct from per-bill/per-state names; other
+    characters are sanitized to stay filesystem/URL safe."""
+    safe = re.sub(r"[^A-Za-z0-9._-]", "-", hearing_id or "")
+    return f"hearing-{safe}.xml"
+
+
+def hearing_feeds(doc):
+    """One RSS feed per individual hearing (a single item that updates if the
+    hearing is rescheduled or canceled), so any committee meeting is followable
+    on its own. Returns {filename: xml_string}."""
+    built_822, names = _feed_prelude(doc)
+    feeds = {}
+    for h in doc.get("hearings", []):
+        state = names.get(h["jurisdiction"], h["jurisdiction"].upper())
+        fname = hearing_feed_name(h["id"])
+        feeds[fname] = _feed_xml(
+            f"govbot — {state} {h.get('committee', 'committee')}: {_pretty_when(h)}",
+            f"A single {state} committee hearing tracked by govbot; the item "
+            f"updates if it is rescheduled or canceled.",
+            DASHBOARD_URL + "hearings/" + fname, [h], names, built_822)
+    return feeds
+
+
+def all_feeds(doc):
+    """Every per-entity feed to publish alongside the whole-calendar hearings.xml:
+    one per bill, one per jurisdiction, and one per hearing."""
+    feeds = {}
+    feeds.update(bill_feeds(doc))
+    feeds.update(jurisdiction_feeds(doc))
+    feeds.update(hearing_feeds(doc))
+    return feeds
+
+
 # --------------------------------------------------------------------------- #
 # govbot bill enrichment
 # --------------------------------------------------------------------------- #
@@ -706,10 +767,12 @@ def main():
     ap.add_argument("--output", "-o", default="-", help="Output path (default: stdout)")
     ap.add_argument("--rss", default=None,
                     help="Also write an RSS 2.0 feed of the hearings to this path")
-    ap.add_argument("--rss-bills-dir", default=None,
-                    help="Also write one RSS 2.0 feed per bill into this directory "
-                         "(filenames like il-HB1643.xml), so readers can follow a "
-                         "single bill instead of the whole calendar")
+    ap.add_argument("--rss-feeds-dir", default=None,
+                    help="Also write granular RSS 2.0 feeds into this directory: one "
+                         "per bill (il-HB1643.xml), one per jurisdiction (wa.xml), and "
+                         "one per hearing (hearing-<id>.xml), so readers can follow a "
+                         "single bill, a whole state, or one hearing instead of the "
+                         "entire calendar")
     ap.add_argument("--dashboard-data", default="docs/src/dashboard/data.json",
                     help="govbot bill dataset (data.json) used to enrich hearing "
                          "bills with their govbot title + topic tags")
@@ -754,13 +817,13 @@ def main():
         Path(args.rss).write_text(to_rss(doc))
         print(f"wrote RSS feed to {args.rss}", file=sys.stderr)
 
-    if args.rss_bills_dir:
-        outdir = Path(args.rss_bills_dir)
+    if args.rss_feeds_dir:
+        outdir = Path(args.rss_feeds_dir)
         outdir.mkdir(parents=True, exist_ok=True)
-        feeds = bill_feeds(doc)
+        feeds = all_feeds(doc)
         for fname, xml in feeds.items():
             (outdir / fname).write_text(xml)
-        print(f"wrote {len(feeds)} per-bill RSS feeds to {outdir}", file=sys.stderr)
+        print(f"wrote {len(feeds)} granular RSS feeds to {outdir}", file=sys.stderr)
     return 0
 
 
