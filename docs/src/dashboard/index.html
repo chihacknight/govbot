@@ -1433,9 +1433,6 @@
       addSection(body, "govbot topics", t);
     }
 
-    const syn = meta && meta.abstracts && meta.abstracts[0] && meta.abstracts[0].abstract;
-    if (syn) addSection(body, "Official synopsis", mkel("p", "m-muted", syn));
-
     if (hearingsIndex) {
       const h = hearingsIndex[b.state + ":" + normId(b.id)];
       const node = mkel("p", "m-muted");
