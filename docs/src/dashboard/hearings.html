@@ -656,8 +656,8 @@
 
   // Loaded independently of data.json: a hearings outage must never block the
   // bills dashboard. hearings.json is a rolling near-future window built by
-  // actions/scrape-hearings (IL: ilga.gov, WA: leg.wa.gov), refreshed by the
-  // twice-daily Pages deploy — a different cadence and source than the bill
+  // actions/scrape-hearings (IL: ilga.gov, WA: leg.wa.gov, MA: malegislature.gov),
+  // refreshed by the twice-daily Pages deploy — a different cadence and source than the bill
   // snapshot, so it carries its own "updated" stamp.
   function loadHearings() {
     fetch("hearings.json")
@@ -690,6 +690,8 @@
 
     const portals = {};
     (data.jurisdictions || []).forEach((j) => { portals[j.code] = j; });
+    jurParticipation = {};
+    (data.jurisdictions || []).forEach((j) => { if (j.participation) jurParticipation[j.code] = j.participation; });
 
     const byJur = {};
     hearings.forEach((h) => { (byJur[h.jurisdiction] = byJur[h.jurisdiction] || []).push(h); });
@@ -793,6 +795,9 @@
   }
 
   function participationFor(h) {
+    // Prefer the jurisdiction's declared participation type; fall back to the
+    // known per-state defaults if the feed didn't carry one.
+    if (jurParticipation[h.jurisdiction]) return jurParticipation[h.jurisdiction];
     if (h.jurisdiction === "us") return "public_comment";
     return h.jurisdiction === "wa" ? "committee_sign_in" : "witness_slip";
   }
@@ -863,6 +868,10 @@
   let liveCodes = new Set();
   let participation = [];
   let pFilter = "";
+  // code -> how the public weighs in there (from the feed's jurisdictions list),
+  // so each hearing's "how to participate" link is labeled per its own state
+  // rather than assumed. renderHearings fills this.
+  let jurParticipation = {};
 
   // Local flag asset per jurisdiction (offline, committed under flags/). DC has
   // no flagcdn entry, so it's a hand-authored SVG; everything else is a small PNG.

@@ -138,7 +138,7 @@ jobs:
           ls -lh docs/src/dashboard/data.json
 
       # Live committee hearings + witness-slip windows (IL: ilga.gov, WA:
-      # leg.wa.gov). This is a rolling near-future window, separate from the
+      # leg.wa.gov, MA: malegislature.gov). This is a rolling near-future window, separate from the
       # daily bill snapshot, so it has its own file. The scraper is fail-soft
       # (a source outage yields zero hearings, never a crash); we only replace
       # the committed sample when the fresh run actually produced hearings, so
@@ -153,7 +153,7 @@ jobs:
           set -uo pipefail
           rm -rf /tmp/hearings_feeds
           python3 actions/scrape-hearings/main.py \
-            --jurisdictions il,wa,us \
+            --jurisdictions il,wa,ma,us \
             --output /tmp/hearings.json \
             --rss /tmp/hearings.xml \
             --rss-feeds-dir /tmp/hearings_feeds \

@@ -130,8 +130,8 @@ names must stay in sync with the keyword fallback in `scripts/dashboard_tags.jso
 The Pages site has **two dashboards**, linked by a tab bar:
 `docs/src/dashboard/index.html` (the Legislation Dashboard above) and
 `docs/src/dashboard/hearings.html` (**Committee Hearings & Witness Slips**). The hearings
-page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov and leg.wa.gov
-directly (not OpenStates), plus **USA (Federal)** open comment periods from the
+page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov, leg.wa.gov,
+and malegislature.gov directly (not OpenStates), plus **USA (Federal)** open comment periods from the
 Regulations.gov API (needs `REGULATIONS_GOV_API_KEY`; falls back to the committed
 `actions/scrape-hearings/federal_seed.json` when unset/unreachable) — federal leads the
 list, above the states. It writes `docs/src/dashboard/hearings.json` + a whole-calendar
