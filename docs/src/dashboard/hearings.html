@@ -522,8 +522,8 @@
     <div class="title-row">
       <h1>Committee Hearings &amp; Witness Slips</h1>
     </div>
-    <p>Upcoming legislative committee hearings where the public can weigh in — live for Illinois &amp; Washington,
-       with a how-to-participate directory for every state.
+    <p>Upcoming legislative committee hearings where the public can weigh in,
+       with a how-to-participate directory for every state and territory.
        <a class="docs-link" href="../index.html">govbot docs</a> ·
        <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
   </header>
@@ -550,7 +550,7 @@
     <div class="hearings-head">
       <div>
         <h2>Weigh in — by state</h2>
-        <p class="sub">How the public participates in legislation in each state, with a link to the official portal. Illinois &amp; Washington show live hearings above.</p>
+        <p class="sub">How the public participates in legislation in each state, with a link to the official portal. States with a machine-readable hearing feed also show their upcoming hearings above.</p>
       </div>
       <input type="search" id="p-search" class="p-search" placeholder="Filter states…" aria-label="Filter states">
     </div>
@@ -636,13 +636,15 @@
     }
     return s;
   }
-  // "16:15 CDT" for the given Date in America/Chicago, or null if Intl can't
-  // resolve the zone (very old engines) — the UTC label still stands alone.
+  // "09/01/2026, 16:15 CDT" for the given Date in America/Chicago, or null if
+  // Intl can't resolve the zone (very old engines) — the UTC label still stands
+  // alone. The MM/DD/YYYY date is included because the Central calendar day can
+  // differ from the spelled-out UTC date on late-evening builds.
   function centralTime(d) {
     try {
       return new Intl.DateTimeFormat("en-US", {
-        timeZone: "America/Chicago", hour: "2-digit", minute: "2-digit",
-        hour12: false, timeZoneName: "short",
+        timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", hour12: false, timeZoneName: "short",
       }).format(d);
     } catch (e) {
       return null;
@@ -691,6 +693,11 @@
 
     const byJur = {};
     hearings.forEach((h) => { (byJur[h.jurisdiction] = byJur[h.jurisdiction] || []).push(h); });
+
+    // Record which jurisdictions have live hearings and refresh the participation
+    // badges (participation may have rendered first, before this feed loaded).
+    liveCodes = new Set(Object.keys(byJur));
+    if (participation.length) renderParticipation(pFilter);
 
     // USA (Federal) leads, then states alphabetically.
     Object.keys(byJur).sort((a, b) => (b === "us") - (a === "us") || a.localeCompare(b)).forEach((code, gi) => {
@@ -849,8 +856,13 @@
     public_comment: "Public comment",
     contact_only: "Contact the committee",
   };
-  const LIVE_STATES = { us: true, il: true, wa: true };
+  // Which jurisdictions actually have live hearings is read from the feed itself
+  // (renderHearings fills this), not hardcoded — so the "Live hearings" badge on
+  // the participation cards is always truthful and grows automatically as more
+  // states are wired into the scraper.
+  let liveCodes = new Set();
   let participation = [];
+  let pFilter = "";
 
   // Local flag asset per jurisdiction (offline, committed under flags/). DC has
   // no flagcdn entry, so it's a hand-authored SVG; everything else is a small PNG.
@@ -875,7 +887,8 @@
     if (!participation.length) return;
     const grid = $("participation-grid");
     grid.textContent = "";
-    const q = (filter || "").trim().toLowerCase();
+    pFilter = filter || "";
+    const q = pFilter.trim().toLowerCase();
     const rows = participation.filter((j) =>
       !q || j.name.toLowerCase().includes(q) ||
       (KIND_LABEL[j.participation] || "").toLowerCase().includes(q));
@@ -890,7 +903,7 @@
       if (flag) idcol.append(flag);
       idcol.append(eln("span", "pstate-name", j.name));
       top.append(idcol);
-      if (LIVE_STATES[j.code]) top.append(eln("span", "pstate-live", "Live hearings"));
+      if (liveCodes.has(j.code)) top.append(eln("span", "pstate-live", "Live hearings"));
       card.append(top);
       card.append(eln("span", "pstate-kind", KIND_LABEL[j.participation] || j.participation));
       if (j.how_to) card.append(eln("div", "pstate-how", j.how_to));

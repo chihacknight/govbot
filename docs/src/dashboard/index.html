@@ -1230,13 +1230,15 @@
     }
     return s;
   }
-  // "16:15 CDT" for the given Date in America/Chicago, or null if Intl can't
-  // resolve the zone (very old engines) — the UTC label still stands alone.
+  // "09/01/2026, 16:15 CDT" for the given Date in America/Chicago, or null if
+  // Intl can't resolve the zone (very old engines) — the UTC label still stands
+  // alone. The MM/DD/YYYY date is included because the Central calendar day can
+  // differ from the spelled-out UTC date on late-evening builds.
   function centralTime(d) {
     try {
       return new Intl.DateTimeFormat("en-US", {
-        timeZone: "America/Chicago", hour: "2-digit", minute: "2-digit",
-        hour12: false, timeZoneName: "short",
+        timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", hour12: false, timeZoneName: "short",
       }).format(d);
     } catch (e) {
       return null;
