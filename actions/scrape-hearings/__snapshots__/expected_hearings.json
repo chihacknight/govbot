@@ -15,6 +15,12 @@
       "portal_url": "https://my.ilga.gov/"
     },
     {
+      "code": "ma",
+      "name": "Massachusetts",
+      "participation": "written_testimony",
+      "portal_url": "https://malegislature.gov/"
+    },
+    {
       "code": "wa",
       "name": "Washington",
       "participation": "committee_sign_in",
@@ -24,6 +30,7 @@
   "counts": {
     "us": 4,
     "il": 2,
+    "ma": 3,
     "wa": 7
   },
   "hearings": [
@@ -178,6 +185,93 @@
       "committee_url": "https://ilga.gov/House/committees/members/3201",
       "witness_slip_url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=25&GAID=18&SessionID=114",
       "source": "ilga.gov"
+    },
+    {
+      "id": "ma-other-5774",
+      "jurisdiction": "ma",
+      "chamber": "other",
+      "committee": "Health Care Workplace Violence",
+      "title": "Conference Committee of the House and Senate to Resolve Differences Between H.4767 and S.3184",
+      "scheduled_iso": "2026-09-03T14:00:00",
+      "scheduled_display": "2026-09-03T14:00:00",
+      "timezone": "America/New_York",
+      "location": "428A · Boston",
+      "status": "scheduled",
+      "bills": [],
+      "details_url": "https://malegislature.gov/Events/Hearings/Detail/5774",
+      "committee_url": null,
+      "witness_slip_url": "https://malegislature.gov/",
+      "source": "malegislature.gov"
+    },
+    {
+      "id": "ma-joint-5769",
+      "jurisdiction": "ma",
+      "chamber": "joint",
+      "committee": "Joint Committee on Consumer Protection and Professional Licensure",
+      "title": "Late-referred Local Alcohol Petitions and Real Estate Matters",
+      "scheduled_iso": "2026-09-10T09:00:00",
+      "scheduled_display": "2026-09-10T09:00:00",
+      "timezone": "America/New_York",
+      "location": "Written Testimony Only · Boston",
+      "status": "scheduled",
+      "bills": [
+        {
+          "id": "H5516",
+          "slips": null,
+          "url": "https://malegislature.gov/Bills/194/H5516"
+        },
+        {
+          "id": "H5583",
+          "slips": null,
+          "url": "https://malegislature.gov/Bills/194/H5583"
+        },
+        {
+          "id": "H5602",
+          "slips": null,
+          "url": "https://malegislature.gov/Bills/194/H5602"
+        },
+        {
+          "id": "H5605",
+          "slips": null,
+          "url": "https://malegislature.gov/Bills/194/H5605"
+        },
+        {
+          "id": "S3234",
+          "slips": null,
+          "url": "https://malegislature.gov/Bills/194/S3234"
+        },
+        {
+          "id": "H5481",
+          "slips": null,
+          "url": "https://malegislature.gov/Bills/194/H5481"
+        },
+        {
+          "id": "S3261",
+          "slips": null,
+          "url": "https://malegislature.gov/Bills/194/S3261"
+        }
+      ],
+      "details_url": "https://malegislature.gov/Events/Hearings/Detail/5769",
+      "committee_url": "https://malegislature.gov/Committees/Detail/J17/194",
+      "witness_slip_url": "https://malegislature.gov/",
+      "source": "malegislature.gov"
+    },
+    {
+      "id": "ma-house-5697",
+      "jurisdiction": "ma",
+      "chamber": "house",
+      "committee": "House Committee on Intergovernmental Affairs",
+      "title": "State-Federal Medicare/Medicaid Discussion",
+      "scheduled_iso": "2026-10-20T13:00:00",
+      "scheduled_display": "2026-10-20T13:00:00",
+      "timezone": "America/New_York",
+      "location": "437 · Boston",
+      "status": "scheduled",
+      "bills": [],
+      "details_url": "https://malegislature.gov/Events/Hearings/Detail/5697",
+      "committee_url": null,
+      "witness_slip_url": "https://malegislature.gov/",
+      "source": "malegislature.gov"
     },
     {
       "id": "wa-other-33551",

@@ -102,6 +102,44 @@ class WashingtonCommittee(unittest.TestCase):
         self.assertIsNone(main.wa_committee_url("Joint Transportation Committee"))
 
 
+class MassachusettsParser(unittest.TestCase):
+    def _hearing(self, eid):
+        return main.parse_ma_hearing((RAW / f"ma_hearing_{eid}.json").read_text())
+
+    def test_list_ids_extracted_in_order(self):
+        ids = main.parse_ma_hearing_list((RAW / "ma_hearings.json").read_text())
+        self.assertEqual(ids[:2], [5769, 5774])
+
+    def test_hearing_with_bills(self):
+        h = self._hearing(5769)
+        self.assertEqual(h["id"], "ma-joint-5769")
+        self.assertEqual(h["chamber"], "joint")
+        self.assertEqual(h["status"], "scheduled")
+        self.assertEqual(h["scheduled_iso"], "2026-09-10T09:00:00")
+        self.assertIn("H5516", [b["id"] for b in h["bills"]])
+        self.assertTrue(h["bills"][0]["url"].startswith("https://malegislature.gov/Bills/194/"))
+        self.assertEqual(h["committee_url"], "https://malegislature.gov/Committees/Detail/J17/194")
+
+    def test_canceled_status(self):
+        self.assertEqual(self._hearing(5675)["status"], "canceled")
+
+    def test_placeholder_committee_code_yields_no_link(self):
+        # 5697's committee code is the placeholder "Hxx" — no real committee page.
+        self.assertIsNone(self._hearing(5697)["committee_url"])
+
+    def test_null_heavy_record_is_tolerated(self):
+        # 5768 has null Name/CommitteeCode/GeneralCourtNumber; must not crash and
+        # falls back to the Description for its title.
+        h = self._hearing(5768)
+        self.assertEqual(h["committee"], "Committee")
+        self.assertIsNone(h["committee_url"])
+        self.assertTrue(h["title"])
+
+    def test_bad_json_is_none_not_crash(self):
+        self.assertIsNone(main.parse_ma_hearing("<html>nope</html>"))
+        self.assertEqual(main.parse_ma_hearing_list("nope"), [])
+
+
 class PastFilter(unittest.TestCase):
     def test_past_hearings_dropped_future_kept(self):
         from datetime import datetime, timezone
@@ -149,7 +187,7 @@ class Snapshot(unittest.TestCase):
     def test_offline_build_matches_snapshot(self):
         from datetime import datetime, timezone
         hearings = main.build_from_fixtures(RAW)
-        doc = main.assemble(hearings, ["us", "il", "wa"], "fixtures (offline snapshot)",
+        doc = main.assemble(hearings, ["us", "il", "wa", "ma"], "fixtures (offline snapshot)",
                             datetime(2026, 8, 28, tzinfo=timezone.utc))
         expected = json.loads(EXPECTED.read_text())
         self.assertEqual(doc, expected,

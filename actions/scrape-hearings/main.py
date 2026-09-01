@@ -7,8 +7,9 @@ are *live* artifacts published by each statehouse on its own machine-readable
 endpoint. govbot does not get them from OpenStates, so this action taps the
 sources directly:
 
-* Illinois  -> ilga.gov Hearings JSON API (per chamber, date range)
-* Washington -> leg.wa.gov CommitteeMeetingService SOAP/XML
+* Illinois     -> ilga.gov Hearings JSON API (per chamber, date range)
+* Washington   -> leg.wa.gov CommitteeMeetingService SOAP/XML
+* Massachusetts -> malegislature.gov Hearings JSON API (list + per-hearing detail)
 
 The output is one document matching schemas/govbot.hearings.schema.json, written
 next to the dashboard's data.json. The Pages deploy runs this twice a day, so the
@@ -69,6 +70,10 @@ JURISDICTIONS = {
     "wa": {
         "code": "wa", "name": "Washington", "participation": "committee_sign_in",
         "portal_url": "https://app.leg.wa.gov/csi/",
+    },
+    "ma": {
+        "code": "ma", "name": "Massachusetts", "participation": "written_testimony",
+        "portal_url": "https://malegislature.gov/",
     },
     "us": {
         "code": "us", "name": "USA (Federal)", "participation": "public_comment",
@@ -479,6 +484,150 @@ def fetch_wa(begin, end):
 
 
 # --------------------------------------------------------------------------- #
+# Massachusetts — malegislature.gov Hearings JSON API
+# --------------------------------------------------------------------------- #
+# MA publishes a keyless JSON API. GET /api/Hearings lists every hearing of the
+# current General Court as {EventId} stubs, ordered newest-scheduled first, so
+# upcoming hearings cluster at the front. GET /api/Hearings/<id> returns the full
+# record: committee, datetime (naive Eastern), location, and the bills on each
+# agenda. We scan a bounded prefix of the list and keep the near-future ones.
+MA_LIST_URL = "https://malegislature.gov/api/Hearings"
+# Detail requests to pull from the (long, historical) list. Upcoming hearings sit
+# at the top; a generous prefix catches them all while bounding the request count.
+MA_SCAN_LIMIT = 150
+
+
+def ma_detail_url(event_id):
+    return f"https://malegislature.gov/api/Hearings/{event_id}"
+
+
+def ma_hearing_page_url(event_id):
+    return f"https://malegislature.gov/Events/Hearings/Detail/{event_id}"
+
+
+def ma_bill_url(bill_number, general_court):
+    return f"https://malegislature.gov/Bills/{general_court}/{bill_number}"
+
+
+def ma_committee_page_url(code, general_court):
+    return f"https://malegislature.gov/Committees/Detail/{code}/{general_court}"
+
+
+def _ma_chamber(name, code):
+    """House / Senate / Joint from the committee name, falling back to the
+    committee-code prefix (H/S/J), else 'other'."""
+    text = (name or "").lower()
+    if "joint" in text:
+        return "joint"
+    if "house" in text:
+        return "house"
+    if "senate" in text:
+        return "senate"
+    return {"J": "joint", "H": "house", "S": "senate"}.get((code or "")[:1].upper(), "other")
+
+
+def _ma_real_committee_code(code):
+    """MA tags conference/special hearings with a placeholder code (Hxx/Sxx/Jxx)
+    that has no committee page. Return the code only when it is a real one
+    (letter + digits, e.g. J17), else None so no bogus committee link is built."""
+    return code if re.match(r"^[HSJ]\d+$", code or "") else None
+
+
+def parse_ma_hearing_list(json_text):
+    """Pure: ordered event ids from the /api/Hearings stub list."""
+    try:
+        rows = json.loads(json_text)
+    except (json.JSONDecodeError, TypeError):
+        return []
+    ids = []
+    for r in rows if isinstance(rows, list) else []:
+        eid = r.get("EventId") if isinstance(r, dict) else None
+        if eid is not None:
+            ids.append(eid)
+    return ids
+
+
+def parse_ma_hearing(json_text):
+    """Pure: normalize one /api/Hearings/<id> detail into a hearing record, or
+    None when the body isn't a usable hearing object. Tolerates the null-heavy
+    records the API returns for stub/placeholder events."""
+    try:
+        d = json.loads(json_text)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    if not isinstance(d, dict) or d.get("EventId") is None:
+        return None
+    host = d.get("HearingHost") or {}
+    code = host.get("CommitteeCode")
+    general_court = host.get("GeneralCourtNumber")
+    name = d.get("Name") or ""
+    chamber = _ma_chamber(name, code)
+    real_code = _ma_real_committee_code(code)
+    when = d.get("StartTime") or d.get("EventDate") or ""
+    when = when.strip() if isinstance(when, str) else ""
+    loc = d.get("Location") or {}
+    location = join_location(loc.get("LocationName") or "", loc.get("City") or "")
+    canceled = str(d.get("Status") or "").lower() == "canceled"
+    # Bills: every document on every agenda, de-duplicated, normalized (H5516).
+    bill_urls = {}
+    for agenda in d.get("HearingAgendas") or []:
+        for doc in (agenda or {}).get("DocumentsInAgenda") or []:
+            num = str((doc or {}).get("BillNumber") or "").replace(" ", "").upper()
+            if not num:
+                continue
+            gc = (doc or {}).get("GeneralCourtNumber") or general_court or 194
+            bill_urls.setdefault(num, ma_bill_url(num, gc))
+    bills = [{"id": bid, "slips": None, "url": url} for bid, url in bill_urls.items()]
+    return {
+        "id": f"ma-{chamber}-{d['EventId']}",
+        "jurisdiction": "ma",
+        "chamber": chamber,
+        "committee": name or "Committee",
+        "title": (d.get("Description") or name or "").strip(),
+        "scheduled_iso": when or None,
+        "scheduled_display": when,
+        "timezone": "America/New_York",
+        "location": location,
+        "status": "canceled" if canceled else "scheduled",
+        "bills": bills,
+        "details_url": ma_hearing_page_url(d["EventId"]),
+        "committee_url": ma_committee_page_url(real_code, general_court) if real_code and general_court else None,
+        "witness_slip_url": "https://malegislature.gov/",
+        "source": "malegislature.gov",
+    }
+
+
+def fetch_ma(begin, end):
+    """Live: pull the hearing list, fetch a bounded prefix of details in parallel,
+    and keep those in the [begin, end] window. The MA API has no date filter, so
+    we bound client-side; fail-soft — a missed detail drops only that hearing."""
+    listing = fetch_text(MA_LIST_URL)
+    if not listing:
+        return []
+    ids = parse_ma_hearing_list(listing)[:MA_SCAN_LIMIT]
+    if not ids:
+        return []
+    lo, hi = begin.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
+
+    def one(eid):
+        text = fetch_text(ma_detail_url(eid))
+        return parse_ma_hearing(text) if text else None
+
+    out = []
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        for rec in pool.map(one, ids):
+            if not rec:
+                continue
+            day = (rec.get("scheduled_iso") or "")[:10]
+            # Keep undated (can't prove past) and anything inside the window;
+            # assemble() also drops past hearings, but bounding the far side here
+            # keeps months-out hearings out of the near-future feed.
+            if not day or lo <= day <= hi:
+                out.append(rec)
+    return out
+
+
+# --------------------------------------------------------------------------- #
 # USA (Federal) — open comment periods from Regulations.gov
 # --------------------------------------------------------------------------- #
 # Federal "hearings" are open public-comment periods (agencies also post public
@@ -603,6 +752,15 @@ def build_from_fixtures(fixtures_dir):
                 m["bills"] = wa_bills(parse_wa_items(items_file.read_text()), m)
             m.pop("_agenda_id", None)
             hearings.append(m)
+    # Massachusetts: a list stub file names the detail fixtures to parse.
+    ma_list = d / "ma_hearings.json"
+    if ma_list.exists():
+        for eid in parse_ma_hearing_list(ma_list.read_text()):
+            detail = d / f"ma_hearing_{eid}.json"
+            if detail.exists():
+                rec = parse_ma_hearing(detail.read_text())
+                if rec:
+                    hearings.append(rec)
     # Federal comment periods come from the committed seed offline (deterministic).
     hearings.extend(federal_from_seed())
     return hearings
@@ -869,8 +1027,8 @@ def enrich_from_govbot(hearings, data_path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--jurisdictions", default="il,wa,us",
-                    help="Comma-separated codes to scrape live (default: il,wa,us; "
+    ap.add_argument("--jurisdictions", default="il,wa,ma,us",
+                    help="Comma-separated codes to scrape live (default: il,wa,ma,us; "
                          "'us' = federal comment periods from Regulations.gov)")
     ap.add_argument("--from-fixtures", default=None,
                     help="Build offline from a raw fixtures dir (no network)")
@@ -900,7 +1058,7 @@ def main():
     if args.from_fixtures:
         hearings = build_from_fixtures(args.from_fixtures)
         source = "fixtures (offline snapshot)"
-        codes = ["us", "il", "wa"]
+        codes = ["us", "il", "wa", "ma"]
     else:
         codes = [c.strip().lower() for c in args.jurisdictions.split(",") if c.strip()]
         begin = now - timedelta(days=WINDOW_BACK_DAYS)
@@ -910,11 +1068,13 @@ def main():
             hearings.extend(fetch_il(begin, end, with_slips=args.slips))
         if "wa" in codes:
             hearings.extend(fetch_wa(begin, end))
+        if "ma" in codes:
+            hearings.extend(fetch_ma(begin, end))
         resolve_wa_committee_urls(hearings)  # WA committee pages from the index
         verify_committee_urls(hearings)      # drop any link that 404s / soft-404s
         if "us" in codes:                    # federal comment periods (Regulations.gov)
             hearings.extend(fetch_us())
-        source = "ilga.gov + leg.wa.gov + regulations.gov (govbot scrape-hearings)"
+        source = "ilga.gov + leg.wa.gov + malegislature.gov + regulations.gov (govbot scrape-hearings)"
 
     if args.dashboard_data:
         n = enrich_from_govbot(hearings, args.dashboard_data)

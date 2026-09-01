@@ -40,6 +40,27 @@ jobs:
           curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh | bash
           echo "$HOME/.govbot/bin" >> "$GITHUB_PATH"
 
+      # Refresh the legislator-name roster (people.json) from the public-domain
+      # Open States people repo, so the dashboard can show full sponsor names for
+      # jurisdictions that publish bills with surnames only (AK, WY, ...). Fully
+      # fail-soft: a failed clone or empty result leaves the committed roster in
+      # place (the build script refuses to write an empty file), so the deploy
+      # never breaks. A shallow, blobless, sparse clone keeps this to ~1s.
+      - name: Refresh legislator name roster
+        run: |
+          set -uo pipefail
+          if git clone --depth 1 --filter=blob:none --sparse \
+               https://github.com/openstates/people.git /tmp/openstates-people \
+             && git -C /tmp/openstates-people sparse-checkout set data; then
+            python3 scripts/build_people_roster.py \
+              --people-dir /tmp/openstates-people \
+              --output docs/src/dashboard/people.json \
+              || echo "::warning::roster build failed; keeping committed people.json"
+          else
+            echo "::warning::could not clone openstates/people; keeping committed people.json"
+          fi
+          ls -lh docs/src/dashboard/people.json || true
+
       # The ~90MB all-MiniLM-L6-v2 ONNX model is downloaded once and reused
       # across runs. Stable key => downloaded on the first run, restored after.
       - name: Cache embedding model
@@ -117,7 +138,7 @@ jobs:
           ls -lh docs/src/dashboard/data.json
 
       # Live committee hearings + witness-slip windows (IL: ilga.gov, WA:
-      # leg.wa.gov). This is a rolling near-future window, separate from the
+      # leg.wa.gov, MA: malegislature.gov). This is a rolling near-future window, separate from the
       # daily bill snapshot, so it has its own file. The scraper is fail-soft
       # (a source outage yields zero hearings, never a crash); we only replace
       # the committed sample when the fresh run actually produced hearings, so
@@ -132,7 +153,7 @@ jobs:
           set -uo pipefail
           rm -rf /tmp/hearings_feeds
           python3 actions/scrape-hearings/main.py \
-            --jurisdictions il,wa,us \
+            --jurisdictions il,wa,ma,us \
             --output /tmp/hearings.json \
             --rss /tmp/hearings.xml \
             --rss-feeds-dir /tmp/hearings_feeds \
