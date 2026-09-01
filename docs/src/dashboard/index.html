@@ -370,6 +370,9 @@
     padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary);
   }
   .m-chip.is-law { color: var(--series-4); border-color: var(--series-4); }
+  /* State locator chip: filled accent so the jurisdiction reads first, next to
+     the bill number, at the top of the details card. */
+  .m-chip.is-state { color: #fff; background: var(--series-1); border-color: var(--series-1); }
   .modal-close {
     flex: none; cursor: pointer; width: 32px; height: 32px; border-radius: 8px;
     border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary);
@@ -408,6 +411,7 @@
   .modal-card .m-loading,
   .modal-card .m-chip { color: var(--text-primary); }
   .modal-card .m-chip.is-law { color: var(--text-primary); }  /* keep green border */
+  .modal-card .m-chip.is-state { color: #fff; }  /* keep white text on filled accent */
 </style>
 <script>
   // Apply a saved theme choice before first paint to avoid a flash of the
@@ -1366,6 +1370,44 @@
         (h.bills || []).forEach((bl) => { hearingsIndex[h.jurisdiction + ":" + normId(bl.id)] = h; }));
     });
 
+  // Roster of legislator names (people.json). Some jurisdictions (AK, WY, ...)
+  // list bill sponsors by surname only, so the detail card can otherwise show
+  // just "Hall"; this lets us fill in the full name from the shipped roster.
+  let peopleIndex = null;
+  fetch("people.json")
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null)
+    .then((d) => { peopleIndex = d || {}; });
+
+  // Resolve a sponsor's display name to their full name when the metadata only
+  // gives a surname ("Hall") or a surname with initials to disambiguate several
+  // of the same name ("Campbell, K"). A name that already has a first name, or
+  // that we can't match to exactly one legislator, is returned unchanged — we
+  // never guess a name we aren't sure of.
+  function fullSponsorName(state, name) {
+    if (!name || !peopleIndex) return name;
+    const raw = String(name).trim();
+    const roster = peopleIndex[state];
+    if (!roster) return raw;
+    let family = raw, initials = "";
+    const comma = raw.indexOf(",");
+    if (comma !== -1) {
+      family = raw.slice(0, comma).trim();
+      initials = raw.slice(comma + 1).replace(/[^A-Za-z]/g, "");
+    } else if (/\s/.test(raw)) {
+      return raw;  // already "First Last" — nothing to fill in
+    }
+    const cands = roster[family.toLowerCase()];
+    if (!cands || !cands.length) return raw;
+    if (cands.length === 1) return cands[0][1];
+    if (initials) {
+      const first = initials.charAt(0).toLowerCase();
+      const hits = cands.filter((c) => (c[0] || "").trim().toLowerCase().charAt(0) === first);
+      if (hits.length === 1) return hits[0][1];
+    }
+    return raw;  // several legislators share the surname — keep it rather than guess
+  }
+
   let modalKey = 0;
   function openDetails(b) {
     const overlay = $("bill-modal");
@@ -1376,6 +1418,8 @@
     const head = mkel("div", "modal-head");
     const htxt = mkel("div");
     const chips = mkel("div", "modal-chips");
+    const stName = state.stateNames[b.state] || (b.state || "").toUpperCase();
+    if (stName) chips.append(mchip(stName, "is-state"));
     chips.append(mchip(b.id));
     const ch = chamberLabel(b.chamber); if (ch) chips.append(mchip(ch));
     if (b.session) chips.append(mchip(b.session));
@@ -1427,7 +1471,7 @@
       const co = people.filter((s) => !s.primary);
       const sponsorLi = (s, role) => {
         const li = mkel("li");
-        li.append(mkel("b", null, s.name));
+        li.append(mkel("b", null, fullSponsorName(b.state, s.name)));
         const bits = [personChamber(s.person_id), role].filter(Boolean);
         if (bits.length) li.append(document.createTextNode(" · " + bits.join(" · ")));
         return li;
