@@ -14,6 +14,7 @@ sources directly:
 | Illinois (`il`) | `ilga.gov` Hearings JSON API | per chamber, date range; bills parsed from the subject line |
 | Washington (`wa`) | `leg.wa.gov` CommitteeMeetingService (SOAP/XML) | agenda items fetched per meeting for bill ids |
 | Massachusetts (`ma`) | `malegislature.gov` Hearings JSON API | list of events + per-hearing detail; committee, location, and agenda bills; keyless |
+| Alaska (`ak`) | `akleg.gov` BASIS meetings JSON API | one document per legislature; committee, date, room, chamber, status; keyless. No bill agenda in the feed, so Alaska hearings carry no bills. Bump `AK_SESSION` each biennium |
 
 **Federal (`us`) needs an API key.** Set `REGULATIONS_GOV_API_KEY` (free from
 [api.data.gov](https://api.data.gov/signup/)) for live data; the shared `DEMO_KEY`
@@ -40,7 +41,7 @@ enrichment is bounded and parallel, and any failure simply leaves `slips` null.
 
 ```bash
 # Live (what the Pages deploy runs, twice daily):
-python3 main.py --jurisdictions il,wa,ma,us --output docs/src/dashboard/hearings.json
+python3 main.py --jurisdictions il,wa,ma,ak,us --output docs/src/dashboard/hearings.json
 
 # Also emit RSS: one whole-calendar feed (--rss) plus granular feeds
 # (--rss-feeds-dir) so a reader can follow a single bill, a whole state, or one
@@ -48,7 +49,7 @@ python3 main.py --jurisdictions il,wa,ma,us --output docs/src/dashboard/hearings
 #   per bill:        <jurisdiction>-<NORMALIZED_ID>.xml   (e.g. il-HB1643.xml)
 #   per jurisdiction: <code>.xml                          (e.g. wa.xml)
 #   per hearing:     hearing-<id>.xml                     (e.g. hearing-wa-other-33551.xml)
-python3 main.py --jurisdictions il,wa,ma,us \
+python3 main.py --jurisdictions il,wa,ma,ak,us \
   --output docs/src/dashboard/hearings.json \
   --rss docs/src/dashboard/hearings.xml \
   --rss-feeds-dir docs/src/dashboard/hearings
@@ -66,7 +67,7 @@ As a composite GitHub Action, see [`action.yml`](./action.yml).
 ## Tests & snapshots
 
 Pure parsers (`parse_il_hearings`, `parse_slip_counts`, `parse_wa_meetings`,
-`parse_wa_items`, `parse_ma_hearing_list`, `parse_ma_hearing`) take raw text and
+`parse_wa_items`, `parse_ma_hearing_list`, `parse_ma_hearing`, `parse_ak_meetings`) take raw text and
 are covered offline by fixtures in `__snapshots__/raw/`. The whole offline build is diffed against
 `__snapshots__/expected_hearings.json`.
 

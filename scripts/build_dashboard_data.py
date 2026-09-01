@@ -36,6 +36,7 @@ import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlparse
 
 # Payload discipline: at ~140k bills every byte per bill is ~140KB of
 # output, and GitHub Pages rejects files over 100MB. Ship only fields the
@@ -75,6 +76,32 @@ def parse_org_classification(raw):
         return json.loads(raw[1:]).get("classification")
     except (json.JSONDecodeError, AttributeError):
         return None
+
+
+def is_machine_source(url):
+    """A raw API / bulk-data endpoint, not a page a person can open. OpenStates
+    files NY's canonical source as the nysenate API (returns a "valid API key
+    needed" error in a browser) and USA/federal bills as govinfo bulk XML. Mirrors
+    the dashboard's isMachineSource so the bill link never lands on one."""
+    try:
+        parts = urlparse(url)
+    except (ValueError, AttributeError):
+        return False
+    host = (parts.hostname or "").replace("www.", "")
+    path = parts.path or ""
+    if host.startswith("api."):
+        return True
+    if "/api/" in path or "/bulkdata/" in path:
+        return True
+    return bool(re.search(r"\.(xml|json|csv)$", path, re.IGNORECASE))
+
+
+def pick_bill_url(sources):
+    """The bill's canonical link for the dashboard: the first human-readable
+    source, falling back to the first source only if every one is a raw
+    API/bulk-data endpoint (so the Bill column never links to an error page)."""
+    urls = [s["url"] for s in sources or [] if s.get("url")]
+    return next((u for u in urls if not is_machine_source(u)), urls[0] if urls else None)
 
 
 def looks_like_bill(metadata):
@@ -188,7 +215,7 @@ def summarize_bill(metadata, session_id, tags, code, today):
     latest = max(past, key=lambda a: a["date"]) if past else {}
     latest_date = latest.get("date", "")[:10] or None
     sponsors = [s.get("name", "") for s in metadata.get("sponsorships") or []]
-    url = next((s["url"] for s in metadata.get("sources") or [] if s.get("url")), None)
+    url = pick_bill_url(metadata.get("sources"))
     desc = latest.get("description")
     return {
         "state": code,
