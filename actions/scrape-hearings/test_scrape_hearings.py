@@ -140,6 +140,37 @@ class MassachusettsParser(unittest.TestCase):
         self.assertEqual(main.parse_ma_hearing_list("nope"), [])
 
 
+class AlaskaParser(unittest.TestCase):
+    def setUp(self):
+        self.hearings = main.parse_ak_meetings((RAW / "ak_meetings.json").read_text())
+        self.by_id = {h["id"]: h for h in self.hearings}
+
+    def test_standing_committee_parsed(self):
+        h = next(h for h in self.hearings if h["committee"] == "Resources" and h["chamber"] == "house")
+        self.assertEqual(h["scheduled_iso"], "2026-09-10T13:00:00")
+        self.assertEqual(h["status"], "scheduled")
+        self.assertEqual(h["jurisdiction"], "ak")
+        self.assertEqual(h["bills"], [])
+        self.assertTrue(h["details_url"].startswith("https://www.akleg.gov/"))
+        self.assertNotIn(" ", h["details_url"])  # spaces encoded
+
+    def test_all_caps_committee_titlecased(self):
+        self.assertTrue(any(h["committee"] == "Legislative Council" for h in self.hearings))
+
+    def test_joint_committee_deduped_across_chambers(self):
+        # LEGISLATIVE COUNCIL is listed once per chamber; collapses to one joint row.
+        lc = [h for h in self.hearings if h["committee"] == "Legislative Council"]
+        self.assertEqual(len(lc), 1)
+        self.assertEqual(lc[0]["chamber"], "joint")
+
+    def test_canceled_status(self):
+        self.assertTrue(any(h["status"] == "canceled" for h in self.hearings))
+
+    def test_bad_json_is_empty_not_crash(self):
+        self.assertEqual(main.parse_ak_meetings("<html>nope</html>"), [])
+        self.assertEqual(main.parse_ak_meetings('{"Basis": {}}'), [])
+
+
 class PastFilter(unittest.TestCase):
     def test_past_hearings_dropped_future_kept(self):
         from datetime import datetime, timezone
@@ -187,7 +218,7 @@ class Snapshot(unittest.TestCase):
     def test_offline_build_matches_snapshot(self):
         from datetime import datetime, timezone
         hearings = main.build_from_fixtures(RAW)
-        doc = main.assemble(hearings, ["us", "il", "wa", "ma"], "fixtures (offline snapshot)",
+        doc = main.assemble(hearings, ["us", "il", "wa", "ma", "ak"], "fixtures (offline snapshot)",
                             datetime(2026, 8, 28, tzinfo=timezone.utc))
         expected = json.loads(EXPECTED.read_text())
         self.assertEqual(doc, expected,

@@ -10,6 +10,7 @@ sources directly:
 * Illinois     -> ilga.gov Hearings JSON API (per chamber, date range)
 * Washington   -> leg.wa.gov CommitteeMeetingService SOAP/XML
 * Massachusetts -> malegislature.gov Hearings JSON API (list + per-hearing detail)
+* Alaska        -> akleg.gov BASIS meetings JSON API (one document per legislature)
 
 The output is one document matching schemas/govbot.hearings.schema.json, written
 next to the dashboard's data.json. The Pages deploy runs this twice a day, so the
@@ -75,6 +76,10 @@ JURISDICTIONS = {
         "code": "ma", "name": "Massachusetts", "participation": "written_testimony",
         "portal_url": "https://malegislature.gov/",
     },
+    "ak": {
+        "code": "ak", "name": "Alaska", "participation": "public_comment",
+        "portal_url": "https://www.akleg.gov/poms/",
+    },
     "us": {
         "code": "us", "name": "USA (Federal)", "participation": "public_comment",
         "portal_url": "https://www.regulations.gov/",
@@ -87,13 +92,16 @@ BILL_RE = re.compile(r"\b(HJR|SJR|HB|SB|HR|SR)\s*-?\s*(\d{1,5})\b", re.IGNORECAS
 # --------------------------------------------------------------------------- #
 # network (thin, testable-around)
 # --------------------------------------------------------------------------- #
-def fetch_text(url, timeout=FETCH_TIMEOUT):
+def fetch_text(url, timeout=FETCH_TIMEOUT, extra_headers=None):
     """GET a URL, returning the body text or None on any failure."""
-    req = urllib.request.Request(url, headers={
+    headers = {
         "user-agent": UA,
         "accept": "application/json,text/xml,application/xml,text/html;q=0.9,*/*;q=0.8",
         "accept-language": "en-US,en;q=0.9",
-    })
+    }
+    if extra_headers:
+        headers.update(extra_headers)
+    req = urllib.request.Request(url, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             if resp.status != 200:
@@ -102,6 +110,11 @@ def fetch_text(url, timeout=FETCH_TIMEOUT):
     except Exception as err:  # network, TLS, timeout, decode — all non-fatal
         print(f"warning: fetch failed {url}: {err}", file=sys.stderr)
         return None
+
+
+def fetch_text_headers(url, extra_headers, timeout=FETCH_TIMEOUT):
+    """fetch_text with extra request headers (some APIs want a version header)."""
+    return fetch_text(url, timeout=timeout, extra_headers=extra_headers)
 
 
 # --------------------------------------------------------------------------- #
@@ -628,6 +641,105 @@ def fetch_ma(begin, end):
 
 
 # --------------------------------------------------------------------------- #
+# Alaska — akleg.gov BASIS meetings JSON API
+# --------------------------------------------------------------------------- #
+# Alaska's BASIS service returns every committee meeting of a legislature as one
+# keyless JSON document (committee, date/time, room, chamber, status). There is
+# no bill agenda in the list, so Alaska hearings carry no bills — the reliable
+# signal is the meeting itself plus the public-testimony (POM) link. The session
+# number identifies the two-year legislature and must be bumped each biennium
+# (34 = 2025-2026), the same maintenance step as Illinois's GA id.
+AK_SESSION = "34"
+AK_MEETINGS_URL = (f"https://www.akleg.gov/publicservice/basis/meetings"
+                   f"?session={AK_SESSION}&json=true")
+# BASIS asks callers to send a version header; it still serves data without one,
+# but sending it avoids the deprecation warning.
+AK_HEADERS = {"X-Alaska-Legislature-Basis-Version": "1.4"}
+
+
+def _ak_title_case(name):
+    """akleg publishes committee names in all caps ("LEGISLATIVE COUNCIL"); make
+    them readable while leaving short all-cap tokens (<=3 chars, e.g. an acronym)
+    alone."""
+    def fix(w):
+        return w if len(w) <= 3 and w.isalpha() else w.capitalize()
+    return " ".join(fix(w) for w in (name or "").split())
+
+
+def _ak_chamber(sponsor_type, chamber):
+    if "joint" in (sponsor_type or "").lower():
+        return "joint"
+    return {"H": "house", "S": "senate"}.get((chamber or "").upper(), "other")
+
+
+def ak_meeting_detail_url(raw_url):
+    """The meeting's own akleg detail page. BASIS gives an http URL with spaces
+    in the query (e.g. 'HRES 2026-09-10 13:00:00'); serve it as https and encode
+    the spaces so the link works."""
+    if not raw_url:
+        return "https://www.akleg.gov/"
+    return raw_url.replace("http://", "https://").replace(" ", "%20")
+
+
+def parse_ak_meetings(json_text):
+    """Pure: normalize the BASIS meetings document into hearing records within the
+    current legislature. De-duplicates a joint committee that BASIS lists once per
+    chamber (same sponsor/date/time), and skips rows with no date."""
+    try:
+        doc = json.loads(json_text)
+    except (json.JSONDecodeError, TypeError):
+        return []
+    meetings = ((doc or {}).get("Basis") or {}).get("Meetings") or []
+    out, seen = [], set()
+    for m in meetings if isinstance(meetings, list) else []:
+        if not isinstance(m, dict):
+            continue
+        date = (m.get("MeetingDate") or "").strip()
+        if not date:
+            continue
+        chamber = _ak_chamber(m.get("SponsorType"), m.get("Chamber"))
+        sponsor = (m.get("MeetingSponsor") or "").strip()
+        time = (m.get("MeetingTime") or "").strip()
+        # A joint committee is published once per chamber — collapse to one.
+        dedup_chamber = "joint" if chamber == "joint" else (m.get("Chamber") or "")
+        key = (sponsor, date, time, dedup_chamber)
+        if key in seen:
+            continue
+        seen.add(key)
+        iso = f"{date}T{time}" if time else date
+        out.append({
+            "id": f"ak-{chamber}-{sponsor}-{date}-{time}".replace(":", "").replace(" ", ""),
+            "jurisdiction": "ak",
+            "chamber": chamber,
+            "committee": _ak_title_case(m.get("MeetingTitle")) or "Committee",
+            "title": (m.get("MeetingChangeText") or "").strip(),
+            "scheduled_iso": iso or None,
+            "scheduled_display": iso,
+            "timezone": "America/Anchorage",
+            "location": (m.get("Location") or "").strip(),
+            "status": "canceled" if m.get("MeetingCanceled") else "scheduled",
+            "bills": [],
+            "details_url": ak_meeting_detail_url(m.get("Url")),
+            "committee_url": None,
+            "witness_slip_url": "https://www.akleg.gov/poms/",
+            "source": "akleg.gov",
+        })
+    return out
+
+
+def fetch_ak(begin, end):
+    """Live: one request for the session's meetings, filtered to the window.
+    Fail-soft: no data yields no Alaska hearings, never an error."""
+    text = fetch_text_headers(AK_MEETINGS_URL, AK_HEADERS)
+    if not text:
+        return []
+    lo, hi = begin.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
+    return [m for m in parse_ak_meetings(text)
+            if not (m.get("scheduled_iso") or "")[:10]
+            or lo <= m["scheduled_iso"][:10] <= hi]
+
+
+# --------------------------------------------------------------------------- #
 # USA (Federal) — open comment periods from Regulations.gov
 # --------------------------------------------------------------------------- #
 # Federal "hearings" are open public-comment periods (agencies also post public
@@ -761,6 +873,10 @@ def build_from_fixtures(fixtures_dir):
                 rec = parse_ma_hearing(detail.read_text())
                 if rec:
                     hearings.append(rec)
+    # Alaska: one BASIS meetings document.
+    ak_path = d / "ak_meetings.json"
+    if ak_path.exists():
+        hearings.extend(parse_ak_meetings(ak_path.read_text()))
     # Federal comment periods come from the committed seed offline (deterministic).
     hearings.extend(federal_from_seed())
     return hearings
@@ -1027,8 +1143,8 @@ def enrich_from_govbot(hearings, data_path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--jurisdictions", default="il,wa,ma,us",
-                    help="Comma-separated codes to scrape live (default: il,wa,ma,us; "
+    ap.add_argument("--jurisdictions", default="il,wa,ma,ak,us",
+                    help="Comma-separated codes to scrape live (default: il,wa,ma,ak,us; "
                          "'us' = federal comment periods from Regulations.gov)")
     ap.add_argument("--from-fixtures", default=None,
                     help="Build offline from a raw fixtures dir (no network)")
@@ -1058,7 +1174,7 @@ def main():
     if args.from_fixtures:
         hearings = build_from_fixtures(args.from_fixtures)
         source = "fixtures (offline snapshot)"
-        codes = ["us", "il", "wa", "ma"]
+        codes = ["us", "il", "wa", "ma", "ak"]
     else:
         codes = [c.strip().lower() for c in args.jurisdictions.split(",") if c.strip()]
         begin = now - timedelta(days=WINDOW_BACK_DAYS)
@@ -1070,11 +1186,14 @@ def main():
             hearings.extend(fetch_wa(begin, end))
         if "ma" in codes:
             hearings.extend(fetch_ma(begin, end))
+        if "ak" in codes:
+            hearings.extend(fetch_ak(begin, end))
         resolve_wa_committee_urls(hearings)  # WA committee pages from the index
         verify_committee_urls(hearings)      # drop any link that 404s / soft-404s
         if "us" in codes:                    # federal comment periods (Regulations.gov)
             hearings.extend(fetch_us())
-        source = "ilga.gov + leg.wa.gov + malegislature.gov + regulations.gov (govbot scrape-hearings)"
+        source = ("ilga.gov + leg.wa.gov + malegislature.gov + akleg.gov + "
+                  "regulations.gov (govbot scrape-hearings)")
 
     if args.dashboard_data:
         n = enrich_from_govbot(hearings, args.dashboard_data)

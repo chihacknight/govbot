@@ -1,0 +1,76 @@
+{
+ "Basis": {
+  "Meetings": [
+   {
+    "MeetingDate": "2026-09-10",
+    "MeetingTime": "13:00:00",
+    "MeetingTitle": "RESOURCES",
+    "SponsorType": "Standing Committee",
+    "MeetingSponsor": "RES",
+    "Chamber": "H",
+    "MeetingCanceled": false,
+    "MeetingPostponed": false,
+    "MeetingChangeText": "-- Please Note Time & Location Change --",
+    "Location": "ANCH LIO DENALI Rm",
+    "Url": "http://www.akleg.gov/basis/Meeting/Detail?Meeting=HRES 2026-09-10 13:00:00",
+    "Id": null
+   },
+   {
+    "MeetingDate": "2026-09-10",
+    "MeetingTime": "13:00:00",
+    "MeetingTitle": "RESOURCES",
+    "SponsorType": "Standing Committee",
+    "MeetingSponsor": "RES",
+    "Chamber": "S",
+    "MeetingCanceled": false,
+    "MeetingPostponed": false,
+    "MeetingChangeText": "-- Please Note Time & Location Change --",
+    "Location": "ANCH LIO DENALI Rm",
+    "Url": "http://www.akleg.gov/basis/Meeting/Detail?Meeting=SRES 2026-09-10 13:00:00",
+    "Id": null
+   },
+   {
+    "MeetingDate": "2026-08-25",
+    "MeetingTime": "11:00:00",
+    "MeetingTitle": "LEGISLATIVE COUNCIL",
+    "SponsorType": "Joint Committee",
+    "MeetingSponsor": "LEC",
+    "Chamber": "H",
+    "MeetingCanceled": false,
+    "MeetingPostponed": true,
+    "MeetingChangeText": "-- Delayed to 12:00 Noon Today --",
+    "Location": "ANCH LIO DENALI Rm",
+    "Url": "http://www.akleg.gov/basis/Meeting/Detail?Meeting=HLEC 2026-08-25 11:00:00",
+    "Id": 514573
+   },
+   {
+    "MeetingDate": "2025-01-21",
+    "MeetingTime": "15:30:00",
+    "MeetingTitle": "HEALTH & SOCIAL SERVICES",
+    "SponsorType": "Standing Committee",
+    "MeetingSponsor": "HSS",
+    "Chamber": "S",
+    "MeetingCanceled": true,
+    "MeetingPostponed": false,
+    "MeetingChangeText": "No Meeting Scheduled",
+    "Location": "BUTROVICH 205",
+    "Url": "http://www.akleg.gov/basis/Meeting/Detail?Meeting=SHSS 2025-01-21 15:30:00",
+    "Id": null
+   },
+   {
+    "MeetingDate": "2025-01-09",
+    "MeetingTime": "10:45:00",
+    "MeetingTitle": "TASK FORCE EVAL ALASKA SEAFOOD INDUSTRY",
+    "SponsorType": "Other Committee",
+    "MeetingSponsor": "SFI",
+    "Chamber": "H",
+    "MeetingCanceled": false,
+    "MeetingPostponed": false,
+    "MeetingChangeText": "",
+    "Location": "ANCH LIO DENALI Rm",
+    "Url": "http://www.akleg.gov/basis/Meeting/Detail?Meeting=HSFI 2025-01-09 10:45:00",
+    "Id": 422131
+   }
+  ]
+ }
+}

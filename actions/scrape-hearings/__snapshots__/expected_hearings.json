@@ -9,6 +9,12 @@
       "portal_url": "https://www.regulations.gov/"
     },
     {
+      "code": "ak",
+      "name": "Alaska",
+      "participation": "public_comment",
+      "portal_url": "https://www.akleg.gov/poms/"
+    },
+    {
       "code": "il",
       "name": "Illinois",
       "participation": "witness_slip",
@@ -29,6 +35,7 @@
   ],
   "counts": {
     "us": 4,
+    "ak": 2,
     "il": 2,
     "ma": 3,
     "wa": 7
@@ -129,6 +136,40 @@
       "committee_url": null,
       "witness_slip_url": "https://www.regulations.gov/search?filter=Oil%20and%20Gas%20Leasing",
       "source": "regulations.gov"
+    },
+    {
+      "id": "ak-house-RES-2026-09-10-130000",
+      "jurisdiction": "ak",
+      "chamber": "house",
+      "committee": "Resources",
+      "title": "-- Please Note Time & Location Change --",
+      "scheduled_iso": "2026-09-10T13:00:00",
+      "scheduled_display": "2026-09-10T13:00:00",
+      "timezone": "America/Anchorage",
+      "location": "ANCH LIO DENALI Rm",
+      "status": "scheduled",
+      "bills": [],
+      "details_url": "https://www.akleg.gov/basis/Meeting/Detail?Meeting=HRES%202026-09-10%2013:00:00",
+      "committee_url": null,
+      "witness_slip_url": "https://www.akleg.gov/poms/",
+      "source": "akleg.gov"
+    },
+    {
+      "id": "ak-senate-RES-2026-09-10-130000",
+      "jurisdiction": "ak",
+      "chamber": "senate",
+      "committee": "Resources",
+      "title": "-- Please Note Time & Location Change --",
+      "scheduled_iso": "2026-09-10T13:00:00",
+      "scheduled_display": "2026-09-10T13:00:00",
+      "timezone": "America/Anchorage",
+      "location": "ANCH LIO DENALI Rm",
+      "status": "scheduled",
+      "bills": [],
+      "details_url": "https://www.akleg.gov/basis/Meeting/Detail?Meeting=SRES%202026-09-10%2013:00:00",
+      "committee_url": null,
+      "witness_slip_url": "https://www.akleg.gov/poms/",
+      "source": "akleg.gov"
     },
     {
       "id": "il-house-3114-23224",
