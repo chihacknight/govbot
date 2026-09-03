@@ -146,7 +146,7 @@
       "scheduled_iso": "2026-09-10T13:00:00",
       "scheduled_display": "2026-09-10T13:00:00",
       "timezone": "America/Anchorage",
-      "location": "ANCH LIO DENALI Rm",
+      "location": "Anchorage Legislative Information Office DENALI Room",
       "status": "scheduled",
       "bills": [],
       "details_url": "https://www.akleg.gov/basis/Meeting/Detail?Meeting=HRES%202026-09-10%2013:00:00",
@@ -163,7 +163,7 @@
       "scheduled_iso": "2026-09-10T13:00:00",
       "scheduled_display": "2026-09-10T13:00:00",
       "timezone": "America/Anchorage",
-      "location": "ANCH LIO DENALI Rm",
+      "location": "Anchorage Legislative Information Office DENALI Room",
       "status": "scheduled",
       "bills": [],
       "details_url": "https://www.akleg.gov/basis/Meeting/Detail?Meeting=SRES%202026-09-10%2013:00:00",
@@ -236,7 +236,7 @@
       "scheduled_iso": "2026-09-03T14:00:00",
       "scheduled_display": "2026-09-03T14:00:00",
       "timezone": "America/New_York",
-      "location": "428A · Boston",
+      "location": "Room 428A · 24 Beacon Street · Boston, MA",
       "status": "scheduled",
       "bills": [],
       "details_url": "https://malegislature.gov/Events/Hearings/Detail/5774",
@@ -253,43 +253,50 @@
       "scheduled_iso": "2026-09-10T09:00:00",
       "scheduled_display": "2026-09-10T09:00:00",
       "timezone": "America/New_York",
-      "location": "Written Testimony Only · Boston",
+      "location": "Written Testimony Only · 24 Beacon Street · Boston, MA",
       "status": "scheduled",
       "bills": [
         {
           "id": "H5516",
           "slips": null,
-          "url": "https://malegislature.gov/Bills/194/H5516"
+          "url": "https://malegislature.gov/Bills/194/H5516",
+          "title": "An Act regulating condominium associations and management companies"
         },
         {
           "id": "H5583",
           "slips": null,
-          "url": "https://malegislature.gov/Bills/194/H5583"
+          "url": "https://malegislature.gov/Bills/194/H5583",
+          "title": "An Act authorizing the town of Webster to grant a license for the sale of all alcoholic beverages not to be drunk on the premises"
         },
         {
           "id": "H5602",
           "slips": null,
-          "url": "https://malegislature.gov/Bills/194/H5602"
+          "url": "https://malegislature.gov/Bills/194/H5602",
+          "title": "An Act authorizing the town of Ludlow to grant an additional all alcohol license for on premises consumption"
         },
         {
           "id": "H5605",
           "slips": null,
-          "url": "https://malegislature.gov/Bills/194/H5605"
+          "url": "https://malegislature.gov/Bills/194/H5605",
+          "title": "An Act relative to liquor license extensions in the town of Hanover"
         },
         {
           "id": "S3234",
           "slips": null,
-          "url": "https://malegislature.gov/Bills/194/S3234"
+          "url": "https://malegislature.gov/Bills/194/S3234",
+          "title": "An Act authorizing the town of Millbury to grant additional liquor licenses"
         },
         {
           "id": "H5481",
           "slips": null,
-          "url": "https://malegislature.gov/Bills/194/H5481"
+          "url": "https://malegislature.gov/Bills/194/H5481",
+          "title": "An Act authorizing the town of Wayland to grant additional licenses for the sale of all alcoholic beverages to be drunk on the premises"
         },
         {
           "id": "S3261",
           "slips": null,
-          "url": "https://malegislature.gov/Bills/194/S3261"
+          "url": "https://malegislature.gov/Bills/194/S3261",
+          "title": "An Act authorizing the city of Greenfield to grant an additional liquor license for the sale of all alcoholic beverages to be drunk on the premises"
         }
       ],
       "details_url": "https://malegislature.gov/Events/Hearings/Detail/5769",
@@ -306,7 +313,7 @@
       "scheduled_iso": "2026-10-20T13:00:00",
       "scheduled_display": "2026-10-20T13:00:00",
       "timezone": "America/New_York",
-      "location": "437 · Boston",
+      "location": "Room 437 · 24 Beacon Street · Boston, MA",
       "status": "scheduled",
       "bills": [],
       "details_url": "https://malegislature.gov/Events/Hearings/Detail/5697",

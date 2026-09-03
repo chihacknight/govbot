@@ -81,6 +81,7 @@
             "properties": {
               "id": { "type": "string", "description": "Compact bill id, e.g. HB1643, SB25." },
               "url": { "type": "string", "description": "Official page for this bill (IL: Bill Status; WA: bill summary)." },
+              "title": { "type": "string", "description": "Bill/measure name from the hearing source itself, shown beside the number when the bill isn't in govbot's dataset (e.g. the MA agenda title, the federal docket title)." },
               "govbot_title": { "type": "string", "description": "Bill title from govbot's own dataset, when govbot tracks this bill (build-time enrichment)." },
               "govbot_tags": { "type": "array", "items": { "type": "string" }, "description": "govbot topic tags for this bill, when tracked." },
               "slips": {
