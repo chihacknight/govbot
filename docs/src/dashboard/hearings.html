@@ -401,6 +401,13 @@
   .hearing-row.is-canceled { opacity: 0.62; }
   .h-when { color: var(--text-secondary); font-size: 13px; }
   .h-when b { color: var(--text-primary); font-weight: 600; }
+  /* Says what the date means: a scheduled hearing time vs. a submission deadline. */
+  .h-kind {
+    display: inline-block; margin-bottom: 3px; padding: 1px 6px; border-radius: 4px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--series-1); border: 1px solid var(--series-1);
+  }
+  .h-kind.is-due { color: var(--series-3); border-color: var(--series-3); }
   .h-badge {
     display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 999px;
     font-size: 11px; font-weight: 600; color: var(--series-6);
@@ -740,8 +747,12 @@
     const row = eln("div", "hearing-row" + (h.status === "canceled" ? " is-canceled" : ""));
 
     const when = eln("div", "h-when");
-    when.append(eln("b", null, hearingWhen(h)));
-    if (h.status === "canceled") when.append(eln("span", "h-badge", "Canceled"));
+    const kind = whenKind(h);
+    when.append(eln("span", "h-kind" + (kind.cls ? " " + kind.cls : ""), kind.text));
+    const timeRow = eln("div", "h-when-time");
+    timeRow.append(eln("b", null, hearingWhen(h)));
+    if (h.status === "canceled") timeRow.append(eln("span", "h-badge", "Canceled"));
+    when.append(timeRow);
     row.append(when);
 
     const main = eln("div", "h-main");
@@ -806,10 +817,19 @@
   // ISO-looking strings ourselves from their parts — never via Date(), which
   // would re-interpret the naive time in the viewer's zone — and fall back to
   // the source's own display string (already friendly for IL).
+  // What the date on a row means. State/territory rows are a hearing happening at
+  // that time; federal rows are a public-comment window whose date is the deadline.
+  function whenKind(h) {
+    return h.jurisdiction === "us"
+      ? { text: "Comment due", cls: "is-due" }
+      : { text: "Hearing", cls: "" };
+  }
   function hearingWhen(h) {
-    // Federal items already carry a human "Comments due …" string; show it as-is
-    // rather than reformatting the deadline into a wall-clock time.
-    if (h.jurisdiction === "us") return h.scheduled_display || "Open for comment";
+    // Federal items carry a "Comments due …" deadline string; the "Comment due"
+    // label now says that, so show just the date to avoid repeating the words.
+    if (h.jurisdiction === "us") {
+      return (h.scheduled_display || "Open for comment").replace(/^comments?\s+due\s+/i, "");
+    }
     let disp = prettyLocal(h.scheduled_display) || prettyLocal(h.scheduled_iso)
       || h.scheduled_display || h.scheduled_iso || "Time TBA";
     const zone = TZ_ABBR[h.timezone];

@@ -116,9 +116,18 @@ class MassachusettsParser(unittest.TestCase):
         self.assertEqual(h["chamber"], "joint")
         self.assertEqual(h["status"], "scheduled")
         self.assertEqual(h["scheduled_iso"], "2026-09-10T09:00:00")
-        self.assertIn("H5516", [b["id"] for b in h["bills"]])
-        self.assertTrue(h["bills"][0]["url"].startswith("https://malegislature.gov/Bills/194/"))
+        bills = {b["id"]: b for b in h["bills"]}
+        self.assertIn("H5516", bills)
+        self.assertTrue(bills["H5516"]["url"].startswith("https://malegislature.gov/Bills/194/"))
+        # The bill name is carried from MA's own feed (MA isn't in govbot data).
+        self.assertIn("condominium", bills["H5516"]["title"].lower())
         self.assertEqual(h["committee_url"], "https://malegislature.gov/Committees/Detail/J17/194")
+
+    def test_location_has_room_and_address(self):
+        # "437" alone is context-free; the room is labeled and the State House
+        # address folded in.
+        self.assertEqual(self._hearing(5697)["location"],
+                         "Room 437 · 24 Beacon Street · Boston, MA")
 
     def test_canceled_status(self):
         self.assertEqual(self._hearing(5675)["status"], "canceled")
@@ -165,6 +174,10 @@ class AlaskaParser(unittest.TestCase):
 
     def test_canceled_status(self):
         self.assertTrue(any(h["status"] == "canceled" for h in self.hearings))
+
+    def test_location_abbreviations_expanded(self):
+        h = next(h for h in self.hearings if h["committee"] == "Resources")
+        self.assertEqual(h["location"], "Anchorage Legislative Information Office DENALI Room")
 
     def test_bad_json_is_empty_not_crash(self):
         self.assertEqual(main.parse_ak_meetings("<html>nope</html>"), [])

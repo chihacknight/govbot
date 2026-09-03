@@ -546,6 +546,21 @@ def _ma_real_committee_code(code):
     return code if re.match(r"^[HSJ]\d+$", code or "") else None
 
 
+def _ma_location(loc):
+    """A location a reader can act on: "Room 428A · 24 Beacon Street · Boston, MA"
+    rather than a bare "428A · Boston". A room number/code is labeled "Room" so it
+    reads as one; the State House street address and state are folded in from the
+    API so the room isn't context-free."""
+    if not isinstance(loc, dict):
+        return ""
+    room = (loc.get("LocationName") or "").strip()
+    if room and room[0].isdigit():  # "428A"/"437" -> "Room 428A"; leave "Virtual …"
+        room = "Room " + room
+    city_state = ", ".join(p for p in [(loc.get("City") or "").strip(),
+                                       (loc.get("State") or "").strip()] if p)
+    return join_location(room, (loc.get("AddressLine1") or "").strip(), city_state)
+
+
 def parse_ma_hearing_list(json_text):
     """Pure: ordered event ids from the /api/Hearings stub list."""
     try:
@@ -578,19 +593,24 @@ def parse_ma_hearing(json_text):
     real_code = _ma_real_committee_code(code)
     when = d.get("StartTime") or d.get("EventDate") or ""
     when = when.strip() if isinstance(when, str) else ""
-    loc = d.get("Location") or {}
-    location = join_location(loc.get("LocationName") or "", loc.get("City") or "")
+    location = _ma_location(d.get("Location"))
     canceled = str(d.get("Status") or "").lower() == "canceled"
-    # Bills: every document on every agenda, de-duplicated, normalized (H5516).
-    bill_urls = {}
+    # Bills: every document on every agenda, de-duplicated, normalized (H5516),
+    # with the bill's title (MA is not in govbot's dataset, so the name shown next
+    # to the number comes from MA's own feed rather than govbot enrichment).
+    bills_by_num = {}
     for agenda in d.get("HearingAgendas") or []:
         for doc in (agenda or {}).get("DocumentsInAgenda") or []:
             num = str((doc or {}).get("BillNumber") or "").replace(" ", "").upper()
-            if not num:
+            if not num or num in bills_by_num:
                 continue
             gc = (doc or {}).get("GeneralCourtNumber") or general_court or 194
-            bill_urls.setdefault(num, ma_bill_url(num, gc))
-    bills = [{"id": bid, "slips": None, "url": url} for bid, url in bill_urls.items()]
+            bill = {"id": num, "slips": None, "url": ma_bill_url(num, gc)}
+            title = str((doc or {}).get("Title") or "").strip()
+            if title:
+                bill["title"] = title
+            bills_by_num[num] = bill
+    bills = list(bills_by_num.values())
     return {
         "id": f"ma-{chamber}-{d['EventId']}",
         "jurisdiction": "ma",
@@ -681,6 +701,27 @@ def ak_meeting_detail_url(raw_url):
     return raw_url.replace("http://", "https://").replace(" ", "%20")
 
 
+# akleg abbreviates the meeting room. Expand only the unambiguous ones so a
+# reader isn't left decoding "ANCH LIO … Rm"; committee-room names (BARNES 124,
+# SENATE FINANCE 532 — rooms in the Juneau Capitol) are already words and pass
+# through untouched.
+_AK_LOC_TERMS = [
+    ("ANCH LIO", "Anchorage Legislative Information Office"),
+    ("FBX LIO", "Fairbanks Legislative Information Office"),
+    ("JNU LIO", "Juneau Legislative Information Office"),
+    ("LIO", "Legislative Information Office"),
+    ("Conf Rm", "Conference Room"),
+    ("Rm", "Room"),
+]
+
+
+def _ak_location(raw):
+    s = (raw or "").strip()
+    for abbr, full in _AK_LOC_TERMS:
+        s = re.sub(r"\b" + re.escape(abbr) + r"\b", full, s)
+    return s
+
+
 def parse_ak_meetings(json_text):
     """Pure: normalize the BASIS meetings document into hearing records within the
     current legislature. De-duplicates a joint committee that BASIS lists once per
@@ -716,7 +757,7 @@ def parse_ak_meetings(json_text):
             "scheduled_iso": iso or None,
             "scheduled_display": iso,
             "timezone": "America/Anchorage",
-            "location": (m.get("Location") or "").strip(),
+            "location": _ak_location(m.get("Location")),
             "status": "canceled" if m.get("MeetingCanceled") else "scheduled",
             "bills": [],
             "details_url": ak_meeting_detail_url(m.get("Url")),
