@@ -130,6 +130,24 @@
   .theme-toggle button:hover { color: var(--text-primary); }
   .theme-toggle button[aria-pressed="true"] { background: var(--series-1); color: #fff; }
 
+  /* theme toggle + New Design switch stacked at the top-right */
+  .controls-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex: none; }
+  .design-toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 12.5px; color: var(--text-secondary); }
+  .design-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .design-toggle .dt-track {
+    position: relative; width: 40px; height: 22px; border-radius: 999px;
+    background: var(--gridline); border: 1px solid var(--border); transition: background 0.18s ease;
+    flex: none;
+  }
+  .design-toggle .dt-thumb {
+    position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--surface-1); box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform 0.18s ease;
+  }
+  .design-toggle input:checked + .dt-track { background: #00c805; border-color: #00c805; }
+  .design-toggle input:checked + .dt-track .dt-thumb { transform: translateX(18px); background: #fff; }
+  .design-toggle input:focus-visible + .dt-track { outline: 2px solid var(--series-1); outline-offset: 2px; }
+  .design-toggle .dt-label { font-weight: 600; white-space: nowrap; }
+
   /* ---------- intro callout (why this page exists) ---------- */
   .intro {
     border: 2px solid var(--series-2); border-radius: 14px; padding: 14px 16px;
@@ -194,6 +212,15 @@
   .badge.partisan { color: var(--series-6); border-color: color-mix(in srgb, var(--series-6) 55%, transparent); }
   .badge.seats { color: var(--series-5); border-color: color-mix(in srgb, var(--series-5) 55%, transparent); }
   .badge.first { color: #fff; background: var(--series-2); border-color: var(--series-2); }
+  /* per-race locator map (inline SVG from maps.json) */
+  .race-map { display: flex; align-items: center; gap: 10px; background: var(--hover-wash); border-radius: 8px; padding: 8px 10px; }
+  .race-map svg { height: 116px; width: auto; flex: none; display: block; }
+  .race-map .map-ctx { fill: color-mix(in srgb, var(--text-muted) 14%, transparent); stroke: var(--border); stroke-width: 1; }
+  .race-map .map-hi { fill: color-mix(in srgb, var(--gc) 42%, transparent); stroke: var(--gc); stroke-width: 2.5; stroke-linejoin: round; }
+  .race-map .map-cap { font-size: 11.5px; color: var(--text-secondary); line-height: 1.4; }
+  .race-map .map-cap b { color: var(--text-primary); font-weight: 650; }
+  .race-map .map-src { color: var(--text-muted); font-size: 10.5px; }
+
   .why {
     font-size: 12.5px; line-height: 1.45; color: var(--text-secondary);
     background: var(--hover-wash); border-radius: 8px; padding: 8px 10px;
@@ -220,6 +247,27 @@
   .mini b { color: var(--text-secondary); font-weight: 600; }
   .cand-links { font-size: 11.5px; font-weight: 600; }
   .incumbent { color: var(--series-5); font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.02em; }
+  .cand-money { margin-top: 5px; font-size: 11.5px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 10px; }
+  .cand-money .m-fig { display: inline-flex; gap: 4px; }
+  .cand-money .m-fig .m-lbl { color: var(--text-muted); }
+  .cand-money .m-fig .m-val { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--series-4); }
+  .cand-money .m-fig.spent .m-val { color: var(--text-secondary); }
+  .cand-money .m-cmte { color: var(--text-muted); font-size: 10.5px; width: 100%; }
+  .cand-money .m-cmte a { font-weight: 600; }
+  /* results (post-Election-Night) */
+  .results { border: 1px solid color-mix(in srgb, var(--series-4) 45%, var(--border)); border-radius: 10px; padding: 9px 11px; background: color-mix(in srgb, var(--series-4) 7%, var(--surface-1)); display: flex; flex-direction: column; gap: 7px; }
+  .results-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+  .results-head .r-title { font-weight: 700; color: var(--series-4); text-transform: uppercase; letter-spacing: 0.03em; font-size: 11px; }
+  .results-head .r-meta { color: var(--text-muted); }
+  .res-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; }
+  .res-name { font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+  .res-name .r-win { font-size: 10px; font-weight: 800; color: #fff; background: var(--series-4); border-radius: 999px; padding: 1px 6px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .res-num { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-secondary); white-space: nowrap; }
+  .res-num b { color: var(--text-primary); }
+  .res-bar { grid-column: 1 / -1; height: 7px; border-radius: 999px; background: var(--gridline); overflow: hidden; }
+  .res-bar > span { display: block; height: 100%; background: var(--baseline); border-radius: 999px; }
+  .res-row.win .res-bar > span { background: var(--series-4); }
+
   .no-cands { font-size: 12.5px; color: var(--text-muted); padding: 4px 2px; }
   .no-cands a { font-weight: 600; }
   .race-foot { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 2px; padding-top: 7px; border-top: 1px solid var(--gridline); }
@@ -228,6 +276,54 @@
   .race-rss:hover { text-decoration: underline; }
 
   .empty { color: var(--text-muted); padding: 24px; text-align: center; }
+
+  /* ---------- Springfield "rules of the game" panel ---------- */
+  .springfield {
+    margin-bottom: 20px; border: 2px solid var(--series-5); border-radius: 14px;
+    padding: 16px 18px 14px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--series-5) 8%, var(--surface-1)) 0%, var(--surface-1) 60%);
+  }
+  .sf-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .springfield h2 { font-size: 16px; font-weight: 700; margin: 0; }
+  .springfield .sf-sub { color: var(--text-secondary); font-size: 12.5px; margin: 4px 0 12px; max-width: 80ch; line-height: 1.5; }
+  .sf-tools { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 0 0 12px; }
+  .sf-filter {
+    font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+    padding: 4px 11px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--surface-1); color: var(--text-secondary);
+  }
+  .sf-filter[aria-pressed="true"] { background: var(--series-5); border-color: var(--series-5); color: #fff; }
+  .sf-rss { margin-left: auto; }
+  .sf-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
+  .sf-bill { border: 1px solid var(--border); border-left: 3px solid var(--series-5); border-radius: 10px; padding: 11px 13px; background: var(--surface-1); display: flex; flex-direction: column; gap: 6px; }
+  .sf-bill-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .sf-bill-id { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .sf-bill-title { font-size: 13px; color: var(--text-primary); line-height: 1.35; }
+  .sf-tags { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+  .sf-tag { font-size: 10.5px; font-weight: 600; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; }
+  .sf-tag.voting { color: var(--series-1); border-color: color-mix(in srgb, var(--series-1) 55%, transparent); }
+  .sf-tag.education { color: var(--series-3); border-color: color-mix(in srgb, var(--series-3) 55%, transparent); }
+  .sf-action { font-size: 11.5px; color: var(--text-muted); }
+  .sf-action b { color: var(--text-secondary); font-weight: 600; }
+  .sf-hearing { font-size: 11.5px; color: var(--series-3); background: color-mix(in srgb, var(--series-3) 10%, transparent); border-radius: 7px; padding: 5px 8px; line-height: 1.4; }
+  .sf-hearing a { font-weight: 600; }
+  .sf-links { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11.5px; font-weight: 600; margin-top: 1px; }
+
+  /* ---------- data-sources cabinet ---------- */
+  .cabinet { margin: 22px 0 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-1); padding: 4px 16px; }
+  .cabinet > summary { cursor: pointer; font-weight: 650; font-size: 14px; padding: 11px 0; list-style: none; display: flex; align-items: center; gap: 8px; }
+  .cabinet > summary::-webkit-details-marker { display: none; }
+  .cabinet > summary::before { content: "▸"; font-size: 11px; transition: transform 0.15s ease; color: var(--text-muted); }
+  .cabinet[open] > summary::before { transform: rotate(90deg); }
+  .cabinet .cab-intro { color: var(--text-secondary); font-size: 12.5px; line-height: 1.5; margin: 0 0 12px; max-width: 80ch; }
+  .cab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; padding-bottom: 14px; }
+  .cab-item { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .cab-item h4 { margin: 0 0 3px; font-size: 12.5px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  .cab-item p { margin: 0; font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
+  .cab-item a { font-size: 11.5px; }
+  .cab-status { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 1px 6px; border-radius: 999px; }
+  .cab-status.live { color: var(--series-4); border: 1px solid var(--series-4); }
+  .cab-status.planned { color: var(--text-muted); border: 1px solid var(--border); }
 
   /* ---------- election calendar overview ---------- */
   .calendar { margin-bottom: 20px; }
@@ -287,15 +383,136 @@
   .chn-credit svg { flex: none; }
   .chn-credit a { color: var(--series-1); }
 
+  /* ---------- back-to-top floating button ---------- */
+  .to-top {
+    position: fixed; right: 20px; bottom: 20px; z-index: 60;
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary);
+    font-size: 20px; line-height: 1; cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; transform: translateY(8px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+  }
+  .to-top.show { opacity: 1; visibility: visible; transform: none; }
+  .to-top:hover { border-color: var(--series-1); color: var(--series-1); }
+  @media (prefers-reduced-motion: reduce) { .to-top { transition: none; } }
+
   @media (max-width: 620px) { .races { grid-template-columns: 1fr; } }
+
+  /* ==================================================================== */
+  /*  NEW DESIGN — Robinhood-inspired look & feel (toggled per viewer).    */
+  /*  Placed last so its token + component overrides win by source order.  */
+  /*  Signature: bright Robinhood green (#00C805), near-black/white ground, */
+  /*  flat cards, big rounded corners, airy spacing, minimal borders.      */
+  /* ==================================================================== */
+  :root[data-design="new"] {
+    --page: #ffffff; --surface-1: #f6f8fa;
+    --text-primary: #0b0d0f; --text-secondary: #464c52; --text-muted: #7a8089;
+    --gridline: #eceff2; --baseline: #d9dee2; --border: rgba(0,0,0,0.08);
+    --hover-wash: rgba(0,0,0,0.04); --row-alt: rgba(0,0,0,0.02);
+    --series-1: #00a806; --series-2: #00c805;
+    --rh-green: #00c805; --rh-green-strong: #00a806;
+  }
+  :root[data-design="new"][data-theme="dark"] {
+    --page: #000000; --surface-1: #16181c;
+    --text-primary: #ffffff; --text-secondary: #c7ccd1; --text-muted: #9aa0a6;
+    --gridline: #23262b; --baseline: #31353b; --border: rgba(255,255,255,0.10);
+    --hover-wash: rgba(255,255,255,0.05); --row-alt: rgba(255,255,255,0.03);
+    --series-1: #00d106; --series-2: #00c805;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root[data-design="new"]:not([data-theme]) {
+      --page: #000000; --surface-1: #16181c;
+      --text-primary: #ffffff; --text-secondary: #c7ccd1; --text-muted: #9aa0a6;
+      --gridline: #23262b; --baseline: #31353b; --border: rgba(255,255,255,0.10);
+      --hover-wash: rgba(255,255,255,0.05); --row-alt: rgba(255,255,255,0.03);
+      --series-1: #00d106; --series-2: #00c805;
+    }
+  }
+
+  /* typography — cleaner, tighter, Robinhood-ish */
+  :root[data-design="new"] body {
+    font-family: "Inter", ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    letter-spacing: -0.006em;
+  }
+  :root[data-design="new"] header.top h1 { font-weight: 700; letter-spacing: -0.03em; font-size: 25px; }
+  :root[data-design="new"] .group-title,
+  :root[data-design="new"] .calendar h2,
+  :root[data-design="new"] .cal-card h3 { letter-spacing: -0.02em; }
+
+  /* tabs — flat, with a green underline on the active tab (no card look) */
+  :root[data-design="new"] .tabs { border-bottom-color: var(--border); }
+  :root[data-design="new"] .tab { border-top-color: transparent !important; border-radius: 8px 8px 0 0; }
+  :root[data-design="new"] .tab[aria-current="page"] {
+    background: transparent; border-color: transparent;
+    box-shadow: inset 0 -3px 0 var(--rh-green, #00c805);
+  }
+  :root[data-design="new"] .tab:hover { color: var(--rh-green-strong, #00a806); }
+
+  /* controls — green active states */
+  :root[data-design="new"] .theme-toggle,
+  :root[data-design="new"] .filters input,
+  :root[data-design="new"] .filters select { border-radius: 12px; }
+  :root[data-design="new"] .theme-toggle { border-radius: 999px; }
+  :root[data-design="new"] .theme-toggle button[aria-pressed="true"] { background: var(--rh-green, #00c805); color: #06210a; }
+
+  /* cards & panels — flatter, rounder, airier */
+  :root[data-design="new"] .intro {
+    border-radius: 18px; border-color: color-mix(in srgb, var(--rh-green) 35%, transparent);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--rh-green) 9%, var(--surface-1)) 0%, var(--surface-1) 75%);
+  }
+  :root[data-design="new"] .tile { border-radius: 16px; border-left-width: 1px; }
+  :root[data-design="new"] .tile .value { color: var(--rh-green, #00c805); }
+  :root[data-design="new"] .group { border-width: 1px; border-color: var(--border); border-radius: 18px; }
+  :root[data-design="new"] .group-head { border-bottom-color: var(--gridline); }
+  :root[data-design="new"] .race { border-radius: 16px; border-top-width: 1px; border-top-color: var(--border); }
+  :root[data-design="new"] .cal-card { border-width: 1px; border-color: var(--border); border-radius: 18px; }
+  :root[data-design="new"] .cal-card .cal-when { color: var(--rh-green-strong); }
+
+  /* buttons / interactive — Robinhood green */
+  :root[data-design="new"] .toggle-pill[aria-pressed="true"] { background: var(--rh-green); border-color: var(--rh-green); color: #06210a; }
+  :root[data-design="new"] .clear-btn,
+  :root[data-design="new"] .filters input,
+  :root[data-design="new"] .filters select { border-radius: 12px; }
+  :root[data-design="new"] .rss-copy { background: var(--rh-green); color: #06210a; }
+  :root[data-design="new"] .rss-link, :root[data-design="new"] .race-rss,
+  :root[data-design="new"] details.tl-details > summary,
+  :root[data-design="new"] .group-rss .rss-link { color: var(--rh-green-strong); }
+  :root[data-design="new"] a { color: var(--rh-green-strong); }
+
+  /* badges & chips — flat pills */
+  :root[data-design="new"] .badge { border-radius: 999px; }
+  :root[data-design="new"] .badge.first { background: var(--rh-green); border-color: var(--rh-green); color: #06210a; }
+  :root[data-design="new"] .pchip.on_ballot { color: var(--rh-green-strong); border-color: var(--rh-green-strong); }
+
+  /* timeline — green progress */
+  :root[data-design="new"] .tl-item.done .tl-dot { background: var(--rh-green); border-color: var(--rh-green); color: #06210a; }
+  :root[data-design="new"] .tl-item.next .tl-dot { background: var(--rh-green-strong); border-color: var(--rh-green-strong); }
+
+  /* Springfield panel + cabinet — Robinhood green */
+  :root[data-design="new"] .springfield {
+    border-radius: 18px; border-color: color-mix(in srgb, var(--rh-green) 35%, transparent);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--rh-green) 8%, var(--surface-1)) 0%, var(--surface-1) 60%);
+  }
+  :root[data-design="new"] .sf-bill { border-radius: 14px; border-left-color: var(--rh-green); }
+  :root[data-design="new"] .sf-filter[aria-pressed="true"] { background: var(--rh-green); border-color: var(--rh-green); color: #06210a; }
+  :root[data-design="new"] .cabinet { border-radius: 16px; }
+  :root[data-design="new"] .cab-status.live { color: var(--rh-green-strong); border-color: var(--rh-green-strong); }
+
+  /* back-to-top — green on hover in the new design */
+  :root[data-design="new"] .to-top:hover { border-color: var(--rh-green); color: var(--rh-green-strong); }
 </style>
 <script>
   // Apply a saved theme choice before first paint. Shared localStorage key, so
-  // the choice carries across all four dashboard tabs.
+  // the choice carries across all four dashboard tabs. Also apply the saved
+  // "New Design" (Robinhood-inspired) preference, which is scoped to this page.
   (function () {
     try {
       var t = localStorage.getItem("govbot-theme");
       if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+      if (localStorage.getItem("govbot-elections-design") === "new")
+        document.documentElement.setAttribute("data-design", "new");
     } catch (e) {}
   })();
 </script>
@@ -314,10 +531,17 @@
         <img class="brand-logo" src="govbot-logo.png" width="40" height="40" alt="" aria-hidden="true">
         <span class="brand-name">gov<span class="bot">bot</span></span>
       </a>
-      <div class="theme-toggle" role="group" aria-label="Color theme">
-        <button type="button" data-theme-choice="light" title="Light theme" aria-label="Light theme" aria-pressed="false">☀</button>
-        <button type="button" data-theme-choice="auto"  title="Match system" aria-label="Match system theme" aria-pressed="false">Auto</button>
-        <button type="button" data-theme-choice="dark"  title="Dark theme"  aria-label="Dark theme" aria-pressed="false">☾</button>
+      <div class="controls-stack">
+        <div class="theme-toggle" role="group" aria-label="Color theme">
+          <button type="button" data-theme-choice="light" title="Light theme" aria-label="Light theme" aria-pressed="false">☀</button>
+          <button type="button" data-theme-choice="auto"  title="Match system" aria-label="Match system theme" aria-pressed="false">Auto</button>
+          <button type="button" data-theme-choice="dark"  title="Dark theme"  aria-label="Dark theme" aria-pressed="false">☾</button>
+        </div>
+        <label class="design-toggle" title="Preview a Robinhood-inspired look">
+          <input type="checkbox" id="design-switch" role="switch" aria-label="New Design">
+          <span class="dt-track" aria-hidden="true"><span class="dt-thumb"></span></span>
+          <span class="dt-label">New Design</span>
+        </label>
       </div>
     </div>
     <div class="title-row">
@@ -341,6 +565,22 @@
     <p class="cal-legend"><span class="tl-approx">≈ expected</span> dates follow the statutory election calendar — confirm the exact day with the official source; fixed dates (like Election Day) are shown without the tag.</p>
   </section>
 
+  <section class="springfield" id="springfield" hidden>
+    <div class="sf-head">
+      <h2>🏛️ The rules of the game — from Springfield</h2>
+    </div>
+    <p class="sf-sub">Illinois laws &amp; bills that set <b>how</b> these elections work — the elected CPS board and its 2026–27 transition, ward &amp; runoff rules, campaign-finance limits, school governance. This is <b>context beside the races, not a candidate list</b>. Pulled from govbot's Illinois legislation dataset (tagged <em>elections &amp; voting</em> or <em>education</em>) and cross-referenced with upcoming ILGA committee hearings.</p>
+    <div class="sf-tools" id="sf-tools">
+      <button type="button" class="sf-filter" data-sf="" aria-pressed="true">All</button>
+      <button type="button" class="sf-filter" data-sf="elections &amp; voting" aria-pressed="false">Elections &amp; voting</button>
+      <button type="button" class="sf-filter" data-sf="education" aria-pressed="false">Education</button>
+      <span class="sf-rss"><button type="button" class="rss-link" id="sf-rss-btn" aria-haspopup="dialog" title="Subscribe to the Springfield bills feed">
+        <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"/></svg>
+        Follow (RSS)</button></span>
+    </div>
+    <div class="sf-list" id="sf-list"></div>
+  </section>
+
   <div class="filters" id="filters" hidden>
     <div class="search-wrap">
       <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
@@ -360,6 +600,45 @@
   <p class="empty" id="loading">Loading Illinois &amp; Chicago races…</p>
   <div class="groups" id="groups"></div>
   <p class="empty" id="empty" hidden>No races match the current filters.</p>
+
+  <details class="cabinet">
+    <summary>📂 Where the data comes from</summary>
+    <p class="cab-intro">This site isn't the official clerk — it's a <b>cabinet</b> that puts the sources in one place so a Chicagoan can ask "who's running in my CPS subdistrict and my ward, and when do I vote?" A fully assembled race draws on up to five drawers: <b>map · candidates · money · results · context</b>. Here's what each source owns and what's live today.</p>
+    <div class="cab-grid">
+      <div class="cab-item">
+        <h4>🗳️ Candidates &amp; city results <span class="cab-status live">live · candidates · results ready</span></h4>
+        <p>City candidate filings, early-vote sites, precinct/ward maps — and per-race vote results, which attach automatically on Election Night.</p>
+        <a href="https://chicagoelections.gov/" target="_blank" rel="noopener">chicagoelections.gov ↗</a>
+      </div>
+      <div class="cab-item">
+        <h4>🏫 State &amp; CPS candidates <span class="cab-status live">live</span></h4>
+        <p>Statewide + CPS board candidate lists ("Who Is Running") and official campaign-money files.</p>
+        <a href="https://www.elections.il.gov/" target="_blank" rel="noopener">elections.il.gov ↗</a>
+      </div>
+      <div class="cab-item">
+        <h4>📜 Rules of the game <span class="cab-status live">live · above</span></h4>
+        <p>Illinois bills &amp; ILGA hearings about the rules — see the Springfield panel above.</p>
+        <a href="https://github.com/govbot-data/il-legislation" target="_blank" rel="noopener">govbot-data/il-legislation ↗</a>
+      </div>
+      <div class="cab-item">
+        <h4>💵 Campaign money <span class="cab-status live">live · when a committee matches</span></h4>
+        <p>Each candidate's receipts, spending &amp; cash on hand from their SBE committee's latest D2 filing (attached only on a confident ID match).</p>
+        <a href="https://www.elections.il.gov/campaigndisclosuredatafiles/" target="_blank" rel="noopener">SBE disclosure files ↗</a>
+      </div>
+      <div class="cab-item">
+        <h4>🏘️ Suburban Cook results <span class="cab-status planned">planned</span></h4>
+        <p>Suburban Cook results + turnout, after Election Night.</p>
+        <a href="https://www.cookcountyclerkil.gov/" target="_blank" rel="noopener">cookcountyclerkil.gov ↗</a>
+      </div>
+      <div class="cab-item">
+        <h4>🗺️ Maps <span class="cab-status live">live · ward + police</span></h4>
+        <p>Ward &amp; police-district boundaries draw a locator on each race (from the City Data Portal). CPS subdistrict polygons aren't published yet.</p>
+        <a href="https://data.cityofchicago.org/" target="_blank" rel="noopener">data.cityofchicago.org ↗</a>
+      </div>
+    </div>
+    <p class="cab-intro" style="margin-bottom:14px">History (not 2026–27): older, already-cleaned Chicago municipal results from
+      <a href="https://github.com/datamade/chicago-municipal-elections" target="_blank" rel="noopener">DataMade's chicago-municipal-elections ↗</a>.</p>
+  </details>
 
   <footer id="footer"></footer>
   <p class="chn-credit">
@@ -410,6 +689,23 @@
     apply(saved());
   })();
 
+  // ----- "New Design" (Robinhood-inspired) toggle — scoped to this page -----
+  (function initDesign() {
+    const root = document.documentElement;
+    const sw = document.getElementById("design-switch");
+    if (!sw) return;
+    const on = () => root.getAttribute("data-design") === "new";
+    sw.checked = on();
+    sw.addEventListener("change", () => {
+      if (sw.checked) root.setAttribute("data-design", "new");
+      else root.removeAttribute("data-design");
+      try {
+        if (sw.checked) localStorage.setItem("govbot-elections-design", "new");
+        else localStorage.removeItem("govbot-elections-design");
+      } catch (e) {}
+    });
+  })();
+
   const GROUP_META = {
     citywide:                { label: "Chicago citywide",        emoji: "🏙️", color: "--series-1" },
     council:                 { label: "Alderperson · City Council", emoji: "🏛️", color: "--series-5" },
@@ -449,6 +745,13 @@
     $("filters").hidden = false;
     renderCalendar(data.races);
     $("calendar").hidden = false;
+    initSpringfield(data.springfield || []);
+
+    // District locator maps (fail-soft; re-render when they arrive).
+    fetch("maps.json")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((m) => { state.maps = m; if (m) render(); })
+      .catch(() => {});
 
     // as-of badge
     const asof = formatAsOf(data.generated_at);
@@ -621,6 +924,12 @@
     if (r.seats && r.seats > 1) badges.append(mkBadge(r.seats + " seats", "seats"));
     card.append(badges);
 
+    const map = renderRaceMap(r, meta);
+    if (map) card.append(map);
+
+    const results = renderResults(r);
+    if (results) card.append(results);
+
     if (r.why_note) {
       const why = document.createElement("div"); why.className = "why";
       why.textContent = r.why_note;
@@ -679,6 +988,83 @@
     return card;
   }
 
+  // Inline-SVG locator: the light city (all wards) with this race's district
+  // filled in the group accent. Citywide races tint the whole city; races with
+  // no published geometry (CPS subdistricts) return null.
+  const SVGNS = "http://www.w3.org/2000/svg";
+  function renderRaceMap(r, meta) {
+    const maps = state.maps;
+    if (!maps || !maps.view || !maps.context) return null;
+    const entry = maps.districts && maps.districts[r.id];
+    if (!entry && !r.is_citywide) return null;
+
+    const wrap = document.createElement("div"); wrap.className = "race-map";
+    wrap.style.setProperty("--gc", "var(" + meta.color + ")");
+    const svg = document.createElementNS(SVGNS, "svg");
+    svg.setAttribute("viewBox", "0 0 " + maps.view.w + " " + maps.view.h);
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label",
+      (r.is_citywide ? "Citywide" : (entry && entry.label) || "District") + " locator map of Chicago");
+    const mk = (d, cls) => { const p = document.createElementNS(SVGNS, "path"); p.setAttribute("d", d); p.setAttribute("class", cls); return p; };
+    // base city
+    maps.context.forEach((d) => svg.append(mk(d, r.is_citywide ? "map-hi" : "map-ctx")));
+    // highlighted district on top
+    if (entry) entry.paths.forEach((d) => svg.append(mk(d, "map-hi")));
+    wrap.append(svg);
+
+    const cap = document.createElement("div"); cap.className = "map-cap";
+    const b = document.createElement("b");
+    b.textContent = r.is_citywide ? "Citywide" : (entry && entry.label) || (r.district || "");
+    cap.append(b);
+    cap.append(document.createElement("br"));
+    const src = document.createElement("span"); src.className = "map-src";
+    src.textContent = r.is_citywide ? "All of Chicago" : "Boundary: City of Chicago";
+    cap.append(src);
+    wrap.append(cap);
+    return wrap;
+  }
+
+  // Post-Election-Night vote results (null until an authority reports them).
+  function renderResults(r) {
+    const res = r.results;
+    if (!res || !res.reported || !(res.candidates && res.candidates.length)) return null;
+    const box = document.createElement("div"); box.className = "results";
+    const head = document.createElement("div"); head.className = "results-head";
+    const t = document.createElement("span"); t.className = "r-title";
+    t.textContent = res.complete ? "✓ Final results" : "Results — reporting";
+    head.append(t);
+    const meta = document.createElement("span"); meta.className = "r-meta";
+    const bits = [];
+    if (res.precincts_total) bits.push((res.precincts_reporting || 0) + " of " + res.precincts_total + " precincts");
+    if (res.total_votes) bits.push(fmt(res.total_votes) + " votes");
+    if (res.as_of) bits.push("as of " + (formatAsOf(res.as_of) || res.as_of));
+    meta.textContent = bits.join(" · ");
+    head.append(meta);
+    box.append(head);
+    const max = Math.max(1, ...res.candidates.map((c) => c.votes || 0));
+    res.candidates.forEach((c) => {
+      const row = document.createElement("div"); row.className = "res-row" + (c.winner ? " win" : "");
+      const name = document.createElement("div"); name.className = "res-name";
+      name.append(document.createTextNode(c.name));
+      if (c.winner) { const w = document.createElement("span"); w.className = "r-win"; w.textContent = "Winner"; name.append(w); }
+      const num = document.createElement("div"); num.className = "res-num";
+      const b = document.createElement("b"); b.textContent = (c.pct != null ? c.pct + "%" : "");
+      num.append(b, document.createTextNode(c.pct != null ? " · " : ""), document.createTextNode(fmt(c.votes) + " votes"));
+      const bar = document.createElement("div"); bar.className = "res-bar";
+      const span = document.createElement("span"); span.style.width = (100 * (c.votes || 0) / max) + "%";
+      bar.append(span);
+      row.append(name, num, bar);
+      box.append(row);
+    });
+    if (res.source_url) {
+      const src = document.createElement("a"); src.className = "sf-links";
+      src.href = res.source_url; src.target = "_blank"; src.rel = "noopener";
+      src.textContent = "Official results ↗"; src.style.fontSize = "11.5px"; src.style.fontWeight = "600";
+      box.append(src);
+    }
+    return box;
+  }
+
   function renderCand(c, r) {
     const row = document.createElement("div"); row.className = "cand";
     if (c.photo_url) {
@@ -720,8 +1106,45 @@
       meta.append(a);
     }
     if (meta.childNodes.length) body.append(meta);
+
+    if (c.money) {
+      const m = c.money;
+      const mon = document.createElement("div"); mon.className = "cand-money";
+      const fig = (lbl, val, cls) => {
+        const s = document.createElement("span"); s.className = "m-fig" + (cls ? " " + cls : "");
+        const l = document.createElement("span"); l.className = "m-lbl"; l.textContent = lbl;
+        const v = document.createElement("span"); v.className = "m-val"; v.textContent = fmtMoney(val);
+        s.append(l, v); return s;
+      };
+      if (m.funds_raised != null) mon.append(fig("💵 Raised", m.funds_raised));
+      if (m.funds_spent != null) mon.append(fig("Spent", m.funds_spent, "spent"));
+      if (m.cash_on_hand != null) mon.append(fig("Cash", m.cash_on_hand));
+      if (m.committee_name || m.source_url) {
+        const cm = document.createElement("span"); cm.className = "m-cmte";
+        cm.append(document.createTextNode((m.committee_name || "Committee") +
+          (m.committees > 1 ? " +" + (m.committees - 1) + " more" : "") + " · "));
+        const a = document.createElement("a");
+        a.href = m.source_url || "https://www.elections.il.gov/"; a.target = "_blank"; a.rel = "noopener";
+        a.textContent = "SBE filing ↗";
+        cm.append(a);
+        if (m.as_of) cm.append(document.createTextNode(" · as of " + prettyDate(m.as_of)));
+        mon.append(cm);
+      }
+      body.append(mon);
+    }
+
     row.append(body);
     return row;
+  }
+
+  // Compact currency: $1.2M / $340K / $5,600 / $0.
+  function fmtMoney(n) {
+    n = Number(n) || 0;
+    const sign = n < 0 ? "-" : "";
+    const a = Math.abs(n);
+    if (a >= 1e6) return sign + "$" + (a / 1e6).toFixed(a >= 1e7 ? 0 : 1) + "M";
+    if (a >= 1e3) return sign + "$" + Math.round(a / 1e3) + "K";
+    return sign + "$" + Math.round(a).toLocaleString("en-US");
   }
 
   function avatarPlaceholder(name) {
@@ -790,6 +1213,89 @@
     if (top + h > window.innerHeight - 8) top = Math.max(8, rect.top - h - 6);
     pop.style.left = Math.max(8, left) + "px";
     pop.style.top = top + "px";
+  }
+
+  /* ---------- Springfield "rules of the game" ---------- */
+  const sfState = { bills: [], filter: "" };
+
+  function initSpringfield(bills) {
+    sfState.bills = bills || [];
+    if (!sfState.bills.length) return;  // section stays hidden when empty
+    $("springfield").hidden = false;
+    document.querySelectorAll(".sf-filter").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        sfState.filter = btn.dataset.sf || "";
+        document.querySelectorAll(".sf-filter").forEach((b) =>
+          b.setAttribute("aria-pressed", String(b === btn)));
+        renderSpringfield();
+      });
+    });
+    const rssBtn = $("sf-rss-btn");
+    if (rssBtn) rssBtn.addEventListener("click", (e) => { e.stopPropagation(); openRss(rssBtn, {
+      title: "Follow the Springfield bills",
+      sub: "Illinois elections & education bills shaping these races, refreshed twice daily.",
+      url: FEED_BASE + "elections/springfield.xml",
+    }); });
+    renderSpringfield();
+  }
+
+  function renderSpringfield() {
+    const list = $("sf-list");
+    list.textContent = "";
+    const bills = sfState.filter
+      ? sfState.bills.filter((b) => (b.tags || []).includes(sfState.filter))
+      : sfState.bills;
+    if (!bills.length) {
+      const e = document.createElement("p"); e.className = "sf-action";
+      e.textContent = "No bills in this category right now.";
+      list.append(e);
+      return;
+    }
+    bills.forEach((b) => list.append(renderSpringfieldBill(b)));
+  }
+
+  function renderSpringfieldBill(b) {
+    const card = document.createElement("div"); card.className = "sf-bill";
+    const top = document.createElement("div"); top.className = "sf-bill-top";
+    const id = document.createElement("span"); id.className = "sf-bill-id"; id.textContent = b.id;
+    top.append(id);
+    (b.tags || []).forEach((t) => {
+      const tag = document.createElement("span");
+      tag.className = "sf-tag " + (t.indexOf("education") !== -1 ? "education" : "voting");
+      tag.textContent = t;
+      top.append(tag);
+    });
+    card.append(top);
+    const title = document.createElement("div"); title.className = "sf-bill-title"; title.textContent = b.title || "";
+    card.append(title);
+    if (b.latest_action || b.latest_action_desc) {
+      const act = document.createElement("div"); act.className = "sf-action";
+      const bold = document.createElement("b"); bold.textContent = b.latest_action ? prettyDate(b.latest_action) : "Latest";
+      act.append(bold, document.createTextNode(" — " + (b.latest_action_desc || "action recorded")));
+      card.append(act);
+    }
+    if (b.hearing) {
+      const h = document.createElement("div"); h.className = "sf-hearing";
+      const when = b.hearing.scheduled_display ? " — " + b.hearing.scheduled_display : "";
+      h.append(document.createTextNode("📅 On the " + (b.hearing.committee || "committee") + " calendar" + when + ". "));
+      const a = document.createElement("a");
+      a.href = b.hearing.witness_slip_url || b.hearing.details_url || "hearings.html";
+      a.target = "_blank"; a.rel = "noopener"; a.textContent = "File a witness slip ↗";
+      h.append(a);
+      card.append(h);
+    }
+    const links = document.createElement("div"); links.className = "sf-links";
+    const dash = document.createElement("a");
+    dash.href = "index.html#q=" + encodeURIComponent(b.id || "");
+    dash.textContent = "View on Legislation Dashboard ↗";
+    links.append(dash);
+    if (b.url) {
+      const off = document.createElement("a");
+      off.href = b.url; off.target = "_blank"; off.rel = "noopener"; off.textContent = "Bill page ↗";
+      links.append(off);
+    }
+    card.append(links);
+    return card;
   }
 
   /* ---------- timeline ---------- */
@@ -913,6 +1419,20 @@
       String(d.getUTCMinutes()).padStart(2, "0") + " UTC";
     return s;
   }
+})();
+</script>
+<button class="to-top" id="to-top" type="button" aria-label="Back to top" title="Back to top">↑</button>
+<script>
+(function () {
+  var btn = document.getElementById("to-top");
+  if (!btn) return;
+  var toggle = function () { btn.classList.toggle("show", (window.scrollY || document.documentElement.scrollTop) > 400); };
+  window.addEventListener("scroll", toggle, { passive: true });
+  toggle();
+  btn.addEventListener("click", function () {
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+  });
 })();
 </script>
 </body>

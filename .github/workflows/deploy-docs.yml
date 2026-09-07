@@ -174,13 +174,27 @@ jobs:
           ls -lh docs/src/dashboard/hearings.json docs/src/dashboard/hearings.xml
           ls -1 docs/src/dashboard/hearings/ 2>/dev/null | head -5 || true
 
+      # Chicago district locator maps: ward + police-district boundaries from the
+      # City of Chicago Data Portal, projected/simplified into a compact maps.json
+      # the Elections page draws next to each race. Fail-soft — a portal outage
+      # leaves the committed maps.json in place (the script only writes when it
+      # fetched a basemap).
+      - name: Build Chicago district maps
+        run: |
+          set -uo pipefail
+          python3 actions/scrape-maps/main.py --output docs/src/dashboard/maps.json \
+            || echo "::warning::scrape-maps reported errors; keeping committed maps.json"
+          ls -lh docs/src/dashboard/maps.json || true
+
       # Illinois & Chicago elections feed (Elections Happening in IL): candidate lists from
       # the Chicago Board of Elections and the Illinois SBE "Who Is Running" list,
-      # placed onto the committed race-structure seed. Fully fail-soft — a source
-      # outage/format change yields zero candidates, never a crash. We only
-      # replace the committed sample when the fresh run actually placed
-      # candidates, so a total outage keeps the last-good curated sample rather
-      # than blanking every roster.
+      # placed onto the committed race-structure seed, plus the "Springfield"
+      # rules-of-the-game feed (IL bills tagged elections/education from the
+      # data.json built above, cross-referenced with hearings.json). Fully
+      # fail-soft — a source outage yields zero candidates, never a crash. We
+      # replace the committed sample only when the fresh run actually produced
+      # something (candidates placed OR Springfield bills), so a total outage
+      # keeps the last-good curated sample rather than blanking everything.
       - name: Build Illinois & Chicago elections feed
         run: |
           set -uo pipefail
@@ -189,9 +203,11 @@ jobs:
             --output /tmp/elections.json \
             --rss /tmp/elections.xml \
             --rss-feeds-dir /tmp/elections_feeds \
+            --legislation docs/src/dashboard/data.json \
+            --hearings docs/src/dashboard/hearings.json \
             || echo "::warning::elections scrape reported errors"
           if [ -s /tmp/elections.json ] && \
-             [ "$(python3 -c 'import json;d=json.load(open("/tmp/elections.json"));print(sum(len(r["candidates"]) for r in d["races"]))' 2>/dev/null || echo 0)" -gt 0 ]; then
+             [ "$(python3 -c 'import json;d=json.load(open("/tmp/elections.json"));print(sum(len(r["candidates"]) for r in d["races"]) + len(d.get("springfield", [])))' 2>/dev/null || echo 0)" -gt 0 ]; then
             mv /tmp/elections.json docs/src/dashboard/elections.json
             [ -s /tmp/elections.xml ] && mv /tmp/elections.xml docs/src/dashboard/elections.xml
             # Replace the whole granular-feed directory so feeds for races that
@@ -200,10 +216,57 @@ jobs:
             [ -d /tmp/elections_feeds ] && mv /tmp/elections_feeds docs/src/dashboard/elections
             echo "elections.json + elections.xml + granular feeds refreshed"
           else
-            echo "::warning::no candidates scraped; keeping committed sample elections.json + feeds"
+            echo "::warning::no candidates or Springfield bills produced; keeping committed sample elections.json + feeds"
           fi
           ls -lh docs/src/dashboard/elections.json docs/src/dashboard/elections.xml
           ls -1 docs/src/dashboard/elections/ 2>/dev/null | head -5 || true
+
+      # Campaign money (Illinois SBE): attach each candidate's receipts / spending
+      # / cash-on-hand from their committee's latest D2 filing, via the SBE ID
+      # crosswalk. Gated on candidates actually being present — the SBE bulk files
+      # are large (~70MB), so we only download + enrich when there's something to
+      # enrich. Fully fail-soft: a download error just leaves money off.
+      - name: Enrich candidates with SBE campaign money
+        run: |
+          set -uo pipefail
+          CANDS="$(python3 -c 'import json;d=json.load(open("docs/src/dashboard/elections.json"));print(sum(len(r["candidates"]) for r in d["races"]))' 2>/dev/null || echo 0)"
+          if [ "$CANDS" -gt 0 ]; then
+            mkdir -p /tmp/sbe
+            base="https://www.elections.il.gov/campaigndisclosuredatafiles"
+            ok=1
+            for f in Candidates.txt CmteCandidateLinks.txt Committees.txt D2Totals.txt; do
+              curl -fsSL --retry 3 -o "/tmp/sbe/$f" "$base/$f" || { echo "::warning::could not download $f"; ok=0; }
+            done
+            if [ "$ok" = "1" ]; then
+              python3 actions/scrape-elections/main.py \
+                --enrich-money docs/src/dashboard/elections.json --money-dir /tmp/sbe \
+                || echo "::warning::money enrichment reported errors"
+            fi
+          else
+            echo "no candidates present; skipping SBE money download/enrichment"
+          fi
+
+      # Election results (post-Election-Night): when the ELECTION_RESULTS_URL repo
+      # variable/secret points at the authority's results export (Chicago BOE or
+      # Cook County Clerk CSV/TSV), download it and attach per-race vote tallies.
+      # Inert until that is set — there are no results before an election — and
+      # fully fail-soft.
+      - name: Attach election results
+        env:
+          ELECTION_RESULTS_URL: ${{ vars.ELECTION_RESULTS_URL || secrets.ELECTION_RESULTS_URL }}
+          ELECTION_RESULTS_PAGE: ${{ vars.ELECTION_RESULTS_PAGE }}
+        run: |
+          set -uo pipefail
+          if [ -n "${ELECTION_RESULTS_URL:-}" ]; then
+            curl -fsSL --retry 3 -o /tmp/results.csv "$ELECTION_RESULTS_URL" \
+              && python3 actions/scrape-elections/main.py \
+                   --enrich-results docs/src/dashboard/elections.json \
+                   --results-file /tmp/results.csv \
+                   --results-url "${ELECTION_RESULTS_PAGE:-$ELECTION_RESULTS_URL}" \
+              || echo "::warning::results enrichment failed; leaving results off"
+          else
+            echo "ELECTION_RESULTS_URL not set; skipping results (none before Election Night)"
+          fi
 
       - name: Build docs
         run: mdbook build docs

@@ -42,6 +42,69 @@ no confirmed candidate keeps an empty list plus a link to its official source.
 > The exact live endpoints in `main.py` may need re-pointing against a real page
 > snapshot as a cycle opens.
 
+## Springfield side feed — "the rules of the game"
+
+Beyond candidates, the build attaches a top-level `springfield` list: **Illinois
+bills that shape how these elections work** — the elected CPS board and its
+2026–27 transition, ward & runoff rules, campaign finance, school governance.
+`build_springfield()` reads govbot's legislation dataset
+(`--legislation docs/src/dashboard/data.json`), keeps IL bills tagged
+`elections & voting` or `education`, and cross-references
+`--hearings docs/src/dashboard/hearings.json` so a bill on an upcoming ILGA
+committee calendar carries its hearing + witness-slip link. This is **context
+beside the races, never mixed into candidate lists**. It degrades to an empty
+list when the dataset is unavailable. On the deploy, `data.json` and
+`hearings.json` are both built earlier in the same job, so this reads the fresh
+copies.
+
+## Campaign money — Illinois SBE (D2 filings)
+
+Each candidate can carry a `money` summary (receipts, spending, cash on hand)
+from their committee's latest **D2** filing. It uses the SBE's reliable **ID
+crosswalk**, never fuzzy dollar matching:
+
+```
+our candidate name → Candidates.txt (ID) → CmteCandidateLinks (CommitteeID)
+                   → Committees.txt (Name) → D2Totals (latest filing, max ID)
+```
+
+A candidate is enriched only when their normalized *First Last* resolves to
+**exactly one** SBE candidate record; ambiguous names are skipped, not guessed.
+Figures across multiple linked committees are summed; the committee with the most
+cash on hand is shown as primary.
+
+Because the SBE bulk files are large (~70 MB), enrichment is a **separate,
+gated** step — the deploy downloads the files and runs it only when candidates
+are present:
+
+```bash
+python3 actions/scrape-elections/main.py \
+  --enrich-money docs/src/dashboard/elections.json --money-dir /path/to/sbe-files
+```
+
+where the directory holds `Candidates.txt`, `CmteCandidateLinks.txt`,
+`Committees.txt`, and `D2Totals.txt` from
+elections.il.gov/campaigndisclosuredatafiles/.
+
+## Results — post-Election-Night (scaffold)
+
+Each race can carry a `results` block (per-candidate votes, %, winner, precincts
+reporting) attached from the authority's results export after Election Night —
+Chicago Board of Elections, or the Cook County Clerk for suburban races. It's
+**inert until results exist**: `parse_results_rows()` is header-driven (CSV/TSV)
+and `attach_results()` maps rows to a race by office+district, counting **every
+reported candidate** (official results are authoritative — our roster isn't).
+Winners are flagged only when the source marks them; nothing is ever projected.
+
+```bash
+python3 actions/scrape-elections/main.py \
+  --enrich-results docs/src/dashboard/elections.json \
+  --results-file results.csv --results-url https://chicagoelections.gov/...
+```
+
+The deploy runs this only when the `ELECTION_RESULTS_URL` repo variable/secret is
+set (so it does nothing before an election).
+
 ## Usage
 
 ```bash
@@ -62,6 +125,7 @@ python3 actions/scrape-elections/main.py \
 - `elections.xml` — the whole ballot, one item per race.
 - `elections/group-<group>.xml` — one feed per office group (all aldermanic, all
   CPS board, …).
+- `elections/springfield.xml` — the "rules of the game" IL bills (when present).
 - `elections/race-<id>.xml` — one feed per race, so a resident can follow just
   their ward, their CPS subdistrict, or the mayor's race.
 

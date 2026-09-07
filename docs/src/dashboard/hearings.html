@@ -338,6 +338,21 @@
   }
   .chn-credit svg { flex: none; }
   .chn-credit a { color: var(--series-1); }
+
+  /* ---------- back-to-top floating button ---------- */
+  .to-top {
+    position: fixed; right: 20px; bottom: 20px; z-index: 60;
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary);
+    font-size: 20px; line-height: 1; cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; transform: translateY(8px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+  }
+  .to-top.show { opacity: 1; visibility: visible; transform: none; }
+  .to-top:hover { border-color: var(--series-1); color: var(--series-1); }
+  @media (prefers-reduced-motion: reduce) { .to-top { transition: none; } }
   /* ---------- committee hearings & witness slips ---------- */
   .card--hearings { margin-top: 12px; }
   .hearings-head {
@@ -1274,6 +1289,20 @@
 
   loadHearings();
   loadParticipation();
+})();
+</script>
+<button class="to-top" id="to-top" type="button" aria-label="Back to top" title="Back to top">↑</button>
+<script>
+(function () {
+  var btn = document.getElementById("to-top");
+  if (!btn) return;
+  var toggle = function () { btn.classList.toggle("show", (window.scrollY || document.documentElement.scrollTop) > 400); };
+  window.addEventListener("scroll", toggle, { passive: true });
+  toggle();
+  btn.addEventListener("click", function () {
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+  });
 })();
 </script>
 </body>

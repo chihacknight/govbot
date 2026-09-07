@@ -39,9 +39,40 @@
     "races": {
       "type": "array",
       "items": { "$ref": "#/definitions/Race" }
+    },
+    "springfield": {
+      "type": "array",
+      "description": "The 'rules of the game': Illinois bills from govbot's legislation dataset tagged 'elections & voting' or 'education' — the laws that shape how these elections work (the elected CPS board, ward/runoff rules, campaign finance, school governance). Context beside the races, never mixed into candidate lists. Built from docs/src/dashboard/data.json and cross-referenced with the hearings feed; empty when unavailable.",
+      "items": { "$ref": "#/definitions/SpringfieldBill" }
     }
   },
   "definitions": {
+    "SpringfieldBill": {
+      "type": "object",
+      "required": ["id", "title"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "description": "Bill identifier, e.g. HB1234, SB56." },
+        "title": { "type": "string" },
+        "url": { "type": ["string", "null"], "description": "Official bill page." },
+        "session": { "type": ["string", "null"] },
+        "chamber": { "type": ["string", "null"] },
+        "tags": { "type": "array", "items": { "type": "string" }, "description": "Matched govbot topics (subset of 'elections & voting', 'education')." },
+        "latest_action": { "type": ["string", "null"], "description": "Date of the most recent action, YYYY-MM-DD." },
+        "latest_action_desc": { "type": ["string", "null"] },
+        "hearing": {
+          "type": ["object", "null"],
+          "description": "Set when this bill is on an upcoming ILGA committee calendar (from the hearings feed).",
+          "additionalProperties": false,
+          "properties": {
+            "committee": { "type": ["string", "null"] },
+            "scheduled_display": { "type": ["string", "null"] },
+            "details_url": { "type": ["string", "null"] },
+            "witness_slip_url": { "type": ["string", "null"] }
+          }
+        }
+      }
+    },
     "Race": {
       "type": "object",
       "required": ["id", "jurisdiction", "office", "office_group", "is_citywide", "partisan", "status", "candidates", "source"],
@@ -109,6 +140,36 @@
           "description": "Candidates for this race. Empty when no candidate has been confirmed from an official source yet.",
           "items": { "$ref": "#/definitions/Candidate" }
         },
+        "results": {
+          "type": ["object", "null"],
+          "description": "Vote results, attached after Election Night from the election authority's precinct/summary sheets (Chicago Board of Elections; Cook County Clerk for suburban). Absent/null until results are reported — never projected or invented.",
+          "additionalProperties": false,
+          "required": ["candidates"],
+          "properties": {
+            "reported": { "type": "boolean", "description": "True once any results are in for this race." },
+            "complete": { "type": "boolean", "description": "True when all precincts have reported." },
+            "as_of": { "type": ["string", "null"], "description": "Timestamp of this results snapshot." },
+            "precincts_reporting": { "type": ["integer", "null"], "minimum": 0 },
+            "precincts_total": { "type": ["integer", "null"], "minimum": 0 },
+            "total_votes": { "type": ["integer", "null"], "minimum": 0 },
+            "source_url": { "type": ["string", "null"], "description": "Official results page for verification." },
+            "candidates": {
+              "type": "array",
+              "description": "Per-candidate vote tallies, highest first.",
+              "items": {
+                "type": "object",
+                "required": ["name", "votes"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": { "type": "string" },
+                  "votes": { "type": "integer", "minimum": 0 },
+                  "pct": { "type": ["number", "null"], "description": "Share of total votes, 0-100." },
+                  "winner": { "type": "boolean", "description": "True only when the authority has marked this candidate elected/winner." }
+                }
+              }
+            }
+          }
+        },
         "source": { "type": "string", "description": "Origin authority/host, e.g. 'Chicago Board of Elections' or 'Illinois State Board of Elections'." }
       }
     },
@@ -135,6 +196,21 @@
         },
         "website": { "type": ["string", "null"], "format": "uri", "description": "Candidate campaign website, when known." },
         "photo_url": { "type": ["string", "null"], "format": "uri", "description": "Official candidate photo URL, when published by the authority." },
+        "money": {
+          "type": ["object", "null"],
+          "description": "Campaign finance summary from the Illinois SBE, attached only when the candidate resolves unambiguously to an SBE candidate record and their committee(s). Dollar figures come straight from the committee's own D2 filings; null when no confident match.",
+          "additionalProperties": false,
+          "properties": {
+            "committee_name": { "type": ["string", "null"], "description": "Primary political committee name." },
+            "committee_id": { "type": ["string", "null"], "description": "SBE committee ID." },
+            "committees": { "type": "integer", "minimum": 1, "description": "Number of linked committees aggregated." },
+            "funds_raised": { "type": ["number", "null"], "description": "Total receipts across linked committees' latest D2 filings." },
+            "funds_spent": { "type": ["number", "null"], "description": "Total expenditures across linked committees' latest D2 filings." },
+            "cash_on_hand": { "type": ["number", "null"], "description": "End funds available across linked committees' latest D2 filings." },
+            "as_of": { "type": ["string", "null"], "description": "When this snapshot was taken (build date), since D2Totals has no per-row date." },
+            "source_url": { "type": ["string", "null"], "description": "SBE committee-search page for verification." }
+          }
+        },
         "source": { "type": ["string", "null"], "description": "Where this candidate record was read (host or authority)." }
       }
     }

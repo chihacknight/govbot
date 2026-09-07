@@ -135,7 +135,13 @@ The Pages site has **three dashboards plus a Site Architecture page**, linked by
 pipelines — keep its tab bar and the `.tab-arch` accent in sync with the other pages
 whenever the tab bar changes). Tab order is Legislation · Hearings · Elections Happening in IL ·
 Site Architecture across all four pages, with accents `.tab-legis` (blue), `.tab-hearings`
-(gold), `.tab-elections` (green), `.tab-arch` (purple). The hearings
+(gold), `.tab-elections` (green), `.tab-arch` (purple). All four pages share a floating
+`.to-top` "Back to top" button (fixed bottom-right, shown after ~400px of scroll). The
+elections page additionally has a **"New Design"** switch under the theme toggle that sets
+`data-design="new"` on `<html>` (persisted in `localStorage['govbot-elections-design']`),
+which applies a Robinhood-inspired override skin (bright green #00C805, near-black/white
+ground, flat rounded cards) via `:root[data-design="new"]` token + component rules placed
+last in that page's stylesheet; it is scoped to elections.html only. The hearings
 page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov, leg.wa.gov,
 malegislature.gov, and akleg.gov directly (not OpenStates), plus **USA (Federal)** open comment periods from the
 Regulations.gov API (needs `REGULATIONS_GOV_API_KEY`; falls back to the committed
@@ -161,10 +167,43 @@ Cook County Clerk, future). A candidate attaches to a race only when office+dist
 exactly (`race_id_for`) — unplaceable rows are dropped, never invented, and a race with no
 confirmed candidate keeps an empty list + a source link. It also writes a whole-ballot RSS
 `elections.xml` + granular feeds under `docs/src/dashboard/elections/` (per office group
-`group-<group>.xml`, per race `race-<id>.xml`). Fail-soft: with sources down the seed's
-structure still ships (empty rosters), and `deploy-docs.yml` keeps the committed sample
-unless the fresh run actually placed candidates. Parsers are offline-snapshot-tested:
+`group-<group>.xml`, per race `race-<id>.xml`). It also attaches a top-level
+`springfield` list — the **"rules of the game"**: IL bills from the legislation
+`data.json` tagged `elections & voting` or `education` (the elected CPS board, ward/runoff
+rules, campaign finance), cross-referenced with `hearings.json` for upcoming ILGA hearings,
+shown on the page as context *beside* the races (never mixed into candidate lists) plus a
+`springfield.xml` feed. `deploy-docs.yml` runs this after `data.json`+`hearings.json` are
+built so it reads the fresh copies. Fail-soft: with sources down the seed's structure still
+ships (empty rosters/springfield), and the deploy keeps the committed sample unless the
+fresh run produced candidates or Springfield bills. Parsers are offline-snapshot-tested:
 `python3 actions/scrape-elections/test_scrape_elections.py`.
+
+Per-race **locator maps** come from a separate action, `actions/scrape-maps/`: it fetches
+ward (`p293-wvbd`) + police-district (`24zt-jpfn`) boundaries from the City of Chicago Data
+Portal, projects + Douglas-Peucker-simplifies them at build time, and writes a compact
+`docs/src/dashboard/maps.json` (`{view, context, districts}` keyed by race id). The elections
+page draws each race's ward/police polygon as an inline-SVG locator inside a light city
+outline (citywide offices tint all of Chicago); CPS subdistricts have no published polygon
+so their map is omitted. Fail-soft: a portal outage leaves the committed `maps.json` in
+place. Geometry helpers are offline-tested: `python3 actions/scrape-maps/main.py --self-test`.
+
+**Campaign money** (Illinois SBE) attaches to each candidate via the SBE ID crosswalk
+(candidate name → `Candidates.txt` ID → `CmteCandidateLinks` → `Committees` → latest
+`D2Totals` row): receipts, spending, cash on hand. Only unambiguous name matches are kept
+(never fuzzy dollar matching). Because the SBE bulk files are ~70MB, `deploy-docs.yml`
+runs it as a **separate step gated on candidates being present** —
+`main.py --enrich-money docs/src/dashboard/elections.json --money-dir <sbe-files>` — so the
+committed sample (empty rosters) carries no money. Parsers/aggregation are offline-tested
+in `test_scrape_elections.py`.
+
+**Results** (post–Election Night) are scaffolded: each race can carry a `results` block
+(per-candidate votes/%/winner, precincts reporting) attached by
+`main.py --enrich-results <elections.json> --results-file <csv>` from the authority's
+results export (Chicago BOE / Cook County Clerk). Header-driven + fail-soft; it counts every
+reported candidate (official results are authoritative) and flags a winner only when the
+source does — never projected. The deploy step runs only when the `ELECTION_RESULTS_URL`
+repo variable/secret is set, so it is inert until an election happens. This completes the
+"five drawers" per race: map · candidates · money · results · context (Springfield).
 
 ## govbot Development
 

@@ -447,6 +447,375 @@ def build_from_fixtures(fixtures_dir):
 
 
 # --------------------------------------------------------------------------- #
+# Springfield side feed — "the rules of the game"
+# --------------------------------------------------------------------------- #
+# Illinois bills from govbot's legislation dataset that shape how these elections
+# work. Shown beside the races as context, never mixed into candidate lists.
+SPRINGFIELD_STATE = "il"
+SPRINGFIELD_TOPICS = ["elections & voting", "education"]
+SPRINGFIELD_LIMIT = 40
+
+
+def _norm_bill_id(s):
+    return re.sub(r"[^A-Z0-9]", "", (s or "").upper())
+
+
+def _hearing_index(hearings):
+    """Map normalized IL bill id -> its upcoming hearing (first seen), from a
+    hearings.json document. Fail-soft: a missing/other-shape doc yields {}."""
+    idx = {}
+    for h in (hearings or {}).get("hearings", []):
+        if (h.get("jurisdiction") or "").lower() != SPRINGFIELD_STATE:
+            continue
+        for b in h.get("bills", []):
+            key = _norm_bill_id(b.get("id"))
+            if key and key not in idx:
+                idx[key] = {
+                    "committee": h.get("committee"),
+                    "scheduled_display": h.get("scheduled_display"),
+                    "details_url": h.get("details_url"),
+                    "witness_slip_url": h.get("witness_slip_url"),
+                }
+    return idx
+
+
+def build_springfield(legislation, hearings=None, limit=SPRINGFIELD_LIMIT):
+    """Extract the IL 'rules of the game' bills from a govbot data.json document.
+
+    Keeps IL bills tagged 'elections & voting' or 'education', attaches an
+    upcoming committee hearing when the bill is on the ILGA calendar, and returns
+    them newest-action first. Pure/deterministic given its inputs; an
+    empty/missing dataset yields []."""
+    bills = (legislation or {}).get("bills", [])
+    hidx = _hearing_index(hearings)
+    topics = set(SPRINGFIELD_TOPICS)
+    out = []
+    for b in bills:
+        if (b.get("state") or "").lower() != SPRINGFIELD_STATE:
+            continue
+        matched = sorted(topics.intersection(b.get("tags") or []))
+        if not matched:
+            continue
+        rec = {
+            "id": b.get("id"),
+            "title": b.get("title") or "",
+            "url": b.get("url") or None,
+            "session": b.get("session") or None,
+            "chamber": b.get("chamber") or None,
+            "tags": matched,
+            "latest_action": b.get("latest_action") or None,
+            "latest_action_desc": b.get("latest_action_desc") or None,
+            "hearing": hidx.get(_norm_bill_id(b.get("id"))),
+        }
+        out.append(rec)
+    # Newest action first (bills without a date sort last), then by id.
+    out.sort(key=lambda r: (r["latest_action"] or "", r["id"] or ""), reverse=True)
+    return out[:limit]
+
+
+def load_json(path):
+    """Read a JSON file, returning the parsed object or None on any failure."""
+    if not path:
+        return None
+    try:
+        return json.loads(Path(path).read_text())
+    except (OSError, json.JSONDecodeError) as err:
+        print(f"warning: could not read {path}: {err}", file=sys.stderr)
+        return None
+
+
+# --------------------------------------------------------------------------- #
+# Campaign money — Illinois SBE bulk data (D2 filings via the ID crosswalk)
+# --------------------------------------------------------------------------- #
+# The SBE publishes tab-delimited, header-first bulk files at
+# elections.il.gov/campaigndisclosuredatafiles/. We use the reliable ID
+# crosswalk — never fuzzy dollar matching:
+#   our candidate name -> Candidates.txt (ID) -> CmteCandidateLinks (CommitteeID)
+#   -> Committees.txt (Name) -> D2Totals (latest filing: receipts/expend/funds).
+# A candidate gets money only when their normalized "First Last" resolves to
+# exactly one SBE candidate record; ambiguous names are skipped, not guessed.
+SBE_COMMITTEE_SEARCH = "https://www.elections.il.gov/CampaignDisclosure/CommitteeDetailRevenue.aspx"
+
+
+def _name_key(name):
+    """Normalized 'firstlast' key from a ballot name ('Last, First' or 'First
+    ... Last'); '' when it can't be split."""
+    raw = (name or "").strip()
+    if not raw:
+        return ""
+    if "," in raw:
+        last, _, first = raw.partition(",")
+        first = first.strip().split()[0] if first.strip() else ""
+    else:
+        parts = raw.split()
+        if len(parts) < 2:
+            return re.sub(r"[^a-z0-9]", "", raw.lower())
+        first, last = parts[0], parts[-1]
+    return re.sub(r"[^a-z0-9]", "", (first + last).lower())
+
+
+def read_tsv(path):
+    """Yield each row of a tab-delimited, header-first SBE file as a dict.
+    Streaming (line by line) so the 50MB+ D2Totals file never loads fully."""
+    p = Path(path)
+    if not p.exists():
+        return
+    with p.open(encoding="utf-8", errors="replace") as fh:
+        header = fh.readline().rstrip("\n").split("\t")
+        for line in fh:
+            cells = line.rstrip("\n").split("\t")
+            if len(cells) < len(header):
+                cells += [""] * (len(header) - len(cells))
+            yield dict(zip(header, cells))
+
+
+def _to_float(s):
+    try:
+        return round(float((s or "").strip() or 0), 2)
+    except ValueError:
+        return 0.0
+
+
+def build_money_index(money_dir, wanted_name_keys, now):
+    """Resolve campaign money for the given candidate name-keys from a directory
+    of SBE bulk files. Returns {name_key: money_dict}. Fail-soft: missing files
+    yield {}. Only unambiguous name matches are kept."""
+    d = Path(money_dir)
+    if not d.exists():
+        return {}
+    wanted = set(k for k in wanted_name_keys if k)
+    if not wanted:
+        return {}
+
+    # 1) name -> candidate id (drop names that map to more than one SBE record)
+    cand_ids, ambiguous = {}, set()
+    for row in read_tsv(d / "Candidates.txt"):
+        key = _name_key(row.get("LastName", "") + ", " + row.get("FirstName", ""))
+        if key not in wanted:
+            continue
+        cid = (row.get("ID") or "").strip()
+        if not cid:
+            continue
+        if key in cand_ids and cand_ids[key] != cid:
+            ambiguous.add(key)
+        cand_ids.setdefault(key, cid)
+    for k in ambiguous:
+        cand_ids.pop(k, None)
+    if not cand_ids:
+        return {}
+    id_to_key = {v: k for k, v in cand_ids.items()}
+
+    # 2) candidate id -> committee ids
+    cand_committees = {}
+    for row in read_tsv(d / "CmteCandidateLinks.txt"):
+        cid = (row.get("CandidateID") or "").strip()
+        k = id_to_key.get(cid)
+        if k:
+            cand_committees.setdefault(k, set()).add((row.get("CommitteeID") or "").strip())
+    wanted_committees = {c for cs in cand_committees.values() for c in cs if c}
+    if not wanted_committees:
+        return {}
+
+    # 3) committee id -> name
+    cmte_name = {}
+    for row in read_tsv(d / "Committees.txt"):
+        cid = (row.get("ID") or "").strip()
+        if cid in wanted_committees:
+            cmte_name[cid] = (row.get("Name") or "").strip()
+
+    # 4) committee id -> latest D2 filing (max numeric ID) totals
+    latest = {}  # committee_id -> (max_id, receipts, expend, funds)
+    for row in read_tsv(d / "D2Totals.txt"):
+        cid = (row.get("CommitteeID") or "").strip()
+        if cid not in wanted_committees:
+            continue
+        try:
+            rid = int((row.get("ID") or "0").strip() or 0)
+        except ValueError:
+            continue
+        if cid not in latest or rid > latest[cid][0]:
+            latest[cid] = (rid, _to_float(row.get("TotalReceipts")),
+                           _to_float(row.get("TotalExpend")), _to_float(row.get("EndFundsAvail")))
+
+    # 5) aggregate per candidate
+    out = {}
+    for k, cids in cand_committees.items():
+        cids = [c for c in cids if c in latest]
+        if not cids:
+            continue
+        raised = sum(latest[c][1] for c in cids)
+        spent = sum(latest[c][2] for c in cids)
+        cash = sum(latest[c][3] for c in cids)
+        primary = max(cids, key=lambda c: latest[c][3])  # most cash on hand
+        out[k] = {
+            "committee_name": cmte_name.get(primary) or None,
+            "committee_id": primary,
+            "committees": len(cids),
+            "funds_raised": raised,
+            "funds_spent": spent,
+            "cash_on_hand": cash,
+            "as_of": now.strftime("%Y-%m-%d"),
+            "source_url": SBE_COMMITTEE_SEARCH,
+        }
+    return out
+
+
+def enrich_money(doc, money_dir, now):
+    """Attach `money` to each candidate in an assembled elections doc, in place.
+    Returns the number of candidates enriched."""
+    cands = [c for r in doc.get("races", []) for c in r.get("candidates", [])]
+    if not cands:
+        return 0
+    index = build_money_index(money_dir, {_name_key(c["name"]) for c in cands}, now)
+    if not index:
+        return 0
+    n = 0
+    for c in cands:
+        m = index.get(_name_key(c["name"]))
+        if m:
+            c["money"] = m
+            n += 1
+    return n
+
+
+# --------------------------------------------------------------------------- #
+# Results — post-Election-Night vote tallies (Chicago BOE / Cook County Clerk)
+# --------------------------------------------------------------------------- #
+# Scaffold: results don't exist until an election happens, so this stays inert
+# (no results attached) until a results file is provided. When it is, results
+# attach to a race only when office+district resolve and the candidate name
+# matches — vote totals come straight from the authority; winners are shown only
+# when the source marks them. Nothing is ever projected or invented.
+_RESULTS_ALIASES = {
+    "office": {"office", "contest", "contest name", "office name", "race"},
+    "district": {"district", "ward", "subdistrict", "police district"},
+    "name": {"name", "candidate", "candidate name", "choice"},
+    "votes": {"votes", "vote total", "votes total", "total votes", "vote count", "ballots"},
+    "winner": {"winner", "elected", "is winner"},
+    "precincts_reporting": {"precincts reporting", "reporting", "precincts_reported"},
+    "precincts_total": {"precincts", "precincts total", "total precincts"},
+}
+
+
+def _split_row(line):
+    if "\t" in line:
+        return [c.strip() for c in line.split("\t")]
+    return [c.strip() for c in line.split(",")]
+
+
+def _header_map(cells, aliases):
+    out = {}
+    for i, c in enumerate(cells):
+        key = c.strip().lower()
+        for field, al in aliases.items():
+            if key in al and field not in out:
+                out[field] = i
+    return out
+
+
+def _int(s):
+    try:
+        return int(re.sub(r"[^0-9-]", "", str(s or "")) or 0)
+    except ValueError:
+        return 0
+
+
+def _truthy(s):
+    return str(s or "").strip().lower() in {"1", "true", "yes", "y", "won", "winner", "elected"}
+
+
+def parse_results_rows(text, source="Chicago Board of Elections"):
+    """Parse a delimited (CSV/TSV) results export into per-candidate rows tagged
+    with a resolved race id. Header-driven; requires at least office/contest,
+    candidate name, and votes columns. Pure/deterministic; unplaceable rows keep
+    _race_id=None (dropped by attach_results)."""
+    lines = [ln for ln in (text or "").splitlines() if ln.strip()]
+    header, start = None, 0
+    for i, ln in enumerate(lines):
+        hm = _header_map(_split_row(ln), _RESULTS_ALIASES)
+        if "name" in hm and "votes" in hm and ("office" in hm or "district" in hm):
+            header, start = hm, i + 1
+            break
+    if not header:
+        return []
+    rows = []
+    for ln in lines[start:]:
+        cells = _split_row(ln)
+        def col(f):
+            i = header.get(f)
+            return cells[i] if i is not None and i < len(cells) else ""
+        name = col("name")
+        if not name:
+            continue
+        rows.append({
+            "name": _clean(name),
+            "office": col("office"),
+            "district": col("district"),
+            "votes": _int(col("votes")),
+            "winner": _truthy(col("winner")),
+            "precincts_reporting": _int(col("precincts_reporting")) if header.get("precincts_reporting") is not None else None,
+            "precincts_total": _int(col("precincts_total")) if header.get("precincts_total") is not None else None,
+            "_race_id": race_id_for(col("office"), col("district")),
+            "source": source,
+        })
+    return rows
+
+
+def attach_results(doc, rows, now, source_url=None):
+    """Group parsed result rows by race id and attach a `results` block to each
+    matching race, ordered by votes. Only rows whose candidate name matches a
+    listed candidate in that race are counted (so a stray write-in row can't
+    invent a candidate). Returns the number of races updated."""
+    by_race = {}
+    for r in rows:
+        rid = r.get("_race_id")
+        if rid:
+            by_race.setdefault(rid, []).append(r)
+    if not by_race:
+        return 0
+    updated = 0
+    for race in doc.get("races", []):
+        group = by_race.get(race["id"])
+        if not group:
+            continue
+        # Official results are authoritative for who ran, so count every reported
+        # row for the race (don't filter by our — possibly stale — candidate list,
+        # which would distort the percentages).
+        chosen = group
+        total = sum(r["votes"] for r in chosen)
+        pr = next((r["precincts_reporting"] for r in chosen if r["precincts_reporting"] is not None), None)
+        pt = next((r["precincts_total"] for r in chosen if r["precincts_total"] is not None), None)
+        cands = sorted(
+            ({"name": r["name"], "votes": r["votes"],
+              "pct": round(100.0 * r["votes"] / total, 1) if total else None,
+              "winner": bool(r["winner"])} for r in chosen),
+            key=lambda c: c["votes"], reverse=True)
+        race["results"] = {
+            "reported": True,
+            "complete": (pr is not None and pt is not None and pr >= pt and pt > 0),
+            "as_of": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "precincts_reporting": pr,
+            "precincts_total": pt,
+            "total_votes": total,
+            "source_url": source_url,
+            "candidates": cands,
+        }
+        updated += 1
+    return updated
+
+
+def enrich_results(doc, results_path, now, source_url=None):
+    """Load a results export and attach results to `doc` in place. Returns the
+    number of races updated. Fail-soft: a missing/unreadable file is a no-op."""
+    try:
+        text = Path(results_path).read_text()
+    except OSError as err:
+        print(f"warning: could not read results {results_path}: {err}", file=sys.stderr)
+        return 0
+    return attach_results(doc, parse_results_rows(text), now, source_url)
+
+
+# --------------------------------------------------------------------------- #
 # assembly
 # --------------------------------------------------------------------------- #
 def load_seed(seed_path=SEED_PATH):
@@ -457,12 +826,13 @@ def load_seed(seed_path=SEED_PATH):
         return {"jurisdictions": [], "races": []}
 
 
-def assemble(candidates, seed, source, now):
+def assemble(candidates, seed, source, now, springfield=None):
     """Merge scraped candidates into the seed's race structure by race id.
 
     The seed is the authority on which races exist; candidates only fill them.
     Candidates that don't resolve to a seed race are counted and reported, never
-    invented into a new race.
+    invented into a new race. `springfield` (the IL "rules of the game" bills) is
+    attached as its own top-level list, kept separate from candidate data.
     """
     races = [dict(r) for r in seed.get("races", [])]
     for r in races:
@@ -503,6 +873,7 @@ def assemble(candidates, seed, source, now):
         "jurisdictions": seed.get("jurisdictions", []),
         "counts": counts,
         "races": races,
+        "springfield": springfield or [],
     }, placed
 
 
@@ -657,10 +1028,51 @@ def race_feeds(doc):
     return feeds
 
 
+def springfield_feed(doc):
+    """One RSS feed of the IL 'rules of the game' bills (springfield.xml), so a
+    reader can follow the laws shaping these elections. Returns {} when empty."""
+    bills = doc.get("springfield") or []
+    if not bills:
+        return {}
+    built_822 = _feed_prelude(doc)
+    rss = ET.Element("rss", {"version": "2.0", "xmlns:atom": "http://www.w3.org/2005/Atom"})
+    ch = ET.SubElement(rss, "channel")
+    ET.SubElement(ch, "title").text = "govbot — Springfield: the rules of the game (IL elections & education bills)"
+    ET.SubElement(ch, "link").text = DASHBOARD_URL + "elections.html"
+    ET.SubElement(ch, "description").text = (
+        "Illinois bills tagged elections & voting or education — the laws that "
+        "shape how Chicago/IL elections work. Context beside the races, from "
+        "govbot's legislation dataset; refreshed twice daily.")
+    ET.SubElement(ch, "language").text = "en-us"
+    ET.SubElement(ch, "lastBuildDate").text = built_822
+    self_url = DASHBOARD_URL + "elections/springfield.xml"
+    ET.SubElement(ch, "atom:link", {"href": self_url, "rel": "self", "type": "application/rss+xml"})
+    for b in bills:
+        parts = []
+        if b.get("latest_action_desc"):
+            parts.append(b["latest_action_desc"] + ".")
+        if b.get("tags"):
+            parts.append("Topics: " + ", ".join(b["tags"]) + ".")
+        if b.get("hearing"):
+            h = b["hearing"]
+            parts.append("On the " + (h.get("committee") or "committee") + " calendar" +
+                         (" — " + h["scheduled_display"] if h.get("scheduled_display") else "") + ".")
+        item = ET.SubElement(ch, "item")
+        ET.SubElement(item, "title").text = f"{b['id']} — {b.get('title', '')}"
+        ET.SubElement(item, "link").text = b.get("url") or (DASHBOARD_URL + "index.html#q=" + (b.get("id") or ""))
+        ET.SubElement(item, "description").text = " ".join(parts) or b.get("title", "")
+        ET.SubElement(item, "category").text = "Springfield · rules of the game"
+        ET.SubElement(item, "guid", {"isPermaLink": "false"}).text = "springfield-" + _norm_bill_id(b.get("id"))
+        ET.SubElement(item, "pubDate").text = built_822
+    return {"springfield.xml": ('<?xml version="1.0" encoding="UTF-8"?>\n'
+                                + ET.tostring(rss, encoding="unicode") + "\n")}
+
+
 def all_feeds(doc):
     feeds = {}
     feeds.update(group_feeds(doc))
     feeds.update(race_feeds(doc))
+    feeds.update(springfield_feed(doc))
     return feeds
 
 
@@ -684,19 +1096,65 @@ def main():
                     help="Also write an RSS 2.0 feed of every race to this path")
     ap.add_argument("--rss-feeds-dir", default=None,
                     help="Also write granular RSS 2.0 feeds into this directory: "
-                         "one per office group (group-council.xml) and one per "
-                         "race (race-chicago-mayor.xml), so readers can follow a "
-                         "whole office group or a single race")
+                         "one per office group (group-council.xml), one per "
+                         "race (race-chicago-mayor.xml), and springfield.xml, so "
+                         "readers can follow a whole office group, a single race, "
+                         "or the 'rules of the game' bills")
+    ap.add_argument("--legislation", default="docs/src/dashboard/data.json",
+                    help="govbot bill dataset (data.json) for the Springfield "
+                         "'rules of the game' feed — IL bills tagged elections & "
+                         "voting or education. Missing/unreadable degrades to an "
+                         "empty Springfield list")
+    ap.add_argument("--hearings", default="docs/src/dashboard/hearings.json",
+                    help="hearings.json, to cross-reference Springfield bills with "
+                         "upcoming ILGA committee hearings")
+    ap.add_argument("--enrich-money", default=None,
+                    help="Attach SBE campaign-finance money to the candidates in an "
+                         "existing elections.json (rewritten in place) using --money-dir, "
+                         "then exit. Run after candidates are populated")
+    ap.add_argument("--money-dir", default=None,
+                    help="Directory of Illinois SBE bulk files (Candidates.txt, "
+                         "CmteCandidateLinks.txt, Committees.txt, D2Totals.txt) for "
+                         "--enrich-money")
+    ap.add_argument("--enrich-results", default=None,
+                    help="Attach post-Election-Night vote results to an existing "
+                         "elections.json (rewritten in place) from --results-file, "
+                         "then exit")
+    ap.add_argument("--results-file", default=None,
+                    help="A delimited (CSV/TSV) results export from the election "
+                         "authority, for --enrich-results")
+    ap.add_argument("--results-url", default=None,
+                    help="Official results page URL recorded on each results block")
     args = ap.parse_args()
 
     now = (datetime.strptime(args.now, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
            if args.now else datetime.now(timezone.utc))
+
+    if args.enrich_money:
+        doc = load_json(args.enrich_money)
+        if doc is None:
+            return 0
+        n = enrich_money(doc, args.money_dir or "", now)
+        Path(args.enrich_money).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
+        print(f"enriched {n} candidate(s) with SBE campaign money", file=sys.stderr)
+        return 0
+
+    if args.enrich_results:
+        doc = load_json(args.enrich_results)
+        if doc is None:
+            return 0
+        n = enrich_results(doc, args.results_file or "", now, args.results_url)
+        Path(args.enrich_results).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
+        print(f"attached results to {n} race(s)", file=sys.stderr)
+        return 0
 
     seed = load_seed(args.seed)
 
     if args.from_fixtures:
         candidates = build_from_fixtures(args.from_fixtures)
         source = "fixtures (offline snapshot)"
+        legislation = load_json(str(Path(args.from_fixtures) / "il_legislation.json"))
+        hearings = load_json(str(Path(args.from_fixtures) / "il_hearings.json"))
     else:
         srcs = [s.strip().lower() for s in args.sources.split(",") if s.strip()]
         candidates = []
@@ -708,15 +1166,18 @@ def main():
             candidates.extend(fetch_cook_clerk())
         source = ("chicagoelections.gov + elections.il.gov + Cook County Clerk "
                   "(govbot scrape-elections); race structure from committed seed")
+        legislation = load_json(args.legislation)
+        hearings = load_json(args.hearings)
 
-    doc, placed = assemble(candidates, seed, source, now)
+    springfield = build_springfield(legislation, hearings)
+    doc, placed = assemble(candidates, seed, source, now, springfield=springfield)
     text = json.dumps(doc, indent=2, ensure_ascii=False) + "\n"
     if args.output == "-":
         sys.stdout.write(text)
     else:
         Path(args.output).write_text(text)
-        print(f"wrote {len(doc['races'])} races "
-              f"({placed} candidate(s) placed) to {args.output}", file=sys.stderr)
+        print(f"wrote {len(doc['races'])} races ({placed} candidate(s) placed, "
+              f"{len(springfield)} Springfield bill(s)) to {args.output}", file=sys.stderr)
 
     if args.rss:
         Path(args.rss).write_text(to_rss(doc))

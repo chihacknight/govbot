@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-09-06T00:00:00Z",
+  "source": "fixture",
+  "jurisdictions": [
+    { "code": "il", "name": "Illinois", "participation": "witness_slip", "portal_url": "https://my.ilga.gov/" }
+  ],
+  "hearings": [
+    {
+      "id": "il-house-3201-24010",
+      "jurisdiction": "il",
+      "chamber": "house",
+      "committee": "Elections & Campaign Finance Committee",
+      "status": "scheduled",
+      "scheduled_display": "Sep 9, 2026, 2:00 PM",
+      "details_url": "https://ilga.gov/House/hearings/details/3201/24010",
+      "witness_slip_url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=1234",
+      "source": "ilga.gov",
+      "bills": [
+        { "id": "HB1234", "url": "https://ilga.gov/legislation/BillStatus?DocNum=1234" }
+      ]
+    }
+  ]
+}

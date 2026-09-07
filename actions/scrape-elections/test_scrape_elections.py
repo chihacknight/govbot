@@ -176,14 +176,147 @@ class Feeds(unittest.TestCase):
             ET.fromstring(xml)  # each must be well-formed
 
 
+class Springfield(unittest.TestCase):
+    def setUp(self):
+        self.leg = json.loads((RAW / "il_legislation.json").read_text())
+        self.hear = json.loads((RAW / "il_hearings.json").read_text())
+        self.sf = main.build_springfield(self.leg, self.hear)
+
+    def test_only_il_matching_topics(self):
+        ids = [b["id"] for b in self.sf]
+        self.assertEqual(set(ids), {"HB1234", "SB0056", "HB0777"})
+        self.assertNotIn("HB0009", ids)   # health care — wrong topic
+        self.assertNotIn("AB0100", ids)   # elections, but California
+
+    def test_sorted_newest_first(self):
+        dates = [b["latest_action"] for b in self.sf]
+        self.assertEqual(dates, sorted(dates, reverse=True))
+
+    def test_matched_tags_only(self):
+        hb = next(b for b in self.sf if b["id"] == "HB1234")
+        self.assertEqual(hb["tags"], ["education", "elections & voting"])  # sorted, no "government operations"
+
+    def test_hearing_crossref(self):
+        hb = next(b for b in self.sf if b["id"] == "HB1234")
+        self.assertIsNotNone(hb["hearing"])
+        self.assertIn("Elections", hb["hearing"]["committee"])
+        sb = next(b for b in self.sf if b["id"] == "SB0056")
+        self.assertIsNone(sb["hearing"])
+
+    def test_missing_inputs_empty(self):
+        self.assertEqual(main.build_springfield(None, None), [])
+        self.assertEqual(main.build_springfield({"bills": []}, None), [])
+
+    def test_feed_is_valid_xml(self):
+        import xml.etree.ElementTree as ET
+        doc = {"generated_at": "2026-09-07T00:00:00Z", "springfield": self.sf}
+        feeds = main.springfield_feed(doc)
+        self.assertIn("springfield.xml", feeds)
+        items = ET.fromstring(feeds["springfield.xml"]).findall(".//item")
+        self.assertEqual(len(items), 3)
+
+
+class Money(unittest.TestCase):
+    def setUp(self):
+        self.dir = RAW / "sbe"
+        self.now = main.datetime(2026, 9, 7, tzinfo=main.timezone.utc)
+        keys = {main._name_key(n) for n in
+                ["Casey R. Sample", "Morgan Placeholder", "Sam T. Example", "Lee Q. Testcase"]}
+        self.idx = main.build_money_index(str(self.dir), keys, self.now)
+
+    def test_name_key(self):
+        self.assertEqual(main._name_key("Casey R. Sample"), "caseysample")
+        self.assertEqual(main._name_key("Sample, Casey R."), "caseysample")
+
+    def test_aggregates_multiple_committees(self):
+        m = self.idx[main._name_key("Casey R. Sample")]
+        self.assertEqual(m["committees"], 2)
+        self.assertEqual(m["funds_raised"], 90000.0)
+        self.assertEqual(m["funds_spent"], 54000.0)
+        self.assertEqual(m["cash_on_hand"], 41000.0)
+        self.assertEqual(m["committee_name"], "Friends of Casey Sample")  # most cash
+
+    def test_latest_d2_by_max_id(self):
+        # committee 900 has filings id 10 and 20; the id-20 receipts (80000) win.
+        m = self.idx[main._name_key("Casey R. Sample")]
+        self.assertNotIn(50000.0, [m["funds_raised"]])  # not the older filing
+
+    def test_ambiguous_name_skipped(self):
+        # "Morgan Placeholder" appears twice in Candidates.txt -> no money.
+        self.assertNotIn(main._name_key("Morgan Placeholder"), self.idx)
+
+    def test_no_committee_skipped(self):
+        self.assertNotIn(main._name_key("Lee Q. Testcase"), self.idx)
+
+    def test_missing_dir_empty(self):
+        self.assertEqual(main.build_money_index("/no/such/dir", {"caseysample"}, self.now), {})
+
+    def test_enrich_money_attaches(self):
+        doc = {"races": [{"candidates": [{"name": "Casey R. Sample"}, {"name": "Nobody Here"}]}]}
+        n = main.enrich_money(doc, str(self.dir), self.now)
+        self.assertEqual(n, 1)
+        self.assertEqual(doc["races"][0]["candidates"][0]["money"]["committees"], 2)
+        self.assertNotIn("money", doc["races"][0]["candidates"][1])
+
+
+class Results(unittest.TestCase):
+    def setUp(self):
+        self.now = main.datetime(2026, 11, 3, 20, 0, tzinfo=main.timezone.utc)
+        self.rows = main.parse_results_rows((RAW / "boe_results.csv").read_text())
+
+    def test_parses_and_resolves(self):
+        ids = {str(r["_race_id"]) for r in self.rows}
+        self.assertIn("chicago-mayor", ids)
+        self.assertIn("chicago-alderperson-ward-01", ids)
+        # A non-Chicago contest doesn't resolve to a race.
+        self.assertIn("None", ids)
+
+    def test_attach_percentages_and_winner(self):
+        doc = {"races": [{"id": "chicago-mayor", "candidates": [{"name": "Casey R. Sample"}]}]}
+        n = main.attach_results(doc, self.rows, self.now, "https://chicagoelections.gov/results")
+        self.assertEqual(n, 1)
+        res = doc["races"][0]["results"]
+        self.assertTrue(res["reported"] and res["complete"])
+        self.assertEqual(res["total_votes"], 218570)
+        top = res["candidates"][0]
+        self.assertEqual(top["name"], "Casey R. Sample")
+        self.assertEqual(top["pct"], 55.1)
+        self.assertTrue(top["winner"])
+        self.assertFalse(res["candidates"][1]["winner"])
+
+    def test_counts_all_reported_candidates(self):
+        # Ward 1 has two reported candidates even though only one is in our roster;
+        # results are authoritative, so both are counted (pct not distorted).
+        doc = {"races": [{"id": "chicago-alderperson-ward-01", "candidates": [{"name": "Sam T. Example"}]}]}
+        main.attach_results(doc, self.rows, self.now)
+        res = doc["races"][0]["results"]
+        self.assertEqual(len(res["candidates"]), 2)
+        self.assertEqual(res["total_votes"], 8500)
+
+    def test_no_results_when_unmatched(self):
+        doc = {"races": [{"id": "cps-board-president", "candidates": []}]}
+        self.assertEqual(main.attach_results(doc, self.rows, self.now), 0)
+        self.assertIsNone(doc["races"][0].get("results"))
+
+    def test_bad_input_empty(self):
+        self.assertEqual(main.parse_results_rows("no header\njust text"), [])
+
+    def test_enrich_missing_file_noop(self):
+        doc = {"races": []}
+        self.assertEqual(main.enrich_results(doc, "/no/such.csv", self.now), 0)
+
+
 class Snapshot(unittest.TestCase):
     def test_matches_expected(self):
         if not EXPECTED.exists():
             self.skipTest("run ./render-snapshots.sh to create the expected snapshot")
         seed = main.load_seed()
         cands = main.build_from_fixtures(RAW)
+        sf = main.build_springfield(
+            main.load_json(str(RAW / "il_legislation.json")),
+            main.load_json(str(RAW / "il_hearings.json")))
         now = main.datetime(2026, 9, 7, tzinfo=main.timezone.utc)
-        doc, _ = main.assemble(cands, seed, "fixtures (offline snapshot)", now)
+        doc, _ = main.assemble(cands, seed, "fixtures (offline snapshot)", now, springfield=sf)
         expected = json.loads(EXPECTED.read_text())
         self.assertEqual(doc, expected)
 

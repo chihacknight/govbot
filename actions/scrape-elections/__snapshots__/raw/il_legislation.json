@@ -1,0 +1,61 @@
+{
+  "generated_at": "2026-09-06T00:00:00Z",
+  "source": "fixture",
+  "states": [{ "code": "il", "name": "Illinois" }],
+  "tags": [
+    { "name": "elections & voting", "description": "" },
+    { "name": "education", "description": "" }
+  ],
+  "bills": [
+    {
+      "id": "HB1234", "state": "il", "session": "104th",
+      "chamber": "lower",
+      "title": "Establishes the elected Chicago Board of Education and the 2026-2027 transition",
+      "tags": ["elections & voting", "education", "government operations"],
+      "latest_action": "2026-05-01",
+      "latest_action_desc": "Public Act; signed into law",
+      "sponsors": ["Sample"],
+      "url": "https://ilga.gov/legislation/BillStatus?DocNum=1234"
+    },
+    {
+      "id": "SB0056", "state": "il", "session": "104th",
+      "chamber": "upper",
+      "title": "Revises ward election runoff rules and campaign finance disclosure",
+      "tags": ["elections & voting"],
+      "latest_action": "2026-04-15",
+      "latest_action_desc": "Referred to Assignments",
+      "sponsors": ["Example"],
+      "url": "https://ilga.gov/legislation/BillStatus?DocNum=56"
+    },
+    {
+      "id": "HB0777", "state": "il", "session": "104th",
+      "chamber": "lower",
+      "title": "Increases per-pupil funding and teacher salaries",
+      "tags": ["education"],
+      "latest_action": "2026-03-10",
+      "latest_action_desc": "Assigned to Appropriations",
+      "sponsors": ["Placeholder"],
+      "url": "https://ilga.gov/legislation/BillStatus?DocNum=777"
+    },
+    {
+      "id": "HB0009", "state": "il", "session": "104th",
+      "chamber": "lower",
+      "title": "Caps insulin copays and prescription drug prices",
+      "tags": ["health care"],
+      "latest_action": "2026-02-01",
+      "latest_action_desc": "First reading",
+      "sponsors": ["Nobody"],
+      "url": "https://ilga.gov/legislation/BillStatus?DocNum=9"
+    },
+    {
+      "id": "AB0100", "state": "ca", "session": "2025-2026",
+      "chamber": "lower",
+      "title": "California elections omnibus (should be excluded — not Illinois)",
+      "tags": ["elections & voting"],
+      "latest_action": "2026-06-01",
+      "latest_action_desc": "Enrolled",
+      "sponsors": ["Golden"],
+      "url": "https://example.org/ca/ab100"
+    }
+  ]
+}
