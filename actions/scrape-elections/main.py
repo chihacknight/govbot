@@ -540,9 +540,33 @@ def _race_description(r):
                  if n else "No candidates confirmed yet.")
     if r.get("candidates"):
         parts.append("Candidates: " + ", ".join(c["name"] for c in r["candidates"]) + ".")
+    tl = _timeline_summary(r.get("timeline"))
+    if tl:
+        parts.append("Timeline: " + tl + ".")
     if r.get("why_note"):
         parts.append(r["why_note"])
     return " ".join(parts)
+
+
+def _timeline_summary(timeline):
+    """Compact 'Filing deadline ~Nov 23, 2026 · Election Day Feb 23, 2027' line for
+    a feed item, so subscribers see the whole election calendar. '~' marks an
+    expected (statutory) date."""
+    bits = []
+    for m in timeline or []:
+        if not m.get("date"):
+            continue
+        pre = "~" if m.get("confirmed") is False else ""
+        bits.append(f"{m['label']} {pre}{_pretty_date(m['date'])}")
+    return " · ".join(bits)
+
+
+def _pretty_date(iso):
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})$", iso or "")
+    if not m:
+        return iso or ""
+    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    return f"{months[int(m.group(2)) - 1]} {int(m.group(3))}, {m.group(1)}"
 
 
 def _feed_prelude(doc):

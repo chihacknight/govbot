@@ -1,5 +1,5 @@
 {
-  "note": "Committed seed / offline fallback for actions/scrape-elections. It carries the real race STRUCTURE (offices, districts, ballot dates, why-this-race notes, official sources). Candidate rosters are left empty here on purpose and are populated at build time from official sources (ISBE 'Who Is Running', the Chicago Board of Elections, the Cook County Clerk). Nothing here is a guessed candidate.",
+  "note": "Committed seed / offline fallback for actions/scrape-elections. It carries the real race STRUCTURE (offices, districts, ballot dates, election-calendar timeline, and why-this-race notes) plus official sources. Candidate rosters are left empty here on purpose and are populated at build time from official sources (ISBE 'Who Is Running', the Chicago Board of Elections, the Cook County Clerk). Timeline milestones flagged confirmed:false are the expected/statutory calendar — confirm against the official source. Nothing here is a guessed candidate.",
   "jurisdictions": [
     {
       "code": "chicago",
@@ -29,6 +29,50 @@
       "why_note": "Chicago's citywide chief executive. On the 2027 municipal ballot — a non-partisan race; if no candidate wins a majority, the top two advance to an April runoff.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "district": null,
       "seats": 1,
       "candidates": []
@@ -47,6 +91,50 @@
       "why_note": "Citywide office that keeps City Council records and issues city stickers and licenses. On the 2027 municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "district": null,
       "seats": 1,
       "candidates": []
@@ -65,6 +153,50 @@
       "why_note": "Citywide office that manages and invests city funds and pension money. On the 2027 municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "district": null,
       "seats": 1,
       "candidates": []
@@ -84,6 +216,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -102,6 +278,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -120,6 +340,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -138,6 +402,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -156,6 +464,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -174,6 +526,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -192,6 +588,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -210,6 +650,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -228,6 +712,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -246,6 +774,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -264,6 +836,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -282,6 +898,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -300,6 +960,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -318,6 +1022,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -336,6 +1084,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -354,6 +1146,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -372,6 +1208,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -390,6 +1270,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -408,6 +1332,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -426,6 +1394,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -444,6 +1456,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -462,6 +1518,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -480,6 +1580,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -498,6 +1642,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -516,6 +1704,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -534,6 +1766,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -552,6 +1828,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -570,6 +1890,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -588,6 +1952,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -606,6 +2014,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -624,6 +2076,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -642,6 +2138,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -660,6 +2200,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -678,6 +2262,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -696,6 +2324,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -714,6 +2386,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -732,6 +2448,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -750,6 +2510,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -768,6 +2572,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -786,6 +2634,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -804,6 +2696,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -822,6 +2758,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -840,6 +2820,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -858,6 +2882,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -876,6 +2944,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -894,6 +3006,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -912,6 +3068,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -930,6 +3130,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -948,6 +3192,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -966,6 +3254,50 @@
       "why_note": "Represents one of Chicago's 50 wards on the City Council. Elected by ward on the 2027 municipal ballot (non-partisan).",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": "2027-04-06",
+          "label": "Runoff (if no majority)",
+          "note": "Consolidated election; top two advance when no candidate wins >50%",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -983,6 +3315,44 @@
       "why_note": "The Chicago Board of Education's first voter-elected president. Chicago is moving from a mayor-appointed board to a fully elected 21-member board; the president is elected citywide for the first time on Nov 3, 2026.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "district": null,
       "seats": 1,
       "candidates": []
@@ -1002,6 +3372,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1020,6 +3428,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1038,6 +3484,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1056,6 +3540,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1074,6 +3596,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1092,6 +3652,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1110,6 +3708,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1128,6 +3764,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1146,6 +3820,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1164,6 +3876,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1182,6 +3932,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1200,6 +3988,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1218,6 +4044,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1236,6 +4100,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1254,6 +4156,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1272,6 +4212,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1290,6 +4268,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1308,6 +4324,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1326,6 +4380,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1344,6 +4436,44 @@
       "why_note": "A Chicago Board of Education subdistrict seat. As the hybrid appointed/elected board phases out, these subdistrict seats are filled by voters. Some districts elected a member in 2024 and others were mayor-appointed — the 2026 election is part of completing the fully elected board.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-06-22",
+          "label": "Candidate filing deadline",
+          "note": "Nominating petitions filed with the Illinois State Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-07-06",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2026-09-25",
+          "label": "Vote by mail begins",
+          "note": "Ballots mailed to voters who requested them",
+          "confirmed": false
+        },
+        {
+          "date": "2026-10-19",
+          "label": "Early voting begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-03",
+          "label": "Election Day",
+          "note": "First voter-elected Chicago Board of Education",
+          "confirmed": true
+        },
+        {
+          "date": "2027-01-15",
+          "label": "New elected board seated",
+          "note": "Fully elected 21-member board takes office",
+          "confirmed": false
+        }
+      ],
       "seats": 1,
       "candidates": []
     },
@@ -1363,6 +4493,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1381,6 +4555,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1399,6 +4617,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1417,6 +4679,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1435,6 +4741,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1453,6 +4803,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1471,6 +4865,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1489,6 +4927,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1507,6 +4989,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1525,6 +5051,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1543,6 +5113,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1561,6 +5175,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1579,6 +5237,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1597,6 +5299,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1615,6 +5361,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1633,6 +5423,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1651,6 +5485,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1669,6 +5547,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1687,6 +5609,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1705,6 +5671,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1723,6 +5733,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     },
     {
@@ -1741,6 +5795,50 @@
       "why_note": "One of three seats on the elected Police District Council for this Chicago police district. District Councils shape local policing priorities and help pick the citywide Community Commission. On the 2027 Chicago municipal ballot.",
       "official_list_url": "https://chicagoelections.gov/",
       "source": "Chicago Board of Elections",
+      "timeline": [
+        {
+          "date": "2026-10-01",
+          "label": "Petition circulation begins",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2026-11-23",
+          "label": "Filing deadline",
+          "note": "Last day to file nominating papers with the Chicago Board of Elections",
+          "confirmed": false
+        },
+        {
+          "date": "2026-12-05",
+          "label": "Objection period & ballot certification",
+          "note": "Petition challenges heard; ballot finalized",
+          "confirmed": false
+        },
+        {
+          "date": "2027-01-30",
+          "label": "Early voting & vote by mail begin",
+          "note": null,
+          "confirmed": false
+        },
+        {
+          "date": "2027-02-23",
+          "label": "Election Day — municipal general",
+          "note": null,
+          "confirmed": true
+        },
+        {
+          "date": null,
+          "label": "No runoff",
+          "note": "Top vote-getters win outright (plurality)",
+          "confirmed": true
+        },
+        {
+          "date": "2027-05-17",
+          "label": "Term begins / inauguration",
+          "note": null,
+          "confirmed": false
+        }
+      ],
       "candidates": []
     }
   ]

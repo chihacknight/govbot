@@ -229,6 +229,45 @@
 
   .empty { color: var(--text-muted); padding: 24px; text-align: center; }
 
+  /* ---------- election calendar overview ---------- */
+  .calendar { margin-bottom: 20px; }
+  .calendar h2 { font-size: 16px; font-weight: 700; margin: 0 0 4px; }
+  .calendar .cal-sub { color: var(--text-muted); font-size: 12.5px; margin: 0 0 12px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .cal-card { border: 2px solid var(--cc, var(--series-2)); border-radius: 12px; padding: 14px 16px; background: var(--surface-1); }
+  .cal-card h3 { margin: 0 0 2px; font-size: 15px; }
+  .cal-card .cal-when { color: var(--cc); font-weight: 700; font-size: 13px; margin-bottom: 10px; }
+  .cal-card .cal-for { color: var(--text-muted); font-size: 12px; margin-bottom: 10px; }
+
+  /* timeline (shared by the calendar overview and each race's expandable one) */
+  .tl { list-style: none; margin: 0; padding: 0; position: relative; }
+  .tl::before { content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px; width: 2px; background: var(--gridline); }
+  .tl-item { position: relative; padding: 0 0 12px 26px; }
+  .tl-item:last-child { padding-bottom: 0; }
+  .tl-dot { position: absolute; left: 0; top: 1px; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--baseline); background: var(--surface-1); box-shadow: 0 0 0 3px var(--surface-1); display: flex; align-items: center; justify-content: center; font-size: 9px; }
+  .tl-item.done .tl-dot { border-color: var(--series-2); background: var(--series-2); color: #fff; }
+  .tl-item.next .tl-dot { border-color: var(--tl-accent, var(--series-1)); background: var(--tl-accent, var(--series-1)); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--tl-accent, var(--series-1)) 25%, var(--surface-1)); }
+  .tl-item.future .tl-dot { border-color: var(--baseline); }
+  .tl-date { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+  .tl-item.future .tl-date, .tl-item.future .tl-label { color: var(--text-muted); }
+  .tl-item.next .tl-date { color: var(--tl-accent, var(--series-1)); }
+  .tl-label { font-size: 12.5px; color: var(--text-secondary); }
+  .tl-note { font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
+  .tl-approx { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--series-3); border: 1px solid var(--series-3); border-radius: 999px; padding: 0 5px; margin-left: 5px; }
+  .tl-next-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; }
+  .tl-next-chip .lbl { color: var(--text-muted); }
+  .tl-next-chip b { color: var(--text-primary); }
+  .cal-legend { margin-top: 10px; font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+  /* per-race expandable timeline */
+  .race-next { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+  details.tl-details { border-top: 1px solid var(--gridline); padding-top: 7px; }
+  details.tl-details > summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--series-2); list-style: none; display: inline-flex; align-items: center; gap: 5px; }
+  details.tl-details > summary::-webkit-details-marker { display: none; }
+  details.tl-details > summary::before { content: "▸"; font-size: 10px; transition: transform 0.15s ease; }
+  details.tl-details[open] > summary::before { transform: rotate(90deg); }
+  details.tl-details .tl { margin-top: 10px; padding-left: 2px; }
+
   /* ---------- RSS popover (shared) ---------- */
   .rss-link { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 600; text-decoration: none; color: var(--series-2); background: none; border: none; padding: 0; white-space: nowrap; }
   .rss-link:hover { text-decoration: underline; }
@@ -294,6 +333,13 @@
     <span class="intro-ico" aria-hidden="true">🗳️</span>
     <b>Two big ballots ahead.</b> On <b>Nov 3, 2026</b>, Chicago elects a <b>Board of Education</b> for the first time by popular vote — including its <b>first-ever elected President</b> — as the mayor-appointed hybrid board is phased out. Then the <b>2027 municipal election</b> puts the Mayor, City Clerk, City Treasurer, all 50 Alderpersons, and the Police District Councils on the ballot. Candidate lists are pulled from the Chicago Board of Elections and the Illinois State Board of Elections' “Who Is Running” list; a race with no one listed yet links to its official source rather than guessing.
   </div>
+
+  <section class="calendar" id="calendar" hidden>
+    <h2>🗓️ Election calendar</h2>
+    <p class="cal-sub">The full timeline for each upcoming ballot — from candidate filing to Election Day. Each race below also has its own timeline.</p>
+    <div class="cal-grid" id="cal-grid"></div>
+    <p class="cal-legend"><span class="tl-approx">≈ expected</span> dates follow the statutory election calendar — confirm the exact day with the official source; fixed dates (like Election Day) are shown without the tag.</p>
+  </section>
 
   <div class="filters" id="filters" hidden>
     <div class="search-wrap">
@@ -398,8 +444,11 @@
 
   function init(data) {
     state.data = data;
+    state.nowDate = (data.generated_at || "").slice(0, 10) || new Date().toISOString().slice(0, 10);
     $("loading").hidden = true;
     $("filters").hidden = false;
+    renderCalendar(data.races);
+    $("calendar").hidden = false;
 
     // as-of badge
     const asof = formatAsOf(data.generated_at);
@@ -594,6 +643,26 @@
       card.append(none);
     }
 
+    // Election timeline: a one-line "next milestone" plus an expandable full timeline.
+    if (r.timeline && r.timeline.length) {
+      const nm = nextMilestone(r.timeline);
+      if (nm) {
+        const nx = document.createElement("div"); nx.className = "race-next";
+        const chip = document.createElement("span"); chip.className = "tl-next-chip";
+        const lbl = document.createElement("span"); lbl.className = "lbl"; lbl.textContent = "⏭ Next: ";
+        const b = document.createElement("b"); b.textContent = nm.label;
+        chip.append(lbl, b, document.createTextNode(" · " + (nm.date ? prettyDate(nm.date) : "TBA")));
+        if (nm.date && nm.confirmed === false) { const a = document.createElement("span"); a.className = "tl-approx"; a.textContent = "≈"; chip.append(a); }
+        nx.append(chip);
+        card.append(nx);
+      }
+      const det = document.createElement("details"); det.className = "tl-details";
+      const sum = document.createElement("summary"); sum.textContent = "Full timeline";
+      det.append(sum);
+      det.append(renderTimeline(r.timeline, meta.color));
+      card.append(det);
+    }
+
     const foot = document.createElement("div"); foot.className = "race-foot";
     if (r.official_list_url) {
       const src = document.createElement("a"); src.className = "src-link";
@@ -721,6 +790,99 @@
     if (top + h > window.innerHeight - 8) top = Math.max(8, rect.top - h - 6);
     pop.style.left = Math.max(8, left) + "px";
     pop.style.top = top + "px";
+  }
+
+  /* ---------- timeline ---------- */
+  // Classify each milestone against the snapshot date: past dated milestones are
+  // "done", the first dated milestone on/after now is "next", the rest "future".
+  // Null-dated milestones (e.g. "No runoff") are neutral and never "next".
+  function classifyTimeline(timeline) {
+    const now = state.nowDate;
+    let nextIdx = -1;
+    timeline.forEach((m, i) => { if (nextIdx === -1 && m.date && m.date >= now) nextIdx = i; });
+    return timeline.map((m, i) => {
+      let cls = "future";
+      if (m.date && m.date < now) cls = "done";
+      else if (i === nextIdx) cls = "next";
+      else if (!m.date) cls = "future";
+      return cls;
+    });
+  }
+
+  function nextMilestone(timeline) {
+    const now = state.nowDate;
+    for (const m of timeline) if (m.date && m.date >= now) return m;
+    return null;
+  }
+
+  function renderTimeline(timeline, accentVar) {
+    const ul = document.createElement("ul");
+    ul.className = "tl";
+    if (accentVar) ul.style.setProperty("--tl-accent", "var(" + accentVar + ")");
+    const cls = classifyTimeline(timeline);
+    timeline.forEach((m, i) => {
+      const li = document.createElement("li");
+      li.className = "tl-item " + cls[i];
+      const dot = document.createElement("span"); dot.className = "tl-dot";
+      dot.textContent = cls[i] === "done" ? "✓" : "";
+      li.append(dot);
+      const dline = document.createElement("div");
+      const date = document.createElement("span"); date.className = "tl-date";
+      date.textContent = m.date ? prettyDate(m.date) : "—";
+      dline.append(date);
+      if (m.date && m.confirmed === false) {
+        const a = document.createElement("span"); a.className = "tl-approx"; a.textContent = "≈ expected";
+        dline.append(a);
+      }
+      li.append(dline);
+      const lbl = document.createElement("div"); lbl.className = "tl-label"; lbl.textContent = m.label;
+      li.append(lbl);
+      if (m.note) { const n = document.createElement("div"); n.className = "tl-note"; n.textContent = m.note; li.append(n); }
+      ul.append(li);
+    });
+    return ul;
+  }
+
+  // Pick the race whose timeline is the most complete (most dated milestones),
+  // so the calendar overview shows the fullest version (e.g. the one with a runoff).
+  function pickRepresentative(races) {
+    return races.slice().sort((a, b) => {
+      const da = (a.timeline || []).filter((m) => m.date).length;
+      const db = (b.timeline || []).filter((m) => m.date).length;
+      return db - da || (b.timeline || []).length - (a.timeline || []).length;
+    })[0];
+  }
+
+  function renderCalendar(races) {
+    const grid = $("cal-grid");
+    grid.textContent = "";
+    const byDate = {};
+    races.forEach((r) => { if (r.ballot_date && (r.timeline || []).length) (byDate[r.ballot_date] = byDate[r.ballot_date] || []).push(r); });
+    const dates = Object.keys(byDate).sort();
+    const ACCENTS = ["--series-2", "--series-1", "--series-3", "--series-5"];
+    dates.forEach((date, i) => {
+      const races_d = byDate[date];
+      const rep = pickRepresentative(races_d);
+      const accent = ACCENTS[i % ACCENTS.length];
+      const card = document.createElement("div");
+      card.className = "cal-card";
+      card.style.setProperty("--cc", "var(" + accent + ")");
+      // Name the ballot from what's on it.
+      const groups = [...new Set(races_d.map((r) => r.office_group))];
+      const onlyCps = groups.length === 1 && groups[0] === "cps_board";
+      const h3 = document.createElement("h3");
+      h3.textContent = onlyCps ? "Chicago Board of Education (CPS)" : "Chicago municipal election";
+      card.append(h3);
+      const when = document.createElement("div"); when.className = "cal-when";
+      when.textContent = "Election Day · " + prettyDate(date);
+      card.append(when);
+      const forEl = document.createElement("div"); forEl.className = "cal-for";
+      const labels = groups.map((g) => (GROUP_META[g] ? GROUP_META[g].label : g));
+      forEl.textContent = races_d.length + " races — " + labels.join(", ");
+      card.append(forEl);
+      card.append(renderTimeline(rep.timeline, accent));
+      grid.append(card);
+    });
   }
 
   /* ---------- utilities ---------- */

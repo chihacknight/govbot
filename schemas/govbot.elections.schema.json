@@ -83,6 +83,21 @@
           "type": ["string", "null"],
           "description": "Short plain-English note on why this race exists or what's notable — especially CPS 2026 (the hybrid board ending, appointed vs. voter-elected seats) and first-ever elected offices."
         },
+        "timeline": {
+          "type": "array",
+          "description": "Ordered election-calendar milestones for this race, from candidate filing through Election Day (and runoff / term start), so a reader can see the whole timeline. Dates flagged confirmed:false are the expected/statutory calendar and should be confirmed against the official source.",
+          "items": {
+            "type": "object",
+            "required": ["label"],
+            "additionalProperties": false,
+            "properties": {
+              "date": { "type": ["string", "null"], "description": "Milestone date, ISO YYYY-MM-DD, when known/expected; null if only a phase." },
+              "label": { "type": "string", "description": "Milestone name, e.g. 'Filing deadline', 'Election Day', 'Runoff (if no majority)'." },
+              "note": { "type": ["string", "null"], "description": "Optional one-line detail." },
+              "confirmed": { "type": "boolean", "description": "True when the date is a fixed, official date (e.g. Election Day); false when it's the expected/statutory calendar." }
+            }
+          }
+        },
         "status": {
           "type": "string",
           "description": "Where the race is in the election cycle.",
