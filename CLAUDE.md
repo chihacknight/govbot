@@ -130,10 +130,10 @@ names must stay in sync with the keyword fallback in `scripts/dashboard_tags.jso
 The Pages site has **three dashboards plus a Site Architecture page**, linked by a tab bar:
 `docs/src/dashboard/index.html` (the Legislation Dashboard above),
 `docs/src/dashboard/hearings.html` (**Committee Hearings & Witness Slips**),
-`docs/src/dashboard/elections.html` (**allILElections**), and
+`docs/src/dashboard/elections.html` (**Elections Happening in IL**), and
 `docs/src/dashboard/architecture.html` (a static, no-data explainer of all three backend
 pipelines — keep its tab bar and the `.tab-arch` accent in sync with the other pages
-whenever the tab bar changes). Tab order is Legislation · Hearings · allILElections ·
+whenever the tab bar changes). Tab order is Legislation · Hearings · Elections Happening in IL ·
 Site Architecture across all four pages, with accents `.tab-legis` (blue), `.tab-hearings`
 (gold), `.tab-elections` (green), `.tab-arch` (purple). The hearings
 page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov, leg.wa.gov,
@@ -150,7 +150,7 @@ directory `docs/src/dashboard/participation.json` (schema
 `data.json` and the hearings feed on the twice-daily schedule. Hearings parsers are
 offline-snapshot-tested: `python3 actions/scrape-hearings/test_scrape_hearings.py`.
 
-The **allILElections** page is a *third* pipeline: `actions/scrape-elections/` builds
+The **Elections Happening in IL** page is a *third* pipeline: `actions/scrape-elections/` builds
 `docs/src/dashboard/elections.json` (schema `schemas/govbot.elections.schema.json`) — every
 office on upcoming Chicago/Illinois ballots (citywide, Alderperson wards 1–50, CPS board
 president + subdistricts 1A–10B, and 22 Police District Councils). The ballot *structure*

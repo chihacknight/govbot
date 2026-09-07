@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the "allILElections" feed: offices/races on upcoming Illinois and
+"""Build the "Elections Happening in IL" feed: offices/races on upcoming Illinois and
 Chicago ballots, with the candidates running for each.
 
 Unlike the bill dataset (OpenStates -> git-repos-as-datasets), candidate lists
@@ -608,7 +608,7 @@ def to_rss(doc):
     """The whole ballot as one RSS 2.0 feed (one item per race)."""
     built_822 = _feed_prelude(doc)
     return _feed_xml(
-        "govbot — allILElections: Chicago & Illinois races",
+        "govbot — Elections Happening in IL: Chicago & Illinois races",
         "Every office on upcoming Chicago and Illinois ballots (citywide, "
         "aldermanic, CPS board, and Police District Councils), with candidates "
         "as they are confirmed. Refreshed twice daily by govbot.",

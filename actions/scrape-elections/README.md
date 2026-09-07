@@ -1,6 +1,6 @@
 # scrape-elections — Illinois & Chicago elections feed
 
-Builds the **allILElections** dashboard feed: every office on upcoming Chicago
+Builds the **Elections Happening in IL** dashboard feed: every office on upcoming Chicago
 and Illinois ballots, with the candidates running for each.
 
 Powers `docs/src/dashboard/elections.html`. Output validates against

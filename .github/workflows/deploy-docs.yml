@@ -174,7 +174,7 @@ jobs:
           ls -lh docs/src/dashboard/hearings.json docs/src/dashboard/hearings.xml
           ls -1 docs/src/dashboard/hearings/ 2>/dev/null | head -5 || true
 
-      # Illinois & Chicago elections feed (allILElections): candidate lists from
+      # Illinois & Chicago elections feed (Elections Happening in IL): candidate lists from
       # the Chicago Board of Elections and the Illinois SBE "Who Is Running" list,
       # placed onto the committed race-structure seed. Fully fail-soft — a source
       # outage/format change yields zero candidates, never a crash. We only
