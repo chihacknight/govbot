@@ -525,6 +525,160 @@ def load_json(path):
 
 
 # --------------------------------------------------------------------------- #
+# Campaign money — Illinois SBE bulk data (D2 filings via the ID crosswalk)
+# --------------------------------------------------------------------------- #
+# The SBE publishes tab-delimited, header-first bulk files at
+# elections.il.gov/campaigndisclosuredatafiles/. We use the reliable ID
+# crosswalk — never fuzzy dollar matching:
+#   our candidate name -> Candidates.txt (ID) -> CmteCandidateLinks (CommitteeID)
+#   -> Committees.txt (Name) -> D2Totals (latest filing: receipts/expend/funds).
+# A candidate gets money only when their normalized "First Last" resolves to
+# exactly one SBE candidate record; ambiguous names are skipped, not guessed.
+SBE_COMMITTEE_SEARCH = "https://www.elections.il.gov/CampaignDisclosure/CommitteeDetailRevenue.aspx"
+
+
+def _name_key(name):
+    """Normalized 'firstlast' key from a ballot name ('Last, First' or 'First
+    ... Last'); '' when it can't be split."""
+    raw = (name or "").strip()
+    if not raw:
+        return ""
+    if "," in raw:
+        last, _, first = raw.partition(",")
+        first = first.strip().split()[0] if first.strip() else ""
+    else:
+        parts = raw.split()
+        if len(parts) < 2:
+            return re.sub(r"[^a-z0-9]", "", raw.lower())
+        first, last = parts[0], parts[-1]
+    return re.sub(r"[^a-z0-9]", "", (first + last).lower())
+
+
+def read_tsv(path):
+    """Yield each row of a tab-delimited, header-first SBE file as a dict.
+    Streaming (line by line) so the 50MB+ D2Totals file never loads fully."""
+    p = Path(path)
+    if not p.exists():
+        return
+    with p.open(encoding="utf-8", errors="replace") as fh:
+        header = fh.readline().rstrip("\n").split("\t")
+        for line in fh:
+            cells = line.rstrip("\n").split("\t")
+            if len(cells) < len(header):
+                cells += [""] * (len(header) - len(cells))
+            yield dict(zip(header, cells))
+
+
+def _to_float(s):
+    try:
+        return round(float((s or "").strip() or 0), 2)
+    except ValueError:
+        return 0.0
+
+
+def build_money_index(money_dir, wanted_name_keys, now):
+    """Resolve campaign money for the given candidate name-keys from a directory
+    of SBE bulk files. Returns {name_key: money_dict}. Fail-soft: missing files
+    yield {}. Only unambiguous name matches are kept."""
+    d = Path(money_dir)
+    if not d.exists():
+        return {}
+    wanted = set(k for k in wanted_name_keys if k)
+    if not wanted:
+        return {}
+
+    # 1) name -> candidate id (drop names that map to more than one SBE record)
+    cand_ids, ambiguous = {}, set()
+    for row in read_tsv(d / "Candidates.txt"):
+        key = _name_key(row.get("LastName", "") + ", " + row.get("FirstName", ""))
+        if key not in wanted:
+            continue
+        cid = (row.get("ID") or "").strip()
+        if not cid:
+            continue
+        if key in cand_ids and cand_ids[key] != cid:
+            ambiguous.add(key)
+        cand_ids.setdefault(key, cid)
+    for k in ambiguous:
+        cand_ids.pop(k, None)
+    if not cand_ids:
+        return {}
+    id_to_key = {v: k for k, v in cand_ids.items()}
+
+    # 2) candidate id -> committee ids
+    cand_committees = {}
+    for row in read_tsv(d / "CmteCandidateLinks.txt"):
+        cid = (row.get("CandidateID") or "").strip()
+        k = id_to_key.get(cid)
+        if k:
+            cand_committees.setdefault(k, set()).add((row.get("CommitteeID") or "").strip())
+    wanted_committees = {c for cs in cand_committees.values() for c in cs if c}
+    if not wanted_committees:
+        return {}
+
+    # 3) committee id -> name
+    cmte_name = {}
+    for row in read_tsv(d / "Committees.txt"):
+        cid = (row.get("ID") or "").strip()
+        if cid in wanted_committees:
+            cmte_name[cid] = (row.get("Name") or "").strip()
+
+    # 4) committee id -> latest D2 filing (max numeric ID) totals
+    latest = {}  # committee_id -> (max_id, receipts, expend, funds)
+    for row in read_tsv(d / "D2Totals.txt"):
+        cid = (row.get("CommitteeID") or "").strip()
+        if cid not in wanted_committees:
+            continue
+        try:
+            rid = int((row.get("ID") or "0").strip() or 0)
+        except ValueError:
+            continue
+        if cid not in latest or rid > latest[cid][0]:
+            latest[cid] = (rid, _to_float(row.get("TotalReceipts")),
+                           _to_float(row.get("TotalExpend")), _to_float(row.get("EndFundsAvail")))
+
+    # 5) aggregate per candidate
+    out = {}
+    for k, cids in cand_committees.items():
+        cids = [c for c in cids if c in latest]
+        if not cids:
+            continue
+        raised = sum(latest[c][1] for c in cids)
+        spent = sum(latest[c][2] for c in cids)
+        cash = sum(latest[c][3] for c in cids)
+        primary = max(cids, key=lambda c: latest[c][3])  # most cash on hand
+        out[k] = {
+            "committee_name": cmte_name.get(primary) or None,
+            "committee_id": primary,
+            "committees": len(cids),
+            "funds_raised": raised,
+            "funds_spent": spent,
+            "cash_on_hand": cash,
+            "as_of": now.strftime("%Y-%m-%d"),
+            "source_url": SBE_COMMITTEE_SEARCH,
+        }
+    return out
+
+
+def enrich_money(doc, money_dir, now):
+    """Attach `money` to each candidate in an assembled elections doc, in place.
+    Returns the number of candidates enriched."""
+    cands = [c for r in doc.get("races", []) for c in r.get("candidates", [])]
+    if not cands:
+        return 0
+    index = build_money_index(money_dir, {_name_key(c["name"]) for c in cands}, now)
+    if not index:
+        return 0
+    n = 0
+    for c in cands:
+        m = index.get(_name_key(c["name"]))
+        if m:
+            c["money"] = m
+            n += 1
+    return n
+
+
+# --------------------------------------------------------------------------- #
 # assembly
 # --------------------------------------------------------------------------- #
 def load_seed(seed_path=SEED_PATH):
@@ -817,10 +971,27 @@ def main():
     ap.add_argument("--hearings", default="docs/src/dashboard/hearings.json",
                     help="hearings.json, to cross-reference Springfield bills with "
                          "upcoming ILGA committee hearings")
+    ap.add_argument("--enrich-money", default=None,
+                    help="Attach SBE campaign-finance money to the candidates in an "
+                         "existing elections.json (rewritten in place) using --money-dir, "
+                         "then exit. Run after candidates are populated")
+    ap.add_argument("--money-dir", default=None,
+                    help="Directory of Illinois SBE bulk files (Candidates.txt, "
+                         "CmteCandidateLinks.txt, Committees.txt, D2Totals.txt) for "
+                         "--enrich-money")
     args = ap.parse_args()
 
     now = (datetime.strptime(args.now, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
            if args.now else datetime.now(timezone.utc))
+
+    if args.enrich_money:
+        doc = load_json(args.enrich_money)
+        if doc is None:
+            return 0
+        n = enrich_money(doc, args.money_dir or "", now)
+        Path(args.enrich_money).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
+        print(f"enriched {n} candidate(s) with SBE campaign money", file=sys.stderr)
+        return 0
 
     seed = load_seed(args.seed)
 

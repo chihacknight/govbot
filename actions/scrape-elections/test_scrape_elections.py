@@ -216,6 +216,49 @@ class Springfield(unittest.TestCase):
         self.assertEqual(len(items), 3)
 
 
+class Money(unittest.TestCase):
+    def setUp(self):
+        self.dir = RAW / "sbe"
+        self.now = main.datetime(2026, 9, 7, tzinfo=main.timezone.utc)
+        keys = {main._name_key(n) for n in
+                ["Casey R. Sample", "Morgan Placeholder", "Sam T. Example", "Lee Q. Testcase"]}
+        self.idx = main.build_money_index(str(self.dir), keys, self.now)
+
+    def test_name_key(self):
+        self.assertEqual(main._name_key("Casey R. Sample"), "caseysample")
+        self.assertEqual(main._name_key("Sample, Casey R."), "caseysample")
+
+    def test_aggregates_multiple_committees(self):
+        m = self.idx[main._name_key("Casey R. Sample")]
+        self.assertEqual(m["committees"], 2)
+        self.assertEqual(m["funds_raised"], 90000.0)
+        self.assertEqual(m["funds_spent"], 54000.0)
+        self.assertEqual(m["cash_on_hand"], 41000.0)
+        self.assertEqual(m["committee_name"], "Friends of Casey Sample")  # most cash
+
+    def test_latest_d2_by_max_id(self):
+        # committee 900 has filings id 10 and 20; the id-20 receipts (80000) win.
+        m = self.idx[main._name_key("Casey R. Sample")]
+        self.assertNotIn(50000.0, [m["funds_raised"]])  # not the older filing
+
+    def test_ambiguous_name_skipped(self):
+        # "Morgan Placeholder" appears twice in Candidates.txt -> no money.
+        self.assertNotIn(main._name_key("Morgan Placeholder"), self.idx)
+
+    def test_no_committee_skipped(self):
+        self.assertNotIn(main._name_key("Lee Q. Testcase"), self.idx)
+
+    def test_missing_dir_empty(self):
+        self.assertEqual(main.build_money_index("/no/such/dir", {"caseysample"}, self.now), {})
+
+    def test_enrich_money_attaches(self):
+        doc = {"races": [{"candidates": [{"name": "Casey R. Sample"}, {"name": "Nobody Here"}]}]}
+        n = main.enrich_money(doc, str(self.dir), self.now)
+        self.assertEqual(n, 1)
+        self.assertEqual(doc["races"][0]["candidates"][0]["money"]["committees"], 2)
+        self.assertNotIn("money", doc["races"][0]["candidates"][1])
+
+
 class Snapshot(unittest.TestCase):
     def test_matches_expected(self):
         if not EXPECTED.exists():

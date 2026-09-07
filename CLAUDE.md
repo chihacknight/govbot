@@ -187,6 +187,15 @@ outline (citywide offices tint all of Chicago); CPS subdistricts have no publish
 so their map is omitted. Fail-soft: a portal outage leaves the committed `maps.json` in
 place. Geometry helpers are offline-tested: `python3 actions/scrape-maps/main.py --self-test`.
 
+**Campaign money** (Illinois SBE) attaches to each candidate via the SBE ID crosswalk
+(candidate name → `Candidates.txt` ID → `CmteCandidateLinks` → `Committees` → latest
+`D2Totals` row): receipts, spending, cash on hand. Only unambiguous name matches are kept
+(never fuzzy dollar matching). Because the SBE bulk files are ~70MB, `deploy-docs.yml`
+runs it as a **separate step gated on candidates being present** —
+`main.py --enrich-money docs/src/dashboard/elections.json --money-dir <sbe-files>` — so the
+committed sample (empty rosters) carries no money. Parsers/aggregation are offline-tested
+in `test_scrape_elections.py`.
+
 ## govbot Development
 
 ```bash

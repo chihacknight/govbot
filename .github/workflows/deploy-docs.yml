@@ -221,6 +221,31 @@ jobs:
           ls -lh docs/src/dashboard/elections.json docs/src/dashboard/elections.xml
           ls -1 docs/src/dashboard/elections/ 2>/dev/null | head -5 || true
 
+      # Campaign money (Illinois SBE): attach each candidate's receipts / spending
+      # / cash-on-hand from their committee's latest D2 filing, via the SBE ID
+      # crosswalk. Gated on candidates actually being present — the SBE bulk files
+      # are large (~70MB), so we only download + enrich when there's something to
+      # enrich. Fully fail-soft: a download error just leaves money off.
+      - name: Enrich candidates with SBE campaign money
+        run: |
+          set -uo pipefail
+          CANDS="$(python3 -c 'import json;d=json.load(open("docs/src/dashboard/elections.json"));print(sum(len(r["candidates"]) for r in d["races"]))' 2>/dev/null || echo 0)"
+          if [ "$CANDS" -gt 0 ]; then
+            mkdir -p /tmp/sbe
+            base="https://www.elections.il.gov/campaigndisclosuredatafiles"
+            ok=1
+            for f in Candidates.txt CmteCandidateLinks.txt Committees.txt D2Totals.txt; do
+              curl -fsSL --retry 3 -o "/tmp/sbe/$f" "$base/$f" || { echo "::warning::could not download $f"; ok=0; }
+            done
+            if [ "$ok" = "1" ]; then
+              python3 actions/scrape-elections/main.py \
+                --enrich-money docs/src/dashboard/elections.json --money-dir /tmp/sbe \
+                || echo "::warning::money enrichment reported errors"
+            fi
+          else
+            echo "no candidates present; skipping SBE money download/enrichment"
+          fi
+
       - name: Build docs
         run: mdbook build docs
 

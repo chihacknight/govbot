@@ -247,6 +247,13 @@
   .mini b { color: var(--text-secondary); font-weight: 600; }
   .cand-links { font-size: 11.5px; font-weight: 600; }
   .incumbent { color: var(--series-5); font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.02em; }
+  .cand-money { margin-top: 5px; font-size: 11.5px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 10px; }
+  .cand-money .m-fig { display: inline-flex; gap: 4px; }
+  .cand-money .m-fig .m-lbl { color: var(--text-muted); }
+  .cand-money .m-fig .m-val { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--series-4); }
+  .cand-money .m-fig.spent .m-val { color: var(--text-secondary); }
+  .cand-money .m-cmte { color: var(--text-muted); font-size: 10.5px; width: 100%; }
+  .cand-money .m-cmte a { font-weight: 600; }
   .no-cands { font-size: 12.5px; color: var(--text-muted); padding: 4px 2px; }
   .no-cands a { font-weight: 600; }
   .race-foot { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 2px; padding-top: 7px; border-top: 1px solid var(--gridline); }
@@ -600,8 +607,8 @@
         <a href="https://github.com/govbot-data/il-legislation" target="_blank" rel="noopener">govbot-data/il-legislation ↗</a>
       </div>
       <div class="cab-item">
-        <h4>💵 Campaign money <span class="cab-status planned">planned</span></h4>
-        <p>Committee filings &amp; disclosure data from the Illinois SBE.</p>
+        <h4>💵 Campaign money <span class="cab-status live">live · when a committee matches</span></h4>
+        <p>Each candidate's receipts, spending &amp; cash on hand from their SBE committee's latest D2 filing (attached only on a confident ID match).</p>
         <a href="https://www.elections.il.gov/campaigndisclosuredatafiles/" target="_blank" rel="noopener">SBE disclosure files ↗</a>
       </div>
       <div class="cab-item">
@@ -1041,8 +1048,45 @@
       meta.append(a);
     }
     if (meta.childNodes.length) body.append(meta);
+
+    if (c.money) {
+      const m = c.money;
+      const mon = document.createElement("div"); mon.className = "cand-money";
+      const fig = (lbl, val, cls) => {
+        const s = document.createElement("span"); s.className = "m-fig" + (cls ? " " + cls : "");
+        const l = document.createElement("span"); l.className = "m-lbl"; l.textContent = lbl;
+        const v = document.createElement("span"); v.className = "m-val"; v.textContent = fmtMoney(val);
+        s.append(l, v); return s;
+      };
+      if (m.funds_raised != null) mon.append(fig("💵 Raised", m.funds_raised));
+      if (m.funds_spent != null) mon.append(fig("Spent", m.funds_spent, "spent"));
+      if (m.cash_on_hand != null) mon.append(fig("Cash", m.cash_on_hand));
+      if (m.committee_name || m.source_url) {
+        const cm = document.createElement("span"); cm.className = "m-cmte";
+        cm.append(document.createTextNode((m.committee_name || "Committee") +
+          (m.committees > 1 ? " +" + (m.committees - 1) + " more" : "") + " · "));
+        const a = document.createElement("a");
+        a.href = m.source_url || "https://www.elections.il.gov/"; a.target = "_blank"; a.rel = "noopener";
+        a.textContent = "SBE filing ↗";
+        cm.append(a);
+        if (m.as_of) cm.append(document.createTextNode(" · as of " + prettyDate(m.as_of)));
+        mon.append(cm);
+      }
+      body.append(mon);
+    }
+
     row.append(body);
     return row;
+  }
+
+  // Compact currency: $1.2M / $340K / $5,600 / $0.
+  function fmtMoney(n) {
+    n = Number(n) || 0;
+    const sign = n < 0 ? "-" : "";
+    const a = Math.abs(n);
+    if (a >= 1e6) return sign + "$" + (a / 1e6).toFixed(a >= 1e7 ? 0 : 1) + "M";
+    if (a >= 1e3) return sign + "$" + Math.round(a / 1e3) + "K";
+    return sign + "$" + Math.round(a).toLocaleString("en-US");
   }
 
   function avatarPlaceholder(name) {

@@ -57,6 +57,35 @@ list when the dataset is unavailable. On the deploy, `data.json` and
 `hearings.json` are both built earlier in the same job, so this reads the fresh
 copies.
 
+## Campaign money — Illinois SBE (D2 filings)
+
+Each candidate can carry a `money` summary (receipts, spending, cash on hand)
+from their committee's latest **D2** filing. It uses the SBE's reliable **ID
+crosswalk**, never fuzzy dollar matching:
+
+```
+our candidate name → Candidates.txt (ID) → CmteCandidateLinks (CommitteeID)
+                   → Committees.txt (Name) → D2Totals (latest filing, max ID)
+```
+
+A candidate is enriched only when their normalized *First Last* resolves to
+**exactly one** SBE candidate record; ambiguous names are skipped, not guessed.
+Figures across multiple linked committees are summed; the committee with the most
+cash on hand is shown as primary.
+
+Because the SBE bulk files are large (~70 MB), enrichment is a **separate,
+gated** step — the deploy downloads the files and runs it only when candidates
+are present:
+
+```bash
+python3 actions/scrape-elections/main.py \
+  --enrich-money docs/src/dashboard/elections.json --money-dir /path/to/sbe-files
+```
+
+where the directory holds `Candidates.txt`, `CmteCandidateLinks.txt`,
+`Committees.txt`, and `D2Totals.txt` from
+elections.il.gov/campaigndisclosuredatafiles/.
+
 ## Usage
 
 ```bash

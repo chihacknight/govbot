@@ -166,6 +166,21 @@
         },
         "website": { "type": ["string", "null"], "format": "uri", "description": "Candidate campaign website, when known." },
         "photo_url": { "type": ["string", "null"], "format": "uri", "description": "Official candidate photo URL, when published by the authority." },
+        "money": {
+          "type": ["object", "null"],
+          "description": "Campaign finance summary from the Illinois SBE, attached only when the candidate resolves unambiguously to an SBE candidate record and their committee(s). Dollar figures come straight from the committee's own D2 filings; null when no confident match.",
+          "additionalProperties": false,
+          "properties": {
+            "committee_name": { "type": ["string", "null"], "description": "Primary political committee name." },
+            "committee_id": { "type": ["string", "null"], "description": "SBE committee ID." },
+            "committees": { "type": "integer", "minimum": 1, "description": "Number of linked committees aggregated." },
+            "funds_raised": { "type": ["number", "null"], "description": "Total receipts across linked committees' latest D2 filings." },
+            "funds_spent": { "type": ["number", "null"], "description": "Total expenditures across linked committees' latest D2 filings." },
+            "cash_on_hand": { "type": ["number", "null"], "description": "End funds available across linked committees' latest D2 filings." },
+            "as_of": { "type": ["string", "null"], "description": "When this snapshot was taken (build date), since D2Totals has no per-row date." },
+            "source_url": { "type": ["string", "null"], "description": "SBE committee-search page for verification." }
+          }
+        },
         "source": { "type": ["string", "null"], "description": "Where this candidate record was read (host or authority)." }
       }
     }

@@ -1,0 +1,4 @@
+ID	CommitteeID	CandidateID
+1	900	100
+2	901	100
+3	902	102
