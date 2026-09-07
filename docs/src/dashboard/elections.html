@@ -130,6 +130,24 @@
   .theme-toggle button:hover { color: var(--text-primary); }
   .theme-toggle button[aria-pressed="true"] { background: var(--series-1); color: #fff; }
 
+  /* theme toggle + New Design switch stacked at the top-right */
+  .controls-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex: none; }
+  .design-toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 12.5px; color: var(--text-secondary); }
+  .design-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .design-toggle .dt-track {
+    position: relative; width: 40px; height: 22px; border-radius: 999px;
+    background: var(--gridline); border: 1px solid var(--border); transition: background 0.18s ease;
+    flex: none;
+  }
+  .design-toggle .dt-thumb {
+    position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--surface-1); box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform 0.18s ease;
+  }
+  .design-toggle input:checked + .dt-track { background: #00c805; border-color: #00c805; }
+  .design-toggle input:checked + .dt-track .dt-thumb { transform: translateX(18px); background: #fff; }
+  .design-toggle input:focus-visible + .dt-track { outline: 2px solid var(--series-1); outline-offset: 2px; }
+  .design-toggle .dt-label { font-weight: 600; white-space: nowrap; }
+
   /* ---------- intro callout (why this page exists) ---------- */
   .intro {
     border: 2px solid var(--series-2); border-radius: 14px; padding: 14px 16px;
@@ -287,15 +305,126 @@
   .chn-credit svg { flex: none; }
   .chn-credit a { color: var(--series-1); }
 
+  /* ---------- back-to-top floating button ---------- */
+  .to-top {
+    position: fixed; right: 20px; bottom: 20px; z-index: 60;
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary);
+    font-size: 20px; line-height: 1; cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; transform: translateY(8px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+  }
+  .to-top.show { opacity: 1; visibility: visible; transform: none; }
+  .to-top:hover { border-color: var(--series-1); color: var(--series-1); }
+  @media (prefers-reduced-motion: reduce) { .to-top { transition: none; } }
+
   @media (max-width: 620px) { .races { grid-template-columns: 1fr; } }
+
+  /* ==================================================================== */
+  /*  NEW DESIGN — Robinhood-inspired look & feel (toggled per viewer).    */
+  /*  Placed last so its token + component overrides win by source order.  */
+  /*  Signature: bright Robinhood green (#00C805), near-black/white ground, */
+  /*  flat cards, big rounded corners, airy spacing, minimal borders.      */
+  /* ==================================================================== */
+  :root[data-design="new"] {
+    --page: #ffffff; --surface-1: #f6f8fa;
+    --text-primary: #0b0d0f; --text-secondary: #464c52; --text-muted: #7a8089;
+    --gridline: #eceff2; --baseline: #d9dee2; --border: rgba(0,0,0,0.08);
+    --hover-wash: rgba(0,0,0,0.04); --row-alt: rgba(0,0,0,0.02);
+    --series-1: #00a806; --series-2: #00c805;
+    --rh-green: #00c805; --rh-green-strong: #00a806;
+  }
+  :root[data-design="new"][data-theme="dark"] {
+    --page: #000000; --surface-1: #16181c;
+    --text-primary: #ffffff; --text-secondary: #c7ccd1; --text-muted: #9aa0a6;
+    --gridline: #23262b; --baseline: #31353b; --border: rgba(255,255,255,0.10);
+    --hover-wash: rgba(255,255,255,0.05); --row-alt: rgba(255,255,255,0.03);
+    --series-1: #00d106; --series-2: #00c805;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root[data-design="new"]:not([data-theme]) {
+      --page: #000000; --surface-1: #16181c;
+      --text-primary: #ffffff; --text-secondary: #c7ccd1; --text-muted: #9aa0a6;
+      --gridline: #23262b; --baseline: #31353b; --border: rgba(255,255,255,0.10);
+      --hover-wash: rgba(255,255,255,0.05); --row-alt: rgba(255,255,255,0.03);
+      --series-1: #00d106; --series-2: #00c805;
+    }
+  }
+
+  /* typography — cleaner, tighter, Robinhood-ish */
+  :root[data-design="new"] body {
+    font-family: "Inter", ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    letter-spacing: -0.006em;
+  }
+  :root[data-design="new"] header.top h1 { font-weight: 700; letter-spacing: -0.03em; font-size: 25px; }
+  :root[data-design="new"] .group-title,
+  :root[data-design="new"] .calendar h2,
+  :root[data-design="new"] .cal-card h3 { letter-spacing: -0.02em; }
+
+  /* tabs — flat, with a green underline on the active tab (no card look) */
+  :root[data-design="new"] .tabs { border-bottom-color: var(--border); }
+  :root[data-design="new"] .tab { border-top-color: transparent !important; border-radius: 8px 8px 0 0; }
+  :root[data-design="new"] .tab[aria-current="page"] {
+    background: transparent; border-color: transparent;
+    box-shadow: inset 0 -3px 0 var(--rh-green, #00c805);
+  }
+  :root[data-design="new"] .tab:hover { color: var(--rh-green-strong, #00a806); }
+
+  /* controls — green active states */
+  :root[data-design="new"] .theme-toggle,
+  :root[data-design="new"] .filters input,
+  :root[data-design="new"] .filters select { border-radius: 12px; }
+  :root[data-design="new"] .theme-toggle { border-radius: 999px; }
+  :root[data-design="new"] .theme-toggle button[aria-pressed="true"] { background: var(--rh-green, #00c805); color: #06210a; }
+
+  /* cards & panels — flatter, rounder, airier */
+  :root[data-design="new"] .intro {
+    border-radius: 18px; border-color: color-mix(in srgb, var(--rh-green) 35%, transparent);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--rh-green) 9%, var(--surface-1)) 0%, var(--surface-1) 75%);
+  }
+  :root[data-design="new"] .tile { border-radius: 16px; border-left-width: 1px; }
+  :root[data-design="new"] .tile .value { color: var(--rh-green, #00c805); }
+  :root[data-design="new"] .group { border-width: 1px; border-color: var(--border); border-radius: 18px; }
+  :root[data-design="new"] .group-head { border-bottom-color: var(--gridline); }
+  :root[data-design="new"] .race { border-radius: 16px; border-top-width: 1px; border-top-color: var(--border); }
+  :root[data-design="new"] .cal-card { border-width: 1px; border-color: var(--border); border-radius: 18px; }
+  :root[data-design="new"] .cal-card .cal-when { color: var(--rh-green-strong); }
+
+  /* buttons / interactive — Robinhood green */
+  :root[data-design="new"] .toggle-pill[aria-pressed="true"] { background: var(--rh-green); border-color: var(--rh-green); color: #06210a; }
+  :root[data-design="new"] .clear-btn,
+  :root[data-design="new"] .filters input,
+  :root[data-design="new"] .filters select { border-radius: 12px; }
+  :root[data-design="new"] .rss-copy { background: var(--rh-green); color: #06210a; }
+  :root[data-design="new"] .rss-link, :root[data-design="new"] .race-rss,
+  :root[data-design="new"] details.tl-details > summary,
+  :root[data-design="new"] .group-rss .rss-link { color: var(--rh-green-strong); }
+  :root[data-design="new"] a { color: var(--rh-green-strong); }
+
+  /* badges & chips — flat pills */
+  :root[data-design="new"] .badge { border-radius: 999px; }
+  :root[data-design="new"] .badge.first { background: var(--rh-green); border-color: var(--rh-green); color: #06210a; }
+  :root[data-design="new"] .pchip.on_ballot { color: var(--rh-green-strong); border-color: var(--rh-green-strong); }
+
+  /* timeline — green progress */
+  :root[data-design="new"] .tl-item.done .tl-dot { background: var(--rh-green); border-color: var(--rh-green); color: #06210a; }
+  :root[data-design="new"] .tl-item.next .tl-dot { background: var(--rh-green-strong); border-color: var(--rh-green-strong); }
+
+  /* back-to-top — green on hover in the new design */
+  :root[data-design="new"] .to-top:hover { border-color: var(--rh-green); color: var(--rh-green-strong); }
 </style>
 <script>
   // Apply a saved theme choice before first paint. Shared localStorage key, so
-  // the choice carries across all four dashboard tabs.
+  // the choice carries across all four dashboard tabs. Also apply the saved
+  // "New Design" (Robinhood-inspired) preference, which is scoped to this page.
   (function () {
     try {
       var t = localStorage.getItem("govbot-theme");
       if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+      if (localStorage.getItem("govbot-elections-design") === "new")
+        document.documentElement.setAttribute("data-design", "new");
     } catch (e) {}
   })();
 </script>
@@ -314,10 +443,17 @@
         <img class="brand-logo" src="govbot-logo.png" width="40" height="40" alt="" aria-hidden="true">
         <span class="brand-name">gov<span class="bot">bot</span></span>
       </a>
-      <div class="theme-toggle" role="group" aria-label="Color theme">
-        <button type="button" data-theme-choice="light" title="Light theme" aria-label="Light theme" aria-pressed="false">☀</button>
-        <button type="button" data-theme-choice="auto"  title="Match system" aria-label="Match system theme" aria-pressed="false">Auto</button>
-        <button type="button" data-theme-choice="dark"  title="Dark theme"  aria-label="Dark theme" aria-pressed="false">☾</button>
+      <div class="controls-stack">
+        <div class="theme-toggle" role="group" aria-label="Color theme">
+          <button type="button" data-theme-choice="light" title="Light theme" aria-label="Light theme" aria-pressed="false">☀</button>
+          <button type="button" data-theme-choice="auto"  title="Match system" aria-label="Match system theme" aria-pressed="false">Auto</button>
+          <button type="button" data-theme-choice="dark"  title="Dark theme"  aria-label="Dark theme" aria-pressed="false">☾</button>
+        </div>
+        <label class="design-toggle" title="Preview a Robinhood-inspired look">
+          <input type="checkbox" id="design-switch" role="switch" aria-label="New Design">
+          <span class="dt-track" aria-hidden="true"><span class="dt-thumb"></span></span>
+          <span class="dt-label">New Design</span>
+        </label>
       </div>
     </div>
     <div class="title-row">
@@ -408,6 +544,23 @@
     }
     buttons.forEach((b) => b.addEventListener("click", () => apply(b.dataset.themeChoice)));
     apply(saved());
+  })();
+
+  // ----- "New Design" (Robinhood-inspired) toggle — scoped to this page -----
+  (function initDesign() {
+    const root = document.documentElement;
+    const sw = document.getElementById("design-switch");
+    if (!sw) return;
+    const on = () => root.getAttribute("data-design") === "new";
+    sw.checked = on();
+    sw.addEventListener("change", () => {
+      if (sw.checked) root.setAttribute("data-design", "new");
+      else root.removeAttribute("data-design");
+      try {
+        if (sw.checked) localStorage.setItem("govbot-elections-design", "new");
+        else localStorage.removeItem("govbot-elections-design");
+      } catch (e) {}
+    });
   })();
 
   const GROUP_META = {
@@ -913,6 +1066,20 @@
       String(d.getUTCMinutes()).padStart(2, "0") + " UTC";
     return s;
   }
+})();
+</script>
+<button class="to-top" id="to-top" type="button" aria-label="Back to top" title="Back to top">↑</button>
+<script>
+(function () {
+  var btn = document.getElementById("to-top");
+  if (!btn) return;
+  var toggle = function () { btn.classList.toggle("show", (window.scrollY || document.documentElement.scrollTop) > 400); };
+  window.addEventListener("scroll", toggle, { passive: true });
+  toggle();
+  btn.addEventListener("click", function () {
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+  });
 })();
 </script>
 </body>
