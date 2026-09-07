@@ -1,0 +1,192 @@
+#!/usr/bin/env python3
+"""Offline snapshot tests for the elections scraper.
+
+Pure parsers are exercised against the raw fixtures under __snapshots__/raw/,
+and the whole offline build is diffed against __snapshots__/expected_elections.json.
+No network. Run: python3 actions/scrape-elections/test_scrape_elections.py
+Regenerate the snapshot after an intentional change: ./render-snapshots.sh
+"""
+
+import json
+import unittest
+from pathlib import Path
+
+import main
+
+HERE = Path(__file__).parent
+RAW = HERE / "__snapshots__" / "raw"
+EXPECTED = HERE / "__snapshots__" / "expected_elections.json"
+RACE_REQUIRED = {"id", "jurisdiction", "office", "office_group", "is_citywide",
+                 "partisan", "status", "candidates", "source"}
+
+
+class RaceMatching(unittest.TestCase):
+    def test_citywide(self):
+        self.assertEqual(main.race_id_for("Mayor", None), "chicago-mayor")
+        self.assertEqual(main.race_id_for("City Clerk", ""), "chicago-city-clerk")
+        self.assertEqual(main.race_id_for("City Treasurer", ""), "chicago-city-treasurer")
+
+    def test_alderperson_ward(self):
+        self.assertEqual(main.race_id_for("Alderperson", "Ward 1"),
+                         "chicago-alderperson-ward-01")
+        self.assertEqual(main.race_id_for("Alderman", "Ward 50"),
+                         "chicago-alderperson-ward-50")
+
+    def test_cps(self):
+        self.assertEqual(main.race_id_for("President of the Board of Education", ""),
+                         "cps-board-president")
+        self.assertEqual(main.race_id_for("Member of the Board of Education", "Subdistrict 1A"),
+                         "cps-board-member-1a")
+        self.assertEqual(main.race_id_for("Member of the Board of Education", "Subdistrict 10B"),
+                         "cps-board-member-10b")
+
+    def test_police_district_council(self):
+        self.assertEqual(main.race_id_for("Police District Councilmember", "Police District 14"),
+                         "chicago-police-district-council-014")
+
+    def test_unplaceable_returns_none(self):
+        self.assertIsNone(main.race_id_for("State Representative", "District 5"))
+        self.assertIsNone(main.race_id_for("Alderperson", "Ward 99"))  # out of range
+
+
+class StatusNormalization(unittest.TestCase):
+    def test_maps(self):
+        self.assertEqual(main.normalize_status("On Ballot"), "on_ballot")
+        self.assertEqual(main.normalize_status("OBJECTED"), "objected")
+        self.assertEqual(main.normalize_status("Withdrawn"), "withdrawn")
+        self.assertEqual(main.normalize_status("Removed from ballot"), "removed")
+        self.assertEqual(main.normalize_status("Filed"), "filed")
+        self.assertEqual(main.normalize_status("something odd"), "unknown")
+        self.assertIsNone(main.normalize_status(""))
+
+
+class ISBEParser(unittest.TestCase):
+    def setUp(self):
+        self.cands = main.parse_isbe_candidates((RAW / "isbe_who_is_running.txt").read_text())
+
+    def test_row_count(self):
+        # 4 CPS/valid rows + 1 unplaceable state race = 5 parsed candidates.
+        self.assertEqual(len(self.cands), 5)
+
+    def test_president_resolves(self):
+        pres = [c for c in self.cands if c["_race_id"] == "cps-board-president"]
+        self.assertEqual(len(pres), 1)
+        self.assertEqual(pres[0]["name"], "Alex Q. Example")
+        self.assertEqual(pres[0]["petition_status"], "on_ballot")
+        self.assertEqual(pres[0]["filing_date"], "2026-03-20")
+
+    def test_subdistrict_resolves(self):
+        subs = {c["_race_id"] for c in self.cands}
+        self.assertIn("cps-board-member-1a", subs)
+        self.assertIn("cps-board-member-10b", subs)
+
+    def test_objected_status(self):
+        obj = [c for c in self.cands if c["name"] == "Pat Q. Placeholder"]
+        self.assertEqual(obj[0]["petition_status"], "objected")
+
+    def test_state_race_is_unplaceable(self):
+        st = [c for c in self.cands if c["name"] == "Not A Chicago Race"]
+        self.assertIsNone(st[0]["_race_id"])
+
+    def test_bad_input_empty(self):
+        self.assertEqual(main.parse_isbe_candidates("no header here\njust text"), [])
+
+
+class ChicagoBOEParser(unittest.TestCase):
+    def setUp(self):
+        self.cands = main.parse_chicago_boe((RAW / "chicago_boe_candidates.html").read_text())
+
+    def test_mayor_with_website(self):
+        m = [c for c in self.cands if c["_race_id"] == "chicago-mayor"]
+        self.assertEqual(len(m), 1)
+        self.assertEqual(m[0]["name"], "Casey R. Sample")
+        self.assertEqual(m[0]["website"], "https://example.org/casey")
+        self.assertEqual(m[0]["petition_status"], "on_ballot")
+
+    def test_wards(self):
+        ids = {c["_race_id"] for c in self.cands}
+        self.assertIn("chicago-alderperson-ward-01", ids)
+        self.assertIn("chicago-alderperson-ward-50", ids)
+
+    def test_pdc(self):
+        self.assertIn("chicago-police-district-council-014",
+                      {c["_race_id"] for c in self.cands})
+
+    def test_unplaceable_present_but_unresolved(self):
+        u = [c for c in self.cands if c["name"] == "Unplaceable Person"]
+        self.assertEqual(len(u), 1)
+        self.assertIsNone(u[0]["_race_id"])
+
+    def test_bad_html_empty(self):
+        self.assertEqual(main.parse_chicago_boe("<p>no table</p>"), [])
+
+
+class Assemble(unittest.TestCase):
+    def setUp(self):
+        self.seed = main.load_seed()
+        cands = main.build_from_fixtures(RAW)
+        now = main.datetime(2026, 9, 7, tzinfo=main.timezone.utc)
+        self.doc, self.placed = main.assemble(cands, self.seed, "test", now)
+        self.by_id = {r["id"]: r for r in self.doc["races"]}
+
+    def test_structure_preserved(self):
+        # Seed race count is preserved regardless of candidate matches.
+        self.assertEqual(len(self.doc["races"]), len(self.seed["races"]))
+
+    def test_candidates_placed(self):
+        self.assertGreater(self.placed, 0)
+        self.assertEqual([c["name"] for c in self.by_id["chicago-mayor"]["candidates"]],
+                         ["Casey R. Sample"])
+        self.assertEqual(len(self.by_id["cps-board-member-1a"]["candidates"]), 2)
+
+    def test_populated_race_marked_on_ballot(self):
+        self.assertEqual(self.by_id["chicago-mayor"]["status"], "on_ballot")
+        # An untouched race keeps its seed status.
+        self.assertEqual(self.by_id["chicago-city-treasurer"]["status"], "upcoming")
+
+    def test_every_race_has_required_fields(self):
+        for r in self.doc["races"]:
+            self.assertTrue(RACE_REQUIRED.issubset(r), f"missing fields in {r['id']}")
+
+    def test_no_internal_race_id_leaks(self):
+        for r in self.doc["races"]:
+            for c in r["candidates"]:
+                self.assertNotIn("_race_id", c)
+
+
+class Feeds(unittest.TestCase):
+    def setUp(self):
+        seed = main.load_seed()
+        cands = main.build_from_fixtures(RAW)
+        now = main.datetime(2026, 9, 7, tzinfo=main.timezone.utc)
+        self.doc, _ = main.assemble(cands, seed, "test", now)
+
+    def test_whole_feed_valid_xml(self):
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(main.to_rss(self.doc))
+        items = root.findall(".//item")
+        self.assertEqual(len(items), len(self.doc["races"]))
+
+    def test_granular_feeds_present(self):
+        feeds = main.all_feeds(self.doc)
+        self.assertIn("group-citywide.xml", feeds)
+        self.assertIn("race-chicago-mayor.xml", feeds)
+        import xml.etree.ElementTree as ET
+        for xml in feeds.values():
+            ET.fromstring(xml)  # each must be well-formed
+
+
+class Snapshot(unittest.TestCase):
+    def test_matches_expected(self):
+        if not EXPECTED.exists():
+            self.skipTest("run ./render-snapshots.sh to create the expected snapshot")
+        seed = main.load_seed()
+        cands = main.build_from_fixtures(RAW)
+        now = main.datetime(2026, 9, 7, tzinfo=main.timezone.utc)
+        doc, _ = main.assemble(cands, seed, "fixtures (offline snapshot)", now)
+        expected = json.loads(EXPECTED.read_text())
+        self.assertEqual(doc, expected)
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

@@ -1,0 +1,76 @@
+# scrape-elections — Illinois & Chicago elections feed
+
+Builds the **Elections Happening in IL** dashboard feed: every office on upcoming Chicago
+and Illinois ballots, with the candidates running for each.
+
+Powers `docs/src/dashboard/elections.html`. Output validates against
+`schemas/govbot.elections.schema.json`.
+
+## What it covers
+
+| Office group | Races | Ballot | Candidate source |
+|---|---|---|---|
+| Chicago citywide | Mayor, City Clerk, City Treasurer | 2027 municipal | Chicago Board of Elections |
+| City Council | Alderperson, Wards 1–50 | 2027 municipal | Chicago Board of Elections |
+| CPS Board | President (citywide) + Subdistricts 1A…10B | **Nov 3, 2026** | ISBE "Who Is Running" |
+| Police District Council | 3 seats × 22 police districts | 2027 municipal | Chicago Board of Elections |
+| Cook County / suburban / judicial / statewide | *(future)* | — | Cook County Clerk / ISBE |
+
+## How it works — structure vs. candidates
+
+The **race structure** (which offices/districts are on the ballot, their dates,
+and a plain-English *"why this race exists"* note) is stable and lives in a
+committed seed: [`elections_seed.json`](./elections_seed.json). The scrapers
+only **populate candidates** into those races.
+
+- `parse_isbe_candidates(text)` — ISBE's delimited "Who Is Running" candidate
+  list (tab/pipe/space-delimited); header-driven, so column order can change.
+- `parse_chicago_boe(html)` — the Chicago Board of Elections candidate-list
+  HTML table; a link in the name cell is kept as the candidate website.
+- `parse_cook_clerk(...)` — placeholder for suburban Cook (returns nothing until
+  the seed carries those races).
+
+A candidate is attached to a race only when its office + district resolve
+**unambiguously** (`race_id_for`). Anything that can't be placed is counted and
+dropped with a warning — **we never invent a race or a candidate.** A race with
+no confirmed candidate keeps an empty list plus a link to its official source.
+
+> **Best-effort live parsing.** ISBE and the Chicago BOE reshape their pages
+> between cycles, so a live fetch/parse can fail. When it does, the build falls
+> back to the committed seed (real structure, empty rosters) rather than
+> crashing, and the parsers stay validated offline against the fixtures below.
+> The exact live endpoints in `main.py` may need re-pointing against a real page
+> snapshot as a cycle opens.
+
+## Usage
+
+```bash
+# Live (what the Pages deploy runs):
+python3 actions/scrape-elections/main.py \
+  --output docs/src/dashboard/elections.json \
+  --rss docs/src/dashboard/elections.xml \
+  --rss-feeds-dir docs/src/dashboard/elections
+
+# Offline, deterministic — rebuild from fixtures:
+python3 actions/scrape-elections/main.py \
+  --from-fixtures actions/scrape-elections/__snapshots__/raw \
+  --now 2026-09-07T00:00:00Z --output -
+```
+
+## RSS
+
+- `elections.xml` — the whole ballot, one item per race.
+- `elections/group-<group>.xml` — one feed per office group (all aldermanic, all
+  CPS board, …).
+- `elections/race-<id>.xml` — one feed per race, so a resident can follow just
+  their ward, their CPS subdistrict, or the mayor's race.
+
+## Tests (offline)
+
+```bash
+python3 actions/scrape-elections/test_scrape_elections.py
+```
+
+Pure parsers run against `__snapshots__/raw/`; the whole build is diffed against
+`__snapshots__/expected_elections.json`. Regenerate that snapshot after an
+intentional change with `./render-snapshots.sh`, then review the diff.

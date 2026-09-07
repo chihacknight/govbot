@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>govbot — Elections Happening in IL</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20200%20200%22%3E%3Cpolygon%20points%3D%2282%2C68.8%20100%2C8%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22100%2C8%20118%2C68.8%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C68.8%20179.7%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22179.7%2C54%20136%2C100%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%22136%2C100%20179.7%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22179.7%2C146%20118%2C131.2%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C131.2%20100%2C192%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22100%2C192%2082%2C131.2%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%2282%2C131.2%2020.3%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%2220.3%2C146%2064%2C100%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%2264%2C100%2020.3%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%2220.3%2C54%2082%2C68.8%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3C/svg%3E">
+<style>
+  :root {
+    --page:           #f9f9f7;
+    --surface-1:      #fcfcfb;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #0b0b0b;
+    --text-muted:     #0b0b0b;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1: #2a78d6;
+    --series-2: #1baf7a;
+    --series-3: #eda100;
+    --series-4: #008300;
+    --series-5: #4a3aa7;
+    --series-6: #e34948;
+    --series-7: #e87ba4;
+    --series-8: #eb6834;
+    --hover-wash: rgba(11,11,11,0.04);
+    --row-alt: rgba(11,11,11,0.028);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      --page:           #0d0d0d;
+      --surface-1:      #1a1a19;
+      --text-primary:   #ffffff;
+      --text-secondary: #ffffff;
+      --text-muted:     #ffffff;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1: #3987e5;
+      --series-2: #199e70;
+      --series-3: #c98500;
+      --series-4: #008300;
+      --series-5: #9085e9;
+      --series-6: #e66767;
+      --series-7: #d55181;
+      --series-8: #d95926;
+      --hover-wash: rgba(255,255,255,0.06);
+      --row-alt: rgba(255,255,255,0.04);
+    }
+  }
+  :root[data-theme="dark"] {
+    --page:           #0d0d0d;
+    --surface-1:      #1a1a19;
+    --text-primary:   #ffffff;
+    --text-secondary: #ffffff;
+    --text-muted:     #ffffff;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1: #3987e5;
+    --series-2: #199e70;
+    --series-3: #c98500;
+    --series-4: #008300;
+    --series-5: #9085e9;
+    --series-6: #e66767;
+    --series-7: #d55181;
+    --series-8: #d95926;
+    --hover-wash: rgba(255,255,255,0.06);
+    --row-alt: rgba(255,255,255,0.04);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--text-primary);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  a { color: var(--series-1); }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 20px 48px; }
+
+  header.top { margin-bottom: 20px; }
+  header.top .title-row {
+    display: flex; align-items: center; gap: 12px;
+    flex-wrap: wrap; margin: 0 0 4px;
+  }
+  header.top h1 { font-size: 22px; font-weight: 650; margin: 0; }
+  header.top p  { margin: 0; color: var(--text-secondary); max-width: 76ch; }
+  header.top .docs-link { font-size: 13px; }
+  .asof {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px;
+    border: 1px solid var(--border); border-radius: 999px;
+    font-size: 12.5px; color: var(--text-secondary);
+  }
+  .asof .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--series-2); flex: none; }
+  .asof b { color: var(--text-primary); font-weight: 600; }
+
+  /* ---------- top tabs ---------- */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .tab {
+    padding: 8px 15px; text-decoration: none; color: var(--text-secondary);
+    font-weight: 550; font-size: 14px; border: 1px solid transparent; border-bottom: none;
+    border-top: 3px solid transparent; border-radius: 8px 8px 0 0; margin-bottom: -1px;
+  }
+  .tab-legis     { --tab-accent: var(--series-1); }  /* blue */
+  .tab-hearings  { --tab-accent: var(--series-3); }  /* gold */
+  .tab-arch      { --tab-accent: var(--series-5); }  /* purple */
+  .tab-elections { --tab-accent: var(--series-2); }  /* green */
+  .tab:hover { color: var(--tab-accent); background: var(--hover-wash); }
+  .tab[aria-current="page"] {
+    color: var(--text-primary); background: var(--surface-1);
+    border-color: var(--border); border-bottom: 1px solid var(--surface-1);
+    border-top-color: var(--tab-accent);
+  }
+  .tab:not([aria-current="page"]) { border-top-color: color-mix(in srgb, var(--tab-accent) 45%, transparent); }
+
+  /* ---------- brand bar + theme toggle ---------- */
+  .brandbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .brand { display: inline-flex; align-items: center; gap: 9px; text-decoration: none; color: var(--text-primary); }
+  .brand .brand-logo { flex: none; display: block; width: 40px; height: 40px; border-radius: 9px; border: 1px solid var(--border); }
+  .brand .brand-name { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+  .brand .brand-name .bot { color: var(--series-1); }
+  .theme-toggle { display: inline-flex; align-items: center; flex: none; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-1); padding: 2px; }
+  .theme-toggle button {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 28px; min-width: 34px; padding: 0 11px; border: none; background: transparent;
+    border-radius: 999px; color: var(--text-secondary); font: inherit; font-size: 12.5px; line-height: 1; cursor: pointer;
+  }
+  .theme-toggle button:hover { color: var(--text-primary); }
+  .theme-toggle button[aria-pressed="true"] { background: var(--series-1); color: #fff; }
+
+  /* ---------- intro callout (why this page exists) ---------- */
+  .intro {
+    border: 2px solid var(--series-2); border-radius: 14px; padding: 14px 16px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--series-2) 10%, var(--surface-1)) 0%, var(--surface-1) 70%);
+    margin-bottom: 18px; line-height: 1.55;
+  }
+  .intro b { font-weight: 700; }
+  .intro .intro-ico { font-size: 18px; }
+
+  /* ---------- filters ---------- */
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 16px 0 18px; }
+  .filters input[type="search"], .filters select {
+    height: 32px; padding: 0 10px; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--surface-1); color: var(--text-primary); font: inherit;
+  }
+  .filters input[type="search"] { width: 230px; }
+  .search-wrap { position: relative; display: inline-flex; align-items: center; }
+  .search-wrap .search-icon { position: absolute; left: 9px; color: var(--text-muted); pointer-events: none; }
+  .filters .search-wrap input[type="search"] { padding-left: 30px; }
+  .filters select:hover { background: var(--hover-wash); }
+  .toggle-pill {
+    display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px;
+    border: 1px solid var(--border); border-radius: 999px; background: var(--surface-1);
+    color: var(--text-secondary); font: inherit; font-size: 13px; cursor: pointer;
+  }
+  .toggle-pill[aria-pressed="true"] { background: var(--series-2); color: #fff; border-color: var(--series-2); }
+  .clear-btn { height: 32px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-1); color: var(--text-secondary); font: inherit; cursor: pointer; }
+  .clear-btn[disabled] { opacity: 0.45; cursor: default; }
+  .clear-btn:hover:not([disabled]) { background: var(--hover-wash); }
+
+  /* ---------- stat tiles ---------- */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .tile { background: var(--surface-1); border: 1px solid var(--border); border-left: 4px solid var(--c, var(--series-2)); border-radius: 10px; padding: 14px 16px; }
+  .tile .label { color: var(--text-secondary); font-size: 13px; margin-bottom: 4px; }
+  .tile .value { font-size: 26px; font-weight: 650; color: var(--c, var(--text-primary)); font-variant-numeric: tabular-nums; }
+
+  /* ---------- office-group sections ---------- */
+  .groups { display: flex; flex-direction: column; gap: 16px; }
+  .group {
+    border: 2px solid var(--gc, var(--series-2)); border-radius: 12px;
+    background: var(--surface-1); padding: 14px 15px 6px;
+  }
+  .group-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-bottom: 10px; border-bottom: 2px solid var(--gc, var(--gridline)); margin-bottom: 6px; }
+  .group-emoji {
+    width: 34px; height: 34px; border-radius: 9px; flex: none; display: flex; align-items: center; justify-content: center; font-size: 19px;
+    background: color-mix(in srgb, var(--gc) 20%, transparent); border: 1px solid color-mix(in srgb, var(--gc) 50%, transparent);
+  }
+  .group-title { font-size: 16px; font-weight: 700; }
+  .group-count { color: var(--text-muted); font-size: 12.5px; }
+  .group-rss { margin-left: auto; }
+
+  /* ---------- race cards ---------- */
+  .races { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; padding: 8px 0 10px; }
+  .race { border: 1px solid var(--border); border-top: 3px solid var(--gc, var(--series-2)); border-radius: 10px; padding: 12px 13px; background: var(--page); display: flex; flex-direction: column; gap: 8px; }
+  .race-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .race-office { font-weight: 650; font-size: 14.5px; }
+  .race-district { color: var(--text-secondary); font-size: 13px; }
+  .race-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; }
+  .badge.ballot { color: var(--series-1); border-color: color-mix(in srgb, var(--series-1) 55%, transparent); }
+  .badge.nonpartisan { color: var(--text-muted); }
+  .badge.partisan { color: var(--series-6); border-color: color-mix(in srgb, var(--series-6) 55%, transparent); }
+  .badge.seats { color: var(--series-5); border-color: color-mix(in srgb, var(--series-5) 55%, transparent); }
+  .badge.first { color: #fff; background: var(--series-2); border-color: var(--series-2); }
+  .why {
+    font-size: 12.5px; line-height: 1.45; color: var(--text-secondary);
+    background: var(--hover-wash); border-radius: 8px; padding: 8px 10px;
+    border-left: 3px solid color-mix(in srgb, var(--gc) 60%, transparent);
+  }
+  .why b { color: var(--text-primary); }
+
+  .cands { display: flex; flex-direction: column; gap: 7px; }
+  .cand { display: flex; gap: 9px; align-items: flex-start; padding: 7px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); }
+  .cand-avatar { width: 34px; height: 34px; border-radius: 50%; flex: none; object-fit: cover; border: 1px solid var(--border); background: var(--hover-wash); }
+  .cand-avatar.placeholder { display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--text-muted); font-size: 13px; }
+  .cand-body { min-width: 0; flex: 1; }
+  .cand-name { font-weight: 600; font-size: 13.5px; }
+  .cand-name a { color: var(--text-primary); text-decoration: none; }
+  .cand-name a:hover { color: var(--series-1); text-decoration: underline; }
+  .cand-meta { display: flex; flex-wrap: wrap; gap: 5px 6px; margin-top: 4px; align-items: center; }
+  .pchip { font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); }
+  .pchip.on_ballot { color: var(--series-4); border-color: var(--series-4); }
+  .pchip.filed { color: var(--series-1); border-color: color-mix(in srgb, var(--series-1) 55%, transparent); }
+  .pchip.objected { color: var(--series-3); border-color: var(--series-3); }
+  .pchip.withdrawn { color: var(--text-muted); }
+  .pchip.removed { color: var(--series-6); border-color: var(--series-6); }
+  .mini { font-size: 11.5px; color: var(--text-muted); }
+  .mini b { color: var(--text-secondary); font-weight: 600; }
+  .cand-links { font-size: 11.5px; font-weight: 600; }
+  .incumbent { color: var(--series-5); font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.02em; }
+  .no-cands { font-size: 12.5px; color: var(--text-muted); padding: 4px 2px; }
+  .no-cands a { font-weight: 600; }
+  .race-foot { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 2px; padding-top: 7px; border-top: 1px solid var(--gridline); }
+  .src-link, .race-rss { font-size: 11.5px; font-weight: 600; }
+  .race-rss { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; color: var(--series-2); background: none; border: none; padding: 0; font-family: inherit; }
+  .race-rss:hover { text-decoration: underline; }
+
+  .empty { color: var(--text-muted); padding: 24px; text-align: center; }
+
+  /* ---------- election calendar overview ---------- */
+  .calendar { margin-bottom: 20px; }
+  .calendar h2 { font-size: 16px; font-weight: 700; margin: 0 0 4px; }
+  .calendar .cal-sub { color: var(--text-muted); font-size: 12.5px; margin: 0 0 12px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .cal-card { border: 2px solid var(--cc, var(--series-2)); border-radius: 12px; padding: 14px 16px; background: var(--surface-1); }
+  .cal-card h3 { margin: 0 0 2px; font-size: 15px; }
+  .cal-card .cal-when { color: var(--cc); font-weight: 700; font-size: 13px; margin-bottom: 10px; }
+  .cal-card .cal-for { color: var(--text-muted); font-size: 12px; margin-bottom: 10px; }
+
+  /* timeline (shared by the calendar overview and each race's expandable one) */
+  .tl { list-style: none; margin: 0; padding: 0; position: relative; }
+  .tl::before { content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px; width: 2px; background: var(--gridline); }
+  .tl-item { position: relative; padding: 0 0 12px 26px; }
+  .tl-item:last-child { padding-bottom: 0; }
+  .tl-dot { position: absolute; left: 0; top: 1px; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--baseline); background: var(--surface-1); box-shadow: 0 0 0 3px var(--surface-1); display: flex; align-items: center; justify-content: center; font-size: 9px; }
+  .tl-item.done .tl-dot { border-color: var(--series-2); background: var(--series-2); color: #fff; }
+  .tl-item.next .tl-dot { border-color: var(--tl-accent, var(--series-1)); background: var(--tl-accent, var(--series-1)); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--tl-accent, var(--series-1)) 25%, var(--surface-1)); }
+  .tl-item.future .tl-dot { border-color: var(--baseline); }
+  .tl-date { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+  .tl-item.future .tl-date, .tl-item.future .tl-label { color: var(--text-muted); }
+  .tl-item.next .tl-date { color: var(--tl-accent, var(--series-1)); }
+  .tl-label { font-size: 12.5px; color: var(--text-secondary); }
+  .tl-note { font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
+  .tl-approx { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--series-3); border: 1px solid var(--series-3); border-radius: 999px; padding: 0 5px; margin-left: 5px; }
+  .tl-next-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; }
+  .tl-next-chip .lbl { color: var(--text-muted); }
+  .tl-next-chip b { color: var(--text-primary); }
+  .cal-legend { margin-top: 10px; font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+  /* per-race expandable timeline */
+  .race-next { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+  details.tl-details { border-top: 1px solid var(--gridline); padding-top: 7px; }
+  details.tl-details > summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--series-2); list-style: none; display: inline-flex; align-items: center; gap: 5px; }
+  details.tl-details > summary::-webkit-details-marker { display: none; }
+  details.tl-details > summary::before { content: "▸"; font-size: 10px; transition: transform 0.15s ease; }
+  details.tl-details[open] > summary::before { transform: rotate(90deg); }
+  details.tl-details .tl { margin-top: 10px; padding-left: 2px; }
+
+  /* ---------- RSS popover (shared) ---------- */
+  .rss-link { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 600; text-decoration: none; color: var(--series-2); background: none; border: none; padding: 0; white-space: nowrap; }
+  .rss-link:hover { text-decoration: underline; }
+  .rss-pop { position: fixed; z-index: 40; width: 320px; max-width: 86vw; background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.22); padding: 12px 13px; text-align: left; }
+  .rss-pop[hidden] { display: none; }
+  .rss-pop-title { margin: 0 0 3px; font-weight: 650; font-size: 13px; }
+  .rss-pop-sub { margin: 0 0 9px; font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+  .rss-pop-row { display: flex; gap: 6px; }
+  .rss-pop-row input { flex: 1; min-width: 0; font: inherit; font-size: 12px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 7px; background: var(--page); color: var(--text-primary); }
+  .rss-copy { cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; padding: 6px 11px; border: 1px solid var(--border); border-radius: 7px; background: var(--series-2); color: #fff; }
+  .rss-copy:hover { filter: brightness(1.08); }
+  .rss-open { display: inline-block; margin-top: 9px; font-size: 12px; }
+
+  footer { margin-top: 28px; color: var(--text-muted); font-size: 12.5px; }
+  footer code { background: var(--surface-1); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; }
+  .chn-credit { margin: 10px 0 0; display: flex; align-items: center; gap: 7px; color: var(--text-muted); font-size: 12.5px; }
+  .chn-credit svg { flex: none; }
+  .chn-credit a { color: var(--series-1); }
+
+  @media (max-width: 620px) { .races { grid-template-columns: 1fr; } }
+</style>
+<script>
+  // Apply a saved theme choice before first paint. Shared localStorage key, so
+  // the choice carries across all four dashboard tabs.
+  (function () {
+    try {
+      var t = localStorage.getItem("govbot-theme");
+      if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+<div class="wrap">
+  <nav class="tabs" aria-label="Dashboards">
+    <a class="tab tab-legis" href="index.html">Legislation Dashboard</a>
+    <a class="tab tab-hearings" href="hearings.html">Committee Hearings &amp; Witness Slips</a>
+    <a class="tab tab-elections" href="elections.html" aria-current="page">Elections Happening in IL</a>
+    <a class="tab tab-arch" href="architecture.html">Site Architecture</a>
+  </nav>
+  <header class="top">
+    <div class="brandbar">
+      <a class="brand" href="../index.html" aria-label="govbot home">
+        <img class="brand-logo" src="govbot-logo.png" width="40" height="40" alt="" aria-hidden="true">
+        <span class="brand-name">gov<span class="bot">bot</span></span>
+      </a>
+      <div class="theme-toggle" role="group" aria-label="Color theme">
+        <button type="button" data-theme-choice="light" title="Light theme" aria-label="Light theme" aria-pressed="false">☀</button>
+        <button type="button" data-theme-choice="auto"  title="Match system" aria-label="Match system theme" aria-pressed="false">Auto</button>
+        <button type="button" data-theme-choice="dark"  title="Dark theme"  aria-label="Dark theme" aria-pressed="false">☾</button>
+      </div>
+    </div>
+    <div class="title-row">
+      <h1>Elections Happening in IL</h1>
+      <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
+    </div>
+    <p>Every office on upcoming Chicago &amp; Illinois ballots — citywide, all 50 wards, the CPS Board, and Police District Councils — with candidates as they're confirmed from official sources.
+       <a class="docs-link" href="../index.html">govbot docs</a> ·
+       <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
+  </header>
+
+  <div class="intro">
+    <span class="intro-ico" aria-hidden="true">🗳️</span>
+    <b>Two big ballots ahead.</b> On <b>Nov 3, 2026</b>, Chicago elects a <b>Board of Education</b> for the first time by popular vote — including its <b>first-ever elected President</b> — as the mayor-appointed hybrid board is phased out. Then the <b>2027 municipal election</b> puts the Mayor, City Clerk, City Treasurer, all 50 Alderpersons, and the Police District Councils on the ballot. Candidate lists are pulled from the Chicago Board of Elections and the Illinois State Board of Elections' “Who Is Running” list; a race with no one listed yet links to its official source rather than guessing.
+  </div>
+
+  <section class="calendar" id="calendar" hidden>
+    <h2>🗓️ Election calendar</h2>
+    <p class="cal-sub">The full timeline for each upcoming ballot — from candidate filing to Election Day. Each race below also has its own timeline.</p>
+    <div class="cal-grid" id="cal-grid"></div>
+    <p class="cal-legend"><span class="tl-approx">≈ expected</span> dates follow the statutory election calendar — confirm the exact day with the official source; fixed dates (like Election Day) are shown without the tag.</p>
+  </section>
+
+  <div class="filters" id="filters" hidden>
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
+      <input type="search" id="f-search" placeholder="Search office, district, or candidate…" aria-label="Search races and candidates">
+    </div>
+    <select id="f-group" aria-label="Office group"></select>
+    <select id="f-ballot" aria-label="Ballot date"></select>
+    <button type="button" class="toggle-pill" id="f-hascands" aria-pressed="false">Only races with candidates</button>
+    <button type="button" class="clear-btn" id="f-clear" disabled>Clear</button>
+    <span style="margin-left:auto"><button type="button" class="rss-link" id="rss-all" aria-haspopup="dialog" aria-expanded="false" title="Subscribe to every race in a feed reader">
+      <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"/></svg>
+      Subscribe to all (RSS)</button></span>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <p class="empty" id="loading">Loading Illinois &amp; Chicago races…</p>
+  <div class="groups" id="groups"></div>
+  <p class="empty" id="empty" hidden>No races match the current filters.</p>
+
+  <footer id="footer"></footer>
+  <p class="chn-credit">
+    <svg viewBox="0 0 200 200" width="15" height="15" aria-hidden="true" focusable="false">
+      <polygon points="82,68.8 100,8 100,100"    fill="#1B87B8"/>
+      <polygon points="100,8 118,68.8 100,100"   fill="#29ABE2"/>
+      <polygon points="118,68.8 179.7,54 100,100" fill="#C81820"/>
+      <polygon points="179.7,54 136,100 100,100"  fill="#ED2E38"/>
+      <polygon points="136,100 179.7,146 100,100" fill="#1B87B8"/>
+      <polygon points="179.7,146 118,131.2 100,100" fill="#29ABE2"/>
+      <polygon points="118,131.2 100,192 100,100" fill="#C81820"/>
+      <polygon points="100,192 82,131.2 100,100"  fill="#ED2E38"/>
+      <polygon points="82,131.2 20.3,146 100,100" fill="#1B87B8"/>
+      <polygon points="20.3,146 64,100 100,100"   fill="#29ABE2"/>
+      <polygon points="64,100 20.3,54 100,100"    fill="#C81820"/>
+      <polygon points="20.3,54 82,68.8 100,100"   fill="#ED2E38"/>
+    </svg>
+    A <a href="https://chihacknight.org/">Chi Hack Night</a> project
+  </p>
+</div>
+
+<div class="rss-pop" id="rss-pop" role="dialog" aria-label="Subscribe via RSS" hidden></div>
+
+<script>
+"use strict";
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const FEED_BASE = "https://chihacknight.github.io/govbot/dashboard/";
+
+  // ----- theme toggle -----
+  (function initTheme() {
+    const root = document.documentElement;
+    const buttons = Array.from(document.querySelectorAll(".theme-toggle button"));
+    const saved = () => {
+      const t = root.getAttribute("data-theme");
+      return t === "light" || t === "dark" ? t : "auto";
+    };
+    function apply(choice) {
+      if (choice === "auto") root.removeAttribute("data-theme");
+      else root.setAttribute("data-theme", choice);
+      try {
+        if (choice === "auto") localStorage.removeItem("govbot-theme");
+        else localStorage.setItem("govbot-theme", choice);
+      } catch (e) {}
+      buttons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.themeChoice === choice)));
+    }
+    buttons.forEach((b) => b.addEventListener("click", () => apply(b.dataset.themeChoice)));
+    apply(saved());
+  })();
+
+  const GROUP_META = {
+    citywide:                { label: "Chicago citywide",        emoji: "🏙️", color: "--series-1" },
+    council:                 { label: "Alderperson · City Council", emoji: "🏛️", color: "--series-5" },
+    cps_board:               { label: "CPS Board of Education",   emoji: "🎓", color: "--series-3" },
+    police_district_council: { label: "Police District Councils", emoji: "🚔", color: "--series-8" },
+    cook_county:             { label: "Cook County",              emoji: "🗺️", color: "--series-2" },
+    suburban:                { label: "Suburban Cook",            emoji: "🏘️", color: "--series-7" },
+    judicial:                { label: "Judicial",                 emoji: "⚖️", color: "--series-6" },
+    state:                   { label: "Statewide",                emoji: "🌐", color: "--series-1" },
+    federal:                 { label: "Federal",                  emoji: "🇺🇸", color: "--series-6" },
+    other:                   { label: "Other",                    emoji: "🗳️", color: "--series-2" },
+  };
+  const GROUP_ORDER = ["citywide", "council", "cps_board", "police_district_council",
+                       "cook_county", "suburban", "judicial", "state", "federal", "other"];
+  const STATUS_LABEL = {
+    on_ballot: "On ballot", filed: "Filed", objected: "Objected",
+    withdrawn: "Withdrawn", removed: "Removed", unknown: "Filed",
+  };
+
+  const state = {
+    data: null,
+    filters: { search: "", group: "", ballot: "", hasCands: false },
+  };
+
+  fetch("elections.json")
+    .then((r) => { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.json(); })
+    .then(init)
+    .catch((err) => {
+      $("loading").textContent = "Could not load elections.json — " + err.message +
+        ". If you opened this file directly, serve it over HTTP.";
+    });
+
+  function init(data) {
+    state.data = data;
+    state.nowDate = (data.generated_at || "").slice(0, 10) || new Date().toISOString().slice(0, 10);
+    $("loading").hidden = true;
+    $("filters").hidden = false;
+    renderCalendar(data.races);
+    $("calendar").hidden = false;
+
+    // as-of badge
+    const asof = formatAsOf(data.generated_at);
+    if (asof) {
+      $("asof-text").textContent = "Data as of " + asof;
+      $("asof").hidden = false;
+    }
+
+    // group filter options (only groups present in the data)
+    const groupsPresent = GROUP_ORDER.filter((g) => data.races.some((r) => r.office_group === g));
+    buildSelect($("f-group"), "All offices",
+      groupsPresent.map((g) => [g, GROUP_META[g] ? GROUP_META[g].label : g]),
+      (v) => { state.filters.group = v; render(); });
+
+    // ballot-date filter options
+    const dates = [...new Set(data.races.map((r) => r.ballot_date).filter(Boolean))].sort();
+    buildSelect($("f-ballot"), "Any ballot date",
+      dates.map((d) => [d, prettyDate(d)]),
+      (v) => { state.filters.ballot = v; render(); });
+
+    let searchTimer;
+    $("f-search").addEventListener("input", (e) => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => { state.filters.search = e.target.value.trim().toLowerCase(); render(); }, 130);
+    });
+    $("f-hascands").addEventListener("click", () => {
+      state.filters.hasCands = !state.filters.hasCands;
+      $("f-hascands").setAttribute("aria-pressed", String(state.filters.hasCands));
+      render();
+    });
+    $("f-clear").addEventListener("click", () => {
+      state.filters = { search: "", group: "", ballot: "", hasCands: false };
+      $("f-search").value = ""; $("f-group").value = ""; $("f-ballot").value = "";
+      $("f-hascands").setAttribute("aria-pressed", "false");
+      render();
+    });
+
+    $("rss-all").addEventListener("click", (e) => openRss(e.currentTarget, {
+      title: "Subscribe to every race",
+      sub: "Every Chicago & Illinois race in one feed, refreshed twice daily.",
+      url: FEED_BASE + "elections.xml",
+    }));
+    document.addEventListener("click", (e) => {
+      const pop = $("rss-pop");
+      if (!pop.hidden && !pop.contains(e.target) && !e.target.closest("[data-rss]") && e.target.id !== "rss-all")
+        pop.hidden = true;
+    });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("rss-pop").hidden = true; });
+
+    // footer
+    const f = $("footer");
+    f.textContent = "Built " + (data.generated_at || "n/a") + " from " + (data.source || "official sources") + ". Regenerate with ";
+    const code = document.createElement("code");
+    code.textContent = "python3 actions/scrape-elections/main.py";
+    f.append(code, document.createTextNode("."));
+
+    render();
+  }
+
+  /* ---------- filtering ---------- */
+  function filteredRaces() {
+    const f = state.filters;
+    return state.data.races.filter((r) => {
+      if (f.group && r.office_group !== f.group) return false;
+      if (f.ballot && r.ballot_date !== f.ballot) return false;
+      if (f.hasCands && !(r.candidates && r.candidates.length)) return false;
+      if (f.search) {
+        const hay = [r.office, r.district || "", (r.candidates || []).map((c) => c.name).join(" ")]
+          .join(" ").toLowerCase();
+        if (!hay.includes(f.search)) return false;
+      }
+      return true;
+    });
+  }
+  function anyFilter() {
+    const f = state.filters;
+    return !!(f.search || f.group || f.ballot || f.hasCands);
+  }
+
+  /* ---------- render ---------- */
+  function render() {
+    const races = filteredRaces();
+    $("f-clear").disabled = !anyFilter();
+    renderTiles(races);
+    renderGroups(races);
+  }
+
+  function renderTiles(races) {
+    const tiles = $("tiles");
+    tiles.textContent = "";
+    const withCands = races.filter((r) => r.candidates && r.candidates.length);
+    const candTotal = races.reduce((n, r) => n + (r.candidates ? r.candidates.length : 0), 0);
+    const nextBallot = [...new Set(races.map((r) => r.ballot_date).filter(Boolean))].sort()[0];
+    [
+      ["Races shown", fmt(races.length), "--series-2"],
+      ["Races with candidates", fmt(withCands.length), "--series-1"],
+      ["Candidates listed", fmt(candTotal), "--series-5"],
+      ["Next ballot", nextBallot ? prettyDate(nextBallot) : "—", "--series-3"],
+    ].forEach(([label, value, color]) => {
+      const t = document.createElement("div");
+      t.className = "tile";
+      t.style.setProperty("--c", "var(" + color + ")");
+      const l = document.createElement("div"); l.className = "label"; l.textContent = label;
+      const v = document.createElement("div"); v.className = "value"; v.textContent = value;
+      t.append(l, v);
+      tiles.append(t);
+    });
+  }
+
+  function renderGroups(races) {
+    const wrap = $("groups");
+    wrap.textContent = "";
+    $("empty").hidden = races.length > 0;
+
+    const byGroup = {};
+    races.forEach((r) => { (byGroup[r.office_group] = byGroup[r.office_group] || []).push(r); });
+
+    GROUP_ORDER.filter((g) => byGroup[g]).forEach((g) => {
+      const meta = GROUP_META[g] || { label: g, emoji: "🗳️", color: "--series-2" };
+      const section = document.createElement("section");
+      section.className = "group";
+      section.style.setProperty("--gc", "var(" + meta.color + ")");
+
+      const head = document.createElement("div");
+      head.className = "group-head";
+      const em = document.createElement("div"); em.className = "group-emoji"; em.textContent = meta.emoji; em.setAttribute("aria-hidden", "true");
+      const title = document.createElement("div"); title.className = "group-title"; title.textContent = meta.label;
+      const cnt = document.createElement("div"); cnt.className = "group-count";
+      const races_g = byGroup[g];
+      const filled = races_g.filter((r) => r.candidates && r.candidates.length).length;
+      cnt.textContent = races_g.length + (races_g.length === 1 ? " race" : " races") +
+        (filled ? " · " + filled + " with candidates" : "");
+      const rss = document.createElement("span"); rss.className = "group-rss";
+      const rssBtn = mkRss("Follow this group", {
+        title: meta.label + " — subscribe",
+        sub: "Every " + meta.label + " race in one feed.",
+        url: FEED_BASE + "elections/group-" + g + ".xml",
+      });
+      rss.append(rssBtn);
+      head.append(em, title, cnt, rss);
+      section.append(head);
+
+      const grid = document.createElement("div");
+      grid.className = "races";
+      races_g.forEach((r) => grid.append(renderRace(r, meta)));
+      section.append(grid);
+      wrap.append(section);
+    });
+  }
+
+  function renderRace(r, meta) {
+    const card = document.createElement("div");
+    card.className = "race";
+    card.style.setProperty("--gc", "var(" + meta.color + ")");
+
+    const top = document.createElement("div"); top.className = "race-top";
+    const idbox = document.createElement("div");
+    const office = document.createElement("div"); office.className = "race-office"; office.textContent = r.office;
+    idbox.append(office);
+    if (r.district) { const d = document.createElement("div"); d.className = "race-district"; d.textContent = r.district; idbox.append(d); }
+    top.append(idbox);
+    card.append(top);
+
+    const badges = document.createElement("div"); badges.className = "race-badges";
+    if (r.incumbent_status === "new_seat")
+      badges.append(mkBadge("★ First elected", "first"));
+    if (r.ballot_date)
+      badges.append(mkBadge("🗳️ " + prettyDate(r.ballot_date), "ballot"));
+    badges.append(mkBadge(r.partisan ? "Partisan" : "Non-partisan", r.partisan ? "partisan" : "nonpartisan"));
+    if (r.seats && r.seats > 1) badges.append(mkBadge(r.seats + " seats", "seats"));
+    card.append(badges);
+
+    if (r.why_note) {
+      const why = document.createElement("div"); why.className = "why";
+      why.textContent = r.why_note;
+      card.append(why);
+    }
+
+    const cands = r.candidates || [];
+    if (cands.length) {
+      const list = document.createElement("div"); list.className = "cands";
+      cands.forEach((c) => list.append(renderCand(c, r)));
+      card.append(list);
+    } else {
+      const none = document.createElement("div"); none.className = "no-cands";
+      none.append(document.createTextNode("No candidates confirmed yet — "));
+      const a = document.createElement("a");
+      a.href = r.official_list_url || (r.source ? "#" : "#");
+      a.target = "_blank"; a.rel = "noopener";
+      a.textContent = "see the official list ↗";
+      none.append(a);
+      card.append(none);
+    }
+
+    // Election timeline: a one-line "next milestone" plus an expandable full timeline.
+    if (r.timeline && r.timeline.length) {
+      const nm = nextMilestone(r.timeline);
+      if (nm) {
+        const nx = document.createElement("div"); nx.className = "race-next";
+        const chip = document.createElement("span"); chip.className = "tl-next-chip";
+        const lbl = document.createElement("span"); lbl.className = "lbl"; lbl.textContent = "⏭ Next: ";
+        const b = document.createElement("b"); b.textContent = nm.label;
+        chip.append(lbl, b, document.createTextNode(" · " + (nm.date ? prettyDate(nm.date) : "TBA")));
+        if (nm.date && nm.confirmed === false) { const a = document.createElement("span"); a.className = "tl-approx"; a.textContent = "≈"; chip.append(a); }
+        nx.append(chip);
+        card.append(nx);
+      }
+      const det = document.createElement("details"); det.className = "tl-details";
+      const sum = document.createElement("summary"); sum.textContent = "Full timeline";
+      det.append(sum);
+      det.append(renderTimeline(r.timeline, meta.color));
+      card.append(det);
+    }
+
+    const foot = document.createElement("div"); foot.className = "race-foot";
+    if (r.official_list_url) {
+      const src = document.createElement("a"); src.className = "src-link";
+      src.href = r.official_list_url; src.target = "_blank"; src.rel = "noopener";
+      src.textContent = (r.source || "Official source") + " ↗";
+      foot.append(src);
+    }
+    foot.append(mkRss("Follow this race", {
+      title: raceHeadline(r) + " — subscribe",
+      sub: "One race; the feed updates as candidates are confirmed.",
+      url: FEED_BASE + "elections/race-" + r.id + ".xml",
+    }, "race-rss"));
+    card.append(foot);
+    return card;
+  }
+
+  function renderCand(c, r) {
+    const row = document.createElement("div"); row.className = "cand";
+    if (c.photo_url) {
+      const img = document.createElement("img"); img.className = "cand-avatar";
+      img.src = c.photo_url; img.alt = ""; img.loading = "lazy";
+      img.addEventListener("error", () => img.replaceWith(avatarPlaceholder(c.name)));
+      row.append(img);
+    } else {
+      row.append(avatarPlaceholder(c.name));
+    }
+    const body = document.createElement("div"); body.className = "cand-body";
+    const name = document.createElement("div"); name.className = "cand-name";
+    if (c.website) {
+      const a = document.createElement("a"); a.href = c.website; a.target = "_blank"; a.rel = "noopener";
+      a.textContent = c.name; name.append(a);
+    } else {
+      name.textContent = c.name;
+    }
+    if (c.incumbent) {
+      const inc = document.createElement("span"); inc.className = "incumbent";
+      inc.textContent = "  · Incumbent" + (c.incumbency ? " (" + c.incumbency + ")" : "");
+      name.append(inc);
+    }
+    body.append(name);
+
+    const meta = document.createElement("div"); meta.className = "cand-meta";
+    const st = c.petition_status;
+    if (st) {
+      const chip = document.createElement("span");
+      chip.className = "pchip " + st;
+      chip.textContent = STATUS_LABEL[st] || st;
+      meta.append(chip);
+    }
+    if (r.partisan && c.party) meta.append(mkMini("Party", c.party));
+    if (c.filing_date) meta.append(mkMini("Filed", prettyDate(c.filing_date)));
+    if (c.website) {
+      const a = document.createElement("a"); a.className = "cand-links";
+      a.href = c.website; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Website ↗";
+      meta.append(a);
+    }
+    if (meta.childNodes.length) body.append(meta);
+    row.append(body);
+    return row;
+  }
+
+  function avatarPlaceholder(name) {
+    const ph = document.createElement("div");
+    ph.className = "cand-avatar placeholder";
+    ph.textContent = (name || "?").trim().charAt(0).toUpperCase() || "?";
+    ph.setAttribute("aria-hidden", "true");
+    return ph;
+  }
+  function mkMini(label, value) {
+    const s = document.createElement("span"); s.className = "mini";
+    const b = document.createElement("b"); b.textContent = label + ": ";
+    s.append(b, document.createTextNode(value));
+    return s;
+  }
+  function mkBadge(text, cls) {
+    const b = document.createElement("span"); b.className = "badge" + (cls ? " " + cls : "");
+    b.textContent = text; return b;
+  }
+
+  /* ---------- RSS popover ---------- */
+  function mkRss(label, info, extraClass) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "rss-link" + (extraClass ? " " + extraClass : "");
+    btn.setAttribute("data-rss", "1");
+    btn.setAttribute("aria-haspopup", "dialog");
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", "12"); svg.setAttribute("height", "12");
+    svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("fill", "currentColor");
+    path.setAttribute("d", "M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z");
+    svg.append(path);
+    btn.append(svg, document.createTextNode(" " + label));
+    btn.addEventListener("click", (e) => { e.stopPropagation(); openRss(btn, info); });
+    return btn;
+  }
+
+  function openRss(trigger, info) {
+    const pop = $("rss-pop");
+    pop.textContent = "";
+    const title = document.createElement("p"); title.className = "rss-pop-title"; title.textContent = info.title;
+    const sub = document.createElement("p"); sub.className = "rss-pop-sub"; sub.textContent = info.sub;
+    const rowEl = document.createElement("div"); rowEl.className = "rss-pop-row";
+    const input = document.createElement("input"); input.readOnly = true; input.value = info.url;
+    input.addEventListener("focus", () => input.select());
+    const copy = document.createElement("button"); copy.className = "rss-copy"; copy.textContent = "Copy";
+    copy.addEventListener("click", () => {
+      input.select();
+      try {
+        navigator.clipboard ? navigator.clipboard.writeText(info.url) : document.execCommand("copy");
+        copy.textContent = "Copied!"; setTimeout(() => (copy.textContent = "Copy"), 1400);
+      } catch (e) { document.execCommand && document.execCommand("copy"); }
+    });
+    rowEl.append(input, copy);
+    const open = document.createElement("a"); open.className = "rss-open";
+    open.href = info.url; open.target = "_blank"; open.rel = "noopener"; open.textContent = "Open feed ↗";
+    pop.append(title, sub, rowEl, open);
+
+    pop.hidden = false;
+    const rect = trigger.getBoundingClientRect();
+    const w = pop.offsetWidth, h = pop.offsetHeight;
+    let left = Math.min(rect.left, window.innerWidth - w - 8);
+    let top = rect.bottom + 6;
+    if (top + h > window.innerHeight - 8) top = Math.max(8, rect.top - h - 6);
+    pop.style.left = Math.max(8, left) + "px";
+    pop.style.top = top + "px";
+  }
+
+  /* ---------- timeline ---------- */
+  // Classify each milestone against the snapshot date: past dated milestones are
+  // "done", the first dated milestone on/after now is "next", the rest "future".
+  // Null-dated milestones (e.g. "No runoff") are neutral and never "next".
+  function classifyTimeline(timeline) {
+    const now = state.nowDate;
+    let nextIdx = -1;
+    timeline.forEach((m, i) => { if (nextIdx === -1 && m.date && m.date >= now) nextIdx = i; });
+    return timeline.map((m, i) => {
+      let cls = "future";
+      if (m.date && m.date < now) cls = "done";
+      else if (i === nextIdx) cls = "next";
+      else if (!m.date) cls = "future";
+      return cls;
+    });
+  }
+
+  function nextMilestone(timeline) {
+    const now = state.nowDate;
+    for (const m of timeline) if (m.date && m.date >= now) return m;
+    return null;
+  }
+
+  function renderTimeline(timeline, accentVar) {
+    const ul = document.createElement("ul");
+    ul.className = "tl";
+    if (accentVar) ul.style.setProperty("--tl-accent", "var(" + accentVar + ")");
+    const cls = classifyTimeline(timeline);
+    timeline.forEach((m, i) => {
+      const li = document.createElement("li");
+      li.className = "tl-item " + cls[i];
+      const dot = document.createElement("span"); dot.className = "tl-dot";
+      dot.textContent = cls[i] === "done" ? "✓" : "";
+      li.append(dot);
+      const dline = document.createElement("div");
+      const date = document.createElement("span"); date.className = "tl-date";
+      date.textContent = m.date ? prettyDate(m.date) : "—";
+      dline.append(date);
+      if (m.date && m.confirmed === false) {
+        const a = document.createElement("span"); a.className = "tl-approx"; a.textContent = "≈ expected";
+        dline.append(a);
+      }
+      li.append(dline);
+      const lbl = document.createElement("div"); lbl.className = "tl-label"; lbl.textContent = m.label;
+      li.append(lbl);
+      if (m.note) { const n = document.createElement("div"); n.className = "tl-note"; n.textContent = m.note; li.append(n); }
+      ul.append(li);
+    });
+    return ul;
+  }
+
+  // Pick the race whose timeline is the most complete (most dated milestones),
+  // so the calendar overview shows the fullest version (e.g. the one with a runoff).
+  function pickRepresentative(races) {
+    return races.slice().sort((a, b) => {
+      const da = (a.timeline || []).filter((m) => m.date).length;
+      const db = (b.timeline || []).filter((m) => m.date).length;
+      return db - da || (b.timeline || []).length - (a.timeline || []).length;
+    })[0];
+  }
+
+  function renderCalendar(races) {
+    const grid = $("cal-grid");
+    grid.textContent = "";
+    const byDate = {};
+    races.forEach((r) => { if (r.ballot_date && (r.timeline || []).length) (byDate[r.ballot_date] = byDate[r.ballot_date] || []).push(r); });
+    const dates = Object.keys(byDate).sort();
+    const ACCENTS = ["--series-2", "--series-1", "--series-3", "--series-5"];
+    dates.forEach((date, i) => {
+      const races_d = byDate[date];
+      const rep = pickRepresentative(races_d);
+      const accent = ACCENTS[i % ACCENTS.length];
+      const card = document.createElement("div");
+      card.className = "cal-card";
+      card.style.setProperty("--cc", "var(" + accent + ")");
+      // Name the ballot from what's on it.
+      const groups = [...new Set(races_d.map((r) => r.office_group))];
+      const onlyCps = groups.length === 1 && groups[0] === "cps_board";
+      const h3 = document.createElement("h3");
+      h3.textContent = onlyCps ? "Chicago Board of Education (CPS)" : "Chicago municipal election";
+      card.append(h3);
+      const when = document.createElement("div"); when.className = "cal-when";
+      when.textContent = "Election Day · " + prettyDate(date);
+      card.append(when);
+      const forEl = document.createElement("div"); forEl.className = "cal-for";
+      const labels = groups.map((g) => (GROUP_META[g] ? GROUP_META[g].label : g));
+      forEl.textContent = races_d.length + " races — " + labels.join(", ");
+      card.append(forEl);
+      card.append(renderTimeline(rep.timeline, accent));
+      grid.append(card);
+    });
+  }
+
+  /* ---------- utilities ---------- */
+  function buildSelect(el, allLabel, pairs, onChange) {
+    el.textContent = "";
+    const all = document.createElement("option"); all.value = ""; all.textContent = allLabel; el.append(all);
+    pairs.forEach(([value, label]) => {
+      const o = document.createElement("option"); o.value = value; o.textContent = label; el.append(o);
+    });
+    el.addEventListener("change", () => onChange(el.value));
+  }
+  function raceHeadline(r) { return r.district ? r.office + " — " + r.district : r.office; }
+  function fmt(n) { return Number(n).toLocaleString("en-US"); }
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  function prettyDate(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
+    if (!m) return iso || "";
+    return MONTHS[Number(m[2]) - 1] + " " + Number(m[3]) + ", " + m[1];
+  }
+  function formatAsOf(iso) {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d)) return typeof iso === "string" ? iso : null;
+    const months = ["January","February","March","April","May","June","July",
+                    "August","September","October","November","December"];
+    let s = months[d.getUTCMonth()] + " " + d.getUTCDate() + ", " + d.getUTCFullYear();
+    if (/T\d/.test(iso)) s += ", " + String(d.getUTCHours()).padStart(2, "0") + ":" +
+      String(d.getUTCMinutes()).padStart(2, "0") + " UTC";
+    return s;
+  }
+})();
+</script>
+</body>
+</html>

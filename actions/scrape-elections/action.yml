@@ -1,0 +1,47 @@
+name: "Scrape Illinois & Chicago Elections"
+description: "Populate the Elections Happening in IL feed: Chicago citywide, aldermanic, CPS board, and Police District Council races with candidates from official sources, onto a committed race-structure seed."
+
+inputs:
+  sources:
+    description: "Comma-separated candidate sources to scrape (isbe,chicago,cook)"
+    required: false
+    default: "isbe,chicago,cook"
+  output:
+    description: "Path to write the elections JSON document"
+    required: false
+    default: "docs/src/dashboard/elections.json"
+  rss:
+    description: "Path to write the whole-ballot RSS feed"
+    required: false
+    default: "docs/src/dashboard/elections.xml"
+  rss_feeds_dir:
+    description: "Directory for granular per-office-group and per-race RSS feeds"
+    required: false
+    default: "docs/src/dashboard/elections"
+
+outputs:
+  elections-path:
+    description: "Path to the written elections document"
+    value: "${{ inputs.output }}"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.11"
+
+    # Fail-soft: a source outage/format change contributes zero candidates and
+    # the committed seed's race structure still ships (empty rosters); never a
+    # non-zero exit. The caller decides whether to keep the committed sample.
+    - name: Scrape elections
+      shell: bash
+      run: |
+        set -uo pipefail
+        python3 "${{ github.action_path }}/main.py" \
+          --sources "${{ inputs.sources }}" \
+          --output "${{ inputs.output }}" \
+          --rss "${{ inputs.rss }}" \
+          --rss-feeds-dir "${{ inputs.rss_feeds_dir }}" \
+          || echo "::warning::scrape-elections reported errors; output may be partial"

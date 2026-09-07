@@ -127,9 +127,15 @@ names must stay in sync with the keyword fallback in `scripts/dashboard_tags.jso
 `docs/src/dashboard-guide.md` for the data flow; tagging in CI is incremental via
 `scripts/filter_new_bills.py` + `scripts/tag_dashboard_repo.sh`.
 
-The Pages site has **two dashboards**, linked by a tab bar:
-`docs/src/dashboard/index.html` (the Legislation Dashboard above) and
-`docs/src/dashboard/hearings.html` (**Committee Hearings & Witness Slips**). The hearings
+The Pages site has **three dashboards plus a Site Architecture page**, linked by a tab bar:
+`docs/src/dashboard/index.html` (the Legislation Dashboard above),
+`docs/src/dashboard/hearings.html` (**Committee Hearings & Witness Slips**),
+`docs/src/dashboard/elections.html` (**Elections Happening in IL**), and
+`docs/src/dashboard/architecture.html` (a static, no-data explainer of all three backend
+pipelines — keep its tab bar and the `.tab-arch` accent in sync with the other pages
+whenever the tab bar changes). Tab order is Legislation · Hearings · Elections Happening in IL ·
+Site Architecture across all four pages, with accents `.tab-legis` (blue), `.tab-hearings`
+(gold), `.tab-elections` (green), `.tab-arch` (purple). The hearings
 page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov, leg.wa.gov,
 malegislature.gov, and akleg.gov directly (not OpenStates), plus **USA (Federal)** open comment periods from the
 Regulations.gov API (needs `REGULATIONS_GOV_API_KEY`; falls back to the committed
@@ -143,6 +149,22 @@ directory `docs/src/dashboard/participation.json` (schema
 `schemas/govbot.participation.schema.json`). `deploy-docs.yml` rebuilds both the bill
 `data.json` and the hearings feed on the twice-daily schedule. Hearings parsers are
 offline-snapshot-tested: `python3 actions/scrape-hearings/test_scrape_hearings.py`.
+
+The **Elections Happening in IL** page is a *third* pipeline: `actions/scrape-elections/` builds
+`docs/src/dashboard/elections.json` (schema `schemas/govbot.elections.schema.json`) — every
+office on upcoming Chicago/Illinois ballots (citywide, Alderperson wards 1–50, CPS board
+president + subdistricts 1A–10B, and 22 Police District Councils). The ballot *structure*
+(offices, districts, ballot dates, and a "why this race exists" note) is a committed seed,
+`actions/scrape-elections/elections_seed.json`; the scrapers only *populate candidates* onto
+it from official candidate lists (Chicago Board of Elections; Illinois SBE "Who Is Running";
+Cook County Clerk, future). A candidate attaches to a race only when office+district resolve
+exactly (`race_id_for`) — unplaceable rows are dropped, never invented, and a race with no
+confirmed candidate keeps an empty list + a source link. It also writes a whole-ballot RSS
+`elections.xml` + granular feeds under `docs/src/dashboard/elections/` (per office group
+`group-<group>.xml`, per race `race-<id>.xml`). Fail-soft: with sources down the seed's
+structure still ships (empty rosters), and `deploy-docs.yml` keeps the committed sample
+unless the fresh run actually placed candidates. Parsers are offline-snapshot-tested:
+`python3 actions/scrape-elections/test_scrape_elections.py`.
 
 ## govbot Development
 

@@ -1,0 +1,142 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/chihacknight/govbot/schemas/govbot.elections.schema.json",
+  "title": "Illinois & Chicago Elections Feed",
+  "description": "Aggregate document produced by actions/scrape-elections and consumed by docs/src/dashboard/elections.html. It holds the offices/races on upcoming Illinois and Chicago ballots (Chicago citywide, Alderperson wards 1-50, CPS board, Police District Councils, and — as coverage expands — Cook County, suburban, judicial and statewide offices) together with the candidates running for each. Like the hearings feed, this is a rolling near-future window, not point-in-time bill metadata; the Pages deploy refreshes it twice daily. Candidate rosters are populated best-effort from official sources (ISBE 'Who Is Running', the Chicago Board of Elections, the Cook County Clerk); a race with no confirmed candidates yet carries an empty list and a link to its official source rather than a guess.",
+  "type": "object",
+  "required": ["generated_at", "source", "jurisdictions", "races"],
+  "additionalProperties": false,
+  "properties": {
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC timestamp when this document was built (data-lineage marker for the dashboard 'as of' badge)."
+    },
+    "source": {
+      "type": "string",
+      "description": "Human-readable provenance shown in the dashboard footer."
+    },
+    "jurisdictions": {
+      "type": "array",
+      "description": "Election authorities whose races this document covers, with the official candidate-list source.",
+      "items": {
+        "type": "object",
+        "required": ["code", "name", "authority", "source_url"],
+        "additionalProperties": false,
+        "properties": {
+          "code": { "type": "string", "description": "Short jurisdiction key, e.g. chicago, cps, cook, il." },
+          "name": { "type": "string", "description": "Display name, e.g. 'City of Chicago'." },
+          "authority": { "type": "string", "description": "The election authority that runs and lists these races, e.g. 'Chicago Board of Elections'." },
+          "source_url": { "type": "string", "format": "uri", "description": "Official candidate-list / who-is-running page for this authority." }
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "description": "Race count per jurisdiction code (convenience for the dashboard).",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "races": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Race" }
+    }
+  },
+  "definitions": {
+    "Race": {
+      "type": "object",
+      "required": ["id", "jurisdiction", "office", "office_group", "is_citywide", "partisan", "status", "candidates", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable identifier, e.g. chicago-mayor, chicago-alderperson-ward-01, cps-board-member-1a, chicago-police-district-council-014. Idempotent across runs; feed filenames derive from it."
+        },
+        "jurisdiction": { "type": "string", "description": "Jurisdiction code this race belongs to (matches a jurisdictions[].code)." },
+        "office": { "type": "string", "description": "Office title as commonly named, e.g. 'Mayor', 'Alderperson', 'CPS Board Member', 'Police District Councilmember'." },
+        "office_group": {
+          "type": "string",
+          "description": "Grouping used by the dashboard's section headers.",
+          "enum": ["citywide", "council", "cps_board", "police_district_council", "cook_county", "suburban", "judicial", "state", "federal", "other"]
+        },
+        "district": {
+          "type": ["string", "null"],
+          "description": "District / ward / subdistrict label, e.g. 'Ward 1', 'Subdistrict 1A', 'District 14'. Null for citywide offices."
+        },
+        "is_citywide": { "type": "boolean", "description": "True for offices elected by the whole city/authority (Mayor, Clerk, Treasurer, CPS Board President)." },
+        "ballot_date": {
+          "type": ["string", "null"],
+          "description": "Date this race appears on the ballot, ISO YYYY-MM-DD, when known (e.g. 2026-11-03 for CPS 2026; 2027-02-23 for the Chicago 2027 municipal general). Null when the date isn't set yet."
+        },
+        "ballot_stage": {
+          "type": ["string", "null"],
+          "description": "Which ballot this is.",
+          "enum": ["primary", "general", "municipal_general", "municipal_runoff", "consolidated", null]
+        },
+        "partisan": { "type": "boolean", "description": "True if the race is partisan (candidates carry a party); Chicago municipal and CPS/PDC races are non-partisan." },
+        "seats": { "type": "integer", "minimum": 1, "description": "Number of seats elected in this race (usually 1)." },
+        "incumbent_status": {
+          "type": ["string", "null"],
+          "description": "How the current officeholder came to the seat, when relevant to 'why this race exists' (e.g. CPS seats that were appointed vs. already elected).",
+          "enum": ["elected", "appointed", "vacant", "new_seat", null]
+        },
+        "why_note": {
+          "type": ["string", "null"],
+          "description": "Short plain-English note on why this race exists or what's notable — especially CPS 2026 (the hybrid board ending, appointed vs. voter-elected seats) and first-ever elected offices."
+        },
+        "timeline": {
+          "type": "array",
+          "description": "Ordered election-calendar milestones for this race, from candidate filing through Election Day (and runoff / term start), so a reader can see the whole timeline. Dates flagged confirmed:false are the expected/statutory calendar and should be confirmed against the official source.",
+          "items": {
+            "type": "object",
+            "required": ["label"],
+            "additionalProperties": false,
+            "properties": {
+              "date": { "type": ["string", "null"], "description": "Milestone date, ISO YYYY-MM-DD, when known/expected; null if only a phase." },
+              "label": { "type": "string", "description": "Milestone name, e.g. 'Filing deadline', 'Election Day', 'Runoff (if no majority)'." },
+              "note": { "type": ["string", "null"], "description": "Optional one-line detail." },
+              "confirmed": { "type": "boolean", "description": "True when the date is a fixed, official date (e.g. Election Day); false when it's the expected/statutory calendar." }
+            }
+          }
+        },
+        "status": {
+          "type": "string",
+          "description": "Where the race is in the election cycle.",
+          "enum": ["upcoming", "filing_open", "on_ballot", "certified", "completed"]
+        },
+        "official_list_url": { "type": ["string", "null"], "description": "Official candidate-list / who-is-running page for this specific race or authority." },
+        "candidates": {
+          "type": "array",
+          "description": "Candidates for this race. Empty when no candidate has been confirmed from an official source yet.",
+          "items": { "$ref": "#/definitions/Candidate" }
+        },
+        "source": { "type": "string", "description": "Origin authority/host, e.g. 'Chicago Board of Elections' or 'Illinois State Board of Elections'." }
+      }
+    },
+    "Candidate": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "description": "Name as it will appear on the ballot." },
+        "office": { "type": "string", "description": "Office sought (echoes the race office; helps when a feed lists candidates across races)." },
+        "district": { "type": ["string", "null"], "description": "District / ward / subdistrict sought." },
+        "incumbent": { "type": ["boolean", "null"], "description": "True if the candidate currently holds this seat. Null when unknown/unverified." },
+        "incumbency": {
+          "type": ["string", "null"],
+          "description": "If an incumbent, how they hold the seat.",
+          "enum": ["appointed", "elected", null]
+        },
+        "party": { "type": ["string", "null"], "description": "Party, for partisan races only; null for non-partisan races." },
+        "filing_date": { "type": ["string", "null"], "description": "Date the candidate filed nominating papers, ISO YYYY-MM-DD when known." },
+        "petition_status": {
+          "type": ["string", "null"],
+          "description": "Ballot-status of the candidacy.",
+          "enum": ["filed", "on_ballot", "objected", "withdrawn", "removed", "unknown", null]
+        },
+        "website": { "type": ["string", "null"], "format": "uri", "description": "Candidate campaign website, when known." },
+        "photo_url": { "type": ["string", "null"], "format": "uri", "description": "Official candidate photo URL, when published by the authority." },
+        "source": { "type": ["string", "null"], "description": "Where this candidate record was read (host or authority)." }
+      }
+    }
+  }
+}

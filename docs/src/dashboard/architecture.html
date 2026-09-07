@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>govbot — Site Architecture</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20200%20200%22%3E%3Cpolygon%20points%3D%2282%2C68.8%20100%2C8%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22100%2C8%20118%2C68.8%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C68.8%20179.7%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22179.7%2C54%20136%2C100%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%22136%2C100%20179.7%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22179.7%2C146%20118%2C131.2%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C131.2%20100%2C192%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22100%2C192%2082%2C131.2%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%2282%2C131.2%2020.3%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%2220.3%2C146%2064%2C100%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%2264%2C100%2020.3%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%2220.3%2C54%2082%2C68.8%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3C/svg%3E">
+<style>
+  :root {
+    --page:           #f9f9f7;
+    --surface-1:      #fcfcfb;
+    --text-primary:   #0b0b0b;
+    /* Non-link text is full-contrast (not gray) in both themes: secondary and
+       muted fold into primary here (light) and into white in the dark blocks. */
+    --text-secondary: #0b0b0b;
+    --text-muted:     #0b0b0b;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1: #2a78d6;
+    --series-2: #1baf7a;
+    --series-3: #eda100;
+    --series-4: #008300;
+    --series-5: #4a3aa7;
+    --series-6: #e34948;
+    --series-7: #e87ba4;
+    --series-8: #eb6834;
+    --hover-wash: rgba(11,11,11,0.04);
+    --row-alt: rgba(11,11,11,0.028);
+    /* Diagram surface: node boxes read as a dark "console" panel in BOTH themes
+       (like the reference flowchart), with the accent color doing the talking. */
+    --diagram-bg:   #10131a;
+    --diagram-grid: rgba(255,255,255,0.05);
+    --node-bg:      #171b24;
+    --node-text:    #eef1f6;
+    --node-sub:     #aeb6c4;
+    --connector:    #3a4152;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      --page:           #0d0d0d;
+      --surface-1:      #1a1a19;
+      --text-primary:   #ffffff;
+      --text-secondary: #ffffff;
+      --text-muted:     #ffffff;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1: #3987e5;
+      --series-2: #199e70;
+      --series-3: #c98500;
+      --series-4: #008300;
+      --series-5: #9085e9;
+      --series-6: #e66767;
+      --series-7: #d55181;
+      --series-8: #d95926;
+      --hover-wash: rgba(255,255,255,0.06);
+      --row-alt: rgba(255,255,255,0.04);
+      --diagram-bg:   #0a0c11;
+      --diagram-grid: rgba(255,255,255,0.045);
+      --node-bg:      #14171f;
+      --node-text:    #eef1f6;
+      --node-sub:     #aeb6c4;
+      --connector:    #39414f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page:           #0d0d0d;
+    --surface-1:      #1a1a19;
+    --text-primary:   #ffffff;
+    --text-secondary: #ffffff;
+    --text-muted:     #ffffff;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1: #3987e5;
+    --series-2: #199e70;
+    --series-3: #c98500;
+    --series-4: #008300;
+    --series-5: #9085e9;
+    --series-6: #e66767;
+    --series-7: #d55181;
+    --series-8: #d95926;
+    --hover-wash: rgba(255,255,255,0.06);
+    --row-alt: rgba(255,255,255,0.04);
+    --diagram-bg:   #0a0c11;
+    --diagram-grid: rgba(255,255,255,0.045);
+    --node-bg:      #14171f;
+    --node-text:    #eef1f6;
+    --node-sub:     #aeb6c4;
+    --connector:    #39414f;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--text-primary);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  a { color: var(--series-1); }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 20px 48px; }
+
+  header.top { margin-bottom: 20px; }
+  header.top .title-row {
+    display: flex; align-items: center; gap: 12px;
+    flex-wrap: wrap; margin: 0 0 6px;
+  }
+  header.top h1 { font-size: 22px; font-weight: 650; margin: 0; }
+  header.top p  { margin: 0; color: var(--text-secondary); max-width: 70ch; }
+  header.top .docs-link { font-size: 13px; }
+
+  /* ---------- top tabs (each tab has its own accent color) ---------- */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .tab {
+    padding: 8px 15px; text-decoration: none; color: var(--text-secondary);
+    font-weight: 550; font-size: 14px; border: 1px solid transparent; border-bottom: none;
+    border-top: 3px solid transparent; border-radius: 8px 8px 0 0; margin-bottom: -1px;
+  }
+  .tab-legis    { --tab-accent: var(--series-1); }  /* blue */
+  .tab-hearings { --tab-accent: var(--series-3); }  /* gold */
+  .tab-elections { --tab-accent: var(--series-2); } /* green */
+  .tab-arch     { --tab-accent: var(--series-5); }  /* purple */
+  .tab:hover { color: var(--tab-accent); background: var(--hover-wash); }
+  .tab[aria-current="page"] {
+    color: var(--text-primary); background: var(--surface-1);
+    border-color: var(--border); border-bottom: 1px solid var(--surface-1);
+    border-top-color: var(--tab-accent);
+  }
+  .tab:not([aria-current="page"]) { border-top-color: color-mix(in srgb, var(--tab-accent) 45%, transparent); }
+
+  /* ---------- brand bar + theme toggle ---------- */
+  .brandbar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 16px;
+  }
+  .brand {
+    display: inline-flex; align-items: center; gap: 9px;
+    text-decoration: none; color: var(--text-primary);
+  }
+  .brand .brand-logo {
+    flex: none; display: block; width: 40px; height: 40px;
+    border-radius: 9px; border: 1px solid var(--border);
+  }
+  .brand .brand-name { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+  .brand .brand-name .bot { color: var(--series-1); }
+
+  .theme-toggle {
+    display: inline-flex; align-items: center; flex: none;
+    border: 1px solid var(--border); border-radius: 999px;
+    background: var(--surface-1); padding: 2px;
+  }
+  .theme-toggle button {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 28px; min-width: 34px; padding: 0 11px;
+    border: none; background: transparent; border-radius: 999px;
+    color: var(--text-secondary); font: inherit; font-size: 12.5px; line-height: 1;
+    cursor: pointer;
+  }
+  .theme-toggle button:hover { color: var(--text-primary); }
+  .theme-toggle button[aria-pressed="true"] { background: var(--series-1); color: #fff; }
+
+  /* ---------- lead / TL;DR ---------- */
+  .lead {
+    margin: 8px 0 22px; font-size: 15.5px; line-height: 1.6;
+    color: var(--text-primary); max-width: 78ch;
+  }
+  .lead b { font-weight: 700; }
+
+  /* Two-up "what you're looking at" cards at the very top. */
+  .overview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 26px; }
+  @media (max-width: 900px) { .overview { grid-template-columns: 1fr; } }
+  .ov {
+    position: relative; overflow: hidden;
+    border: 2px solid var(--c); border-radius: 14px;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--c) 12%, var(--surface-1)) 0%,
+                              var(--surface-1) 60%);
+    padding: 16px 18px 18px;
+  }
+  .ov .ov-emoji { font-size: 30px; line-height: 1; display: block; margin-bottom: 8px; }
+  .ov h3 { margin: 0 0 4px; font-size: 16px; font-weight: 700; }
+  .ov h3 .ov-file {
+    font: 600 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+    padding: 3px 7px; border-radius: 6px; margin-left: 6px; white-space: nowrap;
+  }
+  .ov p { margin: 6px 0 0; color: var(--text-secondary); line-height: 1.5; }
+
+  /* ---------- section panels ---------- */
+  .panel {
+    background: var(--surface-1);
+    border: 2px solid var(--c, var(--border)); border-radius: 14px;
+    padding: 20px 20px 22px; margin-bottom: 22px;
+  }
+  .panel > .panel-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .panel .kicker {
+    display: inline-flex; align-items: center; gap: 6px;
+    font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--c) 40%, transparent);
+    padding: 4px 9px; border-radius: 999px;
+  }
+  .panel h2 { font-size: 20px; font-weight: 700; margin: 0; }
+  .panel .sub { color: var(--text-secondary); margin: 6px 0 0; font-size: 14px; line-height: 1.55; max-width: 78ch; }
+
+  /* ---------- the flowchart (reference-style) ---------- */
+  .diagram {
+    margin-top: 18px; padding: 20px 16px 22px;
+    background:
+      linear-gradient(var(--diagram-grid) 1px, transparent 1px) 0 0 / 22px 22px,
+      linear-gradient(90deg, var(--diagram-grid) 1px, transparent 1px) 0 0 / 22px 22px,
+      var(--diagram-bg);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;
+    overflow-x: auto;
+  }
+  .flow { min-width: 260px; }
+  /* A "job" container groups a run of steps, like the outlined jobs in the
+     reference diagram: dashed accent border + a floating title chip. */
+  .flow-job {
+    position: relative;
+    border: 1.5px dashed color-mix(in srgb, var(--c) 65%, transparent);
+    border-radius: 12px; padding: 26px 16px 16px; margin: 20px auto 0;
+    max-width: 460px;
+  }
+  .flow-job:first-child { margin-top: 8px; }
+  .flow-job-head {
+    position: absolute; top: -12px; left: 14px;
+    display: inline-flex; align-items: center; gap: 8px;
+    font: 700 12px/1 system-ui, sans-serif;
+    color: #fff; background: var(--c);
+    padding: 5px 11px; border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  }
+  .flow-job-head .badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 17px; height: 17px; border-radius: 50%;
+    background: rgba(0,0,0,0.28); font-size: 11px;
+  }
+  .flow-job-meta { font-weight: 500; font-size: 11px; opacity: 0.9; }
+
+  /* A single step box. Accent set per-node via inline --c so one job can hold
+     several colors, like the reference. */
+  .node {
+    display: flex; align-items: center; gap: 11px;
+    background: var(--node-bg); color: var(--node-text);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-left: 4px solid var(--c);
+    border-radius: 9px; padding: 11px 13px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.03), 0 6px 16px rgba(0,0,0,0.28);
+    max-width: 420px; margin: 0 auto;
+  }
+  .node .n-ico {
+    flex: none; width: 34px; height: 34px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+    background: color-mix(in srgb, var(--c) 26%, transparent);
+    border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
+  }
+  .node .n-body { min-width: 0; }
+  .node .n-title { font-weight: 650; font-size: 13.5px; }
+  .node .n-title code {
+    font: 650 12.5px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: color-mix(in srgb, var(--c) 60%, var(--node-text));
+  }
+  .node .n-sub { color: var(--node-sub); font-size: 12px; margin-top: 2px; line-height: 1.4; }
+
+  /* Vertical connector with a chevron, between two stacked boxes. */
+  .conn { display: flex; flex-direction: column; align-items: center; margin: 0 auto; }
+  .conn i { display: block; width: 2px; height: 16px; background: var(--connector); }
+  .conn::after {
+    content: ""; width: 9px; height: 9px; margin-top: -5px;
+    border-right: 2px solid var(--connector); border-bottom: 2px solid var(--connector);
+    transform: rotate(45deg);
+  }
+  .conn.tight i { height: 10px; }
+
+  /* Fan-out row: one input splitting to several output chips (the granular
+     RSS feeds / social targets in the reference). */
+  .fan { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 4px auto 0; max-width: 640px; }
+  .out {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--node-bg); color: var(--node-text);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-top: 3px solid var(--c);
+    border-radius: 9px; padding: 9px 12px; font-size: 12.5px; font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.28);
+  }
+  .out .out-ico { font-size: 15px; }
+  .out .out-sub { color: var(--node-sub); font-weight: 500; font-size: 11px; }
+  .fan-label {
+    text-align: center; color: var(--node-sub);
+    font: 600 11px/1 ui-monospace, monospace; letter-spacing: 0.05em;
+    text-transform: uppercase; margin: 2px 0 8px;
+  }
+
+  /* Sources fan-IN row (several boxes merging into the pipeline). */
+  .sources { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px; max-width: 560px; margin: 0 auto; }
+  .src {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--node-bg); color: var(--node-text);
+    border: 1px solid rgba(255,255,255,0.10); border-radius: 999px;
+    padding: 6px 12px 6px 8px; font-size: 12px; font-weight: 600;
+  }
+  .src .src-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex: none; }
+  .src .src-sub { color: var(--node-sub); font-weight: 500; }
+
+  /* ---------- "at a glance" fact grid ---------- */
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 16px; }
+  .fact { border: 1px solid var(--border); border-left: 4px solid var(--c); border-radius: 10px; padding: 12px 14px; background: var(--surface-1); }
+  .fact .f-val { font-size: 22px; font-weight: 700; color: var(--c); font-variant-numeric: tabular-nums; }
+  .fact .f-lbl { color: var(--text-secondary); font-size: 12.5px; margin-top: 2px; line-height: 1.35; }
+
+  /* ---------- callouts ---------- */
+  .callout {
+    display: flex; gap: 12px; align-items: flex-start;
+    border: 1px solid color-mix(in srgb, var(--c) 45%, var(--border));
+    background: color-mix(in srgb, var(--c) 8%, var(--surface-1));
+    border-radius: 11px; padding: 13px 15px; margin-top: 16px;
+  }
+  .callout .co-ico { font-size: 20px; flex: none; line-height: 1.2; }
+  .callout .co-body { line-height: 1.5; }
+  .callout .co-body b { font-weight: 700; }
+
+  /* ---------- step list (plain-english walkthroughs) ---------- */
+  .steps { list-style: none; counter-reset: s; margin: 16px 0 0; padding: 0; }
+  .steps li {
+    position: relative; padding: 4px 0 14px 42px; line-height: 1.5;
+    border-left: 2px solid var(--gridline); margin-left: 15px;
+  }
+  .steps li:last-child { border-left-color: transparent; padding-bottom: 0; }
+  .steps li::before {
+    counter-increment: s; content: counter(s);
+    position: absolute; left: -15px; top: 0;
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; color: #fff; background: var(--c);
+    box-shadow: 0 0 0 4px var(--surface-1);
+  }
+  .steps li b { font-weight: 650; }
+  .steps li code, .prose code {
+    font: 600 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--hover-wash); border: 1px solid var(--border);
+    border-radius: 5px; padding: 1px 5px;
+  }
+
+  .prose { line-height: 1.6; }
+  .prose p { margin: 10px 0; max-width: 78ch; }
+
+  /* ---------- tech chips ---------- */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .tchip {
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 6px 12px; font-size: 12.5px; font-weight: 600; background: var(--surface-1);
+  }
+  .tchip .t-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+
+  /* ---------- connection / cross-link card ---------- */
+  .bridge {
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px;
+    margin-top: 14px;
+  }
+  @media (max-width: 620px) { .bridge { grid-template-columns: 1fr; } .bridge .bridge-mid { transform: rotate(90deg); } }
+  .bridge-end {
+    border: 2px solid var(--c); border-radius: 12px; padding: 13px 15px;
+    background: color-mix(in srgb, var(--c) 9%, var(--surface-1));
+  }
+  .bridge-end h4 { margin: 0 0 3px; font-size: 14px; }
+  .bridge-end p { margin: 0; color: var(--text-secondary); font-size: 12.5px; line-height: 1.45; }
+  .bridge-mid { text-align: center; font-size: 26px; color: var(--series-5); }
+
+  footer { margin-top: 28px; color: var(--text-muted); font-size: 12.5px; }
+  footer code { background: var(--surface-1); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; }
+  .chn-credit {
+    margin: 10px 0 0; display: flex; align-items: center; gap: 7px;
+    color: var(--text-muted); font-size: 12.5px;
+  }
+  .chn-credit svg { flex: none; }
+  .chn-credit a { color: var(--series-1); }
+</style>
+<script>
+  // Apply a saved theme choice before first paint to avoid a flash of the
+  // wrong palette. "auto" (or nothing saved) falls through to the CSS
+  // prefers-color-scheme default. Shared with the other dashboard pages via
+  // the same localStorage key, so a choice carries across all three tabs.
+  (function () {
+    try {
+      var t = localStorage.getItem("govbot-theme");
+      if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+<div class="wrap">
+  <nav class="tabs" aria-label="Dashboards">
+    <a class="tab tab-legis" href="index.html">Legislation Dashboard</a>
+    <a class="tab tab-hearings" href="hearings.html">Committee Hearings &amp; Witness Slips</a>
+    <a class="tab tab-elections" href="elections.html">Elections Happening in IL</a>
+    <a class="tab tab-arch" href="architecture.html" aria-current="page">Site Architecture</a>
+  </nav>
+  <header class="top">
+    <div class="brandbar">
+      <a class="brand" href="../index.html" aria-label="govbot home">
+        <img class="brand-logo" src="govbot-logo.png" width="40" height="40" alt="" aria-hidden="true">
+        <span class="brand-name">gov<span class="bot">bot</span></span>
+      </a>
+      <div class="theme-toggle" role="group" aria-label="Color theme">
+        <button type="button" data-theme-choice="light" title="Light theme" aria-label="Light theme" aria-pressed="false">☀</button>
+        <button type="button" data-theme-choice="auto"  title="Match system" aria-label="Match system theme" aria-pressed="false">Auto</button>
+        <button type="button" data-theme-choice="dark"  title="Dark theme"  aria-label="Dark theme" aria-pressed="false">☾</button>
+      </div>
+    </div>
+    <div class="title-row">
+      <h1>Site Architecture</h1>
+    </div>
+    <p>How both dashboards on this site are built — from raw government data, through
+       automated pipelines, to the pages you're reading.
+       <a class="docs-link" href="../dashboard-guide.md">Dashboard guide</a> ·
+       <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
+  </header>
+
+  <!-- ===================== TL;DR ===================== -->
+  <p class="lead">
+    This site has <b>three dashboards</b> and <b>three separate backend pipelines</b> that feed them.
+    They run automatically <b>twice a day</b> on GitHub Actions, write plain <code style="font-size:12.5px">.json</code>
+    files into the site, and never break the page when a government source goes down —
+    they fall back to the last good data. Here's how each one works. 👇
+  </p>
+
+  <div class="overview">
+    <div class="ov" style="--c: var(--series-1)">
+      <span class="ov-emoji" aria-hidden="true">🏛️</span>
+      <h3>Legislation Dashboard <span class="ov-file">data.json</span></h3>
+      <p>Bills from <b>50+ states &amp; territories</b>. An AI model reads each bill and tags it by
+         topic. Powers the searchable, filterable bill table and charts.</p>
+    </div>
+    <div class="ov" style="--c: var(--series-3)">
+      <span class="ov-emoji" aria-hidden="true">🗓️</span>
+      <h3>Committee Hearings <span class="ov-file">hearings.json</span></h3>
+      <p>Upcoming hearings &amp; public-comment windows scraped <b>straight from state legislatures</b>
+         and the federal register — with RSS feeds you can subscribe to.</p>
+    </div>
+    <div class="ov" style="--c: var(--series-2)">
+      <span class="ov-emoji" aria-hidden="true">🗳️</span>
+      <h3>Elections Happening in IL <span class="ov-file">elections.json</span></h3>
+      <p>Every office on upcoming <b>Chicago &amp; Illinois ballots</b> — citywide, all 50 wards, CPS
+         board, Police District Councils — with candidates from official candidate lists.</p>
+    </div>
+  </div>
+
+  <!-- ===================== BIG PICTURE ===================== -->
+  <section class="panel" style="--c: var(--series-5)">
+    <div class="panel-head">
+      <span class="kicker">🗺️ The big picture</span>
+    </div>
+    <h2>One static site, two data pipelines</h2>
+    <p class="sub">
+      Everything you see is <b>static HTML + JSON</b> hosted on GitHub Pages — no server, no database
+      at request time. Two scheduled jobs refresh the data files behind the scenes; your browser just
+      downloads them and draws the page.
+    </p>
+
+    <div class="diagram" role="img"
+      aria-label="Two automated pipelines — legislation and hearings — both write JSON files into a static site that is built by mdbook and served by GitHub Pages to your browser.">
+      <div class="flow">
+
+        <div class="flow-job" style="--c: var(--series-5)">
+          <div class="flow-job-head"><span class="badge" aria-hidden="true">⚙</span> Twice a day &middot; GitHub Actions <span class="flow-job-meta">deploy-docs.yml</span></div>
+
+          <div class="node" style="--c: var(--series-1)">
+            <span class="n-ico" aria-hidden="true">🏛️</span>
+            <div class="n-body">
+              <div class="n-title">Legislation pipeline</div>
+              <div class="n-sub">clone 50+ state repos → AI topic-tag → <code>data.json</code></div>
+            </div>
+          </div>
+          <div class="conn tight" aria-hidden="true"><i></i></div>
+          <div class="node" style="--c: var(--series-3)">
+            <span class="n-ico" aria-hidden="true">🗓️</span>
+            <div class="n-body">
+              <div class="n-title">Hearings pipeline</div>
+              <div class="n-sub">scrape legislatures + federal → <code>hearings.json</code> + RSS</div>
+            </div>
+          </div>
+          <div class="conn tight" aria-hidden="true"><i></i></div>
+          <div class="node" style="--c: var(--series-2)">
+            <span class="n-ico" aria-hidden="true">🗳️</span>
+            <div class="n-body">
+              <div class="n-title">Elections pipeline</div>
+              <div class="n-sub">official candidate lists → <code>elections.json</code> + RSS</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="conn" aria-hidden="true"><i></i></div>
+
+        <div class="flow-job" style="--c: var(--series-4)">
+          <div class="flow-job-head"><span class="badge" aria-hidden="true">📦</span> Build the site</div>
+          <div class="node" style="--c: var(--series-4)">
+            <span class="n-ico" aria-hidden="true">📚</span>
+            <div class="n-body">
+              <div class="n-title"><code>mdbook build</code></div>
+              <div class="n-sub">bundles the docs + copies the dashboard HTML &amp; JSON verbatim</div>
+            </div>
+          </div>
+          <div class="conn tight" aria-hidden="true"><i></i></div>
+          <div class="node" style="--c: var(--series-2)">
+            <span class="n-ico" aria-hidden="true">🚀</span>
+            <div class="n-body">
+              <div class="n-title">Deploy to GitHub Pages</div>
+              <div class="n-sub">publishes <code>chihacknight.github.io/govbot</code></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="conn" aria-hidden="true"><i></i></div>
+
+        <div class="fan-label">what you open in the browser</div>
+        <div class="fan">
+          <span class="out" style="--c: var(--series-1)"><span class="out-ico" aria-hidden="true">🏛️</span> Legislation Dashboard <span class="out-sub">index.html</span></span>
+          <span class="out" style="--c: var(--series-3)"><span class="out-ico" aria-hidden="true">🗓️</span> Hearings Dashboard <span class="out-sub">hearings.html</span></span>
+          <span class="out" style="--c: var(--series-2)"><span class="out-ico" aria-hidden="true">🗳️</span> Elections Happening in IL <span class="out-sub">elections.html</span></span>
+          <span class="out" style="--c: var(--series-5)"><span class="out-ico" aria-hidden="true">🗺️</span> This page <span class="out-sub">architecture.html</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="facts">
+      <div class="fact" style="--c: var(--series-1)"><div class="f-val">50+</div><div class="f-lbl">states &amp; territories tracked</div></div>
+      <div class="fact" style="--c: var(--series-3)"><div class="f-val">2×/day</div><div class="f-lbl">rebuilt (08:00 &amp; 20:00 UTC)</div></div>
+      <div class="fact" style="--c: var(--series-2)"><div class="f-val">$0</div><div class="f-lbl">servers — fully static hosting</div></div>
+      <div class="fact" style="--c: var(--series-5)"><div class="f-val">0</div><div class="f-lbl">crashes when a source is down (fail-soft)</div></div>
+    </div>
+  </section>
+
+  <!-- ===================== PIPELINE 1: LEGISLATION ===================== -->
+  <section class="panel" style="--c: var(--series-1)">
+    <div class="panel-head">
+      <span class="kicker">🏛️ Pipeline 1</span>
+    </div>
+    <h2>The Legislation Dashboard</h2>
+    <p class="sub">
+      Git repositories <b>are</b> the dataset here: govbot mirrors each jurisdiction's bills as a git repo.
+      The pipeline clones them, lets a small AI model read every new bill and label it by topic, then
+      flattens the result into one <code>data.json</code> the page can search instantly.
+    </p>
+
+    <div class="diagram" role="img"
+      aria-label="Legislation pipeline: clone state repositories, filter to new bills, run an embedding model to tag topics, build data.json, then the browser renders charts, filters, a table, and a details modal.">
+      <div class="flow">
+
+        <div class="flow-job" style="--c: var(--series-1)">
+          <div class="flow-job-head"><span class="badge" aria-hidden="true">1</span> Gather &amp; tag <span class="flow-job-meta">GitHub Actions</span></div>
+
+          <div class="node" style="--c: var(--series-1)">
+            <span class="n-ico" aria-hidden="true">📥</span>
+            <div class="n-body">
+              <div class="n-title"><code>govbot clone all</code></div>
+              <div class="n-sub">50+ legislation repos, shallow, 8 in parallel</div>
+            </div>
+          </div>
+          <div class="conn tight" aria-hidden="true"><i></i></div>
+
+          <div class="node" style="--c: var(--series-7)">
+            <span class="n-ico" aria-hidden="true">🔎</span>
+            <div class="n-body">
+              <div class="n-title">Filter to new bills</div>
+              <div class="n-sub"><code>filter_new_bills.py</code> — a seen-bills ledger, so only fresh bills get re-tagged</div>
+            </div>
+          </div>
+          <div class="conn tight" aria-hidden="true"><i></i></div>
+
+          <div class="node" style="--c: var(--series-5)">
+            <span class="n-ico" aria-hidden="true">🧠</span>
+            <div class="n-body">
+              <div class="n-title"><code>govbot tag</code> — AI topic tagging</div>
+              <div class="n-sub">all-MiniLM-L6-v2 embeddings vs. the topic taxonomy in <code>govbot-dashboard.yml</code>; keyword fallback if the model is unavailable</div>
+            </div>
+          </div>
+          <div class="conn tight" aria-hidden="true"><i></i></div>
+
+          <div class="node" style="--c: var(--series-4)">
+            <span class="n-ico" aria-hidden="true">🧩</span>
+            <div class="n-body">
+              <div class="n-title"><code>build_dashboard_data.py</code></div>
+              <div class="n-sub">merges every repo + tags into one <code>data.json</code></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="conn" aria-hidden="true"><i></i></div>
+
+        <div class="flow-job" style="--c: var(--series-2)">
+          <div class="flow-job-head"><span class="badge" aria-hidden="true">2</span> Extra context <span class="flow-job-meta">fail-soft add-ons</span></div>
+          <div class="node" style="--c: var(--series-2)">
+            <span class="n-ico" aria-hidden="true">👤</span>
+            <div class="n-body">
+              <div class="n-title">Legislator roster → <code>people.json</code></div>
+              <div class="n-sub">from the Open States people repo, so surname-only sponsors get full names</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="conn" aria-hidden="true"><i></i></div>
+
+        <div class="fan-label">your browser draws it from data.json</div>
+        <div class="fan">
+          <span class="out" style="--c: var(--series-1)"><span class="out-ico" aria-hidden="true">📊</span> Charts <span class="out-sub">by state · topic · month</span></span>
+          <span class="out" style="--c: var(--series-3)"><span class="out-ico" aria-hidden="true">🔍</span> Filters &amp; search</span>
+          <span class="out" style="--c: var(--series-4)"><span class="out-ico" aria-hidden="true">📋</span> Sortable bill table</span>
+          <span class="out" style="--c: var(--series-5)"><span class="out-ico" aria-hidden="true">🪟</span> Details modal <span class="out-sub">live govbot record</span></span>
+        </div>
+      </div>
+    </div>
+
+    <ol class="steps" style="--c: var(--series-1)">
+      <li><b>Clone the data.</b> Each state's bills live in their own git repo (git repos are the dataset). <code>govbot clone all</code> pulls them all down.</li>
+      <li><b>Skip what's unchanged.</b> A ledger of already-seen bills means only <em>new</em> bills go through the expensive tagging step — the rest are reused.</li>
+      <li><b>Tag with a tiny AI model.</b> An embedding model compares each bill's text to a curated list of topics and attaches the closest matches. If the model can't load, a keyword list stands in.</li>
+      <li><b>Flatten to one file.</b> Everything is merged into <code>data.json</code> — the single file the dashboard downloads.</li>
+      <li><b>Render in the browser.</b> <code>index.html</code> reads that file and builds the charts, filters, table, and per-bill details modal (which fetches the live govbot record on demand).</li>
+    </ol>
+
+    <div class="callout" style="--c: var(--series-3)">
+      <span class="co-ico" aria-hidden="true">🛟</span>
+      <div class="co-body">
+        <b>Fail-soft everywhere.</b> Every network or AI step degrades to a warning plus a fallback
+        (keyword tags, or the last committed sample data). A flaky government site never takes the
+        dashboard down.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PIPELINE 2: HEARINGS ===================== -->
+  <section class="panel" style="--c: var(--series-3)">
+    <div class="panel-head">
+      <span class="kicker">🗓️ Pipeline 2</span>
+    </div>
+    <h2>Committee Hearings &amp; Witness Slips</h2>
+    <p class="sub">
+      A completely separate scraper that taps legislature websites <b>directly</b> — not through Open States —
+      plus federal public-comment periods. It produces a rolling near-future window of hearings and a family
+      of RSS feeds so you can follow a single bill, a whole state, or one hearing.
+    </p>
+
+    <div class="diagram" role="img"
+      aria-label="Hearings pipeline: scrape Illinois, Washington, Massachusetts, Alaska legislatures and federal Regulations.gov, then write hearings.json, a whole-calendar RSS feed, and granular per-bill, per-jurisdiction, and per-hearing RSS feeds, plus a participation directory.">
+      <div class="flow">
+
+        <div class="flow-job" style="--c: var(--series-3)">
+          <div class="flow-job-head"><span class="badge" aria-hidden="true">1</span> Scrape the sources <span class="flow-job-meta">scrape-hearings/main.py</span></div>
+
+          <div class="fan-label">tapped directly — federal leads, then states</div>
+          <div class="sources">
+            <span class="src" style="--c: var(--series-6)"><span class="src-dot"></span> 🇺🇸 USA Federal <span class="src-sub">Regulations.gov</span></span>
+            <span class="src" style="--c: var(--series-1)"><span class="src-dot"></span> Illinois <span class="src-sub">ilga.gov</span></span>
+            <span class="src" style="--c: var(--series-2)"><span class="src-dot"></span> Washington <span class="src-sub">leg.wa.gov</span></span>
+            <span class="src" style="--c: var(--series-5)"><span class="src-dot"></span> Massachusetts <span class="src-sub">malegislature.gov</span></span>
+            <span class="src" style="--c: var(--series-8)"><span class="src-dot"></span> Alaska <span class="src-sub">akleg.gov</span></span>
+          </div>
+
+          <div class="conn" aria-hidden="true"><i></i></div>
+
+          <div class="node" style="--c: var(--series-3)">
+            <span class="n-ico" aria-hidden="true">🧾</span>
+            <div class="n-body">
+              <div class="n-title">Parse &amp; normalize</div>
+              <div class="n-sub">one shared schema (<code>govbot.hearings.schema.json</code>); federal falls back to <code>federal_seed.json</code> without an API key</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="conn" aria-hidden="true"><i></i></div>
+
+        <div class="fan-label">outputs written into the site</div>
+        <div class="fan">
+          <span class="out" style="--c: var(--series-3)"><span class="out-ico" aria-hidden="true">📄</span> hearings.json <span class="out-sub">the dashboard data</span></span>
+          <span class="out" style="--c: var(--series-8)"><span class="out-ico" aria-hidden="true">📡</span> hearings.xml <span class="out-sub">whole-calendar RSS</span></span>
+          <span class="out" style="--c: var(--series-6)"><span class="out-ico" aria-hidden="true">🔖</span> per-bill RSS</span>
+          <span class="out" style="--c: var(--series-1)"><span class="out-ico" aria-hidden="true">📍</span> per-jurisdiction RSS</span>
+          <span class="out" style="--c: var(--series-5)"><span class="out-ico" aria-hidden="true">🎫</span> per-hearing RSS</span>
+          <span class="out" style="--c: var(--series-2)"><span class="out-ico" aria-hidden="true">🗂️</span> participation.json <span class="out-sub">56-jurisdiction directory</span></span>
+        </div>
+
+        <div class="conn" aria-hidden="true"><i></i></div>
+        <div class="node" style="--c: var(--series-3)">
+          <span class="n-ico" aria-hidden="true">🗓️</span>
+          <div class="n-body">
+            <div class="n-title"><code>hearings.html</code></div>
+            <div class="n-sub">renders the calendar, witness-slip windows, and RSS links</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ol class="steps" style="--c: var(--series-3)">
+      <li><b>Go straight to the source.</b> Instead of a third-party aggregator, the scraper reads each legislature's own site plus the federal Regulations.gov API.</li>
+      <li><b>Normalize to one shape.</b> Every source is mapped onto a shared hearings schema so the page treats them all the same.</li>
+      <li><b>Fan out to feeds.</b> Beyond the dashboard's <code>hearings.json</code>, it emits a whole-calendar RSS and granular per-bill / per-jurisdiction / per-hearing feeds you can subscribe to.</li>
+      <li><b>Keep the last good copy.</b> If a source is down and zero hearings come back, the previous committed data stays — the panel never blanks out.</li>
+    </ol>
+
+    <div class="callout" style="--c: var(--series-2)">
+      <span class="co-ico" aria-hidden="true">🧪</span>
+      <div class="co-body">
+        <b>Tested offline.</b> The parsers are snapshot-tested against saved copies of each site
+        (<code>python3 actions/scrape-hearings/test_scrape_hearings.py</code>), so parsing works without
+        hitting the network — exactly the offline-first principle the project is built on.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PIPELINE 3: ELECTIONS ===================== -->
+  <section class="panel" style="--c: var(--series-2)">
+    <div class="panel-head">
+      <span class="kicker">🗳️ Pipeline 3</span>
+    </div>
+    <h2>Elections Happening in IL</h2>
+    <p class="sub">
+      The ballot's <b>structure</b> — every office, district, ballot date, and a plain-English
+      “why this race exists” note — is stable, so it lives in a committed <b>seed</b>. Scrapers only
+      <b>populate candidates</b> onto that seed from official candidate lists. A race with nobody
+      listed yet keeps an empty slot and a link to its official source — never a guess.
+    </p>
+
+    <div class="diagram" role="img"
+      aria-label="Elections pipeline: a committed seed defines every race; scrapers read the Chicago Board of Elections and the Illinois State Board of Elections candidate lists, a matcher attaches each candidate to its race, and the result is elections.json plus whole-ballot and granular RSS feeds rendered by elections.html.">
+      <div class="flow">
+
+        <div class="flow-job" style="--c: var(--series-8)">
+          <div class="flow-job-head"><span class="badge" aria-hidden="true">1</span> Scrape candidate lists <span class="flow-job-meta">scrape-elections/main.py</span></div>
+
+          <div class="fan-label">official sources — no third-party aggregator</div>
+          <div class="sources">
+            <span class="src" style="--c: var(--series-1)"><span class="src-dot"></span> Chicago Board of Elections <span class="src-sub">mayor · wards · PDC</span></span>
+            <span class="src" style="--c: var(--series-3)"><span class="src-dot"></span> Illinois SBE <span class="src-sub">“Who Is Running” · CPS board</span></span>
+            <span class="src" style="--c: var(--series-7)"><span class="src-dot"></span> Cook County Clerk <span class="src-sub">suburban (future)</span></span>
+          </div>
+        </div>
+
+        <div class="conn" aria-hidden="true"><i></i></div>
+
+        <div class="flow-job" style="--c: var(--series-2)">
+          <div class="flow-job-head"><span class="badge" aria-hidden="true">2</span> Place onto the seed</div>
+          <div class="node" style="--c: var(--series-5)">
+            <span class="n-ico" aria-hidden="true">🧱</span>
+            <div class="n-body">
+              <div class="n-title"><code>elections_seed.json</code></div>
+              <div class="n-sub">96 races: citywide, wards 1–50, CPS president + subdistricts 1A–10B, 22 Police District Councils</div>
+            </div>
+          </div>
+          <div class="conn tight" aria-hidden="true"><i></i></div>
+          <div class="node" style="--c: var(--series-2)">
+            <span class="n-ico" aria-hidden="true">🎯</span>
+            <div class="n-body">
+              <div class="n-title">Matcher</div>
+              <div class="n-sub">attaches a candidate to a race only when office + district resolve exactly; anything unplaceable is dropped, never invented</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="conn" aria-hidden="true"><i></i></div>
+
+        <div class="fan-label">outputs written into the site</div>
+        <div class="fan">
+          <span class="out" style="--c: var(--series-2)"><span class="out-ico" aria-hidden="true">📄</span> elections.json <span class="out-sub">the dashboard data</span></span>
+          <span class="out" style="--c: var(--series-8)"><span class="out-ico" aria-hidden="true">📡</span> elections.xml <span class="out-sub">whole-ballot RSS</span></span>
+          <span class="out" style="--c: var(--series-5)"><span class="out-ico" aria-hidden="true">🗂️</span> per-office-group RSS</span>
+          <span class="out" style="--c: var(--series-1)"><span class="out-ico" aria-hidden="true">🔖</span> per-race RSS</span>
+        </div>
+
+        <div class="conn" aria-hidden="true"><i></i></div>
+        <div class="node" style="--c: var(--series-2)">
+          <span class="n-ico" aria-hidden="true">🗳️</span>
+          <div class="n-body">
+            <div class="n-title"><code>elections.html</code></div>
+            <div class="n-sub">groups races by office, shows candidates + “why this race exists,” and RSS links</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ol class="steps" style="--c: var(--series-2)">
+      <li><b>Start from the ballot's shape.</b> A committed seed lists every race, its district, ballot date, and why it exists — this never depends on a scrape succeeding.</li>
+      <li><b>Read official candidate lists.</b> Best-effort parsers read the Chicago Board of Elections pages and the Illinois SBE “Who Is Running” list.</li>
+      <li><b>Match, don't invent.</b> Each candidate attaches to a race only when its office and district resolve unambiguously; unplaceable rows are dropped with a warning.</li>
+      <li><b>Fan out to feeds.</b> Beyond <code>elections.json</code>, it emits a whole-ballot RSS plus per-office-group and per-race feeds you can follow.</li>
+    </ol>
+
+    <div class="callout" style="--c: var(--series-3)">
+      <span class="co-ico" aria-hidden="true">🎓</span>
+      <div class="co-body">
+        <b>Why the CPS races are special.</b> On Nov 3, 2026 Chicago elects a school board by popular
+        vote for the first time — including its first-ever elected president — as the mayor-appointed
+        hybrid board is phased out. The seed carries that context on every CPS race so the page can
+        explain it, not just list it.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== HOW THEY CONNECT ===================== -->
+  <section class="panel" style="--c: var(--series-5)">
+    <div class="panel-head">
+      <span class="kicker">🔗 Where they meet</span>
+    </div>
+    <h2>Pipelines that talk to each other</h2>
+    <p class="sub">The three dashboards are independent, but they cross-reference each other so a bill and its hearing feel connected.</p>
+
+    <div class="bridge">
+      <div class="bridge-end" style="--c: var(--series-1)">
+        <h4>🏛️ A bill's details modal</h4>
+        <p>Opens a bill on the Legislation Dashboard and checks the hearings feed…</p>
+      </div>
+      <div class="bridge-mid" aria-hidden="true">⇄</div>
+      <div class="bridge-end" style="--c: var(--series-3)">
+        <h4>🗓️ …shows if it's on a calendar</h4>
+        <p>“On the committee calendar — see the Committee Hearings tab.” And hearings link bills back with a pre-filtered deep link.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TECH STACK ===================== -->
+  <section class="panel" style="--c: var(--series-4)">
+    <div class="panel-head">
+      <span class="kicker">🧰 Under the hood</span>
+    </div>
+    <h2>What it's built with</h2>
+    <p class="sub">Deliberately boring, portable, and dependency-light — everything runs as plain scripts.</p>
+    <div class="chips">
+      <span class="tchip"><span class="t-dot" style="background:var(--series-6)"></span> Rust — the <code>govbot</code> CLI</span>
+      <span class="tchip"><span class="t-dot" style="background:var(--series-1)"></span> Python — build &amp; scrape scripts</span>
+      <span class="tchip"><span class="t-dot" style="background:var(--series-5)"></span> all-MiniLM-L6-v2 — embeddings</span>
+      <span class="tchip"><span class="t-dot" style="background:var(--series-3)"></span> GitHub Actions — scheduler</span>
+      <span class="tchip"><span class="t-dot" style="background:var(--series-4)"></span> mdBook — site builder</span>
+      <span class="tchip"><span class="t-dot" style="background:var(--series-2)"></span> GitHub Pages — hosting</span>
+      <span class="tchip"><span class="t-dot" style="background:var(--series-8)"></span> Git repos — the datasets</span>
+      <span class="tchip"><span class="t-dot" style="background:var(--series-7)"></span> Vanilla JS — no framework</span>
+      <span class="tchip"><span class="t-dot" style="background:var(--series-1)"></span> JSON Schema — validation</span>
+    </div>
+
+    <div class="prose" style="margin-top:16px">
+      <p>Want the deeper walkthrough? The <a href="../dashboard-guide.md">dashboard guide</a> documents the data flow,
+         and every action folder in the <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a>
+         is a self-contained module you can run as a shell script or a GitHub Action.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>This page is itself a static file — <code>docs/src/dashboard/architecture.html</code> — copied verbatim into the
+       site by <code>mdbook build</code>, just like the two dashboards it describes.</p>
+  </footer>
+  <p class="chn-credit">
+    <svg viewBox="0 0 200 200" width="15" height="15" aria-hidden="true" focusable="false">
+      <polygon points="82,68.8 100,8 100,100"    fill="#1B87B8"/>
+      <polygon points="100,8 118,68.8 100,100"   fill="#29ABE2"/>
+      <polygon points="118,68.8 179.7,54 100,100" fill="#C81820"/>
+      <polygon points="179.7,54 136,100 100,100"  fill="#ED2E38"/>
+      <polygon points="136,100 179.7,146 100,100" fill="#1B87B8"/>
+      <polygon points="179.7,146 118,131.2 100,100" fill="#29ABE2"/>
+      <polygon points="118,131.2 100,192 100,100" fill="#C81820"/>
+      <polygon points="100,192 82,131.2 100,100"  fill="#ED2E38"/>
+      <polygon points="82,131.2 20.3,146 100,100" fill="#1B87B8"/>
+      <polygon points="20.3,146 64,100 100,100"   fill="#29ABE2"/>
+      <polygon points="64,100 20.3,54 100,100"    fill="#C81820"/>
+      <polygon points="20.3,54 82,68.8 100,100"   fill="#ED2E38"/>
+    </svg>
+    A <a href="https://chihacknight.org/">Chi Hack Night</a> project
+  </p>
+</div>
+
+<script>
+"use strict";
+(function () {
+  // ----- color theme toggle (light / dark / auto), shared across all tabs -----
+  const root = document.documentElement;
+  const buttons = Array.from(document.querySelectorAll(".theme-toggle button"));
+  const saved = () => {
+    const t = root.getAttribute("data-theme");
+    return t === "light" || t === "dark" ? t : "auto";
+  };
+  function apply(choice) {
+    if (choice === "auto") root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", choice);
+    try {
+      if (choice === "auto") localStorage.removeItem("govbot-theme");
+      else localStorage.setItem("govbot-theme", choice);
+    } catch (e) {}
+    buttons.forEach((b) =>
+      b.setAttribute("aria-pressed", String(b.dataset.themeChoice === choice)));
+  }
+  buttons.forEach((b) => b.addEventListener("click", () => apply(b.dataset.themeChoice)));
+  apply(saved());
+})();
+</script>
+</body>
+</html>
