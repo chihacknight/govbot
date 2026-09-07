@@ -127,9 +127,12 @@ names must stay in sync with the keyword fallback in `scripts/dashboard_tags.jso
 `docs/src/dashboard-guide.md` for the data flow; tagging in CI is incremental via
 `scripts/filter_new_bills.py` + `scripts/tag_dashboard_repo.sh`.
 
-The Pages site has **two dashboards**, linked by a tab bar:
-`docs/src/dashboard/index.html` (the Legislation Dashboard above) and
-`docs/src/dashboard/hearings.html` (**Committee Hearings & Witness Slips**). The hearings
+The Pages site has **two dashboards plus a Site Architecture page**, linked by a tab bar:
+`docs/src/dashboard/index.html` (the Legislation Dashboard above),
+`docs/src/dashboard/hearings.html` (**Committee Hearings & Witness Slips**), and
+`docs/src/dashboard/architecture.html` (a static, no-data explainer of both backend
+pipelines — keep its tab bar and the `.tab-arch` accent in sync with the other two pages
+whenever the tab bar changes). The hearings
 page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov, leg.wa.gov,
 malegislature.gov, and akleg.gov directly (not OpenStates), plus **USA (Federal)** open comment periods from the
 Regulations.gov API (needs `REGULATIONS_GOV_API_KEY`; falls back to the committed
