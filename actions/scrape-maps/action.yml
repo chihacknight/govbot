@@ -1,0 +1,30 @@
+name: "Build Chicago district maps"
+description: "Fetch ward + police-district boundaries from the City of Chicago Data Portal and write a compact, pre-projected maps.json for the Elections dashboard's per-race locator maps."
+
+inputs:
+  output:
+    description: "Path to write the maps JSON document"
+    required: false
+    default: "docs/src/dashboard/maps.json"
+
+outputs:
+  maps-path:
+    description: "Path to the written maps document"
+    value: "${{ inputs.output }}"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.11"
+
+    # Fail-soft: a portal outage yields no basemap and the script leaves the
+    # committed maps.json in place rather than exiting non-zero.
+    - name: Build maps
+      shell: bash
+      run: |
+        set -uo pipefail
+        python3 "${{ github.action_path }}/main.py" --output "${{ inputs.output }}" \
+          || echo "::warning::scrape-maps reported errors; keeping committed maps.json"

@@ -178,6 +178,15 @@ ships (empty rosters/springfield), and the deploy keeps the committed sample unl
 fresh run produced candidates or Springfield bills. Parsers are offline-snapshot-tested:
 `python3 actions/scrape-elections/test_scrape_elections.py`.
 
+Per-race **locator maps** come from a separate action, `actions/scrape-maps/`: it fetches
+ward (`p293-wvbd`) + police-district (`24zt-jpfn`) boundaries from the City of Chicago Data
+Portal, projects + Douglas-Peucker-simplifies them at build time, and writes a compact
+`docs/src/dashboard/maps.json` (`{view, context, districts}` keyed by race id). The elections
+page draws each race's ward/police polygon as an inline-SVG locator inside a light city
+outline (citywide offices tint all of Chicago); CPS subdistricts have no published polygon
+so their map is omitted. Fail-soft: a portal outage leaves the committed `maps.json` in
+place. Geometry helpers are offline-tested: `python3 actions/scrape-maps/main.py --self-test`.
+
 ## govbot Development
 
 ```bash

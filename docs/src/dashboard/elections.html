@@ -212,6 +212,15 @@
   .badge.partisan { color: var(--series-6); border-color: color-mix(in srgb, var(--series-6) 55%, transparent); }
   .badge.seats { color: var(--series-5); border-color: color-mix(in srgb, var(--series-5) 55%, transparent); }
   .badge.first { color: #fff; background: var(--series-2); border-color: var(--series-2); }
+  /* per-race locator map (inline SVG from maps.json) */
+  .race-map { display: flex; align-items: center; gap: 10px; background: var(--hover-wash); border-radius: 8px; padding: 8px 10px; }
+  .race-map svg { height: 116px; width: auto; flex: none; display: block; }
+  .race-map .map-ctx { fill: color-mix(in srgb, var(--text-muted) 14%, transparent); stroke: var(--border); stroke-width: 1; }
+  .race-map .map-hi { fill: color-mix(in srgb, var(--gc) 42%, transparent); stroke: var(--gc); stroke-width: 2.5; stroke-linejoin: round; }
+  .race-map .map-cap { font-size: 11.5px; color: var(--text-secondary); line-height: 1.4; }
+  .race-map .map-cap b { color: var(--text-primary); font-weight: 650; }
+  .race-map .map-src { color: var(--text-muted); font-size: 10.5px; }
+
   .why {
     font-size: 12.5px; line-height: 1.45; color: var(--text-secondary);
     background: var(--hover-wash); border-radius: 8px; padding: 8px 10px;
@@ -601,8 +610,8 @@
         <a href="https://www.cookcountyclerkil.gov/" target="_blank" rel="noopener">cookcountyclerkil.gov ↗</a>
       </div>
       <div class="cab-item">
-        <h4>🗺️ Maps <span class="cab-status planned">planned</span></h4>
-        <p>Ward / precinct shapefiles, plus CPS board district &amp; subdistrict maps.</p>
+        <h4>🗺️ Maps <span class="cab-status live">live · ward + police</span></h4>
+        <p>Ward &amp; police-district boundaries draw a locator on each race (from the City Data Portal). CPS subdistrict polygons aren't published yet.</p>
         <a href="https://data.cityofchicago.org/" target="_blank" rel="noopener">data.cityofchicago.org ↗</a>
       </div>
     </div>
@@ -716,6 +725,12 @@
     renderCalendar(data.races);
     $("calendar").hidden = false;
     initSpringfield(data.springfield || []);
+
+    // District locator maps (fail-soft; re-render when they arrive).
+    fetch("maps.json")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((m) => { state.maps = m; if (m) render(); })
+      .catch(() => {});
 
     // as-of badge
     const asof = formatAsOf(data.generated_at);
@@ -888,6 +903,9 @@
     if (r.seats && r.seats > 1) badges.append(mkBadge(r.seats + " seats", "seats"));
     card.append(badges);
 
+    const map = renderRaceMap(r, meta);
+    if (map) card.append(map);
+
     if (r.why_note) {
       const why = document.createElement("div"); why.className = "why";
       why.textContent = r.why_note;
@@ -944,6 +962,42 @@
     }, "race-rss"));
     card.append(foot);
     return card;
+  }
+
+  // Inline-SVG locator: the light city (all wards) with this race's district
+  // filled in the group accent. Citywide races tint the whole city; races with
+  // no published geometry (CPS subdistricts) return null.
+  const SVGNS = "http://www.w3.org/2000/svg";
+  function renderRaceMap(r, meta) {
+    const maps = state.maps;
+    if (!maps || !maps.view || !maps.context) return null;
+    const entry = maps.districts && maps.districts[r.id];
+    if (!entry && !r.is_citywide) return null;
+
+    const wrap = document.createElement("div"); wrap.className = "race-map";
+    wrap.style.setProperty("--gc", "var(" + meta.color + ")");
+    const svg = document.createElementNS(SVGNS, "svg");
+    svg.setAttribute("viewBox", "0 0 " + maps.view.w + " " + maps.view.h);
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label",
+      (r.is_citywide ? "Citywide" : (entry && entry.label) || "District") + " locator map of Chicago");
+    const mk = (d, cls) => { const p = document.createElementNS(SVGNS, "path"); p.setAttribute("d", d); p.setAttribute("class", cls); return p; };
+    // base city
+    maps.context.forEach((d) => svg.append(mk(d, r.is_citywide ? "map-hi" : "map-ctx")));
+    // highlighted district on top
+    if (entry) entry.paths.forEach((d) => svg.append(mk(d, "map-hi")));
+    wrap.append(svg);
+
+    const cap = document.createElement("div"); cap.className = "map-cap";
+    const b = document.createElement("b");
+    b.textContent = r.is_citywide ? "Citywide" : (entry && entry.label) || (r.district || "");
+    cap.append(b);
+    cap.append(document.createElement("br"));
+    const src = document.createElement("span"); src.className = "map-src";
+    src.textContent = r.is_citywide ? "All of Chicago" : "Boundary: City of Chicago";
+    cap.append(src);
+    wrap.append(cap);
+    return wrap;
   }
 
   function renderCand(c, r) {

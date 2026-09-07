@@ -174,6 +174,18 @@ jobs:
           ls -lh docs/src/dashboard/hearings.json docs/src/dashboard/hearings.xml
           ls -1 docs/src/dashboard/hearings/ 2>/dev/null | head -5 || true
 
+      # Chicago district locator maps: ward + police-district boundaries from the
+      # City of Chicago Data Portal, projected/simplified into a compact maps.json
+      # the Elections page draws next to each race. Fail-soft — a portal outage
+      # leaves the committed maps.json in place (the script only writes when it
+      # fetched a basemap).
+      - name: Build Chicago district maps
+        run: |
+          set -uo pipefail
+          python3 actions/scrape-maps/main.py --output docs/src/dashboard/maps.json \
+            || echo "::warning::scrape-maps reported errors; keeping committed maps.json"
+          ls -lh docs/src/dashboard/maps.json || true
+
       # Illinois & Chicago elections feed (Elections Happening in IL): candidate lists from
       # the Chicago Board of Elections and the Illinois SBE "Who Is Running" list,
       # placed onto the committed race-structure seed, plus the "Springfield"
