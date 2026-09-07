@@ -246,6 +246,28 @@ jobs:
             echo "no candidates present; skipping SBE money download/enrichment"
           fi
 
+      # Election results (post-Election-Night): when the ELECTION_RESULTS_URL repo
+      # variable/secret points at the authority's results export (Chicago BOE or
+      # Cook County Clerk CSV/TSV), download it and attach per-race vote tallies.
+      # Inert until that is set — there are no results before an election — and
+      # fully fail-soft.
+      - name: Attach election results
+        env:
+          ELECTION_RESULTS_URL: ${{ vars.ELECTION_RESULTS_URL || secrets.ELECTION_RESULTS_URL }}
+          ELECTION_RESULTS_PAGE: ${{ vars.ELECTION_RESULTS_PAGE }}
+        run: |
+          set -uo pipefail
+          if [ -n "${ELECTION_RESULTS_URL:-}" ]; then
+            curl -fsSL --retry 3 -o /tmp/results.csv "$ELECTION_RESULTS_URL" \
+              && python3 actions/scrape-elections/main.py \
+                   --enrich-results docs/src/dashboard/elections.json \
+                   --results-file /tmp/results.csv \
+                   --results-url "${ELECTION_RESULTS_PAGE:-$ELECTION_RESULTS_URL}" \
+              || echo "::warning::results enrichment failed; leaving results off"
+          else
+            echo "ELECTION_RESULTS_URL not set; skipping results (none before Election Night)"
+          fi
+
       - name: Build docs
         run: mdbook build docs
 

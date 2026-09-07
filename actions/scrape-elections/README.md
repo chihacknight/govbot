@@ -86,6 +86,25 @@ where the directory holds `Candidates.txt`, `CmteCandidateLinks.txt`,
 `Committees.txt`, and `D2Totals.txt` from
 elections.il.gov/campaigndisclosuredatafiles/.
 
+## Results — post-Election-Night (scaffold)
+
+Each race can carry a `results` block (per-candidate votes, %, winner, precincts
+reporting) attached from the authority's results export after Election Night —
+Chicago Board of Elections, or the Cook County Clerk for suburban races. It's
+**inert until results exist**: `parse_results_rows()` is header-driven (CSV/TSV)
+and `attach_results()` maps rows to a race by office+district, counting **every
+reported candidate** (official results are authoritative — our roster isn't).
+Winners are flagged only when the source marks them; nothing is ever projected.
+
+```bash
+python3 actions/scrape-elections/main.py \
+  --enrich-results docs/src/dashboard/elections.json \
+  --results-file results.csv --results-url https://chicagoelections.gov/...
+```
+
+The deploy runs this only when the `ELECTION_RESULTS_URL` repo variable/secret is
+set (so it does nothing before an election).
+
 ## Usage
 
 ```bash

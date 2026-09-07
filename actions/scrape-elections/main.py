@@ -679,6 +679,143 @@ def enrich_money(doc, money_dir, now):
 
 
 # --------------------------------------------------------------------------- #
+# Results — post-Election-Night vote tallies (Chicago BOE / Cook County Clerk)
+# --------------------------------------------------------------------------- #
+# Scaffold: results don't exist until an election happens, so this stays inert
+# (no results attached) until a results file is provided. When it is, results
+# attach to a race only when office+district resolve and the candidate name
+# matches — vote totals come straight from the authority; winners are shown only
+# when the source marks them. Nothing is ever projected or invented.
+_RESULTS_ALIASES = {
+    "office": {"office", "contest", "contest name", "office name", "race"},
+    "district": {"district", "ward", "subdistrict", "police district"},
+    "name": {"name", "candidate", "candidate name", "choice"},
+    "votes": {"votes", "vote total", "votes total", "total votes", "vote count", "ballots"},
+    "winner": {"winner", "elected", "is winner"},
+    "precincts_reporting": {"precincts reporting", "reporting", "precincts_reported"},
+    "precincts_total": {"precincts", "precincts total", "total precincts"},
+}
+
+
+def _split_row(line):
+    if "\t" in line:
+        return [c.strip() for c in line.split("\t")]
+    return [c.strip() for c in line.split(",")]
+
+
+def _header_map(cells, aliases):
+    out = {}
+    for i, c in enumerate(cells):
+        key = c.strip().lower()
+        for field, al in aliases.items():
+            if key in al and field not in out:
+                out[field] = i
+    return out
+
+
+def _int(s):
+    try:
+        return int(re.sub(r"[^0-9-]", "", str(s or "")) or 0)
+    except ValueError:
+        return 0
+
+
+def _truthy(s):
+    return str(s or "").strip().lower() in {"1", "true", "yes", "y", "won", "winner", "elected"}
+
+
+def parse_results_rows(text, source="Chicago Board of Elections"):
+    """Parse a delimited (CSV/TSV) results export into per-candidate rows tagged
+    with a resolved race id. Header-driven; requires at least office/contest,
+    candidate name, and votes columns. Pure/deterministic; unplaceable rows keep
+    _race_id=None (dropped by attach_results)."""
+    lines = [ln for ln in (text or "").splitlines() if ln.strip()]
+    header, start = None, 0
+    for i, ln in enumerate(lines):
+        hm = _header_map(_split_row(ln), _RESULTS_ALIASES)
+        if "name" in hm and "votes" in hm and ("office" in hm or "district" in hm):
+            header, start = hm, i + 1
+            break
+    if not header:
+        return []
+    rows = []
+    for ln in lines[start:]:
+        cells = _split_row(ln)
+        def col(f):
+            i = header.get(f)
+            return cells[i] if i is not None and i < len(cells) else ""
+        name = col("name")
+        if not name:
+            continue
+        rows.append({
+            "name": _clean(name),
+            "office": col("office"),
+            "district": col("district"),
+            "votes": _int(col("votes")),
+            "winner": _truthy(col("winner")),
+            "precincts_reporting": _int(col("precincts_reporting")) if header.get("precincts_reporting") is not None else None,
+            "precincts_total": _int(col("precincts_total")) if header.get("precincts_total") is not None else None,
+            "_race_id": race_id_for(col("office"), col("district")),
+            "source": source,
+        })
+    return rows
+
+
+def attach_results(doc, rows, now, source_url=None):
+    """Group parsed result rows by race id and attach a `results` block to each
+    matching race, ordered by votes. Only rows whose candidate name matches a
+    listed candidate in that race are counted (so a stray write-in row can't
+    invent a candidate). Returns the number of races updated."""
+    by_race = {}
+    for r in rows:
+        rid = r.get("_race_id")
+        if rid:
+            by_race.setdefault(rid, []).append(r)
+    if not by_race:
+        return 0
+    updated = 0
+    for race in doc.get("races", []):
+        group = by_race.get(race["id"])
+        if not group:
+            continue
+        # Official results are authoritative for who ran, so count every reported
+        # row for the race (don't filter by our — possibly stale — candidate list,
+        # which would distort the percentages).
+        chosen = group
+        total = sum(r["votes"] for r in chosen)
+        pr = next((r["precincts_reporting"] for r in chosen if r["precincts_reporting"] is not None), None)
+        pt = next((r["precincts_total"] for r in chosen if r["precincts_total"] is not None), None)
+        cands = sorted(
+            ({"name": r["name"], "votes": r["votes"],
+              "pct": round(100.0 * r["votes"] / total, 1) if total else None,
+              "winner": bool(r["winner"])} for r in chosen),
+            key=lambda c: c["votes"], reverse=True)
+        race["results"] = {
+            "reported": True,
+            "complete": (pr is not None and pt is not None and pr >= pt and pt > 0),
+            "as_of": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "precincts_reporting": pr,
+            "precincts_total": pt,
+            "total_votes": total,
+            "source_url": source_url,
+            "candidates": cands,
+        }
+        updated += 1
+    return updated
+
+
+def enrich_results(doc, results_path, now, source_url=None):
+    """Load a results export and attach results to `doc` in place. Returns the
+    number of races updated. Fail-soft: a missing/unreadable file is a no-op."""
+    try:
+        text = Path(results_path).read_text()
+    except OSError as err:
+        print(f"warning: could not read results {results_path}: {err}", file=sys.stderr)
+        return 0
+    return attach_results(doc, parse_results_rows(text), now, source_url)
+
+
+# --------------------------------------------------------------------------- #
 # assembly
 # --------------------------------------------------------------------------- #
 def load_seed(seed_path=SEED_PATH):
@@ -979,6 +1116,15 @@ def main():
                     help="Directory of Illinois SBE bulk files (Candidates.txt, "
                          "CmteCandidateLinks.txt, Committees.txt, D2Totals.txt) for "
                          "--enrich-money")
+    ap.add_argument("--enrich-results", default=None,
+                    help="Attach post-Election-Night vote results to an existing "
+                         "elections.json (rewritten in place) from --results-file, "
+                         "then exit")
+    ap.add_argument("--results-file", default=None,
+                    help="A delimited (CSV/TSV) results export from the election "
+                         "authority, for --enrich-results")
+    ap.add_argument("--results-url", default=None,
+                    help="Official results page URL recorded on each results block")
     args = ap.parse_args()
 
     now = (datetime.strptime(args.now, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
@@ -991,6 +1137,15 @@ def main():
         n = enrich_money(doc, args.money_dir or "", now)
         Path(args.enrich_money).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
         print(f"enriched {n} candidate(s) with SBE campaign money", file=sys.stderr)
+        return 0
+
+    if args.enrich_results:
+        doc = load_json(args.enrich_results)
+        if doc is None:
+            return 0
+        n = enrich_results(doc, args.results_file or "", now, args.results_url)
+        Path(args.enrich_results).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
+        print(f"attached results to {n} race(s)", file=sys.stderr)
         return 0
 
     seed = load_seed(args.seed)

@@ -254,6 +254,20 @@
   .cand-money .m-fig.spent .m-val { color: var(--text-secondary); }
   .cand-money .m-cmte { color: var(--text-muted); font-size: 10.5px; width: 100%; }
   .cand-money .m-cmte a { font-weight: 600; }
+  /* results (post-Election-Night) */
+  .results { border: 1px solid color-mix(in srgb, var(--series-4) 45%, var(--border)); border-radius: 10px; padding: 9px 11px; background: color-mix(in srgb, var(--series-4) 7%, var(--surface-1)); display: flex; flex-direction: column; gap: 7px; }
+  .results-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+  .results-head .r-title { font-weight: 700; color: var(--series-4); text-transform: uppercase; letter-spacing: 0.03em; font-size: 11px; }
+  .results-head .r-meta { color: var(--text-muted); }
+  .res-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; }
+  .res-name { font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+  .res-name .r-win { font-size: 10px; font-weight: 800; color: #fff; background: var(--series-4); border-radius: 999px; padding: 1px 6px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .res-num { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-secondary); white-space: nowrap; }
+  .res-num b { color: var(--text-primary); }
+  .res-bar { grid-column: 1 / -1; height: 7px; border-radius: 999px; background: var(--gridline); overflow: hidden; }
+  .res-bar > span { display: block; height: 100%; background: var(--baseline); border-radius: 999px; }
+  .res-row.win .res-bar > span { background: var(--series-4); }
+
   .no-cands { font-size: 12.5px; color: var(--text-muted); padding: 4px 2px; }
   .no-cands a { font-weight: 600; }
   .race-foot { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 2px; padding-top: 7px; border-top: 1px solid var(--gridline); }
@@ -592,8 +606,8 @@
     <p class="cab-intro">This site isn't the official clerk — it's a <b>cabinet</b> that puts the sources in one place so a Chicagoan can ask "who's running in my CPS subdistrict and my ward, and when do I vote?" A fully assembled race draws on up to five drawers: <b>map · candidates · money · results · context</b>. Here's what each source owns and what's live today.</p>
     <div class="cab-grid">
       <div class="cab-item">
-        <h4>🗳️ Candidates &amp; city results <span class="cab-status live">live · candidates</span></h4>
-        <p>City candidate filings, results, early-vote sites, precinct/ward maps.</p>
+        <h4>🗳️ Candidates &amp; city results <span class="cab-status live">live · candidates · results ready</span></h4>
+        <p>City candidate filings, early-vote sites, precinct/ward maps — and per-race vote results, which attach automatically on Election Night.</p>
         <a href="https://chicagoelections.gov/" target="_blank" rel="noopener">chicagoelections.gov ↗</a>
       </div>
       <div class="cab-item">
@@ -913,6 +927,9 @@
     const map = renderRaceMap(r, meta);
     if (map) card.append(map);
 
+    const results = renderResults(r);
+    if (results) card.append(results);
+
     if (r.why_note) {
       const why = document.createElement("div"); why.className = "why";
       why.textContent = r.why_note;
@@ -1005,6 +1022,47 @@
     cap.append(src);
     wrap.append(cap);
     return wrap;
+  }
+
+  // Post-Election-Night vote results (null until an authority reports them).
+  function renderResults(r) {
+    const res = r.results;
+    if (!res || !res.reported || !(res.candidates && res.candidates.length)) return null;
+    const box = document.createElement("div"); box.className = "results";
+    const head = document.createElement("div"); head.className = "results-head";
+    const t = document.createElement("span"); t.className = "r-title";
+    t.textContent = res.complete ? "✓ Final results" : "Results — reporting";
+    head.append(t);
+    const meta = document.createElement("span"); meta.className = "r-meta";
+    const bits = [];
+    if (res.precincts_total) bits.push((res.precincts_reporting || 0) + " of " + res.precincts_total + " precincts");
+    if (res.total_votes) bits.push(fmt(res.total_votes) + " votes");
+    if (res.as_of) bits.push("as of " + (formatAsOf(res.as_of) || res.as_of));
+    meta.textContent = bits.join(" · ");
+    head.append(meta);
+    box.append(head);
+    const max = Math.max(1, ...res.candidates.map((c) => c.votes || 0));
+    res.candidates.forEach((c) => {
+      const row = document.createElement("div"); row.className = "res-row" + (c.winner ? " win" : "");
+      const name = document.createElement("div"); name.className = "res-name";
+      name.append(document.createTextNode(c.name));
+      if (c.winner) { const w = document.createElement("span"); w.className = "r-win"; w.textContent = "Winner"; name.append(w); }
+      const num = document.createElement("div"); num.className = "res-num";
+      const b = document.createElement("b"); b.textContent = (c.pct != null ? c.pct + "%" : "");
+      num.append(b, document.createTextNode(c.pct != null ? " · " : ""), document.createTextNode(fmt(c.votes) + " votes"));
+      const bar = document.createElement("div"); bar.className = "res-bar";
+      const span = document.createElement("span"); span.style.width = (100 * (c.votes || 0) / max) + "%";
+      bar.append(span);
+      row.append(name, num, bar);
+      box.append(row);
+    });
+    if (res.source_url) {
+      const src = document.createElement("a"); src.className = "sf-links";
+      src.href = res.source_url; src.target = "_blank"; src.rel = "noopener";
+      src.textContent = "Official results ↗"; src.style.fontSize = "11.5px"; src.style.fontWeight = "600";
+      box.append(src);
+    }
+    return box;
   }
 
   function renderCand(c, r) {

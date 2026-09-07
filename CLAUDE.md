@@ -196,6 +196,15 @@ runs it as a **separate step gated on candidates being present** —
 committed sample (empty rosters) carries no money. Parsers/aggregation are offline-tested
 in `test_scrape_elections.py`.
 
+**Results** (post–Election Night) are scaffolded: each race can carry a `results` block
+(per-candidate votes/%/winner, precincts reporting) attached by
+`main.py --enrich-results <elections.json> --results-file <csv>` from the authority's
+results export (Chicago BOE / Cook County Clerk). Header-driven + fail-soft; it counts every
+reported candidate (official results are authoritative) and flags a winner only when the
+source does — never projected. The deploy step runs only when the `ELECTION_RESULTS_URL`
+repo variable/secret is set, so it is inert until an election happens. This completes the
+"five drawers" per race: map · candidates · money · results · context (Springfield).
+
 ## govbot Development
 
 ```bash

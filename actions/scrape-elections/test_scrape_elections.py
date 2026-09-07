@@ -259,6 +259,53 @@ class Money(unittest.TestCase):
         self.assertNotIn("money", doc["races"][0]["candidates"][1])
 
 
+class Results(unittest.TestCase):
+    def setUp(self):
+        self.now = main.datetime(2026, 11, 3, 20, 0, tzinfo=main.timezone.utc)
+        self.rows = main.parse_results_rows((RAW / "boe_results.csv").read_text())
+
+    def test_parses_and_resolves(self):
+        ids = {str(r["_race_id"]) for r in self.rows}
+        self.assertIn("chicago-mayor", ids)
+        self.assertIn("chicago-alderperson-ward-01", ids)
+        # A non-Chicago contest doesn't resolve to a race.
+        self.assertIn("None", ids)
+
+    def test_attach_percentages_and_winner(self):
+        doc = {"races": [{"id": "chicago-mayor", "candidates": [{"name": "Casey R. Sample"}]}]}
+        n = main.attach_results(doc, self.rows, self.now, "https://chicagoelections.gov/results")
+        self.assertEqual(n, 1)
+        res = doc["races"][0]["results"]
+        self.assertTrue(res["reported"] and res["complete"])
+        self.assertEqual(res["total_votes"], 218570)
+        top = res["candidates"][0]
+        self.assertEqual(top["name"], "Casey R. Sample")
+        self.assertEqual(top["pct"], 55.1)
+        self.assertTrue(top["winner"])
+        self.assertFalse(res["candidates"][1]["winner"])
+
+    def test_counts_all_reported_candidates(self):
+        # Ward 1 has two reported candidates even though only one is in our roster;
+        # results are authoritative, so both are counted (pct not distorted).
+        doc = {"races": [{"id": "chicago-alderperson-ward-01", "candidates": [{"name": "Sam T. Example"}]}]}
+        main.attach_results(doc, self.rows, self.now)
+        res = doc["races"][0]["results"]
+        self.assertEqual(len(res["candidates"]), 2)
+        self.assertEqual(res["total_votes"], 8500)
+
+    def test_no_results_when_unmatched(self):
+        doc = {"races": [{"id": "cps-board-president", "candidates": []}]}
+        self.assertEqual(main.attach_results(doc, self.rows, self.now), 0)
+        self.assertIsNone(doc["races"][0].get("results"))
+
+    def test_bad_input_empty(self):
+        self.assertEqual(main.parse_results_rows("no header\njust text"), [])
+
+    def test_enrich_missing_file_noop(self):
+        doc = {"races": []}
+        self.assertEqual(main.enrich_results(doc, "/no/such.csv", self.now), 0)
+
+
 class Snapshot(unittest.TestCase):
     def test_matches_expected(self):
         if not EXPECTED.exists():

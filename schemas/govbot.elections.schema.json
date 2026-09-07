@@ -140,6 +140,36 @@
           "description": "Candidates for this race. Empty when no candidate has been confirmed from an official source yet.",
           "items": { "$ref": "#/definitions/Candidate" }
         },
+        "results": {
+          "type": ["object", "null"],
+          "description": "Vote results, attached after Election Night from the election authority's precinct/summary sheets (Chicago Board of Elections; Cook County Clerk for suburban). Absent/null until results are reported — never projected or invented.",
+          "additionalProperties": false,
+          "required": ["candidates"],
+          "properties": {
+            "reported": { "type": "boolean", "description": "True once any results are in for this race." },
+            "complete": { "type": "boolean", "description": "True when all precincts have reported." },
+            "as_of": { "type": ["string", "null"], "description": "Timestamp of this results snapshot." },
+            "precincts_reporting": { "type": ["integer", "null"], "minimum": 0 },
+            "precincts_total": { "type": ["integer", "null"], "minimum": 0 },
+            "total_votes": { "type": ["integer", "null"], "minimum": 0 },
+            "source_url": { "type": ["string", "null"], "description": "Official results page for verification." },
+            "candidates": {
+              "type": "array",
+              "description": "Per-candidate vote tallies, highest first.",
+              "items": {
+                "type": "object",
+                "required": ["name", "votes"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": { "type": "string" },
+                  "votes": { "type": "integer", "minimum": 0 },
+                  "pct": { "type": ["number", "null"], "description": "Share of total votes, 0-100." },
+                  "winner": { "type": "boolean", "description": "True only when the authority has marked this candidate elected/winner." }
+                }
+              }
+            }
+          }
+        },
         "source": { "type": "string", "description": "Origin authority/host, e.g. 'Chicago Board of Elections' or 'Illinois State Board of Elections'." }
       }
     },
