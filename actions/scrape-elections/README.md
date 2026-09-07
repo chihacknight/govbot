@@ -42,6 +42,21 @@ no confirmed candidate keeps an empty list plus a link to its official source.
 > The exact live endpoints in `main.py` may need re-pointing against a real page
 > snapshot as a cycle opens.
 
+## Springfield side feed — "the rules of the game"
+
+Beyond candidates, the build attaches a top-level `springfield` list: **Illinois
+bills that shape how these elections work** — the elected CPS board and its
+2026–27 transition, ward & runoff rules, campaign finance, school governance.
+`build_springfield()` reads govbot's legislation dataset
+(`--legislation docs/src/dashboard/data.json`), keeps IL bills tagged
+`elections & voting` or `education`, and cross-references
+`--hearings docs/src/dashboard/hearings.json` so a bill on an upcoming ILGA
+committee calendar carries its hearing + witness-slip link. This is **context
+beside the races, never mixed into candidate lists**. It degrades to an empty
+list when the dataset is unavailable. On the deploy, `data.json` and
+`hearings.json` are both built earlier in the same job, so this reads the fresh
+copies.
+
 ## Usage
 
 ```bash
@@ -62,6 +77,7 @@ python3 actions/scrape-elections/main.py \
 - `elections.xml` — the whole ballot, one item per race.
 - `elections/group-<group>.xml` — one feed per office group (all aldermanic, all
   CPS board, …).
+- `elections/springfield.xml` — the "rules of the game" IL bills (when present).
 - `elections/race-<id>.xml` — one feed per race, so a resident can follow just
   their ward, their CPS subdistrict, or the mayor's race.
 

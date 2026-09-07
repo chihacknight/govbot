@@ -39,9 +39,40 @@
     "races": {
       "type": "array",
       "items": { "$ref": "#/definitions/Race" }
+    },
+    "springfield": {
+      "type": "array",
+      "description": "The 'rules of the game': Illinois bills from govbot's legislation dataset tagged 'elections & voting' or 'education' — the laws that shape how these elections work (the elected CPS board, ward/runoff rules, campaign finance, school governance). Context beside the races, never mixed into candidate lists. Built from docs/src/dashboard/data.json and cross-referenced with the hearings feed; empty when unavailable.",
+      "items": { "$ref": "#/definitions/SpringfieldBill" }
     }
   },
   "definitions": {
+    "SpringfieldBill": {
+      "type": "object",
+      "required": ["id", "title"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "description": "Bill identifier, e.g. HB1234, SB56." },
+        "title": { "type": "string" },
+        "url": { "type": ["string", "null"], "description": "Official bill page." },
+        "session": { "type": ["string", "null"] },
+        "chamber": { "type": ["string", "null"] },
+        "tags": { "type": "array", "items": { "type": "string" }, "description": "Matched govbot topics (subset of 'elections & voting', 'education')." },
+        "latest_action": { "type": ["string", "null"], "description": "Date of the most recent action, YYYY-MM-DD." },
+        "latest_action_desc": { "type": ["string", "null"] },
+        "hearing": {
+          "type": ["object", "null"],
+          "description": "Set when this bill is on an upcoming ILGA committee calendar (from the hearings feed).",
+          "additionalProperties": false,
+          "properties": {
+            "committee": { "type": ["string", "null"] },
+            "scheduled_display": { "type": ["string", "null"] },
+            "details_url": { "type": ["string", "null"] },
+            "witness_slip_url": { "type": ["string", "null"] }
+          }
+        }
+      }
+    },
     "Race": {
       "type": "object",
       "required": ["id", "jurisdiction", "office", "office_group", "is_citywide", "partisan", "status", "candidates", "source"],

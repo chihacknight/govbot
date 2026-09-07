@@ -5971,5 +5971,52 @@
       ],
       "candidates": []
     }
+  ],
+  "springfield": [
+    {
+      "id": "HB1234",
+      "title": "Establishes the elected Chicago Board of Education and the 2026-2027 transition",
+      "url": "https://ilga.gov/legislation/BillStatus?DocNum=1234",
+      "session": "104th",
+      "chamber": "lower",
+      "tags": [
+        "education",
+        "elections & voting"
+      ],
+      "latest_action": "2026-05-01",
+      "latest_action_desc": "Public Act; signed into law",
+      "hearing": {
+        "committee": "Elections & Campaign Finance Committee",
+        "scheduled_display": "Sep 9, 2026, 2:00 PM",
+        "details_url": "https://ilga.gov/House/hearings/details/3201/24010",
+        "witness_slip_url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=1234"
+      }
+    },
+    {
+      "id": "SB0056",
+      "title": "Revises ward election runoff rules and campaign finance disclosure",
+      "url": "https://ilga.gov/legislation/BillStatus?DocNum=56",
+      "session": "104th",
+      "chamber": "upper",
+      "tags": [
+        "elections & voting"
+      ],
+      "latest_action": "2026-04-15",
+      "latest_action_desc": "Referred to Assignments",
+      "hearing": null
+    },
+    {
+      "id": "HB0777",
+      "title": "Increases per-pupil funding and teacher salaries",
+      "url": "https://ilga.gov/legislation/BillStatus?DocNum=777",
+      "session": "104th",
+      "chamber": "lower",
+      "tags": [
+        "education"
+      ],
+      "latest_action": "2026-03-10",
+      "latest_action_desc": "Assigned to Appropriations",
+      "hearing": null
+    }
   ]
 }

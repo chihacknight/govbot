@@ -447,6 +447,84 @@ def build_from_fixtures(fixtures_dir):
 
 
 # --------------------------------------------------------------------------- #
+# Springfield side feed — "the rules of the game"
+# --------------------------------------------------------------------------- #
+# Illinois bills from govbot's legislation dataset that shape how these elections
+# work. Shown beside the races as context, never mixed into candidate lists.
+SPRINGFIELD_STATE = "il"
+SPRINGFIELD_TOPICS = ["elections & voting", "education"]
+SPRINGFIELD_LIMIT = 40
+
+
+def _norm_bill_id(s):
+    return re.sub(r"[^A-Z0-9]", "", (s or "").upper())
+
+
+def _hearing_index(hearings):
+    """Map normalized IL bill id -> its upcoming hearing (first seen), from a
+    hearings.json document. Fail-soft: a missing/other-shape doc yields {}."""
+    idx = {}
+    for h in (hearings or {}).get("hearings", []):
+        if (h.get("jurisdiction") or "").lower() != SPRINGFIELD_STATE:
+            continue
+        for b in h.get("bills", []):
+            key = _norm_bill_id(b.get("id"))
+            if key and key not in idx:
+                idx[key] = {
+                    "committee": h.get("committee"),
+                    "scheduled_display": h.get("scheduled_display"),
+                    "details_url": h.get("details_url"),
+                    "witness_slip_url": h.get("witness_slip_url"),
+                }
+    return idx
+
+
+def build_springfield(legislation, hearings=None, limit=SPRINGFIELD_LIMIT):
+    """Extract the IL 'rules of the game' bills from a govbot data.json document.
+
+    Keeps IL bills tagged 'elections & voting' or 'education', attaches an
+    upcoming committee hearing when the bill is on the ILGA calendar, and returns
+    them newest-action first. Pure/deterministic given its inputs; an
+    empty/missing dataset yields []."""
+    bills = (legislation or {}).get("bills", [])
+    hidx = _hearing_index(hearings)
+    topics = set(SPRINGFIELD_TOPICS)
+    out = []
+    for b in bills:
+        if (b.get("state") or "").lower() != SPRINGFIELD_STATE:
+            continue
+        matched = sorted(topics.intersection(b.get("tags") or []))
+        if not matched:
+            continue
+        rec = {
+            "id": b.get("id"),
+            "title": b.get("title") or "",
+            "url": b.get("url") or None,
+            "session": b.get("session") or None,
+            "chamber": b.get("chamber") or None,
+            "tags": matched,
+            "latest_action": b.get("latest_action") or None,
+            "latest_action_desc": b.get("latest_action_desc") or None,
+            "hearing": hidx.get(_norm_bill_id(b.get("id"))),
+        }
+        out.append(rec)
+    # Newest action first (bills without a date sort last), then by id.
+    out.sort(key=lambda r: (r["latest_action"] or "", r["id"] or ""), reverse=True)
+    return out[:limit]
+
+
+def load_json(path):
+    """Read a JSON file, returning the parsed object or None on any failure."""
+    if not path:
+        return None
+    try:
+        return json.loads(Path(path).read_text())
+    except (OSError, json.JSONDecodeError) as err:
+        print(f"warning: could not read {path}: {err}", file=sys.stderr)
+        return None
+
+
+# --------------------------------------------------------------------------- #
 # assembly
 # --------------------------------------------------------------------------- #
 def load_seed(seed_path=SEED_PATH):
@@ -457,12 +535,13 @@ def load_seed(seed_path=SEED_PATH):
         return {"jurisdictions": [], "races": []}
 
 
-def assemble(candidates, seed, source, now):
+def assemble(candidates, seed, source, now, springfield=None):
     """Merge scraped candidates into the seed's race structure by race id.
 
     The seed is the authority on which races exist; candidates only fill them.
     Candidates that don't resolve to a seed race are counted and reported, never
-    invented into a new race.
+    invented into a new race. `springfield` (the IL "rules of the game" bills) is
+    attached as its own top-level list, kept separate from candidate data.
     """
     races = [dict(r) for r in seed.get("races", [])]
     for r in races:
@@ -503,6 +582,7 @@ def assemble(candidates, seed, source, now):
         "jurisdictions": seed.get("jurisdictions", []),
         "counts": counts,
         "races": races,
+        "springfield": springfield or [],
     }, placed
 
 
@@ -657,10 +737,51 @@ def race_feeds(doc):
     return feeds
 
 
+def springfield_feed(doc):
+    """One RSS feed of the IL 'rules of the game' bills (springfield.xml), so a
+    reader can follow the laws shaping these elections. Returns {} when empty."""
+    bills = doc.get("springfield") or []
+    if not bills:
+        return {}
+    built_822 = _feed_prelude(doc)
+    rss = ET.Element("rss", {"version": "2.0", "xmlns:atom": "http://www.w3.org/2005/Atom"})
+    ch = ET.SubElement(rss, "channel")
+    ET.SubElement(ch, "title").text = "govbot — Springfield: the rules of the game (IL elections & education bills)"
+    ET.SubElement(ch, "link").text = DASHBOARD_URL + "elections.html"
+    ET.SubElement(ch, "description").text = (
+        "Illinois bills tagged elections & voting or education — the laws that "
+        "shape how Chicago/IL elections work. Context beside the races, from "
+        "govbot's legislation dataset; refreshed twice daily.")
+    ET.SubElement(ch, "language").text = "en-us"
+    ET.SubElement(ch, "lastBuildDate").text = built_822
+    self_url = DASHBOARD_URL + "elections/springfield.xml"
+    ET.SubElement(ch, "atom:link", {"href": self_url, "rel": "self", "type": "application/rss+xml"})
+    for b in bills:
+        parts = []
+        if b.get("latest_action_desc"):
+            parts.append(b["latest_action_desc"] + ".")
+        if b.get("tags"):
+            parts.append("Topics: " + ", ".join(b["tags"]) + ".")
+        if b.get("hearing"):
+            h = b["hearing"]
+            parts.append("On the " + (h.get("committee") or "committee") + " calendar" +
+                         (" — " + h["scheduled_display"] if h.get("scheduled_display") else "") + ".")
+        item = ET.SubElement(ch, "item")
+        ET.SubElement(item, "title").text = f"{b['id']} — {b.get('title', '')}"
+        ET.SubElement(item, "link").text = b.get("url") or (DASHBOARD_URL + "index.html#q=" + (b.get("id") or ""))
+        ET.SubElement(item, "description").text = " ".join(parts) or b.get("title", "")
+        ET.SubElement(item, "category").text = "Springfield · rules of the game"
+        ET.SubElement(item, "guid", {"isPermaLink": "false"}).text = "springfield-" + _norm_bill_id(b.get("id"))
+        ET.SubElement(item, "pubDate").text = built_822
+    return {"springfield.xml": ('<?xml version="1.0" encoding="UTF-8"?>\n'
+                                + ET.tostring(rss, encoding="unicode") + "\n")}
+
+
 def all_feeds(doc):
     feeds = {}
     feeds.update(group_feeds(doc))
     feeds.update(race_feeds(doc))
+    feeds.update(springfield_feed(doc))
     return feeds
 
 
@@ -684,9 +805,18 @@ def main():
                     help="Also write an RSS 2.0 feed of every race to this path")
     ap.add_argument("--rss-feeds-dir", default=None,
                     help="Also write granular RSS 2.0 feeds into this directory: "
-                         "one per office group (group-council.xml) and one per "
-                         "race (race-chicago-mayor.xml), so readers can follow a "
-                         "whole office group or a single race")
+                         "one per office group (group-council.xml), one per "
+                         "race (race-chicago-mayor.xml), and springfield.xml, so "
+                         "readers can follow a whole office group, a single race, "
+                         "or the 'rules of the game' bills")
+    ap.add_argument("--legislation", default="docs/src/dashboard/data.json",
+                    help="govbot bill dataset (data.json) for the Springfield "
+                         "'rules of the game' feed — IL bills tagged elections & "
+                         "voting or education. Missing/unreadable degrades to an "
+                         "empty Springfield list")
+    ap.add_argument("--hearings", default="docs/src/dashboard/hearings.json",
+                    help="hearings.json, to cross-reference Springfield bills with "
+                         "upcoming ILGA committee hearings")
     args = ap.parse_args()
 
     now = (datetime.strptime(args.now, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
@@ -697,6 +827,8 @@ def main():
     if args.from_fixtures:
         candidates = build_from_fixtures(args.from_fixtures)
         source = "fixtures (offline snapshot)"
+        legislation = load_json(str(Path(args.from_fixtures) / "il_legislation.json"))
+        hearings = load_json(str(Path(args.from_fixtures) / "il_hearings.json"))
     else:
         srcs = [s.strip().lower() for s in args.sources.split(",") if s.strip()]
         candidates = []
@@ -708,15 +840,18 @@ def main():
             candidates.extend(fetch_cook_clerk())
         source = ("chicagoelections.gov + elections.il.gov + Cook County Clerk "
                   "(govbot scrape-elections); race structure from committed seed")
+        legislation = load_json(args.legislation)
+        hearings = load_json(args.hearings)
 
-    doc, placed = assemble(candidates, seed, source, now)
+    springfield = build_springfield(legislation, hearings)
+    doc, placed = assemble(candidates, seed, source, now, springfield=springfield)
     text = json.dumps(doc, indent=2, ensure_ascii=False) + "\n"
     if args.output == "-":
         sys.stdout.write(text)
     else:
         Path(args.output).write_text(text)
-        print(f"wrote {len(doc['races'])} races "
-              f"({placed} candidate(s) placed) to {args.output}", file=sys.stderr)
+        print(f"wrote {len(doc['races'])} races ({placed} candidate(s) placed, "
+              f"{len(springfield)} Springfield bill(s)) to {args.output}", file=sys.stderr)
 
     if args.rss:
         Path(args.rss).write_text(to_rss(doc))

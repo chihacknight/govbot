@@ -167,9 +167,15 @@ Cook County Clerk, future). A candidate attaches to a race only when office+dist
 exactly (`race_id_for`) — unplaceable rows are dropped, never invented, and a race with no
 confirmed candidate keeps an empty list + a source link. It also writes a whole-ballot RSS
 `elections.xml` + granular feeds under `docs/src/dashboard/elections/` (per office group
-`group-<group>.xml`, per race `race-<id>.xml`). Fail-soft: with sources down the seed's
-structure still ships (empty rosters), and `deploy-docs.yml` keeps the committed sample
-unless the fresh run actually placed candidates. Parsers are offline-snapshot-tested:
+`group-<group>.xml`, per race `race-<id>.xml`). It also attaches a top-level
+`springfield` list — the **"rules of the game"**: IL bills from the legislation
+`data.json` tagged `elections & voting` or `education` (the elected CPS board, ward/runoff
+rules, campaign finance), cross-referenced with `hearings.json` for upcoming ILGA hearings,
+shown on the page as context *beside* the races (never mixed into candidate lists) plus a
+`springfield.xml` feed. `deploy-docs.yml` runs this after `data.json`+`hearings.json` are
+built so it reads the fresh copies. Fail-soft: with sources down the seed's structure still
+ships (empty rosters/springfield), and the deploy keeps the committed sample unless the
+fresh run produced candidates or Springfield bills. Parsers are offline-snapshot-tested:
 `python3 actions/scrape-elections/test_scrape_elections.py`.
 
 ## govbot Development

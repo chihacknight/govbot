@@ -176,14 +176,57 @@ class Feeds(unittest.TestCase):
             ET.fromstring(xml)  # each must be well-formed
 
 
+class Springfield(unittest.TestCase):
+    def setUp(self):
+        self.leg = json.loads((RAW / "il_legislation.json").read_text())
+        self.hear = json.loads((RAW / "il_hearings.json").read_text())
+        self.sf = main.build_springfield(self.leg, self.hear)
+
+    def test_only_il_matching_topics(self):
+        ids = [b["id"] for b in self.sf]
+        self.assertEqual(set(ids), {"HB1234", "SB0056", "HB0777"})
+        self.assertNotIn("HB0009", ids)   # health care — wrong topic
+        self.assertNotIn("AB0100", ids)   # elections, but California
+
+    def test_sorted_newest_first(self):
+        dates = [b["latest_action"] for b in self.sf]
+        self.assertEqual(dates, sorted(dates, reverse=True))
+
+    def test_matched_tags_only(self):
+        hb = next(b for b in self.sf if b["id"] == "HB1234")
+        self.assertEqual(hb["tags"], ["education", "elections & voting"])  # sorted, no "government operations"
+
+    def test_hearing_crossref(self):
+        hb = next(b for b in self.sf if b["id"] == "HB1234")
+        self.assertIsNotNone(hb["hearing"])
+        self.assertIn("Elections", hb["hearing"]["committee"])
+        sb = next(b for b in self.sf if b["id"] == "SB0056")
+        self.assertIsNone(sb["hearing"])
+
+    def test_missing_inputs_empty(self):
+        self.assertEqual(main.build_springfield(None, None), [])
+        self.assertEqual(main.build_springfield({"bills": []}, None), [])
+
+    def test_feed_is_valid_xml(self):
+        import xml.etree.ElementTree as ET
+        doc = {"generated_at": "2026-09-07T00:00:00Z", "springfield": self.sf}
+        feeds = main.springfield_feed(doc)
+        self.assertIn("springfield.xml", feeds)
+        items = ET.fromstring(feeds["springfield.xml"]).findall(".//item")
+        self.assertEqual(len(items), 3)
+
+
 class Snapshot(unittest.TestCase):
     def test_matches_expected(self):
         if not EXPECTED.exists():
             self.skipTest("run ./render-snapshots.sh to create the expected snapshot")
         seed = main.load_seed()
         cands = main.build_from_fixtures(RAW)
+        sf = main.build_springfield(
+            main.load_json(str(RAW / "il_legislation.json")),
+            main.load_json(str(RAW / "il_hearings.json")))
         now = main.datetime(2026, 9, 7, tzinfo=main.timezone.utc)
-        doc, _ = main.assemble(cands, seed, "fixtures (offline snapshot)", now)
+        doc, _ = main.assemble(cands, seed, "fixtures (offline snapshot)", now, springfield=sf)
         expected = json.loads(EXPECTED.read_text())
         self.assertEqual(doc, expected)
 

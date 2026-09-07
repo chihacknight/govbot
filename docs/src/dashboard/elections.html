@@ -247,6 +247,54 @@
 
   .empty { color: var(--text-muted); padding: 24px; text-align: center; }
 
+  /* ---------- Springfield "rules of the game" panel ---------- */
+  .springfield {
+    margin-bottom: 20px; border: 2px solid var(--series-5); border-radius: 14px;
+    padding: 16px 18px 14px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--series-5) 8%, var(--surface-1)) 0%, var(--surface-1) 60%);
+  }
+  .sf-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .springfield h2 { font-size: 16px; font-weight: 700; margin: 0; }
+  .springfield .sf-sub { color: var(--text-secondary); font-size: 12.5px; margin: 4px 0 12px; max-width: 80ch; line-height: 1.5; }
+  .sf-tools { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 0 0 12px; }
+  .sf-filter {
+    font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+    padding: 4px 11px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--surface-1); color: var(--text-secondary);
+  }
+  .sf-filter[aria-pressed="true"] { background: var(--series-5); border-color: var(--series-5); color: #fff; }
+  .sf-rss { margin-left: auto; }
+  .sf-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
+  .sf-bill { border: 1px solid var(--border); border-left: 3px solid var(--series-5); border-radius: 10px; padding: 11px 13px; background: var(--surface-1); display: flex; flex-direction: column; gap: 6px; }
+  .sf-bill-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .sf-bill-id { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .sf-bill-title { font-size: 13px; color: var(--text-primary); line-height: 1.35; }
+  .sf-tags { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+  .sf-tag { font-size: 10.5px; font-weight: 600; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; }
+  .sf-tag.voting { color: var(--series-1); border-color: color-mix(in srgb, var(--series-1) 55%, transparent); }
+  .sf-tag.education { color: var(--series-3); border-color: color-mix(in srgb, var(--series-3) 55%, transparent); }
+  .sf-action { font-size: 11.5px; color: var(--text-muted); }
+  .sf-action b { color: var(--text-secondary); font-weight: 600; }
+  .sf-hearing { font-size: 11.5px; color: var(--series-3); background: color-mix(in srgb, var(--series-3) 10%, transparent); border-radius: 7px; padding: 5px 8px; line-height: 1.4; }
+  .sf-hearing a { font-weight: 600; }
+  .sf-links { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11.5px; font-weight: 600; margin-top: 1px; }
+
+  /* ---------- data-sources cabinet ---------- */
+  .cabinet { margin: 22px 0 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-1); padding: 4px 16px; }
+  .cabinet > summary { cursor: pointer; font-weight: 650; font-size: 14px; padding: 11px 0; list-style: none; display: flex; align-items: center; gap: 8px; }
+  .cabinet > summary::-webkit-details-marker { display: none; }
+  .cabinet > summary::before { content: "▸"; font-size: 11px; transition: transform 0.15s ease; color: var(--text-muted); }
+  .cabinet[open] > summary::before { transform: rotate(90deg); }
+  .cabinet .cab-intro { color: var(--text-secondary); font-size: 12.5px; line-height: 1.5; margin: 0 0 12px; max-width: 80ch; }
+  .cab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; padding-bottom: 14px; }
+  .cab-item { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .cab-item h4 { margin: 0 0 3px; font-size: 12.5px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  .cab-item p { margin: 0; font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
+  .cab-item a { font-size: 11.5px; }
+  .cab-status { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 1px 6px; border-radius: 999px; }
+  .cab-status.live { color: var(--series-4); border: 1px solid var(--series-4); }
+  .cab-status.planned { color: var(--text-muted); border: 1px solid var(--border); }
+
   /* ---------- election calendar overview ---------- */
   .calendar { margin-bottom: 20px; }
   .calendar h2 { font-size: 16px; font-weight: 700; margin: 0 0 4px; }
@@ -412,6 +460,16 @@
   :root[data-design="new"] .tl-item.done .tl-dot { background: var(--rh-green); border-color: var(--rh-green); color: #06210a; }
   :root[data-design="new"] .tl-item.next .tl-dot { background: var(--rh-green-strong); border-color: var(--rh-green-strong); }
 
+  /* Springfield panel + cabinet — Robinhood green */
+  :root[data-design="new"] .springfield {
+    border-radius: 18px; border-color: color-mix(in srgb, var(--rh-green) 35%, transparent);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--rh-green) 8%, var(--surface-1)) 0%, var(--surface-1) 60%);
+  }
+  :root[data-design="new"] .sf-bill { border-radius: 14px; border-left-color: var(--rh-green); }
+  :root[data-design="new"] .sf-filter[aria-pressed="true"] { background: var(--rh-green); border-color: var(--rh-green); color: #06210a; }
+  :root[data-design="new"] .cabinet { border-radius: 16px; }
+  :root[data-design="new"] .cab-status.live { color: var(--rh-green-strong); border-color: var(--rh-green-strong); }
+
   /* back-to-top — green on hover in the new design */
   :root[data-design="new"] .to-top:hover { border-color: var(--rh-green); color: var(--rh-green-strong); }
 </style>
@@ -477,6 +535,22 @@
     <p class="cal-legend"><span class="tl-approx">≈ expected</span> dates follow the statutory election calendar — confirm the exact day with the official source; fixed dates (like Election Day) are shown without the tag.</p>
   </section>
 
+  <section class="springfield" id="springfield" hidden>
+    <div class="sf-head">
+      <h2>🏛️ The rules of the game — from Springfield</h2>
+    </div>
+    <p class="sf-sub">Illinois laws &amp; bills that set <b>how</b> these elections work — the elected CPS board and its 2026–27 transition, ward &amp; runoff rules, campaign-finance limits, school governance. This is <b>context beside the races, not a candidate list</b>. Pulled from govbot's Illinois legislation dataset (tagged <em>elections &amp; voting</em> or <em>education</em>) and cross-referenced with upcoming ILGA committee hearings.</p>
+    <div class="sf-tools" id="sf-tools">
+      <button type="button" class="sf-filter" data-sf="" aria-pressed="true">All</button>
+      <button type="button" class="sf-filter" data-sf="elections &amp; voting" aria-pressed="false">Elections &amp; voting</button>
+      <button type="button" class="sf-filter" data-sf="education" aria-pressed="false">Education</button>
+      <span class="sf-rss"><button type="button" class="rss-link" id="sf-rss-btn" aria-haspopup="dialog" title="Subscribe to the Springfield bills feed">
+        <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"/></svg>
+        Follow (RSS)</button></span>
+    </div>
+    <div class="sf-list" id="sf-list"></div>
+  </section>
+
   <div class="filters" id="filters" hidden>
     <div class="search-wrap">
       <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
@@ -496,6 +570,45 @@
   <p class="empty" id="loading">Loading Illinois &amp; Chicago races…</p>
   <div class="groups" id="groups"></div>
   <p class="empty" id="empty" hidden>No races match the current filters.</p>
+
+  <details class="cabinet">
+    <summary>📂 Where the data comes from</summary>
+    <p class="cab-intro">This site isn't the official clerk — it's a <b>cabinet</b> that puts the sources in one place so a Chicagoan can ask "who's running in my CPS subdistrict and my ward, and when do I vote?" A fully assembled race draws on up to five drawers: <b>map · candidates · money · results · context</b>. Here's what each source owns and what's live today.</p>
+    <div class="cab-grid">
+      <div class="cab-item">
+        <h4>🗳️ Candidates &amp; city results <span class="cab-status live">live · candidates</span></h4>
+        <p>City candidate filings, results, early-vote sites, precinct/ward maps.</p>
+        <a href="https://chicagoelections.gov/" target="_blank" rel="noopener">chicagoelections.gov ↗</a>
+      </div>
+      <div class="cab-item">
+        <h4>🏫 State &amp; CPS candidates <span class="cab-status live">live</span></h4>
+        <p>Statewide + CPS board candidate lists ("Who Is Running") and official campaign-money files.</p>
+        <a href="https://www.elections.il.gov/" target="_blank" rel="noopener">elections.il.gov ↗</a>
+      </div>
+      <div class="cab-item">
+        <h4>📜 Rules of the game <span class="cab-status live">live · above</span></h4>
+        <p>Illinois bills &amp; ILGA hearings about the rules — see the Springfield panel above.</p>
+        <a href="https://github.com/govbot-data/il-legislation" target="_blank" rel="noopener">govbot-data/il-legislation ↗</a>
+      </div>
+      <div class="cab-item">
+        <h4>💵 Campaign money <span class="cab-status planned">planned</span></h4>
+        <p>Committee filings &amp; disclosure data from the Illinois SBE.</p>
+        <a href="https://www.elections.il.gov/campaigndisclosuredatafiles/" target="_blank" rel="noopener">SBE disclosure files ↗</a>
+      </div>
+      <div class="cab-item">
+        <h4>🏘️ Suburban Cook results <span class="cab-status planned">planned</span></h4>
+        <p>Suburban Cook results + turnout, after Election Night.</p>
+        <a href="https://www.cookcountyclerkil.gov/" target="_blank" rel="noopener">cookcountyclerkil.gov ↗</a>
+      </div>
+      <div class="cab-item">
+        <h4>🗺️ Maps <span class="cab-status planned">planned</span></h4>
+        <p>Ward / precinct shapefiles, plus CPS board district &amp; subdistrict maps.</p>
+        <a href="https://data.cityofchicago.org/" target="_blank" rel="noopener">data.cityofchicago.org ↗</a>
+      </div>
+    </div>
+    <p class="cab-intro" style="margin-bottom:14px">History (not 2026–27): older, already-cleaned Chicago municipal results from
+      <a href="https://github.com/datamade/chicago-municipal-elections" target="_blank" rel="noopener">DataMade's chicago-municipal-elections ↗</a>.</p>
+  </details>
 
   <footer id="footer"></footer>
   <p class="chn-credit">
@@ -602,6 +715,7 @@
     $("filters").hidden = false;
     renderCalendar(data.races);
     $("calendar").hidden = false;
+    initSpringfield(data.springfield || []);
 
     // as-of badge
     const asof = formatAsOf(data.generated_at);
@@ -943,6 +1057,89 @@
     if (top + h > window.innerHeight - 8) top = Math.max(8, rect.top - h - 6);
     pop.style.left = Math.max(8, left) + "px";
     pop.style.top = top + "px";
+  }
+
+  /* ---------- Springfield "rules of the game" ---------- */
+  const sfState = { bills: [], filter: "" };
+
+  function initSpringfield(bills) {
+    sfState.bills = bills || [];
+    if (!sfState.bills.length) return;  // section stays hidden when empty
+    $("springfield").hidden = false;
+    document.querySelectorAll(".sf-filter").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        sfState.filter = btn.dataset.sf || "";
+        document.querySelectorAll(".sf-filter").forEach((b) =>
+          b.setAttribute("aria-pressed", String(b === btn)));
+        renderSpringfield();
+      });
+    });
+    const rssBtn = $("sf-rss-btn");
+    if (rssBtn) rssBtn.addEventListener("click", (e) => { e.stopPropagation(); openRss(rssBtn, {
+      title: "Follow the Springfield bills",
+      sub: "Illinois elections & education bills shaping these races, refreshed twice daily.",
+      url: FEED_BASE + "elections/springfield.xml",
+    }); });
+    renderSpringfield();
+  }
+
+  function renderSpringfield() {
+    const list = $("sf-list");
+    list.textContent = "";
+    const bills = sfState.filter
+      ? sfState.bills.filter((b) => (b.tags || []).includes(sfState.filter))
+      : sfState.bills;
+    if (!bills.length) {
+      const e = document.createElement("p"); e.className = "sf-action";
+      e.textContent = "No bills in this category right now.";
+      list.append(e);
+      return;
+    }
+    bills.forEach((b) => list.append(renderSpringfieldBill(b)));
+  }
+
+  function renderSpringfieldBill(b) {
+    const card = document.createElement("div"); card.className = "sf-bill";
+    const top = document.createElement("div"); top.className = "sf-bill-top";
+    const id = document.createElement("span"); id.className = "sf-bill-id"; id.textContent = b.id;
+    top.append(id);
+    (b.tags || []).forEach((t) => {
+      const tag = document.createElement("span");
+      tag.className = "sf-tag " + (t.indexOf("education") !== -1 ? "education" : "voting");
+      tag.textContent = t;
+      top.append(tag);
+    });
+    card.append(top);
+    const title = document.createElement("div"); title.className = "sf-bill-title"; title.textContent = b.title || "";
+    card.append(title);
+    if (b.latest_action || b.latest_action_desc) {
+      const act = document.createElement("div"); act.className = "sf-action";
+      const bold = document.createElement("b"); bold.textContent = b.latest_action ? prettyDate(b.latest_action) : "Latest";
+      act.append(bold, document.createTextNode(" — " + (b.latest_action_desc || "action recorded")));
+      card.append(act);
+    }
+    if (b.hearing) {
+      const h = document.createElement("div"); h.className = "sf-hearing";
+      const when = b.hearing.scheduled_display ? " — " + b.hearing.scheduled_display : "";
+      h.append(document.createTextNode("📅 On the " + (b.hearing.committee || "committee") + " calendar" + when + ". "));
+      const a = document.createElement("a");
+      a.href = b.hearing.witness_slip_url || b.hearing.details_url || "hearings.html";
+      a.target = "_blank"; a.rel = "noopener"; a.textContent = "File a witness slip ↗";
+      h.append(a);
+      card.append(h);
+    }
+    const links = document.createElement("div"); links.className = "sf-links";
+    const dash = document.createElement("a");
+    dash.href = "index.html#q=" + encodeURIComponent(b.id || "");
+    dash.textContent = "View on Legislation Dashboard ↗";
+    links.append(dash);
+    if (b.url) {
+      const off = document.createElement("a");
+      off.href = b.url; off.target = "_blank"; off.rel = "noopener"; off.textContent = "Bill page ↗";
+      links.append(off);
+    }
+    card.append(links);
+    return card;
   }
 
   /* ---------- timeline ---------- */
