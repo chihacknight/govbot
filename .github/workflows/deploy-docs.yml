@@ -174,6 +174,37 @@ jobs:
           ls -lh docs/src/dashboard/hearings.json docs/src/dashboard/hearings.xml
           ls -1 docs/src/dashboard/hearings/ 2>/dev/null | head -5 || true
 
+      # Illinois & Chicago elections feed (allILElections): candidate lists from
+      # the Chicago Board of Elections and the Illinois SBE "Who Is Running" list,
+      # placed onto the committed race-structure seed. Fully fail-soft — a source
+      # outage/format change yields zero candidates, never a crash. We only
+      # replace the committed sample when the fresh run actually placed
+      # candidates, so a total outage keeps the last-good curated sample rather
+      # than blanking every roster.
+      - name: Build Illinois & Chicago elections feed
+        run: |
+          set -uo pipefail
+          rm -rf /tmp/elections_feeds
+          python3 actions/scrape-elections/main.py \
+            --output /tmp/elections.json \
+            --rss /tmp/elections.xml \
+            --rss-feeds-dir /tmp/elections_feeds \
+            || echo "::warning::elections scrape reported errors"
+          if [ -s /tmp/elections.json ] && \
+             [ "$(python3 -c 'import json;d=json.load(open("/tmp/elections.json"));print(sum(len(r["candidates"]) for r in d["races"]))' 2>/dev/null || echo 0)" -gt 0 ]; then
+            mv /tmp/elections.json docs/src/dashboard/elections.json
+            [ -s /tmp/elections.xml ] && mv /tmp/elections.xml docs/src/dashboard/elections.xml
+            # Replace the whole granular-feed directory so feeds for races that
+            # dropped out don't linger as stale files.
+            rm -rf docs/src/dashboard/elections
+            [ -d /tmp/elections_feeds ] && mv /tmp/elections_feeds docs/src/dashboard/elections
+            echo "elections.json + elections.xml + granular feeds refreshed"
+          else
+            echo "::warning::no candidates scraped; keeping committed sample elections.json + feeds"
+          fi
+          ls -lh docs/src/dashboard/elections.json docs/src/dashboard/elections.xml
+          ls -1 docs/src/dashboard/elections/ 2>/dev/null | head -5 || true
+
       - name: Build docs
         run: mdbook build docs
 

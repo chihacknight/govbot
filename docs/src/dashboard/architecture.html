@@ -119,6 +119,7 @@
   }
   .tab-legis    { --tab-accent: var(--series-1); }  /* blue */
   .tab-hearings { --tab-accent: var(--series-3); }  /* gold */
+  .tab-elections { --tab-accent: var(--series-2); } /* green */
   .tab-arch     { --tab-accent: var(--series-5); }  /* purple */
   .tab:hover { color: var(--tab-accent); background: var(--hover-wash); }
   .tab[aria-current="page"] {
@@ -167,8 +168,8 @@
   .lead b { font-weight: 700; }
 
   /* Two-up "what you're looking at" cards at the very top. */
-  .overview { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 26px; }
-  @media (max-width: 760px) { .overview { grid-template-columns: 1fr; } }
+  .overview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 26px; }
+  @media (max-width: 900px) { .overview { grid-template-columns: 1fr; } }
   .ov {
     position: relative; overflow: hidden;
     border: 2px solid var(--c); border-radius: 14px;
@@ -397,6 +398,7 @@
   <nav class="tabs" aria-label="Dashboards">
     <a class="tab tab-legis" href="index.html">Legislation Dashboard</a>
     <a class="tab tab-hearings" href="hearings.html">Committee Hearings &amp; Witness Slips</a>
+    <a class="tab tab-elections" href="elections.html">allILElections</a>
     <a class="tab tab-arch" href="architecture.html" aria-current="page">Site Architecture</a>
   </nav>
   <header class="top">
@@ -422,8 +424,8 @@
 
   <!-- ===================== TL;DR ===================== -->
   <p class="lead">
-    This site has <b>two dashboards</b> and <b>two separate backend pipelines</b> that feed them.
-    Both run automatically <b>twice a day</b> on GitHub Actions, write plain <code style="font-size:12.5px">.json</code>
+    This site has <b>three dashboards</b> and <b>three separate backend pipelines</b> that feed them.
+    They run automatically <b>twice a day</b> on GitHub Actions, write plain <code style="font-size:12.5px">.json</code>
     files into the site, and never break the page when a government source goes down —
     they fall back to the last good data. Here's how each one works. 👇
   </p>
@@ -440,6 +442,12 @@
       <h3>Committee Hearings <span class="ov-file">hearings.json</span></h3>
       <p>Upcoming hearings &amp; public-comment windows scraped <b>straight from state legislatures</b>
          and the federal register — with RSS feeds you can subscribe to.</p>
+    </div>
+    <div class="ov" style="--c: var(--series-2)">
+      <span class="ov-emoji" aria-hidden="true">🗳️</span>
+      <h3>allILElections <span class="ov-file">elections.json</span></h3>
+      <p>Every office on upcoming <b>Chicago &amp; Illinois ballots</b> — citywide, all 50 wards, CPS
+         board, Police District Councils — with candidates from official candidate lists.</p>
     </div>
   </div>
 
@@ -477,6 +485,14 @@
               <div class="n-sub">scrape legislatures + federal → <code>hearings.json</code> + RSS</div>
             </div>
           </div>
+          <div class="conn tight" aria-hidden="true"><i></i></div>
+          <div class="node" style="--c: var(--series-2)">
+            <span class="n-ico" aria-hidden="true">🗳️</span>
+            <div class="n-body">
+              <div class="n-title">Elections pipeline</div>
+              <div class="n-sub">official candidate lists → <code>elections.json</code> + RSS</div>
+            </div>
+          </div>
         </div>
 
         <div class="conn" aria-hidden="true"><i></i></div>
@@ -506,6 +522,7 @@
         <div class="fan">
           <span class="out" style="--c: var(--series-1)"><span class="out-ico" aria-hidden="true">🏛️</span> Legislation Dashboard <span class="out-sub">index.html</span></span>
           <span class="out" style="--c: var(--series-3)"><span class="out-ico" aria-hidden="true">🗓️</span> Hearings Dashboard <span class="out-sub">hearings.html</span></span>
+          <span class="out" style="--c: var(--series-2)"><span class="out-ico" aria-hidden="true">🗳️</span> allILElections <span class="out-sub">elections.html</span></span>
           <span class="out" style="--c: var(--series-5)"><span class="out-ico" aria-hidden="true">🗺️</span> This page <span class="out-sub">architecture.html</span></span>
         </div>
       </div>
@@ -696,13 +713,101 @@
     </div>
   </section>
 
+  <!-- ===================== PIPELINE 3: ELECTIONS ===================== -->
+  <section class="panel" style="--c: var(--series-2)">
+    <div class="panel-head">
+      <span class="kicker">🗳️ Pipeline 3</span>
+    </div>
+    <h2>allILElections</h2>
+    <p class="sub">
+      The ballot's <b>structure</b> — every office, district, ballot date, and a plain-English
+      “why this race exists” note — is stable, so it lives in a committed <b>seed</b>. Scrapers only
+      <b>populate candidates</b> onto that seed from official candidate lists. A race with nobody
+      listed yet keeps an empty slot and a link to its official source — never a guess.
+    </p>
+
+    <div class="diagram" role="img"
+      aria-label="Elections pipeline: a committed seed defines every race; scrapers read the Chicago Board of Elections and the Illinois State Board of Elections candidate lists, a matcher attaches each candidate to its race, and the result is elections.json plus whole-ballot and granular RSS feeds rendered by elections.html.">
+      <div class="flow">
+
+        <div class="flow-job" style="--c: var(--series-8)">
+          <div class="flow-job-head"><span class="badge" aria-hidden="true">1</span> Scrape candidate lists <span class="flow-job-meta">scrape-elections/main.py</span></div>
+
+          <div class="fan-label">official sources — no third-party aggregator</div>
+          <div class="sources">
+            <span class="src" style="--c: var(--series-1)"><span class="src-dot"></span> Chicago Board of Elections <span class="src-sub">mayor · wards · PDC</span></span>
+            <span class="src" style="--c: var(--series-3)"><span class="src-dot"></span> Illinois SBE <span class="src-sub">“Who Is Running” · CPS board</span></span>
+            <span class="src" style="--c: var(--series-7)"><span class="src-dot"></span> Cook County Clerk <span class="src-sub">suburban (future)</span></span>
+          </div>
+        </div>
+
+        <div class="conn" aria-hidden="true"><i></i></div>
+
+        <div class="flow-job" style="--c: var(--series-2)">
+          <div class="flow-job-head"><span class="badge" aria-hidden="true">2</span> Place onto the seed</div>
+          <div class="node" style="--c: var(--series-5)">
+            <span class="n-ico" aria-hidden="true">🧱</span>
+            <div class="n-body">
+              <div class="n-title"><code>elections_seed.json</code></div>
+              <div class="n-sub">96 races: citywide, wards 1–50, CPS president + subdistricts 1A–10B, 22 Police District Councils</div>
+            </div>
+          </div>
+          <div class="conn tight" aria-hidden="true"><i></i></div>
+          <div class="node" style="--c: var(--series-2)">
+            <span class="n-ico" aria-hidden="true">🎯</span>
+            <div class="n-body">
+              <div class="n-title">Matcher</div>
+              <div class="n-sub">attaches a candidate to a race only when office + district resolve exactly; anything unplaceable is dropped, never invented</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="conn" aria-hidden="true"><i></i></div>
+
+        <div class="fan-label">outputs written into the site</div>
+        <div class="fan">
+          <span class="out" style="--c: var(--series-2)"><span class="out-ico" aria-hidden="true">📄</span> elections.json <span class="out-sub">the dashboard data</span></span>
+          <span class="out" style="--c: var(--series-8)"><span class="out-ico" aria-hidden="true">📡</span> elections.xml <span class="out-sub">whole-ballot RSS</span></span>
+          <span class="out" style="--c: var(--series-5)"><span class="out-ico" aria-hidden="true">🗂️</span> per-office-group RSS</span>
+          <span class="out" style="--c: var(--series-1)"><span class="out-ico" aria-hidden="true">🔖</span> per-race RSS</span>
+        </div>
+
+        <div class="conn" aria-hidden="true"><i></i></div>
+        <div class="node" style="--c: var(--series-2)">
+          <span class="n-ico" aria-hidden="true">🗳️</span>
+          <div class="n-body">
+            <div class="n-title"><code>elections.html</code></div>
+            <div class="n-sub">groups races by office, shows candidates + “why this race exists,” and RSS links</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ol class="steps" style="--c: var(--series-2)">
+      <li><b>Start from the ballot's shape.</b> A committed seed lists every race, its district, ballot date, and why it exists — this never depends on a scrape succeeding.</li>
+      <li><b>Read official candidate lists.</b> Best-effort parsers read the Chicago Board of Elections pages and the Illinois SBE “Who Is Running” list.</li>
+      <li><b>Match, don't invent.</b> Each candidate attaches to a race only when its office and district resolve unambiguously; unplaceable rows are dropped with a warning.</li>
+      <li><b>Fan out to feeds.</b> Beyond <code>elections.json</code>, it emits a whole-ballot RSS plus per-office-group and per-race feeds you can follow.</li>
+    </ol>
+
+    <div class="callout" style="--c: var(--series-3)">
+      <span class="co-ico" aria-hidden="true">🎓</span>
+      <div class="co-body">
+        <b>Why the CPS races are special.</b> On Nov 3, 2026 Chicago elects a school board by popular
+        vote for the first time — including its first-ever elected president — as the mayor-appointed
+        hybrid board is phased out. The seed carries that context on every CPS race so the page can
+        explain it, not just list it.
+      </div>
+    </div>
+  </section>
+
   <!-- ===================== HOW THEY CONNECT ===================== -->
   <section class="panel" style="--c: var(--series-5)">
     <div class="panel-head">
       <span class="kicker">🔗 Where they meet</span>
     </div>
-    <h2>Two pipelines, one experience</h2>
-    <p class="sub">The dashboards are independent, but they cross-reference each other so a bill and its hearing feel connected.</p>
+    <h2>Pipelines that talk to each other</h2>
+    <p class="sub">The three dashboards are independent, but they cross-reference each other so a bill and its hearing feel connected.</p>
 
     <div class="bridge">
       <div class="bridge-end" style="--c: var(--series-1)">

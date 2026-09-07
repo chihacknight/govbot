@@ -1,0 +1,9 @@
+Illinois State Board of Elections — Who Is Running (candidate list)
+Report generated: 09/06/2026
+
+Office	District	Name	Party	Filing Date	Status	Website
+Member of the Board of Education	Subdistrict 1A	Jordan A. Sample	Nonpartisan	03/24/2026	On Ballot	https://example.org/jordan
+Member of the Board of Education	Subdistrict 1A	Pat Q. Placeholder	Nonpartisan	03/25/2026	Objected
+Member of the Board of Education	Subdistrict 10B	Robin Testfield	Nonpartisan	03/23/2026	Filed
+President of the Board of Education		Alex Q. Example	Nonpartisan	03/20/2026	On Ballot	https://example.org/alex
+State Representative	District 5	Not A Chicago Race	Democratic	03/01/2026	Filed
