@@ -222,6 +222,20 @@ jobs:
           ls -lh docs/src/dashboard/elections.json docs/src/dashboard/elections.xml
           ls -1 docs/src/dashboard/elections/ 2>/dev/null | head -5 || true
 
+      # Potential candidates (unofficial): before filing opens, surface names the
+      # press reports as running/exploring for each race, from a Google News
+      # search — each tied to its article. Written straight into elections.json
+      # (a rumor/coverage signal, kept separate from the official candidate list;
+      # never added to the RSS feeds). Independent of whether official candidates
+      # exist yet, and fully fail-soft: sources down leaves the lists empty.
+      - name: Enrich races with news-sourced potential candidates
+        run: |
+          set -uo pipefail
+          python3 actions/scrape-elections/main.py \
+            --enrich-potential docs/src/dashboard/elections.json \
+            || echo "::warning::potential-candidate enrichment reported errors"
+          python3 -c 'import json;d=json.load(open("docs/src/dashboard/elections.json"));n=sum(len(r.get("potential_candidates") or []) for r in d["races"]);print(f"potential candidates surfaced: {n}")'
+
       # Campaign money (Illinois SBE): attach each candidate's receipts / spending
       # / cash-on-hand from their committee's latest D2 filing, via the SBE ID
       # crosswalk. Gated on candidates actually being present — the SBE bulk files

@@ -105,6 +105,39 @@ python3 actions/scrape-elections/main.py \
 The deploy runs this only when the `ELECTION_RESULTS_URL` repo variable/secret is
 set (so it does nothing before an election).
 
+## Potential candidates — unofficial, from news coverage
+
+Long before filing opens, outlets report who's running, exploring, or rumored.
+`--enrich-potential` surfaces those names per race into a **separate**
+`potential_candidates` list — a rumor/coverage signal, kept strictly apart from
+the official `candidates` and never added to the RSS feeds.
+
+It reads **Google News' public RSS search** (an aggregator over the press — the
+"internet" source; raw social-platform scraping is neither TOS-safe nor reliable,
+so it's out). A name is attached **only** when a headline both:
+
+1. names a person next to a candidacy verb (`announces` / `to run` / `enters` →
+   *announced*; `mulls` / `weighing` / `rumored` → *exploring*; `candidate NAME`
+   → *reported*), and
+2. references the race — its office keyword, plus the **district token** for a
+   district race (word-boundary matched, so "5th ward" never matches "25th ward").
+
+Leading honorifics are stripped (`Rep. Mike Quigley` → `Mike Quigley`) so one
+person doesn't split in two, office/place/calendar words are rejected as names,
+and every surfaced name carries the article(s) it came from (headline, link,
+publisher, date). Nothing is invented; a name with no source is dropped. One
+pooled news query runs per office group (plus one per citywide office); each race
+extracts only names whose headline references it. Fully fail-soft — sources down
+leaves the lists empty.
+
+```bash
+python3 actions/scrape-elections/main.py \
+  --enrich-potential docs/src/dashboard/elections.json
+```
+
+The deploy runs this right after the base build (independent of whether official
+candidates exist yet), twice daily. The committed sample ships empty lists.
+
 ## Usage
 
 ```bash

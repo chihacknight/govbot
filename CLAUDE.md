@@ -216,6 +216,23 @@ source does — never projected. The deploy step runs only when the `ELECTION_RE
 repo variable/secret is set, so it is inert until an election happens. This completes the
 "five drawers" per race: map · candidates · money · results · context (Springfield).
 
+**Potential candidates** (unofficial) attach a *separate* `potential_candidates` list per
+race — names the press reports as running/exploring/rumored before filing opens, kept strictly
+apart from the official `candidates` list and deliberately **not** in any RSS feed.
+`main.py --enrich-potential <elections.json>` reads **Google News' public RSS search** (the
+"internet"; raw social-platform scraping is not TOS-safe/reliable, so it is out) and attaches a
+name only when a headline both names a person beside a candidacy verb (→ status
+`announced`/`exploring`/`reported`) *and* references the race — its office keyword plus, for a
+district race, its district token (word-boundary matched, so "5th ward" ≠ "25th ward").
+Honorifics are stripped ("Rep. Mike Quigley" → "Mike Quigley"), office/place/calendar words are
+rejected as names, and every name carries its source article(s) {title, url, publisher, date};
+a sourceless name is dropped — nothing is invented. One pooled news query per office group (plus
+one per citywide office); fail-soft (sources down → empty lists), committed sample empty. The
+frontend renders it as a collapsed, dashed-amber "💭 Potential candidates · Unofficial · from
+news" block under each race. `deploy-docs.yml` runs it right after the base elections build
+(independent of official candidates), twice daily. Parsers are offline-tested in
+`test_scrape_elections.py`.
+
 ## govbot Development
 
 ```bash

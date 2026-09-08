@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Chicago City Council alderman candidate ward - Google News</title>
+    <link>https://news.google.com/search</link>
+    <description>Sample fixture modeled on Google News RSS search output.</description>
+    <language>en-US</language>
+    <item>
+      <title>Sam T. Northside announces run for alderman in Ward 1 - Sample Tribune</title>
+      <link>https://news.google.com/rss/articles/w1a</link>
+      <guid isPermaLink="false">w1a</guid>
+      <pubDate>Tue, 02 Sep 2026 14:30:00 GMT</pubDate>
+      <source url="https://sampletribune.example">Sample Tribune</source>
+    </item>
+    <item>
+      <title>Pat R. Lakeview to run for alderperson in the 50th Ward - Sample Sun</title>
+      <link>https://news.google.com/rss/articles/w50a</link>
+      <guid isPermaLink="false">w50a</guid>
+      <pubDate>Wed, 03 Sep 2026 09:00:00 GMT</pubDate>
+      <source url="https://samplesun.example">Sample Sun</source>
+    </item>
+    <item>
+      <title>Chicago aldermen debate zoning reform citywide - Sample WTTW</title>
+      <link>https://news.google.com/rss/articles/gen</link>
+      <guid isPermaLink="false">gen</guid>
+      <pubDate>Mon, 01 Sep 2026 12:00:00 GMT</pubDate>
+      <source url="https://samplewttw.example">Sample WTTW</source>
+    </item>
+  </channel>
+</rss>
