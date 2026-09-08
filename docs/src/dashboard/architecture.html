@@ -380,20 +380,39 @@
   .chn-credit svg { flex: none; }
   .chn-credit a { color: var(--series-1); }
 
-  /* ---------- back-to-top floating button ---------- */
+  /* ---------- back-to-top floating button (liquid glass) ---------- */
   .to-top {
-    position: fixed; right: 20px; bottom: 20px; z-index: 60;
-    width: 44px; height: 44px; border-radius: 50%;
-    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary);
-    font-size: 20px; line-height: 1; cursor: pointer;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.18);
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; visibility: hidden; transform: translateY(8px);
-    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+    position: fixed; right: 22px; bottom: 22px; z-index: 60;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 17px 11px 14px; border-radius: 999px;
+    font: inherit; font-size: 13px; font-weight: 650; letter-spacing: -0.01em;
+    color: var(--text-primary); cursor: pointer; overflow: hidden;
+    /* liquid glass: translucent fill + heavy blur + layered inner highlights */
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.28), rgba(255,255,255,0.06) 40%, rgba(255,255,255,0.02)),
+      color-mix(in srgb, var(--surface-1) 52%, transparent);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid color-mix(in srgb, var(--text-primary) 16%, transparent);
+    box-shadow:
+      0 10px 32px rgba(0,0,0,0.24),
+      inset 0 1px 0 rgba(255,255,255,0.45),
+      inset 0 -6px 14px rgba(255,255,255,0.06);
+    opacity: 0; visibility: hidden; transform: translateY(12px) scale(0.98);
+    transition: opacity .28s ease, transform .28s cubic-bezier(.2,.9,.3,1.3), visibility .28s ease, box-shadow .2s ease;
   }
+  /* moving sheen highlight for the "liquid" feel */
+  .to-top::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: radial-gradient(120% 80% at 18% -10%, rgba(255,255,255,0.5), transparent 55%);
+    opacity: 0.7;
+  }
+  .to-top .tt-arrow { font-size: 15px; line-height: 1; transition: transform .25s ease; }
   .to-top.show { opacity: 1; visibility: visible; transform: none; }
-  .to-top:hover { border-color: var(--series-1); color: var(--series-1); }
-  @media (prefers-reduced-motion: reduce) { .to-top { transition: none; } }
+  .to-top:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.6), inset 0 -6px 14px rgba(255,255,255,0.1); }
+  .to-top:hover .tt-arrow { transform: translateY(-2px); }
+  .to-top:active { transform: translateY(0) scale(0.97); }
+  @media (prefers-reduced-motion: reduce) { .to-top, .to-top .tt-arrow { transition: none; } }
 </style>
 <script>
   // Apply a saved theme choice before first paint to avoid a flash of the
@@ -910,7 +929,7 @@
   apply(saved());
 })();
 </script>
-<button class="to-top" id="to-top" type="button" aria-label="Back to top" title="Back to top">↑</button>
+<button class="to-top" id="to-top" type="button" aria-label="Back to top" title="Back to top"><span class="tt-arrow" aria-hidden="true">↑</span>Back to Top</button>
 <script>
 (function () {
   var btn = document.getElementById("to-top");

@@ -30,8 +30,8 @@
       "include_keywords": ["criminal", "police", "policing", "prison", "incarceration", "sentencing", "bail", "parole", "probation", "felony"]
     },
     "elections & voting": {
-      "description": "Elections, voting rights, registration, ballots, redistricting, and campaign finance",
-      "include_keywords": ["election", "elections", "voting", "voter", "ballot", "registration", "redistricting", "campaign finance", "polling place"]
+      "description": "Elections, voting rights, voter registration, ballots, redistricting, and campaign finance",
+      "include_keywords": ["election", "elections", "voting", "voter", "voter registration", "ballot", "redistricting", "campaign finance", "polling place", "vote by mail", "early voting"]
     },
     "budget & taxes": {
       "description": "Appropriations, taxation, tax credits, fees, revenue, bonding, and public funds",

@@ -136,12 +136,17 @@ pipelines — keep its tab bar and the `.tab-arch` accent in sync with the other
 whenever the tab bar changes). Tab order is Legislation · Hearings · Elections Happening in IL ·
 Site Architecture across all four pages, with accents `.tab-legis` (blue), `.tab-hearings`
 (gold), `.tab-elections` (green), `.tab-arch` (purple). All four pages share a floating
-`.to-top` "Back to top" button (fixed bottom-right, shown after ~400px of scroll). The
-elections page additionally has a **"New Design"** switch under the theme toggle that sets
-`data-design="new"` on `<html>` (persisted in `localStorage['govbot-elections-design']`),
-which applies a Robinhood-inspired override skin (bright green #00C805, near-black/white
-ground, flat rounded cards) via `:root[data-design="new"]` token + component rules placed
-last in that page's stylesheet; it is scoped to elections.html only. The hearings
+`.to-top` "Back to Top" button (fixed bottom-right, shown after ~400px of scroll) styled as
+a liquid-glass pill (translucent + `backdrop-filter` blur). The three data dashboards each
+have a **"New Design"** switch under the theme toggle that sets `data-design="new"` on
+`<html>` (persisted per page in `localStorage['govbot-<page>-design']`, applied before first
+paint) and applies a design-system-inspired override skin via `:root[data-design="new"]`
+token + component rules placed last in that page's stylesheet: **elections → Robinhood**
+(green #00C805), **legislation → Stripe** (blurple #635BFF), **hearings → Polymarket** (azure
+on navy). Each skin is scoped to its own page. On elections and hearings, the long list
+sections scroll inside capped-height boxes (`.group .races`, `.sf-list`, `.hgroup-rows`,
+`.participation-grid`) so the homepage isn't enormous; the elections "Where the data comes
+from" cabinet is `open` by default. The hearings
 page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov, leg.wa.gov,
 malegislature.gov, and akleg.gov directly (not OpenStates), plus **USA (Federal)** open comment periods from the
 Regulations.gov API (needs `REGULATIONS_GOV_API_KEY`; falls back to the committed

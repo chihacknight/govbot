@@ -155,6 +155,17 @@
   .theme-toggle button:hover { color: var(--text-primary); }
   .theme-toggle button[aria-pressed="true"] { background: var(--series-1); color: #fff; }
 
+  /* theme toggle + New Design switch stacked at the top-right */
+  .controls-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex: none; }
+  .design-toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 12.5px; color: var(--text-secondary); --nd-accent: #635bff; }
+  .design-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .design-toggle .dt-track { position: relative; width: 40px; height: 22px; border-radius: 999px; background: var(--gridline); border: 1px solid var(--border); transition: background 0.18s ease; flex: none; }
+  .design-toggle .dt-thumb { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface-1); box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform 0.18s ease; }
+  .design-toggle input:checked + .dt-track { background: var(--nd-accent); border-color: var(--nd-accent); }
+  .design-toggle input:checked + .dt-track .dt-thumb { transform: translateX(18px); background: #fff; }
+  .design-toggle input:focus-visible + .dt-track { outline: 2px solid var(--series-1); outline-offset: 2px; }
+  .design-toggle .dt-label { font-weight: 600; white-space: nowrap; }
+
   /* ---------- filter row ---------- */
   .filters {
     display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
@@ -312,6 +323,14 @@
   tbody tr:hover { background: var(--hover-wash); }
   td.num, td.date { font-variant-numeric: tabular-nums; white-space: nowrap; }
   td .bill-id { font-weight: 600; white-space: nowrap; }
+  /* The bill number opens the details card (which holds the official-source
+     link) rather than linking straight out. */
+  td .bill-id.bill-id-link {
+    cursor: pointer; background: none; border: none; padding: 0;
+    font-family: inherit; font-size: inherit; font-weight: 600;
+    color: var(--series-1); text-align: left;
+  }
+  td .bill-id.bill-id-link:hover { text-decoration: underline; }
   td .bill-title { color: var(--text-secondary); }
   td .action-desc { color: var(--text-muted); font-size: 12px; }
   .empty { color: var(--text-muted); padding: 24px; text-align: center; }
@@ -332,20 +351,39 @@
   .chn-credit svg { flex: none; }
   .chn-credit a { color: var(--series-1); }
 
-  /* ---------- back-to-top floating button ---------- */
+  /* ---------- back-to-top floating button (liquid glass) ---------- */
   .to-top {
-    position: fixed; right: 20px; bottom: 20px; z-index: 60;
-    width: 44px; height: 44px; border-radius: 50%;
-    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary);
-    font-size: 20px; line-height: 1; cursor: pointer;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.18);
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; visibility: hidden; transform: translateY(8px);
-    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+    position: fixed; right: 22px; bottom: 22px; z-index: 60;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 17px 11px 14px; border-radius: 999px;
+    font: inherit; font-size: 13px; font-weight: 650; letter-spacing: -0.01em;
+    color: var(--text-primary); cursor: pointer; overflow: hidden;
+    /* liquid glass: translucent fill + heavy blur + layered inner highlights */
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.28), rgba(255,255,255,0.06) 40%, rgba(255,255,255,0.02)),
+      color-mix(in srgb, var(--surface-1) 52%, transparent);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid color-mix(in srgb, var(--text-primary) 16%, transparent);
+    box-shadow:
+      0 10px 32px rgba(0,0,0,0.24),
+      inset 0 1px 0 rgba(255,255,255,0.45),
+      inset 0 -6px 14px rgba(255,255,255,0.06);
+    opacity: 0; visibility: hidden; transform: translateY(12px) scale(0.98);
+    transition: opacity .28s ease, transform .28s cubic-bezier(.2,.9,.3,1.3), visibility .28s ease, box-shadow .2s ease;
   }
+  /* moving sheen highlight for the "liquid" feel */
+  .to-top::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: radial-gradient(120% 80% at 18% -10%, rgba(255,255,255,0.5), transparent 55%);
+    opacity: 0.7;
+  }
+  .to-top .tt-arrow { font-size: 15px; line-height: 1; transition: transform .25s ease; }
   .to-top.show { opacity: 1; visibility: visible; transform: none; }
-  .to-top:hover { border-color: var(--series-1); color: var(--series-1); }
-  @media (prefers-reduced-motion: reduce) { .to-top { transition: none; } }
+  .to-top:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.6), inset 0 -6px 14px rgba(255,255,255,0.1); }
+  .to-top:hover .tt-arrow { transform: translateY(-2px); }
+  .to-top:active { transform: translateY(0) scale(0.97); }
+  @media (prefers-reduced-motion: reduce) { .to-top, .to-top .tt-arrow { transition: none; } }
 
   /* narrower Topics column; chips wrap inside it */
   th.col-tags, td.col-tags { max-width: 150px; width: 150px; }
@@ -429,6 +467,57 @@
   .modal-card .m-chip { color: var(--text-primary); }
   .modal-card .m-chip.is-law { color: var(--text-primary); }  /* keep green border */
   .modal-card .m-chip.is-state { color: #fff; }  /* keep white text on filled accent */
+
+  /* ==================================================================== */
+  /*  NEW DESIGN — Stripe-inspired (toggled per viewer, this page only).   */
+  /*  Blurple #635BFF, soft shadows, rounded cards, airy off-white ground. */
+  /*  Placed last so its token + component overrides win by source order.  */
+  /* ==================================================================== */
+  :root[data-design="new"] {
+    --page: #f6f9fc; --surface-1: #ffffff;
+    --text-primary: #0a2540; --text-secondary: #425466; --text-muted: #697386;
+    --gridline: #e6ebf1; --baseline: #cfd7df; --border: rgba(10,37,64,0.09);
+    --hover-wash: rgba(10,37,64,0.035); --row-alt: rgba(10,37,64,0.02);
+    --series-1: #635bff;
+    --st-accent: #635bff;
+  }
+  :root[data-design="new"][data-theme="dark"] {
+    --page: #0a0e27; --surface-1: #1a1f36;
+    --text-primary: #ffffff; --text-secondary: #c1c9d2; --text-muted: #8b95a5;
+    --gridline: #2a2f45; --baseline: #3b4160; --border: rgba(255,255,255,0.10);
+    --hover-wash: rgba(255,255,255,0.05); --row-alt: rgba(255,255,255,0.03);
+    --series-1: #8b85ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root[data-design="new"]:not([data-theme]) {
+      --page: #0a0e27; --surface-1: #1a1f36;
+      --text-primary: #ffffff; --text-secondary: #c1c9d2; --text-muted: #8b95a5;
+      --gridline: #2a2f45; --baseline: #3b4160; --border: rgba(255,255,255,0.10);
+      --hover-wash: rgba(255,255,255,0.05); --row-alt: rgba(255,255,255,0.03);
+      --series-1: #8b85ff;
+    }
+  }
+  :root[data-design="new"] body {
+    font-family: "Inter", ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    letter-spacing: -0.006em;
+  }
+  :root[data-design="new"] header.top h1 { font-weight: 700; letter-spacing: -0.025em; }
+  /* tabs → flat with a blurple underline on the active tab */
+  :root[data-design="new"] .tab { border-top-color: transparent !important; }
+  :root[data-design="new"] .tab[aria-current="page"] { background: transparent; border-color: transparent; box-shadow: inset 0 -3px 0 var(--st-accent, #635bff); }
+  :root[data-design="new"] .tab:hover { color: var(--st-accent, #635bff); }
+  /* cards & tiles → Stripe's soft shadow, rounded, minimal border */
+  :root[data-design="new"] .card, :root[data-design="new"] .tile, :root[data-design="new"] .modal-card {
+    border-radius: 14px; border-color: var(--border);
+    box-shadow: 0 2px 5px -1px rgba(50,50,93,0.10), 0 1px 3px -1px rgba(0,0,0,0.07);
+  }
+  :root[data-design="new"] .card--accent { border-width: 1px; }
+  :root[data-design="new"] .tile .value { color: var(--st-accent, #635bff); }
+  :root[data-design="new"] .theme-toggle button[aria-pressed="true"] { background: var(--st-accent, #635bff); color: #fff; }
+  :root[data-design="new"] .details-btn, :root[data-design="new"] a { color: var(--st-accent, #635bff); }
+  :root[data-design="new"] .filters input, :root[data-design="new"] .filters select,
+  :root[data-design="new"] .msel > button, :root[data-design="new"] .clear-btn { border-radius: 9px; }
+  :root[data-design="new"] .to-top:hover { box-shadow: 0 14px 40px rgba(99,91,255,0.25), inset 0 1px 0 rgba(255,255,255,0.6); }
 </style>
 <script>
   // Apply a saved theme choice before first paint to avoid a flash of the
@@ -438,6 +527,8 @@
     try {
       var t = localStorage.getItem("govbot-theme");
       if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+      if (localStorage.getItem("govbot-legislation-design") === "new")
+        document.documentElement.setAttribute("data-design", "new");
     } catch (e) {}
   })();
 </script>
@@ -456,10 +547,17 @@
         <img class="brand-logo" src="govbot-logo.png" width="40" height="40" alt="" aria-hidden="true">
         <span class="brand-name">gov<span class="bot">bot</span></span>
       </a>
-      <div class="theme-toggle" role="group" aria-label="Color theme">
-        <button type="button" data-theme-choice="light" title="Light theme" aria-label="Light theme" aria-pressed="false">☀</button>
-        <button type="button" data-theme-choice="auto"  title="Match system" aria-label="Match system theme" aria-pressed="false">Auto</button>
-        <button type="button" data-theme-choice="dark"  title="Dark theme"  aria-label="Dark theme" aria-pressed="false">☾</button>
+      <div class="controls-stack">
+        <div class="theme-toggle" role="group" aria-label="Color theme">
+          <button type="button" data-theme-choice="light" title="Light theme" aria-label="Light theme" aria-pressed="false">☀</button>
+          <button type="button" data-theme-choice="auto"  title="Match system" aria-label="Match system theme" aria-pressed="false">Auto</button>
+          <button type="button" data-theme-choice="dark"  title="Dark theme"  aria-label="Dark theme" aria-pressed="false">☾</button>
+        </div>
+        <label class="design-toggle" title="Preview a Stripe-inspired look">
+          <input type="checkbox" id="design-switch" role="switch" aria-label="New Design">
+          <span class="dt-track" aria-hidden="true"><span class="dt-thumb"></span></span>
+          <span class="dt-label">New Design</span>
+        </label>
       </div>
     </div>
     <div class="title-row">
@@ -590,6 +688,22 @@
     }
     buttons.forEach((b) => b.addEventListener("click", () => apply(b.dataset.themeChoice)));
     apply(saved());
+  })();
+
+  // ----- "New Design" (Stripe-inspired) toggle — scoped to this page -----
+  (function initDesign() {
+    const root = document.documentElement;
+    const sw = document.getElementById("design-switch");
+    if (!sw) return;
+    sw.checked = root.getAttribute("data-design") === "new";
+    sw.addEventListener("change", () => {
+      if (sw.checked) root.setAttribute("data-design", "new");
+      else root.removeAttribute("data-design");
+      try {
+        if (sw.checked) localStorage.setItem("govbot-legislation-design", "new");
+        else localStorage.removeItem("govbot-legislation-design");
+      } catch (e) {}
+    });
   })();
 
   const state = {
@@ -1006,11 +1120,15 @@
       const tr = document.createElement("tr");
 
       const tdId = document.createElement("td");
-      const idSpan = document.createElement(b.url ? "a" : "span");
-      idSpan.className = "bill-id";
-      idSpan.textContent = b.id;
-      if (b.url) { idSpan.href = b.url; idSpan.target = "_blank"; idSpan.rel = "noopener"; }
-      tdId.append(idSpan);
+      // The bill number opens the details card (its official-source link lives
+      // inside), rather than linking straight to the external source.
+      const idBtn = document.createElement("button");
+      idBtn.type = "button";
+      idBtn.className = "bill-id bill-id-link";
+      idBtn.textContent = b.id;
+      idBtn.title = "View bill details";
+      idBtn.addEventListener("click", () => openDetails(b));
+      tdId.append(idBtn);
 
       const tdState = document.createElement("td");
       tdState.textContent = state.stateNames[b.state] || (b.state || "").toUpperCase();
@@ -1577,7 +1695,7 @@
   }
 })();
 </script>
-<button class="to-top" id="to-top" type="button" aria-label="Back to top" title="Back to top">↑</button>
+<button class="to-top" id="to-top" type="button" aria-label="Back to top" title="Back to top"><span class="tt-arrow" aria-hidden="true">↑</span>Back to Top</button>
 <script>
 (function () {
   var btn = document.getElementById("to-top");
