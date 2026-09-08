@@ -306,6 +306,133 @@ class Results(unittest.TestCase):
         self.assertEqual(main.enrich_results(doc, "/no/such.csv", self.now), 0)
 
 
+class PotentialCandidates(unittest.TestCase):
+    def setUp(self):
+        self.now = main.datetime(2026, 9, 7, tzinfo=main.timezone.utc)
+        self.mayor_items = main.parse_news_rss((RAW / "news_mayor.xml").read_text())
+        self.council_items = main.parse_news_rss((RAW / "news_council.xml").read_text())
+        self.mayor = {"id": "chicago-mayor", "office": "Mayor",
+                      "office_group": "citywide", "is_citywide": True,
+                      "district": None, "ballot_date": "2027-02-23"}
+
+    def test_parse_strips_publisher_suffix(self):
+        titles = [i["title"] for i in self.mayor_items]
+        self.assertIn("Jordan A. Rivers announces run for Chicago mayor in 2027", titles)
+        self.assertEqual(self.mayor_items[0]["publisher"], "Sample Tribune")
+        self.assertEqual(self.mayor_items[0]["date"], "2026-09-02")
+
+    def test_parse_bad_xml_empty(self):
+        self.assertEqual(main.parse_news_rss("<not xml"), [])
+
+    def test_extract_announce_and_reverse(self):
+        names = dict(main.extract_candidacy(
+            "Jordan A. Rivers announces run for Chicago mayor in 2027", self.mayor))
+        self.assertEqual(names.get("Jordan A. Rivers"), "announced")
+        names2 = dict(main.extract_candidacy(
+            "Chicago mayoral candidate Dana Q. Fields lays out platform", self.mayor))
+        self.assertEqual(names2.get("Dana Q. Fields"), "reported")
+
+    def test_reverse_pattern_rejects_event_nouns(self):
+        # A title-case event headline must not yield a "person" from the
+        # "candidate NAME" pattern.
+        self.assertEqual(main.extract_candidacy(
+            "Mayoral Candidate Forum Draws Big Crowd Downtown", self.mayor), [])
+        self.assertEqual(main.extract_candidacy(
+            "Chicago Mayor Race Guide: Everything To Know", self.mayor), [])
+
+    def test_extract_exploring(self):
+        names = dict(main.extract_candidacy(
+            "Alex Placeholder mulls a bid for mayor as field grows", self.mayor))
+        self.assertEqual(names.get("Alex Placeholder"), "exploring")
+
+    def test_extract_requires_office_match(self):
+        # No office keyword -> nothing attributed to the mayor race.
+        self.assertEqual(main.extract_candidacy(
+            "City Council approves new budget after long debate", self.mayor), [])
+
+    def test_extract_rejects_office_words_as_names(self):
+        # "Chicago Mayor" must never be read as a person's name.
+        self.assertEqual(main.extract_candidacy(
+            "Who is running for Chicago mayor? Here is the field so far", self.mayor), [])
+
+    def test_build_dedupes_and_ranks(self):
+        pcs = main.build_potential(self.mayor, self.mayor_items, self.now)
+        by_name = {p["name"]: p for p in pcs}
+        # Jordan appears in two articles -> merged, mentions=2, announced.
+        self.assertIn("Jordan A. Rivers", by_name)
+        self.assertEqual(by_name["Jordan A. Rivers"]["mentions"], 2)
+        self.assertEqual(by_name["Jordan A. Rivers"]["status"], "announced")
+        self.assertEqual(by_name["Jordan A. Rivers"]["first_seen"], "2026-09-02")
+        self.assertEqual(by_name["Jordan A. Rivers"]["last_seen"], "2026-09-04")
+        # Most-cited first.
+        self.assertEqual(pcs[0]["name"], "Jordan A. Rivers")
+        # Every surfaced name carries at least one source.
+        for p in pcs:
+            self.assertTrue(p["sources"])
+
+    def test_build_merges_existing(self):
+        existing = [{"name": "Jordan A. Rivers", "status": "exploring",
+                     "sources": [{"title": "old story", "url": "https://old.example/x",
+                                  "publisher": "Old Paper", "date": "2026-08-01"}]}]
+        pcs = main.build_potential(self.mayor, self.mayor_items, self.now, existing=existing)
+        jordan = next(p for p in pcs if p["name"] == "Jordan A. Rivers")
+        # Old source retained; first_seen reaches back to the old article.
+        self.assertEqual(jordan["first_seen"], "2026-08-01")
+        self.assertTrue(any(s["url"] == "https://old.example/x" for s in jordan["sources"]))
+        # Status upgraded by the newer coverage.
+        self.assertEqual(jordan["status"], "announced")
+
+    def test_district_gating(self):
+        ward1 = {"id": "chicago-alderperson-ward-01", "office": "Alderperson",
+                 "office_group": "council", "is_citywide": False, "district": "Ward 1"}
+        ward50 = {"id": "chicago-alderperson-ward-50", "office": "Alderperson",
+                  "office_group": "council", "is_citywide": False, "district": "Ward 50"}
+        p1 = main.build_potential(ward1, self.council_items, self.now)
+        p50 = main.build_potential(ward50, self.council_items, self.now)
+        self.assertEqual([p["name"] for p in p1], ["Sam T. Northside"])
+        self.assertEqual([p["name"] for p in p50], ["Pat R. Lakeview"])
+        # The citywide "aldermen debate zoning" story attaches to neither.
+
+    def test_district_word_boundaries(self):
+        # "5th ward" is a substring of "25th ward"; "ward 5" of "ward 50". A Ward 5
+        # race must NOT pick up 25th/50th-ward candidates.
+        ward5 = {"id": "chicago-alderperson-ward-05", "office": "Alderperson",
+                 "office_group": "council", "is_citywide": False, "district": "Ward 5"}
+        self.assertEqual(main.extract_candidacy(
+            "Chris Example to run for alderman in the 25th Ward", ward5), [])
+        self.assertEqual(main.extract_candidacy(
+            "Robin Example enters the race for alderman in Ward 50", ward5), [])
+        self.assertTrue(main.extract_candidacy(
+            "Robin Example enters the race for alderman in Ward 5", ward5))
+
+    def test_enrich_potential_offline(self):
+        seed = main.load_seed()
+        doc, _ = main.assemble([], seed, "test", self.now)
+
+        def fake_fetch(query):
+            q = query.lower()
+            if "alderman" in q:
+                return self.council_items
+            if "mayor" in q:
+                return self.mayor_items
+            return []
+
+        n = main.enrich_potential(doc, self.now, fetcher=fake_fetch, sleep=0)
+        self.assertGreater(n, 0)
+        by_id = {r["id"]: r for r in doc["races"]}
+        self.assertTrue(by_id["chicago-mayor"]["potential_candidates"])
+        # Untouched build leaves official candidates empty and separate.
+        self.assertEqual(by_id["chicago-mayor"]["candidates"], [])
+
+    def test_enrich_potential_failsoft(self):
+        seed = main.load_seed()
+        doc, _ = main.assemble([], seed, "test", self.now)
+        n = main.enrich_potential(doc, self.now, fetcher=lambda q: [], sleep=0)
+        self.assertEqual(n, 0)
+        for r in doc["races"]:
+            self.assertEqual(r["potential_candidates"], [])
+
+
 class Snapshot(unittest.TestCase):
     def test_matches_expected(self):
         if not EXPECTED.exists():

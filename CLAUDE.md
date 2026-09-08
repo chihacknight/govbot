@@ -157,7 +157,10 @@ RSS `hearings.xml` + granular RSS feeds under `docs/src/dashboard/hearings/` —
 (`hearing-<id>.xml`) — so a reader can follow one bill, a whole state, or a single hearing
 (schema `schemas/govbot.hearings.schema.json`), plus a static 56-jurisdiction participation
 directory `docs/src/dashboard/participation.json` (schema
-`schemas/govbot.participation.schema.json`). `deploy-docs.yml` rebuilds both the bill
+`schemas/govbot.participation.schema.json`). Passing `--participation <file>` also emits an
+empty placeholder `<code>.xml` for every participation state with no live hearings yet, so
+each "Weigh in — by state" card carries a "Follow this state (RSS)" link that starts empty
+and fills when that state opens (its filter box has a colored border + search icon). `deploy-docs.yml` rebuilds both the bill
 `data.json` and the hearings feed on the twice-daily schedule. Hearings parsers are
 offline-snapshot-tested: `python3 actions/scrape-hearings/test_scrape_hearings.py`.
 
@@ -212,6 +215,23 @@ reported candidate (official results are authoritative) and flags a winner only 
 source does — never projected. The deploy step runs only when the `ELECTION_RESULTS_URL`
 repo variable/secret is set, so it is inert until an election happens. This completes the
 "five drawers" per race: map · candidates · money · results · context (Springfield).
+
+**Potential candidates** (unofficial) attach a *separate* `potential_candidates` list per
+race — names the press reports as running/exploring/rumored before filing opens, kept strictly
+apart from the official `candidates` list and deliberately **not** in any RSS feed.
+`main.py --enrich-potential <elections.json>` reads **Google News' public RSS search** (the
+"internet"; raw social-platform scraping is not TOS-safe/reliable, so it is out) and attaches a
+name only when a headline both names a person beside a candidacy verb (→ status
+`announced`/`exploring`/`reported`) *and* references the race — its office keyword plus, for a
+district race, its district token (word-boundary matched, so "5th ward" ≠ "25th ward").
+Honorifics are stripped ("Rep. Mike Quigley" → "Mike Quigley"), office/place/calendar words are
+rejected as names, and every name carries its source article(s) {title, url, publisher, date};
+a sourceless name is dropped — nothing is invented. One pooled news query per office group (plus
+one per citywide office); fail-soft (sources down → empty lists), committed sample empty. The
+frontend renders it as a collapsed, dashed-amber "💭 Potential candidates · Unofficial · from
+news" block under each race. `deploy-docs.yml` runs it right after the base elections build
+(independent of official candidates), twice daily. Parsers are offline-tested in
+`test_scrape_elections.py`.
 
 ## govbot Development
 

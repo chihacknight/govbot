@@ -1,5 +1,5 @@
 name: "Scrape Illinois & Chicago Elections"
-description: "Populate the Elections Happening in IL feed: Chicago citywide, aldermanic, CPS board, and Police District Council races with candidates from official sources, onto a committed race-structure seed."
+description: "Populate the Elections Happening in IL feed: Chicago citywide, aldermanic, CPS board, and Police District Council races with candidates from official sources, onto a committed race-structure seed. Enrichment passes (run separately by the deploy workflow) add SBE campaign money, post-election results, and — via --enrich-potential — unofficial news-sourced potential candidates."
 
 inputs:
   sources:

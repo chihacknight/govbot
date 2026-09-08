@@ -816,6 +816,398 @@ def enrich_results(doc, results_path, now, source_url=None):
 
 
 # --------------------------------------------------------------------------- #
+# Potential candidates — unofficial names from public news coverage
+# --------------------------------------------------------------------------- #
+# The official candidates[] list only ever holds people an election authority has
+# confirmed. But long before filing opens, outlets report who is running,
+# exploring, or rumored to run. This adapter surfaces those names as a *separate*,
+# clearly-unofficial potential_candidates[] list, each tied to the article(s) it
+# came from so a reader can verify. It reads Google News' public RSS search (an
+# aggregator over Illinois/Chicago outlets) — the "internet" source; raw social-
+# platform scraping is neither TOS-safe nor reliable, so we don't do it. A name is
+# attached ONLY when a headline both names the person next to a candidacy verb and
+# references the race's office (and, for a district race, its district). Nothing
+# is invented, and this signal never becomes a ballot record — no petition status,
+# money, or votes ride on it.
+NEWS_RSS_BASE = "https://news.google.com/rss/search"
+POTENTIAL_MAX_PER_RACE = 12      # cap names surfaced per race
+POTENTIAL_MAX_SOURCES = 6        # cap articles kept per name
+POTENTIAL_FETCH_SLEEP = 0.7      # be polite between pooled group fetches
+
+# Signal verbs -> status. "announced" is a firm declaration; "exploring" is a
+# maybe. Order matters: the strongest signal seen for a name wins.
+_ANNOUNCE_VERBS = (
+    r"announces?|announced|launch(?:es|ed)?|enters?|entered|joins?|joined|"
+    r"declares?|declared|files?|filed|to run|running for|will run|"
+    r"kicks? off|jumps? in(?:to)?|throws? (?:his|her|their) hat|"
+    r"seeks?|to seek|enters? the race|launch(?:es|ed)? (?:a )?(?:bid|campaign)")
+_EXPLORE_VERBS = (
+    r"mulls?|mulling|weighs?|weighing|considers?|considering|eyes?|eyeing|"
+    r"explores?|exploring|could run|may run|might run|thinking about|"
+    r"reportedly|rumored|floated|expected to run|potential(?:ly)?|possible")
+
+_NAME = r"([A-Z][a-zA-Z.'’-]+(?:\s+(?:[A-Z]\.?|[A-Z][a-zA-Z.'’-]+)){1,2})"
+
+# Person-name is <name> <verb>, or <office-word> candidate/hopeful <name>.
+_ANNOUNCE_RE = re.compile(_NAME + r"\s+(?:" + _ANNOUNCE_VERBS + r")\b")
+_EXPLORE_RE = re.compile(_NAME + r"\s+(?:" + _EXPLORE_VERBS + r")\b")
+_REVERSE_RE = re.compile(
+    r"\b(?:candidate|hopeful|contender)\s+" + _NAME + r"\b")
+_BID_RE = re.compile(_NAME + r"['’]s\s+(?:bid|campaign|run)\b")
+
+# Tokens that are never a person's given/sur-name in this context; a candidate
+# match containing any of these is rejected (kills "Chicago Mayor", "Ward Five",
+# "Board President", month/day words, outlet-ish words, etc.).
+_NAME_STOPWORDS = {
+    "chicago", "illinois", "cook", "county", "city", "board", "education",
+    "school", "mayor", "mayoral", "alderman", "alderperson", "alderwoman",
+    "ward", "district", "council", "councilmember", "police", "president",
+    "election", "elections", "who", "new", "the", "state", "community",
+    "special", "report", "news", "candidate", "candidates", "running", "race",
+    "primary", "general", "runoff", "vote", "voters", "ballot", "committee",
+    "commissioner", "trustee", "governor", "senate", "house", "congress",
+    "january", "february", "march", "april", "may", "june", "july", "august",
+    "september", "october", "november", "december", "monday", "tuesday",
+    "wednesday", "thursday", "friday", "saturday", "sunday", "this", "next",
+    "here", "meet", "poll", "opinion", "editorial", "endorses", "endorsement",
+    # common headline/event nouns — guard the weaker "candidate NAME" pattern
+    # against title-case phrases like "Candidate Forum Draws Crowd".
+    "forum", "debate", "guide", "tracker", "roundup", "questionnaire", "field",
+    "spotlight", "event", "night", "crowd", "draws", "hall", "recap", "preview",
+    "explainer", "primer", "rundown", "lineup", "slate", "profiles", "profile",
+    "list", "questions", "answers", "town", "watch", "update", "updates",
+    "coverage", "results", "forums", "debates",
+}
+
+
+def _office_terms(race):
+    """(required office keywords, whether a district token is also required) for
+    matching a headline to a race. A headline must contain at least one office
+    keyword — and, for district races, the district token — before any name from
+    it is attributed to this race."""
+    g = race.get("office_group")
+    office = (race.get("office") or "").lower()
+    if g == "citywide":
+        if "mayor" in office:
+            return (["mayor", "mayoral"], False)
+        if "clerk" in office:
+            return (["city clerk", "clerk"], False)
+        if "treasurer" in office:
+            return (["city treasurer", "treasurer"], False)
+        return ([office], False)
+    if g == "council":
+        return (["alder"], True)
+    if g == "cps_board":
+        return (["board of education", "school board", "cps",
+                 "board of ed"], not race.get("is_citywide"))
+    if g == "police_district_council":
+        return (["police district council", "district council",
+                 "police district"], True)
+    return ([office] if office else [], bool(race.get("district")))
+
+
+_ORD = r"(?:st|nd|rd|th)"
+
+
+def _district_patterns(race):
+    """Regex patterns (word-boundary anchored) that must match a headline for a
+    district race — e.g. ward 5 -> r'\\bward 0*5\\b' | r'\\b0*5(?:st|nd|rd|th)
+    ward\\b'. Boundaries are essential: a naive 'ward 5' substring also matches
+    'ward 50' and '5th ward' matches '25th ward'. Empty for citywide races."""
+    g = race.get("office_group")
+    pats = []
+    if g == "council":
+        w = _ward(race.get("district"))
+        if w:
+            pats += [rf"\bward\s+0*{w}\b", rf"\b0*{w}{_ORD}\s+ward\b"]
+    elif g == "cps_board" and not race.get("is_citywide"):
+        sub = _subdistrict(race.get("district"))
+        if sub:
+            n, letter = sub[:-1], sub[-1].lower()
+            pats += [rf"\b(?:sub-?district\s+|district\s+)?0*{n}\s*{letter}\b"]
+    elif g == "police_district_council":
+        pd = _police_district(race.get("district"))
+        if pd:
+            pats += [rf"\b(?:police\s+)?district\s+0*{pd}\b",
+                     rf"\b0*{pd}{_ORD}\s+(?:police\s+)?district\b"]
+    return pats
+
+
+# Honorifics / role prefixes a headline puts before a name ("Rep. Mike Quigley",
+# "Comptroller Susana Mendoza", "Dr. Lisa Nee"). Stripped from the front so the
+# same person doesn't split into two potential candidates.
+_TITLE_PREFIXES = {
+    "rep", "reps", "sen", "us", "usrep", "gov", "mayor", "ald", "alderman",
+    "alderperson", "alderwoman", "comptroller", "dr", "mr", "ms", "mrs", "mx",
+    "businessman", "businesswoman", "lobbyist", "cardiologist", "former",
+    "congressman", "congresswoman", "judge", "attorney", "prof", "professor",
+    "commissioner", "chairman", "chairwoman", "chair", "sec", "secretary",
+    "gen", "capt", "rev", "hon", "councilman", "councilwoman", "councilmember",
+    "activist", "advocate", "pastor", "coach", "sheriff", "treasurer", "clerk",
+    "president", "governor", "senator", "representative", "state", "county",
+    "ceo", "founder", "chief", "supt", "superintendent", "candidate",
+}
+
+
+def _strip_titles(name):
+    """Drop leading honorific/role tokens from a captured name."""
+    parts = [p for p in _clean(name).split() if p]
+    while parts:
+        base = re.sub(r"[.'’-]", "", parts[0]).lower()
+        if base in _TITLE_PREFIXES:
+            parts.pop(0)
+        else:
+            break
+    return " ".join(parts)
+
+
+def _valid_person(name):
+    """A conservative gate: 2-3 tokens, each capitalized and not an office/place/
+    calendar stopword, not an all-caps acronym."""
+    name = _clean(name)
+    parts = [p for p in name.split() if p]
+    if not (2 <= len(parts) <= 3):
+        return False
+    if name.isupper():
+        return False
+    for p in parts:
+        base = re.sub(r"[.'’-]", "", p).lower()
+        if not base or base in _NAME_STOPWORDS:
+            return False
+        if len(base) == 1:  # a bare initial like "R" is fine only mid-name
+            continue
+    return True
+
+
+def headline_matches_race(headline, race):
+    """True when a headline references this race — its office keyword, plus the
+    district token for a district race. The gate that keeps a name from one race's
+    coverage off another race."""
+    low = _clean(headline).lower()
+    terms, need_district = _office_terms(race)
+    if terms and not any(t in low for t in terms):
+        return False
+    if need_district:
+        pats = _district_patterns(race)
+        if not pats or not any(re.search(p, low) for p in pats):
+            return False
+    return True
+
+
+def extract_candidacy(headline, race):
+    """Names a headline attributes to `race`, as [(name, status)]. Returns [] when
+    the headline doesn't reference this race's office (and district, for a district
+    race) or no candidacy pattern with a valid person-name matches. Deterministic;
+    no network."""
+    text = _clean(headline)
+    if not headline_matches_race(text, race):
+        return []
+    found = {}  # name_key -> (display_name, status)
+    for regex, status in ((_ANNOUNCE_RE, "announced"), (_BID_RE, "announced"),
+                          (_REVERSE_RE, "reported"), (_EXPLORE_RE, "exploring")):
+        for m in regex.finditer(text):
+            name = _strip_titles(m.group(1))
+            if not _valid_person(name):
+                continue
+            key = name.lower()
+            # Strongest signal wins (announced > exploring > reported).
+            rank = {"announced": 3, "exploring": 2, "reported": 1}
+            if key not in found or rank[status] > rank[found[key][1]]:
+                found[key] = (name, status)
+    return list(found.values())
+
+
+def parse_news_rss(xml_text):
+    """Parse a Google News RSS search result into items [{title, link,
+    publisher, date}]. `title` is the bare headline (the ' - Publisher' suffix
+    Google appends is stripped). Pure/deterministic; bad XML yields []."""
+    try:
+        root = ET.fromstring(xml_text or "")
+    except ET.ParseError:
+        return []
+    out = []
+    for it in root.findall(".//item"):
+        title = (it.findtext("title") or "").strip()
+        link = (it.findtext("link") or "").strip()
+        # <source> carries the outlet; Google also appends ' - Outlet' to titles.
+        src_el = it.find("source")
+        if src_el is None:
+            src_el = it.find("{*}source")
+        publisher = (src_el.text.strip() if src_el is not None and src_el.text else None)
+        headline = title
+        if publisher and headline.endswith(" - " + publisher):
+            headline = headline[: -(len(publisher) + 3)].rstrip()
+        elif " - " in headline:
+            head, _, tail = headline.rpartition(" - ")
+            if head and tail and not publisher:
+                headline, publisher = head.strip(), tail.strip()
+        out.append({
+            "title": headline,
+            "link": link,
+            "publisher": publisher,
+            "date": _rss_date(it.findtext("pubDate")),
+        })
+    return out
+
+
+def _rss_date(raw):
+    """ISO YYYY-MM-DD from an RFC-822 RSS pubDate; None if unparseable."""
+    t = (raw or "").strip()
+    if not t:
+        return None
+    try:
+        from email.utils import parsedate_to_datetime
+        dt = parsedate_to_datetime(t)
+        return dt.strftime("%Y-%m-%d") if dt else None
+    except (TypeError, ValueError):
+        return None
+
+
+def news_url(query):
+    from urllib.parse import quote_plus
+    return (f"{NEWS_RSS_BASE}?q={quote_plus(query)}"
+            "&hl=en-US&gl=US&ceid=US:en")
+
+
+def _news_query_for_race(race):
+    """A citywide race gets its own office query; district races share one broad
+    per-group query (the pool is filtered per race by the district token)."""
+    office = race.get("office") or ""
+    yr = (race.get("ballot_date") or "")[:4]
+    if "mayor" in office.lower():
+        return 'Chicago mayor candidate ' + (yr or "2027")
+    if "clerk" in office.lower():
+        return 'Chicago "city clerk" candidate ' + (yr or "2027")
+    if "treasurer" in office.lower():
+        return 'Chicago "city treasurer" candidate ' + (yr or "2027")
+    return f"Chicago {office} candidate {yr}".strip()
+
+
+_GROUP_QUERY = {
+    "council": 'Chicago City Council alderman candidate ward',
+    "cps_board": '"Chicago Board of Education" candidate',
+    "police_district_council": 'Chicago "Police District Council" candidate',
+}
+
+
+def fetch_news_items(query):
+    """Live fetch+parse of one news query. Fail-soft: any failure yields []."""
+    return parse_news_rss(fetch_text(news_url(query)))
+
+
+def build_potential(race, items, now, existing=None):
+    """Assemble a race's potential_candidates[] from news `items` (already the
+    relevant pool), merged with any `existing` list so names/sources accumulate
+    across the twice-daily runs. Pure/deterministic given its inputs."""
+    people = {}  # name_key -> record
+
+    def _seed(name):
+        key = name.lower()
+        if key not in people:
+            people[key] = {"name": name, "status": None, "sources": [],
+                           "_urls": set(), "_dates": set()}
+        return people[key]
+
+    # Carry forward what we already had (older articles roll out of the news
+    # window; keeping them preserves a real first_seen and the citations).
+    for p in (existing or []):
+        rec = _seed(p.get("name") or "")
+        rec["status"] = p.get("status")
+        for s in p.get("sources", []):
+            url = s.get("url")
+            if url and url not in rec["_urls"]:
+                rec["_urls"].add(url)
+                rec["sources"].append({"title": s.get("title"), "url": url,
+                                       "publisher": s.get("publisher"),
+                                       "date": s.get("date")})
+                if s.get("date"):
+                    rec["_dates"].add(s["date"])
+
+    rank = {"announced": 3, "exploring": 2, "reported": 1, None: 0}
+
+    def _add_source(rec, it):
+        url = it.get("link")
+        if url and url not in rec["_urls"]:
+            rec["_urls"].add(url)
+            rec["sources"].append({"title": it.get("title"), "url": url,
+                                   "publisher": it.get("publisher"),
+                                   "date": it.get("date")})
+            if it.get("date"):
+                rec["_dates"].add(it["date"])
+
+    # Pass 1: candidacy patterns discover names (and their signal strength).
+    for it in items:
+        for name, status in extract_candidacy(it.get("title", ""), race):
+            rec = _seed(name)
+            if rank[status] > rank[rec["status"]]:
+                rec["status"] = status
+            _add_source(rec, it)
+
+    # Pass 2: for a name already established (here or from a prior run), any other
+    # race-relevant headline that mentions it is supporting coverage — so ongoing
+    # stories accumulate without a weak headline ever inventing a *new* name.
+    if people:
+        for it in items:
+            title = it.get("title", "")
+            if not headline_matches_race(title, race):
+                continue
+            low = title.lower()
+            for key, rec in people.items():
+                if key in low:
+                    _add_source(rec, it)
+
+    out = []
+    for rec in people.values():
+        if not rec["sources"]:
+            continue
+        dates = sorted(rec["_dates"])
+        rec["sources"].sort(key=lambda s: (s.get("date") or ""), reverse=True)
+        out.append({
+            "name": rec["name"],
+            "status": rec["status"],
+            "mentions": len(rec["sources"]),
+            "first_seen": dates[0] if dates else None,
+            "last_seen": dates[-1] if dates else None,
+            "sources": rec["sources"][:POTENTIAL_MAX_SOURCES],
+        })
+    # Most-cited first, then firmest signal, then name — stable and useful.
+    rank2 = {"announced": 3, "exploring": 2, "reported": 1, None: 0}
+    out.sort(key=lambda p: (-p["mentions"], -rank2[p["status"]], p["name"].lower()))
+    return out[:POTENTIAL_MAX_PER_RACE]
+
+
+def enrich_potential(doc, now, fetcher=fetch_news_items, sleep=POTENTIAL_FETCH_SLEEP):
+    """Attach unofficial, news-sourced potential_candidates[] to each race in an
+    assembled elections doc, in place. One pooled news query per office group
+    (plus one per citywide office); each race extracts only names whose headline
+    references it. `fetcher` is injectable so tests run offline. Returns the
+    number of races given at least one potential candidate."""
+    import time
+    races = doc.get("races", [])
+    # Group fetches: pool district races by office group, citywide per race.
+    group_pool = {}
+    for g, q in _GROUP_QUERY.items():
+        if any(r.get("office_group") == g for r in races):
+            group_pool[g] = fetcher(q) or []
+            if sleep:
+                time.sleep(sleep)
+    updated = 0
+    for r in races:
+        g = r.get("office_group")
+        if g in group_pool:
+            items = group_pool[g]
+        else:
+            items = fetcher(_news_query_for_race(r)) or []
+            if sleep:
+                time.sleep(sleep)
+        pcs = build_potential(r, items, now, existing=r.get("potential_candidates"))
+        r["potential_candidates"] = pcs
+        if pcs:
+            updated += 1
+    return updated
+
+
+# --------------------------------------------------------------------------- #
 # assembly
 # --------------------------------------------------------------------------- #
 def load_seed(seed_path=SEED_PATH):
@@ -838,6 +1230,10 @@ def assemble(candidates, seed, source, now, springfield=None):
     for r in races:
         r.pop("note", None)
         r["candidates"] = []
+        # Unofficial, news-sourced names attach later via --enrich-potential; the
+        # base build always ships the field empty so the shape is stable and the
+        # committed sample never carries a fabricated name.
+        r.setdefault("potential_candidates", [])
     by_id = {r["id"]: r for r in races}
 
     placed, unplaced = 0, 0
@@ -1153,6 +1549,13 @@ def main():
                          "authority, for --enrich-results")
     ap.add_argument("--results-url", default=None,
                     help="Official results page URL recorded on each results block")
+    ap.add_argument("--enrich-potential", default=None,
+                    help="Attach UNOFFICIAL, news-sourced potential_candidates[] to "
+                         "each race in an existing elections.json (rewritten in "
+                         "place) from Google News RSS, then exit. Merges with the "
+                         "file's current potential_candidates so names/citations "
+                         "accumulate across runs. Fail-soft: sources down leaves the "
+                         "lists as they were")
     args = ap.parse_args()
 
     now = (datetime.strptime(args.now, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
@@ -1174,6 +1577,15 @@ def main():
         n = enrich_results(doc, args.results_file or "", now, args.results_url)
         Path(args.enrich_results).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
         print(f"attached results to {n} race(s)", file=sys.stderr)
+        return 0
+
+    if args.enrich_potential:
+        doc = load_json(args.enrich_potential)
+        if doc is None:
+            return 0
+        n = enrich_potential(doc, now)
+        Path(args.enrich_potential).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
+        print(f"attached news-sourced potential candidates to {n} race(s)", file=sys.stderr)
         return 0
 
     seed = load_seed(args.seed)

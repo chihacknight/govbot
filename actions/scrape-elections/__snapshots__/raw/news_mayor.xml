@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>"Chicago mayor" candidate - Google News</title>
+    <link>https://news.google.com/search</link>
+    <description>Sample fixture modeled on Google News RSS search output.</description>
+    <language>en-US</language>
+    <item>
+      <title>Jordan A. Rivers announces run for Chicago mayor in 2027 - Sample Tribune</title>
+      <link>https://news.google.com/rss/articles/aaa</link>
+      <guid isPermaLink="false">aaa</guid>
+      <pubDate>Tue, 02 Sep 2026 14:30:00 GMT</pubDate>
+      <source url="https://sampletribune.example">Sample Tribune</source>
+    </item>
+    <item>
+      <title>Chicago mayoral candidate Dana Q. Fields lays out platform - Sample WTTW</title>
+      <link>https://news.google.com/rss/articles/bbb</link>
+      <guid isPermaLink="false">bbb</guid>
+      <pubDate>Wed, 03 Sep 2026 09:00:00 GMT</pubDate>
+      <source url="https://samplewttw.example">Sample WTTW</source>
+    </item>
+    <item>
+      <title>Alex Placeholder mulls a bid for mayor as field grows - Sample Sun</title>
+      <link>https://news.google.com/rss/articles/ccc</link>
+      <guid isPermaLink="false">ccc</guid>
+      <pubDate>Mon, 01 Sep 2026 12:00:00 GMT</pubDate>
+      <source url="https://samplesun.example">Sample Sun</source>
+    </item>
+    <item>
+      <title>Jordan A. Rivers picks up key endorsement in mayor's race - Sample WGN</title>
+      <link>https://news.google.com/rss/articles/ddd</link>
+      <guid isPermaLink="false">ddd</guid>
+      <pubDate>Thu, 04 Sep 2026 18:15:00 GMT</pubDate>
+      <source url="https://samplewgn.example">Sample WGN</source>
+    </item>
+    <item>
+      <title>Who is running for Chicago mayor? Here is the field so far - Sample ABC</title>
+      <link>https://news.google.com/rss/articles/eee</link>
+      <guid isPermaLink="false">eee</guid>
+      <pubDate>Fri, 05 Sep 2026 08:00:00 GMT</pubDate>
+      <source url="https://sampleabc.example">Sample ABC</source>
+    </item>
+    <item>
+      <title>City Council approves new budget after long debate - Sample Tribune</title>
+      <link>https://news.google.com/rss/articles/fff</link>
+      <guid isPermaLink="false">fff</guid>
+      <pubDate>Sat, 06 Sep 2026 08:00:00 GMT</pubDate>
+      <source url="https://sampletribune.example">Sample Tribune</source>
+    </item>
+  </channel>
+</rss>
