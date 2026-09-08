@@ -158,6 +158,7 @@ jobs:
             --rss /tmp/hearings.xml \
             --rss-feeds-dir /tmp/hearings_feeds \
             --dashboard-data docs/src/dashboard/data.json \
+            --participation docs/src/dashboard/participation.json \
             || echo "::warning::hearings scrape reported errors"
           if [ -s /tmp/hearings.json ] && \
              [ "$(python3 -c 'import json,sys; print(len(json.load(open("/tmp/hearings.json"))["hearings"]))' 2>/dev/null || echo 0)" -gt 0 ]; then

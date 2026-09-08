@@ -1134,13 +1134,47 @@ def hearing_feeds(doc):
     return feeds
 
 
-def all_feeds(doc):
+def participation_feeds(doc, participation_path):
+    """An empty-but-valid per-jurisdiction feed for every participation-directory
+    state that has no live feed yet, so a reader can subscribe to their state
+    now and get items the moment it starts posting hearings. Never overwrites a
+    populated jurisdiction feed. Fail-soft: a missing/bad participation file
+    contributes nothing. Returns {filename: xml_string}."""
+    try:
+        data = json.loads(Path(participation_path).read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+    built_822, names = _feed_prelude(doc)
+    have = {h["jurisdiction"] for h in doc.get("hearings", [])}
+    feeds = {}
+    for j in data.get("jurisdictions", []):
+        code = j.get("code")
+        if not code or code in have:
+            continue  # populated feed already produced by jurisdiction_feeds
+        state = j.get("name", code.upper())
+        fname = jurisdiction_feed_name(code)
+        feeds[fname] = _feed_xml(
+            f"govbot — {state}: upcoming committee hearings",
+            f"Upcoming {state} legislative committee hearings. No hearings are "
+            f"in govbot's window yet; subscribe now to get them when {state} "
+            f"starts posting. Refreshed twice daily.",
+            DASHBOARD_URL + "hearings/" + fname, [], names, built_822)
+    return feeds
+
+
+def all_feeds(doc, participation_path=None):
     """Every per-entity feed to publish alongside the whole-calendar hearings.xml:
-    one per bill, one per jurisdiction, and one per hearing."""
+    one per bill, one per jurisdiction, one per hearing, and (when a participation
+    directory is given) an empty placeholder feed for every not-yet-live state."""
     feeds = {}
     feeds.update(bill_feeds(doc))
     feeds.update(jurisdiction_feeds(doc))
     feeds.update(hearing_feeds(doc))
+    if participation_path:
+        # Placeholders first so a real populated jurisdiction feed always wins.
+        placeholders = participation_feeds(doc, participation_path)
+        placeholders.update(feeds)
+        feeds = placeholders
     return feeds
 
 
@@ -1207,6 +1241,11 @@ def main():
     ap.add_argument("--dashboard-data", default="docs/src/dashboard/data.json",
                     help="govbot bill dataset (data.json) used to enrich hearing "
                          "bills with their govbot title + topic tags")
+    ap.add_argument("--participation", default=None,
+                    help="participation.json — when given, an empty placeholder "
+                         "per-jurisdiction RSS feed is written for every listed "
+                         "state that has no live hearings yet, so residents can "
+                         "subscribe before their state starts posting")
     args = ap.parse_args()
 
     now = (datetime.strptime(args.now, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
@@ -1258,7 +1297,7 @@ def main():
     if args.rss_feeds_dir:
         outdir = Path(args.rss_feeds_dir)
         outdir.mkdir(parents=True, exist_ok=True)
-        feeds = all_feeds(doc)
+        feeds = all_feeds(doc, args.participation)
         for fname, xml in feeds.items():
             (outdir / fname).write_text(xml)
         print(f"wrote {len(feeds)} granular RSS feeds to {outdir}", file=sys.stderr)

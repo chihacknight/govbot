@@ -157,7 +157,10 @@ RSS `hearings.xml` + granular RSS feeds under `docs/src/dashboard/hearings/` —
 (`hearing-<id>.xml`) — so a reader can follow one bill, a whole state, or a single hearing
 (schema `schemas/govbot.hearings.schema.json`), plus a static 56-jurisdiction participation
 directory `docs/src/dashboard/participation.json` (schema
-`schemas/govbot.participation.schema.json`). `deploy-docs.yml` rebuilds both the bill
+`schemas/govbot.participation.schema.json`). Passing `--participation <file>` also emits an
+empty placeholder `<code>.xml` for every participation state with no live hearings yet, so
+each "Weigh in — by state" card carries a "Follow this state (RSS)" link that starts empty
+and fills when that state opens (its filter box has a colored border + search icon). `deploy-docs.yml` rebuilds both the bill
 `data.json` and the hearings feed on the twice-daily schedule. Hearings parsers are
 offline-snapshot-tested: `python3 actions/scrape-hearings/test_scrape_hearings.py`.
 

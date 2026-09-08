@@ -325,7 +325,7 @@
   .sf-links { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11.5px; font-weight: 600; margin-top: 1px; }
 
   /* ---------- data-sources cabinet ---------- */
-  .cabinet { margin: 22px 0 0; border: 1px solid var(--border); border-top: 6px solid var(--series-3); border-radius: 12px; background: var(--surface-1); padding: 4px 16px; }
+  .cabinet { margin: 22px 0 0; border: 2px solid var(--series-3); border-top-width: 6px; border-radius: 12px; background: var(--surface-1); padding: 4px 16px; }
   .cabinet > summary { cursor: pointer; font-weight: 650; font-size: 14px; padding: 11px 0; list-style: none; display: flex; align-items: center; gap: 8px; }
   .cabinet > summary::-webkit-details-marker { display: none; }
   .cabinet > summary::before { content: "▸"; font-size: 11px; transition: transform 0.15s ease; color: var(--text-muted); }
@@ -341,7 +341,7 @@
   .cab-status.planned { color: var(--text-muted); border: 1px solid var(--border); }
 
   /* ---------- election calendar overview ---------- */
-  .calendar { margin-bottom: 20px; border: 1px solid var(--border); border-top: 6px solid var(--series-1); border-radius: 14px; padding: 16px 18px; }
+  .calendar { margin-bottom: 20px; border: 2px solid var(--series-1); border-top-width: 6px; border-radius: 14px; padding: 16px 18px; }
   .calendar h2 { font-size: 16px; font-weight: 700; margin: 0 0 4px; }
   .calendar .cal-sub { color: var(--text-muted); font-size: 12.5px; margin: 0 0 12px; }
   .cal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
@@ -583,8 +583,7 @@
       <h1>Elections Happening in IL</h1>
       <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
     </div>
-    <p>Every office on upcoming Chicago &amp; Illinois ballots — citywide, all 50 wards, the CPS Board, and Police District Councils — with candidates as they're confirmed from official sources.
-       <a class="docs-link" href="../index.html">govbot docs</a> ·
+    <p><a class="docs-link" href="../index.html">govbot docs</a> ·
        <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
   </header>
 
