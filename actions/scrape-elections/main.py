@@ -1008,6 +1008,33 @@ def group_feeds(doc):
     return feeds
 
 
+def ballot_feed_name(date):
+    return f"ballot-{date}.xml"
+
+
+def ballot_feeds(doc):
+    """One RSS feed per ballot date (all races sharing an Election Day), so a
+    reader can follow a whole ballot — e.g. the 2026 CPS election or the 2027
+    Chicago municipal election — rather than a single office group or race."""
+    built_822 = _feed_prelude(doc)
+    by_date = {}
+    for r in doc.get("races", []):
+        if r.get("ballot_date"):
+            by_date.setdefault(r["ballot_date"], []).append(r)
+    feeds = {}
+    for date, races in by_date.items():
+        groups = {rr["office_group"] for rr in races}
+        label = ("Chicago Board of Education (CPS)"
+                 if groups == {"cps_board"} else "Chicago municipal election")
+        fname = ballot_feed_name(date)
+        feeds[fname] = _feed_xml(
+            f"govbot — {label}: races on the {date} ballot",
+            f"Every race on the {label} ballot ({date}) govbot is tracking, "
+            f"refreshed twice daily.",
+            DASHBOARD_URL + "elections/" + fname, races, built_822)
+    return feeds
+
+
 def race_feed_name(race_id):
     safe = re.sub(r"[^A-Za-z0-9._-]", "-", race_id or "")
     return f"race-{safe}.xml"
@@ -1071,6 +1098,7 @@ def springfield_feed(doc):
 def all_feeds(doc):
     feeds = {}
     feeds.update(group_feeds(doc))
+    feeds.update(ballot_feeds(doc))
     feeds.update(race_feeds(doc))
     feeds.update(springfield_feed(doc))
     return feeds

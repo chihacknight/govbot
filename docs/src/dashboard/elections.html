@@ -150,12 +150,19 @@
 
   /* ---------- intro callout (why this page exists) ---------- */
   .intro {
-    border: 2px solid var(--series-2); border-radius: 14px; padding: 14px 16px;
+    border: 2px solid var(--series-2); border-top-width: 6px; border-radius: 14px; padding: 14px 16px;
     background: linear-gradient(180deg, color-mix(in srgb, var(--series-2) 10%, var(--surface-1)) 0%, var(--surface-1) 70%);
     margin-bottom: 18px; line-height: 1.55;
   }
   .intro b { font-weight: 700; }
   .intro .intro-ico { font-size: 18px; }
+
+  /* ---------- table of contents ---------- */
+  .toc { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0 0 18px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-1); font-size: 13px; }
+  .toc .toc-label { font-weight: 700; color: var(--text-muted); margin-right: 2px; }
+  .toc a { text-decoration: none; color: var(--text-secondary); font-weight: 600; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--border); }
+  .toc a:hover { color: var(--text-primary); background: var(--hover-wash); }
+  #calendar, #springfield, #races, #cabinet { scroll-margin-top: 14px; }
 
   /* ---------- filters ---------- */
   .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 16px 0 18px; }
@@ -187,7 +194,7 @@
   /* ---------- office-group sections ---------- */
   .groups { display: flex; flex-direction: column; gap: 16px; }
   .group {
-    border: 2px solid var(--gc, var(--series-2)); border-radius: 12px;
+    border: 2px solid var(--gc, var(--series-2)); border-top-width: 6px; border-radius: 12px;
     background: var(--surface-1); padding: 14px 15px 6px;
   }
   .group-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-bottom: 10px; border-bottom: 2px solid var(--gc, var(--gridline)); margin-bottom: 6px; }
@@ -280,14 +287,14 @@
   .no-cands a { font-weight: 600; }
   .race-foot { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 2px; padding-top: 7px; border-top: 1px solid var(--gridline); }
   .src-link, .race-rss { font-size: 11.5px; font-weight: 600; }
-  .race-rss { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; color: var(--series-2); background: none; border: none; padding: 0; font-family: inherit; }
+  .race-rss { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; color: var(--series-6); background: none; border: none; padding: 0; font-family: inherit; }
   .race-rss:hover { text-decoration: underline; }
 
   .empty { color: var(--text-muted); padding: 24px; text-align: center; }
 
   /* ---------- Springfield "rules of the game" panel ---------- */
   .springfield {
-    margin-bottom: 20px; border: 2px solid var(--series-5); border-radius: 14px;
+    margin-bottom: 20px; border: 2px solid var(--series-5); border-top-width: 6px; border-radius: 14px;
     padding: 16px 18px 14px;
     background: linear-gradient(180deg, color-mix(in srgb, var(--series-5) 8%, var(--surface-1)) 0%, var(--surface-1) 60%);
   }
@@ -318,7 +325,7 @@
   .sf-links { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11.5px; font-weight: 600; margin-top: 1px; }
 
   /* ---------- data-sources cabinet ---------- */
-  .cabinet { margin: 22px 0 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-1); padding: 4px 16px; }
+  .cabinet { margin: 22px 0 0; border: 1px solid var(--border); border-top: 6px solid var(--series-3); border-radius: 12px; background: var(--surface-1); padding: 4px 16px; }
   .cabinet > summary { cursor: pointer; font-weight: 650; font-size: 14px; padding: 11px 0; list-style: none; display: flex; align-items: center; gap: 8px; }
   .cabinet > summary::-webkit-details-marker { display: none; }
   .cabinet > summary::before { content: "▸"; font-size: 11px; transition: transform 0.15s ease; color: var(--text-muted); }
@@ -334,7 +341,7 @@
   .cab-status.planned { color: var(--text-muted); border: 1px solid var(--border); }
 
   /* ---------- election calendar overview ---------- */
-  .calendar { margin-bottom: 20px; }
+  .calendar { margin-bottom: 20px; border: 1px solid var(--border); border-top: 6px solid var(--series-1); border-radius: 14px; padding: 16px 18px; }
   .calendar h2 { font-size: 16px; font-weight: 700; margin: 0 0 4px; }
   .calendar .cal-sub { color: var(--text-muted); font-size: 12.5px; margin: 0 0 12px; }
   .cal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
@@ -373,7 +380,7 @@
   details.tl-details .tl { margin-top: 10px; padding-left: 2px; }
 
   /* ---------- RSS popover (shared) ---------- */
-  .rss-link { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 600; text-decoration: none; color: var(--series-2); background: none; border: none; padding: 0; white-space: nowrap; }
+  .rss-link { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 600; text-decoration: none; color: var(--series-6); background: none; border: none; padding: 0; white-space: nowrap; }
   .rss-link:hover { text-decoration: underline; }
   .rss-pop { position: fixed; z-index: 40; width: 320px; max-width: 86vw; background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.22); padding: 12px 13px; text-align: left; }
   .rss-pop[hidden] { display: none; }
@@ -503,9 +510,10 @@
   :root[data-design="new"] .filters input,
   :root[data-design="new"] .filters select { border-radius: 12px; }
   :root[data-design="new"] .rss-copy { background: var(--rh-green); color: #06210a; }
+  :root[data-design="new"] details.tl-details > summary { color: var(--rh-green-strong); }
+  /* RSS links stay red across themes/designs. */
   :root[data-design="new"] .rss-link, :root[data-design="new"] .race-rss,
-  :root[data-design="new"] details.tl-details > summary,
-  :root[data-design="new"] .group-rss .rss-link { color: var(--rh-green-strong); }
+  :root[data-design="new"] .group-rss .rss-link { color: var(--series-6); }
   :root[data-design="new"] a { color: var(--rh-green-strong); }
 
   /* badges & chips — flat pills */
@@ -580,6 +588,14 @@
        <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
   </header>
 
+  <nav class="toc" id="toc" aria-label="On this page">
+    <span class="toc-label">On this page</span>
+    <a href="#calendar" data-sec="calendar">🗓️ Election calendar</a>
+    <a href="#springfield" data-sec="springfield">🏛️ Rules of the game</a>
+    <a href="#races" data-sec="races">🗳️ Races by office</a>
+    <a href="#cabinet" data-sec="cabinet">📂 Data sources</a>
+  </nav>
+
   <div class="intro">
     <span class="intro-ico" aria-hidden="true">🗳️</span>
     <b>Two big ballots ahead.</b> On <b>Nov 3, 2026</b>, Chicago elects a <b>Board of Education</b> for the first time by popular vote — including its <b>first-ever elected President</b> — as the mayor-appointed hybrid board is phased out. Then the <b>2027 municipal election</b> puts the Mayor, City Clerk, City Treasurer, all 50 Alderpersons, and the Police District Councils on the ballot. Candidate lists are pulled from the Chicago Board of Elections and the Illinois State Board of Elections' “Who Is Running” list; a race with no one listed yet links to its official source rather than guessing.
@@ -603,7 +619,7 @@
       <button type="button" class="sf-filter" data-sf="education" aria-pressed="false">Education</button>
       <span class="sf-rss"><button type="button" class="rss-link" id="sf-rss-btn" aria-haspopup="dialog" title="Subscribe to the Springfield bills feed">
         <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"/></svg>
-        Follow (RSS)</button></span>
+        Follow this race (RSS)</button></span>
     </div>
     <div class="sf-list" id="sf-list"></div>
   </section>
@@ -619,16 +635,17 @@
     <button type="button" class="clear-btn" id="f-clear" disabled>Clear</button>
     <span style="margin-left:auto"><button type="button" class="rss-link" id="rss-all" aria-haspopup="dialog" aria-expanded="false" title="Subscribe to every race in a feed reader">
       <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"/></svg>
-      Subscribe to all (RSS)</button></span>
+      Follow this race (RSS)</button></span>
   </div>
 
   <div class="tiles" id="tiles"></div>
 
+  <div id="races" aria-hidden="true"></div>
   <p class="empty" id="loading">Loading Illinois &amp; Chicago races…</p>
   <div class="groups" id="groups"></div>
   <p class="empty" id="empty" hidden>No races match the current filters.</p>
 
-  <details class="cabinet" open>
+  <details class="cabinet" id="cabinet" open>
     <summary>📂 Where the data comes from</summary>
     <p class="cab-intro">This site isn't the official clerk — it's a <b>cabinet</b> that puts the sources in one place so a Chicagoan can ask "who's running in my CPS subdistrict and my ward, and when do I vote?" A fully assembled race draws on up to five drawers: <b>map · candidates · money · results · context</b>. Here's what each source owns and what's live today.</p>
     <div class="cab-grid">
@@ -773,6 +790,12 @@
     renderCalendar(data.races);
     $("calendar").hidden = false;
     initSpringfield(data.springfield || []);
+    // Hide any table-of-contents link whose section didn't render (e.g. an
+    // empty Springfield feed).
+    document.querySelectorAll("#toc a[data-sec]").forEach((a) => {
+      const target = document.getElementById(a.dataset.sec);
+      a.hidden = !target || target.hidden;
+    });
 
     // District locator maps (fail-soft; re-render when they arrive).
     fetch("maps.json")
@@ -912,7 +935,7 @@
       cnt.textContent = races_g.length + (races_g.length === 1 ? " race" : " races") +
         (filled ? " · " + filled + " with candidates" : "");
       const rss = document.createElement("span"); rss.className = "group-rss";
-      const rssBtn = mkRss("Follow this group", {
+      const rssBtn = mkRss("Follow this race (RSS)", {
         title: meta.label + " — subscribe",
         sub: "Every " + meta.label + " race in one feed.",
         url: FEED_BASE + "elections/group-" + g + ".xml",
@@ -1006,7 +1029,7 @@
       src.textContent = (r.source || "Official source") + " ↗";
       foot.append(src);
     }
-    foot.append(mkRss("Follow this race", {
+    foot.append(mkRss("Follow this race (RSS)", {
       title: raceHeadline(r) + " — subscribe",
       sub: "One race; the feed updates as candidates are confirmed.",
       url: FEED_BASE + "elections/race-" + r.id + ".xml",
@@ -1413,6 +1436,15 @@
       const labels = groups.map((g) => (GROUP_META[g] ? GROUP_META[g].label : g));
       forEl.textContent = races_d.length + " races — " + labels.join(", ");
       card.append(forEl);
+      // Follow the whole ballot (all races sharing this Election Day).
+      const ballotName = onlyCps ? "Chicago Board of Education (CPS)" : "Chicago municipal election";
+      const calRss = document.createElement("div"); calRss.style.margin = "0 0 10px";
+      calRss.append(mkRss("Follow this race (RSS)", {
+        title: ballotName + " — subscribe",
+        sub: "Every race on the " + prettyDate(date) + " ballot in one feed.",
+        url: FEED_BASE + "elections/ballot-" + date + ".xml",
+      }));
+      card.append(calRss);
       card.append(renderTimeline(rep.timeline, accent));
       grid.append(card);
     });

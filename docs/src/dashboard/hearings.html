@@ -1139,7 +1139,7 @@
     }));
   }
   function jurisdictionRssTrigger(code, name) {
-    return mkRssBtn("RSS", "Subscribe to all " + name + " hearings (RSS)", () => ({
+    return mkRssBtn("Follow this state (RSS)", "Subscribe to all " + name + " hearings (RSS)", () => ({
       title: "Follow all " + name + " hearings",
       sub: "Every upcoming " + name + " committee hearing in one feed. Copy it into your reader.",
       url: new URL("hearings/" + jurisdictionFeedName(code), location.href).href,
