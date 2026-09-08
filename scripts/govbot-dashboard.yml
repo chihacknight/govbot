@@ -114,7 +114,7 @@ tags:
       - "Expands early voting and mail-in ballot access"
       - "Sets voter registration and voter ID requirements"
       - "Reforms redistricting and campaign finance disclosure"
-    include_keywords: [election, elections, voting, voter, ballot, registration, redistricting, "campaign finance", "polling place"]
+    include_keywords: [election, elections, voting, voter, "voter registration", ballot, redistricting, "campaign finance", "polling place", "vote by mail", "early voting"]
     threshold: 0.72
 
   budget & taxes:
