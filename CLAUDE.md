@@ -172,7 +172,10 @@ Cook County Clerk, future). A candidate attaches to a race only when office+dist
 exactly (`race_id_for`) — unplaceable rows are dropped, never invented, and a race with no
 confirmed candidate keeps an empty list + a source link. It also writes a whole-ballot RSS
 `elections.xml` + granular feeds under `docs/src/dashboard/elections/` (per office group
-`group-<group>.xml`, per race `race-<id>.xml`). It also attaches a top-level
+`group-<group>.xml`, per ballot date `ballot-<YYYY-MM-DD>.xml`, per race `race-<id>.xml`).
+The page has an "On this page" table of contents; every RSS control reads "Follow this
+race (RSS)" in red; each major section carries a thick colored top border; the Legislation
+Dashboard's Bill column is plain text (the official-source link lives in the details card). It also attaches a top-level
 `springfield` list — the **"rules of the game"**: IL bills from the legislation
 `data.json` tagged `elections & voting` or `education` (the elected CPS board, ward/runoff
 rules, campaign finance), cross-referenced with `hearings.json` for upcoming ILGA hearings,
