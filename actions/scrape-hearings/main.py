@@ -991,13 +991,24 @@ def _pretty_when(h):
             f"{hh}:{m.group(5)} {ampm}")
 
 
+# Feed dates are published in Central time (CST/CDT) to match the govbot
+# dashboard's home turf; zoneinfo is DST-aware, with a UTC fallback if the IANA
+# database is unavailable (still a valid RFC-822 date, just not localized).
+try:
+    from zoneinfo import ZoneInfo
+    FEED_TZ = ZoneInfo("America/Chicago")
+except Exception:  # pragma: no cover - tzdata unavailable
+    FEED_TZ = timezone.utc
+
+
 def _feed_prelude(doc):
-    """Shared (built_822, names) derived from a hearings doc for feed rendering."""
+    """Shared (built_822, names) derived from a hearings doc for feed rendering.
+    built_822 is expressed in Central time."""
     from email.utils import format_datetime
     built = datetime.strptime(doc["generated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(
         tzinfo=timezone.utc)
     names = {j["code"]: j["name"] for j in doc.get("jurisdictions", [])}
-    return format_datetime(built), names
+    return format_datetime(built.astimezone(FEED_TZ)), names
 
 
 def _add_item(ch, h, state, built_822):

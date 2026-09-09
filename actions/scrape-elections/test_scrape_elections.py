@@ -182,6 +182,48 @@ class Feeds(unittest.TestCase):
         feeds = main.all_feeds(self.doc)
         self.assertIn('href="../feed.xsl"', feeds["race-chicago-mayor.xml"])
 
+    def test_richer_item_titles(self):
+        # A race-summary title is self-describing: office · ballot · count.
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(main.to_rss(self.doc))
+        titles = [it.findtext("title") for it in root.findall(".//item")]
+        mayor = next(t for t in titles if t.startswith("Mayor"))
+        self.assertIn("ballot", mayor)
+        self.assertTrue("candidate" in mayor or "no candidates yet" in mayor)
+
+    def test_central_time_pubdate(self):
+        # Feed dates are Central (CST/CDT), not UTC — offset is -0500/-0600.
+        xml = main.to_rss(self.doc)
+        self.assertTrue(("-0500" in xml) or ("-0600" in xml))
+        self.assertNotIn("+0000", xml)
+
+    def test_per_race_feed_expands_candidates_and_potentials(self):
+        import xml.etree.ElementTree as ET
+        doc = json.loads(json.dumps(self.doc))  # deep copy
+        mayor = next(r for r in doc["races"] if r["id"] == "chicago-mayor")
+        mayor["candidates"] = [{"name": "Jane O. Official", "office": "Mayor",
+                                "petition_status": "on_ballot", "filing_date": "2026-11-20"}]
+        mayor["potential_candidates"] = [
+            {"name": "Mike Quigley", "status": "announced", "mentions": 3,
+             "first_seen": "2026-01-01", "last_seen": "2026-06-29",
+             "sources": [{"title": "x", "url": "https://ex.example/q", "publisher": "WTTW", "date": "2026-06-29"}]}]
+        feed = main.race_feeds(doc)["race-chicago-mayor.xml"]
+        root = ET.fromstring(feed)
+        titles = [it.findtext("title") for it in root.findall(".//item")]
+        # summary + 1 official + 1 potential = 3 items
+        self.assertEqual(len(titles), 3)
+        self.assertTrue(any(t == "Jane O. Official — Mayor" for t in titles))
+        self.assertTrue(any(t.startswith("[UNOFFICIAL] Mike Quigley (announced)") for t in titles))
+        # guids are unique per item
+        guids = [it.findtext("guid") for it in root.findall(".//item")]
+        self.assertEqual(len(guids), len(set(guids)))
+
+    def test_empty_race_feed_is_single_summary(self):
+        import xml.etree.ElementTree as ET
+        feed = main.race_feeds(self.doc)["race-chicago-city-treasurer.xml"]
+        items = ET.fromstring(feed).findall(".//item")
+        self.assertEqual(len(items), 1)  # no candidates/potentials -> just summary
+
 
 class Springfield(unittest.TestCase):
     def setUp(self):

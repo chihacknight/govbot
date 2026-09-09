@@ -110,7 +110,9 @@ set (so it does nothing before an election).
 Long before filing opens, outlets report who's running, exploring, or rumored.
 `--enrich-potential` surfaces those names per race into a **separate**
 `potential_candidates` list — a rumor/coverage signal, kept strictly apart from
-the official `candidates` and never added to the RSS feeds.
+the official `candidates`. They appear in the **per-race** RSS feeds as items
+prefixed **`[UNOFFICIAL]`** and linked to a source article (so a rumor can't be
+mistaken for a ballot record); the aggregate feeds don't carry them.
 
 It reads **Google News' public RSS search** (an aggregator over the press — the
 "internet" source; raw social-platform scraping is neither TOS-safe nor reliable,
