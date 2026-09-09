@@ -1448,6 +1448,28 @@ def _add_candidate_item(ch, r, c, built_822):
     ET.SubElement(item, "pubDate").text = _date_822(c.get("filing_date"), built_822)
 
 
+def _add_timeline_item(ch, r, m, built_822):
+    """One item per dated election-calendar milestone (per-race feeds), e.g.
+    'Filing deadline — Mayor · Nov 23, 2026 (expected)'. The date is in the title
+    so a title-only reader sees it; pubDate stays the build time (not the future
+    milestone date) so readers don't hide the item until then."""
+    if not m.get("date"):
+        return
+    head = _race_headline(r)
+    when = _pretty_date(m["date"])
+    approx = " (expected)" if m.get("confirmed") is False else ""
+    item = ET.SubElement(ch, "item")
+    ET.SubElement(item, "title").text = f"🗓 {m['label']} — {head} · {when}{approx}"
+    ET.SubElement(item, "link").text = r.get("official_list_url") or DASHBOARD_URL + "elections.html"
+    desc = f"{m['label']} for {head}: {when}{approx}."
+    if m.get("note"):
+        desc += " " + m["note"]
+    ET.SubElement(item, "description").text = desc
+    ET.SubElement(item, "category").text = "Election calendar"
+    ET.SubElement(item, "guid", {"isPermaLink": "false"}).text = f"{r['id']}|tl|{_slug(m['label'])}"
+    ET.SubElement(item, "pubDate").text = built_822
+
+
 def _add_potential_item(ch, r, p, built_822):
     """One item per UNOFFICIAL, news-sourced potential candidate (per-race feeds
     only). Every such item is prefixed [UNOFFICIAL] and links to a source article,
@@ -1564,8 +1586,8 @@ def _race_feed_xml(r, built_822):
     ET.SubElement(ch, "link").text = DASHBOARD_URL + "elections.html"
     ET.SubElement(ch, "description").text = (
         "A single race tracked by govbot: a summary entry, one entry per candidate "
-        "as they are confirmed, and unofficial potential candidates the press has "
-        f"named. {r.get('why_note') or ''}".strip())
+        "as they are confirmed, unofficial potential candidates the press has named, "
+        f"and the key election-calendar dates. {r.get('why_note') or ''}".strip())
     ET.SubElement(ch, "language").text = "en-us"
     ET.SubElement(ch, "lastBuildDate").text = built_822
     ET.SubElement(ch, "atom:link", {"href": self_url, "rel": "self",
@@ -1575,6 +1597,8 @@ def _race_feed_xml(r, built_822):
         _add_candidate_item(ch, r, c, built_822)
     for p in r.get("potential_candidates") or []:
         _add_potential_item(ch, r, p, built_822)
+    for m in r.get("timeline") or []:  # election-calendar milestones
+        _add_timeline_item(ch, r, m, built_822)
     return _xml_prolog("../" + FEED_XSL) + ET.tostring(rss, encoding="unicode") + "\n"
 
 

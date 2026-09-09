@@ -210,19 +210,37 @@ class Feeds(unittest.TestCase):
         feed = main.race_feeds(doc)["race-chicago-mayor.xml"]
         root = ET.fromstring(feed)
         titles = [it.findtext("title") for it in root.findall(".//item")]
-        # summary + 1 official + 1 potential = 3 items
-        self.assertEqual(len(titles), 3)
+        dated = len([m for m in (mayor.get("timeline") or []) if m.get("date")])
+        # summary + 1 official + 1 potential + one per dated milestone
+        self.assertEqual(len(titles), 3 + dated)
         self.assertTrue(any(t == "Jane O. Official — Mayor" for t in titles))
         self.assertTrue(any(t.startswith("[UNOFFICIAL] Mike Quigley (announced)") for t in titles))
         # guids are unique per item
         guids = [it.findtext("guid") for it in root.findall(".//item")]
         self.assertEqual(len(guids), len(set(guids)))
 
-    def test_empty_race_feed_is_single_summary(self):
+    def test_per_race_feed_includes_timeline(self):
+        # Dated calendar milestones become their own items with the date in title.
         import xml.etree.ElementTree as ET
+        mayor = next(r for r in self.doc["races"] if r["id"] == "chicago-mayor")
+        feed = main.race_feeds(self.doc)["race-chicago-mayor.xml"]
+        titles = [it.findtext("title") for it in ET.fromstring(feed).findall(".//item")]
+        dated = [m for m in (mayor.get("timeline") or []) if m.get("date")]
+        if dated:
+            self.assertTrue(any(t.startswith("🗓 ") for t in titles))
+            # the milestone date is carried in the title (title-only readers)
+            self.assertTrue(any("," in t and "🗓" in t for t in titles))
+
+    def test_empty_race_feed_summary_plus_timeline_only(self):
+        # A race with no candidates still has its summary + any timeline items,
+        # but no candidate/potential items.
+        import xml.etree.ElementTree as ET
+        r = next(x for x in self.doc["races"] if x["id"] == "chicago-city-treasurer")
         feed = main.race_feeds(self.doc)["race-chicago-city-treasurer.xml"]
-        items = ET.fromstring(feed).findall(".//item")
-        self.assertEqual(len(items), 1)  # no candidates/potentials -> just summary
+        titles = [it.findtext("title") for it in ET.fromstring(feed).findall(".//item")]
+        self.assertFalse(any(t.startswith("[UNOFFICIAL]") for t in titles))
+        dated = len([m for m in (r.get("timeline") or []) if m.get("date")])
+        self.assertEqual(len(titles), 1 + dated)  # summary + timeline
 
 
 class Springfield(unittest.TestCase):
