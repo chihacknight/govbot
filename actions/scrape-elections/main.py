@@ -1279,6 +1279,18 @@ def assemble(candidates, seed, source, now, springfield=None):
 DASHBOARD_URL = "https://chihacknight.github.io/govbot/dashboard/"
 FEED_URL = DASHBOARD_URL + "elections.xml"
 
+# Attaching this XSLT makes a browser render the feed as a readable page instead
+# of a raw "this XML has no style information" tree (feed readers ignore it and
+# parse the RSS as usual). The stylesheet lives at dashboard/feed.xsl, so a
+# whole-ballot feed at the dashboard root references "feed.xsl" and a granular
+# feed one directory down references "../feed.xsl". See docs/src/dashboard/feed.xsl.
+FEED_XSL = "feed.xsl"
+
+
+def _xml_prolog(xsl_href):
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+            f'<?xml-stylesheet type="text/xsl" href="{xsl_href}"?>\n')
+
 OFFICE_GROUP_LABEL = {
     "citywide": "Chicago citywide",
     "council": "Alderperson (City Council)",
@@ -1354,7 +1366,7 @@ def _add_item(ch, r, built_822):
     ET.SubElement(item, "pubDate").text = built_822
 
 
-def _feed_xml(title, description, self_url, races, built_822):
+def _feed_xml(title, description, self_url, races, built_822, xsl_href="../" + FEED_XSL):
     rss = ET.Element("rss", {"version": "2.0",
                              "xmlns:atom": "http://www.w3.org/2005/Atom"})
     ch = ET.SubElement(rss, "channel")
@@ -1367,8 +1379,7 @@ def _feed_xml(title, description, self_url, races, built_822):
                                     "type": "application/rss+xml"})
     for r in races:
         _add_item(ch, r, built_822)
-    return ('<?xml version="1.0" encoding="UTF-8"?>\n'
-            + ET.tostring(rss, encoding="unicode") + "\n")
+    return _xml_prolog(xsl_href) + ET.tostring(rss, encoding="unicode") + "\n"
 
 
 def to_rss(doc):
@@ -1379,7 +1390,7 @@ def to_rss(doc):
         "Every office on upcoming Chicago and Illinois ballots (citywide, "
         "aldermanic, CPS board, and Police District Councils), with candidates "
         "as they are confirmed. Refreshed twice daily by govbot.",
-        FEED_URL, doc.get("races", []), built_822)
+        FEED_URL, doc.get("races", []), built_822, xsl_href=FEED_XSL)
 
 
 def office_group_feed_name(group):
@@ -1487,7 +1498,7 @@ def springfield_feed(doc):
         ET.SubElement(item, "category").text = "Springfield · rules of the game"
         ET.SubElement(item, "guid", {"isPermaLink": "false"}).text = "springfield-" + _norm_bill_id(b.get("id"))
         ET.SubElement(item, "pubDate").text = built_822
-    return {"springfield.xml": ('<?xml version="1.0" encoding="UTF-8"?>\n'
+    return {"springfield.xml": (_xml_prolog("../" + FEED_XSL)
                                 + ET.tostring(rss, encoding="unicode") + "\n")}
 
 

@@ -175,6 +175,13 @@ class Feeds(unittest.TestCase):
         for xml in feeds.values():
             ET.fromstring(xml)  # each must be well-formed
 
+    def test_stylesheet_pi(self):
+        # Root feed points at feed.xsl; granular feeds one dir down at ../feed.xsl.
+        self.assertIn('<?xml-stylesheet type="text/xsl" href="feed.xsl"?>',
+                      main.to_rss(self.doc))
+        feeds = main.all_feeds(self.doc)
+        self.assertIn('href="../feed.xsl"', feeds["race-chicago-mayor.xml"])
+
 
 class Springfield(unittest.TestCase):
     def setUp(self):

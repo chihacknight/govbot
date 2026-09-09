@@ -262,6 +262,15 @@ class RssFeed(unittest.TestCase):
         xml = main.to_rss(doc)
         self.assertIn("[CANCELED]", xml)
 
+    def test_stylesheet_pi(self):
+        # Root feed points at feed.xsl; granular feeds one dir down at ../feed.xsl.
+        doc = json.loads(EXPECTED.read_text())
+        self.assertIn('<?xml-stylesheet type="text/xsl" href="feed.xsl"?>',
+                      main.to_rss(doc))
+        feeds = main.jurisdiction_feeds(doc)
+        self.assertTrue(feeds)
+        self.assertIn('href="../feed.xsl"', next(iter(feeds.values())))
+
 
 class BillFeeds(unittest.TestCase):
     def _distinct_bills(self, doc):

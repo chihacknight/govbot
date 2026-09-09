@@ -53,6 +53,9 @@ python3 main.py --jurisdictions il,wa,ma,ak,us \
   --output docs/src/dashboard/hearings.json \
   --rss docs/src/dashboard/hearings.xml \
   --rss-feeds-dir docs/src/dashboard/hearings
+# Every feed carries an <?xml-stylesheet href="feed.xsl"> PI so a browser renders
+# it as a readable page (docs/src/dashboard/feed.xsl) instead of a raw XML tree;
+# feed readers ignore it. Root feed -> feed.xsl, granular feeds -> ../feed.xsl.
 
 # Attempt best-effort slip-count enrichment (opt-in; IL totals endpoint is
 # currently unreliable, so counts are usually absent):

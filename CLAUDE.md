@@ -137,7 +137,14 @@ whenever the tab bar changes). Tab order is Legislation · Hearings · Elections
 Site Architecture across all four pages, with accents `.tab-legis` (blue), `.tab-hearings`
 (gold), `.tab-elections` (green), `.tab-arch` (purple). All four pages share a floating
 `.to-top` "Back to Top" button (fixed bottom-right, shown after ~400px of scroll) styled as
-a liquid-glass pill (translucent + `backdrop-filter` blur). The three data dashboards each
+a liquid-glass pill (translucent + `backdrop-filter` blur). **Every generated RSS feed** (both
+the hearings and elections pipelines) carries an `<?xml-stylesheet type="text/xsl"
+href="feed.xsl"?>` processing instruction pointing at the shared stylesheet
+`docs/src/dashboard/feed.xsl`, so a browser renders a feed as a readable page (title, subscribe
+callout with the feed URL, entry list) instead of a raw "no style information" XML tree — while
+feed readers ignore the PI and parse the RSS as usual. Whole-ballot/whole-calendar feeds at the
+dashboard root reference `feed.xsl`; granular feeds one directory down reference `../feed.xsl`
+(the feed builders in both `main.py`s take an `xsl_href` for exactly this). The three data dashboards each
 have a **"New Design"** switch under the theme toggle that sets `data-design="new"` on
 `<html>` (persisted per page in `localStorage['govbot-<page>-design']`, applied before first
 paint) and applies a design-system-inspired override skin via `:root[data-design="new"]`
