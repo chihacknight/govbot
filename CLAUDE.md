@@ -183,6 +183,13 @@ exactly (`race_id_for`) — unplaceable rows are dropped, never invented, and a 
 confirmed candidate keeps an empty list + a source link. It also writes a whole-ballot RSS
 `elections.xml` + granular feeds under `docs/src/dashboard/elections/` (per office group
 `group-<group>.xml`, per ballot date `ballot-<YYYY-MM-DD>.xml`, per race `race-<id>.xml`).
+Feed-item titles are **self-describing** (`Mayor · on the Feb 23, 2027 ballot · 3 candidates`)
+so a title-only reader/widget conveys the facts; the **per-race** feeds additionally expand into
+**one item per official candidate**, the `[UNOFFICIAL]` potential-candidate items, and **one item
+per dated election-calendar milestone** (`🗓 Filing deadline — Mayor · Nov 23, 2026 (expected)`,
+date in the title, pubDate kept at build time so readers don't hide the future date) — aggregate
+feeds stay one item per race. All feed dates (both pipelines) are published in **Central time
+(CST/CDT)** via a shared `America/Chicago` `FEED_TZ` + `_to_822`/`_date_822` helpers.
 The page has an "On this page" table of contents; every RSS control reads "Follow this
 race (RSS)" in red; each major section carries a thick colored top border; the Legislation
 Dashboard's Bill column is plain text (the official-source link lives in the details card). It also attaches a top-level
@@ -225,7 +232,9 @@ repo variable/secret is set, so it is inert until an election happens. This comp
 
 **Potential candidates** (unofficial) attach a *separate* `potential_candidates` list per
 race — names the press reports as running/exploring/rumored before filing opens, kept strictly
-apart from the official `candidates` list and deliberately **not** in any RSS feed.
+apart from the official `candidates` list. They surface in the **per-race RSS feeds** as items
+prefixed **`[UNOFFICIAL]`** and linked to a source article (a rumor can't be mistaken for a
+ballot record), but are kept out of the whole-ballot/group/ballot aggregate feeds.
 `main.py --enrich-potential <elections.json>` reads **Google News' public RSS search** (the
 "internet"; raw social-platform scraping is not TOS-safe/reliable, so it is out) and attaches a
 name only when a headline both names a person beside a candidacy verb (→ status

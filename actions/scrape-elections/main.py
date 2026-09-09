@@ -1291,6 +1291,35 @@ def _xml_prolog(xsl_href):
     return ('<?xml version="1.0" encoding="UTF-8"?>\n'
             f'<?xml-stylesheet type="text/xsl" href="{xsl_href}"?>\n')
 
+# Feed dates are published in Chicago local time (CST/CDT) — these are Chicago/IL
+# races, so a reader sees times in the ballot's own zone, not UTC. zoneinfo is
+# DST-aware; if the IANA db is somehow missing we fall back to UTC (still valid
+# RFC-822, just not localized) rather than crash.
+try:
+    from zoneinfo import ZoneInfo
+    FEED_TZ = ZoneInfo("America/Chicago")
+except Exception:  # pragma: no cover - tzdata unavailable
+    FEED_TZ = timezone.utc
+
+
+def _to_822(dt):
+    """RFC-822 date string for `dt`, expressed in the feed's Central timezone."""
+    from email.utils import format_datetime
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return format_datetime(dt.astimezone(FEED_TZ))
+
+
+def _date_822(iso, fallback):
+    """RFC-822 (Central, at local noon) for a YYYY-MM-DD, so per-candidate items
+    sort by their real date; `fallback` (the build time) when it's missing/bad."""
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})$", iso or "")
+    if not m:
+        return fallback
+    return _to_822(datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)),
+                            12, 0, tzinfo=FEED_TZ))
+
+
 OFFICE_GROUP_LABEL = {
     "citywide": "Chicago citywide",
     "council": "Alderperson (City Council)",
@@ -1310,6 +1339,24 @@ def _race_headline(r):
     return f"{office} — {r['district']}" if r.get("district") else office
 
 
+def _race_item_title(r):
+    """A self-describing feed-item / channel title so even a title-only reader or
+    widget conveys the key facts: office (+ district) · ballot · candidate count.
+    Falls back to the potential-candidate count, then 'no candidates yet'."""
+    bits = [_race_headline(r)]
+    if r.get("ballot_date"):
+        bits.append("on the " + _pretty_date(r["ballot_date"]) + " ballot")
+    n = len(r.get("candidates") or [])
+    p = len(r.get("potential_candidates") or [])
+    if n:
+        bits.append(f"{n} candidate{'' if n == 1 else 's'}")
+    elif p:
+        bits.append(f"{p} potential (unofficial)")
+    else:
+        bits.append("no candidates yet")
+    return " · ".join(bits)
+
+
 def _race_description(r):
     parts = []
     n = len(r.get("candidates", []))
@@ -1319,6 +1366,9 @@ def _race_description(r):
                  if n else "No candidates confirmed yet.")
     if r.get("candidates"):
         parts.append("Candidates: " + ", ".join(c["name"] for c in r["candidates"]) + ".")
+    if r.get("potential_candidates"):
+        names = ", ".join(p["name"] for p in r["potential_candidates"][:6])
+        parts.append(f"Potential (unofficial, from news): {names}.")
     tl = _timeline_summary(r.get("timeline"))
     if tl:
         parts.append("Timeline: " + tl + ".")
@@ -1349,21 +1399,98 @@ def _pretty_date(iso):
 
 
 def _feed_prelude(doc):
-    from email.utils import format_datetime
     built = datetime.strptime(doc["generated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(
         tzinfo=timezone.utc)
-    return format_datetime(built)
+    return _to_822(built)
+
+
+def _slug(s):
+    return re.sub(r"[^a-z0-9]+", "-", (s or "").lower()).strip("-") or "x"
 
 
 def _add_item(ch, r, built_822):
+    """The race-summary item (one per race), used by every feed. Its title is now
+    self-describing so a title-only reader still sees office · ballot · counts."""
     item = ET.SubElement(ch, "item")
-    ET.SubElement(item, "title").text = _race_headline(r)
+    ET.SubElement(item, "title").text = _race_item_title(r)
     ET.SubElement(item, "link").text = r.get("official_list_url") or DASHBOARD_URL + "elections.html"
     ET.SubElement(item, "description").text = _race_description(r)
     ET.SubElement(item, "category").text = OFFICE_GROUP_LABEL.get(
         r.get("office_group"), r.get("office_group", ""))
     ET.SubElement(item, "guid", {"isPermaLink": "false"}).text = r["id"]
     ET.SubElement(item, "pubDate").text = built_822
+
+
+def _add_candidate_item(ch, r, c, built_822):
+    """One item per confirmed, official candidate (in the per-race feeds), so a
+    reader gets a new entry each time someone files."""
+    item = ET.SubElement(ch, "item")
+    head = _race_headline(r)
+    ET.SubElement(item, "title").text = f"{c['name']} — {head}"
+    ET.SubElement(item, "link").text = (c.get("website") or r.get("official_list_url")
+                                        or DASHBOARD_URL + "elections.html")
+    bits = []
+    if r.get("partisan") and c.get("party"):
+        bits.append(c["party"])
+    if c.get("petition_status"):
+        bits.append(c["petition_status"].replace("_", " "))
+    if c.get("incumbent"):
+        bits.append("incumbent")
+    if c.get("filing_date"):
+        bits.append("filed " + _pretty_date(c["filing_date"]))
+    desc = f"Candidate for {head}." + (" " + "; ".join(bits) + "." if bits else "")
+    money = c.get("money") or {}
+    if money.get("funds_raised") is not None:
+        desc += f" Raised ${money['funds_raised']:,.0f}."
+    ET.SubElement(item, "description").text = desc
+    ET.SubElement(item, "category").text = "Candidate (official)"
+    ET.SubElement(item, "guid", {"isPermaLink": "false"}).text = f"{r['id']}|cand|{_slug(c['name'])}"
+    ET.SubElement(item, "pubDate").text = _date_822(c.get("filing_date"), built_822)
+
+
+def _add_timeline_item(ch, r, m, built_822):
+    """One item per dated election-calendar milestone (per-race feeds), e.g.
+    'Filing deadline — Mayor · Nov 23, 2026 (expected)'. The date is in the title
+    so a title-only reader sees it; pubDate stays the build time (not the future
+    milestone date) so readers don't hide the item until then."""
+    if not m.get("date"):
+        return
+    head = _race_headline(r)
+    when = _pretty_date(m["date"])
+    approx = " (expected)" if m.get("confirmed") is False else ""
+    item = ET.SubElement(ch, "item")
+    ET.SubElement(item, "title").text = f"🗓 {m['label']} — {head} · {when}{approx}"
+    ET.SubElement(item, "link").text = r.get("official_list_url") or DASHBOARD_URL + "elections.html"
+    desc = f"{m['label']} for {head}: {when}{approx}."
+    if m.get("note"):
+        desc += " " + m["note"]
+    ET.SubElement(item, "description").text = desc
+    ET.SubElement(item, "category").text = "Election calendar"
+    ET.SubElement(item, "guid", {"isPermaLink": "false"}).text = f"{r['id']}|tl|{_slug(m['label'])}"
+    ET.SubElement(item, "pubDate").text = built_822
+
+
+def _add_potential_item(ch, r, p, built_822):
+    """One item per UNOFFICIAL, news-sourced potential candidate (per-race feeds
+    only). Every such item is prefixed [UNOFFICIAL] and links to a source article,
+    so a rumor can never be mistaken for a ballot record in a reader."""
+    item = ET.SubElement(ch, "item")
+    head = _race_headline(r)
+    status = p.get("status") or "reported"
+    ET.SubElement(item, "title").text = f"[UNOFFICIAL] {p['name']} ({status}) — {head}"
+    srcs = p.get("sources") or []
+    ET.SubElement(item, "link").text = ((srcs[0].get("url") if srcs else None)
+                                        or DASHBOARD_URL + "elections.html")
+    pubs = list(dict.fromkeys(s.get("publisher") for s in srcs if s.get("publisher")))
+    desc = (f"UNOFFICIAL — not a filed candidate. Reported by the press as "
+            f"{status} for {head}.")
+    if pubs:
+        desc += " Coverage: " + ", ".join(pubs[:5]) + "."
+    desc += " Verify via the linked sources; this is a news signal, not a ballot record."
+    ET.SubElement(item, "description").text = desc
+    ET.SubElement(item, "category").text = "Potential candidate (unofficial · from news)"
+    ET.SubElement(item, "guid", {"isPermaLink": "false"}).text = f"{r['id']}|pot|{_slug(p['name'])}"
+    ET.SubElement(item, "pubDate").text = _date_822(p.get("last_seen"), built_822)
 
 
 def _feed_xml(title, description, self_url, races, built_822, xsl_href="../" + FEED_XSL):
@@ -1447,19 +1574,40 @@ def race_feed_name(race_id):
     return f"race-{safe}.xml"
 
 
+def _race_feed_xml(r, built_822):
+    """A single race as its own feed: a summary entry, then one entry per official
+    candidate, then one per UNOFFICIAL potential candidate — so following one race
+    (your ward, your CPS subdistrict, the mayor's race) surfaces names as items."""
+    self_url = DASHBOARD_URL + "elections/" + race_feed_name(r["id"])
+    rss = ET.Element("rss", {"version": "2.0",
+                             "xmlns:atom": "http://www.w3.org/2005/Atom"})
+    ch = ET.SubElement(rss, "channel")
+    ET.SubElement(ch, "title").text = f"govbot — {_race_item_title(r)}"
+    ET.SubElement(ch, "link").text = DASHBOARD_URL + "elections.html"
+    ET.SubElement(ch, "description").text = (
+        "A single race tracked by govbot: a summary entry, one entry per candidate "
+        "as they are confirmed, unofficial potential candidates the press has named, "
+        f"and the key election-calendar dates. {r.get('why_note') or ''}".strip())
+    ET.SubElement(ch, "language").text = "en-us"
+    ET.SubElement(ch, "lastBuildDate").text = built_822
+    ET.SubElement(ch, "atom:link", {"href": self_url, "rel": "self",
+                                    "type": "application/rss+xml"})
+    _add_item(ch, r, built_822)  # race summary first
+    for c in r.get("candidates") or []:
+        _add_candidate_item(ch, r, c, built_822)
+    for p in r.get("potential_candidates") or []:
+        _add_potential_item(ch, r, p, built_822)
+    for m in r.get("timeline") or []:  # election-calendar milestones
+        _add_timeline_item(ch, r, m, built_822)
+    return _xml_prolog("../" + FEED_XSL) + ET.tostring(rss, encoding="unicode") + "\n"
+
+
 def race_feeds(doc):
     """One RSS feed per individual race, so a reader can follow just their ward,
-    their CPS subdistrict, or the mayor's race."""
+    their CPS subdistrict, or the mayor's race — each with per-candidate items."""
     built_822 = _feed_prelude(doc)
-    feeds = {}
-    for r in doc.get("races", []):
-        fname = race_feed_name(r["id"])
-        feeds[fname] = _feed_xml(
-            f"govbot — {_race_headline(r)}",
-            f"A single race tracked by govbot; the item updates as candidates "
-            f"are confirmed. {r.get('why_note') or ''}".strip(),
-            DASHBOARD_URL + "elections/" + fname, [r], built_822)
-    return feeds
+    return {race_feed_name(r["id"]): _race_feed_xml(r, built_822)
+            for r in doc.get("races", [])}
 
 
 def springfield_feed(doc):
@@ -1509,6 +1657,22 @@ def all_feeds(doc):
     feeds.update(race_feeds(doc))
     feeds.update(springfield_feed(doc))
     return feeds
+
+
+def write_feeds(doc, rss_path=None, feeds_dir=None):
+    """Write the whole-ballot feed (rss_path) and/or the granular feeds (feeds_dir)
+    from an assembled doc. Kept separate so the deploy can regenerate feeds AFTER
+    enrichment (potential candidates / money) has mutated elections.json."""
+    if rss_path:
+        Path(rss_path).write_text(to_rss(doc))
+        print(f"wrote RSS feed to {rss_path}", file=sys.stderr)
+    if feeds_dir:
+        outdir = Path(feeds_dir)
+        outdir.mkdir(parents=True, exist_ok=True)
+        feeds = all_feeds(doc)
+        for fname, xml in feeds.items():
+            (outdir / fname).write_text(xml)
+        print(f"wrote {len(feeds)} granular RSS feeds to {outdir}", file=sys.stderr)
 
 
 # --------------------------------------------------------------------------- #
@@ -1567,6 +1731,11 @@ def main():
                          "file's current potential_candidates so names/citations "
                          "accumulate across runs. Fail-soft: sources down leaves the "
                          "lists as they were")
+    ap.add_argument("--rss-from", default=None,
+                    help="(Re)generate the RSS feeds from an existing elections.json "
+                         "(no scrape), then exit — used by the deploy to rebuild feeds "
+                         "AFTER enrichment (potential candidates / money) so those items "
+                         "land in the per-race feeds. Writes --rss and/or --rss-feeds-dir")
     args = ap.parse_args()
 
     now = (datetime.strptime(args.now, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
@@ -1597,6 +1766,13 @@ def main():
         n = enrich_potential(doc, now)
         Path(args.enrich_potential).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
         print(f"attached news-sourced potential candidates to {n} race(s)", file=sys.stderr)
+        return 0
+
+    if args.rss_from:
+        doc = load_json(args.rss_from)
+        if doc is None:
+            return 0
+        write_feeds(doc, args.rss, args.rss_feeds_dir)
         return 0
 
     seed = load_seed(args.seed)
@@ -1630,17 +1806,7 @@ def main():
         print(f"wrote {len(doc['races'])} races ({placed} candidate(s) placed, "
               f"{len(springfield)} Springfield bill(s)) to {args.output}", file=sys.stderr)
 
-    if args.rss:
-        Path(args.rss).write_text(to_rss(doc))
-        print(f"wrote RSS feed to {args.rss}", file=sys.stderr)
-
-    if args.rss_feeds_dir:
-        outdir = Path(args.rss_feeds_dir)
-        outdir.mkdir(parents=True, exist_ok=True)
-        feeds = all_feeds(doc)
-        for fname, xml in feeds.items():
-            (outdir / fname).write_text(xml)
-        print(f"wrote {len(feeds)} granular RSS feeds to {outdir}", file=sys.stderr)
+    write_feeds(doc, args.rss, args.rss_feeds_dir)
     return 0
 
 

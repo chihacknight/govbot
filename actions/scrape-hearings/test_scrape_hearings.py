@@ -271,6 +271,12 @@ class RssFeed(unittest.TestCase):
         self.assertTrue(feeds)
         self.assertIn('href="../feed.xsl"', next(iter(feeds.values())))
 
+    def test_central_time_pubdate(self):
+        # Feed dates are Central (CST/CDT), not UTC.
+        xml = main.to_rss(json.loads(EXPECTED.read_text()))
+        self.assertTrue(("-0500" in xml) or ("-0600" in xml))
+        self.assertNotIn("+0000", xml)
+
 
 class BillFeeds(unittest.TestCase):
     def _distinct_bills(self, doc):

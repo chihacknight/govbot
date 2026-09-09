@@ -226,8 +226,10 @@ jobs:
       # press reports as running/exploring for each race, from a Google News
       # search — each tied to its article. Written straight into elections.json
       # (a rumor/coverage signal, kept separate from the official candidate list;
-      # never added to the RSS feeds). Independent of whether official candidates
-      # exist yet, and fully fail-soft: sources down leaves the lists empty.
+      # in the RSS feeds they appear only in the per-race feeds, prefixed
+      # [UNOFFICIAL]). Runs before the RSS feeds are written (the base build step's
+      # --rss / --rss-feeds-dir happen after this), independent of whether official
+      # candidates exist yet, and fully fail-soft: sources down leaves the lists empty.
       - name: Enrich races with news-sourced potential candidates
         run: |
           set -uo pipefail
@@ -282,6 +284,19 @@ jobs:
           else
             echo "ELECTION_RESULTS_URL not set; skipping results (none before Election Night)"
           fi
+
+      # Rebuild the elections RSS feeds LAST, from the fully-enriched elections.json.
+      # The base build wrote feeds before potential candidates + money were attached;
+      # regenerate so the per-race feeds carry the [UNOFFICIAL] potential-candidate
+      # items and the per-candidate money figures. Fail-soft.
+      - name: Rebuild elections RSS feeds from enriched data
+        run: |
+          set -uo pipefail
+          python3 actions/scrape-elections/main.py \
+            --rss-from docs/src/dashboard/elections.json \
+            --rss docs/src/dashboard/elections.xml \
+            --rss-feeds-dir docs/src/dashboard/elections \
+            || echo "::warning::elections RSS rebuild reported errors"
 
       - name: Build docs
         run: mdbook build docs
