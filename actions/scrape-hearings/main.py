@@ -963,6 +963,18 @@ def assemble(hearings, jurisdictions, source, now):
 DASHBOARD_URL = "https://chihacknight.github.io/govbot/dashboard/"
 FEED_URL = DASHBOARD_URL + "hearings.xml"
 
+# Attaching this XSLT makes a browser render the feed as a readable page instead
+# of a raw "this XML has no style information" tree (feed readers ignore it and
+# parse the RSS as usual). The stylesheet lives at dashboard/feed.xsl, so the
+# whole-calendar feed at the dashboard root references "feed.xsl" and a granular
+# feed one directory down references "../feed.xsl". See docs/src/dashboard/feed.xsl.
+FEED_XSL = "feed.xsl"
+
+
+def _xml_prolog(xsl_href):
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+            f'<?xml-stylesheet type="text/xsl" href="{xsl_href}"?>\n')
+
 
 def _pretty_when(h):
     """Human 'Aug 4, 2026, 10:00 AM' from scheduled_iso, else the raw display."""
@@ -1011,7 +1023,8 @@ def _add_item(ch, h, state, built_822):
     ET.SubElement(item, "pubDate").text = built_822
 
 
-def _feed_xml(title, description, self_url, hearings, names, built_822):
+def _feed_xml(title, description, self_url, hearings, names, built_822,
+              xsl_href="../" + FEED_XSL):
     """Render an RSS 2.0 channel (one <item> per hearing) as a string."""
     rss = ET.Element("rss", {"version": "2.0",
                              "xmlns:atom": "http://www.w3.org/2005/Atom"})
@@ -1026,8 +1039,7 @@ def _feed_xml(title, description, self_url, hearings, names, built_822):
     for h in hearings:
         state = names.get(h["jurisdiction"], h["jurisdiction"].upper())
         _add_item(ch, h, state, built_822)
-    return ('<?xml version="1.0" encoding="UTF-8"?>\n'
-            + ET.tostring(rss, encoding="unicode") + "\n")
+    return _xml_prolog(xsl_href) + ET.tostring(rss, encoding="unicode") + "\n"
 
 
 def to_rss(doc):
@@ -1040,7 +1052,7 @@ def to_rss(doc):
         "govbot — Upcoming committee hearings & witness slips",
         "Upcoming legislative committee hearings where the public can weigh in "
         "(Illinois & Washington), refreshed twice daily by govbot.",
-        FEED_URL, doc.get("hearings", []), names, built_822)
+        FEED_URL, doc.get("hearings", []), names, built_822, xsl_href=FEED_XSL)
 
 
 def bill_feed_name(jurisdiction, bill_id):

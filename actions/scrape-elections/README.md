@@ -162,6 +162,11 @@ python3 actions/scrape-elections/main.py \
 - `elections/race-<id>.xml` — one feed per race, so a resident can follow just
   their ward, their CPS subdistrict, or the mayor's race.
 
+Every feed carries an `<?xml-stylesheet href="feed.xsl">` processing instruction
+so a browser renders it as a readable page (`docs/src/dashboard/feed.xsl`) rather
+than a raw XML tree; feed readers ignore it. Root feeds reference `feed.xsl`,
+granular feeds `../feed.xsl` (via `_feed_xml(..., xsl_href=…)`).
+
 ## Tests (offline)
 
 ```bash
