@@ -1,0 +1,69 @@
+{
+  "manifest_version": "0.2",
+  "name": "govbot",
+  "display_name": "govbot — U.S. Legislation",
+  "version": "0.1.0",
+  "description": "Ask about your representatives using government data cloned to your own computer.",
+  "long_description": "govbot turns every U.S. legislature into a git repository you can clone. This extension lets you ask questions about it in plain language — who represents you, what they have sponsored, and how they have voted — answered from data on your own machine, with a citation back to the exact file for every claim.\n\nNothing you ask leaves your computer. There is no account, no API key, and no server keeping a record of what you looked up. You are never asked for your address.\n\nCoverage is uneven and the extension says so: some states publish every roll-call vote, some publish only totals, and some publish none at all. Where the data cannot answer a question, it tells you that instead of guessing.",
+  "author": {
+    "name": "Chi Hack Night",
+    "url": "https://github.com/chihacknight/govbot"
+  },
+  "homepage": "https://github.com/chihacknight/govbot",
+  "documentation": "https://github.com/chihacknight/govbot/tree/main/actions/mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chihacknight/govbot"
+  },
+  "keywords": ["legislation", "government", "congress", "civic", "local-first"],
+  "license": "MIT",
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/index.js"],
+      "env": {
+        "GOVBOT_WORKSPACE": "${user_config.workspace}",
+        "GOVBOT_BIN": "${user_config.govbot_binary}"
+      }
+    }
+  },
+  "tools": [
+    { "name": "setup_workspace", "description": "Create a folder on this computer for tracking legislation." },
+    { "name": "check_local_data", "description": "Report what data is cloned and what it can answer." },
+    { "name": "clone_government_data", "description": "Privately clone legislation for a jurisdiction." },
+    { "name": "save_my_values", "description": "Save the topics you care about to your workspace." },
+    { "name": "tag_with_local_ai", "description": "Score bills against your topics with a local AI model." },
+    { "name": "query", "description": "Search cloned legislation for bills, votes, and people." }
+  ],
+  "prompts": [
+    {
+      "name": "who_are_my_reps",
+      "description": "Find your representatives and compare their record against what you care about.",
+      "arguments": ["state", "values"],
+      "text": "I want to know who represents me and how their record lines up with what I care about."
+    }
+  ],
+  "user_config": {
+    "workspace": {
+      "type": "directory",
+      "title": "Workspace folder",
+      "description": "Where your configuration and the cloned legislation are kept. You own this folder and can publish or delete it at any time.",
+      "default": "${HOME}/govbot-workspace",
+      "required": false
+    },
+    "govbot_binary": {
+      "type": "string",
+      "title": "Path to the govbot command-line tool",
+      "description": "Leave blank to look in ~/.govbot/bin and then on PATH. Install it with the one-line installer at github.com/chihacknight/govbot.",
+      "default": "",
+      "required": false
+    }
+  },
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": { "node": ">=20.0.0" }
+  }
+}

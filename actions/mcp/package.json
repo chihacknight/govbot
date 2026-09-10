@@ -1,0 +1,25 @@
+{
+  "name": "@govbot/mcp",
+  "version": "0.1.0",
+  "description": "Ask Claude Desktop about your representatives, using government data cloned to your own computer.",
+  "type": "module",
+  "license": "MIT",
+  "bin": { "govbot-mcp": "dist/index.js" },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "node --test dist/*.test.js",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "yaml": "^2.6.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": { "node": ">=20" }
+}

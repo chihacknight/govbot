@@ -1,0 +1,22 @@
+name: "govbot MCP"
+description: "Build and snapshot the govbot MCP server for Claude Desktop."
+inputs:
+  node-version:
+    description: "Node version to build with"
+    required: false
+    default: "20"
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+    - name: Install dependencies
+      shell: bash
+      run: npm ci --prefix actions/mcp || npm install --prefix actions/mcp
+    - name: Typecheck and build
+      shell: bash
+      run: npm run build --prefix actions/mcp
+    - name: Test
+      shell: bash
+      run: npm test --prefix actions/mcp

@@ -12,6 +12,7 @@ Usage: govbot [COMMAND]
 
 Commands:
   clone   Clone or pull data pipeline repositories (default: updates existing repos) Clones if repository doesn't exist, pulls if it does Use "govbot clone all" to clone all repos, or "govbot clone <repo>" for specific repos
+  query   Query cloned legislation and get back a bounded, cited JSON answer
   logs    Process and display pipeline log files
   delete  Delete data pipeline repositories Deletes local repository directories for specified locales
   load    Load bill metadata into a DuckDB database file Loads all metadata.json files from cloned repos into a DuckDB database for analysis. The database file is saved in the base govbot directory (e.g., ./govbot_data/govbot.duckdb)
