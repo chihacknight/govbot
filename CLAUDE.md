@@ -192,7 +192,17 @@ feeds stay one item per race. All feed dates (both pipelines) are published in *
 (CST/CDT)** via a shared `America/Chicago` `FEED_TZ` + `_to_822`/`_date_822` helpers.
 The page has an "On this page" table of contents; every RSS control reads "Follow this
 race (RSS)" in red; each major section carries a thick colored top border; the Legislation
-Dashboard's Bill column is plain text (the official-source link lives in the details card). It also attaches a top-level
+Dashboard's Bill column is plain text (the official-source link lives in the details card). Each
+bill row also has a **"Share"** button beside "Details" (and a "Share this bill" link in the
+details card's Sources) that copies a deep link `index.html#q=<billid>` (id lowercased, punctuation
+stripped, e.g. `#q=sb813`); opening it lands the dashboard pre-filtered to that bill — the search
+filter now also matches ids ignoring spaces/punctuation, and a `hashchange` listener re-applies the
+`#q=` filter live. The details card lists each **sponsor/co-sponsor with their current party (a
+tinted D/R/other tag) and seat** (chamber + district, e.g. "Senate District 39"), resolved from the
+`people.json` roster: `scripts/build_people_roster.py` now emits `[given, full, party, area]` per
+legislator (from the Open States people repo — the current party role and current legislative seat;
+name fields keep their positions so resolution is unchanged, party/area degrade to "" when
+unknown). Offline-tested in `scripts/test_build_people_roster.py`. It also attaches a top-level
 `springfield` list — the **"rules of the game"**: IL bills from the legislation
 `data.json` tagged `elections & voting` or `education` (the elected CPS board, ward/runoff
 rules, campaign finance), cross-referenced with `hearings.json` for upcoming ILGA hearings,
