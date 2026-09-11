@@ -389,6 +389,7 @@
     margin-top: 8px;
   }
   .details-btn:hover { background: var(--hover-wash); border-color: var(--series-1); }
+  .share-btn { margin-left: 6px; }
 
   /* ---------- bill details modal ---------- */
   .modal-overlay {
@@ -436,6 +437,20 @@
   .m-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
   .m-list li { font-size: 13px; color: var(--text-secondary); }
   .m-list li b { color: var(--text-primary); font-weight: 600; }
+  /* Party tag beside a sponsor name — small, tinted, data-driven (D blue,
+     R red, everything else neutral). Kept subtle so it reads as metadata. */
+  .m-party { display: inline-block; font-size: 11px; font-weight: 700; line-height: 1.5;
+    padding: 0 6px; border-radius: 999px; border: 1px solid currentColor; vertical-align: middle; }
+  /* Three classes so the tint wins over the modal's `.modal-card .m-chip` color. */
+  .m-chip.m-party.is-dem { color: #1d4ed8; }
+  .m-chip.m-party.is-rep { color: #b91c1c; }
+  .m-chip.m-party.is-other { color: var(--text-secondary); font-weight: 600; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .m-chip.m-party.is-dem { color: #7aa2ff; }
+    :root:not([data-theme="light"]) .m-chip.m-party.is-rep { color: #ff8a8a; }
+  }
+  :root[data-theme="dark"] .m-chip.m-party.is-dem { color: #7aa2ff; }
+  :root[data-theme="dark"] .m-chip.m-party.is-rep { color: #ff8a8a; }
   .m-actions-list { counter-reset: a; max-height: 230px; overflow-y: auto; padding-right: 6px; }
   .m-act { display: flex; gap: 10px; font-size: 12.5px; padding: 3px 0; border-bottom: 1px solid var(--gridline); }
   .m-act .d { color: var(--text-muted); white-space: nowrap; min-width: 88px; font-variant-numeric: tabular-nums; }
@@ -444,6 +459,10 @@
   /* De-emphasized source link: a bare directory/index URL that doesn't point
      straight at the bill. */
   .m-links a.m-src-weak { color: var(--series-1); font-weight: 450; }
+  /* Share link reads as an action: filled pill, cursor pointer, no visited color. */
+  .m-links a.m-share { cursor: pointer; font-weight: 600; padding: 2px 10px;
+    border: 1px solid var(--border); border-radius: 999px; }
+  .m-links a.m-share:hover { background: var(--hover-wash); border-color: var(--series-1); }
   .m-muted { color: var(--text-muted); font-size: 13px; }
   .m-tags { display: inline-flex; flex-wrap: wrap; gap: 5px; }
   .m-loading { padding: 30px 0; text-align: center; color: var(--text-muted); }
@@ -805,18 +824,31 @@
     code.textContent = "python3 scripts/build_dashboard_data.py";
     footer.append(code, document.createTextNode(" after `govbot clone` / `govbot tag`."));
 
-    // Deep-link support: the hearings page links bills here as index.html#q=HB1643
-    // (or ?q=), so a "via govbot" click lands pre-filtered on that bill.
-    const deep = (location.hash.match(/[#&]q=([^&]+)/) || location.search.match(/[?&]q=([^&]+)/));
-    if (deep) {
-      try {
-        const q = decodeURIComponent(deep[1]).trim();
-        if (q) { state.filters.search = q.toLowerCase(); $("f-search").value = q; }
-      } catch (e) { /* ignore malformed */ }
-    }
+    // Deep-link support: the hearings page and the "Share this bill" control
+    // link bills here as index.html#q=HB1643 (or ?q=), so opening the link lands
+    // pre-filtered on that bill.
+    applyDeepLink();
 
     render();
   }
+
+  // Read a #q= / ?q= deep link into the search filter. Returns true when it set
+  // a query (so callers can decide whether to re-render). Runs on first load and
+  // on every hashchange, so pasting a share link into an open tab filters live.
+  function applyDeepLink() {
+    const deep = (location.hash.match(/[#&]q=([^&]+)/) || location.search.match(/[?&]q=([^&]+)/));
+    if (!deep) return false;
+    try {
+      const q = decodeURIComponent(deep[1]).trim();
+      if (q) {
+        state.filters.search = q.toLowerCase();
+        const el = $("f-search"); if (el) el.value = q;
+        return true;
+      }
+    } catch (e) { /* ignore malformed */ }
+    return false;
+  }
+  window.addEventListener("hashchange", () => { if (applyDeepLink()) render(); });
 
   /* ---------- filtering ---------- */
 
@@ -848,7 +880,12 @@
       }
       if (f.search) {
         const hay = (b.id + " " + b.title + " " + b.sponsors.join(" ")).toLowerCase();
-        if (!hay.includes(f.search)) return false;
+        if (!hay.includes(f.search)) {
+          // Also match ignoring spaces/punctuation, so a shared/deep link like
+          // "#q=sb813" finds the bill whose id is displayed as "SB 813".
+          const nq = f.search.replace(/[^a-z0-9]/g, "");
+          if (!nq || !hay.replace(/[^a-z0-9]/g, "").includes(nq)) return false;
+        }
       }
       return true;
     });
@@ -1145,6 +1182,22 @@
       dBtn.addEventListener("click", () => openDetails(b));
       tdTitle.append(dBtn);
 
+      // "Share" sits next to Details and copies a link that opens straight to
+      // this bill (index.html#q=<id>), so a resident can pass along one bill.
+      const sBtn = document.createElement("button");
+      sBtn.className = "details-btn share-btn";
+      sBtn.type = "button";
+      sBtn.textContent = "Share";
+      sBtn.title = "Copy a link that opens straight to this bill";
+      sBtn.addEventListener("click", () => {
+        const orig = "Share";
+        shareBill(b, (msg) => {
+          sBtn.textContent = msg;
+          setTimeout(() => { sBtn.textContent = orig; }, 1400);
+        });
+      });
+      tdTitle.append(sBtn);
+
       const tdTags = document.createElement("td");
       tdTags.className = "col-tags";
       b.tags.forEach((t) => {
@@ -1408,6 +1461,29 @@
   // dashboard keeps the spaced display id. Build the path from the stripped form
   // or the raw metadata.json fetch 404s and the modal falls back to a bare title.
   function billDirId(id) { return String(id || "").replace(/\s+/g, ""); }
+  // Deep-link query for a bill: its identifier with punctuation/whitespace
+  // removed and lowercased ("SB 813" -> "sb813") — the form the #q= deep link
+  // and the search box match against.
+  function billQuery(b) { return String(b.id || "").replace(/[^a-z0-9]/gi, "").toLowerCase(); }
+  // A shareable URL that opens the dashboard pre-filtered to this one bill.
+  function billShareUrl(b) { return location.origin + location.pathname + "#q=" + billQuery(b); }
+  // Copy a bill's share link to the clipboard; `flash(msg)` shows brief feedback.
+  // Copy-only (no navigation) so the current view isn't disturbed — recipients
+  // who open the link get filtered to the bill by applyDeepLink() on load.
+  function shareBill(b, flash) {
+    const url = billShareUrl(b);
+    const done = (ok) => flash && flash(ok ? "Link copied!" : "Press Ctrl+C to copy");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(() => done(true), () => done(false));
+    } else {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = url; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.append(ta); ta.focus(); ta.select();
+        const ok = document.execCommand("copy"); ta.remove(); done(ok);
+      } catch (e) { done(false); }
+    }
+  }
   function govbotMetaUrl(b) {
     return "https://raw.githubusercontent.com/govbot-data/" + govbotRepo(b.state) +
       "/main/country:us/state:" + b.state + "/sessions/" + encodeURIComponent(b.session) +
@@ -1507,33 +1583,67 @@
     .catch(() => null)
     .then((d) => { peopleIndex = d || {}; });
 
-  // Resolve a sponsor's display name to their full name when the metadata only
-  // gives a surname ("Hall") or a surname with initials to disambiguate several
-  // of the same name ("Campbell, K"). A name that already has a first name, or
-  // that we can't match to exactly one legislator, is returned unchanged — we
-  // never guess a name we aren't sure of.
-  function fullSponsorName(state, name) {
-    if (!name || !peopleIndex) return name;
+  // Match a sponsor to exactly one roster legislator, returning their
+  // [given, full, party, area] entry — or null when the name can't be resolved
+  // to a single person. Handles a surname only ("Hall"), a surname with
+  // initials ("Campbell, K"), and a full "First Last" (matched on the last
+  // word, disambiguated by first initial). We never guess: an ambiguous
+  // surname with no distinguishing initial returns null.
+  function matchLegislator(state, name) {
+    if (!name || !peopleIndex) return null;
     const raw = String(name).trim();
     const roster = peopleIndex[state];
-    if (!roster) return raw;
-    let family = raw, initials = "";
+    if (!roster) return null;
+    let family = raw, first = "";
     const comma = raw.indexOf(",");
     if (comma !== -1) {
       family = raw.slice(0, comma).trim();
-      initials = raw.slice(comma + 1).replace(/[^A-Za-z]/g, "");
+      first = raw.slice(comma + 1).replace(/[^A-Za-z]/g, "");
     } else if (/\s/.test(raw)) {
-      return raw;  // already "First Last" — nothing to fill in
+      const parts = raw.split(/\s+/);
+      first = parts[0];
+      family = parts[parts.length - 1];
     }
     const cands = roster[family.toLowerCase()];
-    if (!cands || !cands.length) return raw;
-    if (cands.length === 1) return cands[0][1];
-    if (initials) {
-      const first = initials.charAt(0).toLowerCase();
-      const hits = cands.filter((c) => (c[0] || "").trim().toLowerCase().charAt(0) === first);
-      if (hits.length === 1) return hits[0][1];
+    if (!cands || !cands.length) return null;
+    if (cands.length === 1) return cands[0];
+    if (first) {
+      const fi = first.charAt(0).toLowerCase();
+      const hits = cands.filter((c) => (c[0] || "").trim().toLowerCase().charAt(0) === fi);
+      if (hits.length === 1) return hits[0];
     }
-    return raw;  // several legislators share the surname — keep it rather than guess
+    return null;  // several legislators share the surname — don't guess
+  }
+
+  // Resolve a sponsor's display name to their full name when the metadata only
+  // gives a surname. A name that already reads "First Last" is kept verbatim
+  // (we don't rewrite a name the source already spelled out); a bare surname is
+  // filled in only when it resolves to exactly one legislator.
+  function fullSponsorName(state, name) {
+    const raw = name ? String(name).trim() : name;
+    if (!raw) return raw;
+    if (/\s/.test(raw) && raw.indexOf(",") === -1) return raw;  // already full
+    const m = matchLegislator(state, name);
+    return m ? m[1] : raw;
+  }
+
+  // Current party + seat for a sponsor, e.g. {party:"Democratic",
+  // area:"House District 19"} — or null when unknown/ambiguous. Fields may be
+  // empty strings when Open States doesn't record them.
+  function sponsorSeat(state, name) {
+    const m = matchLegislator(state, name);
+    if (!m) return null;
+    const party = m[2] || "", area = m[3] || "";
+    return (party || area) ? { party, area } : null;
+  }
+  // A compact party tag (letter for the big two, short word otherwise) plus a
+  // CSS class so it can be tinted. Kept neutral and data-driven — no editorializing.
+  function partyTag(party) {
+    const p = (party || "").toLowerCase();
+    if (p.indexOf("democrat") === 0) return { label: "D", cls: "is-dem", full: party };
+    if (p.indexOf("republican") === 0) return { label: "R", cls: "is-rep", full: party };
+    if (!party) return null;
+    return { label: party, cls: "is-other", full: party };
   }
 
   let modalKey = 0;
@@ -1600,7 +1710,16 @@
       const sponsorLi = (s, role) => {
         const li = mkel("li");
         li.append(mkel("b", null, fullSponsorName(b.state, s.name)));
-        const bits = [personChamber(s.person_id), role].filter(Boolean);
+        const seat = sponsorSeat(b.state, s.name) || {};
+        const pt = partyTag(seat.party);
+        if (pt) {
+          const chip = mchip(pt.label, "m-party " + pt.cls);
+          if (pt.full && pt.full !== pt.label) chip.title = pt.full;
+          li.append(document.createTextNode(" "), chip);
+        }
+        // Prefer the roster's seat (chamber + district); fall back to the
+        // chamber encoded in the sponsorship's person_id when we have no seat.
+        const bits = [seat.area || personChamber(s.person_id), role].filter(Boolean);
         if (bits.length) li.append(document.createTextNode(" · " + bits.join(" · ")));
         return li;
       };
@@ -1660,6 +1779,18 @@
       if (human) officialUrl = human;
     }
     const links = mkel("div", "m-links");
+    // Share this bill: a real link (so copy-link / middle-click work) whose
+    // left-click copies the deep link to the clipboard.
+    const shareA = mkel("a", "m-share", "Share this bill 🔗");
+    shareA.href = billShareUrl(b);
+    shareA.addEventListener("click", (e) => {
+      e.preventDefault();
+      shareBill(b, (msg) => {
+        const o = "Share this bill 🔗"; shareA.textContent = msg;
+        setTimeout(() => { shareA.textContent = o; }, 1400);
+      });
+    });
+    links.append(shareA);
     if (officialUrl) links.append(mlink("Official source ↗", officialUrl));
     links.append(mlink("govbot record ↗", govbotRecordUrl(b)));
     links.append(mlink("Open States ↗",

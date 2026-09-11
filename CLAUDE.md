@@ -192,7 +192,17 @@ feeds stay one item per race. All feed dates (both pipelines) are published in *
 (CST/CDT)** via a shared `America/Chicago` `FEED_TZ` + `_to_822`/`_date_822` helpers.
 The page has an "On this page" table of contents; every RSS control reads "Follow this
 race (RSS)" in red; each major section carries a thick colored top border; the Legislation
-Dashboard's Bill column is plain text (the official-source link lives in the details card). It also attaches a top-level
+Dashboard's Bill column is plain text (the official-source link lives in the details card). Each
+bill row also has a **"Share"** button beside "Details" (and a "Share this bill" link in the
+details card's Sources) that copies a deep link `index.html#q=<billid>` (id lowercased, punctuation
+stripped, e.g. `#q=sb813`); opening it lands the dashboard pre-filtered to that bill — the search
+filter now also matches ids ignoring spaces/punctuation, and a `hashchange` listener re-applies the
+`#q=` filter live. The details card lists each **sponsor/co-sponsor with their current party (a
+tinted D/R/other tag) and seat** (chamber + district, e.g. "Senate District 39"), resolved from the
+`people.json` roster: `scripts/build_people_roster.py` now emits `[given, full, party, area]` per
+legislator (from the Open States people repo — the current party role and current legislative seat;
+name fields keep their positions so resolution is unchanged, party/area degrade to "" when
+unknown). Offline-tested in `scripts/test_build_people_roster.py`. It also attaches a top-level
 `springfield` list — the **"rules of the game"**: IL bills from the legislation
 `data.json` tagged `elections & voting` or `education` (the elected CPS board, ward/runoff
 rules, campaign finance), cross-referenced with `hearings.json` for upcoming ILGA hearings,
@@ -218,14 +228,20 @@ publishes the roster only as a PDF). `deploy-docs.yml` installs `poppler-utils` 
 `main.py --enrich-candidates-boe docs/src/dashboard/elections.json` auto-discovers the newest
 `Candidate List_<date>.pdf`, extracts it with the `pdftotext` **system tool** (shelled out like
 DuckDB — no Python dep, so the stdlib-only rule holds), and merges candidates. The pure
-`parse_boe_candidate_list(text)` is scoped to Board-of-Education offices — the only Chicago-seed
-races on the Nov 2026 ballot (president + 20 subdistricts 1a–10b) — so the statewide/federal/
-judicial offices on the same list are ignored (critically, the statewide "Treasurer" is never
-misread as the Chicago City Treasurer); office context resets at every non-BOE header so trailing
-sections never leak into the last subdistrict. It's offline-tested against
-`__snapshots__/raw/boe_candidate_list.txt` (`pdftotext -layout` text; the shell-out lives only in
-the fetch wrapper). Runs before the money step (so committees can match) and before the RSS feeds
-are rebuilt. Fail-soft: no poppler / no PDF leaves rosters as they were; committed sample empty.
+`parse_boe_candidate_list(text)` keeps a candidate only when its office header resolves to a
+Chicago-seed race (`_boe_office_race` → `race_id_for`); the statewide/federal/judicial/county
+offices on the same ballot are ignored. Two guards make that safe: `race_id_for` requires an
+education signal for the CPS board (so the **Cook County Board president** never resolves to the
+CPS president), and `_boe_office_race` requires the word "City" for the treasurer/clerk (so the
+**statewide Treasurer** is never misread as the Chicago City Treasurer). On the Nov 2026 ballot
+this yields exactly the CPS races (president + 20 subdistricts 1a–10b, 42 candidates); it's
+forward-compatible, so when the **2027 municipal** candidate list publishes it will populate
+mayor / alderperson wards / police district councils / city clerk & treasurer the same way (no
+2027 official roster exists yet — filing is Nov 2026). Offline-tested against
+`__snapshots__/raw/boe_candidate_list.txt` (`pdftotext -layout` text incl. statewide + municipal
+examples; the shell-out lives only in the fetch wrapper). Runs before the money step (so
+committees can match) and before the RSS feeds are rebuilt. Fail-soft: no poppler / no PDF leaves
+rosters as they were; committed sample empty.
 
 **Campaign money** (Illinois SBE) attaches to each candidate via the SBE ID crosswalk
 (candidate name → `Candidates.txt` ID → `CmteCandidateLinks` → `Committees` → latest
@@ -249,7 +265,10 @@ repo variable/secret is set, so it is inert until an election happens. This comp
 race — names the press reports as running/exploring/rumored before filing opens, kept strictly
 apart from the official `candidates` list. They surface in the **per-race RSS feeds** as items
 prefixed **`[UNOFFICIAL]`** and linked to a source article (a rumor can't be mistaken for a
-ballot record), but are kept out of the whole-ballot/group/ballot aggregate feeds.
+ballot record), but are kept out of the whole-ballot/group/ballot aggregate feeds. Once a name
+is confirmed on the official list it **graduates out** of potential — `build_potential` drops
+any name already in that race's official `candidates` (populated earlier in the deploy by
+`--enrich-candidates-boe`), so a filed candidate never double-lists as both official and rumored.
 `main.py --enrich-potential <elections.json>` reads **Google News' public RSS search** (the
 "internet"; raw social-platform scraping is not TOS-safe/reliable, so it is out) and attaches a
 name only when a headline both names a person beside a candidacy verb (→ status
@@ -257,7 +276,11 @@ name only when a headline both names a person beside a candidacy verb (→ statu
 district race, its district token (word-boundary matched, so "5th ward" ≠ "25th ward").
 Honorifics are stripped ("Rep. Mike Quigley" → "Mike Quigley"), office/place/calendar words are
 rejected as names, and every name carries its source article(s) {title, url, publisher, date};
-a sourceless name is dropped — nothing is invented. Queries: one pooled query per office group
+a sourceless name is dropped — nothing is invented. Extraction is tuned for real local-outlet
+headlines: verbs match case-insensitively (title-case "… Launches …", "… Running …"), an adverb
+between the name and the verb is skipped ("Aida Flores **Again** Running"), and names are gated
+against truncation (a trailing initial or split particle like "Matthew J. O" / "Daniel La") and
+against verb/event words captured as a name. Queries: one pooled query per office group
 for cross-cutting coverage, **plus a per-race query for every district race** (`Chicago alderman
 "45th ward" candidate 2027`, etc.) so each ward/subdistrict/police district gets its own coverage
 pool, plus one per citywide office. A bigger pool never loosens the match — the strict office +

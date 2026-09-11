@@ -48,6 +48,14 @@ class RaceMatching(unittest.TestCase):
         self.assertIsNone(main.race_id_for("State Representative", "District 5"))
         self.assertIsNone(main.race_id_for("Alderperson", "Ward 99"))  # out of range
 
+    def test_non_education_board_president_not_cps(self):
+        # A generic "…Board president" (e.g. the Cook County Board president) must
+        # NOT resolve to the CPS board president — requires an education signal.
+        self.assertIsNone(main.race_id_for("President of County Board", ""))
+        self.assertIsNone(main.race_id_for("President of the Cook County Board", ""))
+        self.assertEqual(main.race_id_for("President of the Chicago Board of Education", ""),
+                         "cps-board-president")
+
 
 class StatusNormalization(unittest.TestCase):
     def test_maps(self):
@@ -125,15 +133,27 @@ class BOECandidateList(unittest.TestCase):
     def setUp(self):
         self.cands = main.parse_boe_candidate_list((RAW / "boe_candidate_list.txt").read_text())
 
-    def test_only_board_of_education_offices(self):
-        # The statewide Treasurer and the trailing Judge office must NOT resolve.
+    def test_only_chicago_offices_resolve(self):
+        # Every parsed candidate resolves to a Chicago-seed race; statewide /
+        # judicial offices on the same ballot are ignored.
         rids = {c["_race_id"] for c in self.cands}
         self.assertNotIn(None, rids)
-        self.assertTrue(all(r.startswith("cps-") for r in rids))
         names = {c["name"] for c in self.cands}
         self.assertNotIn("Max Solomon", names)              # statewide Treasurer
         self.assertNotIn("Michael W. Frerichs", names)      # statewide Treasurer
         self.assertNotIn("Should Not Be Attributed", names)  # trailing judge office
+
+    def test_statewide_vs_city_treasurer_guard(self):
+        # The bare statewide "Treasurer" must NOT become the Chicago City
+        # Treasurer, but an explicit "City Treasurer" office must.
+        by_name = {c["name"]: c["_race_id"] for c in self.cands}
+        self.assertNotIn("Max Solomon", by_name)
+        self.assertEqual(by_name.get("Pat Q. Cityperson"), "chicago-city-treasurer")
+
+    def test_municipal_offices_resolve(self):
+        # Forward-compatible: a municipal ward office on a (future) list resolves.
+        by_name = {c["name"]: c["_race_id"] for c in self.cands}
+        self.assertEqual(by_name.get("Robin T. Fifthward"), "chicago-alderperson-ward-05")
 
     def test_president_and_subdistricts_resolve(self):
         by_race = {}
@@ -475,6 +495,31 @@ class PotentialCandidates(unittest.TestCase):
             "Alex Placeholder mulls a bid for mayor as field grows", self.mayor))
         self.assertEqual(names.get("Alex Placeholder"), "exploring")
 
+    def test_extract_titlecase_and_filler(self):
+        # Title-case verbs and an adverb between name and verb (common in local
+        # outlet headlines) must still extract, with the district in the headline.
+        ward19 = {"office": "Alderperson", "office_group": "council",
+                  "is_citywide": False, "district": "Ward 19"}
+        ward25 = {"office": "Alderperson", "office_group": "council",
+                  "is_citywide": False, "district": "Ward 25"}
+        self.assertEqual(
+            main.extract_candidacy("Melanie Jacobs Stathis Launches 19th Ward Alderman Campaign", ward19),
+            [("Melanie Jacobs Stathis", "announced")])
+        self.assertEqual(
+            main.extract_candidacy("Aida Flores Again Running For 25th Ward Aldermanic Seat", ward25),
+            [("Aida Flores", "announced")])
+        self.assertEqual(
+            dict(main.extract_candidacy("25th Ward candidate for alderman: Hilario Dominguez", ward25)),
+            {"Hilario Dominguez": "reported"})
+
+    def test_titlecase_fix_does_not_break_district_guard(self):
+        # The case-insensitive verbs must NOT let a different city's alderman
+        # (no Chicago ward number in the headline) attach to a ward race.
+        ward5 = {"office": "Alderperson", "office_group": "council",
+                 "is_citywide": False, "district": "Ward 5"}
+        self.assertEqual(main.extract_candidacy(
+            "Rockford Alderman Frank Beach Seeks Interim Mayor Role", ward5), [])
+
     def test_extract_requires_office_match(self):
         # No office keyword -> nothing attributed to the mayor race.
         self.assertEqual(main.extract_candidacy(
@@ -511,6 +556,24 @@ class PotentialCandidates(unittest.TestCase):
         self.assertTrue(any(s["url"] == "https://old.example/x" for s in jordan["sources"]))
         # Status upgraded by the newer coverage.
         self.assertEqual(jordan["status"], "announced")
+
+    def test_build_drops_now_official_candidate(self):
+        # Once someone the press reported as "potential" is confirmed on the
+        # official candidate list for the race, they graduate out of potential
+        # rather than double-listing as both official and rumored.
+        race = dict(self.mayor,
+                    candidates=[{"name": "Jordan A. Rivers", "source": "BOE"}])
+        pcs = main.build_potential(race, self.mayor_items, self.now)
+        names = [p["name"] for p in pcs]
+        self.assertNotIn("Jordan A. Rivers", names)  # now official -> not potential
+        # Other news-only names in the same pool are unaffected.
+        self.assertTrue(all(n != "Jordan A. Rivers" for n in names))
+        # Match is case-insensitive on the official name.
+        race2 = dict(self.mayor,
+                     candidates=[{"name": "jordan a. rivers", "source": "BOE"}])
+        self.assertNotIn(
+            "Jordan A. Rivers",
+            [p["name"] for p in main.build_potential(race2, self.mayor_items, self.now)])
 
     def test_district_gating(self):
         ward1 = {"id": "chicago-alderperson-ward-01", "office": "Alderperson",

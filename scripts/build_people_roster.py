@@ -15,10 +15,20 @@ map each legislator's family name to their given + full name.
 Output shape (``docs/src/dashboard/people.json``)::
 
     {
-      "ak": { "hall": [["Carolyn", "Carolyn Hall"]], ... },
-      "wy": { "campbell": [["Elissa", "Elissa Campbell"],
-                           ["Kevin", "Kevin Campbell"]], ... }
+      "ak": { "hall": [["Carolyn", "Carolyn Hall", "Democratic",
+                        "House District 19"]], ... },
+      "wy": { "campbell": [["Elissa", "Elissa Campbell", "Republican",
+                            "House District 58"],
+                           ["Kevin", "Kevin Campbell", "Republican",
+                            "Senate District 27"]], ... }
     }
+
+Each entry is ``[given, full, party, area]``. ``party`` and ``area`` are the
+legislator's **current** party (the party role with no end date) and the seat
+they represent (chamber + district, e.g. "Senate District 5"); either is an
+empty string when Open States doesn't record it. The first two fields keep the
+same positions they always had, so name resolution is unchanged — party/area
+are additive.
 
 Chambers are intentionally merged: OpenStates sometimes tags a sponsor's
 chamber unreliably (a Wyoming *Senate* file can arrive tagged ``lower``), so
@@ -26,8 +36,9 @@ the dashboard resolves a surname against the whole state and only substitutes a
 full name when the match is unambiguous. Keeping every same-surname legislator
 in the list lets it make that call (and disambiguate "Campbell, K" by initial).
 
-Only the given/family/full name is emitted — no contact details, party, or
-district — keeping the file small and free of data that drifts.
+Contact details and anything that drifts week to week (committee assignments,
+office, contacts) are still omitted — only the name, current party, and current
+seat are emitted, so the file stays small and stable.
 
 Usage:
     # Against a local checkout of openstates/people:
@@ -48,11 +59,57 @@ from pathlib import Path
 import yaml
 
 
-def load_person(path):
-    """Return (given, family, full) for one legislator YAML, or None to skip.
+# Open States role `type` -> the chamber word a reader recognizes. Types that
+# aren't a legislative seat (e.g. "governor", "mayor") map to nothing, so a
+# non-legislator role never produces a bogus "District" label.
+_CHAMBER = {"upper": "Senate", "lower": "House", "legislature": ""}
 
-    Reads only the three name fields; a file missing a family or full name
-    (mononyms, malformed records) is skipped rather than guessed at.
+
+def _current(items):
+    """Pick the 'current' entry from an Open States list of role/party dicts.
+
+    Open States keeps history: past roles/parties carry an ``end_date``, the
+    active one does not. Prefer an entry with no ``end_date``; among several,
+    the latest ``start_date`` wins; if every entry has ended, fall back to the
+    most recently started so we still show something rather than nothing.
+    """
+    rows = [r for r in (items or []) if isinstance(r, dict)]
+    if not rows:
+        return None
+    # Dates come back from YAML as date objects or ISO strings; coerce to a
+    # string so comparisons never mix types (ISO strings sort chronologically).
+    def _s(v):
+        return str(v).strip() if v else ""
+    active = [r for r in rows if not _s(r.get("end_date"))]
+    pool = active or rows
+    return max(pool, key=lambda r: _s(r.get("start_date")))
+
+
+def _area(role):
+    """Human seat label from a current legislative role, or "" — e.g.
+    "Senate District 5", "House District 19", or "District 3" when the chamber
+    is unknown. A named (non-numeric) district is shown as-is beside the chamber
+    ("House · 3rd Middlesex") rather than forced into "District <text>"."""
+    if not role:
+        return ""
+    chamber = _CHAMBER.get((role.get("type") or "").strip().lower())
+    if chamber is None:  # a non-legislative role — no seat to describe
+        return ""
+    district = str(role.get("district") or "").strip()
+    if not district:
+        return chamber  # e.g. an at-large "legislature" seat carries no number
+    if district.isdigit() or (len(district) <= 4 and district[:-1].isdigit()):
+        return f"{chamber} District {district}".strip()
+    return f"{chamber} · {district}".strip(" ·")
+
+
+def load_person(path):
+    """Return (given, family, full, party, area) for one legislator YAML, or
+    None to skip.
+
+    Reads the name fields plus the *current* party and seat. A file missing a
+    family or full name (mononyms, malformed records) is skipped rather than
+    guessed at; missing party/area degrade to "".
     """
     try:
         doc = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -66,7 +123,13 @@ def load_person(path):
     given = (doc.get("given_name") or "").strip()
     if not full or not family:
         return None
-    return given, family, full
+    party_row = _current(doc.get("party"))
+    party = (party_row.get("name") or "").strip() if party_row else ""
+    # Only legislative roles describe a seat; _area() ignores anything else.
+    roles = [r for r in (doc.get("roles") or [])
+             if isinstance(r, dict) and (r.get("type") or "").strip().lower() in _CHAMBER]
+    area = _area(_current(roles))
+    return given, family, full, party, area
 
 
 def build_roster(people_dir):
@@ -86,12 +149,13 @@ def build_roster(people_dir):
             person = load_person(yml)
             if not person:
                 continue
-            given, family, full = person
+            given, family, full, party, area = person
             entries = by_family.setdefault(family.lower(), [])
-            pair = [given, full]
-            # Guard against the same legislator appearing twice.
-            if pair not in entries:
-                entries.append(pair)
+            entry = [given, full, party, area]
+            # Guard against the same legislator appearing twice (compare on the
+            # identifying name pair, not party/area, which shouldn't differ).
+            if not any(e[0] == given and e[1] == full for e in entries):
+                entries.append(entry)
                 count += 1
         if by_family:
             roster[state] = by_family

@@ -149,11 +149,13 @@ def race_id_for(office, district):
     o = (office or "").lower()
     d = district or ""
 
-    # CPS board — check before the generic "president"/"member" words leak.
-    if "board of education" in o or "school board" in o or o.startswith("cps") \
-            or "board member" in o or "board of ed" in o \
-            or ("board" in o and ("subdistrict" in d.lower() or "president" in o)):
-        if "president" in o:
+    # CPS board — require an education signal so a generic "…Board president"
+    # (e.g. the Cook County Board president) never resolves to the CPS board. A
+    # subdistrict district is itself a CPS signal (only CPS uses subdistricts).
+    _edu = ("board of education" in o or "school board" in o or "board of ed" in o
+            or "cps" in o)
+    if _edu or "subdistrict" in d.lower():
+        if _edu and "president" in o:
             return "cps-board-president"
         sub = _subdistrict(d) or _subdistrict(office)
         return f"cps-board-member-{sub.lower()}" if sub else None
@@ -461,11 +463,28 @@ def _boe_pdf_status(raw):
     return "on_ballot" if (raw or "").strip().lower() == "candidate" else normalize_status(raw)
 
 
+def _boe_office_race(office):
+    """The Chicago-seed race id an office header resolves to, or None. Guards the
+    one trap a statewide/county ballot springs: a bare 'Treasurer' or 'Clerk'
+    (the Illinois state offices) would resolve to the Chicago City Treasurer/Clerk
+    via race_id_for, so those require the word 'City'. Everything race_id_for
+    already scopes to Chicago (Mayor, Alderperson wards, CPS, Police District
+    Councils) passes straight through — so this parser handles the CPS offices on
+    the 2026 ballot today and the municipal offices on a 2027 list unchanged."""
+    rid = race_id_for(office, None)
+    if rid in ("chicago-city-treasurer", "chicago-city-clerk") \
+            and "city" not in (office or "").lower():
+        return None
+    return rid
+
+
 def parse_boe_candidate_list(text, source="Chicago Board of Elections (candidate list)"):
     """Parse the `pdftotext -layout` text of the Chicago BOE Candidate List into
-    Board-of-Education candidate dicts. Office context is the most recent header
-    line naming a Board-of-Education office; it resets to None at any other office
-    header, so trailing sections never bleed into the last subdistrict."""
+    candidate dicts for the Chicago races in the seed. Office context is the most
+    recent header line; a candidate row is kept only when that office resolves to
+    a seed race (`_boe_office_race`), so statewide / federal / judicial offices on
+    the same ballot are ignored and trailing sections can't bleed into the last
+    race. Pure/deterministic."""
     office = None
     out = []
     for ln in (text or "").splitlines():
@@ -473,7 +492,8 @@ def parse_boe_candidate_list(text, source="Chicago Board of Elections (candidate
             continue
         m = _BOE_PDF_ROW.match(ln)
         if m:
-            if office and "board of education" in office.lower():
+            rid = _boe_office_race(office) if office else None
+            if rid:
                 np = m.group(1).strip()
                 pm = re.match(r'^(.*?)\s*\(([^)]+)\)\s*$', np)
                 name, party = (pm.group(1).strip(), pm.group(2).strip()) if pm else (np, None)
@@ -485,9 +505,8 @@ def parse_boe_candidate_list(text, source="Chicago Board of Elections (candidate
             continue
         if _BOE_PDF_VOTE.match(ln) or _BOE_PDF_NOISE.match(ln):
             continue
-        # Any other line is an office/section header: keep it as context only
-        # when it's a Board-of-Education office, else drop context.
-        office = ln.strip() if "board of education" in ln.lower() else None
+        # Any other line is an office/section header — the new office context.
+        office = ln.strip()
     return out
 
 
@@ -1012,22 +1031,35 @@ POTENTIAL_FETCH_SLEEP = 0.7      # be polite between pooled group fetches
 # maybe. Order matters: the strongest signal seen for a name wins.
 _ANNOUNCE_VERBS = (
     r"announces?|announced|launch(?:es|ed)?|enters?|entered|joins?|joined|"
-    r"declares?|declared|files?|filed|to run|running for|will run|"
+    r"declares?|declared|files?|filed|to run|running(?: for)?|will run|"
     r"kicks? off|jumps? in(?:to)?|throws? (?:his|her|their) hat|"
-    r"seeks?|to seek|enters? the race|launch(?:es|ed)? (?:a )?(?:bid|campaign)")
+    r"seeks?|to seek|enters? the race|launch(?:es|ed)? (?:a )?(?:bid|campaign)|"
+    r"challenges?|to challenge|to unseat|takes? on|to take on|running against")
 _EXPLORE_VERBS = (
     r"mulls?|mulling|weighs?|weighing|considers?|considering|eyes?|eyeing|"
     r"explores?|exploring|could run|may run|might run|thinking about|"
     r"reportedly|rumored|floated|expected to run|potential(?:ly)?|possible")
 
-_NAME = r"([A-Z][a-zA-Z.'’-]+(?:\s+(?:[A-Z]\.?|[A-Z][a-zA-Z.'’-]+)){1,2})"
+# Names rely on capitalization, so keep _NAME case-sensitive — but make the VERBS
+# case-insensitive (?i:…), because title-case local-outlet headlines capitalize
+# them ("… Launches …", "… Running …"). `{1,2}?` is non-greedy so a captured name
+# stops at the shortest match (an adverb like "Again"/"formally" between the name
+# and the verb is skipped by `_ADV`, not swallowed into the name).
+_NAME = r"([A-Z][a-zA-Z.'’-]+(?:\s+(?:[A-Z]\.?|[A-Z][a-zA-Z.'’-]+)){1,2}?)"
+_ADV = r"(?:\s+(?i:again|formally|officially|finally|now|once more|reportedly))?"
 
-# Person-name is <name> <verb>, or <office-word> candidate/hopeful <name>.
-_ANNOUNCE_RE = re.compile(_NAME + r"\s+(?:" + _ANNOUNCE_VERBS + r")\b")
-_EXPLORE_RE = re.compile(_NAME + r"\s+(?:" + _EXPLORE_VERBS + r")\b")
-_REVERSE_RE = re.compile(
-    r"\b(?:candidate|hopeful|contender)\s+" + _NAME + r"\b")
-_BID_RE = re.compile(_NAME + r"['’]s\s+(?:bid|campaign|run)\b")
+# Person-name is <name> [<adverb>] <verb>, or <candidate/hopeful/challenger …> <name>.
+_ANNOUNCE_RE = re.compile(_NAME + _ADV + r"\s+(?i:" + _ANNOUNCE_VERBS + r")\b")
+_EXPLORE_RE = re.compile(_NAME + _ADV + r"\s+(?i:" + _EXPLORE_VERBS + r")\b")
+# Reverse form: the name must sit right after candidate/hopeful/…, either
+# immediately ("candidate Jane Smith") or after a "for <office>:" ("… candidate
+# for alderman: Jane Smith"). No arbitrary words in between — that grabbed
+# unrelated names mentioned later in the headline.
+_REVERSE_RE = re.compile(r"\b(?i:candidate|hopeful|contender|challenger)\s+" + _NAME + r"\b")
+_REVERSE_COLON_RE = re.compile(
+    r"\b(?i:candidate|hopeful|contender|challenger)(?:\s+(?i:for)\s+[a-z]+){0,2}"
+    r"\s*:\s*" + _NAME + r"\b")
+_BID_RE = re.compile(_NAME + r"['’]s\s+(?i:bid|campaign|run)\b")
 
 # Tokens that are never a person's given/sur-name in this context; a candidate
 # match containing any of these is rejected (kills "Chicago Mayor", "Ward Five",
@@ -1051,6 +1083,13 @@ _NAME_STOPWORDS = {
     "explainer", "primer", "rundown", "lineup", "slate", "profiles", "profile",
     "list", "questions", "answers", "town", "watch", "update", "updates",
     "coverage", "results", "forums", "debates",
+    # verb words are never a name token — a candidacy verb captured as part of a
+    # name means the match slid ("Propels Claudia Zuno", "Boosts …").
+    "announces", "announced", "launches", "launched", "enters", "entered",
+    "joins", "joined", "declares", "declared", "files", "filed", "seeks",
+    "running", "challenges", "challenger", "unseat", "mulls", "weighs", "faces",
+    "considers", "eyes", "explores", "propels", "boosts", "backs", "taps",
+    "urges", "pushes", "picks", "names", "leads", "vows", "rips", "slams",
 }
 
 
@@ -1137,19 +1176,24 @@ def _strip_titles(name):
 
 def _valid_person(name):
     """A conservative gate: 2-3 tokens, each capitalized and not an office/place/
-    calendar stopword, not an all-caps acronym."""
+    calendar/verb stopword, not an all-caps acronym. The last token must be a real
+    word (>=2 letters), so a name truncated by the headline at an initial or a
+    dropped apostrophe ("Matthew J. O", "Tanya G") is rejected."""
     name = _clean(name)
     parts = [p for p in name.split() if p]
     if not (2 <= len(parts) <= 3):
         return False
     if name.isupper():
         return False
+    last = re.sub(r"[^a-z]", "", parts[-1].lower())
+    if len(last) < 2:  # truncated surname ("Matthew J. O", "Tanya G")
+        return False
+    if last in {"la", "de", "van", "von", "del", "di", "da", "el", "al", "st", "mc", "o"}:
+        return False  # a name particle as the LAST token means it was cut ("Daniel La [Spata]")
     for p in parts:
         base = re.sub(r"[.'’-]", "", p).lower()
         if not base or base in _NAME_STOPWORDS:
             return False
-        if len(base) == 1:  # a bare initial like "R" is fine only mid-name
-            continue
     return True
 
 
@@ -1178,9 +1222,16 @@ def extract_candidacy(headline, race):
         return []
     found = {}  # name_key -> (display_name, status)
     for regex, status in ((_ANNOUNCE_RE, "announced"), (_BID_RE, "announced"),
-                          (_REVERSE_RE, "reported"), (_EXPLORE_RE, "exploring")):
+                          (_REVERSE_RE, "reported"), (_REVERSE_COLON_RE, "reported"),
+                          (_EXPLORE_RE, "exploring")):
         for m in regex.finditer(text):
             name = _strip_titles(m.group(1))
+            # Drop leading verb/place/garbage words the pattern swept into the name
+            # ("… Propels Claudia Zuno To Run" -> "Claudia Zuno"), keeping >=2 tokens.
+            toks = name.split()
+            while len(toks) > 2 and re.sub(r"[.'’-]", "", toks[0].lower()) in _NAME_STOPWORDS:
+                toks.pop(0)
+            name = " ".join(toks)
             if not _valid_person(name):
                 continue
             key = name.lower()
@@ -1303,7 +1354,13 @@ def fetch_news_items(query):
 def build_potential(race, items, now, existing=None):
     """Assemble a race's potential_candidates[] from news `items` (already the
     relevant pool), merged with any `existing` list so names/sources accumulate
-    across the twice-daily runs. Pure/deterministic given its inputs."""
+    across the twice-daily runs. Pure/deterministic given its inputs.
+
+    A name that has since become an *official* candidate for this race (present in
+    race['candidates'], populated earlier by --enrich-candidates-boe) is dropped:
+    once the authority confirms someone, they graduate out of the unofficial
+    "potential/rumored" list rather than double-listing as both."""
+    official = {(c.get("name") or "").lower() for c in race.get("candidates", [])}
     people = {}  # name_key -> record
 
     def _seed(name):
@@ -1362,8 +1419,10 @@ def build_potential(race, items, now, existing=None):
                     _add_source(rec, it)
 
     out = []
-    for rec in people.values():
+    for key, rec in people.items():
         if not rec["sources"]:
+            continue
+        if key in official:      # now an official candidate — no longer "potential"
             continue
         dates = sorted(rec["_dates"])
         rec["sources"].sort(key=lambda s: (s.get("date") or ""), reverse=True)
