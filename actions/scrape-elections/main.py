@@ -1031,22 +1031,35 @@ POTENTIAL_FETCH_SLEEP = 0.7      # be polite between pooled group fetches
 # maybe. Order matters: the strongest signal seen for a name wins.
 _ANNOUNCE_VERBS = (
     r"announces?|announced|launch(?:es|ed)?|enters?|entered|joins?|joined|"
-    r"declares?|declared|files?|filed|to run|running for|will run|"
+    r"declares?|declared|files?|filed|to run|running(?: for)?|will run|"
     r"kicks? off|jumps? in(?:to)?|throws? (?:his|her|their) hat|"
-    r"seeks?|to seek|enters? the race|launch(?:es|ed)? (?:a )?(?:bid|campaign)")
+    r"seeks?|to seek|enters? the race|launch(?:es|ed)? (?:a )?(?:bid|campaign)|"
+    r"challenges?|to challenge|to unseat|takes? on|to take on|running against")
 _EXPLORE_VERBS = (
     r"mulls?|mulling|weighs?|weighing|considers?|considering|eyes?|eyeing|"
     r"explores?|exploring|could run|may run|might run|thinking about|"
     r"reportedly|rumored|floated|expected to run|potential(?:ly)?|possible")
 
-_NAME = r"([A-Z][a-zA-Z.'’-]+(?:\s+(?:[A-Z]\.?|[A-Z][a-zA-Z.'’-]+)){1,2})"
+# Names rely on capitalization, so keep _NAME case-sensitive — but make the VERBS
+# case-insensitive (?i:…), because title-case local-outlet headlines capitalize
+# them ("… Launches …", "… Running …"). `{1,2}?` is non-greedy so a captured name
+# stops at the shortest match (an adverb like "Again"/"formally" between the name
+# and the verb is skipped by `_ADV`, not swallowed into the name).
+_NAME = r"([A-Z][a-zA-Z.'’-]+(?:\s+(?:[A-Z]\.?|[A-Z][a-zA-Z.'’-]+)){1,2}?)"
+_ADV = r"(?:\s+(?i:again|formally|officially|finally|now|once more|reportedly))?"
 
-# Person-name is <name> <verb>, or <office-word> candidate/hopeful <name>.
-_ANNOUNCE_RE = re.compile(_NAME + r"\s+(?:" + _ANNOUNCE_VERBS + r")\b")
-_EXPLORE_RE = re.compile(_NAME + r"\s+(?:" + _EXPLORE_VERBS + r")\b")
-_REVERSE_RE = re.compile(
-    r"\b(?:candidate|hopeful|contender)\s+" + _NAME + r"\b")
-_BID_RE = re.compile(_NAME + r"['’]s\s+(?:bid|campaign|run)\b")
+# Person-name is <name> [<adverb>] <verb>, or <candidate/hopeful/challenger …> <name>.
+_ANNOUNCE_RE = re.compile(_NAME + _ADV + r"\s+(?i:" + _ANNOUNCE_VERBS + r")\b")
+_EXPLORE_RE = re.compile(_NAME + _ADV + r"\s+(?i:" + _EXPLORE_VERBS + r")\b")
+# Reverse form: the name must sit right after candidate/hopeful/…, either
+# immediately ("candidate Jane Smith") or after a "for <office>:" ("… candidate
+# for alderman: Jane Smith"). No arbitrary words in between — that grabbed
+# unrelated names mentioned later in the headline.
+_REVERSE_RE = re.compile(r"\b(?i:candidate|hopeful|contender|challenger)\s+" + _NAME + r"\b")
+_REVERSE_COLON_RE = re.compile(
+    r"\b(?i:candidate|hopeful|contender|challenger)(?:\s+(?i:for)\s+[a-z]+){0,2}"
+    r"\s*:\s*" + _NAME + r"\b")
+_BID_RE = re.compile(_NAME + r"['’]s\s+(?i:bid|campaign|run)\b")
 
 # Tokens that are never a person's given/sur-name in this context; a candidate
 # match containing any of these is rejected (kills "Chicago Mayor", "Ward Five",
@@ -1070,6 +1083,13 @@ _NAME_STOPWORDS = {
     "explainer", "primer", "rundown", "lineup", "slate", "profiles", "profile",
     "list", "questions", "answers", "town", "watch", "update", "updates",
     "coverage", "results", "forums", "debates",
+    # verb words are never a name token — a candidacy verb captured as part of a
+    # name means the match slid ("Propels Claudia Zuno", "Boosts …").
+    "announces", "announced", "launches", "launched", "enters", "entered",
+    "joins", "joined", "declares", "declared", "files", "filed", "seeks",
+    "running", "challenges", "challenger", "unseat", "mulls", "weighs", "faces",
+    "considers", "eyes", "explores", "propels", "boosts", "backs", "taps",
+    "urges", "pushes", "picks", "names", "leads", "vows", "rips", "slams",
 }
 
 
@@ -1156,19 +1176,24 @@ def _strip_titles(name):
 
 def _valid_person(name):
     """A conservative gate: 2-3 tokens, each capitalized and not an office/place/
-    calendar stopword, not an all-caps acronym."""
+    calendar/verb stopword, not an all-caps acronym. The last token must be a real
+    word (>=2 letters), so a name truncated by the headline at an initial or a
+    dropped apostrophe ("Matthew J. O", "Tanya G") is rejected."""
     name = _clean(name)
     parts = [p for p in name.split() if p]
     if not (2 <= len(parts) <= 3):
         return False
     if name.isupper():
         return False
+    last = re.sub(r"[^a-z]", "", parts[-1].lower())
+    if len(last) < 2:  # truncated surname ("Matthew J. O", "Tanya G")
+        return False
+    if last in {"la", "de", "van", "von", "del", "di", "da", "el", "al", "st", "mc", "o"}:
+        return False  # a name particle as the LAST token means it was cut ("Daniel La [Spata]")
     for p in parts:
         base = re.sub(r"[.'’-]", "", p).lower()
         if not base or base in _NAME_STOPWORDS:
             return False
-        if len(base) == 1:  # a bare initial like "R" is fine only mid-name
-            continue
     return True
 
 
@@ -1197,7 +1222,8 @@ def extract_candidacy(headline, race):
         return []
     found = {}  # name_key -> (display_name, status)
     for regex, status in ((_ANNOUNCE_RE, "announced"), (_BID_RE, "announced"),
-                          (_REVERSE_RE, "reported"), (_EXPLORE_RE, "exploring")):
+                          (_REVERSE_RE, "reported"), (_REVERSE_COLON_RE, "reported"),
+                          (_EXPLORE_RE, "exploring")):
         for m in regex.finditer(text):
             name = _strip_titles(m.group(1))
             if not _valid_person(name):

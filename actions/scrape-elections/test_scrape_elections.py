@@ -495,6 +495,31 @@ class PotentialCandidates(unittest.TestCase):
             "Alex Placeholder mulls a bid for mayor as field grows", self.mayor))
         self.assertEqual(names.get("Alex Placeholder"), "exploring")
 
+    def test_extract_titlecase_and_filler(self):
+        # Title-case verbs and an adverb between name and verb (common in local
+        # outlet headlines) must still extract, with the district in the headline.
+        ward19 = {"office": "Alderperson", "office_group": "council",
+                  "is_citywide": False, "district": "Ward 19"}
+        ward25 = {"office": "Alderperson", "office_group": "council",
+                  "is_citywide": False, "district": "Ward 25"}
+        self.assertEqual(
+            main.extract_candidacy("Melanie Jacobs Stathis Launches 19th Ward Alderman Campaign", ward19),
+            [("Melanie Jacobs Stathis", "announced")])
+        self.assertEqual(
+            main.extract_candidacy("Aida Flores Again Running For 25th Ward Aldermanic Seat", ward25),
+            [("Aida Flores", "announced")])
+        self.assertEqual(
+            dict(main.extract_candidacy("25th Ward candidate for alderman: Hilario Dominguez", ward25)),
+            {"Hilario Dominguez": "reported"})
+
+    def test_titlecase_fix_does_not_break_district_guard(self):
+        # The case-insensitive verbs must NOT let a different city's alderman
+        # (no Chicago ward number in the headline) attach to a ward race.
+        ward5 = {"office": "Alderperson", "office_group": "council",
+                 "is_citywide": False, "district": "Ward 5"}
+        self.assertEqual(main.extract_candidacy(
+            "Rockford Alderman Frank Beach Seeks Interim Mayor Role", ward5), [])
+
     def test_extract_requires_office_match(self):
         # No office keyword -> nothing attributed to the mayor race.
         self.assertEqual(main.extract_candidacy(

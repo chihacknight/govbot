@@ -263,7 +263,11 @@ name only when a headline both names a person beside a candidacy verb (→ statu
 district race, its district token (word-boundary matched, so "5th ward" ≠ "25th ward").
 Honorifics are stripped ("Rep. Mike Quigley" → "Mike Quigley"), office/place/calendar words are
 rejected as names, and every name carries its source article(s) {title, url, publisher, date};
-a sourceless name is dropped — nothing is invented. Queries: one pooled query per office group
+a sourceless name is dropped — nothing is invented. Extraction is tuned for real local-outlet
+headlines: verbs match case-insensitively (title-case "… Launches …", "… Running …"), an adverb
+between the name and the verb is skipped ("Aida Flores **Again** Running"), and names are gated
+against truncation (a trailing initial or split particle like "Matthew J. O" / "Daniel La") and
+against verb/event words captured as a name. Queries: one pooled query per office group
 for cross-cutting coverage, **plus a per-race query for every district race** (`Chicago alderman
 "45th ward" candidate 2027`, etc.) so each ward/subdistrict/police district gets its own coverage
 pool, plus one per citywide office. A bigger pool never loosens the match — the strict office +
