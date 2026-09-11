@@ -95,6 +95,19 @@ def fetch_text(url, timeout=FETCH_TIMEOUT):
         return None
 
 
+def fetch_bytes(url, timeout=FETCH_TIMEOUT):
+    """GET a URL, returning the raw bytes or None on any failure (for the BOE
+    candidate-list PDF)."""
+    url = url.replace(" ", "%20")  # BOE blob names contain spaces; urllib rejects them
+    req = urllib.request.Request(url, headers={"user-agent": UA, "accept": "*/*"})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.read() if resp.status == 200 else None
+    except Exception as err:
+        print(f"warning: fetch failed {url}: {err}", file=sys.stderr)
+        return None
+
+
 # --------------------------------------------------------------------------- #
 # normalization + race matching
 # --------------------------------------------------------------------------- #
@@ -412,6 +425,167 @@ def parse_cook_clerk(text, source="Cook County Clerk"):
     seed carries Cook County / suburban races; kept so the adapter slot exists
     and the deploy wiring is stable."""
     return []
+
+
+# --------------------------------------------------------------------------- #
+# Chicago BOE official "Candidate List" PDF (ballot-order text)
+# --------------------------------------------------------------------------- #
+# The Board of Elections publishes the authoritative candidate roster as a PDF
+# ("Candidate List_<date>.pdf") linked from chicagoelections.gov/getting-ballot/
+# candidates. `pdftotext -layout` renders it as ballot-order text:
+#
+#     President of the Chicago Board of Education
+#      Vote for One
+#        (121)   Victor P. Henderson (Nonpartisan)                 Candidate
+#     Member of the Chicago Board of Education, Subdistrict 1A
+#      Vote for One
+#        (131)   Ed Bannon (Nonpartisan)                           Candidate
+#
+# We scope to the Board-of-Education offices (the only Chicago-seed races on the
+# Nov 2026 ballot); the statewide/federal/judicial offices on the same list are
+# ignored — critically, so the statewide "Treasurer" is never misread as the
+# Chicago City Treasurer. Pure/deterministic; the pdftotext shell-out lives in
+# the fetch wrapper, so this is exercised offline against the __snapshots__ text.
+_BOE_PDF_ROW = re.compile(
+    r'^\s*\(\d+\)\s+(\S.*?)\s{2,}'
+    r'(Candidate|Withdrawn|Objected|Removed|Disqualified|Not Certified)\s*$', re.I)
+_BOE_PDF_VOTE = re.compile(r'^\s*Vote (?:for|Yes)\b', re.I)
+_BOE_PDF_NOISE = re.compile(
+    r'^\s*(?:Page \d+ of \d+|Ballot No\.|Write-in\b|This\b|Status as of|'
+    r'Candidate Filings)', re.I)
+
+
+def _boe_pdf_status(raw):
+    """The list is the finalized ballot in ballot order, so a plain 'Candidate'
+    means on the ballot; other words map through the shared normalizer."""
+    return "on_ballot" if (raw or "").strip().lower() == "candidate" else normalize_status(raw)
+
+
+def parse_boe_candidate_list(text, source="Chicago Board of Elections (candidate list)"):
+    """Parse the `pdftotext -layout` text of the Chicago BOE Candidate List into
+    Board-of-Education candidate dicts. Office context is the most recent header
+    line naming a Board-of-Education office; it resets to None at any other office
+    header, so trailing sections never bleed into the last subdistrict."""
+    office = None
+    out = []
+    for ln in (text or "").splitlines():
+        if not ln.strip():
+            continue
+        m = _BOE_PDF_ROW.match(ln)
+        if m:
+            if office and "board of education" in office.lower():
+                np = m.group(1).strip()
+                pm = re.match(r'^(.*?)\s*\(([^)]+)\)\s*$', np)
+                name, party = (pm.group(1).strip(), pm.group(2).strip()) if pm else (np, None)
+                if party and party.lower() == "nonpartisan":
+                    party = None  # schema: party is for partisan races only
+                out.append(make_candidate(
+                    name=name, office=office, district=None, party=party,
+                    petition_status=_boe_pdf_status(m.group(2)), source=source))
+            continue
+        if _BOE_PDF_VOTE.match(ln) or _BOE_PDF_NOISE.match(ln):
+            continue
+        # Any other line is an office/section header: keep it as context only
+        # when it's a Board-of-Education office, else drop context.
+        office = ln.strip() if "board of education" in ln.lower() else None
+    return out
+
+
+BOE_CANDIDATES_PAGE = "https://chicagoelections.gov/getting-ballot/candidates"
+
+
+def discover_boe_pdf_url(page_html=None):
+    """Find the newest 'Candidate List ….pdf' link on the BOE candidates page
+    (other PDFs there are forms/guides). Newest wins by the YYYYMMDD in the name.
+    Pure given `page_html`; fetches the page when it's None."""
+    html = page_html if page_html is not None else fetch_text(BOE_CANDIDATES_PAGE)
+    if not html:
+        return None
+    urls = re.findall(r'https?://[^"\'<>]*?Candidate(?:%20|\s)*List[^"\'<>]*?\.pdf',
+                      html, re.I)
+    if not urls:
+        return None
+    return sorted(urls, key=lambda u: (re.search(r'(\d{8})', u) or [""])[0])[-1]
+
+
+def pdf_to_text(pdf_path):
+    """Extract ballot-order text from a PDF via the `pdftotext -layout` system
+    tool (poppler-utils), the way DuckDB is shelled out elsewhere. Returns None
+    if pdftotext is missing or fails — fully fail-soft."""
+    import subprocess
+    try:
+        r = subprocess.run(["pdftotext", "-layout", str(pdf_path), "-"],
+                           capture_output=True, timeout=120)
+        return r.stdout.decode("utf-8", "replace") if r.returncode == 0 else None
+    except (OSError, subprocess.SubprocessError) as err:
+        print(f"warning: pdftotext failed ({err}); is poppler-utils installed?",
+              file=sys.stderr)
+        return None
+
+
+def fetch_boe_candidates(pdf_source=None):
+    """Resolve, download and parse the Chicago BOE Candidate List PDF into
+    candidate dicts. `pdf_source` may be a local text file (already extracted, for
+    testing), a local .pdf, a .pdf URL, or None (auto-discover). Fail-soft: any
+    step failing yields []."""
+    text = None
+    if pdf_source and pdf_source.lower().endswith((".txt",)):
+        try:
+            text = Path(pdf_source).read_text()
+        except OSError:
+            return []
+    else:
+        pdf_path = pdf_source
+        tmp = None
+        if not pdf_path or pdf_path.lower().startswith(("http://", "https://")):
+            url = pdf_source or discover_boe_pdf_url()
+            if not url:
+                return []
+            blob = fetch_bytes(url)
+            if not blob:
+                return []
+            import tempfile
+            tmp = Path(tempfile.mkstemp(suffix=".pdf")[1])
+            tmp.write_bytes(blob)
+            pdf_path = str(tmp)
+        text = pdf_to_text(pdf_path)
+        if tmp:
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
+    return parse_boe_candidate_list(text) if text else []
+
+
+def merge_candidates(doc, candidates):
+    """Place scraped candidates into an assembled doc's races by resolved race id
+    (dedupe by name; a populated race flips 'upcoming' -> 'on_ballot'). Returns the
+    number placed. Mirrors assemble()'s placement so an enrichment run matches a
+    fresh build."""
+    by_id = {r["id"]: r for r in doc.get("races", [])}
+    placed = 0
+    for c in candidates:
+        rid = c.pop("_race_id", None)
+        race = by_id.get(rid) if rid else None
+        if not race:
+            continue
+        race.setdefault("candidates", [])
+        if any(x["name"].lower() == c["name"].lower() for x in race["candidates"]):
+            continue
+        if race.get("status") == "upcoming":
+            race["status"] = "on_ballot"
+        race["candidates"].append(c)
+        placed += 1
+    for r in doc.get("races", []):
+        r.get("candidates", []).sort(key=lambda c: c["name"].lower())
+    return placed
+
+
+def enrich_candidates_from_boe(doc, pdf_source=None):
+    """Attach official Chicago BOE candidates (currently the Board of Education
+    offices on the ballot) to an assembled elections doc, in place. Returns the
+    number placed."""
+    return merge_candidates(doc, fetch_boe_candidates(pdf_source))
 
 
 # --------------------------------------------------------------------------- #
@@ -1090,6 +1264,37 @@ _GROUP_QUERY = {
 }
 
 
+def _ordinal(n):
+    """1 -> '1st', 2 -> '2nd', 3 -> '3rd', 11 -> '11th', 22 -> '22nd', …"""
+    if 10 <= n % 100 <= 20:
+        suf = "th"
+    else:
+        suf = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suf}"
+
+
+def _race_news_query(race):
+    """A per-race query so each district race gets its own coverage pool (one
+    pooled group query can't cover 50 wards / 22 districts). Returns None for
+    citywide/unknown, which fall back to the pooled group query + _news_query_for_race."""
+    g = race.get("office_group")
+    yr = (race.get("ballot_date") or "")[:4]
+    if g == "council":
+        w = _ward(race.get("district"))
+        if w:
+            return f'Chicago alderman "{_ordinal(w)} ward" candidate {yr or "2027"}'
+    if g == "police_district_council":
+        pd = _police_district(race.get("district"))
+        if pd:
+            return f'Chicago "police district council" "{_ordinal(pd)} district" candidate'
+    if g == "cps_board" and not race.get("is_citywide"):
+        sub = _subdistrict(race.get("district"))
+        if sub:
+            n = re.match(r"(\d+)", sub).group(1)
+            return f'Chicago "Board of Education" "district {n}" candidate {yr or "2026"}'
+    return None
+
+
 def fetch_news_items(query):
     """Live fetch+parse of one news query. Fail-soft: any failure yields []."""
     return parse_news_rss(fetch_text(news_url(query)))
@@ -1178,28 +1383,35 @@ def build_potential(race, items, now, existing=None):
 
 def enrich_potential(doc, now, fetcher=fetch_news_items, sleep=POTENTIAL_FETCH_SLEEP):
     """Attach unofficial, news-sourced potential_candidates[] to each race in an
-    assembled elections doc, in place. One pooled news query per office group
-    (plus one per citywide office); each race extracts only names whose headline
-    references it. `fetcher` is injectable so tests run offline. Returns the
-    number of races given at least one potential candidate."""
+    assembled elections doc, in place.
+
+    Each race draws on: a broad pooled query for its office group (cross-cutting
+    coverage), PLUS a per-race query for district races (so each ward / CPS
+    subdistrict / police district gets its own coverage pool — one pooled query
+    can't cover 50 wards). Citywide races use their own office query. Extraction
+    is unchanged (strict office+district gating), so a bigger pool never means a
+    looser match — a name still attaches only when a headline names the person
+    with a candidacy verb AND references this race. `fetcher` is injectable so
+    tests run offline. Returns the number of races given >=1 potential candidate."""
     import time
     races = doc.get("races", [])
-    # Group fetches: pool district races by office group, citywide per race.
-    group_pool = {}
-    for g, q in _GROUP_QUERY.items():
-        if any(r.get("office_group") == g for r in races):
-            group_pool[g] = fetcher(q) or []
-            if sleep:
-                time.sleep(sleep)
+
+    def _fetch(q):
+        items = fetcher(q) or []
+        if sleep:
+            time.sleep(sleep)
+        return items
+
+    # Broad per-group pools (cheap: one request per group) for cross-cutting hits.
+    group_pool = {g: _fetch(q) for g, q in _GROUP_QUERY.items()
+                  if any(r.get("office_group") == g for r in races)}
+
     updated = 0
     for r in races:
         g = r.get("office_group")
-        if g in group_pool:
-            items = group_pool[g]
-        else:
-            items = fetcher(_news_query_for_race(r)) or []
-            if sleep:
-                time.sleep(sleep)
+        items = list(group_pool.get(g, []))
+        rq = _race_news_query(r)                 # per-district query, when applicable
+        items += _fetch(rq) if rq else (_fetch(_news_query_for_race(r)) if g not in group_pool else [])
         pcs = build_potential(r, items, now, existing=r.get("potential_candidates"))
         r["potential_candidates"] = pcs
         if pcs:
@@ -1731,6 +1943,16 @@ def main():
                          "file's current potential_candidates so names/citations "
                          "accumulate across runs. Fail-soft: sources down leaves the "
                          "lists as they were")
+    ap.add_argument("--enrich-candidates-boe", default=None,
+                    help="Attach official candidates from the Chicago BOE Candidate "
+                         "List PDF to an existing elections.json (rewritten in place), "
+                         "then exit. Populates the Board-of-Education races on the "
+                         "ballot. Uses --boe-pdf or auto-discovers the latest PDF; needs "
+                         "the `pdftotext` system tool (poppler-utils). Fail-soft")
+    ap.add_argument("--boe-pdf", default=None,
+                    help="Source for --enrich-candidates-boe: a .pdf URL, a local .pdf, "
+                         "or a local .txt of already-extracted text (for tests). "
+                         "Omitted = auto-discover the latest from the BOE candidates page")
     ap.add_argument("--rss-from", default=None,
                     help="(Re)generate the RSS feeds from an existing elections.json "
                          "(no scrape), then exit — used by the deploy to rebuild feeds "
@@ -1766,6 +1988,15 @@ def main():
         n = enrich_potential(doc, now)
         Path(args.enrich_potential).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
         print(f"attached news-sourced potential candidates to {n} race(s)", file=sys.stderr)
+        return 0
+
+    if args.enrich_candidates_boe:
+        doc = load_json(args.enrich_candidates_boe)
+        if doc is None:
+            return 0
+        n = enrich_candidates_from_boe(doc, args.boe_pdf)
+        Path(args.enrich_candidates_boe).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
+        print(f"attached {n} official Chicago BOE candidate(s)", file=sys.stderr)
         return 0
 
     if args.rss_from:

@@ -42,6 +42,35 @@ no confirmed candidate keeps an empty list plus a link to its official source.
 > The exact live endpoints in `main.py` may need re-pointing against a real page
 > snapshot as a cycle opens.
 
+## Official candidates — Chicago BOE Candidate List (PDF)
+
+The Board of Elections publishes the authoritative candidate roster only as a
+**PDF** (`Candidate List_<date>.pdf`, linked from
+`chicagoelections.gov/getting-ballot/candidates`). `--enrich-candidates-boe`
+auto-discovers the newest one, extracts it with the `pdftotext` **system tool**
+(poppler-utils — shelled out like DuckDB, so no Python dependency is added), and
+merges the candidates into the matching races:
+
+```bash
+python3 actions/scrape-elections/main.py \
+  --enrich-candidates-boe docs/src/dashboard/elections.json
+# or point at a specific source (URL, local .pdf, or extracted .txt for testing):
+#   --boe-pdf "https://…/Candidate List_20260904-1_0.pdf"
+```
+
+`parse_boe_candidate_list(text)` is a pure parser over the `pdftotext -layout`
+output. It's **scoped to Board-of-Education offices** — the only Chicago-seed
+races on the Nov 2026 ballot (president + 20 subdistricts 1a–10b) — so the
+statewide / federal / judicial offices on the same ballot list are ignored. That
+scoping matters: it stops the statewide *Treasurer* from being misread as the
+Chicago City Treasurer, and the office context resets at every non-BOE header so
+trailing sections never leak into the last subdistrict. Pure/deterministic and
+offline-tested against `__snapshots__/raw/boe_candidate_list.txt`; only the fetch
+wrapper touches the network / shells out to `pdftotext`. Fail-soft: no poppler or
+no PDF leaves rosters untouched. The deploy runs this before the money step (so
+committees can match) and before the feeds are rebuilt; the committed sample
+ships empty.
+
 ## Springfield side feed — "the rules of the game"
 
 Beyond candidates, the build attaches a top-level `springfield` list: **Illinois
@@ -127,10 +156,18 @@ so it's out). A name is attached **only** when a headline both:
 Leading honorifics are stripped (`Rep. Mike Quigley` → `Mike Quigley`) so one
 person doesn't split in two, office/place/calendar words are rejected as names,
 and every surfaced name carries the article(s) it came from (headline, link,
-publisher, date). Nothing is invented; a name with no source is dropped. One
-pooled news query runs per office group (plus one per citywide office); each race
-extracts only names whose headline references it. Fully fail-soft — sources down
-leaves the lists empty.
+publisher, date). Nothing is invented; a name with no source is dropped.
+
+Queries: one **pooled query per office group** for cross-cutting coverage, plus a
+**per-race query for every district race** (`Chicago alderman "45th ward"
+candidate 2027`, …) so each ward / CPS subdistrict / police district gets its own
+coverage pool — a single pooled query can't cover 50 wards. The bigger pool never
+loosens the match: the strict office + district gating is unchanged, so a name
+still attaches only when a headline names the person with a candidacy verb *and*
+references that race. Because of that, **most down-ballot races legitimately stay
+empty** until candidates actually surface in the press (2027 filing opens Nov
+2026) — the lists fill in on the twice-daily refresh as coverage grows, never by
+guessing. Fully fail-soft — sources down leaves the lists empty.
 
 ```bash
 python3 actions/scrape-elections/main.py \
