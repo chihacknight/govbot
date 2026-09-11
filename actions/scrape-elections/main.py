@@ -1226,6 +1226,12 @@ def extract_candidacy(headline, race):
                           (_EXPLORE_RE, "exploring")):
         for m in regex.finditer(text):
             name = _strip_titles(m.group(1))
+            # Drop leading verb/place/garbage words the pattern swept into the name
+            # ("… Propels Claudia Zuno To Run" -> "Claudia Zuno"), keeping >=2 tokens.
+            toks = name.split()
+            while len(toks) > 2 and re.sub(r"[.'’-]", "", toks[0].lower()) in _NAME_STOPWORDS:
+                toks.pop(0)
+            name = " ".join(toks)
             if not _valid_person(name):
                 continue
             key = name.lower()
