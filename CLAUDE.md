@@ -255,7 +255,10 @@ repo variable/secret is set, so it is inert until an election happens. This comp
 race — names the press reports as running/exploring/rumored before filing opens, kept strictly
 apart from the official `candidates` list. They surface in the **per-race RSS feeds** as items
 prefixed **`[UNOFFICIAL]`** and linked to a source article (a rumor can't be mistaken for a
-ballot record), but are kept out of the whole-ballot/group/ballot aggregate feeds.
+ballot record), but are kept out of the whole-ballot/group/ballot aggregate feeds. Once a name
+is confirmed on the official list it **graduates out** of potential — `build_potential` drops
+any name already in that race's official `candidates` (populated earlier in the deploy by
+`--enrich-candidates-boe`), so a filed candidate never double-lists as both official and rumored.
 `main.py --enrich-potential <elections.json>` reads **Google News' public RSS search** (the
 "internet"; raw social-platform scraping is not TOS-safe/reliable, so it is out) and attaches a
 name only when a headline both names a person beside a candidacy verb (→ status

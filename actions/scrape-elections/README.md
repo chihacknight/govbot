@@ -153,6 +153,13 @@ the official `candidates`. They appear in the **per-race** RSS feeds as items
 prefixed **`[UNOFFICIAL]`** and linked to a source article (so a rumor can't be
 mistaken for a ballot record); the aggregate feeds don't carry them.
 
+Once a name is confirmed on the official list, it **graduates out** of potential:
+`build_potential` drops any name already present in that race's official
+`candidates` (populated earlier by `--enrich-candidates-boe`), so a filed
+candidate never double-lists as both official and "rumored." When the 2027
+municipal roster publishes, each race's confirmed names move cleanly from the
+amber "potential" block into the official list.
+
 It reads **Google News' public RSS search** (an aggregator over the press — the
 "internet" source; raw social-platform scraping is neither TOS-safe nor reliable,
 so it's out). A name is attached **only** when a headline both:

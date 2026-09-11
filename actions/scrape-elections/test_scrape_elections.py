@@ -557,6 +557,24 @@ class PotentialCandidates(unittest.TestCase):
         # Status upgraded by the newer coverage.
         self.assertEqual(jordan["status"], "announced")
 
+    def test_build_drops_now_official_candidate(self):
+        # Once someone the press reported as "potential" is confirmed on the
+        # official candidate list for the race, they graduate out of potential
+        # rather than double-listing as both official and rumored.
+        race = dict(self.mayor,
+                    candidates=[{"name": "Jordan A. Rivers", "source": "BOE"}])
+        pcs = main.build_potential(race, self.mayor_items, self.now)
+        names = [p["name"] for p in pcs]
+        self.assertNotIn("Jordan A. Rivers", names)  # now official -> not potential
+        # Other news-only names in the same pool are unaffected.
+        self.assertTrue(all(n != "Jordan A. Rivers" for n in names))
+        # Match is case-insensitive on the official name.
+        race2 = dict(self.mayor,
+                     candidates=[{"name": "jordan a. rivers", "source": "BOE"}])
+        self.assertNotIn(
+            "Jordan A. Rivers",
+            [p["name"] for p in main.build_potential(race2, self.mayor_items, self.now)])
+
     def test_district_gating(self):
         ward1 = {"id": "chicago-alderperson-ward-01", "office": "Alderperson",
                  "office_group": "council", "is_citywide": False, "district": "Ward 1"}

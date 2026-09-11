@@ -1354,7 +1354,13 @@ def fetch_news_items(query):
 def build_potential(race, items, now, existing=None):
     """Assemble a race's potential_candidates[] from news `items` (already the
     relevant pool), merged with any `existing` list so names/sources accumulate
-    across the twice-daily runs. Pure/deterministic given its inputs."""
+    across the twice-daily runs. Pure/deterministic given its inputs.
+
+    A name that has since become an *official* candidate for this race (present in
+    race['candidates'], populated earlier by --enrich-candidates-boe) is dropped:
+    once the authority confirms someone, they graduate out of the unofficial
+    "potential/rumored" list rather than double-listing as both."""
+    official = {(c.get("name") or "").lower() for c in race.get("candidates", [])}
     people = {}  # name_key -> record
 
     def _seed(name):
@@ -1413,8 +1419,10 @@ def build_potential(race, items, now, existing=None):
                     _add_source(rec, it)
 
     out = []
-    for rec in people.values():
+    for key, rec in people.items():
         if not rec["sources"]:
+            continue
+        if key in official:      # now an official candidate — no longer "potential"
             continue
         dates = sorted(rec["_dates"])
         rec["sources"].sort(key=lambda s: (s.get("date") or ""), reverse=True)
