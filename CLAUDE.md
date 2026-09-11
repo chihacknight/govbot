@@ -218,14 +218,20 @@ publishes the roster only as a PDF). `deploy-docs.yml` installs `poppler-utils` 
 `main.py --enrich-candidates-boe docs/src/dashboard/elections.json` auto-discovers the newest
 `Candidate List_<date>.pdf`, extracts it with the `pdftotext` **system tool** (shelled out like
 DuckDB — no Python dep, so the stdlib-only rule holds), and merges candidates. The pure
-`parse_boe_candidate_list(text)` is scoped to Board-of-Education offices — the only Chicago-seed
-races on the Nov 2026 ballot (president + 20 subdistricts 1a–10b) — so the statewide/federal/
-judicial offices on the same list are ignored (critically, the statewide "Treasurer" is never
-misread as the Chicago City Treasurer); office context resets at every non-BOE header so trailing
-sections never leak into the last subdistrict. It's offline-tested against
-`__snapshots__/raw/boe_candidate_list.txt` (`pdftotext -layout` text; the shell-out lives only in
-the fetch wrapper). Runs before the money step (so committees can match) and before the RSS feeds
-are rebuilt. Fail-soft: no poppler / no PDF leaves rosters as they were; committed sample empty.
+`parse_boe_candidate_list(text)` keeps a candidate only when its office header resolves to a
+Chicago-seed race (`_boe_office_race` → `race_id_for`); the statewide/federal/judicial/county
+offices on the same ballot are ignored. Two guards make that safe: `race_id_for` requires an
+education signal for the CPS board (so the **Cook County Board president** never resolves to the
+CPS president), and `_boe_office_race` requires the word "City" for the treasurer/clerk (so the
+**statewide Treasurer** is never misread as the Chicago City Treasurer). On the Nov 2026 ballot
+this yields exactly the CPS races (president + 20 subdistricts 1a–10b, 42 candidates); it's
+forward-compatible, so when the **2027 municipal** candidate list publishes it will populate
+mayor / alderperson wards / police district councils / city clerk & treasurer the same way (no
+2027 official roster exists yet — filing is Nov 2026). Offline-tested against
+`__snapshots__/raw/boe_candidate_list.txt` (`pdftotext -layout` text incl. statewide + municipal
+examples; the shell-out lives only in the fetch wrapper). Runs before the money step (so
+committees can match) and before the RSS feeds are rebuilt. Fail-soft: no poppler / no PDF leaves
+rosters as they were; committed sample empty.
 
 **Campaign money** (Illinois SBE) attaches to each candidate via the SBE ID crosswalk
 (candidate name → `Candidates.txt` ID → `CmteCandidateLinks` → `Committees` → latest

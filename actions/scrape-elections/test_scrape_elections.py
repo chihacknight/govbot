@@ -48,6 +48,14 @@ class RaceMatching(unittest.TestCase):
         self.assertIsNone(main.race_id_for("State Representative", "District 5"))
         self.assertIsNone(main.race_id_for("Alderperson", "Ward 99"))  # out of range
 
+    def test_non_education_board_president_not_cps(self):
+        # A generic "…Board president" (e.g. the Cook County Board president) must
+        # NOT resolve to the CPS board president — requires an education signal.
+        self.assertIsNone(main.race_id_for("President of County Board", ""))
+        self.assertIsNone(main.race_id_for("President of the Cook County Board", ""))
+        self.assertEqual(main.race_id_for("President of the Chicago Board of Education", ""),
+                         "cps-board-president")
+
 
 class StatusNormalization(unittest.TestCase):
     def test_maps(self):
@@ -125,15 +133,27 @@ class BOECandidateList(unittest.TestCase):
     def setUp(self):
         self.cands = main.parse_boe_candidate_list((RAW / "boe_candidate_list.txt").read_text())
 
-    def test_only_board_of_education_offices(self):
-        # The statewide Treasurer and the trailing Judge office must NOT resolve.
+    def test_only_chicago_offices_resolve(self):
+        # Every parsed candidate resolves to a Chicago-seed race; statewide /
+        # judicial offices on the same ballot are ignored.
         rids = {c["_race_id"] for c in self.cands}
         self.assertNotIn(None, rids)
-        self.assertTrue(all(r.startswith("cps-") for r in rids))
         names = {c["name"] for c in self.cands}
         self.assertNotIn("Max Solomon", names)              # statewide Treasurer
         self.assertNotIn("Michael W. Frerichs", names)      # statewide Treasurer
         self.assertNotIn("Should Not Be Attributed", names)  # trailing judge office
+
+    def test_statewide_vs_city_treasurer_guard(self):
+        # The bare statewide "Treasurer" must NOT become the Chicago City
+        # Treasurer, but an explicit "City Treasurer" office must.
+        by_name = {c["name"]: c["_race_id"] for c in self.cands}
+        self.assertNotIn("Max Solomon", by_name)
+        self.assertEqual(by_name.get("Pat Q. Cityperson"), "chicago-city-treasurer")
+
+    def test_municipal_offices_resolve(self):
+        # Forward-compatible: a municipal ward office on a (future) list resolves.
+        by_name = {c["name"]: c["_race_id"] for c in self.cands}
+        self.assertEqual(by_name.get("Robin T. Fifthward"), "chicago-alderperson-ward-05")
 
     def test_president_and_subdistricts_resolve(self):
         by_race = {}

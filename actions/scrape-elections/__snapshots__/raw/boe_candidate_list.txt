@@ -13,6 +13,14 @@ Treasurer
 
                 Write-in                                                                                                                    N/A
 
+City Treasurer
+  Vote for One
+      (40)      Pat Q. Cityperson (Nonpartisan)                                                                                     Candidate
+
+Alderperson, Ward 5
+  Vote for One
+      (55)      Robin T. Fifthward (Nonpartisan)                                                                                    Candidate
+
 President of the Chicago Board of Education
  Vote for One
    (121)   Victor P. Henderson (Nonpartisan)                             Candidate

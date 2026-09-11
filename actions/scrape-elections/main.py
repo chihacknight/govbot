@@ -149,11 +149,13 @@ def race_id_for(office, district):
     o = (office or "").lower()
     d = district or ""
 
-    # CPS board — check before the generic "president"/"member" words leak.
-    if "board of education" in o or "school board" in o or o.startswith("cps") \
-            or "board member" in o or "board of ed" in o \
-            or ("board" in o and ("subdistrict" in d.lower() or "president" in o)):
-        if "president" in o:
+    # CPS board — require an education signal so a generic "…Board president"
+    # (e.g. the Cook County Board president) never resolves to the CPS board. A
+    # subdistrict district is itself a CPS signal (only CPS uses subdistricts).
+    _edu = ("board of education" in o or "school board" in o or "board of ed" in o
+            or "cps" in o)
+    if _edu or "subdistrict" in d.lower():
+        if _edu and "president" in o:
             return "cps-board-president"
         sub = _subdistrict(d) or _subdistrict(office)
         return f"cps-board-member-{sub.lower()}" if sub else None
@@ -461,11 +463,28 @@ def _boe_pdf_status(raw):
     return "on_ballot" if (raw or "").strip().lower() == "candidate" else normalize_status(raw)
 
 
+def _boe_office_race(office):
+    """The Chicago-seed race id an office header resolves to, or None. Guards the
+    one trap a statewide/county ballot springs: a bare 'Treasurer' or 'Clerk'
+    (the Illinois state offices) would resolve to the Chicago City Treasurer/Clerk
+    via race_id_for, so those require the word 'City'. Everything race_id_for
+    already scopes to Chicago (Mayor, Alderperson wards, CPS, Police District
+    Councils) passes straight through — so this parser handles the CPS offices on
+    the 2026 ballot today and the municipal offices on a 2027 list unchanged."""
+    rid = race_id_for(office, None)
+    if rid in ("chicago-city-treasurer", "chicago-city-clerk") \
+            and "city" not in (office or "").lower():
+        return None
+    return rid
+
+
 def parse_boe_candidate_list(text, source="Chicago Board of Elections (candidate list)"):
     """Parse the `pdftotext -layout` text of the Chicago BOE Candidate List into
-    Board-of-Education candidate dicts. Office context is the most recent header
-    line naming a Board-of-Education office; it resets to None at any other office
-    header, so trailing sections never bleed into the last subdistrict."""
+    candidate dicts for the Chicago races in the seed. Office context is the most
+    recent header line; a candidate row is kept only when that office resolves to
+    a seed race (`_boe_office_race`), so statewide / federal / judicial offices on
+    the same ballot are ignored and trailing sections can't bleed into the last
+    race. Pure/deterministic."""
     office = None
     out = []
     for ln in (text or "").splitlines():
@@ -473,7 +492,8 @@ def parse_boe_candidate_list(text, source="Chicago Board of Elections (candidate
             continue
         m = _BOE_PDF_ROW.match(ln)
         if m:
-            if office and "board of education" in office.lower():
+            rid = _boe_office_race(office) if office else None
+            if rid:
                 np = m.group(1).strip()
                 pm = re.match(r'^(.*?)\s*\(([^)]+)\)\s*$', np)
                 name, party = (pm.group(1).strip(), pm.group(2).strip()) if pm else (np, None)
@@ -485,9 +505,8 @@ def parse_boe_candidate_list(text, source="Chicago Board of Elections (candidate
             continue
         if _BOE_PDF_VOTE.match(ln) or _BOE_PDF_NOISE.match(ln):
             continue
-        # Any other line is an office/section header: keep it as context only
-        # when it's a Board-of-Education office, else drop context.
-        office = ln.strip() if "board of education" in ln.lower() else None
+        # Any other line is an office/section header — the new office context.
+        office = ln.strip()
     return out
 
 

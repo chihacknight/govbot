@@ -59,17 +59,27 @@ python3 actions/scrape-elections/main.py \
 ```
 
 `parse_boe_candidate_list(text)` is a pure parser over the `pdftotext -layout`
-output. It's **scoped to Board-of-Education offices** — the only Chicago-seed
-races on the Nov 2026 ballot (president + 20 subdistricts 1a–10b) — so the
-statewide / federal / judicial offices on the same ballot list are ignored. That
-scoping matters: it stops the statewide *Treasurer* from being misread as the
-Chicago City Treasurer, and the office context resets at every non-BOE header so
-trailing sections never leak into the last subdistrict. Pure/deterministic and
-offline-tested against `__snapshots__/raw/boe_candidate_list.txt`; only the fetch
-wrapper touches the network / shells out to `pdftotext`. Fail-soft: no poppler or
-no PDF leaves rosters untouched. The deploy runs this before the money step (so
-committees can match) and before the feeds are rebuilt; the committed sample
-ships empty.
+output. A candidate is kept only when its office header **resolves to a
+Chicago-seed race** (`_boe_office_race` → `race_id_for`); the statewide / federal
+/ judicial / county offices on the same ballot are ignored. Two guards keep that
+honest:
+
+- `race_id_for` requires an **education signal** for the CPS board, so a generic
+  "…Board president" (the **Cook County Board president**, Preckwinkle et al.)
+  never resolves to the CPS president.
+- `_boe_office_race` requires the word **"City"** for the treasurer/clerk, so the
+  statewide *Treasurer* is never misread as the Chicago City Treasurer.
+
+On the Nov 2026 ballot this yields exactly the CPS races (president + 20
+subdistricts 1a–10b — 42 candidates). It's **forward-compatible**: when the 2027
+municipal candidate list is published, the same parser will populate
+mayor / alderperson wards / police district councils / city clerk & treasurer
+(there's no 2027 official roster yet — filing is Nov 2026). Pure/deterministic
+and offline-tested against `__snapshots__/raw/boe_candidate_list.txt` (which
+includes statewide + municipal examples); only the fetch wrapper touches the
+network / shells out to `pdftotext`. Fail-soft: no poppler or no PDF leaves
+rosters untouched. The deploy runs this before the money step (so committees can
+match) and before the feeds are rebuilt; the committed sample ships empty.
 
 ## Springfield side feed — "the rules of the game"
 
