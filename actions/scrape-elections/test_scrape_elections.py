@@ -121,6 +121,69 @@ class ChicagoBOEParser(unittest.TestCase):
         self.assertEqual(main.parse_chicago_boe("<p>no table</p>"), [])
 
 
+class BOECandidateList(unittest.TestCase):
+    def setUp(self):
+        self.cands = main.parse_boe_candidate_list((RAW / "boe_candidate_list.txt").read_text())
+
+    def test_only_board_of_education_offices(self):
+        # The statewide Treasurer and the trailing Judge office must NOT resolve.
+        rids = {c["_race_id"] for c in self.cands}
+        self.assertNotIn(None, rids)
+        self.assertTrue(all(r.startswith("cps-") for r in rids))
+        names = {c["name"] for c in self.cands}
+        self.assertNotIn("Max Solomon", names)              # statewide Treasurer
+        self.assertNotIn("Michael W. Frerichs", names)      # statewide Treasurer
+        self.assertNotIn("Should Not Be Attributed", names)  # trailing judge office
+
+    def test_president_and_subdistricts_resolve(self):
+        by_race = {}
+        for c in self.cands:
+            by_race.setdefault(c["_race_id"], []).append(c["name"])
+        self.assertIn("Victor P. Henderson", by_race["cps-board-president"])
+        self.assertEqual(by_race["cps-board-member-1a"], ["Ed Bannon", "Margie B. Luczak"])
+        self.assertEqual(by_race["cps-board-member-4b"], ["Ellen Rosenfeld"])
+        # trailing content did not leak into the last subdistrict
+        self.assertEqual(by_race["cps-board-member-10b"], ["Connie Anderson", "Patrick C. Watson"])
+
+    def test_status_mapping(self):
+        st = {c["name"]: c["petition_status"] for c in self.cands}
+        self.assertEqual(st["Victor P. Henderson"], "on_ballot")
+        self.assertEqual(st["Sendhil Revuluri"], "withdrawn")
+        self.assertEqual(st["Kyna Lenhof"], "objected")
+
+    def test_nonpartisan_party_nulled(self):
+        # CPS is non-partisan; the "(Nonpartisan)" tag is dropped (schema: party is
+        # for partisan races only).
+        self.assertTrue(all(c["party"] is None for c in self.cands))
+
+    def test_name_with_quotes(self):
+        self.assertIn("Deborah \"Debby\" Pope", {c["name"] for c in self.cands})
+
+    def test_discover_pdf_url_picks_newest_candidate_list(self):
+        html = ('<a href="https://x/prod/2026-03/2026 Candidates Guide.pdf">guide</a>'
+                '<a href="https://x/prod/2026-06/Candidate List_20260604-1_0.pdf">old</a>'
+                '<a href="https://x/prod/2026-09/Candidate List_20260904-1_0.pdf">new</a>'
+                '<a href="https://x/general/Candidate-Withdrawal-Form.pdf">form</a>')
+        self.assertEqual(main.discover_boe_pdf_url(html),
+                         "https://x/prod/2026-09/Candidate List_20260904-1_0.pdf")
+        self.assertIsNone(main.discover_boe_pdf_url("<a href='/no/lists/here.pdf'>x</a>"))
+
+    def test_merge_into_doc(self):
+        doc = {"races": [{"id": "cps-board-member-1a", "status": "upcoming", "candidates": []},
+                         {"id": "cps-board-president", "status": "upcoming", "candidates": []}]}
+        n = main.merge_candidates(doc, main.parse_boe_candidate_list(
+            (RAW / "boe_candidate_list.txt").read_text()))
+        self.assertGreater(n, 0)
+        one_a = next(r for r in doc["races"] if r["id"] == "cps-board-member-1a")
+        self.assertEqual([c["name"] for c in one_a["candidates"]], ["Ed Bannon", "Margie B. Luczak"])
+        self.assertEqual(one_a["status"], "on_ballot")
+        self.assertNotIn("_race_id", one_a["candidates"][0])  # stripped on placement
+
+    def test_bad_input_empty(self):
+        self.assertEqual(main.parse_boe_candidate_list(""), [])
+        self.assertEqual(main.parse_boe_candidate_list("no offices\njust prose"), [])
+
+
 class Assemble(unittest.TestCase):
     def setUp(self):
         self.seed = main.load_seed()

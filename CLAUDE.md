@@ -212,6 +212,21 @@ outline (citywide offices tint all of Chicago); CPS subdistricts have no publish
 so their map is omitted. Fail-soft: a portal outage leaves the committed `maps.json` in
 place. Geometry helpers are offline-tested: `python3 actions/scrape-maps/main.py --self-test`.
 
+**Official candidates** are populated from the Chicago Board of Elections' authoritative
+**Candidate List PDF** (linked from `chicagoelections.gov/getting-ballot/candidates`; the BOE
+publishes the roster only as a PDF). `deploy-docs.yml` installs `poppler-utils` and
+`main.py --enrich-candidates-boe docs/src/dashboard/elections.json` auto-discovers the newest
+`Candidate List_<date>.pdf`, extracts it with the `pdftotext` **system tool** (shelled out like
+DuckDB — no Python dep, so the stdlib-only rule holds), and merges candidates. The pure
+`parse_boe_candidate_list(text)` is scoped to Board-of-Education offices — the only Chicago-seed
+races on the Nov 2026 ballot (president + 20 subdistricts 1a–10b) — so the statewide/federal/
+judicial offices on the same list are ignored (critically, the statewide "Treasurer" is never
+misread as the Chicago City Treasurer); office context resets at every non-BOE header so trailing
+sections never leak into the last subdistrict. It's offline-tested against
+`__snapshots__/raw/boe_candidate_list.txt` (`pdftotext -layout` text; the shell-out lives only in
+the fetch wrapper). Runs before the money step (so committees can match) and before the RSS feeds
+are rebuilt. Fail-soft: no poppler / no PDF leaves rosters as they were; committed sample empty.
+
 **Campaign money** (Illinois SBE) attaches to each candidate via the SBE ID crosswalk
 (candidate name → `Candidates.txt` ID → `CmteCandidateLinks` → `Committees` → latest
 `D2Totals` row): receipts, spending, cash on hand. Only unambiguous name matches are kept
