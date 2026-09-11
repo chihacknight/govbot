@@ -472,6 +472,23 @@ class PotentialCandidates(unittest.TestCase):
         self.assertTrue(main.extract_candidacy(
             "Robin Example enters the race for alderman in Ward 5", ward5))
 
+    def test_ordinal(self):
+        self.assertEqual([main._ordinal(n) for n in (1, 2, 3, 4, 11, 13, 21, 22, 23, 50)],
+                         ["1st", "2nd", "3rd", "4th", "11th", "13th", "21st", "22nd", "23rd", "50th"])
+
+    def test_per_race_news_query(self):
+        # District races get a district-scoped query; citywide races don't.
+        ward = {"office": "Alderperson", "office_group": "council",
+                "is_citywide": False, "district": "Ward 45"}
+        self.assertIn('"45th ward"', main._race_news_query(ward))
+        police = {"office": "Police District Councilmember", "office_group": "police_district_council",
+                  "is_citywide": False, "district": "Police District 14"}
+        self.assertIn('"14th district"', main._race_news_query(police))
+        cps = {"office": "Member of the Board of Education", "office_group": "cps_board",
+               "is_citywide": False, "district": "Subdistrict 4A"}
+        self.assertIn('"district 4"', main._race_news_query(cps))
+        self.assertIsNone(main._race_news_query(self.mayor))  # citywide
+
     def test_enrich_potential_offline(self):
         seed = main.load_seed()
         doc, _ = main.assemble([], seed, "test", self.now)

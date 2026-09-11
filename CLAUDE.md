@@ -242,8 +242,13 @@ name only when a headline both names a person beside a candidacy verb (→ statu
 district race, its district token (word-boundary matched, so "5th ward" ≠ "25th ward").
 Honorifics are stripped ("Rep. Mike Quigley" → "Mike Quigley"), office/place/calendar words are
 rejected as names, and every name carries its source article(s) {title, url, publisher, date};
-a sourceless name is dropped — nothing is invented. One pooled news query per office group (plus
-one per citywide office); fail-soft (sources down → empty lists), committed sample empty. The
+a sourceless name is dropped — nothing is invented. Queries: one pooled query per office group
+for cross-cutting coverage, **plus a per-race query for every district race** (`Chicago alderman
+"45th ward" candidate 2027`, etc.) so each ward/subdistrict/police district gets its own coverage
+pool, plus one per citywide office. A bigger pool never loosens the match — the strict office +
+district gating is unchanged, so most down-ballot races legitimately stay empty until candidates
+actually appear in the press (2027 filing opens Nov 2026); the lists fill in on the twice-daily
+refresh as coverage grows. Fail-soft (sources down → empty lists), committed sample empty. The
 frontend renders it as a collapsed, dashed-amber "💭 Potential candidates · Unofficial · from
 news" block under each race. `deploy-docs.yml` runs it right after the base elections build
 (independent of official candidates), twice daily. Parsers are offline-tested in

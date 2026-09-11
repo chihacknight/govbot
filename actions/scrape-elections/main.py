@@ -1090,6 +1090,37 @@ _GROUP_QUERY = {
 }
 
 
+def _ordinal(n):
+    """1 -> '1st', 2 -> '2nd', 3 -> '3rd', 11 -> '11th', 22 -> '22nd', …"""
+    if 10 <= n % 100 <= 20:
+        suf = "th"
+    else:
+        suf = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suf}"
+
+
+def _race_news_query(race):
+    """A per-race query so each district race gets its own coverage pool (one
+    pooled group query can't cover 50 wards / 22 districts). Returns None for
+    citywide/unknown, which fall back to the pooled group query + _news_query_for_race."""
+    g = race.get("office_group")
+    yr = (race.get("ballot_date") or "")[:4]
+    if g == "council":
+        w = _ward(race.get("district"))
+        if w:
+            return f'Chicago alderman "{_ordinal(w)} ward" candidate {yr or "2027"}'
+    if g == "police_district_council":
+        pd = _police_district(race.get("district"))
+        if pd:
+            return f'Chicago "police district council" "{_ordinal(pd)} district" candidate'
+    if g == "cps_board" and not race.get("is_citywide"):
+        sub = _subdistrict(race.get("district"))
+        if sub:
+            n = re.match(r"(\d+)", sub).group(1)
+            return f'Chicago "Board of Education" "district {n}" candidate {yr or "2026"}'
+    return None
+
+
 def fetch_news_items(query):
     """Live fetch+parse of one news query. Fail-soft: any failure yields []."""
     return parse_news_rss(fetch_text(news_url(query)))
@@ -1178,28 +1209,35 @@ def build_potential(race, items, now, existing=None):
 
 def enrich_potential(doc, now, fetcher=fetch_news_items, sleep=POTENTIAL_FETCH_SLEEP):
     """Attach unofficial, news-sourced potential_candidates[] to each race in an
-    assembled elections doc, in place. One pooled news query per office group
-    (plus one per citywide office); each race extracts only names whose headline
-    references it. `fetcher` is injectable so tests run offline. Returns the
-    number of races given at least one potential candidate."""
+    assembled elections doc, in place.
+
+    Each race draws on: a broad pooled query for its office group (cross-cutting
+    coverage), PLUS a per-race query for district races (so each ward / CPS
+    subdistrict / police district gets its own coverage pool — one pooled query
+    can't cover 50 wards). Citywide races use their own office query. Extraction
+    is unchanged (strict office+district gating), so a bigger pool never means a
+    looser match — a name still attaches only when a headline names the person
+    with a candidacy verb AND references this race. `fetcher` is injectable so
+    tests run offline. Returns the number of races given >=1 potential candidate."""
     import time
     races = doc.get("races", [])
-    # Group fetches: pool district races by office group, citywide per race.
-    group_pool = {}
-    for g, q in _GROUP_QUERY.items():
-        if any(r.get("office_group") == g for r in races):
-            group_pool[g] = fetcher(q) or []
-            if sleep:
-                time.sleep(sleep)
+
+    def _fetch(q):
+        items = fetcher(q) or []
+        if sleep:
+            time.sleep(sleep)
+        return items
+
+    # Broad per-group pools (cheap: one request per group) for cross-cutting hits.
+    group_pool = {g: _fetch(q) for g, q in _GROUP_QUERY.items()
+                  if any(r.get("office_group") == g for r in races)}
+
     updated = 0
     for r in races:
         g = r.get("office_group")
-        if g in group_pool:
-            items = group_pool[g]
-        else:
-            items = fetcher(_news_query_for_race(r)) or []
-            if sleep:
-                time.sleep(sleep)
+        items = list(group_pool.get(g, []))
+        rq = _race_news_query(r)                 # per-district query, when applicable
+        items += _fetch(rq) if rq else (_fetch(_news_query_for_race(r)) if g not in group_pool else [])
         pcs = build_potential(r, items, now, existing=r.get("potential_candidates"))
         r["potential_candidates"] = pcs
         if pcs:
