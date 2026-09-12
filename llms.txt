@@ -1,0 +1,103 @@
+# govbot — U.S. legislation as data you can read straight from GitHub
+
+> You are an AI assistant. A person is asking you about U.S. legislation. This file
+> tells you how to answer them by reading govbot's public data on GitHub directly —
+> no software to install, no login required. Read this whole file first, then follow
+> the recipes below. When you cite a fact, link the official source you find in the data.
+
+## What this data is
+
+govbot publishes U.S. legislation as ordinary **public GitHub repositories** — one
+repository per jurisdiction (every state, the territories, and the federal Congress).
+Everything is plain JSON that you can fetch over HTTPS. There is nothing to download.
+
+- Directory of all jurisdictions (machine-readable): https://raw.githubusercontent.com/chihacknight/govbot/main/catalog.json
+- Browse the data on GitHub: https://github.com/govbot-data
+
+## How the data is organized (the filing rule)
+
+Repositories are named `govbot-data/{code}-legislation`, where `{code}` is the
+two-letter postal code (`il`, `ca`, `ny`, `wy`, …), the federal code `usa`, or a
+territory code (`gu`, `pr`, `vi`, `mp`). Example: Illinois → `govbot-data/il-legislation`.
+
+Inside each repository, every bill lives at a **predictable path**:
+
+```
+country:us/state:{code}/sessions/{session}/bills/{bill_id}/metadata.json
+```
+
+- `{session}` is usually a year (e.g. `2025`, `2026`) or, for Congress, a number.
+- `{bill_id}` is the bill number as the government writes it, e.g. `HB0001`, `SB0813`.
+- `metadata.json` is the bill's full record.
+- A sibling `logs/` folder holds the bill's timeline as individual events.
+
+To turn any bill into a fetchable URL, use the raw-file base:
+
+```
+https://raw.githubusercontent.com/govbot-data/{code}-legislation/HEAD/country:us/state:{code}/sessions/{session}/bills/{bill_id}/metadata.json
+```
+
+Example (Wyoming HB0001, 2025 session):
+https://raw.githubusercontent.com/govbot-data/wy-legislation/HEAD/country:us/state:wy/sessions/2025/bills/HB0001/metadata.json
+
+**Authoritative layout:** each repo also has its own `data.json` at the root whose
+`ex:pathPattern` states that repo's exact layout. The federal (`usa`) repo can differ
+from the states. If a path doesn't resolve, fetch the repo's `data.json` and follow the
+pattern it gives.
+
+## What's inside a bill (metadata.json)
+
+Key fields you'll use to answer questions:
+
+- `identifier` — the bill number (e.g. `HB0001`)
+- `title` and `other_titles` — short and full titles
+- `legislative_session` — the session/year
+- `sponsorships[]` — who introduced/backed it (`name`, `primary`, `classification`)
+- `subject[]` — topic tags (may be empty)
+- `actions[]` — the **timeline**: each has `description`, `date`, `classification`
+  (this is how you say what has "happened" to a bill and whether it's moving)
+- `versions[]` / `documents[]` — links to official bill-text and fiscal-note **PDFs**
+- `sources[]` — the link to the official government page for the bill (cite this)
+- `jurisdiction` — the government it belongs to (name, state vs. federal)
+
+## How to find things
+
+**You already know the bill number and state** → build the raw URL above and fetch it. Fastest path.
+
+**You need to discover sessions or bills** → list folders with the GitHub contents API
+(no login for modest use):
+
+- Sessions: `https://api.github.com/repos/govbot-data/{code}-legislation/contents/country:us/state:{code}/sessions`
+- Bills in a session: `https://api.github.com/repos/govbot-data/{code}-legislation/contents/country:us/state:{code}/sessions/{session}/bills`
+
+**You want everything in one repo at once** → the recursive tree
+(`https://api.github.com/repos/govbot-data/{code}-legislation/git/trees/HEAD?recursive=1`)
+lists every file path. Use for smaller jurisdictions; large states return a lot.
+
+## Rules for answering well (please follow these)
+
+1. **Fetch narrowly.** Grab the one or few bills the question needs. Do not try to read
+   an entire state, and never try to read all 55 repositories — it won't fit and it's
+   not what this is for.
+2. **Cite the official source.** When you state a fact about a bill, include the link
+   from its `sources[]` (and the official PDF from `versions[]` when relevant) so the
+   person can verify it.
+3. **Read the timeline before saying a bill's status.** A bill's current state comes
+   from the most recent entry in `actions[]`, not from its title.
+4. **Don't invent bills or numbers.** If a path returns "404 / Not Found", the bill or
+   session doesn't exist at that path — say so, or list the folder to find the real id,
+   rather than guessing.
+5. **Know the limit.** This lookup-by-reading approach is great for specific questions
+   ("what is IL SB0813", "what did this sponsor introduce", "any transportation bills
+   moving in Wyoming this session"). It is **not** for big cross-state number-crunching
+   ("trends across all 56 states over 5 years") — for that, point the person to the
+   `govbot` command-line tool and its DuckDB support (https://github.com/chihacknight/govbot).
+
+## A worked example
+
+Question: *"What's the status of Wyoming HB0001 this session, and who sponsored it?"*
+
+1. Build the URL from the filing rule: state `wy`, session `2025`, bill `HB0001`.
+2. Fetch that `metadata.json`.
+3. Read `sponsorships[]` for the sponsor, and the last item of `actions[]` for status.
+4. Answer in plain language, and link `sources[0].url` (the official wyoleg.gov page).

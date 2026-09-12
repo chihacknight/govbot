@@ -6,6 +6,13 @@ This file provides senior engineering-level guidance for Claude Code when workin
 
 This is **govbot** - a monorepo for distributed data analysis of government updates. Git repos function as datasets, including legislation from 47+ states/jurisdictions. The `actions/` folder contains self-contained modules that can run as shell scripts or GitHub Actions.
 
+**AI-readable catalog access**: `llms.txt` (repo root) is a plain-language guide that
+teaches any AI assistant to read the `govbot-data/{code}-legislation` catalogs directly
+over HTTPS — no CLI, phone-friendly — and `catalog.json` (repo root) is the
+machine-readable directory of every jurisdiction repo plus the bill path pattern. Keep
+both in sync with the real data layout (the authoritative per-repo pattern lives in each
+repo's own `data.json`); the README's "Read it from an AI assistant" section links them.
+
 ## Senior Engineering Prompts
 
 Use these meta-prompts to guide architectural decisions and code quality.

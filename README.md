@@ -20,6 +20,15 @@
 | **< 1 min** | to clone every dataset |
 | **$0** | cost to tag bills — models run locally on free CI |
 
+## Table of Contents
+
+- [Example Projects](#example-projects)
+- [Quick Start](#quick-start)
+- [Legislation Data Catalogs](#data-catalogs)
+  - [Data Structure](#data-structure)
+  - [Read it from an AI assistant (no install)](#read-it-from-an-ai-assistant-no-install)
+- [Contribute](#contribute)
+
 ## Example Projects
 
 Point govbot at a topic and it publishes a live feed for it. Two running today:
@@ -71,6 +80,8 @@ govbot update              # update govbot to latest version
 govbot --help              # see all commands and options
 ```
 
+<a id="data-catalogs"></a>
+
 # 🏛️ Govbot Legislation Data Catalogs
 
 Formatted legislation data for all 56 jurisdictions is available at [github.com/govbot-data](https://github.com/orgs/govbot-data/repositories).
@@ -103,6 +114,30 @@ Each jurisdiction has its own repo. The root of that repo IS the dataset — no 
 Federal and state jurisdictions share one path pattern (`state:usa` for federal), so downstream tooling doesn't need special-casing.
 
 See [`actions/format/docs/DATA_STRUCTURES.md`](actions/format/docs/DATA_STRUCTURES.md) for the full schema reference (bill metadata, logs, events, error tracking).
+
+### Read it from an AI assistant (no install)
+
+You don't need the CLI to explore the catalogs. Two files let any AI assistant
+(Claude, ChatGPT, etc.) read the data directly from GitHub — great from a phone:
+
+- [`llms.txt`](llms.txt) — a plain-language guide an AI reads first: the filing
+  rule that turns a jurisdiction + bill number into a fetchable URL, the bill
+  fields, discovery recipes, and guardrails (cite official sources, read the
+  timeline, don't invent bills).
+- [`catalog.json`](catalog.json) — a machine-readable directory of every
+  jurisdiction data repo plus the bill path pattern.
+
+**Try it:** paste this into Claude or ChatGPT on your phone —
+
+> Read this guide, then follow it to answer my question:
+> https://raw.githubusercontent.com/chihacknight/govbot/main/llms.txt
+>
+> Question: What's the status of Wyoming HB0001 in the 2025 session, who
+> sponsored it, and what's the official source link?
+
+This lookup-by-reading path is best for **specific** questions ("what is IL
+SB0813", "what did this sponsor introduce"). For big cross-state number-crunching,
+use the CLI + DuckDB above.
 
 ## Contribute
 
