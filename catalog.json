@@ -1,0 +1,470 @@
+{
+  "$comment": "Machine-readable directory of the govbot legislation data catalogs. See llms.txt for the plain-language guide an AI assistant should read first.",
+  "name": "govbot legislation data catalogs",
+  "description": "U.S. legislation for every state, D.C., the territories, and the federal Congress, published as ordinary public GitHub repositories. One repo per jurisdiction.",
+  "updated": "2026-09-12",
+  "canonical_org": "https://github.com/govbot-data",
+  "repo_naming": "govbot-data/{code}-legislation  (e.g. Illinois -> govbot-data/il-legislation)",
+  "raw_file_base": "https://raw.githubusercontent.com/govbot-data/{repo}/HEAD/{path}",
+  "path_pattern": "country:{country_code}/state:{jurisdiction_code}/sessions/{session_id}/bills/{bill_id}/metadata.json",
+  "authoritative_pattern_note": "Each repo also publishes its own data.json whose distribution.ex:pathPattern is the authoritative layout for THAT repo. Federal (usa) can differ from the states. When in doubt, read the repo's data.json first.",
+  "how_to_discover": {
+    "list_sessions": "https://api.github.com/repos/govbot-data/{repo}/contents/country:us/state:{code}/sessions",
+    "list_bills_in_session": "https://api.github.com/repos/govbot-data/{repo}/contents/country:us/state:{code}/sessions/{session_id}/bills",
+    "list_everything_recursive": "https://api.github.com/repos/govbot-data/{repo}/git/trees/HEAD?recursive=1"
+  },
+  "bill_fields": [
+    "identifier (e.g. HB0001)",
+    "title",
+    "legislative_session",
+    "classification",
+    "sponsorships[] (name, classification, primary)",
+    "subject[]",
+    "actions[] (description, date, classification) - the bill's timeline",
+    "versions[] / documents[] (links to official PDFs)",
+    "sources[] (link to the official government page)",
+    "jurisdiction (name, classification)"
+  ],
+  "jurisdictions": [
+    {
+      "code": "ak",
+      "name": "Alaska",
+      "type": "state",
+      "repo": "ak-legislation",
+      "browse": "https://github.com/govbot-data/ak-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/ak-legislation/HEAD/data.json"
+    },
+    {
+      "code": "al",
+      "name": "Alabama",
+      "type": "state",
+      "repo": "al-legislation",
+      "browse": "https://github.com/govbot-data/al-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/al-legislation/HEAD/data.json"
+    },
+    {
+      "code": "ar",
+      "name": "Arkansas",
+      "type": "state",
+      "repo": "ar-legislation",
+      "browse": "https://github.com/govbot-data/ar-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/ar-legislation/HEAD/data.json"
+    },
+    {
+      "code": "az",
+      "name": "Arizona",
+      "type": "state",
+      "repo": "az-legislation",
+      "browse": "https://github.com/govbot-data/az-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/az-legislation/HEAD/data.json"
+    },
+    {
+      "code": "ca",
+      "name": "California",
+      "type": "state",
+      "repo": "ca-legislation",
+      "browse": "https://github.com/govbot-data/ca-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/ca-legislation/HEAD/data.json"
+    },
+    {
+      "code": "co",
+      "name": "Colorado",
+      "type": "state",
+      "repo": "co-legislation",
+      "browse": "https://github.com/govbot-data/co-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/co-legislation/HEAD/data.json"
+    },
+    {
+      "code": "ct",
+      "name": "Connecticut",
+      "type": "state",
+      "repo": "ct-legislation",
+      "browse": "https://github.com/govbot-data/ct-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/ct-legislation/HEAD/data.json"
+    },
+    {
+      "code": "de",
+      "name": "Delaware",
+      "type": "state",
+      "repo": "de-legislation",
+      "browse": "https://github.com/govbot-data/de-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/de-legislation/HEAD/data.json"
+    },
+    {
+      "code": "fl",
+      "name": "Florida",
+      "type": "state",
+      "repo": "fl-legislation",
+      "browse": "https://github.com/govbot-data/fl-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/fl-legislation/HEAD/data.json"
+    },
+    {
+      "code": "ga",
+      "name": "Georgia",
+      "type": "state",
+      "repo": "ga-legislation",
+      "browse": "https://github.com/govbot-data/ga-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/ga-legislation/HEAD/data.json"
+    },
+    {
+      "code": "gu",
+      "name": "Guam",
+      "type": "territory",
+      "repo": "gu-legislation",
+      "browse": "https://github.com/govbot-data/gu-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/gu-legislation/HEAD/data.json"
+    },
+    {
+      "code": "hi",
+      "name": "Hawaii",
+      "type": "state",
+      "repo": "hi-legislation",
+      "browse": "https://github.com/govbot-data/hi-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/hi-legislation/HEAD/data.json"
+    },
+    {
+      "code": "ia",
+      "name": "Iowa",
+      "type": "state",
+      "repo": "ia-legislation",
+      "browse": "https://github.com/govbot-data/ia-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/ia-legislation/HEAD/data.json"
+    },
+    {
+      "code": "id",
+      "name": "Idaho",
+      "type": "state",
+      "repo": "id-legislation",
+      "browse": "https://github.com/govbot-data/id-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/id-legislation/HEAD/data.json"
+    },
+    {
+      "code": "il",
+      "name": "Illinois",
+      "type": "state",
+      "repo": "il-legislation",
+      "browse": "https://github.com/govbot-data/il-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/il-legislation/HEAD/data.json"
+    },
+    {
+      "code": "in",
+      "name": "Indiana",
+      "type": "state",
+      "repo": "in-legislation",
+      "browse": "https://github.com/govbot-data/in-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/in-legislation/HEAD/data.json"
+    },
+    {
+      "code": "ks",
+      "name": "Kansas",
+      "type": "state",
+      "repo": "ks-legislation",
+      "browse": "https://github.com/govbot-data/ks-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/ks-legislation/HEAD/data.json"
+    },
+    {
+      "code": "ky",
+      "name": "Kentucky",
+      "type": "state",
+      "repo": "ky-legislation",
+      "browse": "https://github.com/govbot-data/ky-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/ky-legislation/HEAD/data.json"
+    },
+    {
+      "code": "la",
+      "name": "Louisiana",
+      "type": "state",
+      "repo": "la-legislation",
+      "browse": "https://github.com/govbot-data/la-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/la-legislation/HEAD/data.json"
+    },
+    {
+      "code": "ma",
+      "name": "Massachusetts",
+      "type": "state",
+      "repo": "ma-legislation",
+      "browse": "https://github.com/govbot-data/ma-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/ma-legislation/HEAD/data.json"
+    },
+    {
+      "code": "md",
+      "name": "Maryland",
+      "type": "state",
+      "repo": "md-legislation",
+      "browse": "https://github.com/govbot-data/md-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/md-legislation/HEAD/data.json"
+    },
+    {
+      "code": "me",
+      "name": "Maine",
+      "type": "state",
+      "repo": "me-legislation",
+      "browse": "https://github.com/govbot-data/me-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/me-legislation/HEAD/data.json"
+    },
+    {
+      "code": "mi",
+      "name": "Michigan",
+      "type": "state",
+      "repo": "mi-legislation",
+      "browse": "https://github.com/govbot-data/mi-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/mi-legislation/HEAD/data.json"
+    },
+    {
+      "code": "mn",
+      "name": "Minnesota",
+      "type": "state",
+      "repo": "mn-legislation",
+      "browse": "https://github.com/govbot-data/mn-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/mn-legislation/HEAD/data.json"
+    },
+    {
+      "code": "mo",
+      "name": "Missouri",
+      "type": "state",
+      "repo": "mo-legislation",
+      "browse": "https://github.com/govbot-data/mo-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/mo-legislation/HEAD/data.json"
+    },
+    {
+      "code": "mp",
+      "name": "Northern Mariana Islands",
+      "type": "territory",
+      "repo": "mp-legislation",
+      "browse": "https://github.com/govbot-data/mp-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/mp-legislation/HEAD/data.json"
+    },
+    {
+      "code": "ms",
+      "name": "Mississippi",
+      "type": "state",
+      "repo": "ms-legislation",
+      "browse": "https://github.com/govbot-data/ms-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/ms-legislation/HEAD/data.json"
+    },
+    {
+      "code": "mt",
+      "name": "Montana",
+      "type": "state",
+      "repo": "mt-legislation",
+      "browse": "https://github.com/govbot-data/mt-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/mt-legislation/HEAD/data.json"
+    },
+    {
+      "code": "nc",
+      "name": "North Carolina",
+      "type": "state",
+      "repo": "nc-legislation",
+      "browse": "https://github.com/govbot-data/nc-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/nc-legislation/HEAD/data.json"
+    },
+    {
+      "code": "nd",
+      "name": "North Dakota",
+      "type": "state",
+      "repo": "nd-legislation",
+      "browse": "https://github.com/govbot-data/nd-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/nd-legislation/HEAD/data.json"
+    },
+    {
+      "code": "ne",
+      "name": "Nebraska",
+      "type": "state",
+      "repo": "ne-legislation",
+      "browse": "https://github.com/govbot-data/ne-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/ne-legislation/HEAD/data.json"
+    },
+    {
+      "code": "nh",
+      "name": "New Hampshire",
+      "type": "state",
+      "repo": "nh-legislation",
+      "browse": "https://github.com/govbot-data/nh-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/nh-legislation/HEAD/data.json"
+    },
+    {
+      "code": "nj",
+      "name": "New Jersey",
+      "type": "state",
+      "repo": "nj-legislation",
+      "browse": "https://github.com/govbot-data/nj-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/nj-legislation/HEAD/data.json"
+    },
+    {
+      "code": "nm",
+      "name": "New Mexico",
+      "type": "state",
+      "repo": "nm-legislation",
+      "browse": "https://github.com/govbot-data/nm-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/nm-legislation/HEAD/data.json"
+    },
+    {
+      "code": "nv",
+      "name": "Nevada",
+      "type": "state",
+      "repo": "nv-legislation",
+      "browse": "https://github.com/govbot-data/nv-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/nv-legislation/HEAD/data.json"
+    },
+    {
+      "code": "ny",
+      "name": "New York",
+      "type": "state",
+      "repo": "ny-legislation",
+      "browse": "https://github.com/govbot-data/ny-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/ny-legislation/HEAD/data.json"
+    },
+    {
+      "code": "oh",
+      "name": "Ohio",
+      "type": "state",
+      "repo": "oh-legislation",
+      "browse": "https://github.com/govbot-data/oh-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/oh-legislation/HEAD/data.json"
+    },
+    {
+      "code": "ok",
+      "name": "Oklahoma",
+      "type": "state",
+      "repo": "ok-legislation",
+      "browse": "https://github.com/govbot-data/ok-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/ok-legislation/HEAD/data.json"
+    },
+    {
+      "code": "or",
+      "name": "Oregon",
+      "type": "state",
+      "repo": "or-legislation",
+      "browse": "https://github.com/govbot-data/or-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/or-legislation/HEAD/data.json"
+    },
+    {
+      "code": "pa",
+      "name": "Pennsylvania",
+      "type": "state",
+      "repo": "pa-legislation",
+      "browse": "https://github.com/govbot-data/pa-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/pa-legislation/HEAD/data.json"
+    },
+    {
+      "code": "pr",
+      "name": "Puerto Rico",
+      "type": "territory",
+      "repo": "pr-legislation",
+      "browse": "https://github.com/govbot-data/pr-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/pr-legislation/HEAD/data.json"
+    },
+    {
+      "code": "ri",
+      "name": "Rhode Island",
+      "type": "state",
+      "repo": "ri-legislation",
+      "browse": "https://github.com/govbot-data/ri-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/ri-legislation/HEAD/data.json"
+    },
+    {
+      "code": "sc",
+      "name": "South Carolina",
+      "type": "state",
+      "repo": "sc-legislation",
+      "browse": "https://github.com/govbot-data/sc-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/sc-legislation/HEAD/data.json"
+    },
+    {
+      "code": "sd",
+      "name": "South Dakota",
+      "type": "state",
+      "repo": "sd-legislation",
+      "browse": "https://github.com/govbot-data/sd-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/sd-legislation/HEAD/data.json"
+    },
+    {
+      "code": "tn",
+      "name": "Tennessee",
+      "type": "state",
+      "repo": "tn-legislation",
+      "browse": "https://github.com/govbot-data/tn-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/tn-legislation/HEAD/data.json"
+    },
+    {
+      "code": "tx",
+      "name": "Texas",
+      "type": "state",
+      "repo": "tx-legislation",
+      "browse": "https://github.com/govbot-data/tx-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/tx-legislation/HEAD/data.json"
+    },
+    {
+      "code": "usa",
+      "name": "Federal (U.S. Congress)",
+      "type": "federal",
+      "repo": "usa-legislation",
+      "browse": "https://github.com/govbot-data/usa-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/usa-legislation/HEAD/data.json"
+    },
+    {
+      "code": "ut",
+      "name": "Utah",
+      "type": "state",
+      "repo": "ut-legislation",
+      "browse": "https://github.com/govbot-data/ut-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/ut-legislation/HEAD/data.json"
+    },
+    {
+      "code": "va",
+      "name": "Virginia",
+      "type": "state",
+      "repo": "va-legislation",
+      "browse": "https://github.com/govbot-data/va-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/va-legislation/HEAD/data.json"
+    },
+    {
+      "code": "vi",
+      "name": "U.S. Virgin Islands",
+      "type": "territory",
+      "repo": "vi-legislation",
+      "browse": "https://github.com/govbot-data/vi-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/vi-legislation/HEAD/data.json"
+    },
+    {
+      "code": "vt",
+      "name": "Vermont",
+      "type": "state",
+      "repo": "vt-legislation",
+      "browse": "https://github.com/govbot-data/vt-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/vt-legislation/HEAD/data.json"
+    },
+    {
+      "code": "wa",
+      "name": "Washington",
+      "type": "state",
+      "repo": "wa-legislation",
+      "browse": "https://github.com/govbot-data/wa-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/wa-legislation/HEAD/data.json"
+    },
+    {
+      "code": "wi",
+      "name": "Wisconsin",
+      "type": "state",
+      "repo": "wi-legislation",
+      "browse": "https://github.com/govbot-data/wi-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/wi-legislation/HEAD/data.json"
+    },
+    {
+      "code": "wv",
+      "name": "West Virginia",
+      "type": "state",
+      "repo": "wv-legislation",
+      "browse": "https://github.com/govbot-data/wv-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/wv-legislation/HEAD/data.json"
+    },
+    {
+      "code": "wy",
+      "name": "Wyoming",
+      "type": "state",
+      "repo": "wy-legislation",
+      "browse": "https://github.com/govbot-data/wy-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/wy-legislation/HEAD/data.json"
+    }
+  ]
+}
