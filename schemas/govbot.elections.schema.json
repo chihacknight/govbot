@@ -221,15 +221,15 @@
     },
     "PotentialCandidate": {
       "type": "object",
-      "description": "An unofficial, news-sourced name for a race — someone reported as running/exploring who has NOT been confirmed as a filed candidate. Always carries its source article(s); never a ballot record.",
+      "description": "An unofficial, news-sourced name for a race — someone reported as running/exploring, or an appointed/confirmed sitting incumbent, who has NOT been confirmed as a filed candidate for the upcoming election. Always carries its source article(s); never a ballot record.",
       "required": ["name", "sources"],
       "additionalProperties": false,
       "properties": {
         "name": { "type": "string", "description": "The person's name exactly as it appeared in coverage. Never normalized against a voter file — this is a coverage signal, not a ballot name." },
         "status": {
           "type": ["string", "null"],
-          "description": "How the coverage characterized the candidacy: 'announced' (declared/entered/filed to run), 'exploring' (considering/weighing/rumored), or 'reported' (named as a candidate without a clear signal verb).",
-          "enum": ["announced", "exploring", "reported", null]
+          "description": "How the coverage characterized the candidacy: 'announced' (declared/entered/filed to run), 'incumbent' (appointed/confirmed to the seat mid-term — the sitting officeholder and a presumptive candidate), 'exploring' (considering/weighing/rumored), or 'reported' (named as a candidate without a clear signal verb).",
+          "enum": ["announced", "incumbent", "exploring", "reported", null]
         },
         "mentions": { "type": "integer", "minimum": 1, "description": "Number of distinct source articles backing this name." },
         "first_seen": { "type": ["string", "null"], "description": "Earliest article date across the sources, ISO YYYY-MM-DD; null when no dates parse." },

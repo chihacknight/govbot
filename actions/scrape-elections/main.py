@@ -1060,6 +1060,19 @@ _REVERSE_COLON_RE = re.compile(
     r"\b(?i:candidate|hopeful|contender|challenger)(?:\s+(?i:for)\s+[a-z]+){0,2}"
     r"\s*:\s*" + _NAME + r"\b")
 _BID_RE = re.compile(_NAME + r"['’]s\s+(?i:bid|campaign|run)\b")
+# Appointment / confirmation to a seat mid-term — the appointee is the sitting
+# officeholder (a presumptive candidate), so we surface them with the honest
+# status "incumbent" rather than "announced". Two forms:
+#   name-first  — "Anthony Quezada Confirmed as 35th Ward Alderperson"
+#   appointee   — "…Mayor Brandon Johnson's pick, Anthony Quezada, to replace…"
+# The appointee form deliberately anchors on "pick,"/"appointee" so it captures
+# the person named AFTER it (Quezada), never the owner before it (the mayor);
+# and it excludes "replace"/"succeed", so the OUTGOING member is never grabbed.
+_APPOINT_RE = re.compile(
+    _NAME + _ADV + r"\s+(?i:confirmed|appointed|sworn[\s-]?in|tapped|"
+    r"takes? office|assumes? office)\b")
+_APPOINTEE_RE = re.compile(
+    r"\b(?i:pick|appointee)\b\s*,?\s+(?:the\s+)?" + _NAME + r"\b")
 
 # Tokens that are never a person's given/sur-name in this context; a candidate
 # match containing any of these is rejected (kills "Chicago Mayor", "Ward Five",
@@ -1221,9 +1234,18 @@ def extract_candidacy(headline, race):
     if not headline_matches_race(text, race):
         return []
     found = {}  # name_key -> (display_name, status)
-    for regex, status in ((_ANNOUNCE_RE, "announced"), (_BID_RE, "announced"),
-                          (_REVERSE_RE, "reported"), (_REVERSE_COLON_RE, "reported"),
-                          (_EXPLORE_RE, "exploring")):
+    patterns = [(_ANNOUNCE_RE, "announced"), (_BID_RE, "announced"),
+                (_REVERSE_RE, "reported"), (_REVERSE_COLON_RE, "reported"),
+                (_EXPLORE_RE, "exploring")]
+    # Appointment/confirmation coverage names a person filling a *specific* seat.
+    # Only attach it to a seat-specific (district) race, whose district token the
+    # headline had to contain to match. A citywide race matches on a bare office
+    # word that is often just a title ("Mayor Brandon Johnson's pick, …"), so
+    # letting the appointee attach there would misfile a ward appointee under the
+    # mayor's race — skip appointment patterns for citywide races.
+    if not race.get("is_citywide"):
+        patterns[2:2] = [(_APPOINT_RE, "incumbent"), (_APPOINTEE_RE, "incumbent")]
+    for regex, status in patterns:
         for m in regex.finditer(text):
             name = _strip_titles(m.group(1))
             # Drop leading verb/place/garbage words the pattern swept into the name
@@ -1235,8 +1257,8 @@ def extract_candidacy(headline, race):
             if not _valid_person(name):
                 continue
             key = name.lower()
-            # Strongest signal wins (announced > exploring > reported).
-            rank = {"announced": 3, "exploring": 2, "reported": 1}
+            # Strongest signal wins (announced > incumbent > exploring > reported).
+            rank = {"announced": 4, "incumbent": 3, "exploring": 2, "reported": 1}
             if key not in found or rank[status] > rank[found[key][1]]:
                 found[key] = (name, status)
     return list(found.values())
@@ -1385,7 +1407,7 @@ def build_potential(race, items, now, existing=None):
                 if s.get("date"):
                     rec["_dates"].add(s["date"])
 
-    rank = {"announced": 3, "exploring": 2, "reported": 1, None: 0}
+    rank = {"announced": 4, "incumbent": 3, "exploring": 2, "reported": 1, None: 0}
 
     def _add_source(rec, it):
         url = it.get("link")
@@ -1435,7 +1457,7 @@ def build_potential(race, items, now, existing=None):
             "sources": rec["sources"][:POTENTIAL_MAX_SOURCES],
         })
     # Most-cited first, then firmest signal, then name — stable and useful.
-    rank2 = {"announced": 3, "exploring": 2, "reported": 1, None: 0}
+    rank2 = {"announced": 4, "incumbent": 3, "exploring": 2, "reported": 1, None: 0}
     out.sort(key=lambda p: (-p["mentions"], -rank2[p["status"]], p["name"].lower()))
     return out[:POTENTIAL_MAX_PER_RACE]
 
