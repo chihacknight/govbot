@@ -281,13 +281,21 @@ any name already in that race's official `candidates` (populated earlier in the 
 name only when a headline both names a person beside a candidacy verb (→ status
 `announced`/`exploring`/`reported`) *and* references the race — its office keyword plus, for a
 district race, its district token (word-boundary matched, so "5th ward" ≠ "25th ward").
+It also recognizes a **mid-term appointment/confirmation** to a seat (→ status `incumbent`):
+the appointee is captured (e.g. "Mayor Brandon Johnson's pick, **Anthony Quezada**, to replace
+… 35th Ward Alderman …" → Anthony Quezada), never the owner of the pick (the mayor) nor the
+outgoing member ("to replace …"). Appointment patterns run only for seat-specific district
+races — not citywide ones, where a bare "mayor"/"clerk"/"treasurer" is usually just a title —
+so a ward appointee never leaks into the mayor's race.
 Honorifics are stripped ("Rep. Mike Quigley" → "Mike Quigley"), office/place/calendar words are
 rejected as names, and every name carries its source article(s) {title, url, publisher, date};
 a sourceless name is dropped — nothing is invented. Extraction is tuned for real local-outlet
 headlines: verbs match case-insensitively (title-case "… Launches …", "… Running …"), an adverb
 between the name and the verb is skipped ("Aida Flores **Again** Running"), and names are gated
 against truncation (a trailing initial or split particle like "Matthew J. O" / "Daniel La") and
-against verb/event words captured as a name. Queries: one pooled query per office group
+against verb/event words captured as a name. A **negated** candidacy is dropped, not surfaced
+("… O'Shea **Won't** Seek Reelection", "will not run") — the check is local to each match, so a
+compound headline naming a retiring incumbent *and* a real challenger keeps only the challenger. Queries: one pooled query per office group
 for cross-cutting coverage, **plus a per-race query for every district race** (`Chicago alderman
 "45th ward" candidate 2027`, etc.) so each ward/subdistrict/police district gets its own coverage
 pool, plus one per citywide office. A bigger pool never loosens the match — the strict office +

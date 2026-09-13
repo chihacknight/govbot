@@ -166,14 +166,25 @@ so it's out). A name is attached **only** when a headline both:
 
 1. names a person next to a candidacy verb (`announces` / `to run` / `enters` →
    *announced*; `mulls` / `weighing` / `rumored` → *exploring*; `candidate NAME`
-   → *reported*), and
+   → *reported*; appointed/`confirmed as … Alderperson` or `…'s pick, NAME,` →
+   *incumbent*), and
 2. references the race — its office keyword, plus the **district token** for a
    district race (word-boundary matched, so "5th ward" never matches "25th ward").
+
+For the *incumbent* (mid-term appointment) case the appointee is captured, never
+the owner of the pick (e.g. the mayor) or the outgoing member (`to replace …`);
+and appointment patterns run only for seat-specific district races, so a ward
+appointee is never misfiled under a citywide race whose office word ("mayor") was
+merely a title in the headline.
 
 Leading honorifics are stripped (`Rep. Mike Quigley` → `Mike Quigley`) so one
 person doesn't split in two, office/place/calendar words are rejected as names,
 and every surfaced name carries the article(s) it came from (headline, link,
-publisher, date). Nothing is invented; a name with no source is dropped.
+publisher, date). Nothing is invented; a name with no source is dropped. A
+**negated** candidacy is the opposite of one, so it is dropped rather than
+surfaced (`… O'Shea Won't Seek Reelection`, `will not run`); the negation is
+judged locally around each match, so a compound headline naming a retiring
+incumbent *and* a real challenger still keeps the challenger.
 
 Queries: one **pooled query per office group** for cross-cutting coverage, plus a
 **per-race query for every district race** (`Chicago alderman "45th ward"

@@ -303,6 +303,9 @@
   .pc-sig.announced { color: #fff; background: var(--series-3); border: 1px solid var(--series-3); }
   .pc-sig.exploring { color: var(--series-3); border: 1px solid var(--series-3); }
   .pc-sig.reported { color: var(--text-muted); border: 1px solid var(--border); }
+  /* Appointed incumbent — a firm, factual signal (holds the seat now), filled
+     blue to read distinctly from the amber "announced". */
+  .pc-sig.incumbent { color: #fff; background: var(--series-1); border: 1px solid var(--series-1); }
   .pc-when { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
   .pc-srcs { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 3px 12px; font-size: 11px; }
   .pc-srcs a { font-weight: 600; color: var(--series-1); text-decoration: none; }
@@ -1223,7 +1226,8 @@
 
   // Unofficial potential candidates: a collapsed, clearly-labeled block listing
   // names news outlets have reported for this race, each linked to its source(s).
-  const PC_SIG_LABEL = { announced: "Announced", exploring: "Exploring", reported: "In coverage" };
+  const PC_SIG_LABEL = { announced: "Announced", incumbent: "Incumbent (appointed)",
+                         exploring: "Exploring", reported: "In coverage" };
   function renderPotential(pcs, r) {
     const det = document.createElement("details"); det.className = "potential";
     const sum = document.createElement("summary");
@@ -1236,9 +1240,10 @@
     det.append(sum);
 
     const note = document.createElement("div"); note.className = "pc-note";
-    note.textContent = "Names reported in the press as running, exploring, or "
-      + "rumored — not official filings and not on any ballot list. Check each "
-      + "source and the official list before relying on these.";
+    note.textContent = "Names reported in the press as running, exploring, "
+      + "rumored, or currently holding the seat (an appointed incumbent) — not "
+      + "official filings and not on any ballot list. Check each source and the "
+      + "official list before relying on these.";
     det.append(note);
 
     const list = document.createElement("div"); list.className = "pc-list";
