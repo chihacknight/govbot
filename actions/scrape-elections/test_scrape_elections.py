@@ -686,12 +686,20 @@ class PotentialCandidates(unittest.TestCase):
         self.assertEqual(by_id["chicago-mayor"]["candidates"], [])
 
     def test_enrich_potential_failsoft(self):
+        # With sources down the live feed adds nothing: no race gains a NEW
+        # potential candidate. Curated, pre-sourced seed entries persist (that
+        # is the point of the carry-forward), so a race that ships a seeded
+        # list keeps it and every other race stays empty.
         seed = main.load_seed()
         doc, _ = main.assemble([], seed, "test", self.now)
+        seeded = {r["id"] for r in seed["races"] if r.get("potential_candidates")}
         n = main.enrich_potential(doc, self.now, fetcher=lambda q: [], sleep=0)
-        self.assertEqual(n, 0)
+        self.assertEqual(n, len(seeded))
         for r in doc["races"]:
-            self.assertEqual(r["potential_candidates"], [])
+            if r["id"] in seeded:
+                self.assertTrue(r["potential_candidates"])   # carried forward
+            else:
+                self.assertEqual(r["potential_candidates"], [])
 
 
 class Snapshot(unittest.TestCase):
