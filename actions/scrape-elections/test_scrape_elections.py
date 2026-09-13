@@ -540,6 +540,29 @@ class PotentialCandidates(unittest.TestCase):
         self.assertEqual(main.extract_candidacy(h1, mayor), [])
         self.assertEqual(main.extract_candidacy(h1, w5), [])
 
+    def test_negated_candidacy_is_not_a_candidacy(self):
+        # "Won't Seek Reelection" is the OPPOSITE of running — the retiring
+        # incumbent must not be surfaced (and "Won't" must not become a name).
+        w19 = {"office": "Alderperson", "office_group": "council",
+               "is_citywide": False, "district": "Ward 19"}
+        self.assertEqual(main.extract_candidacy(
+            "19th Ward Alderman Matt O'Shea Won't Seek Reelection After 16 Years, "
+            "Backs Chief of Staff", w19), [])
+        self.assertEqual(main.extract_candidacy(
+            "Jane Q. Smith Will Not Run For 19th Ward Alderman", w19), [])
+        self.assertEqual(main.extract_candidacy(
+            "Ald. Matt O'Shea becomes third council member to not seek reelection "
+            "in 2027", w19), [])
+
+    def test_negation_is_local_not_whole_headline(self):
+        # A compound headline naming a retiring incumbent AND a real challenger
+        # keeps the challenger — negation is judged near each match, not globally.
+        w19 = {"office": "Alderperson", "office_group": "council",
+               "is_citywide": False, "district": "Ward 19"}
+        self.assertEqual(main.extract_candidacy(
+            "19th Ward Alderman O'Shea won't seek reelection, but Melanie Stathis "
+            "launches her campaign", w19), [("Melanie Stathis", "announced")])
+
     def test_titlecase_fix_does_not_break_district_guard(self):
         # The case-insensitive verbs must NOT let a different city's alderman
         # (no Chicago ward number in the headline) attach to a ward race.

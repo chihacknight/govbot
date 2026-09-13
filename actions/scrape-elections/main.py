@@ -1103,7 +1103,20 @@ _NAME_STOPWORDS = {
     "running", "challenges", "challenger", "unseat", "mulls", "weighs", "faces",
     "considers", "eyes", "explores", "propels", "boosts", "backs", "taps",
     "urges", "pushes", "picks", "names", "leads", "vows", "rips", "slams",
+    # negation contractions — a title-case "Won't"/"Can't" captured as a name
+    # token means a NOT-running headline slid in ("… O'Shea Won't Seek …").
+    "wont", "cant", "cannot", "dont", "doesnt", "didnt", "wouldnt", "couldnt",
+    "shouldnt", "isnt", "arent", "aint", "hasnt", "havent", "quits",
 }
+
+# A candidacy verb that is NEGATED is the opposite of a candidacy — the person is
+# leaving, not entering ("Won't Seek Reelection", "will not run", "won't seek").
+# If a match's span carries any of these, it is dropped rather than surfaced.
+_NEGATION_RE = re.compile(
+    r"(?i:\b(?:won'?t|will not|would not|wouldn'?t|do(?:es)?\s*n'?t|"
+    r"not\s+(?:seek|seeking|run|running|be)|no longer|drops?\s+out|"
+    r"bows?\s+out|steps?\s+(?:down|aside)|calls?\s+it\s+quits|"
+    r"retir(?:e|es|ing)|ends?\s+(?:his|her|their)?\s*(?:bid|campaign|run))\b)")
 
 
 def _office_terms(race):
@@ -1247,6 +1260,13 @@ def extract_candidacy(headline, race):
         patterns[2:2] = [(_APPOINT_RE, "incumbent"), (_APPOINTEE_RE, "incumbent")]
     for regex, status in patterns:
         for m in regex.finditer(text):
+            # A negated candidacy is the opposite of one ("… Won't Seek
+            # Reelection", "will not run"). Check the local span around the match
+            # (not the whole headline) so a real candidate elsewhere in a compound
+            # headline still counts.
+            span = text[max(0, m.start() - 16):m.end() + 4]
+            if _NEGATION_RE.search(span):
+                continue
             name = _strip_titles(m.group(1))
             # Drop leading verb/place/garbage words the pattern swept into the name
             # ("… Propels Claudia Zuno To Run" -> "Claudia Zuno"), keeping >=2 tokens.
