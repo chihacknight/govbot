@@ -301,7 +301,24 @@ for cross-cutting coverage, **plus a per-race query for every district race** (`
 pool, plus one per citywide office. A bigger pool never loosens the match — the strict office +
 district gating is unchanged, so most down-ballot races legitimately stay empty until candidates
 actually appear in the press (2027 filing opens Nov 2026); the lists fill in on the twice-daily
-refresh as coverage grows. Fail-soft (sources down → empty lists), committed sample empty. The
+refresh as coverage grows. Fail-soft (sources down → empty lists), committed sample empty.
+
+**Article bodies** are parsed too (on by default; `--no-article-bodies` opts out), because a
+headline often omits the candidate's name while the prose states it ("Meet the 28-year-old
+lawyer running to represent the 23rd Ward" → *Leonardo Rojas-Banda* is only in the body). For a
+few race-relevant articles per race (headline references the race **and** reads like candidacy
+coverage — capped per race and per run), `enrich_potential` resolves the Google News link to the
+publisher URL via Google's `batchexecute` endpoint (`resolve_gnews_url`; the RSS `<link>` is an
+opaque token, so a plain GET only yields Google's interstitial), fetches the article, and reduces
+it to text (`html_to_text`). `extract_candidacy_body` then runs the **same** strict
+name+candidacy-verb gate as headlines — plus a prose-only appositive pattern ("Name, a <role>,
+<verb>", anchored on a/an/the) — but keeps a name only when (1) the race is referenced within a
+short window of the match and (2) the surname recurs in the article (a real subject, not a passing
+mention). Every step is fail-soft (a 403/parse failure just skips that body); `build_potential`
+takes the fetched bodies as an argument so it stays pure and offline-testable, and the fetchers
+are injectable. A curated, news-sourced `potential_candidates` entry may also be **seeded** in
+`elections_seed.json` (preserved by `assemble()`, merged forward by `--enrich-potential`) as a
+durable backstop for a name the automated pass can't reliably catch. The
 frontend renders it as a collapsed, dashed-amber "💭 Potential candidates · Unofficial · from
 news" block under each race. `deploy-docs.yml` runs it right after the base elections build
 (independent of official candidates), twice daily. Parsers are offline-tested in

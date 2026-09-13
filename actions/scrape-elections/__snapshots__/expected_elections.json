@@ -1698,7 +1698,20 @@
       ],
       "seats": 1,
       "candidates": [],
-      "potential_candidates": []
+      "potential_candidates": [
+        {
+          "name": "Leonardo Rojas-Banda",
+          "status": "announced",
+          "sources": [
+            {
+              "title": "Meet the 28-year-old lawyer running to represent the 23rd Ward",
+              "url": "https://southwestregionalpublishing.com/2026/08/28/meet-the-28-year-old-lawyer-running-to-represent-the-23rd-ward/",
+              "publisher": "Southwest Regional Publishing",
+              "date": "2026-08-28"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "chicago-alderperson-ward-24",

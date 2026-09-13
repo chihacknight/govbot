@@ -686,12 +686,131 @@ class PotentialCandidates(unittest.TestCase):
         self.assertEqual(by_id["chicago-mayor"]["candidates"], [])
 
     def test_enrich_potential_failsoft(self):
+        # With sources down the live feed adds nothing: no race gains a NEW
+        # potential candidate. Curated, pre-sourced seed entries persist (that
+        # is the point of the carry-forward), so a race that ships a seeded
+        # list keeps it and every other race stays empty.
         seed = main.load_seed()
         doc, _ = main.assemble([], seed, "test", self.now)
+        seeded = {r["id"] for r in seed["races"] if r.get("potential_candidates")}
         n = main.enrich_potential(doc, self.now, fetcher=lambda q: [], sleep=0)
-        self.assertEqual(n, 0)
+        self.assertEqual(n, len(seeded))
         for r in doc["races"]:
-            self.assertEqual(r["potential_candidates"], [])
+            if r["id"] in seeded:
+                self.assertTrue(r["potential_candidates"])   # carried forward
+            else:
+                self.assertEqual(r["potential_candidates"], [])
+
+
+class ArticleBody(unittest.TestCase):
+    """Body-parsing enrichment: names a headline omits but the prose states."""
+
+    def setUp(self):
+        self.now = main.datetime(2026, 9, 13, tzinfo=main.timezone.utc)
+        self.html = (RAW / "article_ward23.html").read_text()
+        self.ward23 = {"id": "chicago-alderperson-ward-23", "office": "Alderperson",
+                       "office_group": "council", "is_citywide": False,
+                       "district": "Ward 23", "ballot_date": "2027-02-23"}
+
+    def test_html_to_text_drops_script_and_style(self):
+        txt = main.html_to_text(self.html)
+        self.assertIn("Leonardo Rojas-Banda", txt)
+        self.assertNotIn("dataLayer", txt)        # <script> stripped
+        self.assertNotIn("ignore this script", txt.lower())
+        self.assertNotIn("announces nothing", txt.lower())
+        self.assertNotIn(".nav{", txt)            # <style> stripped
+
+    def test_html_to_text_bad_input(self):
+        self.assertEqual(main.html_to_text(""), "")
+        self.assertEqual(main.html_to_text(None), "")
+
+    def test_extract_body_appositive(self):
+        # The headline never names him; the body's "Name, a <role>, <verb>"
+        # appositive (with the ward nearby) does — status "announced".
+        txt = main.html_to_text(self.html)
+        self.assertEqual(main.extract_candidacy_body(txt, self.ward23),
+                         [("Leonardo Rojas-Banda", "announced")])
+
+    def test_body_rejects_noise_phrase_and_incumbent(self):
+        # "Hispanic Heritage Month" (calendar phrase) and the incumbent named in
+        # a non-candidacy sentence must not surface as potential candidates.
+        names = [n for n, _ in main.extract_candidacy_body(
+            main.html_to_text(self.html), self.ward23)]
+        self.assertNotIn("Hispanic Heritage Month", names)
+        self.assertNotIn("Silvana Tabares", names)
+
+    def test_body_requires_race_reference(self):
+        # Same prose, asked for a different ward -> the district gate rejects it.
+        ward24 = dict(self.ward23, id="chicago-alderperson-ward-24", district="Ward 24")
+        self.assertEqual(main.extract_candidacy_body(main.html_to_text(self.html), ward24), [])
+
+    def test_body_requires_recurrence(self):
+        # A subject named only once (surname doesn't recur) is treated as noise.
+        once = ("Dana Q. Placeholder, a local attorney, announced a run for the "
+                "23rd Ward on Tuesday.")
+        self.assertEqual(main.extract_candidacy_body(once, self.ward23), [])
+
+    def test_articles_for_body_gates_on_headline(self):
+        gn = "https://news.google.com/rss/articles/ABC123?oc=5"
+        items = [
+            {"title": "Meet the lawyer running to represent the 23rd Ward", "link": gn},
+            {"title": "23rd Ward street festival draws a crowd", "link": gn},   # no candidacy signal
+            {"title": "Candidate announces run in the 45th Ward", "link": gn},  # wrong ward
+            {"title": "Ward 23 alderman candidate forum set", "link": None},    # no link
+        ]
+        picks = main._articles_for_body(self.ward23, items)
+        self.assertEqual([p["title"] for p in picks],
+                         ["Meet the lawyer running to represent the 23rd Ward"])
+
+    def test_enrich_potential_uses_article_bodies(self):
+        # End to end, offline: a headline with no name + an injected body fetcher
+        # yields the body-stated candidate, cited to the item.
+        seed = main.load_seed()
+        doc, _ = main.assemble([], seed, "test", self.now)
+        w23 = next(r for r in doc["races"] if r["id"] == "chicago-alderperson-ward-23")
+        w23["potential_candidates"] = []   # ignore the curated seed entry: the body is the only source
+        gn = "https://news.google.com/rss/articles/WARD23?oc=5"
+        item = {"title": "Meet the 28-year-old lawyer running to represent the 23rd Ward",
+                "link": gn, "publisher": "Southwest Regional Publishing", "date": "2026-08-28"}
+        html = self.html
+
+        def fake_news(q):
+            return [item] if '"23rd ward"' in q.lower() else []
+
+        def fake_article(link):
+            return main.html_to_text(html) if link == gn else None
+
+        main.enrich_potential(doc, self.now, fetcher=fake_news, sleep=0,
+                              article_fetcher=fake_article)
+        names = {p["name"] for p in w23["potential_candidates"]}
+        self.assertIn("Leonardo Rojas-Banda", names)   # found from the body alone
+        rec = next(p for p in w23["potential_candidates"] if p["name"] == "Leonardo Rojas-Banda")
+        self.assertEqual(rec["status"], "announced")
+        self.assertEqual(rec["sources"][0]["url"], gn)   # cited to the article it came from
+
+    def test_enrich_no_article_fetcher_is_headline_only(self):
+        # Without an article_fetcher, no body is fetched: the headline-only path
+        # (which can't name him) leaves ward 23 to its curated seed entry alone.
+        seed = main.load_seed()
+        doc, _ = main.assemble([], seed, "test", self.now)
+        item = {"title": "Meet the 28-year-old lawyer running to represent the 23rd Ward",
+                "link": "https://news.google.com/rss/articles/X?oc=5",
+                "publisher": "SRP", "date": "2026-08-28"}
+        calls = []
+
+        def fake_news(q):
+            return [item] if '"23rd ward"' in q.lower() else []
+
+        def fake_article(link):
+            calls.append(link)
+            return "should not be called"
+
+        main.enrich_potential(doc, self.now, fetcher=fake_news, sleep=0)  # no article_fetcher
+        self.assertEqual(calls, [])
+
+    def test_resolve_passes_through_non_google_url(self):
+        url = "https://example.com/story"
+        self.assertEqual(main.resolve_gnews_url(url), url)
 
 
 class Snapshot(unittest.TestCase):

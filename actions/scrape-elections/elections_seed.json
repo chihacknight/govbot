@@ -1,5 +1,5 @@
 {
-  "note": "Committed seed / offline fallback for actions/scrape-elections. It carries the real race STRUCTURE (offices, districts, ballot dates, election-calendar timeline, and why-this-race notes) plus official sources. Candidate rosters are left empty here on purpose and are populated at build time from official sources (ISBE 'Who Is Running', the Chicago Board of Elections, the Cook County Clerk). Timeline milestones flagged confirmed:false are the expected/statutory calendar — confirm against the official source. Nothing here is a guessed candidate.",
+  "note": "Committed seed / offline fallback for actions/scrape-elections. It carries the real race STRUCTURE (offices, districts, ballot dates, election-calendar timeline, and why-this-race notes) plus official sources. Candidate rosters are left empty here on purpose and are populated at build time from official sources (ISBE 'Who Is Running', the Chicago Board of Elections, the Cook County Clerk). Timeline milestones flagged confirmed:false are the expected/statutory calendar — confirm against the official source. Nothing here is a guessed candidate. A race MAY carry a curated 'potential_candidates' list — UNOFFICIAL, news-sourced names the headline-only enrichment can't catch (e.g. an article whose headline omits the person's name); each entry carries its source article and is kept strictly apart from the official 'candidates' roster. assemble() preserves it and --enrich-potential merges it forward (and drops anyone who later becomes an official candidate). Still no guessing: a name here without a real source does not belong.",
   "jurisdictions": [
     {
       "code": "chicago",
@@ -1625,7 +1625,21 @@
         }
       ],
       "seats": 1,
-      "candidates": []
+      "candidates": [],
+      "potential_candidates": [
+        {
+          "name": "Leonardo Rojas-Banda",
+          "status": "announced",
+          "sources": [
+            {
+              "title": "Meet the 28-year-old lawyer running to represent the 23rd Ward",
+              "url": "https://southwestregionalpublishing.com/2026/08/28/meet-the-28-year-old-lawyer-running-to-represent-the-23rd-ward/",
+              "publisher": "Southwest Regional Publishing",
+              "date": "2026-08-28"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "chicago-alderperson-ward-24",

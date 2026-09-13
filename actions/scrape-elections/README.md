@@ -197,6 +197,27 @@ empty** until candidates actually surface in the press (2027 filing opens Nov
 2026) — the lists fill in on the twice-daily refresh as coverage grows, never by
 guessing. Fully fail-soft — sources down leaves the lists empty.
 
+**Article bodies** are parsed too (on by default; pass `--no-article-bodies` to
+skip). A headline often omits the candidate's name while the article states it —
+*"Meet the 28-year-old lawyer running to represent the 23rd Ward"* names
+*Leonardo Rojas-Banda* only in the prose. So for a few race-relevant articles per
+race (the headline references the race **and** reads like candidacy coverage —
+capped per race and per run), the enrichment resolves the Google News link to the
+publisher URL (via Google's `batchexecute` endpoint — the RSS `<link>` is an
+opaque token that only 302s through JavaScript, so a plain GET yields Google's
+interstitial), fetches the article, and reduces it to text. It then runs the
+**same** strict name+candidacy-verb gate over the prose — plus one prose-only
+"Name, a <role>, <verb>" appositive pattern (anchored on *a/an/the*) — keeping a
+name only when the race is referenced right by the match **and** the surname
+recurs in the article (a real subject, not a passing mention). Every step is
+fail-soft: a blocked fetch, a redirect that won't resolve, or unparseable HTML
+just skips that body and the headline signal is unaffected.
+
+A curated, news-sourced entry can also be **seeded** directly in
+`elections_seed.json` (under a race's `potential_candidates`) — preserved by the
+base build and merged forward by `--enrich-potential` — as a durable backstop for
+a real, cited name the automated pass can't reliably extract.
+
 ```bash
 python3 actions/scrape-elections/main.py \
   --enrich-potential docs/src/dashboard/elections.json

@@ -205,6 +205,20 @@
   .group-title { font-size: 16px; font-weight: 700; }
   .group-count { color: var(--text-muted); font-size: 12.5px; }
   .group-rss { margin-left: auto; }
+  /* Per-section filter box — one per long office group (and the Springfield
+     panel). Colored 2px border in the section's accent + a leading search icon,
+     matching the "Weigh in — by state" boxes on the Hearings page. */
+  .sec-search-row { display: flex; margin: 2px 0 10px; }
+  .sec-search-wrap { position: relative; display: inline-flex; align-items: center; width: 100%; max-width: 340px; }
+  .sec-search-wrap .sec-search-icon { position: absolute; left: 10px; color: var(--gc, var(--series-2)); pointer-events: none; flex: none; }
+  .sec-search {
+    width: 100%; padding: 7px 11px 7px 32px;
+    border: 2px solid var(--gc, var(--series-2)); border-radius: 8px;
+    background: var(--surface-1); color: var(--text-primary); font-size: 13px;
+  }
+  .sec-search::placeholder { color: var(--text-muted); }
+  .sec-search:focus { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--gc, var(--series-2)) 22%, transparent); }
+  .sec-empty { color: var(--text-muted); font-size: 12.5px; padding: 4px 2px 8px; }
 
   /* ---------- race cards ---------- */
   .races { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; padding: 8px 4px 10px 0; }
@@ -335,6 +349,7 @@
   }
   .sf-filter[aria-pressed="true"] { background: var(--series-5); border-color: var(--series-5); color: #fff; }
   .sf-rss { margin-left: auto; }
+  .sf-search-wrap { width: auto; min-width: 190px; max-width: 260px; }
   .sf-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
   .sf-bill { border: 1px solid var(--border); border-left: 3px solid var(--series-5); border-radius: 10px; padding: 11px 13px; background: var(--surface-1); display: flex; flex-direction: column; gap: 6px; }
   .sf-bill-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
@@ -513,6 +528,7 @@
   /* controls — green active states */
   :root[data-design="new"] .theme-toggle,
   :root[data-design="new"] .filters input,
+  :root[data-design="new"] .sec-search,
   :root[data-design="new"] .filters select { border-radius: 12px; }
   :root[data-design="new"] .theme-toggle { border-radius: 999px; }
   :root[data-design="new"] .theme-toggle button[aria-pressed="true"] { background: var(--rh-green, #00c805); color: #06210a; }
@@ -642,6 +658,10 @@
       <button type="button" class="sf-filter" data-sf="" aria-pressed="true">All</button>
       <button type="button" class="sf-filter" data-sf="elections &amp; voting" aria-pressed="false">Elections &amp; voting</button>
       <button type="button" class="sf-filter" data-sf="education" aria-pressed="false">Education</button>
+      <span class="sec-search-wrap sf-search-wrap" style="--gc: var(--series-5);">
+        <svg class="sec-search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
+        <input type="search" id="sf-search" class="sec-search" placeholder="Filter bills by number or title…" aria-label="Filter Springfield bills">
+      </span>
       <span class="sf-rss"><button type="button" class="rss-link" id="sf-rss-btn" aria-haspopup="dialog" title="Subscribe to the Springfield bills feed">
         <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"/></svg>
         Follow this race (RSS)</button></span>
@@ -802,7 +822,14 @@
   const state = {
     data: null,
     filters: { search: "", group: "", ballot: "", hasCands: false },
+    // Per-section quick filter (keyed by office_group), applied within a single
+    // group's card grid. Kept apart from the top-level `filters` so it survives
+    // the global re-render and doesn't disturb the other sections.
+    sectionSearch: {},
   };
+  // Which office groups get their own in-section filter box: the long lists a
+  // reader actually needs to search within (short groups like citywide don't).
+  const SECTION_SEARCH_MIN = 7;
 
   fetch("elections.json")
     .then((r) => { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.json(); })
@@ -976,12 +1003,63 @@
       head.append(em, title, cnt, rss);
       section.append(head);
 
+      // Long sections get their own filter box so a reader can jump to one ward
+      // / district / candidate without scrolling the whole capped list.
+      const searchable = races_g.length >= SECTION_SEARCH_MIN;
+      if (searchable) {
+        const row = document.createElement("div"); row.className = "sec-search-row";
+        const swrap = document.createElement("span"); swrap.className = "sec-search-wrap";
+        swrap.innerHTML = '<svg class="sec-search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>';
+        const inp = document.createElement("input");
+        inp.type = "search"; inp.className = "sec-search";
+        inp.placeholder = "Filter " + meta.label + "…";
+        inp.setAttribute("aria-label", "Filter " + meta.label);
+        inp.value = state.sectionSearch[g] || "";
+        inp.addEventListener("input", (e) => {
+          state.sectionSearch[g] = e.target.value.trim().toLowerCase();
+          applySectionFilter(section, g);
+        });
+        swrap.append(inp);
+        row.append(swrap);
+        section.append(row);
+      }
+
       const grid = document.createElement("div");
       grid.className = "races";
-      races_g.forEach((r) => grid.append(renderRace(r, meta)));
+      races_g.forEach((r) => {
+        const card = renderRace(r, meta);
+        // Haystack for the in-section filter (office, district, official +
+        // potential candidate names) — same fields the top-level search uses.
+        card.dataset.hay = [r.office, r.district || "",
+          (r.candidates || []).map((c) => c.name).join(" "),
+          (r.potential_candidates || []).map((c) => c.name).join(" ")]
+          .join(" ").toLowerCase();
+        grid.append(card);
+      });
       section.append(grid);
+      if (searchable) {
+        const none = document.createElement("p");
+        none.className = "sec-empty"; none.hidden = true;
+        none.textContent = "No " + meta.label + " match that filter.";
+        section.append(none);
+        applySectionFilter(section, g);
+      }
       wrap.append(section);
     });
+  }
+
+  // Filter one group's cards in place by its own search box (leaves every other
+  // section untouched, so focus and scroll position are preserved).
+  function applySectionFilter(section, g) {
+    const q = state.sectionSearch[g] || "";
+    let shown = 0;
+    section.querySelectorAll(".races > .race").forEach((card) => {
+      const hit = !q || (card.dataset.hay || "").includes(q);
+      card.hidden = !hit;
+      if (hit) shown++;
+    });
+    const none = section.querySelector(".sec-empty");
+    if (none) none.hidden = shown > 0;
   }
 
   function renderRace(r, meta) {
@@ -1374,12 +1452,21 @@
   }
 
   /* ---------- Springfield "rules of the game" ---------- */
-  const sfState = { bills: [], filter: "" };
+  const sfState = { bills: [], filter: "", search: "" };
 
   function initSpringfield(bills) {
     sfState.bills = bills || [];
     if (!sfState.bills.length) return;  // section stays hidden when empty
     $("springfield").hidden = false;
+    const sfSearch = $("sf-search");
+    if (sfSearch) {
+      let t;
+      sfSearch.addEventListener("input", (e) => {
+        clearTimeout(t);
+        const v = e.target.value.trim().toLowerCase();
+        t = setTimeout(() => { sfState.search = v; renderSpringfield(); }, 120);
+      });
+    }
     document.querySelectorAll(".sf-filter").forEach((btn) => {
       btn.addEventListener("click", () => {
         sfState.filter = btn.dataset.sf || "";
@@ -1400,12 +1487,21 @@
   function renderSpringfield() {
     const list = $("sf-list");
     list.textContent = "";
-    const bills = sfState.filter
-      ? sfState.bills.filter((b) => (b.tags || []).includes(sfState.filter))
-      : sfState.bills;
+    const q = sfState.search;
+    const bills = sfState.bills.filter((b) => {
+      if (sfState.filter && !(b.tags || []).includes(sfState.filter)) return false;
+      if (q) {
+        const hay = [b.id || "", b.title || "", (b.tags || []).join(" ")]
+          .join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
     if (!bills.length) {
       const e = document.createElement("p"); e.className = "sf-action";
-      e.textContent = "No bills in this category right now.";
+      e.textContent = q
+        ? "No bills match that filter."
+        : "No bills in this category right now.";
       list.append(e);
       return;
     }

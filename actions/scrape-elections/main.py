@@ -60,8 +60,8 @@ from xml.etree import ElementTree as ET
 HERE = Path(__file__).parent
 SEED_PATH = HERE / "elections_seed.json"
 
-UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-      "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
+UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
 FETCH_TIMEOUT = 20
 
 # Best-effort official endpoints. These sites reshape their pages between cycles,
@@ -106,6 +106,62 @@ def fetch_bytes(url, timeout=FETCH_TIMEOUT):
     except Exception as err:
         print(f"warning: fetch failed {url}: {err}", file=sys.stderr)
         return None
+
+
+# A Google News RSS <link> is not the article — it's an opaque token that
+# redirects (via JavaScript) to the publisher, so a plain GET only yields
+# Google's interstitial. Google's own batchexecute endpoint resolves the token
+# to the real URL given a signature + timestamp lifted from the interstitial.
+# Best-effort and fail-soft: any hiccup returns None and body enrichment is
+# simply skipped for that article (the headline signal is unaffected).
+_GNEWS_HOST = "news.google.com"
+_GNEWS_BATCH = "https://news.google.com/_/DotsSplashUi/data/batchexecute"
+
+
+def resolve_gnews_url(link, timeout=FETCH_TIMEOUT):
+    """Resolve a Google News RSS article link to its publisher URL, or None.
+
+    A non-Google link is returned unchanged (already a publisher URL)."""
+    from urllib.parse import urlparse, urlencode
+    try:
+        parsed = urlparse(link or "")
+        if _GNEWS_HOST not in (parsed.netloc or ""):
+            return link or None
+        m = re.search(r"/(?:rss/)?articles/([^/?#]+)", parsed.path or "")
+        if not m:
+            return None
+        blob = m.group(1)
+        page = fetch_text(link, timeout=timeout)
+        if not page:
+            return None
+        sg = re.search(r'data-n-a-sg="([^"]+)"', page)
+        ts = re.search(r'data-n-a-ts="([^"]+)"', page)
+        if not (sg and ts):
+            return None
+        inner = ('["garturlreq",[["X","X",["X","X"],null,null,1,1,"US:en",null,1,'
+                 'null,null,null,null,null,0,1],"X","X",1,[1,1,1],1,1,null,0,0,'
+                 'null,0],"%s",%s,"%s"]') % (blob, ts.group(1), sg.group(1))
+        data = urlencode({"f.req": json.dumps([[["Fbv4je", inner, None, "generic"]]])})
+        req = urllib.request.Request(
+            _GNEWS_BATCH, data=data.encode(),
+            headers={"user-agent": UA,
+                     "content-type": "application/x-www-form-urlencoded;charset=UTF-8"})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            body = resp.read().decode("utf-8", "replace")
+        m2 = re.search(r'garturlres\\",\\"(https?://[^\\"]+)', body)
+        return m2.group(1) if m2 else None
+    except Exception as err:
+        print(f"warning: gnews resolve failed {link}: {err}", file=sys.stderr)
+        return None
+
+
+def fetch_article_text(link, timeout=FETCH_TIMEOUT):
+    """Best-effort readable body text for a news item's link (resolving a Google
+    News link to the publisher first). None on any failure — fail-soft."""
+    url = resolve_gnews_url(link, timeout=timeout)
+    if not url:
+        return None
+    return html_to_text(fetch_text(url, timeout=timeout)) or None
 
 
 # --------------------------------------------------------------------------- #
@@ -1088,6 +1144,10 @@ _NAME_STOPWORDS = {
     "january", "february", "march", "april", "may", "june", "july", "august",
     "september", "october", "november", "december", "monday", "tuesday",
     "wednesday", "thursday", "friday", "saturday", "sunday", "this", "next",
+    # calendar/event nouns — a title-case phrase like "Hispanic Heritage Month"
+    # or "Labor Day" is not a person, and prose (unlike a headline) is full of them.
+    "heritage", "month", "day", "week", "weekend", "year", "holiday", "morning",
+    "afternoon", "evening", "eve", "season", "festival", "parade", "summit",
     "here", "meet", "poll", "opinion", "editorial", "endorses", "endorsement",
     # common headline/event nouns — guard the weaker "candidate NAME" pattern
     # against title-case phrases like "Candidate Forum Draws Crowd".
@@ -1284,6 +1344,132 @@ def extract_candidacy(headline, race):
     return list(found.values())
 
 
+# --------------------------------------------------------------------------- #
+# article-body extraction (headline enrichment when the name is in the prose)
+# --------------------------------------------------------------------------- #
+# A headline often omits the candidate's name ("Meet the 28-year-old lawyer
+# running to represent the 23rd Ward") while the body states it plainly. This
+# extends the SAME strict name+candidacy-verb gate to article prose, with two
+# extra guards so the looser text can't invent a name: (1) the race must be
+# referenced within a short window of the match — its district token for a
+# district race, an office keyword for a citywide one — and (2) the surname must
+# recur in the article (a real subject, not a passing capitalized phrase). One
+# extra pattern earns its place in prose: the appositive "Name, a <role>, <verb>"
+# construction headlines rarely use — anchored on "a/an/the" so a stray
+# capitalized phrase ("Hispanic Heritage Month, …") can't slip through.
+class _ArticleTextParser(HTMLParser):
+    """Collect readable text from an article page, dropping script/style/etc."""
+
+    _SKIP = {"script", "style", "noscript", "template", "svg", "head"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self._skip_depth = 0
+        self._out = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self._SKIP:
+            self._skip_depth += 1
+
+    def handle_endtag(self, tag):
+        if tag in self._SKIP and self._skip_depth:
+            self._skip_depth -= 1
+
+    def handle_data(self, data):
+        if self._skip_depth == 0 and data.strip():
+            self._out.append(data)
+
+
+BODY_TEXT_MAX = 40000       # cap chars scanned per article (prose lives up top)
+BODY_WINDOW = 200           # chars around a match the race must be referenced within
+
+
+def html_to_text(html):
+    """Reduce an article HTML page to readable plain text (capped). Pure."""
+    if not html:
+        return ""
+    p = _ArticleTextParser()
+    try:
+        p.feed(html)
+    except Exception:
+        return ""
+    return _clean(" ".join(p._out))[:BODY_TEXT_MAX]
+
+
+# Past-tense / narrative candidacy verbs common in article BODIES (headlines
+# lean present-tense: "kicks off" vs. the body's "kicked off"). Kept separate so
+# headline extraction — and its snapshot — is unchanged.
+_BODY_PAST_VERBS = (
+    r"kicked off|jumped in(?:to)?|threw (?:his|her|their) hat|"
+    r"launched (?:a |her |his |their )?(?:bid|campaign|run)|"
+    r"announced (?:a |her |his |their )?(?:bid|campaign|run|candidacy)|"
+    r"entered the race|is running|is seeking|is challenging|to unseat")
+_BODY_VERBS = _ANNOUNCE_VERBS + r"|" + _BODY_PAST_VERBS
+
+# A greedy full-name matcher for prose — hyphens and apostrophes intact
+# ("Rojas-Banda", "O'Shea") — unlike the headline _NAME, which is tuned
+# non-greedy to avoid over-capture in a terse title.
+_BODY_NAME = (r"([A-Z][a-z]+(?:['’\-][A-Z]?[a-z]+)*"
+              r"(?:\s+(?:[A-Z]\.\s+)?[A-Z][a-z]+(?:['’\-][A-Z]?[a-z]+)*){1,2})")
+_BODY_ANNOUNCE_RE = re.compile(_BODY_NAME + _ADV + r"\s+(?i:" + _BODY_VERBS + r")\b")
+_BODY_APPOS_RE = re.compile(
+    _BODY_NAME + r",\s+(?:an?|the)\s+[^,]{2,80}?,\s+(?i:" + _BODY_VERBS + r")\b")
+_BODY_REVERSE_RE = re.compile(
+    r"\b(?i:candidate|hopeful|contender|challenger)\s+" + _BODY_NAME + r"\b")
+_BODY_EXPLORE_RE = re.compile(_BODY_NAME + _ADV + r"\s+(?i:" + _EXPLORE_VERBS + r")\b")
+
+
+def _body_refs_race(window, race, dpats):
+    """True when a window of body text references `race` — its district token for
+    a district race, an office keyword for a citywide one."""
+    low = window.lower()
+    if race.get("is_citywide"):
+        terms, _ = _office_terms(race)
+        return (not terms) or any(t in low for t in terms)
+    return bool(dpats) and any(re.search(p, low) for p in dpats)
+
+
+def extract_candidacy_body(text, race):
+    """Names an article BODY attributes to `race`, as [(name, status)].
+
+    Same name+candidacy-verb gate as `extract_candidacy` (plus a prose-only
+    appositive pattern), but a name is kept only when the race is referenced near
+    the match AND the surname recurs in the article. Deterministic; no network."""
+    text = _clean(text)
+    if not text:
+        return []
+    dpats = _district_patterns(race)
+    if not race.get("is_citywide") and not dpats:
+        return []
+    patterns = [(_BODY_APPOS_RE, "announced"), (_BODY_ANNOUNCE_RE, "announced"),
+                (_BODY_REVERSE_RE, "reported"), (_BODY_EXPLORE_RE, "exploring")]
+    found = {}
+    rank = {"announced": 4, "incumbent": 3, "exploring": 2, "reported": 1}
+    for regex, status in patterns:
+        for m in regex.finditer(text):
+            window = text[max(0, m.start() - BODY_WINDOW):m.end() + BODY_WINDOW]
+            if not _body_refs_race(window, race, dpats):
+                continue
+            if _NEGATION_RE.search(text[max(0, m.start() - 16):m.end() + 4]):
+                continue
+            name = _strip_titles(m.group(1))
+            toks = name.split()
+            while len(toks) > 2 and re.sub(r"[.'’-]", "", toks[0].lower()) in _NAME_STOPWORDS:
+                toks.pop(0)
+            name = " ".join(toks)
+            if not _valid_person(name):
+                continue
+            # A real article subject is named more than once; a one-off match is
+            # far likelier to be noise, so require the surname to recur.
+            surname = re.escape(name.split()[-1])
+            if len(re.findall(r"\b" + surname + r"\b", text)) < 2:
+                continue
+            key = name.lower()
+            if key not in found or rank[status] > rank[found[key][1]]:
+                found[key] = (name, status)
+    return list(found.values())
+
+
 def parse_news_rss(xml_text):
     """Parse a Google News RSS search result into items [{title, link,
     publisher, date}]. `title` is the bare headline (the ' - Publisher' suffix
@@ -1393,15 +1579,22 @@ def fetch_news_items(query):
     return parse_news_rss(fetch_text(news_url(query)))
 
 
-def build_potential(race, items, now, existing=None):
+def build_potential(race, items, now, existing=None, bodies=None):
     """Assemble a race's potential_candidates[] from news `items` (already the
     relevant pool), merged with any `existing` list so names/sources accumulate
     across the twice-daily runs. Pure/deterministic given its inputs.
+
+    `bodies` optionally maps an item's link -> its fetched article body text; when
+    present, names the headline omitted but the prose states are extracted too
+    (via `extract_candidacy_body`), each cited to the item it came from. Passing
+    the text in (rather than fetching here) keeps this function pure and offline-
+    testable; `enrich_potential` does the fetching.
 
     A name that has since become an *official* candidate for this race (present in
     race['candidates'], populated earlier by --enrich-candidates-boe) is dropped:
     once the authority confirms someone, they graduate out of the unofficial
     "potential/rumored" list rather than double-listing as both."""
+    bodies = bodies or {}
     official = {(c.get("name") or "").lower() for c in race.get("candidates", [])}
     people = {}  # name_key -> record
 
@@ -1439,9 +1632,15 @@ def build_potential(race, items, now, existing=None):
             if it.get("date"):
                 rec["_dates"].add(it["date"])
 
-    # Pass 1: candidacy patterns discover names (and their signal strength).
+    # Pass 1: candidacy patterns discover names (and their signal strength) —
+    # from the headline, and from the article body when we fetched it (the name a
+    # terse headline left out). Both cite the item they came from.
     for it in items:
-        for name, status in extract_candidacy(it.get("title", ""), race):
+        hits = list(extract_candidacy(it.get("title", ""), race))
+        body = bodies.get(it.get("link"))
+        if body:
+            hits += extract_candidacy_body(body, race)
+        for name, status in hits:
             rec = _seed(name)
             if rank[status] > rank[rec["status"]]:
                 rec["status"] = status
@@ -1482,7 +1681,42 @@ def build_potential(race, items, now, existing=None):
     return out[:POTENTIAL_MAX_PER_RACE]
 
 
-def enrich_potential(doc, now, fetcher=fetch_news_items, sleep=POTENTIAL_FETCH_SLEEP):
+# How many article bodies to fetch per race, and the headline signal that makes
+# an article worth the fetch. We only open articles whose HEADLINE already
+# references this race (office/district) AND reads like candidacy coverage — that
+# bounds the extra requests and keeps the body scan on-topic.
+BODY_FETCH_MAX_PER_RACE = 4
+BODY_FETCH_MAX_TOTAL = 80    # safety valve: bound total body fetches per run
+_BODY_HEADLINE_SIGNAL = re.compile(
+    r"(?i:candidate|candidacy|running|runs? for|to run|campaign|seek(?:s|ing)?|"
+    r"represent|challeng|\bbid\b|elect|\brace\b|\bballot\b|kick(?:s|ed)? off|"
+    r"announce|launch|throws? (?:his|her|their) hat|enters? the race)")
+
+
+def _articles_for_body(race, items):
+    """Pick the news items worth fetching a body for: headline references this
+    race (its district token, or an office keyword for a citywide race) AND looks
+    like candidacy coverage. Preserves order; the caller caps the count."""
+    dpats = _district_patterns(race)
+    picks = []
+    for it in items:
+        low = (it.get("title") or "").lower()
+        if not it.get("link"):
+            continue
+        if race.get("is_citywide"):
+            terms, _ = _office_terms(race)
+            if terms and not any(t in low for t in terms):
+                continue
+        elif not (dpats and any(re.search(p, low) for p in dpats)):
+            continue
+        if not _BODY_HEADLINE_SIGNAL.search(low):
+            continue
+        picks.append(it)
+    return picks
+
+
+def enrich_potential(doc, now, fetcher=fetch_news_items, sleep=POTENTIAL_FETCH_SLEEP,
+                     article_fetcher=None):
     """Attach unofficial, news-sourced potential_candidates[] to each race in an
     assembled elections doc, in place.
 
@@ -1492,8 +1726,14 @@ def enrich_potential(doc, now, fetcher=fetch_news_items, sleep=POTENTIAL_FETCH_S
     can't cover 50 wards). Citywide races use their own office query. Extraction
     is unchanged (strict office+district gating), so a bigger pool never means a
     looser match — a name still attaches only when a headline names the person
-    with a candidacy verb AND references this race. `fetcher` is injectable so
-    tests run offline. Returns the number of races given >=1 potential candidate."""
+    with a candidacy verb AND references this race.
+
+    When `article_fetcher` is given (production passes `fetch_article_text`), the
+    bodies of a few race-relevant articles are fetched too, so a name the headline
+    left out but the prose states is picked up (still under the strict body gate).
+    Both `fetcher` and `article_fetcher` are injectable so tests run offline; with
+    `article_fetcher=None` no bodies are fetched. Returns the number of races
+    given >=1 potential candidate."""
     import time
     races = doc.get("races", [])
 
@@ -1508,12 +1748,27 @@ def enrich_potential(doc, now, fetcher=fetch_news_items, sleep=POTENTIAL_FETCH_S
                   if any(r.get("office_group") == g for r in races)}
 
     updated = 0
+    body_fetches = 0
     for r in races:
         g = r.get("office_group")
         items = list(group_pool.get(g, []))
         rq = _race_news_query(r)                 # per-district query, when applicable
         items += _fetch(rq) if rq else (_fetch(_news_query_for_race(r)) if g not in group_pool else [])
-        pcs = build_potential(r, items, now, existing=r.get("potential_candidates"))
+
+        bodies = {}
+        if article_fetcher and body_fetches < BODY_FETCH_MAX_TOTAL:
+            for it in _articles_for_body(r, items)[:BODY_FETCH_MAX_PER_RACE]:
+                if body_fetches >= BODY_FETCH_MAX_TOTAL:
+                    break
+                txt = article_fetcher(it["link"])
+                body_fetches += 1
+                if sleep:
+                    time.sleep(sleep)
+                if txt:
+                    bodies[it["link"]] = txt
+
+        pcs = build_potential(r, items, now, existing=r.get("potential_candidates"),
+                              bodies=bodies)
         r["potential_candidates"] = pcs
         if pcs:
             updated += 1
@@ -2044,6 +2299,11 @@ def main():
                          "file's current potential_candidates so names/citations "
                          "accumulate across runs. Fail-soft: sources down leaves the "
                          "lists as they were")
+    ap.add_argument("--no-article-bodies", action="store_true",
+                    help="With --enrich-potential, skip fetching article BODIES "
+                         "(headline-only extraction). Body fetching is on by "
+                         "default: it resolves Google News links and parses the "
+                         "prose to catch a name a headline omits (fail-soft)")
     ap.add_argument("--enrich-candidates-boe", default=None,
                     help="Attach official candidates from the Chicago BOE Candidate "
                          "List PDF to an existing elections.json (rewritten in place), "
@@ -2086,7 +2346,8 @@ def main():
         doc = load_json(args.enrich_potential)
         if doc is None:
             return 0
-        n = enrich_potential(doc, now)
+        n = enrich_potential(doc, now,
+                             article_fetcher=None if args.no_article_bodies else fetch_article_text)
         Path(args.enrich_potential).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
         print(f"attached news-sourced potential candidates to {n} race(s)", file=sys.stderr)
         return 0
