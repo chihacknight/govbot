@@ -10,6 +10,16 @@
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"
 ```
 
+Or via npm (downloads the same prebuilt binary, tracks
+[#20](https://github.com/chihacknight/govbot/issues/20)):
+
+```bash
+npm install -g govbot
+# or: npx govbot --help
+```
+
+See [`npm/`](./npm/) for platforms, overrides, and maintainer notes.
+
 ### 2. Run govbot
 
 ```bash
