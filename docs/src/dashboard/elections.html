@@ -1709,7 +1709,7 @@
       try {
         const chi = new Intl.DateTimeFormat("en-US", {
           timeZone: "America/Chicago", month: "short", day: "numeric",
-          hour: "numeric", minute: "2-digit", timeZoneName: "short",
+          year: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short",
         }).format(d);
         s += " (" + chi + ")";
       } catch (e) { /* Intl/tz unavailable — UTC alone still reads fine */ }
