@@ -1,0 +1,24 @@
+{{Short description|none}}
+Preamble text about all 17 Illinois seats.
+
+==District 4==
+Incumbent [[Chuy García]] withdrew; the Democratic nominee is his chief of staff.
+{{Infobox election
+| nominee1 = [[Patty Garcia]]
+| party1 = Democratic Party (United States)
+| nominee2 = [[Lupe Castillo]]
+| party2 = Republican Party (United States)
+| nominee3 = [[Chris Getty]]
+| party3 = [[Nonpartisan politician|Independent]]
+}}
+===Democratic primary===
+====Nominee====
+* [[Patty Garcia]]<ref>{{cite web|title=ISBE candidate list|url=https://www.elections.il.gov/}}</ref>
+
+==District 7==
+{{Infobox election
+| nominee1 = [[La Shawn Ford]]
+| party1 = Democratic Party (United States)
+| nominee2 = Chad Koppie
+| party2 = Republican Party (United States)
+}}

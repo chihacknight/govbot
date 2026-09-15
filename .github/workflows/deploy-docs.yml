@@ -222,6 +222,19 @@ jobs:
           ls -lh docs/src/dashboard/elections.json docs/src/dashboard/elections.xml
           ls -1 docs/src/dashboard/elections/ 2>/dev/null | head -5 || true
 
+      # 2026 Illinois general-election NOMINEES (statewide, U.S. Senate/House, and
+      # the General Assembly). ISBE has no bulk download, so we read the certified
+      # nominees off Wikipedia's per-office election pages (which themselves cite
+      # the ISBE candidate list); each attached nominee records the page as its
+      # source. Runs before money (so committees can match) and before the feeds
+      # are written. Fully fail-soft: an unreachable/edited page contributes nothing.
+      - name: Populate 2026 general-election nominees (Wikipedia)
+        run: |
+          set -uo pipefail
+          python3 actions/scrape-elections/main.py \
+            --enrich-candidates-wiki docs/src/dashboard/elections.json \
+            || echo "::warning::Wikipedia nominee enrichment reported errors"
+
       # Official candidates from the Chicago Board of Elections' Candidate List PDF.
       # The BOE publishes the authoritative roster only as a PDF, so we extract it
       # with `pdftotext` (poppler-utils, a system tool like the DuckDB dependency)

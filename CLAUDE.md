@@ -262,6 +262,22 @@ examples; the shell-out lives only in the fetch wrapper). Runs before the money 
 committees can match) and before the RSS feeds are rebuilt. Fail-soft: no poppler / no PDF leaves
 rosters as they were; committed sample empty.
 
+**General-election nominees** (the 2026 statewide / U.S. Senate & House / General Assembly races)
+are populated by `main.py --enrich-candidates-wiki docs/src/dashboard/elections.json` from
+**Wikipedia's per-office election pages** (`WIKI_NOMINEE_PAGES`). ISBE has no bulk candidate
+download, so this reads the certified nominees off the structured wiki markup — statewide/U.S.
+Senate from the election infobox (`_wiki_infobox_nominees`), U.S. House from each district's
+general-election infobox (`parse_wiki_ushouse`, so independents are included), and the General
+Assembly from each district's "General election results" box, else the winner of each party
+primary, else a *confirmed* "incumbent … running for re-election" narrative
+(`parse_wiki_legislature`) — and each nominee carries the page it came from as its `source`
+(the pages themselves cite the ISBE candidate list, preserving lineage). Attachment is by seed
+`race_id` (a district not up in 2026, or one Wikipedia hasn't filled in, simply stays empty —
+never guessed), dedup by name, flips the race to `on_ballot`. `deploy-docs.yml` runs it right
+after the base build (before the BOE step, the money step so committees can match, and the feed
+rebuild). Pure parsers are offline-snapshot-tested against `__snapshots__/raw/wiki_*.txt`;
+fetching is fail-soft (an unreachable/edited page — or a rate-limit — contributes nothing).
+
 **Campaign money** (Illinois SBE) attaches to each candidate via the SBE ID crosswalk
 (candidate name → `Candidates.txt` ID → `CmteCandidateLinks` → `Committees` → latest
 `D2Totals` row): receipts, spending, cash on hand. Only unambiguous name matches are kept

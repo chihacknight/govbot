@@ -5979,7 +5979,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "One of Illinois's two seats in the United States Senate (Class 2). On the Nov 3, 2026 general-election ballot for a six-year term — a partisan race.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6017,7 +6017,34 @@
       ],
       "district": null,
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Don Tracy",
+          "office": "U.S. Senator",
+          "district": null,
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_Senate_election_in_Illinois"
+        },
+        {
+          "name": "Juliana Stratton",
+          "office": "U.S. Senator",
+          "district": null,
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_Senate_election_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6030,7 +6057,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's 1st congressional district in the U.S. House. On the Nov 3, 2026 ballot for a two-year term (partisan); all 17 Illinois U.S. House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6068,7 +6095,34 @@
       ],
       "district": "IL District 1",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Christian Maxwell",
+          "office": "U.S. Representative",
+          "district": "IL District 1",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "Jonathan Jackson",
+          "office": "U.S. Representative",
+          "district": "IL District 1",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6081,7 +6135,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's 2nd congressional district in the U.S. House. On the Nov 3, 2026 ballot for a two-year term (partisan); all 17 Illinois U.S. House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6119,7 +6173,34 @@
       ],
       "district": "IL District 2",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Donna Miller",
+          "office": "U.S. Representative",
+          "district": "IL District 2",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "Michael Noack",
+          "office": "U.S. Representative",
+          "district": "IL District 2",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6132,7 +6213,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's 3rd congressional district in the U.S. House. On the Nov 3, 2026 ballot for a two-year term (partisan); all 17 Illinois U.S. House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6170,7 +6251,34 @@
       ],
       "district": "IL District 3",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Angel Oakley",
+          "office": "U.S. Representative",
+          "district": "IL District 3",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "Delia Ramirez",
+          "office": "U.S. Representative",
+          "district": "IL District 3",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6183,7 +6291,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's 4th congressional district in the U.S. House. On the Nov 3, 2026 ballot for a two-year term (partisan); all 17 Illinois U.S. House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6221,7 +6329,47 @@
       ],
       "district": "IL District 4",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Chris Getty",
+          "office": "U.S. Representative",
+          "district": "IL District 4",
+          "party": "Independent",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "Lupe Castillo",
+          "office": "U.S. Representative",
+          "district": "IL District 4",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "Patty Garcia",
+          "office": "U.S. Representative",
+          "district": "IL District 4",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6234,7 +6382,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's 5th congressional district in the U.S. House. On the Nov 3, 2026 ballot for a two-year term (partisan); all 17 Illinois U.S. House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6272,7 +6420,34 @@
       ],
       "district": "IL District 5",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Mike Quigley",
+          "office": "U.S. Representative",
+          "district": "IL District 5",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "Tommy Hanson",
+          "office": "U.S. Representative",
+          "district": "IL District 5",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6285,7 +6460,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's 6th congressional district in the U.S. House. On the Nov 3, 2026 ballot for a two-year term (partisan); all 17 Illinois U.S. House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6323,7 +6498,34 @@
       ],
       "district": "IL District 6",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Niki Conforti",
+          "office": "U.S. Representative",
+          "district": "IL District 6",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "Sean Casten",
+          "office": "U.S. Representative",
+          "district": "IL District 6",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6336,7 +6538,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's 7th congressional district in the U.S. House. On the Nov 3, 2026 ballot for a two-year term (partisan); all 17 Illinois U.S. House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6374,7 +6576,34 @@
       ],
       "district": "IL District 7",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Chad Koppie",
+          "office": "U.S. Representative",
+          "district": "IL District 7",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "La Shawn Ford",
+          "office": "U.S. Representative",
+          "district": "IL District 7",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6387,7 +6616,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's 8th congressional district in the U.S. House. On the Nov 3, 2026 ballot for a two-year term (partisan); all 17 Illinois U.S. House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6425,7 +6654,34 @@
       ],
       "district": "IL District 8",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Jennifer Davis",
+          "office": "U.S. Representative",
+          "district": "IL District 8",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "Melissa Bean",
+          "office": "U.S. Representative",
+          "district": "IL District 8",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6438,7 +6694,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's 9th congressional district in the U.S. House. On the Nov 3, 2026 ballot for a two-year term (partisan); all 17 Illinois U.S. House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6476,7 +6732,34 @@
       ],
       "district": "IL District 9",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Daniel Biss",
+          "office": "U.S. Representative",
+          "district": "IL District 9",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "John Elleson",
+          "office": "U.S. Representative",
+          "district": "IL District 9",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6489,7 +6772,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's 10th congressional district in the U.S. House. On the Nov 3, 2026 ballot for a two-year term (partisan); all 17 Illinois U.S. House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6527,7 +6810,34 @@
       ],
       "district": "IL District 10",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Brad Schneider",
+          "office": "U.S. Representative",
+          "district": "IL District 10",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "Carl Lambrecht",
+          "office": "U.S. Representative",
+          "district": "IL District 10",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6540,7 +6850,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's 11th congressional district in the U.S. House. On the Nov 3, 2026 ballot for a two-year term (partisan); all 17 Illinois U.S. House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6578,7 +6888,34 @@
       ],
       "district": "IL District 11",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Bill Foster",
+          "office": "U.S. Representative",
+          "district": "IL District 11",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "Jeff Walter",
+          "office": "U.S. Representative",
+          "district": "IL District 11",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6591,7 +6928,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's 12th congressional district in the U.S. House. On the Nov 3, 2026 ballot for a two-year term (partisan); all 17 Illinois U.S. House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6629,7 +6966,34 @@
       ],
       "district": "IL District 12",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Julie Fortier",
+          "office": "U.S. Representative",
+          "district": "IL District 12",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "Mike Bost",
+          "office": "U.S. Representative",
+          "district": "IL District 12",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6642,7 +7006,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's 13th congressional district in the U.S. House. On the Nov 3, 2026 ballot for a two-year term (partisan); all 17 Illinois U.S. House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6680,7 +7044,34 @@
       ],
       "district": "IL District 13",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Jeff Wilson",
+          "office": "U.S. Representative",
+          "district": "IL District 13",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "Nikki Budzinski",
+          "office": "U.S. Representative",
+          "district": "IL District 13",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6693,7 +7084,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's 14th congressional district in the U.S. House. On the Nov 3, 2026 ballot for a two-year term (partisan); all 17 Illinois U.S. House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6731,7 +7122,34 @@
       ],
       "district": "IL District 14",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "James Marter",
+          "office": "U.S. Representative",
+          "district": "IL District 14",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "Lauren Underwood",
+          "office": "U.S. Representative",
+          "district": "IL District 14",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6744,7 +7162,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's 15th congressional district in the U.S. House. On the Nov 3, 2026 ballot for a two-year term (partisan); all 17 Illinois U.S. House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6782,7 +7200,34 @@
       ],
       "district": "IL District 15",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Jennifer Todd",
+          "office": "U.S. Representative",
+          "district": "IL District 15",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "Mary Miller",
+          "office": "U.S. Representative",
+          "district": "IL District 15",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6795,7 +7240,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's 16th congressional district in the U.S. House. On the Nov 3, 2026 ballot for a two-year term (partisan); all 17 Illinois U.S. House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6833,7 +7278,34 @@
       ],
       "district": "IL District 16",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Darin LaHood",
+          "office": "U.S. Representative",
+          "district": "IL District 16",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "Paul Nolley",
+          "office": "U.S. Representative",
+          "district": "IL District 16",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6846,7 +7318,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's 17th congressional district in the U.S. House. On the Nov 3, 2026 ballot for a two-year term (partisan); all 17 Illinois U.S. House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6884,7 +7356,34 @@
       ],
       "district": "IL District 17",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Dillan Vancil",
+          "office": "U.S. Representative",
+          "district": "IL District 17",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        },
+        {
+          "name": "Eric Sorensen",
+          "office": "U.S. Representative",
+          "district": "IL District 17",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_United_States_House_of_Representatives_elections_in_Illinois"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6897,7 +7396,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's chief executive, elected on a single ticket with the Lieutenant Governor. On the Nov 3, 2026 ballot for a four-year term (partisan).",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6935,7 +7434,34 @@
       ],
       "district": null,
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Darren Bailey",
+          "office": "Governor",
+          "district": null,
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_gubernatorial_election"
+        },
+        {
+          "name": "JB Pritzker",
+          "office": "Governor",
+          "district": null,
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_gubernatorial_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6948,7 +7474,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's chief legal officer. Statewide, on the Nov 3, 2026 ballot for a four-year term (partisan).",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -6986,7 +7512,34 @@
       ],
       "district": null,
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Bob Fioretti",
+          "office": "Attorney General",
+          "district": null,
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Attorney_General_election"
+        },
+        {
+          "name": "Kwame Raoul",
+          "office": "Attorney General",
+          "district": null,
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Attorney_General_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -6999,7 +7552,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's Secretary of State — driver services, vehicle registration, the state archives and more. Statewide, on the Nov 3, 2026 ballot for a four-year term (partisan).",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -7037,7 +7590,34 @@
       ],
       "district": null,
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Alexi Giannoulias",
+          "office": "Secretary of State",
+          "district": null,
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Secretary_of_State_election"
+        },
+        {
+          "name": "Diane Harris",
+          "office": "Secretary of State",
+          "district": null,
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Secretary_of_State_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -7050,7 +7630,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's Comptroller, who keeps the state's accounts and pays its bills. Statewide, on the Nov 3, 2026 ballot for a four-year term (partisan).",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -7088,7 +7668,34 @@
       ],
       "district": null,
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Bryan Drew",
+          "office": "Comptroller",
+          "district": null,
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Comptroller_election"
+        },
+        {
+          "name": "Margaret Croke",
+          "office": "Comptroller",
+          "district": null,
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Comptroller_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -7101,7 +7708,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois's Treasurer, the state's chief investment and banking officer. Statewide, on the Nov 3, 2026 ballot for a four-year term (partisan).",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -7139,7 +7746,34 @@
       ],
       "district": null,
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Max Solomon",
+          "office": "Treasurer",
+          "district": null,
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_State_Treasurer_election"
+        },
+        {
+          "name": "Mike Frerichs",
+          "office": "Treasurer",
+          "district": null,
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_State_Treasurer_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -7152,7 +7786,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois State Senate district 2. On the Nov 3, 2026 ballot (partisan). 39 of the 59 Senate seats are up this cycle under the chamber's staggered 2-4-4 term schedule.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -7190,7 +7824,21 @@
       ],
       "district": "Senate District 2",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Omar Aquino",
+          "office": "State Senator",
+          "district": "Senate District 2",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Senate_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -7203,7 +7851,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois State Senate district 3. On the Nov 3, 2026 ballot (partisan). 39 of the 59 Senate seats are up this cycle under the chamber's staggered 2-4-4 term schedule.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -7241,7 +7889,21 @@
       ],
       "district": "Senate District 3",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Mattie Hunter",
+          "office": "State Senator",
+          "district": "Senate District 3",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Senate_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -7254,7 +7916,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois State Senate district 5. On the Nov 3, 2026 ballot (partisan). 39 of the 59 Senate seats are up this cycle under the chamber's staggered 2-4-4 term schedule.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -7292,7 +7954,21 @@
       ],
       "district": "Senate District 5",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Lakesia Collins",
+          "office": "State Senator",
+          "district": "Senate District 5",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Senate_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -7305,7 +7981,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois State Senate district 6. On the Nov 3, 2026 ballot (partisan). 39 of the 59 Senate seats are up this cycle under the chamber's staggered 2-4-4 term schedule.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -7343,7 +8019,34 @@
       ],
       "district": "Senate District 6",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Frank Rowder",
+          "office": "State Senator",
+          "district": "Senate District 6",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Senate_election"
+        },
+        {
+          "name": "Sara Feigenholtz",
+          "office": "State Senator",
+          "district": "Senate District 6",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Senate_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -7356,7 +8059,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois State Senate district 8. On the Nov 3, 2026 ballot (partisan). 39 of the 59 Senate seats are up this cycle under the chamber's staggered 2-4-4 term schedule.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -7394,7 +8097,34 @@
       ],
       "district": "Senate District 8",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Ram Villivalam",
+          "office": "State Senator",
+          "district": "Senate District 8",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Senate_election"
+        },
+        {
+          "name": "Vince Romano",
+          "office": "State Senator",
+          "district": "Senate District 8",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Senate_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -7458,7 +8188,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois State Senate district 11. On the Nov 3, 2026 ballot (partisan). 39 of the 59 Senate seats are up this cycle under the chamber's staggered 2-4-4 term schedule.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -7496,7 +8226,21 @@
       ],
       "district": "Senate District 11",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Mike Porfirio",
+          "office": "State Senator",
+          "district": "Senate District 11",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Senate_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -8988,7 +9732,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois State Senate district 56. On the Nov 3, 2026 ballot (partisan). 39 of the 59 Senate seats are up this cycle under the chamber's staggered 2-4-4 term schedule.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -9026,7 +9770,34 @@
       ],
       "district": "Senate District 56",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Erica Harriss",
+          "office": "State Senator",
+          "district": "Senate District 56",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Senate_election"
+        },
+        {
+          "name": "Marsia Geldert-Murphey",
+          "office": "State Senator",
+          "district": "Senate District 56",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Senate_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -9039,7 +9810,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois State Senate district 57. On the Nov 3, 2026 ballot (partisan). 39 of the 59 Senate seats are up this cycle under the chamber's staggered 2-4-4 term schedule.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -9077,7 +9848,34 @@
       ],
       "district": "Senate District 57",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Christopher Belt",
+          "office": "State Senator",
+          "district": "Senate District 57",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Senate_election"
+        },
+        {
+          "name": "Daniel Rhyne",
+          "office": "State Senator",
+          "district": "Senate District 57",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Senate_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -9090,7 +9888,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois State Senate district 59. On the Nov 3, 2026 ballot (partisan). 39 of the 59 Senate seats are up this cycle under the chamber's staggered 2-4-4 term schedule.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -9128,7 +9926,34 @@
       ],
       "district": "Senate District 59",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Paul Jacobs",
+          "office": "State Senator",
+          "district": "Senate District 59",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Senate_election"
+        },
+        {
+          "name": "Tamiko \"T.C.\" Mueller",
+          "office": "State Senator",
+          "district": "Senate District 59",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_Senate_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -9141,7 +9966,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 1. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -9179,7 +10004,21 @@
       ],
       "district": "House District 1",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Aaron M. Ortiz",
+          "office": "State Representative",
+          "district": "House District 1",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -9192,7 +10031,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 2. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -9230,7 +10069,34 @@
       ],
       "district": "House District 2",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Elizabeth Hernandez",
+          "office": "State Representative",
+          "district": "House District 2",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        },
+        {
+          "name": "Laura Hruska",
+          "office": "State Representative",
+          "district": "House District 2",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -9243,7 +10109,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 3. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -9281,7 +10147,21 @@
       ],
       "district": "House District 3",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Eva-Dina Delgado",
+          "office": "State Representative",
+          "district": "House District 3",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -9294,7 +10174,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 4. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -9332,7 +10212,21 @@
       ],
       "district": "House District 4",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Lilian Jiménez",
+          "office": "State Representative",
+          "district": "House District 4",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -9345,7 +10239,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 5. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -9383,7 +10277,21 @@
       ],
       "district": "House District 5",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Kimberly du Buclet",
+          "office": "State Representative",
+          "district": "House District 5",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -9396,7 +10304,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 6. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -9434,7 +10342,21 @@
       ],
       "district": "House District 6",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Sonya Harper",
+          "office": "State Representative",
+          "district": "House District 6",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -9447,7 +10369,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 7. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -9485,7 +10407,21 @@
       ],
       "district": "House District 7",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Chris Welch",
+          "office": "State Representative",
+          "district": "House District 7",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -9498,7 +10434,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 8. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -9536,7 +10472,21 @@
       ],
       "district": "House District 8",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Shantel Franklin",
+          "office": "State Representative",
+          "district": "House District 8",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -9600,7 +10550,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 10. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -9638,7 +10588,21 @@
       ],
       "district": "House District 10",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Jawaharial Williams",
+          "office": "State Representative",
+          "district": "House District 10",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -9702,7 +10666,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 12. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -9740,7 +10704,34 @@
       ],
       "district": "House District 12",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Justin J. Kumar",
+          "office": "State Representative",
+          "district": "House District 12",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        },
+        {
+          "name": "Paul Kendrick",
+          "office": "State Representative",
+          "district": "House District 12",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -9753,7 +10744,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 13. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -9791,7 +10782,34 @@
       ],
       "district": "House District 13",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Demerike Palecek",
+          "office": "State Representative",
+          "district": "House District 13",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        },
+        {
+          "name": "Terry Nguyen Le",
+          "office": "State Representative",
+          "district": "House District 13",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -10416,7 +11434,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 26. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -10454,7 +11472,21 @@
       ],
       "district": "House District 26",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Kam Buckner",
+          "office": "State Representative",
+          "district": "House District 26",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -10518,7 +11550,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 28. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -10556,7 +11588,21 @@
       ],
       "district": "House District 28",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Robert Rita",
+          "office": "State Representative",
+          "district": "House District 28",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -11232,7 +12278,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 42. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -11270,7 +12316,34 @@
       ],
       "district": "House District 42",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Margaret A. Delarosa",
+          "office": "State Representative",
+          "district": "House District 42",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        },
+        {
+          "name": "Stephanie W. Trussell",
+          "office": "State Representative",
+          "district": "House District 42",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -11283,7 +12356,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 43. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -11321,7 +12394,21 @@
       ],
       "district": "House District 43",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Anna Moeller",
+          "office": "State Representative",
+          "district": "House District 43",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -11487,7 +12574,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 47. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -11525,7 +12612,34 @@
       ],
       "district": "House District 47",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Erica Bray-Parker",
+          "office": "State Representative",
+          "district": "House District 47",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        },
+        {
+          "name": "Robert A. Vrankovich",
+          "office": "State Representative",
+          "district": "House District 47",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -11691,7 +12805,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 51. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -11729,7 +12843,34 @@
       ],
       "district": "House District 51",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Jenny Levin",
+          "office": "State Representative",
+          "district": "House District 51",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        },
+        {
+          "name": "Lori Smith",
+          "office": "State Representative",
+          "district": "House District 51",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -11742,7 +12883,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 52. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -11780,7 +12921,21 @@
       ],
       "district": "House District 52",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Martin McLaughlin (politician)",
+          "office": "State Representative",
+          "district": "House District 52",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -11844,7 +12999,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 54. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -11882,7 +13037,21 @@
       ],
       "district": "House District 54",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Mary Beth Canty",
+          "office": "State Representative",
+          "district": "House District 54",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -11895,7 +13064,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 55. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -11933,7 +13102,34 @@
       ],
       "district": "House District 55",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Joseph Johnson",
+          "office": "State Representative",
+          "district": "House District 55",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        },
+        {
+          "name": "Justin Cochran",
+          "office": "State Representative",
+          "district": "House District 55",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -12303,7 +13499,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 63. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -12341,7 +13537,21 @@
       ],
       "district": "House District 63",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Steve Reick",
+          "office": "State Representative",
+          "district": "House District 63",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -12405,7 +13615,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 65. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -12443,7 +13653,21 @@
       ],
       "district": "House District 65",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Dan Ugaste",
+          "office": "State Representative",
+          "district": "House District 65",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -12507,7 +13731,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 67. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -12545,7 +13769,21 @@
       ],
       "district": "House District 67",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Maurice West",
+          "office": "State Representative",
+          "district": "House District 67",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -12558,7 +13796,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 68. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -12596,7 +13834,21 @@
       ],
       "district": "House District 68",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Dave Vella",
+          "office": "State Representative",
+          "district": "House District 68",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -12660,7 +13912,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 70. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -12698,7 +13950,21 @@
       ],
       "district": "House District 70",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Jeff Keicher",
+          "office": "State Representative",
+          "district": "House District 70",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -12711,7 +13977,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 71. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -12749,7 +14015,21 @@
       ],
       "district": "House District 71",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Daniel Swanson",
+          "office": "State Representative",
+          "district": "House District 71",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -12813,7 +14093,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 73. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -12851,7 +14131,21 @@
       ],
       "district": "House District 73",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Ryan Spain",
+          "office": "State Representative",
+          "district": "House District 73",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -12864,7 +14158,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 74. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -12902,7 +14196,21 @@
       ],
       "district": "House District 74",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Bradley Fritts",
+          "office": "State Representative",
+          "district": "House District 74",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -12915,7 +14223,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 75. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -12953,7 +14261,21 @@
       ],
       "district": "House District 75",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Jed Davis (politician)",
+          "office": "State Representative",
+          "district": "House District 75",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -12966,7 +14288,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 76. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -13004,7 +14326,21 @@
       ],
       "district": "House District 76",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Murri Briel",
+          "office": "State Representative",
+          "district": "House District 76",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -13170,7 +14506,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 80. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -13208,7 +14544,21 @@
       ],
       "district": "House District 80",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Anthony DeLuca (Illinois politician)",
+          "office": "State Representative",
+          "district": "House District 80",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -13374,7 +14724,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 84. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -13412,7 +14762,34 @@
       ],
       "district": "House District 84",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Brian Scopa",
+          "office": "State Representative",
+          "district": "House District 84",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        },
+        {
+          "name": "Saba Haider",
+          "office": "State Representative",
+          "district": "House District 84",
+          "party": "Democratic",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -13578,7 +14955,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 88. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -13616,7 +14993,21 @@
       ],
       "district": "House District 88",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Regan Deering",
+          "office": "State Representative",
+          "district": "House District 88",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -13629,7 +15020,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 89. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -13667,7 +15058,21 @@
       ],
       "district": "House District 89",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Tony McCombie",
+          "office": "State Representative",
+          "district": "House District 89",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -13680,7 +15085,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 90. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -13718,7 +15123,21 @@
       ],
       "district": "House District 90",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "John Cabello",
+          "office": "State Representative",
+          "district": "House District 90",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -13884,7 +15303,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 94. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -13922,7 +15341,21 @@
       ],
       "district": "House District 94",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Norine Hammond",
+          "office": "State Representative",
+          "district": "House District 94",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -14139,7 +15572,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 99. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -14177,7 +15610,21 @@
       ],
       "district": "House District 99",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Kyle Moore (politician)",
+          "office": "State Representative",
+          "district": "House District 99",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -14190,7 +15637,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 100. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -14228,7 +15675,21 @@
       ],
       "district": "House District 100",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "C. D. Davidsmeyer",
+          "office": "State Representative",
+          "district": "House District 100",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -14241,7 +15702,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 101. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -14279,7 +15740,21 @@
       ],
       "district": "House District 101",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Chris Miller (politician)",
+          "office": "State Representative",
+          "district": "House District 101",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -14394,7 +15869,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 104. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -14432,7 +15907,21 @@
       ],
       "district": "House District 104",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Brandun Schweizer",
+          "office": "State Representative",
+          "district": "House District 104",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -14445,7 +15934,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 105. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -14483,7 +15972,21 @@
       ],
       "district": "House District 105",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Tim Ruestman",
+          "office": "State Representative",
+          "district": "House District 105",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -14496,7 +15999,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 106. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -14534,7 +16037,21 @@
       ],
       "district": "House District 106",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Jason Bunting",
+          "office": "State Representative",
+          "district": "House District 106",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -14547,7 +16064,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 107. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -14585,7 +16102,21 @@
       ],
       "district": "House District 107",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Brad Halbrook",
+          "office": "State Representative",
+          "district": "House District 107",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -14598,7 +16129,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 108. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -14636,7 +16167,21 @@
       ],
       "district": "House District 108",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Wayne Rosenthal (politician)",
+          "office": "State Representative",
+          "district": "House District 108",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -14649,7 +16194,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 109. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -14687,7 +16232,21 @@
       ],
       "district": "House District 109",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Charles Meier",
+          "office": "State Representative",
+          "district": "House District 109",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -14700,7 +16259,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 110. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -14738,7 +16297,21 @@
       ],
       "district": "House District 110",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Blaine Wilhour",
+          "office": "State Representative",
+          "district": "House District 110",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {
@@ -14751,7 +16324,7 @@
       "ballot_date": "2026-11-03",
       "ballot_stage": "general",
       "incumbent_status": "elected",
-      "status": "upcoming",
+      "status": "on_ballot",
       "why_note": "Illinois House district 111. On the Nov 3, 2026 ballot for a two-year term (partisan); all 118 House seats are elected every two years.",
       "official_list_url": "https://www.elections.il.gov/",
       "source": "Illinois State Board of Elections",
@@ -14789,7 +16362,21 @@
       ],
       "district": "House District 111",
       "seats": 1,
-      "candidates": [],
+      "candidates": [
+        {
+          "name": "Amy Elik",
+          "office": "State Representative",
+          "district": "House District 111",
+          "party": "Republican",
+          "filing_date": null,
+          "petition_status": "on_ballot",
+          "website": null,
+          "photo_url": null,
+          "incumbent": null,
+          "incumbency": null,
+          "source": "https://en.wikipedia.org/wiki/2026_Illinois_House_of_Representatives_election"
+        }
+      ],
       "potential_candidates": []
     },
     {

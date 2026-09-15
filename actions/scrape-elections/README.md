@@ -14,15 +14,15 @@ Powers `docs/src/dashboard/elections.html`. Output validates against
 | City Council | Alderperson, Wards 1–50 | 2027 municipal | Chicago Board of Elections |
 | CPS Board | President (citywide) + Subdistricts 1A…10B | **Nov 3, 2026** | ISBE "Who Is Running" |
 | Police District Council | 3 seats × 22 police districts | 2027 municipal | Chicago Board of Elections |
-| U.S. Senate | 1 seat (Class 2) | **Nov 3, 2026** general | ISBE "Who Is Running" |
-| U.S. House | All 17 Illinois districts | **Nov 3, 2026** general | ISBE "Who Is Running" |
-| Governor & Statewide Offices | Governor + Attorney General, Secretary of State, Comptroller, Treasurer | **Nov 3, 2026** general | ISBE "Who Is Running" |
-| Illinois Senate | 39 of 59 seats up this cycle | **Nov 3, 2026** general | ISBE "Who Is Running" |
-| Illinois House | All 118 districts | **Nov 3, 2026** general | ISBE "Who Is Running" |
+| U.S. Senate | 1 seat (Class 2) | **Nov 3, 2026** general | Wikipedia (cites ISBE) |
+| U.S. House | All 17 Illinois districts | **Nov 3, 2026** general | Wikipedia (cites ISBE) |
+| Governor & Statewide Offices | Governor + Attorney General, Secretary of State, Comptroller, Treasurer | **Nov 3, 2026** general | Wikipedia (cites ISBE) |
+| Illinois Senate | 39 of 59 seats up this cycle | **Nov 3, 2026** general | Wikipedia (cites ISBE) |
+| Illinois House | All 118 districts | **Nov 3, 2026** general | Wikipedia (cites ISBE) |
 | Cook County / suburban / judicial | *(future)* | — | Cook County Clerk / ISBE |
 
-The 2026 general-election offices are `partisan` (`ballot_stage: "general"`); their candidate
-rosters populate from official sources like the Chicago groups, `race_id_for` resolves the
+The 2026 general-election offices are `partisan` (`ballot_stage: "general"`); their nominees are
+populated by `--enrich-candidates-wiki` (see below), `race_id_for` resolves the
 statewide/federal/General-Assembly offices (guarded so a bare "Treasurer"/"Senator"/
 "Representative" still means the Chicago office), and the Chicago-only locator map and
 news-sourced potential-candidate pass are both skipped for them.
@@ -52,6 +52,27 @@ no confirmed candidate keeps an empty list plus a link to its official source.
 > crashing, and the parsers stay validated offline against the fixtures below.
 > The exact live endpoints in `main.py` may need re-pointing against a real page
 > snapshot as a cycle opens.
+
+## General-election nominees — Wikipedia per-office pages
+
+The 2026 statewide, U.S. Senate/House, and General Assembly nominees are attached
+by `--enrich-candidates-wiki`. ISBE offers no bulk candidate download, so this
+reads the certified nominees off **Wikipedia's per-office election pages** (which
+each cite the ISBE candidate list): statewide/U.S. Senate from the election
+infobox, U.S. House from each district's general-election infobox (independents
+included), and the General Assembly from each district's "General election
+results" box → else the winner of each party primary → else a *confirmed*
+"incumbent … running for re-election" line (never a retiring/undeclared one).
+Each nominee records the page it came from as its `source`; attachment is by seed
+`race_id`, so a district not up in 2026 — or one Wikipedia hasn't filled in yet —
+stays empty rather than guessed. Fully fail-soft.
+
+```bash
+python3 actions/scrape-elections/main.py \
+  --enrich-candidates-wiki docs/src/dashboard/elections.json
+```
+
+Pure parsers are offline-tested against `__snapshots__/raw/wiki_*.txt`.
 
 ## Official candidates — Chicago BOE Candidate List (PDF)
 

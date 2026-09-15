@@ -1,0 +1,10 @@
+{{Short description|none}}
+{{Infobox election
+| election_name = 2026 Illinois gubernatorial election
+| nominee1 = [[JB Pritzker]]
+| party1 = Democratic Party (United States)
+| running_mate1 = [[Christian Mitchell]]
+| nominee2 = [[Darren Bailey]]
+| party2 = Republican Party (United States)
+}}
+The '''2026 Illinois gubernatorial election''' will be held on November 3, 2026.
