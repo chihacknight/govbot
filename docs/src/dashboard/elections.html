@@ -737,7 +737,7 @@
   <div class="groups" id="groups"></div>
   <p class="empty" id="empty" hidden>No races match the current filters.</p>
 
-  <details class="cabinet" id="cabinet" open hidden>
+  <details class="cabinet" id="cabinet" open>
     <summary>📂 Where the data comes from</summary>
     <p class="cab-intro">This site isn't the official clerk — it's a <b>cabinet</b> that puts the sources in one place so a Chicagoan can ask "who's running in my CPS subdistrict and my ward, and when do I vote?" A fully assembled race draws on up to five drawers: <b>map · candidates · money · results · context</b>. Here's what each source owns and what's live today.</p>
     <div class="cab-grid">
@@ -1044,9 +1044,9 @@
 
   /* ---------- "Build your view" section picker ---------- */
   function pickerOptions(data) {
+    // "Data sources" is intentionally NOT here — it stays pinned at the bottom.
     const panels = [{ key: "calendar", label: "Election calendar", emoji: "🗓️" }];
     if ((data.springfield || []).length) panels.push({ key: "springfield", label: "Rules of the game", emoji: "🏛️" });
-    panels.push({ key: "cabinet", label: "Data sources", emoji: "📂" });
     const groups = GROUP_ORDER
       .filter((g) => data.races.some((r) => r.office_group === g))
       .map((g) => {
@@ -1124,7 +1124,7 @@
 
     $("calendar").hidden = !v.has("calendar");
     const sf = document.getElementById("springfield"); if (sf) sf.hidden = !v.has("springfield");
-    $("cabinet").hidden = !v.has("cabinet");
+    // Data sources (#cabinet) is always shown at the bottom — never picker-gated.
 
     const anyGroup = state.visibleGroups.size > 0;
     $("filters").hidden = !anyGroup;
