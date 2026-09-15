@@ -157,15 +157,48 @@
   .intro b { font-weight: 700; }
   .intro .intro-ico { font-size: 18px; }
 
-  /* ---------- table of contents ---------- */
-  .toc { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0 0 18px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-1); font-size: 13px; }
-  .toc .toc-label { font-weight: 700; color: var(--text-muted); margin-right: 2px; }
-  .toc a { text-decoration: none; color: var(--text-secondary); font-weight: 600; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--border); }
-  .toc a:hover { color: var(--text-primary); background: var(--hover-wash); }
+  /* ---------- section picker (choose what to see) ---------- */
+  .picker { margin: 0 0 18px; padding: 13px 15px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-1); }
+  .picker-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .picker-q { font-weight: 700; font-size: 14px; margin-right: 2px; }
+  .picker-btn { display: inline-flex; align-items: center; gap: 9px; padding: 8px 13px; border: 2px solid var(--series-2); border-radius: 10px; background: var(--page); color: var(--text-primary); font-size: 13px; font-weight: 650; cursor: pointer; }
+  .picker-btn:hover { background: var(--hover-wash); }
+  .picker-caret { transition: transform 0.15s ease; font-size: 10px; color: var(--text-muted); }
+  .picker-btn[aria-expanded="true"] .picker-caret { transform: rotate(180deg); }
+  .picker-quick { padding: 7px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--page); color: var(--text-secondary); font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .picker-quick:hover { background: var(--hover-wash); color: var(--text-primary); }
+  .picker-panel { margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--gridline); display: grid; gap: 8px 18px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+  .picker-panel[hidden] { display: none; }   /* the grid display would otherwise beat [hidden] */
+  .picker-col h5 { margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+  .picker-opt { display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+  .picker-opt:hover { background: var(--hover-wash); }
+  .picker-opt input { accent-color: var(--series-2); width: 15px; height: 15px; flex: none; }
+  .picker-opt .po-count { color: var(--text-muted); font-size: 11.5px; }
+  .picker-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+  .picker-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 4px 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--series-2) 13%, var(--surface-1)); border: 1px solid color-mix(in srgb, var(--series-2) 40%, var(--border)); font-size: 12px; font-weight: 600; }
+  .picker-chip button { border: none; background: none; cursor: pointer; color: var(--text-muted); font-size: 15px; line-height: 1; padding: 0 3px; }
+  .picker-chip button:hover { color: var(--text-primary); }
+  .picker-empty { color: var(--text-secondary); font-size: 13px; margin: 4px 0 22px; padding: 18px 14px; border: 1px dashed var(--border); border-radius: 12px; text-align: center; background: var(--surface-1); }
   #calendar, #springfield, #races, #cabinet { scroll-margin-top: 14px; }
+
+  /* ---------- Illinois-flag flourishes (desktop, motion-friendly) ---------- */
+  .il-flag { display: block; width: 100%; height: auto; }
+  .il-flag .cloth { transform-origin: 8px center; animation: il-wave 2.8s ease-in-out infinite; }
+  @keyframes il-wave {
+    0%, 100% { transform: rotate(0deg) skewY(0deg) scaleX(1); }
+    25% { transform: rotate(-1.1deg) skewY(1.7deg) scaleX(0.985); }
+    50% { transform: rotate(0.7deg) skewY(-1.5deg) scaleX(1); }
+    75% { transform: rotate(-0.5deg) skewY(0.9deg) scaleX(0.99); }
+  }
+  .corner-flag { position: fixed; top: 8px; right: 12px; z-index: 45; width: 60px; pointer-events: none; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.30)); }
+  #flag-cursor { position: fixed; left: 0; top: 0; width: 30px; z-index: 9998; pointer-events: none; will-change: transform; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.35)); }
+  html.flag-cursor-on, html.flag-cursor-on * { cursor: none !important; }
+  @media (max-width: 899px) { .corner-flag { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .il-flag .cloth { animation: none; } }
 
   /* ---------- filters ---------- */
   .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 16px 0 18px; }
+  .filters[hidden] { display: none; }
   .filters input[type="search"], .filters select {
     height: 32px; padding: 0 10px; border: 1px solid var(--border); border-radius: 6px;
     background: var(--surface-1); color: var(--text-primary); font: inherit;
@@ -187,6 +220,7 @@
 
   /* ---------- stat tiles ---------- */
   .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .tiles[hidden] { display: none; }
   .tile { background: var(--surface-1); border: 1px solid var(--border); border-left: 4px solid var(--c, var(--series-2)); border-radius: 10px; padding: 14px 16px; }
   .tile .label { color: var(--text-secondary); font-size: 13px; margin-bottom: 4px; }
   .tile .value { font-size: 26px; font-weight: 650; color: var(--c, var(--text-primary)); font-variant-numeric: tabular-nums; }
@@ -632,17 +666,28 @@
        <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
   </header>
 
-  <nav class="toc" id="toc" aria-label="On this page">
-    <span class="toc-label">On this page</span>
-    <a href="#calendar" data-sec="calendar">🗓️ Election calendar</a>
-    <a href="#springfield" data-sec="springfield">🏛️ Rules of the game</a>
-    <a href="#races" data-sec="races">🗳️ Races by office</a>
-    <a href="#cabinet" data-sec="cabinet">📂 Data sources</a>
-  </nav>
+  <!-- Decorative Illinois flag, waving, top-right (desktop only, never blocks clicks) -->
+  <div class="corner-flag" id="corner-flag" aria-hidden="true"></div>
+
+  <!-- Build-your-view picker: the major sections start hidden; pick what to see. -->
+  <div class="picker" id="picker" hidden>
+    <div class="picker-head">
+      <span class="picker-q">Build your view</span>
+      <button type="button" class="picker-btn" id="picker-btn" aria-haspopup="true" aria-expanded="false" aria-controls="picker-panel">
+        <span id="picker-summary">Choose sections…</span>
+        <span class="picker-caret" aria-hidden="true">▾</span>
+      </button>
+      <button type="button" class="picker-quick" id="picker-all">Show everything</button>
+      <button type="button" class="picker-quick" id="picker-clear" hidden>Clear</button>
+    </div>
+    <div class="picker-panel" id="picker-panel" hidden role="group" aria-label="Sections to show"></div>
+    <div class="picker-chips" id="picker-chips"></div>
+  </div>
+  <p class="picker-empty" id="picker-empty" hidden>Pick one or more sections above to explore the ballot — or “Show everything.”</p>
 
   <div class="intro">
     <span class="intro-ico" aria-hidden="true">🗳️</span>
-    <b>Two big ballots ahead.</b> On <b>Nov 3, 2026</b>, Chicago elects a <b>Board of Education</b> for the first time by popular vote — including its <b>first-ever elected President</b> — as the mayor-appointed hybrid board is phased out. Then the <b>2027 municipal election</b> puts the Mayor, City Clerk, City Treasurer, all 50 Alderpersons, and the Police District Councils on the ballot. Candidate lists are pulled from the Chicago Board of Elections and the Illinois State Board of Elections' “Who Is Running” list; a race with no one listed yet links to its official source rather than guessing.
+    <b>Two big ballots ahead.</b> On <b>Nov 3, 2026</b>, the <b>Illinois general election</b> fills the U.S. Senate seat and all 17 U.S. House seats, the Governor and the statewide constitutional officers, and the Illinois General Assembly (the 39 state Senate seats up this cycle and all 118 state House seats) — and on the same ballot Chicago elects a <b>Board of Education</b> for the first time by popular vote, including its <b>first-ever elected President</b>, as the mayor-appointed hybrid board is phased out. Then the <b>2027 municipal election</b> puts the Mayor, City Clerk, City Treasurer, all 50 Alderpersons, and the Police District Councils on the ballot. Candidate lists are pulled from the Chicago Board of Elections and the Illinois State Board of Elections; the November 2026 general-election nominees are compiled from public election records (each candidate links to its source), and a race with no one listed yet links to its official source rather than guessing.
   </div>
 
   <section class="calendar" id="calendar" hidden>
@@ -677,7 +722,6 @@
       <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
       <input type="search" id="f-search" placeholder="Search office, district, or candidate…" aria-label="Search races and candidates">
     </div>
-    <select id="f-group" aria-label="Office group"></select>
     <select id="f-ballot" aria-label="Ballot date"></select>
     <button type="button" class="toggle-pill" id="f-hascands" aria-pressed="false">Only races with candidates</button>
     <button type="button" class="clear-btn" id="f-clear" disabled>Clear</button>
@@ -686,7 +730,7 @@
       Follow this race (RSS)</button></span>
   </div>
 
-  <div class="tiles" id="tiles"></div>
+  <div class="tiles" id="tiles" hidden></div>
 
   <div id="races" aria-hidden="true"></div>
   <p class="empty" id="loading">Loading Illinois &amp; Chicago races…</p>
@@ -706,6 +750,11 @@
         <h4>🏫 State &amp; CPS candidates <span class="cab-status live">live</span></h4>
         <p>Statewide + CPS board candidate lists ("Who Is Running") and official campaign-money files.</p>
         <a href="https://www.elections.il.gov/" target="_blank" rel="noopener">elections.il.gov ↗</a>
+      </div>
+      <div class="cab-item">
+        <h4>🏛️ General-election nominees <span class="cab-status live">live · Nov 2026</span></h4>
+        <p>The Nov 3, 2026 nominees — U.S. Senate &amp; House, Governor and the statewide offices, and the Illinois General Assembly — compiled from Wikipedia's per-office election pages (which cite the ISBE candidate list); each candidate links to its source. A district not filled in yet stays empty rather than guessed.</p>
+        <a href="https://en.wikipedia.org/wiki/2026_Illinois_elections" target="_blank" rel="noopener">2026 Illinois elections (Wikipedia) ↗</a>
       </div>
       <div class="cab-item">
         <h4>📜 Rules of the game <span class="cab-status live">live · above</span></h4>
@@ -808,6 +857,11 @@
     council:                 { label: "Alderperson · City Council", emoji: "🏛️", color: "--series-5" },
     cps_board:               { label: "CPS Board of Education",   emoji: "🎓", color: "--series-3" },
     police_district_council: { label: "Police District Councils", emoji: "🚔", color: "--series-8" },
+    us_senate:               { label: "U.S. Senate",             emoji: "🏛️", color: "--series-6" },
+    us_house:                { label: "U.S. House",              emoji: "🇺🇸", color: "--series-7" },
+    il_exec:                 { label: "Governor & Statewide Offices", emoji: "🏵️", color: "--series-2" },
+    il_senate:               { label: "Illinois Senate",         emoji: "🏦", color: "--series-4" },
+    il_house:                { label: "Illinois House",          emoji: "🏫", color: "--series-1" },
     cook_county:             { label: "Cook County",              emoji: "🗺️", color: "--series-2" },
     suburban:                { label: "Suburban Cook",            emoji: "🏘️", color: "--series-7" },
     judicial:                { label: "Judicial",                 emoji: "⚖️", color: "--series-6" },
@@ -816,6 +870,7 @@
     other:                   { label: "Other",                    emoji: "🗳️", color: "--series-2" },
   };
   const GROUP_ORDER = ["citywide", "council", "cps_board", "police_district_council",
+                       "us_senate", "us_house", "il_exec", "il_senate", "il_house",
                        "cook_county", "suburban", "judicial", "state", "federal", "other"];
   const STATUS_LABEL = {
     on_ballot: "On ballot", filed: "Filed", objected: "Objected",
@@ -829,7 +884,12 @@
     // group's card grid. Kept apart from the top-level `filters` so it survives
     // the global re-render and doesn't disturb the other sections.
     sectionSearch: {},
+    // Which major sections the reader has chosen to see (the picker). Keys are
+    // "calendar" / "springfield" / "cabinet" for the panels and "grp:<office_group>"
+    // per race section; empty means the clean, nothing-shown first view.
+    view: new Set(),
   };
+  const VIEW_LS_KEY = "govbot-elections-view";
   // Which office groups get their own in-section filter box: the long lists a
   // reader actually needs to search within (short groups like citywide don't).
   const SECTION_SEARCH_MIN = 7;
@@ -846,16 +906,10 @@
     state.data = data;
     state.nowDate = (data.generated_at || "").slice(0, 10) || new Date().toISOString().slice(0, 10);
     $("loading").hidden = true;
-    $("filters").hidden = false;
     renderCalendar(data.races);
-    $("calendar").hidden = false;
-    initSpringfield(data.springfield || []);
-    // Hide any table-of-contents link whose section didn't render (e.g. an
-    // empty Springfield feed).
-    document.querySelectorAll("#toc a[data-sec]").forEach((a) => {
-      const target = document.getElementById(a.dataset.sec);
-      a.hidden = !target || target.hidden;
-    });
+    initSpringfield(data.springfield || []);  // populates; visibility is the picker's job
+    setupFlourishes();                          // waving corner flag + flag cursor
+    buildPicker(data);                          // the "Build your view" section chooser
 
     // District locator maps (fail-soft; re-render when they arrive).
     fetch("maps.json")
@@ -869,12 +923,6 @@
       $("asof-text").textContent = "Data as of " + asof;
       $("asof").hidden = false;
     }
-
-    // group filter options (only groups present in the data)
-    const groupsPresent = GROUP_ORDER.filter((g) => data.races.some((r) => r.office_group === g));
-    buildSelect($("f-group"), "All offices",
-      groupsPresent.map((g) => [g, GROUP_META[g] ? GROUP_META[g].label : g]),
-      (v) => { state.filters.group = v; render(); });
 
     // ballot-date filter options
     const dates = [...new Set(data.races.map((r) => r.ballot_date).filter(Boolean))].sort();
@@ -894,7 +942,7 @@
     });
     $("f-clear").addEventListener("click", () => {
       state.filters = { search: "", group: "", ballot: "", hasCands: false };
-      $("f-search").value = ""; $("f-group").value = ""; $("f-ballot").value = "";
+      $("f-search").value = ""; $("f-ballot").value = "";
       $("f-hascands").setAttribute("aria-pressed", "false");
       render();
     });
@@ -943,9 +991,168 @@
     return !!(f.search || f.group || f.ballot || f.hasCands);
   }
 
+  /* ---------- Illinois-flag flourishes ---------- */
+  // A compact, stylized Illinois flag (white field + a simplified state seal) —
+  // reused for the waving corner flag and the flag cursor. Decorative only.
+  const IL_FLAG_SVG =
+    '<svg class="il-flag" viewBox="0 0 120 84" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illinois flag">' +
+      '<rect x="4" y="3" width="3.4" height="78" rx="1.7" fill="#7c6a3a"/>' +
+      '<circle cx="5.7" cy="4" r="3.6" fill="#c8a85a"/>' +
+      '<g class="cloth">' +
+        '<rect x="7.4" y="8" width="106" height="60" rx="2" fill="#ffffff" stroke="#d7dce4" stroke-width="1"/>' +
+        '<g transform="translate(60,34)">' +
+          '<circle r="19" fill="none" stroke="#13294b" stroke-width="1.4"/>' +
+          '<circle r="15.5" fill="none" stroke="#c8a85a" stroke-width="1"/>' +
+          '<path d="M-1 -3 C -8 -12 -17 -12 -21 -5 C -15 -6 -7 -3 -1 -1 Z" fill="#13294b"/>' +
+          '<path d="M1 -3 C 8 -12 17 -12 21 -5 C 15 -6 7 -3 1 -1 Z" fill="#13294b"/>' +
+          '<ellipse cx="0" cy="-2" rx="2.4" ry="4.8" fill="#13294b"/>' +
+          '<circle cx="0" cy="-9" r="2.1" fill="#13294b"/>' +
+          '<path d="M0 -10 l3.4 1 l-3.4 1.8 Z" fill="#c8a85a"/>' +
+          '<rect x="-5" y="2" width="10" height="10" rx="1" fill="#c8a85a" stroke="#13294b" stroke-width="0.8"/>' +
+          '<path d="M-5 5 h10 M-5 8 h10" stroke="#b22234" stroke-width="1"/>' +
+        '</g>' +
+        '<text x="60" y="61" text-anchor="middle" font-family="Georgia, \'Times New Roman\', serif" font-size="9" font-weight="700" letter-spacing="1.5" fill="#13294b">ILLINOIS</text>' +
+      '</g>' +
+    '</svg>';
+
+  function reducedMotion() {
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  function setupFlourishes() {
+    const corner = $("corner-flag");
+    if (corner) corner.innerHTML = IL_FLAG_SVG;   // CSS shows it only ≥900px wide
+
+    // Flag cursor: only for a real mouse, and never when reduced motion is asked.
+    const fine = window.matchMedia && window.matchMedia("(pointer: fine)").matches;
+    if (!fine || reducedMotion()) return;
+    const cur = document.createElement("div");
+    cur.id = "flag-cursor"; cur.setAttribute("aria-hidden", "true");
+    cur.innerHTML = IL_FLAG_SVG;
+    cur.style.transform = "translate(-100px,-100px)";   // parked offscreen until the mouse moves
+    document.body.appendChild(cur);
+    document.documentElement.classList.add("flag-cursor-on");
+    let x = -100, y = -100, raf = 0;
+    const place = () => { raf = 0; cur.style.transform = "translate(" + x + "px," + y + "px)"; };
+    window.addEventListener("mousemove", (e) => {
+      x = e.clientX - 3; y = e.clientY - 2;       // pole tip sits at the pointer
+      if (!raf) raf = requestAnimationFrame(place);
+    }, { passive: true });
+    document.addEventListener("mouseleave", () => { cur.style.opacity = "0"; });
+    document.addEventListener("mouseenter", () => { cur.style.opacity = "1"; });
+  }
+
+  /* ---------- "Build your view" section picker ---------- */
+  function pickerOptions(data) {
+    // "Data sources" is intentionally NOT here — it stays pinned at the bottom.
+    const panels = [{ key: "calendar", label: "Election calendar", emoji: "🗓️" }];
+    if ((data.springfield || []).length) panels.push({ key: "springfield", label: "Rules of the game", emoji: "🏛️" });
+    const groups = GROUP_ORDER
+      .filter((g) => data.races.some((r) => r.office_group === g))
+      .map((g) => {
+        const meta = GROUP_META[g] || { label: g, emoji: "🗳️" };
+        return { key: "grp:" + g, label: meta.label, emoji: meta.emoji,
+                 count: data.races.filter((r) => r.office_group === g).length };
+      });
+    return { panels, groups };
+  }
+
+  function buildPicker(data) {
+    const opts = pickerOptions(data);
+    state._pickerOpts = opts;
+    const allKeys = () => [...opts.panels, ...opts.groups].map((o) => o.key);
+
+    // Restore a saved selection (dropping any keys that no longer exist).
+    try {
+      const saved = JSON.parse(localStorage.getItem(VIEW_LS_KEY) || "[]");
+      const valid = new Set(allKeys());
+      saved.forEach((k) => { if (valid.has(k)) state.view.add(k); });
+    } catch (e) { /* private mode / blocked storage — fine */ }
+
+    const panel = $("picker-panel");
+    panel.textContent = "";
+    const mkCol = (title, list) => {
+      const col = document.createElement("div"); col.className = "picker-col";
+      const h = document.createElement("h5"); h.textContent = title; col.append(h);
+      list.forEach((o) => {
+        const lab = document.createElement("label"); lab.className = "picker-opt";
+        const cb = document.createElement("input"); cb.type = "checkbox"; cb.value = o.key;
+        cb.checked = state.view.has(o.key);
+        cb.addEventListener("change", () => {
+          if (cb.checked) state.view.add(o.key); else state.view.delete(o.key);
+          applyView();
+        });
+        lab.append(cb, document.createTextNode(" " + o.emoji + " " + o.label));
+        if (o.count != null) {
+          const c = document.createElement("span"); c.className = "po-count";
+          c.textContent = " (" + o.count + ")"; lab.append(c);
+        }
+        col.append(lab);
+      });
+      return col;
+    };
+    panel.append(mkCol("Overview", opts.panels), mkCol("Races by office", opts.groups));
+
+    $("picker-btn").addEventListener("click", () => {
+      const willOpen = $("picker-panel").hidden;
+      $("picker-panel").hidden = !willOpen;
+      $("picker-btn").setAttribute("aria-expanded", String(willOpen));
+    });
+    $("picker-all").addEventListener("click", () => { allKeys().forEach((k) => state.view.add(k)); syncPickerChecks(); applyView(); });
+    $("picker-clear").addEventListener("click", () => { state.view.clear(); syncPickerChecks(); applyView(); });
+
+    $("picker").hidden = false;
+    applyView();
+  }
+
+  function syncPickerChecks() {
+    document.querySelectorAll("#picker-panel input[type=checkbox]").forEach((cb) => {
+      cb.checked = state.view.has(cb.value);
+    });
+  }
+
+  function viewLabel(key) {
+    const o = state._pickerOpts
+      ? [...state._pickerOpts.panels, ...state._pickerOpts.groups].find((x) => x.key === key)
+      : null;
+    return o ? o.emoji + " " + o.label : key;
+  }
+
+  function applyView() {
+    const v = state.view;
+    state.visibleGroups = new Set([...v].filter((k) => k.indexOf("grp:") === 0).map((k) => k.slice(4)));
+
+    $("calendar").hidden = !v.has("calendar");
+    const sf = document.getElementById("springfield"); if (sf) sf.hidden = !v.has("springfield");
+    // Data sources (#cabinet) is always shown at the bottom — never picker-gated.
+
+    const anyGroup = state.visibleGroups.size > 0;
+    $("filters").hidden = !anyGroup;
+    $("tiles").hidden = !anyGroup;
+    $("picker-empty").hidden = v.size > 0;
+
+    try { localStorage.setItem(VIEW_LS_KEY, JSON.stringify([...v])); } catch (e) {}
+
+    $("picker-summary").textContent = v.size ? v.size + " selected" : "Choose sections…";
+    $("picker-clear").hidden = v.size === 0;
+    const chips = $("picker-chips"); chips.textContent = "";
+    [...v].forEach((k) => {
+      const chip = document.createElement("span"); chip.className = "picker-chip";
+      chip.append(document.createTextNode(viewLabel(k)));
+      const x = document.createElement("button");
+      x.type = "button"; x.setAttribute("aria-label", "Remove " + viewLabel(k)); x.textContent = "×";
+      x.addEventListener("click", () => { state.view.delete(k); syncPickerChecks(); applyView(); });
+      chip.append(x); chips.append(chip);
+    });
+
+    render();
+  }
+
   /* ---------- render ---------- */
   function render() {
-    const races = filteredRaces();
+    // Only races in the office groups the reader has chosen — so the tiles and
+    // the sections both reflect what's actually on screen.
+    const races = filteredRaces().filter((r) => state.view.has("grp:" + r.office_group));
     $("f-clear").disabled = !anyFilter();
     renderTiles(races);
     renderGroups(races);
@@ -976,12 +1183,11 @@
   function renderGroups(races) {
     const wrap = $("groups");
     wrap.textContent = "";
-    $("empty").hidden = races.length > 0;
 
     const byGroup = {};
     races.forEach((r) => { (byGroup[r.office_group] = byGroup[r.office_group] || []).push(r); });
 
-    GROUP_ORDER.filter((g) => byGroup[g]).forEach((g) => {
+    GROUP_ORDER.filter((g) => byGroup[g] && state.view.has("grp:" + g)).forEach((g) => {
       const meta = GROUP_META[g] || { label: g, emoji: "🗳️", color: "--series-2" };
       const section = document.createElement("section");
       section.className = "group";
@@ -1049,6 +1255,10 @@
       }
       wrap.append(section);
     });
+    // "No races match" only when the reader has chosen race sections but the
+    // current filters emptied them — not on the clean nothing-selected view.
+    const anyGroupSelected = [...state.view].some((k) => k.indexOf("grp:") === 0);
+    $("empty").hidden = !(anyGroupSelected && wrap.children.length === 0);
   }
 
   // Filter one group's cards in place by its own search box (leaves every other
@@ -1163,6 +1373,10 @@
   function renderRaceMap(r, meta) {
     const maps = state.maps;
     if (!maps || !maps.view || !maps.context) return null;
+    // The locator is a map of Chicago — only Chicago/CPS races get one. A
+    // statewide (Governor, U.S. Senate) or General Assembly race has no Chicago
+    // geography, so it shows no map (like a CPS subdistrict with no polygon).
+    if (r.jurisdiction !== "chicago" && r.jurisdiction !== "cps") return null;
     const entry = maps.districts && maps.districts[r.id];
     if (!entry && !r.is_citywide) return null;
 
@@ -1459,8 +1673,8 @@
 
   function initSpringfield(bills) {
     sfState.bills = bills || [];
-    if (!sfState.bills.length) return;  // section stays hidden when empty
-    $("springfield").hidden = false;
+    if (!sfState.bills.length) return;  // no bills -> picker won't offer the option
+    // Visibility is the picker's job now (applyView); here we just wire + render.
     const sfSearch = $("sf-search");
     if (sfSearch) {
       let t;
@@ -1630,11 +1844,17 @@
       const card = document.createElement("div");
       card.className = "cal-card";
       card.style.setProperty("--cc", "var(" + accent + ")");
-      // Name the ballot from what's on it.
+      // Name the ballot from what's on it. A ballot carrying any `general` race
+      // is the Illinois general election (the CPS board rides that same ballot);
+      // a CPS-only date is the school-board election; otherwise it's municipal.
       const groups = [...new Set(races_d.map((r) => r.office_group))];
+      const stages = new Set(races_d.map((r) => r.ballot_stage));
       const onlyCps = groups.length === 1 && groups[0] === "cps_board";
+      const ballotName = onlyCps ? "Chicago Board of Education (CPS)"
+        : stages.has("general") ? "Illinois general election"
+        : "Chicago municipal election";
       const h3 = document.createElement("h3");
-      h3.textContent = onlyCps ? "Chicago Board of Education (CPS)" : "Chicago municipal election";
+      h3.textContent = ballotName;
       card.append(h3);
       const when = document.createElement("div"); when.className = "cal-when";
       when.textContent = "Election Day · " + prettyDate(date);
@@ -1644,7 +1864,6 @@
       forEl.textContent = races_d.length + " races — " + labels.join(", ");
       card.append(forEl);
       // Follow the whole ballot (all races sharing this Election Day).
-      const ballotName = onlyCps ? "Chicago Board of Education (CPS)" : "Chicago municipal election";
       const calRss = document.createElement("div"); calRss.style.margin = "0 0 10px";
       calRss.append(mkRss("Follow this race (RSS)", {
         title: ballotName + " — subscribe",
@@ -1681,8 +1900,19 @@
     const months = ["January","February","March","April","May","June","July",
                     "August","September","October","November","December"];
     let s = months[d.getUTCMonth()] + " " + d.getUTCDate() + ", " + d.getUTCFullYear();
-    if (/T\d/.test(iso)) s += ", " + String(d.getUTCHours()).padStart(2, "0") + ":" +
-      String(d.getUTCMinutes()).padStart(2, "0") + " UTC";
+    if (/T\d/.test(iso)) {
+      s += ", " + String(d.getUTCHours()).padStart(2, "0") + ":" +
+        String(d.getUTCMinutes()).padStart(2, "0") + " UTC";
+      // Also show Chicago local time & date — this is a Chicago/Illinois site, and
+      // the RSS feeds already publish in America/Chicago (CST/CDT).
+      try {
+        const chi = new Intl.DateTimeFormat("en-US", {
+          timeZone: "America/Chicago", month: "short", day: "numeric",
+          year: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short",
+        }).format(d);
+        s += " (" + chi + ")";
+      } catch (e) { /* Intl/tz unavailable — UTC alone still reads fine */ }
+    }
     return s;
   }
 })();

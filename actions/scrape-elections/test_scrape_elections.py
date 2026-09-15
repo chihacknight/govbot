@@ -45,8 +45,36 @@ class RaceMatching(unittest.TestCase):
                          "chicago-police-district-council-014")
 
     def test_unplaceable_returns_none(self):
-        self.assertIsNone(main.race_id_for("State Representative", "District 5"))
+        # An office govbot doesn't track resolves to nothing (dropped, not guessed).
+        self.assertIsNone(main.race_id_for("Metropolitan Water Reclamation District Commissioner", ""))
         self.assertIsNone(main.race_id_for("Alderperson", "Ward 99"))  # out of range
+
+    def test_statewide_and_federal_resolve(self):
+        # 2026 general-election offices resolve to their seed races.
+        self.assertEqual(main.race_id_for("United States Senator", ""), "us-senate-il")
+        self.assertEqual(main.race_id_for("Representative in Congress", "7th Congressional District"),
+                         "us-house-il-07")
+        self.assertEqual(main.race_id_for("Governor", ""), "il-governor")
+        self.assertEqual(main.race_id_for("Governor and Lieutenant Governor", ""), "il-governor")
+        self.assertEqual(main.race_id_for("Attorney General", ""), "il-attorney-general")
+        self.assertEqual(main.race_id_for("Secretary of State", ""), "il-secretary-of-state")
+        self.assertEqual(main.race_id_for("Comptroller", ""), "il-comptroller")
+        self.assertEqual(main.race_id_for("State Senator", "District 12"), "il-senate-12")
+        self.assertEqual(main.race_id_for("Representative in the General Assembly", "District 118"),
+                         "il-house-118")
+
+    def test_state_vs_chicago_office_collisions(self):
+        # A bare office word stays the Chicago office; the STATE one says so.
+        self.assertEqual(main.race_id_for("City Treasurer", ""), "chicago-city-treasurer")
+        self.assertEqual(main.race_id_for("Treasurer", ""), "chicago-city-treasurer")
+        self.assertEqual(main.race_id_for("Illinois State Treasurer", ""), "il-treasurer")
+        # A U.S. House race never falls through to the state House, and vice-versa.
+        self.assertEqual(main.race_id_for("U.S. Representative", "IL District 3"), "us-house-il-03")
+        self.assertEqual(main.race_id_for("State Representative", "District 3"), "il-house-003")
+
+    def test_out_of_range_state_district_unplaceable(self):
+        self.assertIsNone(main.race_id_for("State Representative", "District 200"))
+        self.assertIsNone(main.race_id_for("U.S. Representative", "District 40"))
 
     def test_non_education_board_president_not_cps(self):
         # A generic "…Board president" (e.g. the Cook County Board president) must
@@ -73,8 +101,8 @@ class ISBEParser(unittest.TestCase):
         self.cands = main.parse_isbe_candidates((RAW / "isbe_who_is_running.txt").read_text())
 
     def test_row_count(self):
-        # 4 CPS/valid rows + 1 unplaceable state race = 5 parsed candidates.
-        self.assertEqual(len(self.cands), 5)
+        # 4 CPS rows + 1 state-rep row + 1 unplaceable out-of-scope row = 6.
+        self.assertEqual(len(self.cands), 6)
 
     def test_president_resolves(self):
         pres = [c for c in self.cands if c["_race_id"] == "cps-board-president"]
@@ -92,7 +120,13 @@ class ISBEParser(unittest.TestCase):
         obj = [c for c in self.cands if c["name"] == "Pat Q. Placeholder"]
         self.assertEqual(obj[0]["petition_status"], "objected")
 
-    def test_state_race_is_unplaceable(self):
+    def test_state_representative_resolves(self):
+        # A General Assembly candidate now places onto the IL House seed race.
+        rep = [c for c in self.cands if c["name"] == "Dana Q. Statehouse"]
+        self.assertEqual(rep[0]["_race_id"], "il-house-005")
+
+    def test_out_of_scope_office_is_unplaceable(self):
+        # An office govbot doesn't track (e.g. MWRD Commissioner) is dropped.
         st = [c for c in self.cands if c["name"] == "Not A Chicago Race"]
         self.assertIsNone(st[0]["_race_id"])
 
@@ -811,6 +845,84 @@ class ArticleBody(unittest.TestCase):
     def test_resolve_passes_through_non_google_url(self):
         url = "https://example.com/story"
         self.assertEqual(main.resolve_gnews_url(url), url)
+
+
+class WikipediaNominees(unittest.TestCase):
+    """2026 general-election nominees parsed from Wikipedia's per-office pages."""
+
+    def setUp(self):
+        self.now = main.datetime(2026, 9, 15, tzinfo=main.timezone.utc)
+        self.statewide = (RAW / "wiki_statewide.txt").read_text()
+        self.ushouse = (RAW / "wiki_ushouse.txt").read_text()
+        self.legis = (RAW / "wiki_legislature.txt").read_text()
+
+    def test_infobox_nominees(self):
+        self.assertEqual(main._wiki_infobox_nominees(self.statewide),
+                         [("JB Pritzker", "Democratic"), ("Darren Bailey", "Republican")])
+
+    def test_ushouse_includes_independent(self):
+        r = main.parse_wiki_ushouse(self.ushouse)
+        self.assertEqual(r[4], [("Patty Garcia", "Democratic"),
+                                ("Lupe Castillo", "Republican"),
+                                ("Chris Getty", "Independent")])
+        self.assertEqual(r[7], [("La Shawn Ford", "Democratic"), ("Chad Koppie", "Republican")])
+
+    def test_legislature_general_box_primary_winner_and_incumbent(self):
+        r = main.parse_wiki_legislature(self.legis)
+        # general-election results box -> both candidates
+        self.assertEqual(r[6], [("Sara Feigenholtz", "Democratic"), ("Frank Rowder", "Republican")])
+        # primary WINNER only (the loser Guadalupe Rivera is not a nominee)
+        self.assertEqual(r[1], [("Aaron M. Ortiz", "Democratic")])
+        # narrative-only district with a confirmed incumbent running
+        self.assertEqual(r[10], [("Jawaharial Williams", "Democratic")])
+        # a retiring incumbent is NOT a candidate
+        self.assertNotIn(99, r)
+
+    def test_enrich_attaches_to_races(self):
+        seed = main.load_seed()
+        doc, _ = main.assemble([], seed, "test", self.now)
+        pages = {
+            "2026 Illinois gubernatorial election": self.statewide,
+            "2026 United States House of Representatives elections in Illinois": self.ushouse,
+            "2026 Illinois House of Representatives election": self.legis,
+        }
+        n = main.enrich_candidates_wiki(doc, fetcher=lambda t: pages.get(t), sleep=0)
+        self.assertGreater(n, 0)
+        by_id = {r["id"]: r for r in doc["races"]}
+
+        gov = by_id["il-governor"]
+        self.assertEqual({c["name"] for c in gov["candidates"]}, {"JB Pritzker", "Darren Bailey"})
+        self.assertEqual(gov["status"], "on_ballot")
+        pritz = next(c for c in gov["candidates"] if c["name"] == "JB Pritzker")
+        self.assertEqual(pritz["party"], "Democratic")
+        self.assertEqual(pritz["petition_status"], "on_ballot")
+        self.assertIn("gubernatorial", pritz["source"])          # cited to its page
+        self.assertNotIn("_race_id", pritz)                      # internal key stripped
+
+        self.assertEqual(len(by_id["us-house-il-04"]["candidates"]), 3)  # incl. independent
+        self.assertEqual(by_id["il-house-001"]["candidates"][0]["name"], "Aaron M. Ortiz")
+        self.assertTrue(by_id["il-house-010"]["candidates"])
+        self.assertEqual(by_id["il-house-099"]["candidates"], [])        # retiring -> none
+
+    def test_enrich_failsoft_and_skips_unknown_race(self):
+        seed = main.load_seed()
+        doc, _ = main.assemble([], seed, "test", self.now)
+        # Feed the legislature fixture as the IL SENATE page: districts 1/10/99 are
+        # not among the 39 Senate seats up in 2026, so only district 6 attaches.
+        pages = {"2026 Illinois Senate election": self.legis}
+        main.enrich_candidates_wiki(doc, fetcher=lambda t: pages.get(t), sleep=0)
+        by_id = {r["id"]: r for r in doc["races"]}
+        self.assertTrue(by_id["il-senate-06"]["candidates"])     # 6 is up in 2026
+        self.assertNotIn("il-senate-01", by_id)                  # not a 2026 seat -> no race
+        # Everything else fetched None (fail-soft) -> no candidates elsewhere.
+        self.assertEqual(by_id["il-governor"]["candidates"], [])
+
+    def test_enrich_all_pages_unreachable_is_noop(self):
+        seed = main.load_seed()
+        doc, _ = main.assemble([], seed, "test", self.now)
+        n = main.enrich_candidates_wiki(doc, fetcher=lambda t: None, sleep=0)
+        self.assertEqual(n, 0)
+        self.assertTrue(all(not r["candidates"] for r in doc["races"]))
 
 
 class Snapshot(unittest.TestCase):

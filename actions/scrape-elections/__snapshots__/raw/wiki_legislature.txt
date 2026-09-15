@@ -1,0 +1,39 @@
+{{Short description|none}}
+Preamble.
+
+==District 6==
+The incumbent is Democrat [[Sara Feigenholtz]], who was re-elected in 2022.
+===General election results===
+{{Election box begin no change| title=2026 Illinois Senate election, 6th District}}
+{{Election box candidate with party link no change
+ | party      = Democratic Party (US)
+ | candidate  = [[Sara Feigenholtz]] (Incumbent)
+ | votes      =
+}}
+{{Election box candidate with party link no change
+ | party      = Republican Party (US)
+ | candidate  = Frank Rowder
+ | votes      =
+}}
+{{Election box end}}
+
+==District 1==
+The incumbent is Democrat [[Aaron Ortiz]].
+{{Election box begin no change | title = Democratic primary results}}
+{{Election box winning candidate with party link no change
+ | party = Democratic Party of Illinois
+ | candidate = [[Aaron Ortiz|Aaron M. Ortiz]] ([[incumbent]])
+ | votes = 4746
+}}
+{{Election box candidate with party link no change
+ | party = Democratic Party of Illinois
+ | candidate = Guadalupe Rivera
+ | votes = 2610
+}}
+{{Election box end}}
+
+==District 10==
+The incumbent is Democrat [[Jawaharial Williams]], who is running for re-election.<ref>{{cite web|url=https://www.elections.il.gov/}}</ref>
+
+==District 99==
+The incumbent is Democrat [[Pat Retiring]], who is retiring and will not seek re-election.

@@ -181,12 +181,24 @@ offline-snapshot-tested: `python3 actions/scrape-hearings/test_scrape_hearings.p
 The **Elections Happening in IL** page is a *third* pipeline: `actions/scrape-elections/` builds
 `docs/src/dashboard/elections.json` (schema `schemas/govbot.elections.schema.json`) — every
 office on upcoming Chicago/Illinois ballots (citywide, Alderperson wards 1–50, CPS board
-president + subdistricts 1A–10B, and 22 Police District Councils). The ballot *structure*
+president + subdistricts 1A–10B, and 22 Police District Councils) **plus the Nov 3, 2026
+Illinois general election** — U.S. Senate, all 17 U.S. House districts, Governor and the
+statewide constitutional officers (Attorney General, Secretary of State, Comptroller,
+Treasurer), the 39 Illinois Senate seats up this cycle, and all 118 Illinois House seats.
+Those ride five office groups — `us_senate`, `us_house`, `il_exec`, `il_senate`, `il_house`
+(added to the schema enum, the frontend `GROUP_META`/`GROUP_ORDER`, and `OFFICE_GROUP_LABEL`)
+— and render as their own sections like the Chicago groups. They're `partisan` general-election
+races (`ballot_stage: "general"`, ballot date 2026-11-03); the locator map is Chicago-only, so
+statewide/federal races show none (gated on `jurisdiction` in the frontend), and the
+news-sourced *potential-candidate* pass is Chicago-only too (`POTENTIAL_GROUPS`) since these
+offices already have official post-primary nominees. The ballot *structure*
 (offices, districts, ballot dates, and a "why this race exists" note) is a committed seed,
 `actions/scrape-elections/elections_seed.json`; the scrapers only *populate candidates* onto
 it from official candidate lists (Chicago Board of Elections; Illinois SBE "Who Is Running";
 Cook County Clerk, future). A candidate attaches to a race only when office+district resolve
-exactly (`race_id_for`) — unplaceable rows are dropped, never invented, and a race with no
+exactly (`race_id_for` — which now also resolves the statewide/federal/General-Assembly offices,
+guarded so a bare "Treasurer"/"Senator"/"Representative" still means the Chicago office, never a
+statewide one) — unplaceable rows are dropped, never invented, and a race with no
 confirmed candidate keeps an empty list + a source link. It also writes a whole-ballot RSS
 `elections.xml` + granular feeds under `docs/src/dashboard/elections/` (per office group
 `group-<group>.xml`, per ballot date `ballot-<YYYY-MM-DD>.xml`, per race `race-<id>.xml`).
@@ -249,6 +261,22 @@ mayor / alderperson wards / police district councils / city clerk & treasurer th
 examples; the shell-out lives only in the fetch wrapper). Runs before the money step (so
 committees can match) and before the RSS feeds are rebuilt. Fail-soft: no poppler / no PDF leaves
 rosters as they were; committed sample empty.
+
+**General-election nominees** (the 2026 statewide / U.S. Senate & House / General Assembly races)
+are populated by `main.py --enrich-candidates-wiki docs/src/dashboard/elections.json` from
+**Wikipedia's per-office election pages** (`WIKI_NOMINEE_PAGES`). ISBE has no bulk candidate
+download, so this reads the certified nominees off the structured wiki markup — statewide/U.S.
+Senate from the election infobox (`_wiki_infobox_nominees`), U.S. House from each district's
+general-election infobox (`parse_wiki_ushouse`, so independents are included), and the General
+Assembly from each district's "General election results" box, else the winner of each party
+primary, else a *confirmed* "incumbent … running for re-election" narrative
+(`parse_wiki_legislature`) — and each nominee carries the page it came from as its `source`
+(the pages themselves cite the ISBE candidate list, preserving lineage). Attachment is by seed
+`race_id` (a district not up in 2026, or one Wikipedia hasn't filled in, simply stays empty —
+never guessed), dedup by name, flips the race to `on_ballot`. `deploy-docs.yml` runs it right
+after the base build (before the BOE step, the money step so committees can match, and the feed
+rebuild). Pure parsers are offline-snapshot-tested against `__snapshots__/raw/wiki_*.txt`;
+fetching is fail-soft (an unreachable/edited page — or a rate-limit — contributes nothing).
 
 **Campaign money** (Illinois SBE) attaches to each candidate via the SBE ID crosswalk
 (candidate name → `Candidates.txt` ID → `CmteCandidateLinks` → `Committees` → latest

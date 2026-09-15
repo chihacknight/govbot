@@ -87,7 +87,7 @@
         "office_group": {
           "type": "string",
           "description": "Grouping used by the dashboard's section headers.",
-          "enum": ["citywide", "council", "cps_board", "police_district_council", "cook_county", "suburban", "judicial", "state", "federal", "other"]
+          "enum": ["citywide", "council", "cps_board", "police_district_council", "us_senate", "us_house", "il_exec", "il_senate", "il_house", "cook_county", "suburban", "judicial", "state", "federal", "other"]
         },
         "district": {
           "type": ["string", "null"],

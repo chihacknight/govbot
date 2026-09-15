@@ -205,6 +205,38 @@ def race_id_for(office, district):
     o = (office or "").lower()
     d = district or ""
 
+    # --- Illinois statewide + federal offices (2026 general election) ------
+    # Guarded on EXPLICIT state/federal wording so a bare office word (Treasurer,
+    # Clerk, Senator, Representative) still resolves to the Chicago/CPS office
+    # below, never to a statewide one by accident. Federal is checked before
+    # state so "U.S. Senator" / "Representative in Congress" never fall through
+    # to the state senate/house.
+    fed = any(k in o for k in ("u.s.", "u. s.", "united states", "us senate",
+                               "us house", "us representative", "congress"))
+    st = any(k in o for k in ("illinois", "state senat", "state house",
+                              "state representative", "general assembly"))
+    if "senat" in o and fed:
+        return "us-senate-il"
+    if fed and ("representative" in o or "congress" in o or "house" in o):
+        n = _leading_num(d, office)
+        return f"us-house-il-{n:02d}" if n and 1 <= n <= 17 else None
+    if "governor" in o:                       # Governor or joint Gov/Lt-Gov ticket
+        return "il-governor"
+    if "attorney general" in o:
+        return "il-attorney-general"
+    if "secretary of state" in o:
+        return "il-secretary-of-state"
+    if "comptroller" in o:
+        return "il-comptroller"
+    if "treasurer" in o and st:               # STATE Treasurer (city one is below)
+        return "il-treasurer"
+    if "senat" in o and st:
+        n = _leading_num(d, office)
+        return f"il-senate-{n:02d}" if n and 1 <= n <= 59 else None
+    if st and ("representative" in o or "state house" in o):
+        n = _leading_num(d, office)
+        return f"il-house-{n:03d}" if n and 1 <= n <= 118 else None
+
     # CPS board — require an education signal so a generic "…Board president"
     # (e.g. the Cook County Board president) never resolves to the CPS board. A
     # subdistrict district is itself a CPS signal (only CPS uses subdistricts).
@@ -253,6 +285,17 @@ def _police_district(text):
     m = re.search(r"(?:police\s*)?district\s*0*(\d{1,2})", (text or "").lower())
     if m and 1 <= int(m.group(1)) <= 25:
         return int(m.group(1))
+    return None
+
+
+def _leading_num(*texts):
+    """First 1-3 digit number found across `texts` (district field preferred,
+    then the office string) — e.g. 'House District 42' -> 42, '7th Congressional
+    District' -> 7. Used to place a state/federal legislative candidate."""
+    for t in texts:
+        m = re.search(r"(\d{1,3})", t or "")
+        if m:
+            return int(m.group(1))
     return None
 
 
@@ -1082,6 +1125,10 @@ NEWS_RSS_BASE = "https://news.google.com/rss/search"
 POTENTIAL_MAX_PER_RACE = 12      # cap names surfaced per race
 POTENTIAL_MAX_SOURCES = 6        # cap articles kept per name
 POTENTIAL_FETCH_SLEEP = 0.7      # be polite between pooled group fetches
+# Office groups the news-sourced "potential candidate" pass runs for — the
+# Chicago pre-filing races. The 2026 general-election groups have official
+# nominees and Chicago-shaped queries wouldn't fit them, so they're excluded.
+POTENTIAL_GROUPS = {"citywide", "council", "cps_board", "police_district_council"}
 
 # Signal verbs -> status. "announced" is a firm declaration; "exploring" is a
 # maybe. Order matters: the strongest signal seen for a name wins.
@@ -1735,7 +1782,13 @@ def enrich_potential(doc, now, fetcher=fetch_news_items, sleep=POTENTIAL_FETCH_S
     `article_fetcher=None` no bodies are fetched. Returns the number of races
     given >=1 potential candidate."""
     import time
-    races = doc.get("races", [])
+    # Only the Chicago pre-filing races benefit from a news-sourced "who might
+    # run" list. The 2026 general-election offices (statewide / federal / General
+    # Assembly) already have official nominees from the March primary, and their
+    # coverage queries would be Chicago-shaped — so skip them here (their
+    # candidates come from the official-source enrichment instead).
+    races = [r for r in doc.get("races", [])
+             if r.get("office_group") in POTENTIAL_GROUPS]
 
     def _fetch(q):
         items = fetcher(q) or []
@@ -1773,6 +1826,196 @@ def enrich_potential(doc, now, fetcher=fetch_news_items, sleep=POTENTIAL_FETCH_S
         if pcs:
             updated += 1
     return updated
+
+
+# --------------------------------------------------------------------------- #
+# 2026 general-election nominees (Wikipedia certified-nominee tables)
+# --------------------------------------------------------------------------- #
+# The official source is the Illinois State Board of Elections, but ISBE only
+# exposes an interactive portal (no bulk download). Wikipedia's per-office
+# election pages aggregate the certified nominees in structured infoboxes /
+# election-box templates — each in turn citing the ISBE candidate list — so we
+# parse those and attach the *official* nominees to the general-election races,
+# every candidate carrying the Wikipedia page it came from as its `source`. Pure
+# parsers (offline-testable); fetching is fail-soft and injectable. Only the
+# major-party (+ listed independent) nominees a page actually states are taken —
+# a district Wikipedia hasn't filled in yet stays empty rather than guessed.
+WIKI_API = "https://en.wikipedia.org/w/api.php"
+
+
+def _wiki_clean_name(s):
+    s = re.sub(r"\[\[([^\]|]*\|)?([^\]]*)\]\]", r"\2", s)   # [[link|disp]] -> disp
+    s = re.sub(r"\{\{[^}]*\}\}", "", s)                     # {{templates}}
+    s = re.sub(r"<[^>]+>.*?</[^>]+>", "", s)                # <ref>…</ref>
+    s = re.sub(r"<[^>]+>", "", s)                           # stray tags
+    s = re.sub(r"\((?:in)?[Ii]ncumbent\)|\(write-in\)", "", s)
+    s = s.replace("''", "")
+    return re.sub(r"\s+", " ", s).strip(" ,")
+
+
+def _wiki_party(raw):
+    r = (raw or "").lower()
+    # "Democrat"/"Democratic Party of Illinois"/"Democratic Party (US)" all -> Democratic.
+    for key, label in (("democrat", "Democratic"), ("republican", "Republican"),
+                       ("libertarian", "Libertarian"), ("green", "Green"),
+                       ("independent", "Independent")):
+        if key in r:
+            return label
+    return _wiki_clean_name(raw) or None
+
+
+def _wiki_infobox_nominees(wikitext):
+    """[(name, party)] from an election infobox's nomineeN/candidateN + partyN."""
+    names, parties = {}, {}
+    for m in re.finditer(r"\|\s*(?:nominee|candidate)(\d)\s*=\s*(.+)", wikitext):
+        v = _wiki_clean_name(m.group(2))
+        if v:
+            names.setdefault(m.group(1), v)
+    for m in re.finditer(r"\|\s*party(\d)\s*=\s*(.+)", wikitext):
+        parties.setdefault(m.group(1), _wiki_party(m.group(2)))
+    return [(names[k], parties.get(k)) for k in sorted(names)]
+
+
+def _wiki_districts(wikitext):
+    """Split a page into {district_number: block} on '== District N ==' headers."""
+    parts = re.split(r"\n==\s*District (\d+)\s*==", wikitext)
+    return {int(n): body for n, body in zip(parts[1::2], parts[2::2])}
+
+
+def parse_wiki_ushouse(wikitext):
+    """{district: [(name, party)]} — each district's general-election infobox
+    (nomineeN + partyN), so third-party/independent nominees are included."""
+    out = {}
+    for dist, body in _wiki_districts(wikitext).items():
+        recs = _wiki_infobox_nominees(body)
+        if recs:
+            out[dist] = recs
+    return out
+
+
+def _wiki_box_cands(region, winning_only=False):
+    """(name, party) from Election box candidate templates. Field values are read
+    to end-of-line so a '|' inside [[link|disp]] doesn't truncate the name."""
+    name_re = ("Election box winning candidate" if winning_only
+               else "Election box (?:winning )?candidate")
+    out = []
+    for tm in re.finditer(r"\{\{" + name_re + r"\b(.*?)\}\}", region, re.S):
+        blk = tm.group(0)
+        cm = re.search(r"\|\s*candidate\s*=\s*(.+)", blk)
+        pm = re.search(r"\|\s*party\s*=\s*(.+)", blk)
+        if cm:
+            nm = _wiki_clean_name(cm.group(1))
+            if nm:
+                out.append((nm, _wiki_party(pm.group(1)) if pm else None))
+    return out
+
+
+def parse_wiki_legislature(wikitext):
+    """{district: [(name, party)]} for a General Assembly chamber page. Prefers a
+    district's 'General election results' box; falls back to the winner of each
+    party primary (= that party's nominee); and, for a district Wikipedia has left
+    as prose, a *confirmed* 'incumbent … running for re-election' (a real
+    general-election candidate, cited to ISBE) — never a retiring or undeclared
+    incumbent."""
+    out = {}
+    for dist, body in _wiki_districts(wikitext).items():
+        recs = []
+        gi = body.find("General election results")
+        if gi != -1:
+            recs = _wiki_box_cands(body[gi:])
+        if not recs:
+            recs = _wiki_box_cands(body, winning_only=True)
+        if not recs:
+            im = re.search(
+                r"incumbent is (?:the )?(Democrat|Republican|Libertarian|Green)\s+"
+                r"\[\[([^\]|]+)(?:\|[^\]]*)?\]\],?\s+who is (?:running|seeking)\s+"
+                r"for\s+re-?election", body)
+            if im:
+                recs = [(_wiki_clean_name(im.group(2)), _wiki_party(im.group(1)))]
+        seen, uniq = set(), []
+        for nm, pty in recs:
+            if nm and nm.lower() not in seen:
+                seen.add(nm.lower())
+                uniq.append((nm, pty))
+        if uniq:
+            out[dist] = uniq
+    return out
+
+
+# Each page -> (parser kind, a function district->race_id or a fixed race_id).
+WIKI_NOMINEE_PAGES = [
+    ("2026 United States Senate election in Illinois", "infobox", "us-senate-il"),
+    ("2026 Illinois gubernatorial election", "infobox", "il-governor"),
+    ("2026 Illinois Attorney General election", "infobox", "il-attorney-general"),
+    ("2026 Illinois Secretary of State election", "infobox", "il-secretary-of-state"),
+    ("2026 Illinois Comptroller election", "infobox", "il-comptroller"),
+    ("2026 Illinois State Treasurer election", "infobox", "il-treasurer"),
+    ("2026 United States House of Representatives elections in Illinois",
+     "ushouse", lambda d: f"us-house-il-{d:02d}"),
+    ("2026 Illinois Senate election", "legislature", lambda d: f"il-senate-{d:02d}"),
+    ("2026 Illinois House of Representatives election",
+     "legislature", lambda d: f"il-house-{d:03d}"),
+]
+
+
+def fetch_wikitext(title):
+    """Fetch one Wikipedia page's wikitext via the MediaWiki API, or None."""
+    from urllib.parse import quote
+    url = (f"{WIKI_API}?action=parse&page={quote(title)}"
+           "&prop=wikitext&format=json&formatversion=2")
+    raw = fetch_text(url)
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)["parse"]["wikitext"]
+    except (ValueError, KeyError):
+        return None
+
+
+def enrich_candidates_wiki(doc, fetcher=fetch_wikitext, sleep=POTENTIAL_FETCH_SLEEP):
+    """Attach 2026 general-election nominees from Wikipedia's per-office pages to
+    the matching races in `doc`, in place. Fail-soft (an unreachable/edited page
+    just contributes nothing). Returns the number of candidates attached."""
+    import time
+    by_id = {r["id"]: r for r in doc.get("races", [])}
+    page_url = lambda t: "https://en.wikipedia.org/wiki/" + t.replace(" ", "_")
+
+    def attach(race_id, name, party, src):
+        race = by_id.get(race_id)
+        if not race:
+            return 0
+        if any((c.get("name") or "").lower() == name.lower() for c in race["candidates"]):
+            return 0
+        race["candidates"].append(make_candidate(
+            name, office=race.get("office"), district=race.get("district"),
+            party=party, petition_status="on_ballot", source=src))
+        race["candidates"][-1].pop("_race_id", None)
+        if race.get("status") == "upcoming":
+            race["status"] = "on_ballot"
+        return 1
+
+    attached = 0
+    for title, kind, target in WIKI_NOMINEE_PAGES:
+        wt = fetcher(title)
+        if sleep:
+            time.sleep(sleep)
+        if not wt:
+            continue
+        src = page_url(title)
+        if kind == "infobox":
+            for name, party in _wiki_infobox_nominees(wt):
+                attached += attach(target, name, party, src)
+        else:
+            parsed = (parse_wiki_ushouse(wt) if kind == "ushouse"
+                      else parse_wiki_legislature(wt))
+            for dist, recs in parsed.items():
+                rid = target(dist)
+                for name, party in recs:
+                    attached += attach(rid, name, party, src)
+    # keep each race's candidates in stable ballot-name order
+    for r in doc.get("races", []):
+        r["candidates"].sort(key=lambda c: (c.get("name") or "").lower())
+    return attached
 
 
 # --------------------------------------------------------------------------- #
@@ -1893,6 +2136,11 @@ OFFICE_GROUP_LABEL = {
     "council": "Alderperson (City Council)",
     "cps_board": "CPS Board of Education",
     "police_district_council": "Police District Councils",
+    "us_senate": "U.S. Senate",
+    "us_house": "U.S. House",
+    "il_exec": "Governor & Statewide Offices",
+    "il_senate": "Illinois Senate",
+    "il_house": "Illinois House",
     "cook_county": "Cook County",
     "suburban": "Suburban Cook",
     "judicial": "Judicial",
@@ -2126,8 +2374,15 @@ def ballot_feeds(doc):
     feeds = {}
     for date, races in by_date.items():
         groups = {rr["office_group"] for rr in races}
-        label = ("Chicago Board of Education (CPS)"
-                 if groups == {"cps_board"} else "Chicago municipal election")
+        stages = {rr.get("ballot_stage") for rr in races}
+        if groups == {"cps_board"}:
+            label = "Chicago Board of Education (CPS)"
+        elif "general" in stages:
+            label = "Illinois general election"
+        elif stages & {"municipal_general", "municipal_runoff"}:
+            label = "Chicago municipal election"
+        else:
+            label = "election"
         fname = ballot_feed_name(date)
         feeds[fname] = _feed_xml(
             f"govbot — {label}: races on the {date} ballot",
@@ -2304,6 +2559,12 @@ def main():
                          "(headline-only extraction). Body fetching is on by "
                          "default: it resolves Google News links and parses the "
                          "prose to catch a name a headline omits (fail-soft)")
+    ap.add_argument("--enrich-candidates-wiki", default=None,
+                    help="Attach 2026 Illinois general-election NOMINEES (statewide, "
+                         "U.S. Senate/House, and the General Assembly) to an existing "
+                         "elections.json (rewritten in place) from Wikipedia's per-office "
+                         "election pages — each nominee cites the page it came from. "
+                         "Fail-soft: an unreachable page contributes nothing")
     ap.add_argument("--enrich-candidates-boe", default=None,
                     help="Attach official candidates from the Chicago BOE Candidate "
                          "List PDF to an existing elections.json (rewritten in place), "
@@ -2340,6 +2601,15 @@ def main():
         n = enrich_results(doc, args.results_file or "", now, args.results_url)
         Path(args.enrich_results).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
         print(f"attached results to {n} race(s)", file=sys.stderr)
+        return 0
+
+    if args.enrich_candidates_wiki:
+        doc = load_json(args.enrich_candidates_wiki)
+        if doc is None:
+            return 0
+        n = enrich_candidates_wiki(doc)
+        Path(args.enrich_candidates_wiki).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
+        print(f"attached {n} general-election nominee(s) from Wikipedia", file=sys.stderr)
         return 0
 
     if args.enrich_potential:
