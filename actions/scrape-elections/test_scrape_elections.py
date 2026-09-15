@@ -45,8 +45,36 @@ class RaceMatching(unittest.TestCase):
                          "chicago-police-district-council-014")
 
     def test_unplaceable_returns_none(self):
-        self.assertIsNone(main.race_id_for("State Representative", "District 5"))
+        # An office govbot doesn't track resolves to nothing (dropped, not guessed).
+        self.assertIsNone(main.race_id_for("Metropolitan Water Reclamation District Commissioner", ""))
         self.assertIsNone(main.race_id_for("Alderperson", "Ward 99"))  # out of range
+
+    def test_statewide_and_federal_resolve(self):
+        # 2026 general-election offices resolve to their seed races.
+        self.assertEqual(main.race_id_for("United States Senator", ""), "us-senate-il")
+        self.assertEqual(main.race_id_for("Representative in Congress", "7th Congressional District"),
+                         "us-house-il-07")
+        self.assertEqual(main.race_id_for("Governor", ""), "il-governor")
+        self.assertEqual(main.race_id_for("Governor and Lieutenant Governor", ""), "il-governor")
+        self.assertEqual(main.race_id_for("Attorney General", ""), "il-attorney-general")
+        self.assertEqual(main.race_id_for("Secretary of State", ""), "il-secretary-of-state")
+        self.assertEqual(main.race_id_for("Comptroller", ""), "il-comptroller")
+        self.assertEqual(main.race_id_for("State Senator", "District 12"), "il-senate-12")
+        self.assertEqual(main.race_id_for("Representative in the General Assembly", "District 118"),
+                         "il-house-118")
+
+    def test_state_vs_chicago_office_collisions(self):
+        # A bare office word stays the Chicago office; the STATE one says so.
+        self.assertEqual(main.race_id_for("City Treasurer", ""), "chicago-city-treasurer")
+        self.assertEqual(main.race_id_for("Treasurer", ""), "chicago-city-treasurer")
+        self.assertEqual(main.race_id_for("Illinois State Treasurer", ""), "il-treasurer")
+        # A U.S. House race never falls through to the state House, and vice-versa.
+        self.assertEqual(main.race_id_for("U.S. Representative", "IL District 3"), "us-house-il-03")
+        self.assertEqual(main.race_id_for("State Representative", "District 3"), "il-house-003")
+
+    def test_out_of_range_state_district_unplaceable(self):
+        self.assertIsNone(main.race_id_for("State Representative", "District 200"))
+        self.assertIsNone(main.race_id_for("U.S. Representative", "District 40"))
 
     def test_non_education_board_president_not_cps(self):
         # A generic "…Board president" (e.g. the Cook County Board president) must
@@ -73,8 +101,8 @@ class ISBEParser(unittest.TestCase):
         self.cands = main.parse_isbe_candidates((RAW / "isbe_who_is_running.txt").read_text())
 
     def test_row_count(self):
-        # 4 CPS/valid rows + 1 unplaceable state race = 5 parsed candidates.
-        self.assertEqual(len(self.cands), 5)
+        # 4 CPS rows + 1 state-rep row + 1 unplaceable out-of-scope row = 6.
+        self.assertEqual(len(self.cands), 6)
 
     def test_president_resolves(self):
         pres = [c for c in self.cands if c["_race_id"] == "cps-board-president"]
@@ -92,7 +120,13 @@ class ISBEParser(unittest.TestCase):
         obj = [c for c in self.cands if c["name"] == "Pat Q. Placeholder"]
         self.assertEqual(obj[0]["petition_status"], "objected")
 
-    def test_state_race_is_unplaceable(self):
+    def test_state_representative_resolves(self):
+        # A General Assembly candidate now places onto the IL House seed race.
+        rep = [c for c in self.cands if c["name"] == "Dana Q. Statehouse"]
+        self.assertEqual(rep[0]["_race_id"], "il-house-005")
+
+    def test_out_of_scope_office_is_unplaceable(self):
+        # An office govbot doesn't track (e.g. MWRD Commissioner) is dropped.
         st = [c for c in self.cands if c["name"] == "Not A Chicago Race"]
         self.assertIsNone(st[0]["_race_id"])
 

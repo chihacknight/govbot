@@ -642,7 +642,7 @@
 
   <div class="intro">
     <span class="intro-ico" aria-hidden="true">🗳️</span>
-    <b>Two big ballots ahead.</b> On <b>Nov 3, 2026</b>, Chicago elects a <b>Board of Education</b> for the first time by popular vote — including its <b>first-ever elected President</b> — as the mayor-appointed hybrid board is phased out. Then the <b>2027 municipal election</b> puts the Mayor, City Clerk, City Treasurer, all 50 Alderpersons, and the Police District Councils on the ballot. Candidate lists are pulled from the Chicago Board of Elections and the Illinois State Board of Elections' “Who Is Running” list; a race with no one listed yet links to its official source rather than guessing.
+    <b>Two big ballots ahead.</b> On <b>Nov 3, 2026</b>, the <b>Illinois general election</b> fills the U.S. Senate seat and all 17 U.S. House seats, the Governor and the statewide constitutional officers, and the Illinois General Assembly (the 39 state Senate seats up this cycle and all 118 state House seats) — and on the same ballot Chicago elects a <b>Board of Education</b> for the first time by popular vote, including its <b>first-ever elected President</b>, as the mayor-appointed hybrid board is phased out. Then the <b>2027 municipal election</b> puts the Mayor, City Clerk, City Treasurer, all 50 Alderpersons, and the Police District Councils on the ballot. Candidate lists are pulled from the Chicago Board of Elections and the Illinois State Board of Elections' “Who Is Running” list; a race with no one listed yet links to its official source rather than guessing.
   </div>
 
   <section class="calendar" id="calendar" hidden>
@@ -808,6 +808,11 @@
     council:                 { label: "Alderperson · City Council", emoji: "🏛️", color: "--series-5" },
     cps_board:               { label: "CPS Board of Education",   emoji: "🎓", color: "--series-3" },
     police_district_council: { label: "Police District Councils", emoji: "🚔", color: "--series-8" },
+    us_senate:               { label: "U.S. Senate",             emoji: "🏛️", color: "--series-6" },
+    us_house:                { label: "U.S. House",              emoji: "🇺🇸", color: "--series-7" },
+    il_exec:                 { label: "Governor & Statewide Offices", emoji: "🏵️", color: "--series-2" },
+    il_senate:               { label: "Illinois Senate",         emoji: "🏦", color: "--series-4" },
+    il_house:                { label: "Illinois House",          emoji: "🏫", color: "--series-1" },
     cook_county:             { label: "Cook County",              emoji: "🗺️", color: "--series-2" },
     suburban:                { label: "Suburban Cook",            emoji: "🏘️", color: "--series-7" },
     judicial:                { label: "Judicial",                 emoji: "⚖️", color: "--series-6" },
@@ -816,6 +821,7 @@
     other:                   { label: "Other",                    emoji: "🗳️", color: "--series-2" },
   };
   const GROUP_ORDER = ["citywide", "council", "cps_board", "police_district_council",
+                       "us_senate", "us_house", "il_exec", "il_senate", "il_house",
                        "cook_county", "suburban", "judicial", "state", "federal", "other"];
   const STATUS_LABEL = {
     on_ballot: "On ballot", filed: "Filed", objected: "Objected",
@@ -1163,6 +1169,10 @@
   function renderRaceMap(r, meta) {
     const maps = state.maps;
     if (!maps || !maps.view || !maps.context) return null;
+    // The locator is a map of Chicago — only Chicago/CPS races get one. A
+    // statewide (Governor, U.S. Senate) or General Assembly race has no Chicago
+    // geography, so it shows no map (like a CPS subdistrict with no polygon).
+    if (r.jurisdiction !== "chicago" && r.jurisdiction !== "cps") return null;
     const entry = maps.districts && maps.districts[r.id];
     if (!entry && !r.is_citywide) return null;
 

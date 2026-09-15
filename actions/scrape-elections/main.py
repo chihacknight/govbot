@@ -205,6 +205,38 @@ def race_id_for(office, district):
     o = (office or "").lower()
     d = district or ""
 
+    # --- Illinois statewide + federal offices (2026 general election) ------
+    # Guarded on EXPLICIT state/federal wording so a bare office word (Treasurer,
+    # Clerk, Senator, Representative) still resolves to the Chicago/CPS office
+    # below, never to a statewide one by accident. Federal is checked before
+    # state so "U.S. Senator" / "Representative in Congress" never fall through
+    # to the state senate/house.
+    fed = any(k in o for k in ("u.s.", "u. s.", "united states", "us senate",
+                               "us house", "us representative", "congress"))
+    st = any(k in o for k in ("illinois", "state senat", "state house",
+                              "state representative", "general assembly"))
+    if "senat" in o and fed:
+        return "us-senate-il"
+    if fed and ("representative" in o or "congress" in o or "house" in o):
+        n = _leading_num(d, office)
+        return f"us-house-il-{n:02d}" if n and 1 <= n <= 17 else None
+    if "governor" in o:                       # Governor or joint Gov/Lt-Gov ticket
+        return "il-governor"
+    if "attorney general" in o:
+        return "il-attorney-general"
+    if "secretary of state" in o:
+        return "il-secretary-of-state"
+    if "comptroller" in o:
+        return "il-comptroller"
+    if "treasurer" in o and st:               # STATE Treasurer (city one is below)
+        return "il-treasurer"
+    if "senat" in o and st:
+        n = _leading_num(d, office)
+        return f"il-senate-{n:02d}" if n and 1 <= n <= 59 else None
+    if st and ("representative" in o or "state house" in o):
+        n = _leading_num(d, office)
+        return f"il-house-{n:03d}" if n and 1 <= n <= 118 else None
+
     # CPS board — require an education signal so a generic "…Board president"
     # (e.g. the Cook County Board president) never resolves to the CPS board. A
     # subdistrict district is itself a CPS signal (only CPS uses subdistricts).
@@ -253,6 +285,17 @@ def _police_district(text):
     m = re.search(r"(?:police\s*)?district\s*0*(\d{1,2})", (text or "").lower())
     if m and 1 <= int(m.group(1)) <= 25:
         return int(m.group(1))
+    return None
+
+
+def _leading_num(*texts):
+    """First 1-3 digit number found across `texts` (district field preferred,
+    then the office string) — e.g. 'House District 42' -> 42, '7th Congressional
+    District' -> 7. Used to place a state/federal legislative candidate."""
+    for t in texts:
+        m = re.search(r"(\d{1,3})", t or "")
+        if m:
+            return int(m.group(1))
     return None
 
 
@@ -1082,6 +1125,10 @@ NEWS_RSS_BASE = "https://news.google.com/rss/search"
 POTENTIAL_MAX_PER_RACE = 12      # cap names surfaced per race
 POTENTIAL_MAX_SOURCES = 6        # cap articles kept per name
 POTENTIAL_FETCH_SLEEP = 0.7      # be polite between pooled group fetches
+# Office groups the news-sourced "potential candidate" pass runs for — the
+# Chicago pre-filing races. The 2026 general-election groups have official
+# nominees and Chicago-shaped queries wouldn't fit them, so they're excluded.
+POTENTIAL_GROUPS = {"citywide", "council", "cps_board", "police_district_council"}
 
 # Signal verbs -> status. "announced" is a firm declaration; "exploring" is a
 # maybe. Order matters: the strongest signal seen for a name wins.
@@ -1735,7 +1782,13 @@ def enrich_potential(doc, now, fetcher=fetch_news_items, sleep=POTENTIAL_FETCH_S
     `article_fetcher=None` no bodies are fetched. Returns the number of races
     given >=1 potential candidate."""
     import time
-    races = doc.get("races", [])
+    # Only the Chicago pre-filing races benefit from a news-sourced "who might
+    # run" list. The 2026 general-election offices (statewide / federal / General
+    # Assembly) already have official nominees from the March primary, and their
+    # coverage queries would be Chicago-shaped — so skip them here (their
+    # candidates come from the official-source enrichment instead).
+    races = [r for r in doc.get("races", [])
+             if r.get("office_group") in POTENTIAL_GROUPS]
 
     def _fetch(q):
         items = fetcher(q) or []
@@ -1893,6 +1946,11 @@ OFFICE_GROUP_LABEL = {
     "council": "Alderperson (City Council)",
     "cps_board": "CPS Board of Education",
     "police_district_council": "Police District Councils",
+    "us_senate": "U.S. Senate",
+    "us_house": "U.S. House",
+    "il_exec": "Governor & Statewide Offices",
+    "il_senate": "Illinois Senate",
+    "il_house": "Illinois House",
     "cook_county": "Cook County",
     "suburban": "Suburban Cook",
     "judicial": "Judicial",
@@ -2126,8 +2184,15 @@ def ballot_feeds(doc):
     feeds = {}
     for date, races in by_date.items():
         groups = {rr["office_group"] for rr in races}
-        label = ("Chicago Board of Education (CPS)"
-                 if groups == {"cps_board"} else "Chicago municipal election")
+        stages = {rr.get("ballot_stage") for rr in races}
+        if groups == {"cps_board"}:
+            label = "Chicago Board of Education (CPS)"
+        elif "general" in stages:
+            label = "Illinois general election"
+        elif stages & {"municipal_general", "municipal_runoff"}:
+            label = "Chicago municipal election"
+        else:
+            label = "election"
         fname = ballot_feed_name(date)
         feeds[fname] = _feed_xml(
             f"govbot — {label}: races on the {date} ballot",

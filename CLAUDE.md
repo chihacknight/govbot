@@ -181,12 +181,24 @@ offline-snapshot-tested: `python3 actions/scrape-hearings/test_scrape_hearings.p
 The **Elections Happening in IL** page is a *third* pipeline: `actions/scrape-elections/` builds
 `docs/src/dashboard/elections.json` (schema `schemas/govbot.elections.schema.json`) — every
 office on upcoming Chicago/Illinois ballots (citywide, Alderperson wards 1–50, CPS board
-president + subdistricts 1A–10B, and 22 Police District Councils). The ballot *structure*
+president + subdistricts 1A–10B, and 22 Police District Councils) **plus the Nov 3, 2026
+Illinois general election** — U.S. Senate, all 17 U.S. House districts, Governor and the
+statewide constitutional officers (Attorney General, Secretary of State, Comptroller,
+Treasurer), the 39 Illinois Senate seats up this cycle, and all 118 Illinois House seats.
+Those ride five office groups — `us_senate`, `us_house`, `il_exec`, `il_senate`, `il_house`
+(added to the schema enum, the frontend `GROUP_META`/`GROUP_ORDER`, and `OFFICE_GROUP_LABEL`)
+— and render as their own sections like the Chicago groups. They're `partisan` general-election
+races (`ballot_stage: "general"`, ballot date 2026-11-03); the locator map is Chicago-only, so
+statewide/federal races show none (gated on `jurisdiction` in the frontend), and the
+news-sourced *potential-candidate* pass is Chicago-only too (`POTENTIAL_GROUPS`) since these
+offices already have official post-primary nominees. The ballot *structure*
 (offices, districts, ballot dates, and a "why this race exists" note) is a committed seed,
 `actions/scrape-elections/elections_seed.json`; the scrapers only *populate candidates* onto
 it from official candidate lists (Chicago Board of Elections; Illinois SBE "Who Is Running";
 Cook County Clerk, future). A candidate attaches to a race only when office+district resolve
-exactly (`race_id_for`) — unplaceable rows are dropped, never invented, and a race with no
+exactly (`race_id_for` — which now also resolves the statewide/federal/General-Assembly offices,
+guarded so a bare "Treasurer"/"Senator"/"Representative" still means the Chicago office, never a
+statewide one) — unplaceable rows are dropped, never invented, and a race with no
 confirmed candidate keeps an empty list + a source link. It also writes a whole-ballot RSS
 `elections.xml` + granular feeds under `docs/src/dashboard/elections/` (per office group
 `group-<group>.xml`, per ballot date `ballot-<YYYY-MM-DD>.xml`, per race `race-<id>.xml`).
