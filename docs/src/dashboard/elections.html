@@ -642,7 +642,7 @@
 
   <div class="intro">
     <span class="intro-ico" aria-hidden="true">🗳️</span>
-    <b>Two big ballots ahead.</b> On <b>Nov 3, 2026</b>, the <b>Illinois general election</b> fills the U.S. Senate seat and all 17 U.S. House seats, the Governor and the statewide constitutional officers, and the Illinois General Assembly (the 39 state Senate seats up this cycle and all 118 state House seats) — and on the same ballot Chicago elects a <b>Board of Education</b> for the first time by popular vote, including its <b>first-ever elected President</b>, as the mayor-appointed hybrid board is phased out. Then the <b>2027 municipal election</b> puts the Mayor, City Clerk, City Treasurer, all 50 Alderpersons, and the Police District Councils on the ballot. Candidate lists are pulled from the Chicago Board of Elections and the Illinois State Board of Elections' “Who Is Running” list; a race with no one listed yet links to its official source rather than guessing.
+    <b>Two big ballots ahead.</b> On <b>Nov 3, 2026</b>, the <b>Illinois general election</b> fills the U.S. Senate seat and all 17 U.S. House seats, the Governor and the statewide constitutional officers, and the Illinois General Assembly (the 39 state Senate seats up this cycle and all 118 state House seats) — and on the same ballot Chicago elects a <b>Board of Education</b> for the first time by popular vote, including its <b>first-ever elected President</b>, as the mayor-appointed hybrid board is phased out. Then the <b>2027 municipal election</b> puts the Mayor, City Clerk, City Treasurer, all 50 Alderpersons, and the Police District Councils on the ballot. Candidate lists are pulled from the Chicago Board of Elections and the Illinois State Board of Elections; the November 2026 general-election nominees are compiled from public election records (each candidate links to its source), and a race with no one listed yet links to its official source rather than guessing.
   </div>
 
   <section class="calendar" id="calendar" hidden>
@@ -706,6 +706,11 @@
         <h4>🏫 State &amp; CPS candidates <span class="cab-status live">live</span></h4>
         <p>Statewide + CPS board candidate lists ("Who Is Running") and official campaign-money files.</p>
         <a href="https://www.elections.il.gov/" target="_blank" rel="noopener">elections.il.gov ↗</a>
+      </div>
+      <div class="cab-item">
+        <h4>🏛️ General-election nominees <span class="cab-status live">live · Nov 2026</span></h4>
+        <p>The Nov 3, 2026 nominees — U.S. Senate &amp; House, Governor and the statewide offices, and the Illinois General Assembly — compiled from Wikipedia's per-office election pages (which cite the ISBE candidate list); each candidate links to its source. A district not filled in yet stays empty rather than guessed.</p>
+        <a href="https://en.wikipedia.org/wiki/2026_Illinois_elections" target="_blank" rel="noopener">2026 Illinois elections (Wikipedia) ↗</a>
       </div>
       <div class="cab-item">
         <h4>📜 Rules of the game <span class="cab-status live">live · above</span></h4>
@@ -1640,11 +1645,17 @@
       const card = document.createElement("div");
       card.className = "cal-card";
       card.style.setProperty("--cc", "var(" + accent + ")");
-      // Name the ballot from what's on it.
+      // Name the ballot from what's on it. A ballot carrying any `general` race
+      // is the Illinois general election (the CPS board rides that same ballot);
+      // a CPS-only date is the school-board election; otherwise it's municipal.
       const groups = [...new Set(races_d.map((r) => r.office_group))];
+      const stages = new Set(races_d.map((r) => r.ballot_stage));
       const onlyCps = groups.length === 1 && groups[0] === "cps_board";
+      const ballotName = onlyCps ? "Chicago Board of Education (CPS)"
+        : stages.has("general") ? "Illinois general election"
+        : "Chicago municipal election";
       const h3 = document.createElement("h3");
-      h3.textContent = onlyCps ? "Chicago Board of Education (CPS)" : "Chicago municipal election";
+      h3.textContent = ballotName;
       card.append(h3);
       const when = document.createElement("div"); when.className = "cal-when";
       when.textContent = "Election Day · " + prettyDate(date);
@@ -1654,7 +1665,6 @@
       forEl.textContent = races_d.length + " races — " + labels.join(", ");
       card.append(forEl);
       // Follow the whole ballot (all races sharing this Election Day).
-      const ballotName = onlyCps ? "Chicago Board of Education (CPS)" : "Chicago municipal election";
       const calRss = document.createElement("div"); calRss.style.margin = "0 0 10px";
       calRss.append(mkRss("Follow this race (RSS)", {
         title: ballotName + " — subscribe",
@@ -1691,8 +1701,19 @@
     const months = ["January","February","March","April","May","June","July",
                     "August","September","October","November","December"];
     let s = months[d.getUTCMonth()] + " " + d.getUTCDate() + ", " + d.getUTCFullYear();
-    if (/T\d/.test(iso)) s += ", " + String(d.getUTCHours()).padStart(2, "0") + ":" +
-      String(d.getUTCMinutes()).padStart(2, "0") + " UTC";
+    if (/T\d/.test(iso)) {
+      s += ", " + String(d.getUTCHours()).padStart(2, "0") + ":" +
+        String(d.getUTCMinutes()).padStart(2, "0") + " UTC";
+      // Also show Chicago local time & date — this is a Chicago/Illinois site, and
+      // the RSS feeds already publish in America/Chicago (CST/CDT).
+      try {
+        const chi = new Intl.DateTimeFormat("en-US", {
+          timeZone: "America/Chicago", month: "short", day: "numeric",
+          hour: "numeric", minute: "2-digit", timeZoneName: "short",
+        }).format(d);
+        s += " (" + chi + ")";
+      } catch (e) { /* Intl/tz unavailable — UTC alone still reads fine */ }
+    }
     return s;
   }
 })();
