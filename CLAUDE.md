@@ -359,9 +359,12 @@ cd actions/govbot
 just setup           # Install Rust toolchain and dependencies
 just test            # Run snapshot tests
 just review          # Review snapshot changes (insta)
-just govbot logs     # Run CLI in dev mode (uses mocks/govbot_data)
+just govbot logs     # Run CLI in dev mode (repo-local govbot_data dir)
 just mocks wy il     # Update mock data for testing
 ```
+
+Repo-root `justfile` covers the offline Python suites (`just test`), Rust
+delegation (`just check`, `just test-govbot`), and toolchain status (`just info`).
 
 ## When in Doubt
 
