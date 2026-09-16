@@ -13,6 +13,11 @@ pub mod pipeline;
 pub mod processor;
 pub mod publish;
 pub mod query;
+/// RSS/HTML feed rendering (distribution concern, decoupled per issue #26).
+/// Enabled by default via the `rss` Cargo feature; consumers that only need
+/// retrieval/analysis (MCP servers, APIs, dashboards) can build the library
+/// with `--no-default-features` and skip this module entirely.
+#[cfg(feature = "rss")]
 pub mod rss;
 pub mod selectors;
 pub mod types;

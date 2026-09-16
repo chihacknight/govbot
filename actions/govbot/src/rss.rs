@@ -276,27 +276,10 @@ pub fn extract_link(entry: &Value, base_url: Option<&str>) -> Option<String> {
 }
 
 /// Extract or generate a unique GUID for the entry
-pub fn extract_guid(entry: &Value) -> String {
-    // Use source log path as GUID if available
-    if let Some(sources) = entry.get("sources").and_then(|s| s.as_object()) {
-        if let Some(log_source) = sources.get("log").and_then(|s| s.as_str()) {
-            return log_source.to_string();
-        }
-    }
-
-    // Fall back to timestamp + bill_id
-    let timestamp = entry
-        .get("timestamp")
-        .and_then(|t| t.as_str())
-        .unwrap_or("");
-    let bill_id = entry
-        .get("id")
-        .or_else(|| entry.get("log").and_then(|l| l.get("bill_id")))
-        .and_then(|id| id.as_str())
-        .unwrap_or("");
-
-    format!("{}_{}", timestamp, bill_id)
-}
+// Entry identity lives in `crate::publish` (pure data shaping, available with or
+// without the `rss` feature); re-exported here so `govbot::rss::extract_guid`
+// keeps working for existing callers.
+pub use crate::publish::extract_guid;
 
 /// Convert JSON Lines entries to RSS feed
 pub fn json_to_rss(
