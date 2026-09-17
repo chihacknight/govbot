@@ -1753,11 +1753,20 @@
 
     if (meta && meta.actions && meta.actions.length) {
       const wrap = mkel("div", "m-actions-list");
-      meta.actions.slice().reverse().forEach((a) => {
-        const row = mkel("div", "m-act");
-        row.append(mkel("span", "d", (a.date || "").slice(0, 10)), mkel("span", null, a.description || ""));
-        wrap.append(row);
-      });
+      // Show newest first. Source `actions` arrays are NOT consistently ordered
+      // across the fleet — some jurisdictions store oldest-first (e.g. IL),
+      // others newest-first (e.g. WY) — so a blind reverse would sort one of
+      // them backwards. Sort explicitly by date descending. Dates are ISO
+      // (`YYYY-MM-DD`), which compares correctly as strings; the reverse() +
+      // stable sort keeps same-day actions in their prior display order so a
+      // bill that already read correctly is unchanged.
+      meta.actions.slice().reverse()
+        .sort((a, b) => (a.date || "") < (b.date || "") ? 1 : (a.date || "") > (b.date || "") ? -1 : 0)
+        .forEach((a) => {
+          const row = mkel("div", "m-act");
+          row.append(mkel("span", "d", (a.date || "").slice(0, 10)), mkel("span", null, a.description || ""));
+          wrap.append(row);
+        });
       addSection(body, "Latest actions · " + meta.actions.length, wrap);
     }
 
