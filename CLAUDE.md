@@ -157,8 +157,11 @@ recorded actions, unfiltered, click → bill modal), the charts/tiles collapsed 
 leads with an inferred **status timeline** (Introduced → Committee → Passed House → Senate →
 Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component).
 `elections.html` has been reframed **ballot-first**: an Illinois-flag hero (the accurate flag
-asset `assets/il-flag.png` rippled by an animated SVG turbulence/`feDisplacementMap` "wave" with a
-gold edge — a static `<img>` under `prefers-reduced-motion`; "Illinois Elections" / "Know who's on
+asset `assets/il-flag.png` on a gold pole, its cloth rippled by an SVG turbulence/`feDisplacementMap`
+"wave" whose `feTurbulence` baseFrequency + `feDisplacementMap` scale are driven each frame in JS
+(`requestAnimationFrame`, on `#hero-flag._waveRaf`) so it visibly flaps — SMIL `<animate>` on filter
+primitives doesn't reliably repaint; a static `<img>` under `prefers-reduced-motion`. The old
+mouse-following "flag cursor" flourish has been **removed**. Copy: "Illinois Elections" / "Know who's on
 your ballot before you vote." / a dynamic "Next election" line / an "Explore races" CTA) and a "What's on your ballot?" selector
 (`#ballot-cards`, one card per distinct `ballot_date` with its stage label + office/candidate
 counts) that drives the existing `#f-ballot` filter, reveals the sections, and scrolls to
@@ -203,7 +206,13 @@ Govbot Works link on architecture) + the drawer. Each flagship keeps its own **s
 below that shared header: legislation's search hero, elections' waving Illinois flag, architecture's
 plain-English pipeline, and hearings' self-contained "night sky" hero panel — the America-250
 `250th` fireworks canvas (`#fw-canvas`) relocated out of the retired brandbar into `.hh-hero` (dark
-in both themes so the bursts read). **Every generated RSS feed** (both
+in both themes so the bursts read). The per-hero "govbot docs · GitHub repo" links were dropped from
+hearings and elections (the footer already carries them). **External-link convention:** any link that
+leaves the dashboard (`github.com`, `chihacknight.org`, official-source sites, and the mdBook docs at
+`../index.html`/`../dashboard-guide.md` — anything outside `github.io/govbot/dashboard/`) opens in a
+new tab (`target="_blank" rel="noopener"`) and carries a trailing `↗`; links that stay within
+`/dashboard/` (the sibling pages, in-page anchors, RSS `.xml` feeds, deep links) stay same-tab with no
+arrow. **Every generated RSS feed** (both
 the hearings and elections pipelines) carries an `<?xml-stylesheet type="text/xsl"
 href="feed.xsl"?>` processing instruction pointing at the shared stylesheet
 `docs/src/dashboard/feed.xsl`, so a browser renders a feed as a readable page (title, subscribe
