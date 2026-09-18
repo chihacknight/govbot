@@ -146,7 +146,7 @@ The shared CSS also provides designed **state** components — `.gb-state` (empt
 (the empty state's "Clear filters" button reuses each page's `#f-clear`), and a **mega-menu**
 (`.gb-nav-item`/`.gb-mega`) on the Homepage nav (Explore / Follow / Data dropdowns, hover on
 desktop + click, Escape/outside-click to close; the mobile drawer stays a flat link list). `docs/src/dashboard/index.html` is now the
-**Homepage** landing page (Lady Liberty gold line-art hero, "What do you want to know?" cards,
+**Homepage** landing page (a realistic golden wireframe Lady Liberty raster hero, `assets/liberty-hero.png`, luminance-keyed to a transparent background so it drops cleanly onto the hero in both themes; the robot mark `assets/govbot-mark.png` is the header logo; "What do you want to know?" cards,
 live "What's happening now" fetched fail-soft from `data.json`/`hearings.json`/`elections.json`).
 Pages migrate to the shared system one at a time; the old per-page "New Design" skins + toggle
 are retired as each page is migrated. `legislation.html` has had its content redesigned
