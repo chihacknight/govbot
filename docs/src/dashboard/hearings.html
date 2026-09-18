@@ -508,7 +508,15 @@
   .hh-docs { margin: 8px 0 0; font-size: 13px; }
   .hh-hero-art { flex: 0 0 auto; width: 340px; max-width: 46%; filter: drop-shadow(0 0 22px rgba(214,168,79,0.22)); }
   .hh-hero-art img { width: 100%; height: auto; display: block; opacity: 0.95; }
-  @media (max-width: 760px) { .hh-hero { gap: 14px; } .hh-hero-art { width: 190px; } .hh-title { font-size: 38px; } }
+  /* Mobile: stack the hero so the copy sits above the art. The fireworks +
+     White House move to a lower band under the text instead of overlapping it. */
+  @media (max-width: 760px) {
+    .hh-hero { flex-direction: column; align-items: stretch; gap: 12px; padding: 26px 22px; }
+    .hh-title { font-size: 38px; }
+    .hh-hero-art { width: 82%; max-width: 300px; margin: 2px auto 0; align-self: center;
+      filter: drop-shadow(0 0 16px rgba(214,168,79,0.20)); }
+    .hh-hero .fw-canvas { top: auto; bottom: 0; height: 46%; }
+  }
 
   /* participation status made obvious on each hearing */
   .h-open { display: inline-block; margin-top: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
@@ -577,19 +585,19 @@
         <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
       </button>
       <div class="gb-mega" role="menu" aria-label="Data">
-        <a href="https://github.com/chihacknight/govbot/blob/main/catalog.json" role="menuitem" style="--accent:var(--gb-blue-hi)">
+        <a href="https://github.com/chihacknight/govbot/blob/main/catalog.json" role="menuitem" style="--accent:var(--gb-blue-hi)" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
-          <span><span class="mega-t">Data catalog</span><span class="mega-d">Every jurisdiction repo &amp; path pattern</span></span></a>
+          <span><span class="mega-t">Data catalog ↗</span><span class="mega-d">Every jurisdiction repo &amp; path pattern</span></span></a>
         <a href="architecture.html" role="menuitem" style="--accent:var(--gb-purple-hi)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
           <span><span class="mega-t">Sources &amp; methodology</span><span class="mega-d">How the data is gathered</span></span></a>
-        <a href="https://github.com/chihacknight/govbot" role="menuitem" style="--accent:var(--gb-text-2)">
+        <a href="https://github.com/chihacknight/govbot" role="menuitem" style="--accent:var(--gb-text-2)" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l-4 4 4 4M16 5l4 4-4 4"/><path d="M13 4l-2 16"/></svg>
-          <span><span class="mega-t">Open source / GitHub</span><span class="mega-d">Read and run every pipeline</span></span></a>
+          <span><span class="mega-t">Open source / GitHub ↗</span><span class="mega-d">Read and run every pipeline</span></span></a>
       </div>
     </div>
     <a class="gb-nav-plain" href="architecture.html">How Govbot Works</a>
-    <a class="gb-nav-plain" href="https://github.com/chihacknight/govbot">About</a>
+    <a class="gb-nav-plain" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">About ↗</a>
   </nav>
   <div class="gb-header-utils">
     <form class="gb-search" role="search" data-gb-search>
@@ -617,7 +625,7 @@
   <a href="hearings.html" aria-current="page">Hearings &amp; Public Comment</a>
   <a href="elections.html">Illinois Elections</a>
   <a href="architecture.html">How Govbot Works</a>
-  <a href="https://github.com/chihacknight/govbot">About / GitHub</a>
+  <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">About / GitHub ↗</a>
 </div>
 
 <div class="wrap">
@@ -630,8 +638,6 @@
         <p class="hh-tagline">Government isn’t just something you watch — you can participate.</p>
         <p class="hh-stats" id="hh-stats"></p>
         <div class="hh-cta-row"><a class="gb-btn gb-btn-primary" href="#hearings-card">See upcoming hearings</a></div>
-        <p class="hh-docs"><a class="docs-link" href="../index.html">govbot docs</a> ·
-           <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
       </div>
       <div class="hh-hero-art" aria-hidden="true">
         <img src="assets/whitehouse-hero.png" alt="" width="720" height="366">
@@ -817,7 +823,7 @@
       head.append(eln("span", "hgroup-count", byJur[code].length + " scheduled"));
       head.append(jurisdictionRssTrigger(code, juris.name));
       if (juris.portal_url) {
-        const p = eln("a", "hgroup-portal", PARTICIPATION[juris.participation] || "Official portal");
+        const p = eln("a", "hgroup-portal", PARTICIPATION[juris.participation] || "Official portal ↗");
         p.href = juris.portal_url; p.target = "_blank"; p.rel = "noopener";
         head.append(p);
       }
@@ -875,7 +881,7 @@
           row.append(tags);
         }
         if (b.govbot_title || (b.govbot_tags && b.govbot_tags.length)) {
-          const g = eln("a", "gov-link", "via govbot ↗");
+          const g = eln("a", "gov-link", "via govbot");
           g.href = "legislation.html#q=" + encodeURIComponent(b.id);
           g.title = "View " + b.id + " in the govbot Legislation Dashboard";
           row.append(g);
@@ -1396,15 +1402,15 @@
     <div>
       <h4>Transparency</h4>
       <a href="architecture.html">Architecture</a>
-      <a href="https://github.com/chihacknight/govbot">Sources &amp; methodology</a>
-      <a href="../index.html">Govbot docs</a>
+      <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">Sources &amp; methodology ↗</a>
+      <a href="../index.html" target="_blank" rel="noopener">Govbot docs ↗</a>
       <a href="elections.xml">RSS feeds</a>
     </div>
     <div>
       <h4>Community</h4>
-      <a href="https://github.com/chihacknight/govbot">GitHub</a>
-      <a href="https://github.com/chihacknight/govbot">Contribute</a>
-      <a href="https://chihacknight.org/">Chi Hack Night</a>
+      <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub ↗</a>
+      <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">Contribute ↗</a>
+      <a href="https://chihacknight.org/" target="_blank" rel="noopener">Chi Hack Night ↗</a>
     </div>
   </div>
   <div class="gb-footer-bottom">© 2026 Govbot · A nonpartisan, open civic-data project.</div>

@@ -115,8 +115,6 @@
     75% { transform: rotate(-0.5deg) skewY(0.9deg) scaleX(0.99); }
   }
   .corner-flag { position: fixed; top: 8px; right: 12px; z-index: 45; width: 60px; pointer-events: none; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.30)); }
-  #flag-cursor { position: fixed; left: 0; top: 0; width: 30px; z-index: 9998; pointer-events: none; will-change: transform; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.35)); }
-  html.flag-cursor-on, html.flag-cursor-on * { cursor: none !important; }
   @media (max-width: 899px) { .corner-flag { display: none; } }
   @media (prefers-reduced-motion: reduce) { .il-flag .cloth { animation: none; } }
 
@@ -527,19 +525,19 @@
         <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
       </button>
       <div class="gb-mega" role="menu" aria-label="Data">
-        <a href="https://github.com/chihacknight/govbot/blob/main/catalog.json" role="menuitem" style="--accent:var(--gb-blue-hi)">
+        <a href="https://github.com/chihacknight/govbot/blob/main/catalog.json" role="menuitem" style="--accent:var(--gb-blue-hi)" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
-          <span><span class="mega-t">Data catalog</span><span class="mega-d">Every jurisdiction repo &amp; path pattern</span></span></a>
+          <span><span class="mega-t">Data catalog ↗</span><span class="mega-d">Every jurisdiction repo &amp; path pattern</span></span></a>
         <a href="architecture.html" role="menuitem" style="--accent:var(--gb-purple-hi)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
           <span><span class="mega-t">Sources &amp; methodology</span><span class="mega-d">How the data is gathered</span></span></a>
-        <a href="https://github.com/chihacknight/govbot" role="menuitem" style="--accent:var(--gb-text-2)">
+        <a href="https://github.com/chihacknight/govbot" role="menuitem" style="--accent:var(--gb-text-2)" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l-4 4 4 4M16 5l4 4-4 4"/><path d="M13 4l-2 16"/></svg>
-          <span><span class="mega-t">Open source / GitHub</span><span class="mega-d">Read and run every pipeline</span></span></a>
+          <span><span class="mega-t">Open source / GitHub ↗</span><span class="mega-d">Read and run every pipeline</span></span></a>
       </div>
     </div>
     <a class="gb-nav-plain" href="architecture.html">How Govbot Works</a>
-    <a class="gb-nav-plain" href="https://github.com/chihacknight/govbot">About</a>
+    <a class="gb-nav-plain" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">About ↗</a>
   </nav>
   <div class="gb-header-utils">
     <form class="gb-search" role="search" data-gb-search>
@@ -567,7 +565,7 @@
   <a href="hearings.html">Hearings &amp; Public Comment</a>
   <a href="elections.html" aria-current="page">Illinois Elections</a>
   <a href="architecture.html">How Govbot Works</a>
-  <a href="https://github.com/chihacknight/govbot">About / GitHub</a>
+  <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">About / GitHub ↗</a>
 </div>
 
 <div class="wrap">
@@ -582,8 +580,6 @@
           <button type="button" class="gb-btn gb-btn-primary" id="explore-races">Explore races</button>
           <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
         </div>
-        <p class="el-docs"><a class="docs-link" href="../index.html">govbot docs</a> ·
-           <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
       </div>
       <div class="el-hero-flag" id="hero-flag" aria-hidden="true"></div>
     </div>
@@ -826,15 +822,31 @@
       } else {
         hf.innerHTML =
           '<svg class="il-wave-flag" viewBox="0 0 352 330" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illinois state flag on a pole">' +
-            '<defs><filter id="ilwave" x="-12%" y="-12%" width="124%" height="124%">' +
-              '<feTurbulence type="fractalNoise" baseFrequency="0.010 0.022" numOctaves="2" seed="7" result="n">' +
-                '<animate attributeName="baseFrequency" dur="12s" values="0.010 0.022;0.014 0.019;0.010 0.024;0.010 0.022" repeatCount="indefinite"/>' +
-              '</feTurbulence>' +
-              '<feDisplacementMap in="SourceGraphic" in2="n" scale="12" xChannelSelector="R" yChannelSelector="G"/>' +
+            '<defs><filter id="ilwave" x="-24%" y="-24%" width="148%" height="148%">' +
+              '<feTurbulence type="fractalNoise" baseFrequency="0.016 0.03" numOctaves="2" seed="7" result="n"></feTurbulence>' +
+              '<feDisplacementMap in="SourceGraphic" in2="n" scale="28" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>' +
             '</filter></defs>' +
             pole +
             '<image href="assets/il-flag.png" x="18" y="26" width="331" height="287" filter="url(#ilwave)"/>' +
           '</svg>';
+        // Drive the ripple in JS (requestAnimationFrame) rather than SMIL: setting
+        // the filter attributes each frame forces a real repaint, so the flag
+        // visibly flaps instead of sitting near-static.
+        const turb = hf.querySelector("feTurbulence");
+        const disp = hf.querySelector("feDisplacementMap");
+        if (turb && disp && window.requestAnimationFrame) {
+          if (hf._waveRaf) cancelAnimationFrame(hf._waveRaf);
+          const t0 = performance.now();
+          const step = (now) => {
+            const t = (now - t0) / 1000;
+            const fx = (0.016 + 0.007 * Math.sin(t * 1.9)).toFixed(4);
+            const fy = (0.030 + 0.011 * Math.sin(t * 1.3 + 0.7)).toFixed(4);
+            turb.setAttribute("baseFrequency", fx + " " + fy);
+            disp.setAttribute("scale", (26 + 13 * Math.sin(t * 2.4)).toFixed(1));
+            hf._waveRaf = window.requestAnimationFrame(step);
+          };
+          hf._waveRaf = window.requestAnimationFrame(step);
+        }
       }
     }
     const races = (state.data && state.data.races) || [];
@@ -992,26 +1004,8 @@
   }
 
   function setupFlourishes() {
-    const corner = $("corner-flag");
-    if (corner) corner.innerHTML = IL_FLAG_SVG;   // CSS shows it only ≥900px wide
-
-    // Flag cursor: only for a real mouse, and never when reduced motion is asked.
-    const fine = window.matchMedia && window.matchMedia("(pointer: fine)").matches;
-    if (!fine || reducedMotion()) return;
-    const cur = document.createElement("div");
-    cur.id = "flag-cursor"; cur.setAttribute("aria-hidden", "true");
-    cur.innerHTML = IL_FLAG_SVG;
-    cur.style.transform = "translate(-100px,-100px)";   // parked offscreen until the mouse moves
-    document.body.appendChild(cur);
-    document.documentElement.classList.add("flag-cursor-on");
-    let x = -100, y = -100, raf = 0;
-    const place = () => { raf = 0; cur.style.transform = "translate(" + x + "px," + y + "px)"; };
-    window.addEventListener("mousemove", (e) => {
-      x = e.clientX - 3; y = e.clientY - 2;       // pole tip sits at the pointer
-      if (!raf) raf = requestAnimationFrame(place);
-    }, { passive: true });
-    document.addEventListener("mouseleave", () => { cur.style.opacity = "0"; });
-    document.addEventListener("mouseenter", () => { cur.style.opacity = "1"; });
+    // The waving flag now lives only in the hero (`#hero-flag`). The old
+    // mouse-following flag cursor has been removed.
   }
 
   /* ---------- "Build your view" section picker ---------- */
@@ -1730,7 +1724,7 @@
     const links = document.createElement("div"); links.className = "sf-links";
     const dash = document.createElement("a");
     dash.href = "legislation.html#q=" + encodeURIComponent(b.id || "");
-    dash.textContent = "View on Legislation Dashboard ↗";
+    dash.textContent = "View on Legislation Dashboard";
     links.append(dash);
     if (b.url) {
       const off = document.createElement("a");
@@ -1909,15 +1903,15 @@
     <div>
       <h4>Transparency</h4>
       <a href="architecture.html">Architecture</a>
-      <a href="https://github.com/chihacknight/govbot">Sources &amp; methodology</a>
-      <a href="../index.html">Govbot docs</a>
+      <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">Sources &amp; methodology ↗</a>
+      <a href="../index.html" target="_blank" rel="noopener">Govbot docs ↗</a>
       <a href="elections.xml">RSS feeds</a>
     </div>
     <div>
       <h4>Community</h4>
-      <a href="https://github.com/chihacknight/govbot">GitHub</a>
-      <a href="https://github.com/chihacknight/govbot">Contribute</a>
-      <a href="https://chihacknight.org/">Chi Hack Night</a>
+      <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub ↗</a>
+      <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">Contribute ↗</a>
+      <a href="https://chihacknight.org/" target="_blank" rel="noopener">Chi Hack Night ↗</a>
     </div>
   </div>
   <div class="gb-footer-bottom">© 2026 Govbot · A nonpartisan, open civic-data project.</div>
