@@ -445,16 +445,17 @@
   .el-next { margin: 4px 0 0; font-size: 14px; color: var(--series-2); font-weight: 600; }
   .el-cta-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
   .el-docs { margin: 8px 0 0; font-size: 13px; }
-  .el-hero-flag { flex: 0 0 auto; width: 250px; max-width: 40%; filter: drop-shadow(0 0 22px rgba(214,168,79,0.32)); }
-  .el-hero-flag svg { width: 100%; height: auto; opacity: 0.94; }
-  .el-hero-flag .cloth { transform-origin: left center; animation: il-wave 5.5s ease-in-out infinite; }
-  @keyframes il-wave { 0%,100% { transform: skewY(0deg) } 25% { transform: skewY(1.1deg) translateY(-1px) } 50% { transform: skewY(0deg) } 75% { transform: skewY(-1.1deg) translateY(1px) } }
+  .el-hero-flag { flex: 0 0 auto; width: 300px; max-width: 44%; filter: drop-shadow(0 0 24px rgba(214,168,79,0.34)); }
+  .el-hero-flag svg, .el-hero-flag img { width: 100%; height: auto; display: block; }
+  /* gentle in-wind sway on top of the cloth ripple (the SVG turbulence) */
+  .el-hero-flag .il-wave-flag { transform-origin: left center; animation: il-sway 6s ease-in-out infinite; }
+  @keyframes il-sway { 0%,100% { transform: rotate(-0.6deg) translateY(0) } 50% { transform: rotate(0.7deg) translateY(-2px) } }
   @media (max-width: 760px) {
     .el-hero { flex-direction: column-reverse; align-items: flex-start; gap: 16px; }
-    .el-hero-flag { width: 170px; }
+    .el-hero-flag { width: 210px; }
     .el-hero h1 { font-size: 36px; }
   }
-  @media (prefers-reduced-motion: reduce) { .el-hero-flag .cloth { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .el-hero-flag .il-wave-flag { animation: none; } }
 
   .ballot-picker { margin: 10px 0 22px; }
   .bp-title { margin: 0 0 4px; font-size: 27px; }
@@ -508,7 +509,7 @@
       <div class="el-hero-copy">
         <div class="gb-overline" style="color:var(--series-2)">Chicago &amp; Illinois · 2026–2027</div>
         <h1>Illinois Elections</h1>
-        <p class="el-tagline">Know what’s on your ballot before you vote.</p>
+        <p class="el-tagline">Know who’s on your ballot before you vote.</p>
         <p class="el-next" id="el-next"></p>
         <div class="el-cta-row">
           <button type="button" class="gb-btn gb-btn-primary" id="explore-races">Explore races</button>
@@ -762,7 +763,26 @@
     if (g) g.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
   }
   function renderElectionHero(dates) {
-    const hf = $("hero-flag"); if (hf) hf.innerHTML = IL_FLAG_SVG;
+    const hf = $("hero-flag");
+    if (hf) {
+      if (reducedMotion()) {
+        // Static, accurate flag when motion is not wanted.
+        hf.innerHTML = '<img src="assets/il-flag.png" alt="Illinois state flag" style="width:100%;height:auto;display:block;">';
+      } else {
+        // Accurate flag asset rippled by an animated turbulence displacement
+        // filter — a real cloth "wave" rather than a skew.
+        hf.innerHTML =
+          '<svg class="il-wave-flag" viewBox="0 0 331 287" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+            '<defs><filter id="ilwave" x="-12%" y="-12%" width="124%" height="124%">' +
+              '<feTurbulence type="fractalNoise" baseFrequency="0.010 0.022" numOctaves="2" seed="7" result="n">' +
+                '<animate attributeName="baseFrequency" dur="12s" values="0.010 0.022;0.014 0.019;0.010 0.024;0.010 0.022" repeatCount="indefinite"/>' +
+              '</feTurbulence>' +
+              '<feDisplacementMap in="SourceGraphic" in2="n" scale="12" xChannelSelector="R" yChannelSelector="G"/>' +
+            '</filter></defs>' +
+            '<image href="assets/il-flag.png" x="0" y="0" width="331" height="287" filter="url(#ilwave)"/>' +
+          '</svg>';
+      }
+    }
     const races = (state.data && state.data.races) || [];
     const next = dates.filter((d) => d >= state.nowDate)[0] || dates[0];
     if (next) {
