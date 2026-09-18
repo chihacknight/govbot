@@ -286,6 +286,53 @@ h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spaci
 .gb-timeline .bar { height: 2px; background: var(--gb-border); flex: 1; margin-top: 8px; }
 .gb-timeline .bar.done { background: var(--gb-green); }
 
+/* ============================ STATES ================================= */
+/* Designed empty / no-results / error state — icon, message, recovery action. */
+.gb-state {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px;
+  padding: 46px 24px; border: 1px dashed var(--gb-border); border-radius: var(--gb-radius-lg);
+  background: var(--gb-surface); color: var(--gb-text);
+}
+.gb-state-ico { width: 42px; height: 42px; color: var(--gb-text-2); flex: none; }
+.gb-state h3 { margin: 0; font-family: var(--gb-font-display); font-weight: 500; font-size: 20px; color: var(--gb-text); }
+.gb-state p { margin: 0; max-width: 46ch; font-size: 14px; line-height: 1.55; color: var(--gb-text-2); }
+.gb-state-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+.gb-state--error { border-style: solid; border-color: color-mix(in srgb, var(--gb-red) 40%, var(--gb-border)); background: color-mix(in srgb, var(--gb-red) 6%, var(--gb-surface)); }
+.gb-state--error .gb-state-ico { color: var(--gb-red); }
+
+/* Loading: a civic spinner + message. */
+.gb-loading { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 46px 24px; text-align: center; }
+.gb-loading p { margin: 0; font-size: 14px; color: var(--gb-text-2); }
+.gb-spinner { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--gb-border); border-top-color: var(--gb-gold); animation: gb-spin .8s linear infinite; }
+@keyframes gb-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .gb-spinner { animation-duration: 2.4s; } }
+
+/* ===================== GLOBAL-NAV MEGA-MENU ========================= */
+.gb-nav-item { position: relative; display: inline-flex; }
+.gb-nav-trigger {
+  display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: 15px; font-weight: 500;
+  color: var(--gb-text-2); background: none; border: none; cursor: pointer; padding: 6px 2px;
+}
+.gb-nav-trigger:hover, .gb-nav-trigger[aria-expanded="true"] { color: var(--gb-text); }
+.gb-nav-trigger .gb-caret { width: 11px; height: 11px; transition: transform .15s ease; }
+.gb-nav-trigger[aria-expanded="true"] .gb-caret { transform: rotate(180deg); }
+.gb-nav a.gb-nav-plain { color: var(--gb-text-2); font-size: 15px; font-weight: 500; }
+.gb-nav a.gb-nav-plain:hover { color: var(--gb-text); }
+.gb-mega {
+  position: absolute; top: calc(100% + 12px); left: 50%; transform: translateX(-50%) translateY(-6px);
+  min-width: 320px; background: var(--gb-elevated); border: 1px solid var(--gb-border);
+  border-radius: 14px; box-shadow: var(--gb-shadow); padding: 10px; z-index: 60;
+  opacity: 0; visibility: hidden; transition: opacity .16s ease, transform .16s ease;
+}
+.gb-nav-item.open .gb-mega { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+.gb-mega::before { content: ""; position: absolute; top: -12px; left: 0; right: 0; height: 12px; } /* hover bridge */
+.gb-mega a { display: flex; gap: 11px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; color: var(--gb-text); }
+.gb-mega a:hover { background: var(--gb-hover); color: var(--gb-text); }
+.gb-mega a svg { width: 20px; height: 20px; flex: none; margin-top: 1px; color: var(--accent, var(--gb-blue-hi)); }
+.gb-mega .mega-t { font-size: 14px; font-weight: 600; display: block; }
+.gb-mega .mega-d { font-size: 12.5px; color: var(--gb-text-2); display: block; margin-top: 1px; }
+@media (max-width: 860px) { .gb-nav-item, .gb-mega { display: none; } }
+
 /* ===== Product-page legacy tab bar: scroll instead of wrapping on phones ===== */
 /* `nav.tabs` (element+class) outranks each page's own `.tabs` rule, so this wins. */
 @media (max-width: 640px) {

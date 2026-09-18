@@ -95,11 +95,59 @@
     <span class="gb-brand-name">Govbot</span>
   </a>
   <nav class="gb-nav" aria-label="Primary">
-    <a href="legislation.html">Legislation</a>
-    <a href="hearings.html">Hearings</a>
-    <a href="elections.html">Elections</a>
-    <a href="architecture.html">How Govbot Works</a>
-    <a href="https://github.com/chihacknight/govbot">About</a>
+    <div class="gb-nav-item" data-gb-dropdown>
+      <button class="gb-nav-trigger" type="button" aria-expanded="false" aria-haspopup="true">Explore
+        <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="gb-mega" role="menu" aria-label="Explore">
+        <a href="legislation.html" role="menuitem" style="--accent:var(--gb-blue-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
+          <span><span class="mega-t">Legislation</span><span class="mega-d">Bills, topics, states, sponsors &amp; status</span></span></a>
+        <a href="hearings.html" role="menuitem" style="--accent:var(--gb-gold-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg>
+          <span><span class="mega-t">Hearings &amp; Public Comment</span><span class="mega-d">Upcoming hearings and how to weigh in</span></span></a>
+        <a href="elections.html" role="menuitem" style="--accent:var(--gb-green)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/></svg>
+          <span><span class="mega-t">Illinois Elections</span><span class="mega-d">What&#39;s on your ballot, race by race</span></span></a>
+        <a href="architecture.html" role="menuitem" style="--accent:var(--gb-purple-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg>
+          <span><span class="mega-t">How Govbot Works</span><span class="mega-d">The pipeline, in plain English</span></span></a>
+      </div>
+    </div>
+    <div class="gb-nav-item" data-gb-dropdown>
+      <button class="gb-nav-trigger" type="button" aria-expanded="false" aria-haspopup="true">Follow
+        <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="gb-mega" role="menu" aria-label="Follow">
+        <a href="elections.xml" role="menuitem" style="--accent:var(--gb-green)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
+          <span><span class="mega-t">Elections feed</span><span class="mega-d">Whole-ballot &amp; per-race RSS</span></span></a>
+        <a href="hearings.xml" role="menuitem" style="--accent:var(--gb-gold-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
+          <span><span class="mega-t">Hearings feed</span><span class="mega-d">Whole-calendar, per-bill &amp; per-state RSS</span></span></a>
+        <a href="#follow" role="menuitem" style="--accent:var(--gb-blue-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h6M9 16h4"/></svg>
+          <span><span class="mega-t">Bills &amp; topics</span><span class="mega-d">Filter, then follow from the dashboard</span></span></a>
+      </div>
+    </div>
+    <div class="gb-nav-item" data-gb-dropdown>
+      <button class="gb-nav-trigger" type="button" aria-expanded="false" aria-haspopup="true">Data
+        <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="gb-mega" role="menu" aria-label="Data">
+        <a href="https://github.com/chihacknight/govbot/blob/main/catalog.json" role="menuitem" style="--accent:var(--gb-blue-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+          <span><span class="mega-t">Data catalog</span><span class="mega-d">Every jurisdiction repo &amp; path pattern</span></span></a>
+        <a href="architecture.html" role="menuitem" style="--accent:var(--gb-purple-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+          <span><span class="mega-t">Sources &amp; methodology</span><span class="mega-d">How the data is gathered</span></span></a>
+        <a href="https://github.com/chihacknight/govbot" role="menuitem" style="--accent:var(--gb-text-2)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l-4 4 4 4M16 5l4 4-4 4"/><path d="M13 4l-2 16"/></svg>
+          <span><span class="mega-t">Open source / GitHub</span><span class="mega-d">Read and run every pipeline</span></span></a>
+      </div>
+    </div>
+    <a class="gb-nav-plain" href="architecture.html">How Govbot Works</a>
+    <a class="gb-nav-plain" href="https://github.com/chihacknight/govbot">About</a>
   </nav>
   <div class="gb-header-utils">
     <form class="gb-search" role="search" data-gb-search>

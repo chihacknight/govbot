@@ -72,6 +72,36 @@
     });
   }
 
+  /* ---- global-nav mega-menu dropdowns ------------------------------- */
+  var dropdowns = document.querySelectorAll("[data-gb-dropdown]");
+  function closeDropdowns(except) {
+    dropdowns.forEach(function (d) {
+      if (d === except) return;
+      d.classList.remove("open");
+      var t = d.querySelector(".gb-nav-trigger");
+      if (t) t.setAttribute("aria-expanded", "false");
+    });
+  }
+  var finePointer = window.matchMedia && window.matchMedia("(pointer: fine)").matches;
+  dropdowns.forEach(function (item) {
+    var trigger = item.querySelector(".gb-nav-trigger");
+    if (!trigger) return;
+    var setOpen = function (open) {
+      if (open) closeDropdowns(item);
+      item.classList.toggle("open", open);
+      trigger.setAttribute("aria-expanded", String(open));
+    };
+    trigger.addEventListener("click", function (e) { e.stopPropagation(); setOpen(!item.classList.contains("open")); });
+    if (finePointer) {
+      item.addEventListener("mouseenter", function () { setOpen(true); });
+      item.addEventListener("mouseleave", function () { setOpen(false); });
+    }
+  });
+  if (dropdowns.length) {
+    document.addEventListener("click", function () { closeDropdowns(null); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeDropdowns(null); });
+  }
+
   /* ---- global search (routes to legislation search for now) --------- */
   document.querySelectorAll("[data-gb-search]").forEach(function (form) {
     form.addEventListener("submit", function (e) {

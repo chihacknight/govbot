@@ -593,9 +593,17 @@
   <div class="tiles" id="tiles" hidden></div>
 
   <div id="races" aria-hidden="true"></div>
-  <p class="empty" id="loading">Loading Illinois &amp; Chicago races…</p>
+  <div class="gb-loading" id="loading">
+    <div class="gb-spinner" aria-hidden="true"></div>
+    <p>Loading Illinois &amp; Chicago races…</p>
+  </div>
   <div class="groups" id="groups"></div>
-  <p class="empty" id="empty" hidden>No races match the current filters.</p>
+  <div class="gb-state" id="empty" hidden>
+    <svg class="gb-state-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M8.5 11h5"/></svg>
+    <h3>No races match</h3>
+    <p>Nothing matches your current search or ballot filter. Clear the filters to see every office on the ballot.</p>
+    <div class="gb-state-actions"><button type="button" class="clear-btn" data-clear-filters>Clear filters</button></div>
+  </div>
 
   <details class="cabinet" id="cabinet" open>
     <summary>📂 Where the data comes from</summary>
@@ -742,8 +750,12 @@
     .then((r) => { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.json(); })
     .then(init)
     .catch((err) => {
-      $("loading").textContent = "Could not load elections.json — " + err.message +
-        ". If you opened this file directly, serve it over HTTP.";
+      const l = $("loading");
+      l.className = "gb-state gb-state--error";
+      l.innerHTML = '<svg class="gb-state-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 9v4"/><path d="M12 16h.01"/></svg><h3>Couldn’t load elections data</h3>';
+      const p = document.createElement("p");
+      p.textContent = "The ballot data didn’t load. If you opened this file directly, serve it over HTTP. Error: " + err.message;
+      l.append(p);
     });
 
   function ballotStageLabel(rs) {
@@ -869,6 +881,8 @@
       $("f-hascands").setAttribute("aria-pressed", "false");
       render();
     });
+    document.querySelectorAll("[data-clear-filters]").forEach((b) =>
+      b.addEventListener("click", () => $("f-clear").click()));
 
     $("rss-all").addEventListener("click", (e) => openRss(e.currentTarget, {
       title: "Subscribe to every race",

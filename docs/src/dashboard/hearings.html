@@ -582,7 +582,11 @@
     <div id="hearings-body" class="hearings-groups"></div>
   </section>
 
-  <p class="empty" id="hearings-empty" hidden>Loading committee hearings…</p>
+  <div class="gb-loading" id="hearings-loading">
+    <div class="gb-spinner" aria-hidden="true"></div>
+    <p>Loading committee hearings…</p>
+  </div>
+  <div class="gb-state" id="hearings-empty" hidden></div>
 
   <section class="card card--accent" id="participation-card" hidden>
     <div class="hearings-head">
@@ -705,8 +709,18 @@
     fetch("hearings.json")
       .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(renderHearings)
-      .catch(() => { const e = $("hearings-empty"); if (e) { e.hidden = false;
-        e.textContent = "Couldn\u2019t load committee hearings right now. Please try again shortly."; } });
+      .catch(() => {
+        const ld = $("hearings-loading"); if (ld) ld.remove();
+        const e = $("hearings-empty");
+        if (e) {
+          e.classList.add("gb-state--error");
+          e.innerHTML = '<svg class="gb-state-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 9v4"/><path d="M12 16h.01"/></svg><h3>Couldn\u2019t load hearings</h3><p>The hearings data didn\u2019t load right now. Please try again shortly.</p>';
+          const act = document.createElement("div"); act.className = "gb-state-actions";
+          const btn = document.createElement("button"); btn.type = "button"; btn.className = "clear-btn"; btn.textContent = "Try again";
+          btn.addEventListener("click", () => location.reload()); act.append(btn); e.append(act);
+          e.hidden = false;
+        }
+      });
   }
 
   function eln(tag, cls, text) {
@@ -721,8 +735,16 @@
                       "--series-6", "--series-8", "--series-7", "--series-4"];
 
   function renderHearings(data) {
+    const ld = $("hearings-loading"); if (ld) ld.remove();
     const hearings = (data && data.hearings) || [];
-    if (!hearings.length) { const e = $("hearings-empty"); if (e) e.hidden = false; return; }
+    if (!hearings.length) {
+      const e = $("hearings-empty");
+      if (e) {
+        e.innerHTML = '<svg class="gb-state-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><h3>No upcoming hearings</h3><p>There are no scheduled hearings in the current window. Check back soon, or follow a state by RSS to hear when one opens.</p>';
+        e.hidden = false;
+      }
+      return;
+    }
     const card = $("hearings-card");
     const body = $("hearings-body");
     body.textContent = "";

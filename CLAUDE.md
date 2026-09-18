@@ -139,7 +139,13 @@ names must stay in sync with the keyword fallback in `scripts/dashboard_tags.jso
 `docs/src/dashboard/assets/govbot.css` (dark-first tokens + components; legacy token names like
 `--page`/`--series-N` are aliased to the civic palette so unmigrated inline page CSS reskins
 automatically) and `docs/src/dashboard/assets/govbot-shell.js` (theme toggle with dark default,
-mobile nav drawer, back-to-top, global search). `docs/src/dashboard/index.html` is now the
+mobile nav drawer, back-to-top, global search, and the global-nav mega-menu dropdowns).
+The shared CSS also provides designed **state** components — `.gb-state` (empty / no-results /
+`.gb-state--error`, with an icon, message and a recovery action) and `.gb-loading` + `.gb-spinner`
+— used for the loading/empty/error states on the legislation, elections and hearings pages
+(the empty state's "Clear filters" button reuses each page's `#f-clear`), and a **mega-menu**
+(`.gb-nav-item`/`.gb-mega`) on the Homepage nav (Explore / Follow / Data dropdowns, hover on
+desktop + click, Escape/outside-click to close; the mobile drawer stays a flat link list). `docs/src/dashboard/index.html` is now the
 **Homepage** landing page (Lady Liberty gold line-art hero, "What do you want to know?" cards,
 live "What's happening now" fetched fail-soft from `data.json`/`hearings.json`/`elections.json`).
 Pages migrate to the shared system one at a time; the old per-page "New Design" skins + toggle

@@ -505,9 +505,9 @@
        <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
   </header>
 
-  <div class="card" id="loading">
-    <h2>Loading bill data…</h2>
-    <p class="sub">The full dataset covers 50+ jurisdictions and can take a few seconds on slower connections.</p>
+  <div class="gb-loading" id="loading">
+    <div class="gb-spinner" aria-hidden="true"></div>
+    <p>Loading bill data… the full dataset covers 50+ jurisdictions and can take a few seconds.</p>
   </div>
 
   <!-- Search-first: the primary way in -->
@@ -599,7 +599,12 @@
         <tbody id="tbody"></tbody>
       </table>
     </div>
-    <div class="empty" id="empty" hidden>No bills match the current filters.</div>
+    <div class="gb-state" id="empty" hidden>
+      <svg class="gb-state-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M8.5 11h5"/></svg>
+      <h3>No bills match</h3>
+      <p>Nothing matches your current search and filters. Try a broader search, or clear the filters to see every bill.</p>
+      <div class="gb-state-actions"><button type="button" class="clear-btn" data-clear-filters>Clear filters</button></div>
+    </div>
     <button class="clear-btn show-more" id="show-more" hidden></button>
   </div>
 
@@ -673,14 +678,20 @@
     .catch((err) => {
       $("loading").remove();
       const div = document.createElement("div");
-      div.className = "card";
-      const h = document.createElement("h2");
-      h.textContent = "Could not load data.json";
+      div.className = "gb-state gb-state--error";
+      div.innerHTML = '<svg class="gb-state-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 9v4"/><path d="M12 16h.01"/></svg>';
+      const h = document.createElement("h3");
+      h.textContent = "Couldn’t load bill data";
       const p = document.createElement("p");
-      p.className = "sub";
-      p.textContent = "If you opened this file directly, serve it over HTTP instead " +
-        "(e.g. `python3 -m http.server` in this folder). Error: " + err.message;
-      div.append(h, p);
+      p.textContent = "The dashboard data didn’t load. If you opened this file directly, serve it over HTTP " +
+        "(e.g. python3 -m http.server in this folder). Error: " + err.message;
+      const act = document.createElement("div");
+      act.className = "gb-state-actions";
+      const btn = document.createElement("button");
+      btn.type = "button"; btn.className = "clear-btn"; btn.textContent = "Try again";
+      btn.addEventListener("click", () => location.reload());
+      act.append(btn);
+      div.append(h, p, act);
       document.querySelector(".wrap").prepend(div);
     });
 
@@ -721,6 +732,9 @@
       resetDateRange();
       syncMultiSelects(); render();
     });
+    // The empty-state "Clear filters" button reuses the same reset.
+    document.querySelectorAll("[data-clear-filters]").forEach((b) =>
+      b.addEventListener("click", () => $("f-clear").click()));
     document.addEventListener("click", (e) => {
       document.querySelectorAll(".msel.open").forEach((m) => {
         if (!m.contains(e.target)) m.classList.remove("open");
