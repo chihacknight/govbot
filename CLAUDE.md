@@ -189,13 +189,20 @@ formerly `index.html`; deep links are `legislation.html#q=<billid>`),
 `docs/src/dashboard/hearings.html` (**Hearings & Public Comment**),
 `docs/src/dashboard/elections.html` (**Illinois Elections**), and
 `docs/src/dashboard/architecture.html` (**How Govbot Works** — a static, no-data explainer of all
-three backend pipelines — keep its tab bar and the `.tab-arch` accent in sync with the other pages
-whenever the tab bar changes). The product pages share a tab bar (order: Explore Legislation ·
-Hearings & Public Comment · Illinois Elections · How Govbot Works), with accents `.tab-legis`
-(blue), `.tab-hearings` (gold), `.tab-elections` (green), `.tab-arch` (purple); the Homepage uses
-the global nav header instead. The Govbot logo on every page links to the Homepage (`index.html`). All four pages share a floating
-`.to-top` "Back to Top" button (fixed bottom-right, shown after ~400px of scroll) styled as
-a liquid-glass pill (translucent + `backdrop-filter` blur). **Every generated RSS feed** (both
+three backend pipelines). **Every page now wears the same shell as the Homepage** — the old
+per-page tab bar + brandbar (logo + 3-button light/auto/dark theme pill) have been **retired**.
+All five pages share, byte-for-byte, the global-nav header (`.gb-header`: the `assets/govbot-mark.png`
+robot logo linking to the Homepage, the Explore / Follow / Data mega-menus + How Govbot Works /
+About plain links, the global `.gb-search`, and a single `[data-gb-theme-toggle]` icon button), the
+mobile `.gb-drawer` (hamburger → flat link list + search), the civic `.gb-footer` (Explore /
+Transparency / Community columns), and the floating `.gb-to-top` liquid-glass "Back to Top" pill —
+all wired by the shared `assets/govbot-shell.js` (so every page also loads that script). The active
+section is marked `aria-current="page"` in the header's Explore mega-menu (and the top-level How
+Govbot Works link on architecture) + the drawer. Each flagship keeps its own **signature hero**
+below that shared header: legislation's search hero, elections' waving Illinois flag, architecture's
+plain-English pipeline, and hearings' self-contained "night sky" hero panel — the America-250
+`250th` fireworks canvas (`#fw-canvas`) relocated out of the retired brandbar into `.hh-hero` (dark
+in both themes so the bursts read). **Every generated RSS feed** (both
 the hearings and elections pipelines) carries an `<?xml-stylesheet type="text/xsl"
 href="feed.xsl"?>` processing instruction pointing at the shared stylesheet
 `docs/src/dashboard/feed.xsl`, so a browser renders a feed as a readable page (title, subscribe
@@ -205,9 +212,11 @@ dashboard root reference `feed.xsl`; granular feeds one directory down reference
 (the feed builders in both `main.py`s take an `xsl_href` for exactly this). All four product
 pages now link the shared `assets/govbot.css` (dark-mode-first; the legacy `--page`/`--series-N`
 tokens are aliased to the civic palette so the existing chart/table CSS reskins automatically) and
-keep their own theme toggle on the shared `localStorage['govbot-theme']` key. The old per-page
-**"New Design"** skins + toggle (Stripe/Robinhood/Polymarket) have been **retired** — the civic
-dark-first design is the single default. On elections and hearings, the long list
+share the single shell theme toggle (`[data-gb-theme-toggle]` in `govbot-shell.js`, on the
+`localStorage['govbot-theme']` key; each page still inlines the tiny pre-paint snippet in `<head>`
+to avoid a flash). The old per-page **"New Design"** skins + toggle (Stripe/Robinhood/Polymarket)
+and the per-page 3-button light/auto/dark theme pills have been **retired** — the civic dark-first
+design is the single default. On elections and hearings, the long list
 sections scroll inside capped-height boxes (`.group .races`, `.sf-list`, `.hgroup-rows`,
 `.participation-grid`) so the homepage isn't enormous; the elections "Where the data comes
 from" cabinet is `open` by default. The hearings
