@@ -198,8 +198,10 @@ per-page tab bar + brandbar (logo + 3-button light/auto/dark theme pill) have be
 All five pages share, byte-for-byte, the global-nav header (`.gb-header`: the `assets/govbot-mark.png`
 robot logo linking to the Homepage, the Explore / Follow / Data mega-menus + How Govbot Works /
 About plain links, the global `.gb-search`, and a single `[data-gb-theme-toggle]` icon button), the
-mobile `.gb-drawer` (hamburger → flat link list + search), the civic `.gb-footer` (Explore /
-Transparency / Community columns), and the floating `.gb-to-top` liquid-glass "Back to Top" pill —
+mobile `.gb-drawer` (hamburger → flat link list + search), the civic `.gb-footer` (the
+`assets/govbot-mark.png` robot logo + brand blurb + a `.gb-social` row of gold-outline social chips —
+Bluesky / Threads / X / Instagram, styled in `govbot.css` off the `--gb-gold` tokens so they adapt
+per theme — plus Explore / Transparency / Community columns), and the floating `.gb-to-top` liquid-glass "Back to Top" pill —
 all wired by the shared `assets/govbot-shell.js` (so every page also loads that script). The active
 section is marked `aria-current="page"` in the header's Explore mega-menu (and the top-level How
 Govbot Works link on architecture) + the drawer. Each flagship keeps its own **signature hero**
