@@ -134,15 +134,63 @@ names must stay in sync with the keyword fallback in `scripts/dashboard_tags.jso
 `docs/src/dashboard-guide.md` for the data flow; tagging in CI is incremental via
 `scripts/filter_new_bills.py` + `scripts/tag_dashboard_repo.sh`.
 
-The Pages site has **three dashboards plus a Site Architecture page**, linked by a tab bar:
-`docs/src/dashboard/index.html` (the Legislation Dashboard above),
-`docs/src/dashboard/hearings.html` (**Committee Hearings & Witness Slips**),
-`docs/src/dashboard/elections.html` (**Elections Happening in IL**), and
-`docs/src/dashboard/architecture.html` (a static, no-data explainer of all three backend
-pipelines — keep its tab bar and the `.tab-arch` accent in sync with the other pages
-whenever the tab bar changes). Tab order is Legislation · Hearings · Elections Happening in IL ·
-Site Architecture across all four pages, with accents `.tab-legis` (blue), `.tab-hearings`
-(gold), `.tab-elections` (green), `.tab-arch` (purple). All four pages share a floating
+**Civic redesign (in progress).** The dashboard is being revamped into a dark-mode-first
+"civic institution" per the design brief in `tamara-notes/`. Shared design system lives in
+`docs/src/dashboard/assets/govbot.css` (dark-first tokens + components; legacy token names like
+`--page`/`--series-N` are aliased to the civic palette so unmigrated inline page CSS reskins
+automatically) and `docs/src/dashboard/assets/govbot-shell.js` (theme toggle with dark default,
+mobile nav drawer, back-to-top, global search, and the global-nav mega-menu dropdowns).
+The shared CSS also provides designed **state** components — `.gb-state` (empty / no-results /
+`.gb-state--error`, with an icon, message and a recovery action) and `.gb-loading` + `.gb-spinner`
+— used for the loading/empty/error states on the legislation, elections and hearings pages
+(the empty state's "Clear filters" button reuses each page's `#f-clear`), and a **mega-menu**
+(`.gb-nav-item`/`.gb-mega`) on the Homepage nav (Explore / Follow / Data dropdowns, hover on
+desktop + click, Escape/outside-click to close; the mobile drawer stays a flat link list). `docs/src/dashboard/index.html` is now the
+**Homepage** landing page (Lady Liberty gold line-art hero, "What do you want to know?" cards,
+live "What's happening now" fetched fail-soft from `data.json`/`hearings.json`/`elections.json`).
+Pages migrate to the shared system one at a time; the old per-page "New Design" skins + toggle
+are retired as each page is migrated. `legislation.html` has had its content redesigned
+**search-first**: a prominent search hero, State + Topic as primary browse with Session/Chamber/
+date behind a "More filters" `<details>`, a "Recent activity" card strip (`#recent-list`, newest
+recorded actions, unfiltered, click → bill modal), the charts/tiles collapsed under an
+"Overview &amp; charts" `<details>`, and the dense sortable table kept below. The bill modal now
+leads with an inferred **status timeline** (Introduced → Committee → Passed House → Senate →
+Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component).
+`elections.html` has been reframed **ballot-first**: an Illinois-flag hero (the accurate flag
+asset `assets/il-flag.png` rippled by an animated SVG turbulence/`feDisplacementMap` "wave" with a
+gold edge — a static `<img>` under `prefers-reduced-motion`; "Illinois Elections" / "Know who's on
+your ballot before you vote." / a dynamic "Next election" line / an "Explore races" CTA) and a "What's on your ballot?" selector
+(`#ballot-cards`, one card per distinct `ballot_date` with its stage label + office/candidate
+counts) that drives the existing `#f-ballot` filter, reveals the sections, and scrolls to
+`#groups` (`renderElectionHero`). The rich race engine (groups, five drawers, calendar,
+Springfield, picker) is unchanged.
+`hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
+"Hearings & Public Comment", tagline "Government isn't just something you watch — you can
+participate.", a dynamic "N upcoming · N open to public comment · N jurisdictions" line, a gold
+capitol line-art motif, and a "See upcoming hearings" CTA; the America-250 `250th` fireworks
+brandbar is kept). Each hearing now makes participation obvious: a green **"Public comment open"**
+badge on the date column and the witness-slip/comment action elevated into a filled green
+`.file-link` pill. The `<title>` was also corrected (it had been a stray "Legislation Dashboard").
+The hearing/participation render engine is otherwise unchanged.
+`architecture.html` is retitled **"How Govbot Works"** and now opens with a nontechnical layer: a
+plain-English six-stage overview pipeline (`.gw-pipeline`: Government sources → Govbot pipelines →
+Validate + normalize → AI topic tagging → Open data → Your dashboards) and a "How it stays
+trustworthy" card strip (`.gw-trust`: twice-daily refresh, source lineage, fail-soft, open RSS,
+open source, known limits), with the existing detailed per-pipeline diagrams kept below as the
+"full picture" (progressive disclosure). Stale product labels were updated to the new names.
+
+The Pages site has a **Homepage plus three dashboards plus a How-Govbot-Works page**:
+`docs/src/dashboard/index.html` (the **Homepage**),
+`docs/src/dashboard/legislation.html` (**Explore Legislation** — the legislation dashboard,
+formerly `index.html`; deep links are `legislation.html#q=<billid>`),
+`docs/src/dashboard/hearings.html` (**Hearings & Public Comment**),
+`docs/src/dashboard/elections.html` (**Illinois Elections**), and
+`docs/src/dashboard/architecture.html` (**How Govbot Works** — a static, no-data explainer of all
+three backend pipelines — keep its tab bar and the `.tab-arch` accent in sync with the other pages
+whenever the tab bar changes). The product pages share a tab bar (order: Explore Legislation ·
+Hearings & Public Comment · Illinois Elections · How Govbot Works), with accents `.tab-legis`
+(blue), `.tab-hearings` (gold), `.tab-elections` (green), `.tab-arch` (purple); the Homepage uses
+the global nav header instead. The Govbot logo on every page links to the Homepage (`index.html`). All four pages share a floating
 `.to-top` "Back to Top" button (fixed bottom-right, shown after ~400px of scroll) styled as
 a liquid-glass pill (translucent + `backdrop-filter` blur). **Every generated RSS feed** (both
 the hearings and elections pipelines) carries an `<?xml-stylesheet type="text/xsl"
@@ -151,13 +199,12 @@ href="feed.xsl"?>` processing instruction pointing at the shared stylesheet
 callout with the feed URL, entry list) instead of a raw "no style information" XML tree — while
 feed readers ignore the PI and parse the RSS as usual. Whole-ballot/whole-calendar feeds at the
 dashboard root reference `feed.xsl`; granular feeds one directory down reference `../feed.xsl`
-(the feed builders in both `main.py`s take an `xsl_href` for exactly this). The three data dashboards each
-have a **"New Design"** switch under the theme toggle that sets `data-design="new"` on
-`<html>` (persisted per page in `localStorage['govbot-<page>-design']`, applied before first
-paint) and applies a design-system-inspired override skin via `:root[data-design="new"]`
-token + component rules placed last in that page's stylesheet: **elections → Robinhood**
-(green #00C805), **legislation → Stripe** (blurple #635BFF), **hearings → Polymarket** (azure
-on navy). Each skin is scoped to its own page. On elections and hearings, the long list
+(the feed builders in both `main.py`s take an `xsl_href` for exactly this). All four product
+pages now link the shared `assets/govbot.css` (dark-mode-first; the legacy `--page`/`--series-N`
+tokens are aliased to the civic palette so the existing chart/table CSS reskins automatically) and
+keep their own theme toggle on the shared `localStorage['govbot-theme']` key. The old per-page
+**"New Design"** skins + toggle (Stripe/Robinhood/Polymarket) have been **retired** — the civic
+dark-first design is the single default. On elections and hearings, the long list
 sections scroll inside capped-height boxes (`.group .races`, `.sf-list`, `.hgroup-rows`,
 `.participation-grid`) so the homepage isn't enormous; the elections "Where the data comes
 from" cabinet is `open` by default. The hearings
@@ -213,7 +260,7 @@ The page has an "On this page" table of contents; every RSS control reads "Follo
 race (RSS)" in red; each major section carries a thick colored top border; the Legislation
 Dashboard's Bill column is plain text (the official-source link lives in the details card). Each
 bill row also has a **"Share"** button beside "Details" (and a "Share this bill" link in the
-details card's Sources) that copies a deep link `index.html#q=<billid>` (id lowercased, punctuation
+details card's Sources) that copies a deep link `legislation.html#q=<billid>` (id lowercased, punctuation
 stripped, e.g. `#q=sb813`); opening it lands the dashboard pre-filtered to that bill — the search
 filter now also matches ids ignoring spaces/punctuation, and a `hashchange` listener re-applies the
 `#q=` filter live. The details card lists each **sponsor/co-sponsor with their current party (a

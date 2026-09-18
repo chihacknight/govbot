@@ -2464,7 +2464,7 @@ def springfield_feed(doc):
                          (" — " + h["scheduled_display"] if h.get("scheduled_display") else "") + ".")
         item = ET.SubElement(ch, "item")
         ET.SubElement(item, "title").text = f"{b['id']} — {b.get('title', '')}"
-        ET.SubElement(item, "link").text = b.get("url") or (DASHBOARD_URL + "index.html#q=" + (b.get("id") or ""))
+        ET.SubElement(item, "link").text = b.get("url") or (DASHBOARD_URL + "legislation.html#q=" + (b.get("id") or ""))
         ET.SubElement(item, "description").text = " ".join(parts) or b.get("title", "")
         ET.SubElement(item, "category").text = "Springfield · rules of the game"
         ET.SubElement(item, "guid", {"isPermaLink": "false"}).text = "springfield-" + _norm_bill_id(b.get("id"))

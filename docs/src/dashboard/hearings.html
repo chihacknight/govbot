@@ -3,80 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>govbot — Legislation Dashboard</title>
+<link rel="stylesheet" href="assets/govbot.css">
+<title>Govbot — Hearings &amp; Public Comment</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20200%20200%22%3E%3Cpolygon%20points%3D%2282%2C68.8%20100%2C8%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22100%2C8%20118%2C68.8%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C68.8%20179.7%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22179.7%2C54%20136%2C100%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%22136%2C100%20179.7%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22179.7%2C146%20118%2C131.2%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C131.2%20100%2C192%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22100%2C192%2082%2C131.2%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%2282%2C131.2%2020.3%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%2220.3%2C146%2064%2C100%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%2264%2C100%2020.3%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%2220.3%2C54%2082%2C68.8%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3C/svg%3E">
 <style>
-  :root {
-    --page:           #f9f9f7;
-    --surface-1:      #fcfcfb;
-    --text-primary:   #0b0b0b;
-    /* Non-link text is full-contrast (not gray) in both themes: secondary and
-       muted fold into primary here (light) and into white in the dark blocks. */
-    --text-secondary: #0b0b0b;
-    --text-muted:     #0b0b0b;
-    --gridline:       #e1e0d9;
-    --baseline:       #c3c2b7;
-    --border:         rgba(11,11,11,0.10);
-    --series-1: #2a78d6;
-    --series-2: #1baf7a;
-    --series-3: #eda100;
-    --series-4: #008300;
-    --series-5: #4a3aa7;
-    --series-6: #e34948;
-    --series-7: #e87ba4;
-    --series-8: #eb6834;
-    --bar-track: transparent;
-    --hover-wash: rgba(11,11,11,0.04);
-    --row-alt: rgba(11,11,11,0.028);
-  }
   /* Dark palette. Applied when the OS prefers dark AND the user hasn't
      forced a choice, OR when the user explicitly picks dark via the toggle.
      The two selectors carry identical values on purpose (plain CSS can't
      share a declaration block across a media-query boundary). */
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme]) {
-      --page:           #0d0d0d;
-      --surface-1:      #1a1a19;
-      --text-primary:   #ffffff;
-      /* Dark theme: non-link text is white, not gray (secondary/muted folded
-         into primary). Light theme below keeps its softer hierarchy. */
-      --text-secondary: #ffffff;
-      --text-muted:     #ffffff;
-      --gridline:       #2c2c2a;
-      --baseline:       #383835;
-      --border:         rgba(255,255,255,0.10);
-      --series-1: #3987e5;
-      --series-2: #199e70;
-      --series-3: #c98500;
-      --series-4: #008300;
-      --series-5: #9085e9;
-      --series-6: #e66767;
-      --series-7: #d55181;
-      --series-8: #d95926;
-      --hover-wash: rgba(255,255,255,0.06);
-      --row-alt: rgba(255,255,255,0.04);
-    }
-  }
-  :root[data-theme="dark"] {
-    --page:           #0d0d0d;
-    --surface-1:      #1a1a19;
-    --text-primary:   #ffffff;
-    --text-secondary: #ffffff;
-    --text-muted:     #ffffff;
-    --gridline:       #2c2c2a;
-    --baseline:       #383835;
-    --border:         rgba(255,255,255,0.10);
-    --series-1: #3987e5;
-    --series-2: #199e70;
-    --series-3: #c98500;
-    --series-4: #008300;
-    --series-5: #9085e9;
-    --series-6: #e66767;
-    --series-7: #d55181;
-    --series-8: #d95926;
-    --hover-wash: rgba(255,255,255,0.06);
-    --row-alt: rgba(255,255,255,0.04);
-  }
 
   * { box-sizing: border-box; }
   body {
@@ -547,71 +481,29 @@
   .pstate-link.is-offline { color: var(--series-1); }
   .pstate-sub { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--gridline); }
 
-  /* theme toggle + New Design switch stacked at the top-right */
+  /* theme toggle (top-right controls) */
   .controls-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex: none; }
   .controls-stack .theme-toggle { flex: none; }
-  .design-toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 12.5px; color: var(--text-secondary); --nd-accent: #2b9cf0; }
-  .brandbar.celebrate .design-toggle { color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,0.5); }
-  .design-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
-  .design-toggle .dt-track { position: relative; width: 40px; height: 22px; border-radius: 999px; background: var(--gridline); border: 1px solid var(--border); transition: background 0.18s ease; flex: none; }
-  .brandbar.celebrate .design-toggle .dt-track { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.4); }
-  .design-toggle .dt-thumb { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface-1); box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform 0.18s ease; }
-  .design-toggle input:checked + .dt-track { background: var(--nd-accent); border-color: var(--nd-accent); }
-  .design-toggle input:checked + .dt-track .dt-thumb { transform: translateX(18px); background: #fff; }
-  .design-toggle input:focus-visible + .dt-track { outline: 2px solid #fff; outline-offset: 2px; }
-  .design-toggle .dt-label { font-weight: 600; white-space: nowrap; }
 
-  /* ==================================================================== */
-  /*  NEW DESIGN — Polymarket-inspired (toggled per viewer, this page).    */
-  /*  Dark navy ground, azure #2B9CF0 primary, green/red kept for slip     */
-  /*  for/against bars, flat rounded cards. Placed last so it wins.        */
-  /* ==================================================================== */
-  :root[data-design="new"] {
-    --page: #f5f7fa; --surface-1: #ffffff;
-    --text-primary: #0d1117; --text-secondary: #44506a; --text-muted: #6b7280;
-    --gridline: #e6e9ef; --baseline: #ccd2dc; --border: rgba(13,17,22,0.09);
-    --hover-wash: rgba(13,17,22,0.035); --row-alt: rgba(13,17,22,0.02);
-    --series-1: #1e88e5;
-    --pm-accent: #1e88e5;
-  }
-  :root[data-design="new"][data-theme="dark"] {
-    --page: #0d1117; --surface-1: #161b22;
-    --text-primary: #e6edf3; --text-secondary: #b0b8c1; --text-muted: #8b949e;
-    --gridline: #242b33; --baseline: #30363d; --border: rgba(255,255,255,0.10);
-    --hover-wash: rgba(255,255,255,0.05); --row-alt: rgba(255,255,255,0.03);
-    --series-1: #4aa8ff;
-    --pm-accent: #4aa8ff;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root[data-design="new"]:not([data-theme]) {
-      --page: #0d1117; --surface-1: #161b22;
-      --text-primary: #e6edf3; --text-secondary: #b0b8c1; --text-muted: #8b949e;
-      --gridline: #242b33; --baseline: #30363d; --border: rgba(255,255,255,0.10);
-      --hover-wash: rgba(255,255,255,0.05); --row-alt: rgba(255,255,255,0.03);
-      --series-1: #4aa8ff;
-      --pm-accent: #4aa8ff;
-    }
-  }
-  :root[data-design="new"] body {
-    font-family: "Inter", ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    letter-spacing: -0.006em;
-  }
-  :root[data-design="new"] header.top h1 { font-weight: 700; letter-spacing: -0.02em; }
-  :root[data-design="new"] .tab { border-top-color: transparent !important; }
-  :root[data-design="new"] .tab[aria-current="page"] { background: transparent; border-color: transparent; box-shadow: inset 0 -3px 0 var(--pm-accent, #1e88e5); }
-  :root[data-design="new"] .tab:hover { color: var(--pm-accent, #1e88e5); }
-  :root[data-design="new"] .card, :root[data-design="new"] .hgroup, :root[data-design="new"] .pstate {
-    border-radius: 14px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.10), 0 6px 20px rgba(0,0,0,0.06);
-  }
-  :root[data-design="new"] .card--accent { border-width: 1px; }
-  :root[data-design="new"] .hgroup { border-width: 1px; }
-  :root[data-design="new"] a, :root[data-design="new"] .rss-link, :root[data-design="new"] .bill-rss,
-  :root[data-design="new"] .committee-link, :root[data-design="new"] .gov-link { color: var(--pm-accent, #1e88e5); }
-  :root[data-design="new"] .rss-copy { background: var(--pm-accent, #1e88e5); color: #fff; }
-  :root[data-design="new"] .theme-toggle button[aria-pressed="true"] { background: var(--pm-accent, #1e88e5); color: #fff; }
-  :root[data-design="new"] .p-search { border-radius: 10px; }
-  :root[data-design="new"] .to-top:hover { box-shadow: 0 14px 40px rgba(30,136,229,0.25), inset 0 1px 0 rgba(255,255,255,0.6); }
+  /* ===== Hearings — "Have your say" participation hero ===== */
+  .hh-hero { display: flex; align-items: center; gap: 26px; margin: 8px 0 6px; }
+  .hh-hero-copy { flex: 1 1 auto; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .hh-title { margin: 2px 0 0; font-size: 52px; line-height: 1.0; }
+  .hh-tagline { margin: 0; font-family: var(--gb-font-display); font-size: 20px; color: var(--text-secondary); max-width: 46ch; }
+  .hh-stats { margin: 4px 0 0; font-size: 14px; color: var(--series-3); font-weight: 600; }
+  .hh-cta-row { margin-top: 4px; }
+  .hh-docs { margin: 8px 0 0; font-size: 13px; }
+  .hh-hero-art { flex: 0 0 auto; width: 240px; max-width: 38%; filter: drop-shadow(0 0 20px rgba(214,168,79,0.28)); }
+  .hh-hero-art svg { width: 100%; height: auto; display: block; opacity: 0.92; }
+  @media (max-width: 760px) { .hh-hero { gap: 14px; } .hh-hero-art { width: 132px; } .hh-title { font-size: 38px; } }
+
+  /* participation status made obvious on each hearing */
+  .h-open { display: inline-block; margin-top: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+    color: var(--series-2); background: color-mix(in srgb, var(--series-2) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--series-2) 45%, transparent); border-radius: 999px; padding: 2px 9px; }
+  .file-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 650;
+    color: #06210a; background: var(--series-2); border-radius: 999px; padding: 7px 14px; }
+  .file-link:hover { background: color-mix(in srgb, var(--series-2) 85%, #ffffff); color: #06210a; }
 </style>
 <script>
   // Apply a saved theme choice before first paint to avoid a flash of the
@@ -621,8 +513,6 @@
     try {
       var t = localStorage.getItem("govbot-theme");
       if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-      if (localStorage.getItem("govbot-hearings-design") === "new")
-        document.documentElement.setAttribute("data-design", "new");
     } catch (e) {}
   })();
 </script>
@@ -630,15 +520,15 @@
 <body>
 <div class="wrap">
   <nav class="tabs" aria-label="Dashboards">
-    <a class="tab tab-legis" href="index.html">Legislation Dashboard</a>
-    <a class="tab tab-hearings" href="hearings.html" aria-current="page">Committee Hearings &amp; Witness Slips</a>
-    <a class="tab tab-elections" href="elections.html">Elections Happening in IL</a>
-    <a class="tab tab-arch" href="architecture.html">Site Architecture</a>
+    <a class="tab tab-legis" href="legislation.html">Explore Legislation</a>
+    <a class="tab tab-hearings" href="hearings.html" aria-current="page">Hearings &amp; Public Comment</a>
+    <a class="tab tab-elections" href="elections.html">Illinois Elections</a>
+    <a class="tab tab-arch" href="architecture.html">How Govbot Works</a>
   </nav>
   <header class="top">
     <div class="brandbar celebrate">
       <canvas class="fw-canvas" id="fw-canvas" aria-hidden="true"></canvas>
-      <a class="brand" href="../index.html" aria-label="govbot home">
+      <a class="brand" href="index.html" aria-label="govbot home">
         <img class="brand-logo" src="govbot-logo.png" width="48" height="48" alt="">
         <span class="brand-name">gov<span class="bot">bot</span></span>
       </a>
@@ -648,20 +538,32 @@
           <button type="button" data-theme-choice="auto"  title="Match system" aria-label="Match system theme" aria-pressed="false">Auto</button>
           <button type="button" data-theme-choice="dark"  title="Dark theme"  aria-label="Dark theme" aria-pressed="false">☾</button>
         </div>
-        <label class="design-toggle" title="Preview a Polymarket-inspired look">
-          <input type="checkbox" id="design-switch" role="switch" aria-label="New Design">
-          <span class="dt-track" aria-hidden="true"><span class="dt-thumb"></span></span>
-          <span class="dt-label">New Design</span>
-        </label>
       </div>
     </div>
-    <div class="title-row">
-      <h1>Committee Hearings &amp; Witness Slips</h1>
+    <div class="hh-hero">
+      <div class="hh-hero-copy">
+        <div class="gb-overline" style="color:var(--series-3)">Hearings &amp; Public Comment</div>
+        <h1 class="hh-title">Have your say.</h1>
+        <p class="hh-tagline">Government isn’t just something you watch — you can participate.</p>
+        <p class="hh-stats" id="hh-stats"></p>
+        <div class="hh-cta-row"><a class="gb-btn gb-btn-primary" href="#hearings-card">See upcoming hearings</a></div>
+        <p class="hh-docs"><a class="docs-link" href="../index.html">govbot docs</a> ·
+           <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
+      </div>
+      <div class="hh-hero-art" aria-hidden="true">
+        <svg viewBox="0 0 240 184" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#D6A84F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <circle cx="120" cy="12" r="3" fill="#F0C969" stroke="none"/>
+            <path d="M120 15 C106 15 98 30 98 44 L142 44 C142 30 134 15 120 15 Z"/>
+            <path d="M108 44 L108 60 M120 44 L120 60 M132 44 L132 60"/>
+            <path d="M70 80 L120 58 L170 80 Z"/>
+            <path d="M66 84 L174 84"/>
+            <path d="M74 88 L74 150 M90 88 L90 150 M106 88 L106 150 M120 88 L120 150 M134 88 L134 150 M150 88 L150 150 M166 88 L166 150"/>
+            <path d="M60 152 L180 152 M54 162 L186 162 M48 172 L192 172"/>
+          </g>
+        </svg>
+      </div>
     </div>
-    <p>Upcoming legislative committee hearings where the public can weigh in,
-       with a how-to-participate directory for every state and territory.
-       <a class="docs-link" href="../index.html">govbot docs</a> ·
-       <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
   </header>
 
   <section class="card card--accent card--hearings" id="hearings-card" hidden>
@@ -680,7 +582,11 @@
     <div id="hearings-body" class="hearings-groups"></div>
   </section>
 
-  <p class="empty" id="hearings-empty" hidden>Loading committee hearings…</p>
+  <div class="gb-loading" id="hearings-loading">
+    <div class="gb-spinner" aria-hidden="true"></div>
+    <p>Loading committee hearings…</p>
+  </div>
+  <div class="gb-state" id="hearings-empty" hidden></div>
 
   <section class="card card--accent" id="participation-card" hidden>
     <div class="hearings-head">
@@ -755,21 +661,6 @@
     apply(saved());
   })();
 
-  // ----- "New Design" (Polymarket-inspired) toggle — scoped to this page -----
-  (function initDesign() {
-    const root = document.documentElement;
-    const sw = document.getElementById("design-switch");
-    if (!sw) return;
-    sw.checked = root.getAttribute("data-design") === "new";
-    sw.addEventListener("change", () => {
-      if (sw.checked) root.setAttribute("data-design", "new");
-      else root.removeAttribute("data-design");
-      try {
-        if (sw.checked) localStorage.setItem("govbot-hearings-design", "new");
-        else localStorage.removeItem("govbot-hearings-design");
-      } catch (e) {}
-    });
-  })();
 
   // ISO "2026-07-05T21:02:28Z" -> "July 5, 2026, 21:02 UTC"; robust to a
   // bare date or a bad value (falls back to the raw string, then null).
@@ -818,8 +709,18 @@
     fetch("hearings.json")
       .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(renderHearings)
-      .catch(() => { const e = $("hearings-empty"); if (e) { e.hidden = false;
-        e.textContent = "Couldn\u2019t load committee hearings right now. Please try again shortly."; } });
+      .catch(() => {
+        const ld = $("hearings-loading"); if (ld) ld.remove();
+        const e = $("hearings-empty");
+        if (e) {
+          e.classList.add("gb-state--error");
+          e.innerHTML = '<svg class="gb-state-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 9v4"/><path d="M12 16h.01"/></svg><h3>Couldn\u2019t load hearings</h3><p>The hearings data didn\u2019t load right now. Please try again shortly.</p>';
+          const act = document.createElement("div"); act.className = "gb-state-actions";
+          const btn = document.createElement("button"); btn.type = "button"; btn.className = "clear-btn"; btn.textContent = "Try again";
+          btn.addEventListener("click", () => location.reload()); act.append(btn); e.append(act);
+          e.hidden = false;
+        }
+      });
   }
 
   function eln(tag, cls, text) {
@@ -834,11 +735,25 @@
                       "--series-6", "--series-8", "--series-7", "--series-4"];
 
   function renderHearings(data) {
+    const ld = $("hearings-loading"); if (ld) ld.remove();
     const hearings = (data && data.hearings) || [];
-    if (!hearings.length) { const e = $("hearings-empty"); if (e) e.hidden = false; return; }
+    if (!hearings.length) {
+      const e = $("hearings-empty");
+      if (e) {
+        e.innerHTML = '<svg class="gb-state-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><h3>No upcoming hearings</h3><p>There are no scheduled hearings in the current window. Check back soon, or follow a state by RSS to hear when one opens.</p>';
+        e.hidden = false;
+      }
+      return;
+    }
     const card = $("hearings-card");
     const body = $("hearings-body");
     body.textContent = "";
+
+    const openComment = hearings.filter((h) => h.status !== "canceled" && h.witness_slip_url).length;
+    const jurCount = new Set(hearings.map((h) => h.jurisdiction)).size;
+    const stEl = $("hh-stats");
+    if (stEl) stEl.textContent = hearings.length + " upcoming hearing" + (hearings.length === 1 ? "" : "s") +
+      " · " + openComment + " open to public comment · " + jurCount + " jurisdiction" + (jurCount === 1 ? "" : "s");
 
     const asof = formatAsOf(data.generated_at);
     if (asof) $("hearings-asof").textContent = "Updated " + asof;
@@ -901,6 +816,7 @@
     timeRow.append(eln("b", null, hearingWhen(h)));
     if (h.status === "canceled") timeRow.append(eln("span", "h-badge", "Canceled"));
     when.append(timeRow);
+    if (h.status !== "canceled" && h.witness_slip_url) when.append(eln("span", "h-open", "Public comment open"));
     row.append(when);
 
     const main = eln("div", "h-main");
@@ -925,7 +841,7 @@
         }
         if (b.govbot_title || (b.govbot_tags && b.govbot_tags.length)) {
           const g = eln("a", "gov-link", "via govbot ↗");
-          g.href = "index.html#q=" + encodeURIComponent(b.id);
+          g.href = "legislation.html#q=" + encodeURIComponent(b.id);
           g.title = "View " + b.id + " in the govbot Legislation Dashboard";
           row.append(g);
         }
