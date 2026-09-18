@@ -178,6 +178,9 @@ Validate + normalize → AI topic tagging → Open data → Your dashboards) and
 trustworthy" card strip (`.gw-trust`: twice-daily refresh, source lineage, fail-soft, open RSS,
 open source, known limits), with the existing detailed per-pipeline diagrams kept below as the
 "full picture" (progressive disclosure). Stale product labels were updated to the new names.
+All five pages share a single **browser-tab favicon**: an inline SVG data-URI of the Govbot robot
+face (dark rounded tile, silver dome, gold antenna + eyes, green mouth bar) in the civic palette,
+crisp at 16px — replacing the old per-page torch/pinwheel icons.
 
 The Pages site has a **Homepage plus three dashboards plus a How-Govbot-Works page**:
 `docs/src/dashboard/index.html` (the **Homepage**),
