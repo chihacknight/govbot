@@ -158,6 +158,14 @@ your ballot before you vote." / a dynamic "Next election" line / an "Explore rac
 counts) that drives the existing `#f-ballot` filter, reveals the sections, and scrolls to
 `#groups` (`renderElectionHero`). The rich race engine (groups, five drawers, calendar,
 Springfield, picker) is unchanged.
+`hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
+"Hearings & Public Comment", tagline "Government isn't just something you watch — you can
+participate.", a dynamic "N upcoming · N open to public comment · N jurisdictions" line, a gold
+capitol line-art motif, and a "See upcoming hearings" CTA; the America-250 `250th` fireworks
+brandbar is kept). Each hearing now makes participation obvious: a green **"Public comment open"**
+badge on the date column and the witness-slip/comment action elevated into a filled green
+`.file-link` pill. The `<title>` was also corrected (it had been a stray "Legislation Dashboard").
+The hearing/participation render engine is otherwise unchanged.
 
 The Pages site has a **Homepage plus three dashboards plus a How-Govbot-Works page**:
 `docs/src/dashboard/index.html` (the **Homepage**),

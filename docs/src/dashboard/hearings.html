@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="assets/govbot.css">
-<title>govbot — Legislation Dashboard</title>
+<title>Govbot — Hearings &amp; Public Comment</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20200%20200%22%3E%3Cpolygon%20points%3D%2282%2C68.8%20100%2C8%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22100%2C8%20118%2C68.8%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C68.8%20179.7%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22179.7%2C54%20136%2C100%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%22136%2C100%20179.7%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22179.7%2C146%20118%2C131.2%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C131.2%20100%2C192%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22100%2C192%2082%2C131.2%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%2282%2C131.2%2020.3%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%2220.3%2C146%2064%2C100%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%2264%2C100%2020.3%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%2220.3%2C54%2082%2C68.8%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3C/svg%3E">
 <style>
   /* Dark palette. Applied when the OS prefers dark AND the user hasn't
@@ -484,6 +484,26 @@
   /* theme toggle (top-right controls) */
   .controls-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex: none; }
   .controls-stack .theme-toggle { flex: none; }
+
+  /* ===== Hearings — "Have your say" participation hero ===== */
+  .hh-hero { display: flex; align-items: center; gap: 26px; margin: 8px 0 6px; }
+  .hh-hero-copy { flex: 1 1 auto; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .hh-title { margin: 2px 0 0; font-size: 52px; line-height: 1.0; }
+  .hh-tagline { margin: 0; font-family: var(--gb-font-display); font-size: 20px; color: var(--text-secondary); max-width: 46ch; }
+  .hh-stats { margin: 4px 0 0; font-size: 14px; color: var(--series-3); font-weight: 600; }
+  .hh-cta-row { margin-top: 4px; }
+  .hh-docs { margin: 8px 0 0; font-size: 13px; }
+  .hh-hero-art { flex: 0 0 auto; width: 240px; max-width: 38%; filter: drop-shadow(0 0 20px rgba(214,168,79,0.28)); }
+  .hh-hero-art svg { width: 100%; height: auto; display: block; opacity: 0.92; }
+  @media (max-width: 760px) { .hh-hero { gap: 14px; } .hh-hero-art { width: 132px; } .hh-title { font-size: 38px; } }
+
+  /* participation status made obvious on each hearing */
+  .h-open { display: inline-block; margin-top: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+    color: var(--series-2); background: color-mix(in srgb, var(--series-2) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--series-2) 45%, transparent); border-radius: 999px; padding: 2px 9px; }
+  .file-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 650;
+    color: #06210a; background: var(--series-2); border-radius: 999px; padding: 7px 14px; }
+  .file-link:hover { background: color-mix(in srgb, var(--series-2) 85%, #ffffff); color: #06210a; }
 </style>
 <script>
   // Apply a saved theme choice before first paint to avoid a flash of the
@@ -520,13 +540,30 @@
         </div>
       </div>
     </div>
-    <div class="title-row">
-      <h1>Committee Hearings &amp; Witness Slips</h1>
+    <div class="hh-hero">
+      <div class="hh-hero-copy">
+        <div class="gb-overline" style="color:var(--series-3)">Hearings &amp; Public Comment</div>
+        <h1 class="hh-title">Have your say.</h1>
+        <p class="hh-tagline">Government isn’t just something you watch — you can participate.</p>
+        <p class="hh-stats" id="hh-stats"></p>
+        <div class="hh-cta-row"><a class="gb-btn gb-btn-primary" href="#hearings-card">See upcoming hearings</a></div>
+        <p class="hh-docs"><a class="docs-link" href="../index.html">govbot docs</a> ·
+           <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
+      </div>
+      <div class="hh-hero-art" aria-hidden="true">
+        <svg viewBox="0 0 240 184" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#D6A84F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <circle cx="120" cy="12" r="3" fill="#F0C969" stroke="none"/>
+            <path d="M120 15 C106 15 98 30 98 44 L142 44 C142 30 134 15 120 15 Z"/>
+            <path d="M108 44 L108 60 M120 44 L120 60 M132 44 L132 60"/>
+            <path d="M70 80 L120 58 L170 80 Z"/>
+            <path d="M66 84 L174 84"/>
+            <path d="M74 88 L74 150 M90 88 L90 150 M106 88 L106 150 M120 88 L120 150 M134 88 L134 150 M150 88 L150 150 M166 88 L166 150"/>
+            <path d="M60 152 L180 152 M54 162 L186 162 M48 172 L192 172"/>
+          </g>
+        </svg>
+      </div>
     </div>
-    <p>Upcoming legislative committee hearings where the public can weigh in,
-       with a how-to-participate directory for every state and territory.
-       <a class="docs-link" href="../index.html">govbot docs</a> ·
-       <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
   </header>
 
   <section class="card card--accent card--hearings" id="hearings-card" hidden>
@@ -690,6 +727,12 @@
     const body = $("hearings-body");
     body.textContent = "";
 
+    const openComment = hearings.filter((h) => h.status !== "canceled" && h.witness_slip_url).length;
+    const jurCount = new Set(hearings.map((h) => h.jurisdiction)).size;
+    const stEl = $("hh-stats");
+    if (stEl) stEl.textContent = hearings.length + " upcoming hearing" + (hearings.length === 1 ? "" : "s") +
+      " · " + openComment + " open to public comment · " + jurCount + " jurisdiction" + (jurCount === 1 ? "" : "s");
+
     const asof = formatAsOf(data.generated_at);
     if (asof) $("hearings-asof").textContent = "Updated " + asof;
 
@@ -751,6 +794,7 @@
     timeRow.append(eln("b", null, hearingWhen(h)));
     if (h.status === "canceled") timeRow.append(eln("span", "h-badge", "Canceled"));
     when.append(timeRow);
+    if (h.status !== "canceled" && h.witness_slip_url) when.append(eln("span", "h-open", "Public comment open"));
     row.append(when);
 
     const main = eln("div", "h-main");
