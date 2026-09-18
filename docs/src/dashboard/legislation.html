@@ -1619,7 +1619,7 @@
     const all = (acts.join(" | ") + " | " + (b.latest_action_desc || "")).toLowerCase();
     let i = 0;
     if (/committee|referred|assigned to|first reading|second reading|do pass|reported/.test(all)) i = Math.max(i, 1);
-    if (/passed (the )?house|house passed|passed lower|third reading/.test(all)) i = Math.max(i, 2);
+    if (/passed (the )?house|house passed|passed lower/.test(all)) i = Math.max(i, 2);
     if (/passed (the )?senate|senate passed|passed upper|concurred|sent to (the )?senate/.test(all)) i = Math.max(i, 3);
     if (/governor|signed into law|public act|chaptered|enacted|approved by governor|became law|delivered to (the )?governor/.test(all)) i = Math.max(i, 4);
     return i;

@@ -329,6 +329,8 @@
     return Math.floor(days / 30) + "mo";
   }
   function esc(s) { var e = document.createElement("div"); e.textContent = s == null ? "" : String(s); return e.innerHTML; }
+  // Attribute-safe: esc() escapes <>& but not quotes, which would break out of a quoted attribute.
+  function escAttr(s) { return esc(s).replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
 
   // ---- recent legislative activity ----
   fetch("data.json").then(function (r) { return r.json(); }).then(function (d) {
@@ -342,7 +344,7 @@
       var desc = b.latest_action_desc || b.title || "";
       if (desc.length > 92) desc = desc.slice(0, 90) + "…";
       var q = String(b.id || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-      return '<a class="activity-row" style="text-decoration:none;color:inherit;" href="legislation.html#q=' + esc(q) + '">' +
+      return '<a class="activity-row" style="text-decoration:none;color:inherit;" href="legislation.html#q=' + escAttr(q) + '">' +
         '<span class="tag">' + esc(st) + ' · ' + esc(b.id) + '</span>' +
         '<span class="desc">' + esc(desc) + '</span>' +
         '<span class="when">' + esc(ago(b.latest_action)) + '</span></a>';
@@ -367,7 +369,7 @@
       if (label.length > 60) label = label.slice(0, 58) + "…";
       var url = x.witness_slip_url || x.details_url || "hearings.html";
       var border = i === 0 ? "border:none;padding-top:0;" : "";
-      return '<a class="activity-row" style="' + border + 'text-decoration:none;color:inherit;" href="' + esc(url) + '">' +
+      return '<a class="activity-row" style="' + border + 'text-decoration:none;color:inherit;" href="' + escAttr(url) + '">' +
         '<div class="mini-date"><div class="d">' + esc(day) + '</div><div class="m">' + esc(mon) + '</div></div>' +
         '<span class="desc">' + esc(juris) + ' — ' + esc(label) + '</span></a>';
     }).join("");
