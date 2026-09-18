@@ -134,15 +134,29 @@ names must stay in sync with the keyword fallback in `scripts/dashboard_tags.jso
 `docs/src/dashboard-guide.md` for the data flow; tagging in CI is incremental via
 `scripts/filter_new_bills.py` + `scripts/tag_dashboard_repo.sh`.
 
-The Pages site has **three dashboards plus a Site Architecture page**, linked by a tab bar:
-`docs/src/dashboard/index.html` (the Legislation Dashboard above),
-`docs/src/dashboard/hearings.html` (**Committee Hearings & Witness Slips**),
-`docs/src/dashboard/elections.html` (**Elections Happening in IL**), and
-`docs/src/dashboard/architecture.html` (a static, no-data explainer of all three backend
-pipelines — keep its tab bar and the `.tab-arch` accent in sync with the other pages
-whenever the tab bar changes). Tab order is Legislation · Hearings · Elections Happening in IL ·
-Site Architecture across all four pages, with accents `.tab-legis` (blue), `.tab-hearings`
-(gold), `.tab-elections` (green), `.tab-arch` (purple). All four pages share a floating
+**Civic redesign (in progress).** The dashboard is being revamped into a dark-mode-first
+"civic institution" per the design brief in `tamara-notes/`. Shared design system lives in
+`docs/src/dashboard/assets/govbot.css` (dark-first tokens + components; legacy token names like
+`--page`/`--series-N` are aliased to the civic palette so unmigrated inline page CSS reskins
+automatically) and `docs/src/dashboard/assets/govbot-shell.js` (theme toggle with dark default,
+mobile nav drawer, back-to-top, global search). `docs/src/dashboard/index.html` is now the
+**Homepage** landing page (Lady Liberty gold line-art hero, "What do you want to know?" cards,
+live "What's happening now" fetched fail-soft from `data.json`/`hearings.json`/`elections.json`).
+Pages migrate to the shared system one at a time; the old per-page "New Design" skins + toggle
+are retired as each page is migrated.
+
+The Pages site has a **Homepage plus three dashboards plus a How-Govbot-Works page**:
+`docs/src/dashboard/index.html` (the **Homepage**),
+`docs/src/dashboard/legislation.html` (**Explore Legislation** — the legislation dashboard,
+formerly `index.html`; deep links are `legislation.html#q=<billid>`),
+`docs/src/dashboard/hearings.html` (**Hearings & Public Comment**),
+`docs/src/dashboard/elections.html` (**Illinois Elections**), and
+`docs/src/dashboard/architecture.html` (**How Govbot Works** — a static, no-data explainer of all
+three backend pipelines — keep its tab bar and the `.tab-arch` accent in sync with the other pages
+whenever the tab bar changes). The product pages share a tab bar (order: Explore Legislation ·
+Hearings & Public Comment · Illinois Elections · How Govbot Works), with accents `.tab-legis`
+(blue), `.tab-hearings` (gold), `.tab-elections` (green), `.tab-arch` (purple); the Homepage uses
+the global nav header instead. The Govbot logo on every page links to the Homepage (`index.html`). All four pages share a floating
 `.to-top` "Back to Top" button (fixed bottom-right, shown after ~400px of scroll) styled as
 a liquid-glass pill (translucent + `backdrop-filter` blur). **Every generated RSS feed** (both
 the hearings and elections pipelines) carries an `<?xml-stylesheet type="text/xsl"
@@ -213,7 +227,7 @@ The page has an "On this page" table of contents; every RSS control reads "Follo
 race (RSS)" in red; each major section carries a thick colored top border; the Legislation
 Dashboard's Bill column is plain text (the official-source link lives in the details card). Each
 bill row also has a **"Share"** button beside "Details" (and a "Share this bill" link in the
-details card's Sources) that copies a deep link `index.html#q=<billid>` (id lowercased, punctuation
+details card's Sources) that copies a deep link `legislation.html#q=<billid>` (id lowercased, punctuation
 stripped, e.g. `#q=sb813`); opening it lands the dashboard pre-filtered to that bill — the search
 filter now also matches ids ignoring spaces/punctuation, and a `hashchange` listener re-applies the
 `#q=` filter live. The details card lists each **sponsor/co-sponsor with their current party (a

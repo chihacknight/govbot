@@ -630,15 +630,15 @@
 <body>
 <div class="wrap">
   <nav class="tabs" aria-label="Dashboards">
-    <a class="tab tab-legis" href="index.html">Legislation Dashboard</a>
-    <a class="tab tab-hearings" href="hearings.html" aria-current="page">Committee Hearings &amp; Witness Slips</a>
-    <a class="tab tab-elections" href="elections.html">Elections Happening in IL</a>
-    <a class="tab tab-arch" href="architecture.html">Site Architecture</a>
+    <a class="tab tab-legis" href="legislation.html">Explore Legislation</a>
+    <a class="tab tab-hearings" href="hearings.html" aria-current="page">Hearings &amp; Public Comment</a>
+    <a class="tab tab-elections" href="elections.html">Illinois Elections</a>
+    <a class="tab tab-arch" href="architecture.html">How Govbot Works</a>
   </nav>
   <header class="top">
     <div class="brandbar celebrate">
       <canvas class="fw-canvas" id="fw-canvas" aria-hidden="true"></canvas>
-      <a class="brand" href="../index.html" aria-label="govbot home">
+      <a class="brand" href="index.html" aria-label="govbot home">
         <img class="brand-logo" src="govbot-logo.png" width="48" height="48" alt="">
         <span class="brand-name">gov<span class="bot">bot</span></span>
       </a>
@@ -925,7 +925,7 @@
         }
         if (b.govbot_title || (b.govbot_tags && b.govbot_tags.length)) {
           const g = eln("a", "gov-link", "via govbot ↗");
-          g.href = "index.html#q=" + encodeURIComponent(b.id);
+          g.href = "legislation.html#q=" + encodeURIComponent(b.id);
           g.title = "View " + b.id + " in the govbot Legislation Dashboard";
           row.append(g);
         }

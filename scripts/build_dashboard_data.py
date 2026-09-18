@@ -2,7 +2,7 @@
 """Aggregate cloned govbot repos into a single data file for the Pages dashboard.
 
 Scans every ``metadata.json`` under ``<govbot-dir>/repos/*/**/bills/*/`` and
-emits one compact JSON document consumed by ``docs/src/dashboard/index.html``.
+emits one compact JSON document consumed by ``docs/src/dashboard/legislation.html``.
 
 Two bill formats are recognized:
 

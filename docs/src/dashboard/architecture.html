@@ -430,14 +430,14 @@
 <body>
 <div class="wrap">
   <nav class="tabs" aria-label="Dashboards">
-    <a class="tab tab-legis" href="index.html">Legislation Dashboard</a>
-    <a class="tab tab-hearings" href="hearings.html">Committee Hearings &amp; Witness Slips</a>
-    <a class="tab tab-elections" href="elections.html">Elections Happening in IL</a>
-    <a class="tab tab-arch" href="architecture.html" aria-current="page">Site Architecture</a>
+    <a class="tab tab-legis" href="legislation.html">Explore Legislation</a>
+    <a class="tab tab-hearings" href="hearings.html">Hearings &amp; Public Comment</a>
+    <a class="tab tab-elections" href="elections.html">Illinois Elections</a>
+    <a class="tab tab-arch" href="architecture.html" aria-current="page">How Govbot Works</a>
   </nav>
   <header class="top">
     <div class="brandbar">
-      <a class="brand" href="../index.html" aria-label="govbot home">
+      <a class="brand" href="index.html" aria-label="govbot home">
         <img class="brand-logo" src="govbot-logo.png" width="40" height="40" alt="" aria-hidden="true">
         <span class="brand-name">gov<span class="bot">bot</span></span>
       </a>
@@ -554,7 +554,7 @@
 
         <div class="fan-label">what you open in the browser</div>
         <div class="fan">
-          <span class="out" style="--c: var(--series-1)"><span class="out-ico" aria-hidden="true">🏛️</span> Legislation Dashboard <span class="out-sub">index.html</span></span>
+          <span class="out" style="--c: var(--series-1)"><span class="out-ico" aria-hidden="true">🏛️</span> Explore Legislation <span class="out-sub">legislation.html</span></span>
           <span class="out" style="--c: var(--series-3)"><span class="out-ico" aria-hidden="true">🗓️</span> Hearings Dashboard <span class="out-sub">hearings.html</span></span>
           <span class="out" style="--c: var(--series-2)"><span class="out-ico" aria-hidden="true">🗳️</span> Elections Happening in IL <span class="out-sub">elections.html</span></span>
           <span class="out" style="--c: var(--series-5)"><span class="out-ico" aria-hidden="true">🗺️</span> This page <span class="out-sub">architecture.html</span></span>
@@ -655,7 +655,7 @@
       <li><b>Skip what's unchanged.</b> A ledger of already-seen bills means only <em>new</em> bills go through the expensive tagging step — the rest are reused.</li>
       <li><b>Tag with a tiny AI model.</b> An embedding model compares each bill's text to a curated list of topics and attaches the closest matches. If the model can't load, a keyword list stands in.</li>
       <li><b>Flatten to one file.</b> Everything is merged into <code>data.json</code> — the single file the dashboard downloads.</li>
-      <li><b>Render in the browser.</b> <code>index.html</code> reads that file and builds the charts, filters, table, and per-bill details modal (which fetches the live govbot record on demand).</li>
+      <li><b>Render in the browser.</b> <code>legislation.html</code> reads that file and builds the charts, filters, table, and per-bill details modal (which fetches the live govbot record on demand).</li>
     </ol>
 
     <div class="callout" style="--c: var(--series-3)">
