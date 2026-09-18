@@ -166,6 +166,12 @@ brandbar is kept). Each hearing now makes participation obvious: a green **"Publ
 badge on the date column and the witness-slip/comment action elevated into a filled green
 `.file-link` pill. The `<title>` was also corrected (it had been a stray "Legislation Dashboard").
 The hearing/participation render engine is otherwise unchanged.
+`architecture.html` is retitled **"How Govbot Works"** and now opens with a nontechnical layer: a
+plain-English six-stage overview pipeline (`.gw-pipeline`: Government sources → Govbot pipelines →
+Validate + normalize → AI topic tagging → Open data → Your dashboards) and a "How it stays
+trustworthy" card strip (`.gw-trust`: twice-daily refresh, source lineage, fail-soft, open RSS,
+open source, known limits), with the existing detailed per-pipeline diagrams kept below as the
+"full picture" (progressive disclosure). Stale product labels were updated to the new names.
 
 The Pages site has a **Homepage plus three dashboards plus a How-Govbot-Works page**:
 `docs/src/dashboard/index.html` (the **Homepage**),
