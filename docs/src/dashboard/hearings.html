@@ -508,7 +508,15 @@
   .hh-docs { margin: 8px 0 0; font-size: 13px; }
   .hh-hero-art { flex: 0 0 auto; width: 340px; max-width: 46%; filter: drop-shadow(0 0 22px rgba(214,168,79,0.22)); }
   .hh-hero-art img { width: 100%; height: auto; display: block; opacity: 0.95; }
-  @media (max-width: 760px) { .hh-hero { gap: 14px; } .hh-hero-art { width: 190px; } .hh-title { font-size: 38px; } }
+  /* Mobile: stack the hero so the copy sits above the art. The fireworks +
+     White House move to a lower band under the text instead of overlapping it. */
+  @media (max-width: 760px) {
+    .hh-hero { flex-direction: column; align-items: stretch; gap: 12px; padding: 26px 22px; }
+    .hh-title { font-size: 38px; }
+    .hh-hero-art { width: 82%; max-width: 300px; margin: 2px auto 0; align-self: center;
+      filter: drop-shadow(0 0 16px rgba(214,168,79,0.20)); }
+    .hh-hero .fw-canvas { top: auto; bottom: 0; height: 46%; }
+  }
 
   /* participation status made obvious on each hearing */
   .h-open { display: inline-block; margin-top: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
