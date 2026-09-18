@@ -3,80 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="assets/govbot.css">
 <title>Govbot — Explore Legislation</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20200%20200%22%3E%3Cpolygon%20points%3D%2282%2C68.8%20100%2C8%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22100%2C8%20118%2C68.8%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C68.8%20179.7%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22179.7%2C54%20136%2C100%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%22136%2C100%20179.7%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22179.7%2C146%20118%2C131.2%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C131.2%20100%2C192%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22100%2C192%2082%2C131.2%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%2282%2C131.2%2020.3%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%2220.3%2C146%2064%2C100%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%2264%2C100%2020.3%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%2220.3%2C54%2082%2C68.8%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3C/svg%3E">
 <style>
-  :root {
-    --page:           #f9f9f7;
-    --surface-1:      #fcfcfb;
-    --text-primary:   #0b0b0b;
-    /* Non-link text is full-contrast (not gray) in both themes: secondary and
-       muted fold into primary here (light) and into white in the dark blocks. */
-    --text-secondary: #0b0b0b;
-    --text-muted:     #0b0b0b;
-    --gridline:       #e1e0d9;
-    --baseline:       #c3c2b7;
-    --border:         rgba(11,11,11,0.10);
-    --series-1: #2a78d6;
-    --series-2: #1baf7a;
-    --series-3: #eda100;
-    --series-4: #008300;
-    --series-5: #4a3aa7;
-    --series-6: #e34948;
-    --series-7: #e87ba4;
-    --series-8: #eb6834;
-    --bar-track: transparent;
-    --hover-wash: rgba(11,11,11,0.04);
-    --row-alt: rgba(11,11,11,0.028);
-  }
   /* Dark palette. Applied when the OS prefers dark AND the user hasn't
      forced a choice, OR when the user explicitly picks dark via the toggle.
      The two selectors carry identical values on purpose (plain CSS can't
      share a declaration block across a media-query boundary). */
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme]) {
-      --page:           #0d0d0d;
-      --surface-1:      #1a1a19;
-      --text-primary:   #ffffff;
-      /* Dark theme: non-link text is white, not gray (secondary/muted folded
-         into primary). Light theme below keeps its softer hierarchy. */
-      --text-secondary: #ffffff;
-      --text-muted:     #ffffff;
-      --gridline:       #2c2c2a;
-      --baseline:       #383835;
-      --border:         rgba(255,255,255,0.10);
-      --series-1: #3987e5;
-      --series-2: #199e70;
-      --series-3: #c98500;
-      --series-4: #008300;
-      --series-5: #9085e9;
-      --series-6: #e66767;
-      --series-7: #d55181;
-      --series-8: #d95926;
-      --hover-wash: rgba(255,255,255,0.06);
-      --row-alt: rgba(255,255,255,0.04);
-    }
-  }
-  :root[data-theme="dark"] {
-    --page:           #0d0d0d;
-    --surface-1:      #1a1a19;
-    --text-primary:   #ffffff;
-    --text-secondary: #ffffff;
-    --text-muted:     #ffffff;
-    --gridline:       #2c2c2a;
-    --baseline:       #383835;
-    --border:         rgba(255,255,255,0.10);
-    --series-1: #3987e5;
-    --series-2: #199e70;
-    --series-3: #c98500;
-    --series-4: #008300;
-    --series-5: #9085e9;
-    --series-6: #e66767;
-    --series-7: #d55181;
-    --series-8: #d95926;
-    --hover-wash: rgba(255,255,255,0.06);
-    --row-alt: rgba(255,255,255,0.04);
-  }
 
   * { box-sizing: border-box; }
   body {
@@ -155,16 +89,8 @@
   .theme-toggle button:hover { color: var(--text-primary); }
   .theme-toggle button[aria-pressed="true"] { background: var(--series-1); color: #fff; }
 
-  /* theme toggle + New Design switch stacked at the top-right */
+  /* theme toggle (top-right controls) */
   .controls-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex: none; }
-  .design-toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 12.5px; color: var(--text-secondary); --nd-accent: #635bff; }
-  .design-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
-  .design-toggle .dt-track { position: relative; width: 40px; height: 22px; border-radius: 999px; background: var(--gridline); border: 1px solid var(--border); transition: background 0.18s ease; flex: none; }
-  .design-toggle .dt-thumb { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface-1); box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform 0.18s ease; }
-  .design-toggle input:checked + .dt-track { background: var(--nd-accent); border-color: var(--nd-accent); }
-  .design-toggle input:checked + .dt-track .dt-thumb { transform: translateX(18px); background: #fff; }
-  .design-toggle input:focus-visible + .dt-track { outline: 2px solid var(--series-1); outline-offset: 2px; }
-  .design-toggle .dt-label { font-weight: 600; white-space: nowrap; }
 
   /* ---------- filter row ---------- */
   .filters {
@@ -478,57 +404,6 @@
   .modal-card .m-chip { color: var(--text-primary); }
   .modal-card .m-chip.is-law { color: var(--text-primary); }  /* keep green border */
   .modal-card .m-chip.is-state { color: #fff; }  /* keep white text on filled accent */
-
-  /* ==================================================================== */
-  /*  NEW DESIGN — Stripe-inspired (toggled per viewer, this page only).   */
-  /*  Blurple #635BFF, soft shadows, rounded cards, airy off-white ground. */
-  /*  Placed last so its token + component overrides win by source order.  */
-  /* ==================================================================== */
-  :root[data-design="new"] {
-    --page: #f6f9fc; --surface-1: #ffffff;
-    --text-primary: #0a2540; --text-secondary: #425466; --text-muted: #697386;
-    --gridline: #e6ebf1; --baseline: #cfd7df; --border: rgba(10,37,64,0.09);
-    --hover-wash: rgba(10,37,64,0.035); --row-alt: rgba(10,37,64,0.02);
-    --series-1: #635bff;
-    --st-accent: #635bff;
-  }
-  :root[data-design="new"][data-theme="dark"] {
-    --page: #0a0e27; --surface-1: #1a1f36;
-    --text-primary: #ffffff; --text-secondary: #c1c9d2; --text-muted: #8b95a5;
-    --gridline: #2a2f45; --baseline: #3b4160; --border: rgba(255,255,255,0.10);
-    --hover-wash: rgba(255,255,255,0.05); --row-alt: rgba(255,255,255,0.03);
-    --series-1: #8b85ff;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root[data-design="new"]:not([data-theme]) {
-      --page: #0a0e27; --surface-1: #1a1f36;
-      --text-primary: #ffffff; --text-secondary: #c1c9d2; --text-muted: #8b95a5;
-      --gridline: #2a2f45; --baseline: #3b4160; --border: rgba(255,255,255,0.10);
-      --hover-wash: rgba(255,255,255,0.05); --row-alt: rgba(255,255,255,0.03);
-      --series-1: #8b85ff;
-    }
-  }
-  :root[data-design="new"] body {
-    font-family: "Inter", ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    letter-spacing: -0.006em;
-  }
-  :root[data-design="new"] header.top h1 { font-weight: 700; letter-spacing: -0.025em; }
-  /* tabs → flat with a blurple underline on the active tab */
-  :root[data-design="new"] .tab { border-top-color: transparent !important; }
-  :root[data-design="new"] .tab[aria-current="page"] { background: transparent; border-color: transparent; box-shadow: inset 0 -3px 0 var(--st-accent, #635bff); }
-  :root[data-design="new"] .tab:hover { color: var(--st-accent, #635bff); }
-  /* cards & tiles → Stripe's soft shadow, rounded, minimal border */
-  :root[data-design="new"] .card, :root[data-design="new"] .tile, :root[data-design="new"] .modal-card {
-    border-radius: 14px; border-color: var(--border);
-    box-shadow: 0 2px 5px -1px rgba(50,50,93,0.10), 0 1px 3px -1px rgba(0,0,0,0.07);
-  }
-  :root[data-design="new"] .card--accent { border-width: 1px; }
-  :root[data-design="new"] .tile .value { color: var(--st-accent, #635bff); }
-  :root[data-design="new"] .theme-toggle button[aria-pressed="true"] { background: var(--st-accent, #635bff); color: #fff; }
-  :root[data-design="new"] .details-btn, :root[data-design="new"] a { color: var(--st-accent, #635bff); }
-  :root[data-design="new"] .filters input, :root[data-design="new"] .filters select,
-  :root[data-design="new"] .msel > button, :root[data-design="new"] .clear-btn { border-radius: 9px; }
-  :root[data-design="new"] .to-top:hover { box-shadow: 0 14px 40px rgba(99,91,255,0.25), inset 0 1px 0 rgba(255,255,255,0.6); }
 </style>
 <script>
   // Apply a saved theme choice before first paint to avoid a flash of the
@@ -538,8 +413,6 @@
     try {
       var t = localStorage.getItem("govbot-theme");
       if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-      if (localStorage.getItem("govbot-legislation-design") === "new")
-        document.documentElement.setAttribute("data-design", "new");
     } catch (e) {}
   })();
 </script>
@@ -564,11 +437,6 @@
           <button type="button" data-theme-choice="auto"  title="Match system" aria-label="Match system theme" aria-pressed="false">Auto</button>
           <button type="button" data-theme-choice="dark"  title="Dark theme"  aria-label="Dark theme" aria-pressed="false">☾</button>
         </div>
-        <label class="design-toggle" title="Preview a Stripe-inspired look">
-          <input type="checkbox" id="design-switch" role="switch" aria-label="New Design">
-          <span class="dt-track" aria-hidden="true"><span class="dt-thumb"></span></span>
-          <span class="dt-label">New Design</span>
-        </label>
       </div>
     </div>
     <div class="title-row">
@@ -701,21 +569,6 @@
     apply(saved());
   })();
 
-  // ----- "New Design" (Stripe-inspired) toggle — scoped to this page -----
-  (function initDesign() {
-    const root = document.documentElement;
-    const sw = document.getElementById("design-switch");
-    if (!sw) return;
-    sw.checked = root.getAttribute("data-design") === "new";
-    sw.addEventListener("change", () => {
-      if (sw.checked) root.setAttribute("data-design", "new");
-      else root.removeAttribute("data-design");
-      try {
-        if (sw.checked) localStorage.setItem("govbot-legislation-design", "new");
-        else localStorage.removeItem("govbot-legislation-design");
-      } catch (e) {}
-    });
-  })();
 
   const state = {
     data: null,

@@ -3,92 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="assets/govbot.css">
 <title>govbot — Site Architecture</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20200%20200%22%3E%3Cpolygon%20points%3D%2282%2C68.8%20100%2C8%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22100%2C8%20118%2C68.8%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C68.8%20179.7%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22179.7%2C54%20136%2C100%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%22136%2C100%20179.7%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22179.7%2C146%20118%2C131.2%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C131.2%20100%2C192%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22100%2C192%2082%2C131.2%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%2282%2C131.2%2020.3%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%2220.3%2C146%2064%2C100%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%2264%2C100%2020.3%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%2220.3%2C54%2082%2C68.8%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3C/svg%3E">
 <style>
   :root {
-    --page:           #f9f9f7;
-    --surface-1:      #fcfcfb;
-    --text-primary:   #0b0b0b;
-    /* Non-link text is full-contrast (not gray) in both themes: secondary and
-       muted fold into primary here (light) and into white in the dark blocks. */
-    --text-secondary: #0b0b0b;
-    --text-muted:     #0b0b0b;
-    --gridline:       #e1e0d9;
-    --baseline:       #c3c2b7;
-    --border:         rgba(11,11,11,0.10);
-    --series-1: #2a78d6;
-    --series-2: #1baf7a;
-    --series-3: #eda100;
-    --series-4: #008300;
-    --series-5: #4a3aa7;
-    --series-6: #e34948;
-    --series-7: #e87ba4;
-    --series-8: #eb6834;
-    --hover-wash: rgba(11,11,11,0.04);
-    --row-alt: rgba(11,11,11,0.028);
-    /* Diagram surface: node boxes read as a dark "console" panel in BOTH themes
-       (like the reference flowchart), with the accent color doing the talking. */
+    /* Standard tokens come from assets/govbot.css (dark-first + light override).
+       Only the diagram "console panel" vars are page-specific; they read dark in
+       both themes by design, so they are not re-themed. */
     --diagram-bg:   #10131a;
     --diagram-grid: rgba(255,255,255,0.05);
     --node-bg:      #171b24;
     --node-text:    #eef1f6;
     --node-sub:     #aeb6c4;
     --connector:    #3a4152;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme]) {
-      --page:           #0d0d0d;
-      --surface-1:      #1a1a19;
-      --text-primary:   #ffffff;
-      --text-secondary: #ffffff;
-      --text-muted:     #ffffff;
-      --gridline:       #2c2c2a;
-      --baseline:       #383835;
-      --border:         rgba(255,255,255,0.10);
-      --series-1: #3987e5;
-      --series-2: #199e70;
-      --series-3: #c98500;
-      --series-4: #008300;
-      --series-5: #9085e9;
-      --series-6: #e66767;
-      --series-7: #d55181;
-      --series-8: #d95926;
-      --hover-wash: rgba(255,255,255,0.06);
-      --row-alt: rgba(255,255,255,0.04);
-      --diagram-bg:   #0a0c11;
-      --diagram-grid: rgba(255,255,255,0.045);
-      --node-bg:      #14171f;
-      --node-text:    #eef1f6;
-      --node-sub:     #aeb6c4;
-      --connector:    #39414f;
-    }
-  }
-  :root[data-theme="dark"] {
-    --page:           #0d0d0d;
-    --surface-1:      #1a1a19;
-    --text-primary:   #ffffff;
-    --text-secondary: #ffffff;
-    --text-muted:     #ffffff;
-    --gridline:       #2c2c2a;
-    --baseline:       #383835;
-    --border:         rgba(255,255,255,0.10);
-    --series-1: #3987e5;
-    --series-2: #199e70;
-    --series-3: #c98500;
-    --series-4: #008300;
-    --series-5: #9085e9;
-    --series-6: #e66767;
-    --series-7: #d55181;
-    --series-8: #d95926;
-    --hover-wash: rgba(255,255,255,0.06);
-    --row-alt: rgba(255,255,255,0.04);
-    --diagram-bg:   #0a0c11;
-    --diagram-grid: rgba(255,255,255,0.045);
-    --node-bg:      #14171f;
-    --node-text:    #eef1f6;
-    --node-sub:     #aeb6c4;
-    --connector:    #39414f;
   }
 
   * { box-sizing: border-box; }

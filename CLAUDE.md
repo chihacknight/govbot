@@ -165,13 +165,12 @@ href="feed.xsl"?>` processing instruction pointing at the shared stylesheet
 callout with the feed URL, entry list) instead of a raw "no style information" XML tree — while
 feed readers ignore the PI and parse the RSS as usual. Whole-ballot/whole-calendar feeds at the
 dashboard root reference `feed.xsl`; granular feeds one directory down reference `../feed.xsl`
-(the feed builders in both `main.py`s take an `xsl_href` for exactly this). The three data dashboards each
-have a **"New Design"** switch under the theme toggle that sets `data-design="new"` on
-`<html>` (persisted per page in `localStorage['govbot-<page>-design']`, applied before first
-paint) and applies a design-system-inspired override skin via `:root[data-design="new"]`
-token + component rules placed last in that page's stylesheet: **elections → Robinhood**
-(green #00C805), **legislation → Stripe** (blurple #635BFF), **hearings → Polymarket** (azure
-on navy). Each skin is scoped to its own page. On elections and hearings, the long list
+(the feed builders in both `main.py`s take an `xsl_href` for exactly this). All four product
+pages now link the shared `assets/govbot.css` (dark-mode-first; the legacy `--page`/`--series-N`
+tokens are aliased to the civic palette so the existing chart/table CSS reskins automatically) and
+keep their own theme toggle on the shared `localStorage['govbot-theme']` key. The old per-page
+**"New Design"** skins + toggle (Stripe/Robinhood/Polymarket) have been **retired** — the civic
+dark-first design is the single default. On elections and hearings, the long list
 sections scroll inside capped-height boxes (`.group .races`, `.sf-list`, `.hgroup-rows`,
 `.participation-grid`) so the homepage isn't enormous; the elections "Where the data comes
 from" cabinet is `open` by default. The hearings
