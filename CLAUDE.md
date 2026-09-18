@@ -150,6 +150,13 @@ recorded actions, unfiltered, click → bill modal), the charts/tiles collapsed 
 "Overview &amp; charts" `<details>`, and the dense sortable table kept below. The bill modal now
 leads with an inferred **status timeline** (Introduced → Committee → Passed House → Senate →
 Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component).
+`elections.html` has been reframed **ballot-first**: an Illinois-flag hero (waving `IL_FLAG_SVG`
+with a gold edge, "Illinois Elections" / "Know what's on your ballot before you vote." / a dynamic
+"Next election" line / an "Explore races" CTA) and a "What's on your ballot?" selector
+(`#ballot-cards`, one card per distinct `ballot_date` with its stage label + office/candidate
+counts) that drives the existing `#f-ballot` filter, reveals the sections, and scrolls to
+`#groups` (`renderElectionHero`). The rich race engine (groups, five drawers, calendar,
+Springfield, picker) is unchanged.
 
 The Pages site has a **Homepage plus three dashboards plus a How-Govbot-Works page**:
 `docs/src/dashboard/index.html` (the **Homepage**),

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="assets/govbot.css">
-<title>govbot — Elections Happening in IL</title>
+<title>Govbot — Illinois Elections</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20200%20200%22%3E%3Cpolygon%20points%3D%2282%2C68.8%20100%2C8%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22100%2C8%20118%2C68.8%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C68.8%20179.7%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22179.7%2C54%20136%2C100%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%22136%2C100%20179.7%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22179.7%2C146%20118%2C131.2%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C131.2%20100%2C192%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22100%2C192%2082%2C131.2%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%2282%2C131.2%2020.3%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%2220.3%2C146%2064%2C100%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%2264%2C100%2020.3%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%2220.3%2C54%2082%2C68.8%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3C/svg%3E">
 <style>
 
@@ -435,6 +435,41 @@
   @media (prefers-reduced-motion: reduce) { .to-top, .to-top .tt-arrow { transition: none; } }
 
   @media (max-width: 620px) { .races { grid-template-columns: 1fr; } }
+
+  /* ===== Illinois Elections — ballot-first hero + selector ===== */
+  .corner-flag { display: none !important; }  /* replaced by the hero flag */
+  .el-hero { display: flex; align-items: center; gap: 26px; margin-top: 8px; }
+  .el-hero-copy { flex: 1 1 auto; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .el-hero h1 { margin: 2px 0 0; font-size: 48px; line-height: 1.02; }
+  .el-tagline { margin: 0; font-family: var(--gb-font-display); font-size: 20px; color: var(--text-secondary); }
+  .el-next { margin: 4px 0 0; font-size: 14px; color: var(--series-2); font-weight: 600; }
+  .el-cta-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+  .el-docs { margin: 8px 0 0; font-size: 13px; }
+  .el-hero-flag { flex: 0 0 auto; width: 250px; max-width: 40%; filter: drop-shadow(0 0 22px rgba(214,168,79,0.32)); }
+  .el-hero-flag svg { width: 100%; height: auto; opacity: 0.94; }
+  .el-hero-flag .cloth { transform-origin: left center; animation: il-wave 5.5s ease-in-out infinite; }
+  @keyframes il-wave { 0%,100% { transform: skewY(0deg) } 25% { transform: skewY(1.1deg) translateY(-1px) } 50% { transform: skewY(0deg) } 75% { transform: skewY(-1.1deg) translateY(1px) } }
+  @media (max-width: 760px) {
+    .el-hero { flex-direction: column-reverse; align-items: flex-start; gap: 16px; }
+    .el-hero-flag { width: 170px; }
+    .el-hero h1 { font-size: 36px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .el-hero-flag .cloth { animation: none; } }
+
+  .ballot-picker { margin: 10px 0 22px; }
+  .bp-title { margin: 0 0 4px; font-size: 27px; }
+  .bp-sub { margin: 0 0 14px; color: var(--text-secondary); font-size: 14px; max-width: 70ch; }
+  .ballot-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(258px, 1fr)); gap: 14px; }
+  .ballot-card { text-align: left; cursor: pointer; font: inherit; color: var(--text-primary);
+    border: 1px solid var(--border); border-top: 3px solid var(--series-2); border-radius: 14px;
+    background: var(--surface-1); padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
+  .ballot-card:hover { border-color: var(--baseline); transform: translateY(-2px); transition: transform .12s ease; }
+  .ballot-card:focus-visible { outline: 2px solid var(--series-2); outline-offset: 2px; }
+  .bc-label { font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--series-2); font-weight: 600; }
+  .bc-date { font-family: var(--gb-font-display); font-size: 24px; line-height: 1.1; }
+  .bc-count { font-size: 13.5px; color: var(--text-secondary); }
+  .bc-go { font-size: 13.5px; font-weight: 600; color: var(--series-2); margin-top: 4px; }
+  @media (prefers-reduced-motion: reduce) { .ballot-card:hover { transform: none; } }
 </style>
 <script>
   // Apply a saved theme choice before first paint. Shared localStorage key, so
@@ -469,16 +504,32 @@
         </div>
       </div>
     </div>
-    <div class="title-row">
-      <h1>Elections Happening in IL</h1>
-      <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
+    <div class="el-hero">
+      <div class="el-hero-copy">
+        <div class="gb-overline" style="color:var(--series-2)">Chicago &amp; Illinois · 2026–2027</div>
+        <h1>Illinois Elections</h1>
+        <p class="el-tagline">Know what’s on your ballot before you vote.</p>
+        <p class="el-next" id="el-next"></p>
+        <div class="el-cta-row">
+          <button type="button" class="gb-btn gb-btn-primary" id="explore-races">Explore races</button>
+          <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
+        </div>
+        <p class="el-docs"><a class="docs-link" href="../index.html">govbot docs</a> ·
+           <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
+      </div>
+      <div class="el-hero-flag" id="hero-flag" aria-hidden="true"></div>
     </div>
-    <p><a class="docs-link" href="../index.html">govbot docs</a> ·
-       <a class="docs-link" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub repo</a></p>
   </header>
 
   <!-- Decorative Illinois flag, waving, top-right (desktop only, never blocks clicks) -->
   <div class="corner-flag" id="corner-flag" aria-hidden="true"></div>
+
+  <!-- Ballot-first entry: pick a ballot to see every office on it -->
+  <section class="ballot-picker" id="ballot-picker" aria-label="What is on your ballot">
+    <h2 class="bp-title">What’s on your ballot?</h2>
+    <p class="bp-sub">Two big ballots are coming up. Pick one to see every office, its candidates, and how to weigh in — or scroll on for the full breakdown.</p>
+    <div class="ballot-cards" id="ballot-cards"></div>
+  </section>
 
   <!-- Build-your-view picker: the major sections start hidden; pick what to see. -->
   <div class="picker" id="picker" hidden>
@@ -697,6 +748,52 @@
         ". If you opened this file directly, serve it over HTTP.";
     });
 
+  function ballotStageLabel(rs) {
+    const st = rs.map((r) => r.ballot_stage || "");
+    if (st.some((x) => /municipal/.test(x))) return "Chicago municipal election";
+    if (st.some((x) => /general/.test(x))) return "Illinois general election";
+    if (st.some((x) => /consolidated/.test(x))) return "Consolidated election";
+    if (st.some((x) => /primary/.test(x))) return "Primary election";
+    return "Election";
+  }
+  function revealAllSections() { const pa = $("picker-all"); if (pa) pa.click(); }
+  function scrollToRaces() {
+    const g = $("groups");
+    if (g) g.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
+  }
+  function renderElectionHero(dates) {
+    const hf = $("hero-flag"); if (hf) hf.innerHTML = IL_FLAG_SVG;
+    const races = (state.data && state.data.races) || [];
+    const next = dates.filter((d) => d >= state.nowDate)[0] || dates[0];
+    if (next) {
+      const n = races.filter((r) => r.ballot_date === next).length;
+      const el = $("el-next");
+      if (el) el.textContent = "Next election: " + prettyDate(next) + " · " + n + " race" + (n === 1 ? "" : "s") + " on the ballot";
+    }
+    const btn = $("explore-races");
+    if (btn) btn.addEventListener("click", () => { revealAllSections(); render(); scrollToRaces(); });
+    const host = $("ballot-cards"); if (!host) return;
+    host.textContent = "";
+    dates.forEach((d) => {
+      const rs = races.filter((r) => r.ballot_date === d);
+      const withC = rs.filter((r) => r.candidates && r.candidates.length).length;
+      const card = document.createElement("button");
+      card.type = "button"; card.className = "ballot-card";
+      const lab = document.createElement("div"); lab.className = "bc-label"; lab.textContent = ballotStageLabel(rs);
+      const dt = document.createElement("div"); dt.className = "bc-date"; dt.textContent = prettyDate(d);
+      const cnt = document.createElement("div"); cnt.className = "bc-count";
+      cnt.textContent = rs.length + " office" + (rs.length === 1 ? "" : "s") + " · " + withC + " with candidates listed";
+      const go = document.createElement("div"); go.className = "bc-go"; go.textContent = "See this ballot →";
+      card.append(lab, dt, cnt, go);
+      card.addEventListener("click", () => {
+        state.filters.ballot = d;
+        const sel = $("f-ballot"); if (sel) sel.value = d;
+        revealAllSections(); render(); scrollToRaces();
+      });
+      host.append(card);
+    });
+  }
+
   function init(data) {
     state.data = data;
     state.nowDate = (data.generated_at || "").slice(0, 10) || new Date().toISOString().slice(0, 10);
@@ -724,6 +821,8 @@
     buildSelect($("f-ballot"), "Any ballot date",
       dates.map((d) => [d, prettyDate(d)]),
       (v) => { state.filters.ballot = v; render(); });
+
+    renderElectionHero(dates);
 
     let searchTimer;
     $("f-search").addEventListener("input", (e) => {
