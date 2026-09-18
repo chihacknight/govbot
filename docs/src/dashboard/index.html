@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Govbot — See what government is doing</title>
 <meta name="description" content="Government is always moving. Govbot helps you see it — bills, hearings and elections turned into something anyone can see, understand and follow. Open-source, citizen-powered, nonpartisan.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2026%2034'%3E%3Cpath%20d='M13%202C11%206%2011%208%2013%2010C15%208%2015%206%2013%202Z'%20fill='%23F0C969'/%3E%3Crect%20x='11.4'%20y='13'%20width='3.2'%20height='16'%20rx='1'%20fill='%23D6A84F'/%3E%3Cpath%20d='M8%2029H18'%20stroke='%23D6A84F'%20stroke-width='1.6'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%2310151F%22%2F%3E%3Cline%20x1%3D%2216%22%20y1%3D%224.6%22%20x2%3D%2216%22%20y2%3D%228.2%22%20stroke%3D%22%23D6A84F%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%224%22%20r%3D%221.8%22%20fill%3D%22%23F0C969%22%2F%3E%3Crect%20x%3D%227.3%22%20y%3D%228%22%20width%3D%2217.4%22%20height%3D%2215.4%22%20rx%3D%226.2%22%20fill%3D%22%23E9ECF3%22%20stroke%3D%22%23C3C9D6%22%20stroke-width%3D%220.8%22%2F%3E%3Ccircle%20cx%3D%2212.4%22%20cy%3D%2214.8%22%20r%3D%222.2%22%20fill%3D%22%23F0C969%22%2F%3E%3Ccircle%20cx%3D%2219.6%22%20cy%3D%2214.8%22%20r%3D%222.2%22%20fill%3D%22%23F0C969%22%2F%3E%3Crect%20x%3D%2211.8%22%20y%3D%2218.2%22%20width%3D%228.4%22%20height%3D%222.8%22%20rx%3D%221.4%22%20fill%3D%22%233FB37F%22%2F%3E%3C%2Fsvg%3E">
 <link rel="stylesheet" href="assets/govbot.css">
 <!-- pre-paint theme: honor a saved per-visitor choice before first paint -->
 <script>
@@ -31,8 +31,9 @@
   .home-hero p.lede { margin: 0; max-width: 560px; font-size: 19px; line-height: 1.6; color: var(--gb-text-2); }
   .home-hero .cta-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   .home-hero .trust { font-size: 14px; color: var(--gb-text-2); }
+  .gb-brand-mark { width: 34px; height: 34px; border-radius: 9px; display: block; }
   .liberty { position: absolute; right: 12px; top: 0; bottom: 0; width: 50%; display: flex; align-items: flex-start; justify-content: center; pointer-events: none; z-index: 1; }
-  .liberty svg { filter: drop-shadow(0 0 28px rgba(240,201,105,0.5)) drop-shadow(0 0 70px rgba(214,168,79,0.24)); opacity: 1; height: 100%; max-height: 780px; width: auto; }
+  .liberty img { height: 100%; max-height: 820px; width: auto; filter: drop-shadow(0 0 34px rgba(240,201,105,0.32)); }
 
   section.band { max-width: 1200px; margin: 0 auto; padding: 20px 24px 60px; }
   .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 26px; }
@@ -86,12 +87,7 @@
 <!-- ============================ HEADER ============================ -->
 <header class="gb-header">
   <a class="gb-brand" href="index.html" aria-label="Govbot home">
-    <svg width="22" height="30" viewBox="0 0 26 34" fill="none" aria-hidden="true">
-      <path d="M13 2 C11 6 11 8 13 10 C15 8 15 6 13 2 Z" fill="#F0C969"/>
-      <path d="M13 10 C9 11 8 14 9 17 L17 17 C18 14 17 11 13 10 Z" stroke="#D6A84F" stroke-width="1.4" fill="none"/>
-      <rect x="11.4" y="17" width="3.2" height="12" rx="1" fill="#D6A84F"/>
-      <path d="M8 29 L18 29" stroke="#D6A84F" stroke-width="1.4"/>
-    </svg>
+    <img class="gb-brand-mark" src="assets/govbot-mark.png" width="34" height="34" alt="" aria-hidden="true">
     <span class="gb-brand-name">Govbot</span>
   </a>
   <nav class="gb-nav" aria-label="Primary">
@@ -195,36 +191,7 @@
   </div>
   <!-- Lady Liberty — thin metallic-gold line art, cropped at the right -->
   <div class="liberty" aria-hidden="true">
-    <svg viewBox="0 0 460 1120" fill="none" preserveAspectRatio="xMidYMin meet">
-      <g stroke="#E3B860" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none">
-        <path d="M180 252 L135 205 L192 246 Z" fill="rgba(214,168,79,0.12)"/>
-        <path d="M198 246 L163 168 L216 242 Z" fill="rgba(214,168,79,0.12)"/>
-        <path d="M216 242 L198 145 L232 240 Z" fill="rgba(214,168,79,0.12)"/>
-        <path d="M226 240 L230 132 L242 240 Z" fill="rgba(214,168,79,0.16)"/>
-        <path d="M248 242 L262 145 L266 246 Z" fill="rgba(214,168,79,0.12)"/>
-        <path d="M266 246 L297 168 L284 252 Z" fill="rgba(214,168,79,0.12)"/>
-        <path d="M284 252 L325 205 L300 258 Z" fill="rgba(214,168,79,0.12)"/>
-        <path d="M186 254 Q230 238 288 256"/>
-        <path d="M230 250 C205 252 194 274 195 300 C196 330 210 356 230 358 C250 356 264 330 265 300 C266 274 255 252 230 250 Z"/>
-        <path d="M218 356 L216 372 M242 356 L244 372"/>
-        <path d="M298 372 C332 320 350 236 356 160"/>
-        <path d="M312 372 C338 330 352 250 360 168"/>
-        <path d="M340 150 L376 150 L368 128 L348 128 Z"/>
-        <path d="M358 126 C346 104 353 84 358 62 C363 84 370 104 358 126 Z" fill="rgba(240,201,105,0.18)"/>
-        <path d="M358 118 C352 106 355 94 358 82 C361 94 364 106 358 118 Z"/>
-        <path d="M164 372 C150 418 156 456 178 476"/>
-        <path d="M150 470 L200 450 L220 500 L170 520 Z" fill="rgba(214,168,79,0.06)"/>
-        <path d="M162 480 L206 462 M166 492 L210 474 M170 504 L206 490"/>
-        <path d="M172 366 C150 520 140 780 150 1046"/>
-        <path d="M300 366 C320 520 326 780 316 1046"/>
-        <path d="M150 1046 L316 1046"/>
-        <path d="M196 388 C186 560 184 820 190 1040"/>
-        <path d="M230 396 C230 600 230 820 230 1042"/>
-        <path d="M266 388 C278 560 280 820 274 1040"/>
-        <path d="M120 1058 L346 1058"/>
-        <path d="M104 1092 L362 1092"/>
-      </g>
-    </svg>
+    <img class="liberty-img" src="assets/liberty-hero.png" alt="">
   </div>
 </div>
 

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="assets/govbot.css">
 <title>Govbot — Explore Legislation</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20200%20200%22%3E%3Cpolygon%20points%3D%2282%2C68.8%20100%2C8%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22100%2C8%20118%2C68.8%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C68.8%20179.7%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22179.7%2C54%20136%2C100%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%22136%2C100%20179.7%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%22179.7%2C146%20118%2C131.2%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%22118%2C131.2%20100%2C192%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%22100%2C192%2082%2C131.2%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3Cpolygon%20points%3D%2282%2C131.2%2020.3%2C146%20100%2C100%22%20fill%3D%22%231B87B8%22/%3E%3Cpolygon%20points%3D%2220.3%2C146%2064%2C100%20100%2C100%22%20fill%3D%22%2329ABE2%22/%3E%3Cpolygon%20points%3D%2264%2C100%2020.3%2C54%20100%2C100%22%20fill%3D%22%23C81820%22/%3E%3Cpolygon%20points%3D%2220.3%2C54%2082%2C68.8%20100%2C100%22%20fill%3D%22%23ED2E38%22/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%2310151F%22%2F%3E%3Cline%20x1%3D%2216%22%20y1%3D%224.6%22%20x2%3D%2216%22%20y2%3D%228.2%22%20stroke%3D%22%23D6A84F%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%224%22%20r%3D%221.8%22%20fill%3D%22%23F0C969%22%2F%3E%3Crect%20x%3D%227.3%22%20y%3D%228%22%20width%3D%2217.4%22%20height%3D%2215.4%22%20rx%3D%226.2%22%20fill%3D%22%23E9ECF3%22%20stroke%3D%22%23C3C9D6%22%20stroke-width%3D%220.8%22%2F%3E%3Ccircle%20cx%3D%2212.4%22%20cy%3D%2214.8%22%20r%3D%222.2%22%20fill%3D%22%23F0C969%22%2F%3E%3Ccircle%20cx%3D%2219.6%22%20cy%3D%2214.8%22%20r%3D%222.2%22%20fill%3D%22%23F0C969%22%2F%3E%3Crect%20x%3D%2211.8%22%20y%3D%2218.2%22%20width%3D%228.4%22%20height%3D%222.8%22%20rx%3D%221.4%22%20fill%3D%22%233FB37F%22%2F%3E%3C%2Fsvg%3E">
 <style>
   /* Dark palette. Applied when the OS prefers dark AND the user hasn't
      forced a choice, OR when the user explicitly picks dark via the toggle.
@@ -475,27 +475,97 @@
 </script>
 </head>
 <body>
-<div class="wrap">
-  <nav class="tabs" aria-label="Dashboards">
-    <a class="tab tab-legis" href="legislation.html" aria-current="page">Explore Legislation</a>
-    <a class="tab tab-hearings" href="hearings.html">Hearings &amp; Public Comment</a>
-    <a class="tab tab-elections" href="elections.html">Illinois Elections</a>
-    <a class="tab tab-arch" href="architecture.html">How Govbot Works</a>
-  </nav>
-  <header class="top">
-    <div class="brandbar">
-      <a class="brand" href="index.html" aria-label="govbot home">
-        <img class="brand-logo" src="govbot-logo.png" width="40" height="40" alt="" aria-hidden="true">
-        <span class="brand-name">gov<span class="bot">bot</span></span>
-      </a>
-      <div class="controls-stack">
-        <div class="theme-toggle" role="group" aria-label="Color theme">
-          <button type="button" data-theme-choice="light" title="Light theme" aria-label="Light theme" aria-pressed="false">☀</button>
-          <button type="button" data-theme-choice="auto"  title="Match system" aria-label="Match system theme" aria-pressed="false">Auto</button>
-          <button type="button" data-theme-choice="dark"  title="Dark theme"  aria-label="Dark theme" aria-pressed="false">☾</button>
-        </div>
+<header class="gb-header">
+  <a class="gb-brand" href="index.html" aria-label="Govbot home">
+    <img class="gb-brand-mark" src="assets/govbot-mark.png" width="34" height="34" alt="" aria-hidden="true">
+    <span class="gb-brand-name">Govbot</span>
+  </a>
+  <nav class="gb-nav" aria-label="Primary">
+    <div class="gb-nav-item" data-gb-dropdown>
+      <button class="gb-nav-trigger" type="button" aria-expanded="false" aria-haspopup="true">Explore
+        <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="gb-mega" role="menu" aria-label="Explore">
+        <a href="legislation.html" role="menuitem" aria-current="page" style="--accent:var(--gb-blue-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
+          <span><span class="mega-t">Legislation</span><span class="mega-d">Bills, topics, states, sponsors &amp; status</span></span></a>
+        <a href="hearings.html" role="menuitem" style="--accent:var(--gb-gold-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg>
+          <span><span class="mega-t">Hearings &amp; Public Comment</span><span class="mega-d">Upcoming hearings and how to weigh in</span></span></a>
+        <a href="elections.html" role="menuitem" style="--accent:var(--gb-green)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/></svg>
+          <span><span class="mega-t">Illinois Elections</span><span class="mega-d">What&#39;s on your ballot, race by race</span></span></a>
+        <a href="architecture.html" role="menuitem" style="--accent:var(--gb-purple-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg>
+          <span><span class="mega-t">How Govbot Works</span><span class="mega-d">The pipeline, in plain English</span></span></a>
       </div>
     </div>
+    <div class="gb-nav-item" data-gb-dropdown>
+      <button class="gb-nav-trigger" type="button" aria-expanded="false" aria-haspopup="true">Follow
+        <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="gb-mega" role="menu" aria-label="Follow">
+        <a href="elections.xml" role="menuitem" style="--accent:var(--gb-green)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
+          <span><span class="mega-t">Elections feed</span><span class="mega-d">Whole-ballot &amp; per-race RSS</span></span></a>
+        <a href="hearings.xml" role="menuitem" style="--accent:var(--gb-gold-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
+          <span><span class="mega-t">Hearings feed</span><span class="mega-d">Whole-calendar, per-bill &amp; per-state RSS</span></span></a>
+        <a href="#follow" role="menuitem" style="--accent:var(--gb-blue-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h6M9 16h4"/></svg>
+          <span><span class="mega-t">Bills &amp; topics</span><span class="mega-d">Filter, then follow from the dashboard</span></span></a>
+      </div>
+    </div>
+    <div class="gb-nav-item" data-gb-dropdown>
+      <button class="gb-nav-trigger" type="button" aria-expanded="false" aria-haspopup="true">Data
+        <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="gb-mega" role="menu" aria-label="Data">
+        <a href="https://github.com/chihacknight/govbot/blob/main/catalog.json" role="menuitem" style="--accent:var(--gb-blue-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+          <span><span class="mega-t">Data catalog</span><span class="mega-d">Every jurisdiction repo &amp; path pattern</span></span></a>
+        <a href="architecture.html" role="menuitem" style="--accent:var(--gb-purple-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+          <span><span class="mega-t">Sources &amp; methodology</span><span class="mega-d">How the data is gathered</span></span></a>
+        <a href="https://github.com/chihacknight/govbot" role="menuitem" style="--accent:var(--gb-text-2)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l-4 4 4 4M16 5l4 4-4 4"/><path d="M13 4l-2 16"/></svg>
+          <span><span class="mega-t">Open source / GitHub</span><span class="mega-d">Read and run every pipeline</span></span></a>
+      </div>
+    </div>
+    <a class="gb-nav-plain" href="architecture.html">How Govbot Works</a>
+    <a class="gb-nav-plain" href="https://github.com/chihacknight/govbot">About</a>
+  </nav>
+  <div class="gb-header-utils">
+    <form class="gb-search" role="search" data-gb-search>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="color:var(--gb-text-2)"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <label class="gb-sr" for="home-search">Search bills, candidates, hearings, topics</label>
+      <input id="home-search" type="search" placeholder="Search bills, candidates, hearings…">
+    </form>
+    <button class="gb-icon-btn" data-gb-theme-toggle type="button" aria-label="Toggle theme">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F0C969" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg>
+    </button>
+    <button class="gb-icon-btn gb-menu-btn" data-gb-menu type="button" aria-label="Open menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- mobile drawer -->
+<div class="gb-drawer" data-gb-drawer>
+  <form class="gb-search" role="search" data-gb-search>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="color:var(--gb-text-2)"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <label class="gb-sr" for="drawer-search">Search Govbot</label>
+    <input id="drawer-search" type="search" placeholder="Search bills, candidates, hearings…">
+  </form>
+  <a href="legislation.html" aria-current="page">Legislation</a>
+  <a href="hearings.html">Hearings &amp; Public Comment</a>
+  <a href="elections.html">Illinois Elections</a>
+  <a href="architecture.html">How Govbot Works</a>
+  <a href="https://github.com/chihacknight/govbot">About / GitHub</a>
+</div>
+
+<div class="wrap">
+  <header class="top">
     <div class="title-row">
       <h1>Explore Legislation</h1>
       <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
@@ -608,25 +678,41 @@
     <button class="clear-btn show-more" id="show-more" hidden></button>
   </div>
 
-  <footer id="footer"></footer>
-  <p class="chn-credit">
-    <svg viewBox="0 0 200 200" width="15" height="15" aria-hidden="true" focusable="false">
-      <polygon points="82,68.8 100,8 100,100"    fill="#1B87B8"/>
-      <polygon points="100,8 118,68.8 100,100"   fill="#29ABE2"/>
-      <polygon points="118,68.8 179.7,54 100,100" fill="#C81820"/>
-      <polygon points="179.7,54 136,100 100,100"  fill="#ED2E38"/>
-      <polygon points="136,100 179.7,146 100,100" fill="#1B87B8"/>
-      <polygon points="179.7,146 118,131.2 100,100" fill="#29ABE2"/>
-      <polygon points="118,131.2 100,192 100,100" fill="#C81820"/>
-      <polygon points="100,192 82,131.2 100,100"  fill="#ED2E38"/>
-      <polygon points="82,131.2 20.3,146 100,100" fill="#1B87B8"/>
-      <polygon points="20.3,146 64,100 100,100"   fill="#29ABE2"/>
-      <polygon points="64,100 20.3,54 100,100"    fill="#C81820"/>
-      <polygon points="20.3,54 82,68.8 100,100"   fill="#ED2E38"/>
-    </svg>
-    A <a href="https://chihacknight.org/">Chi Hack Night</a> project
-  </p>
 </div>
+
+<footer class="gb-footer">
+  <div class="gb-footer-grid">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <svg width="18" height="24" viewBox="0 0 26 34" fill="none" aria-hidden="true"><path d="M13 2 C11 6 11 8 13 10 C15 8 15 6 13 2 Z" fill="#F0C969"/><rect x="11.4" y="14" width="3.2" height="15" rx="1" fill="#D6A84F"/><path d="M8 29 L18 29" stroke="#D6A84F" stroke-width="1.4"/></svg>
+        <span class="gb-brand-name">Govbot</span>
+      </div>
+      <p style="margin:0;font-size:14px;line-height:1.6;color:var(--gb-text-2);max-width:320px;">Government is always moving. Govbot helps you see it.</p>
+      <div style="font-size:12.5px;color:var(--gb-text-muted);margin-top:10px;">Open-source · Citizen-powered · Built with Chi Hack Night</div>
+    </div>
+    <div>
+      <h4>Explore</h4>
+      <a href="legislation.html">Legislation</a>
+      <a href="hearings.html">Hearings</a>
+      <a href="elections.html">Elections</a>
+      <a href="architecture.html">How Govbot Works</a>
+    </div>
+    <div>
+      <h4>Transparency</h4>
+      <a href="architecture.html">Architecture</a>
+      <a href="https://github.com/chihacknight/govbot">Sources &amp; methodology</a>
+      <a href="../index.html">Govbot docs</a>
+      <a href="elections.xml">RSS feeds</a>
+    </div>
+    <div>
+      <h4>Community</h4>
+      <a href="https://github.com/chihacknight/govbot">GitHub</a>
+      <a href="https://github.com/chihacknight/govbot">Contribute</a>
+      <a href="https://chihacknight.org/">Chi Hack Night</a>
+    </div>
+  </div>
+  <div class="gb-footer-bottom">© 2026 Govbot · A nonpartisan, open civic-data project.</div>
+</footer>
 
 <div class="tooltip" id="tooltip"></div>
 <div class="modal-overlay" id="bill-modal" hidden role="dialog" aria-modal="true" aria-labelledby="bill-modal-title"></div>
@@ -639,27 +725,7 @@
                   "--series-5","--series-6","--series-7","--series-8"];
   const PAGE_SIZE = 100;
 
-  // ----- color theme toggle (light / dark / auto) -----
-  (function initTheme() {
-    const root = document.documentElement;
-    const buttons = Array.from(document.querySelectorAll(".theme-toggle button"));
-    const saved = () => {
-      const t = root.getAttribute("data-theme");
-      return t === "light" || t === "dark" ? t : "auto";
-    };
-    function apply(choice) {
-      if (choice === "auto") root.removeAttribute("data-theme");
-      else root.setAttribute("data-theme", choice);
-      try {
-        if (choice === "auto") localStorage.removeItem("govbot-theme");
-        else localStorage.setItem("govbot-theme", choice);
-      } catch (e) {}
-      buttons.forEach((b) =>
-        b.setAttribute("aria-pressed", String(b.dataset.themeChoice === choice)));
-    }
-    buttons.forEach((b) => b.addEventListener("click", () => apply(b.dataset.themeChoice)));
-    apply(saved());
-  })();
+  // color theme handled by shared assets/govbot-shell.js
 
 
   const state = {
@@ -772,11 +838,13 @@
     }
 
     const footer = $("footer");
-    footer.textContent = "Snapshot built " + (data.generated_at || "n/a") + " from " +
-      (data.source || "govbot repos") + ". Regenerate with ";
-    const code = document.createElement("code");
-    code.textContent = "python3 scripts/build_dashboard_data.py";
-    footer.append(code, document.createTextNode(" after `govbot clone` / `govbot tag`."));
+    if (footer) {
+      footer.textContent = "Snapshot built " + (data.generated_at || "n/a") + " from " +
+        (data.source || "govbot repos") + ". Regenerate with ";
+      const code = document.createElement("code");
+      code.textContent = "python3 scripts/build_dashboard_data.py";
+      footer.append(code, document.createTextNode(" after `govbot clone` / `govbot tag`."));
+    }
 
     // Deep-link support: the hearings page and the "Share this bill" control
     // link bills here as legislation.html#q=HB1643 (or ?q=), so opening the link lands
@@ -1839,19 +1907,10 @@
   }
 })();
 </script>
-<button class="to-top" id="to-top" type="button" aria-label="Back to top" title="Back to top"><span class="tt-arrow" aria-hidden="true">↑</span>Back to Top</button>
-<script>
-(function () {
-  var btn = document.getElementById("to-top");
-  if (!btn) return;
-  var toggle = function () { btn.classList.toggle("show", (window.scrollY || document.documentElement.scrollTop) > 400); };
-  window.addEventListener("scroll", toggle, { passive: true });
-  toggle();
-  btn.addEventListener("click", function () {
-    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
-  });
-})();
-</script>
+<button class="gb-to-top" data-gb-to-top type="button" aria-label="Back to top">
+  <span aria-hidden="true">↑</span> Back to Top
+</button>
+
+<script src="assets/govbot-shell.js"></script>
 </body>
 </html>
