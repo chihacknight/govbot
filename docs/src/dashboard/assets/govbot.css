@@ -286,6 +286,14 @@ h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spaci
 .gb-timeline .bar { height: 2px; background: var(--gb-border); flex: 1; margin-top: 8px; }
 .gb-timeline .bar.done { background: var(--gb-green); }
 
+/* ===== Product-page legacy tab bar: scroll instead of wrapping on phones ===== */
+/* `nav.tabs` (element+class) outranks each page's own `.tabs` rule, so this wins. */
+@media (max-width: 640px) {
+  nav.tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  nav.tabs::-webkit-scrollbar { display: none; }
+  nav.tabs .tab { flex: 0 0 auto; white-space: nowrap; }
+}
+
 /* ============================ MOTION / A11Y ============================ */
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; }
