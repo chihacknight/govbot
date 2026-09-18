@@ -404,6 +404,56 @@
   .modal-card .m-chip { color: var(--text-primary); }
   .modal-card .m-chip.is-law { color: var(--text-primary); }  /* keep green border */
   .modal-card .m-chip.is-state { color: #fff; }  /* keep white text on filled accent */
+
+  /* ===== Explore Legislation — search-first landing ===== */
+  .explore-search { margin: 8px 0 18px; }
+  .search-wrap.big { max-width: 720px; }
+  .search-wrap.big input { font-size: 17px; padding: 15px 14px 15px 46px; }
+  .search-wrap.big .search-icon { width: 20px; height: 20px; left: 16px; }
+  .explore-hint { margin: 9px 2px 0; font-size: 13.5px; color: var(--text-secondary); }
+
+  .filters { align-items: flex-end; }
+  .browse-field { display: flex; flex-direction: column; gap: 6px; }
+  .browse-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gb-gold); font-weight: 600; }
+  .more-filters { align-self: flex-end; }
+  .more-filters > summary { cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--series-1); list-style: none; padding: 9px 4px; }
+  .more-filters > summary::-webkit-details-marker { display: none; }
+  .more-filters > summary::before { content: "+ "; }
+  .more-filters[open] > summary::before { content: "\2212 "; }
+  .more-grid { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; padding: 10px 2px 4px; }
+  .mf-field { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--text-secondary); }
+
+  .section-head-lite { display: flex; align-items: baseline; gap: 12px; margin: 4px 0 12px; flex-wrap: wrap; }
+  .section-head-lite h2 { margin: 0; }
+  .recent { margin-bottom: 18px; }
+  .recent-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(278px, 1fr)); gap: 12px; }
+  .recent-card { text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 7px;
+    background: var(--surface-1); border: 1px solid var(--border); border-left: 3px solid var(--series-1);
+    border-radius: 12px; padding: 14px 16px; font: inherit; color: var(--text-primary); }
+  .recent-card:hover { border-color: var(--baseline); transform: translateY(-2px); transition: transform .12s ease; }
+  .recent-card:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
+  .rc-top { display: flex; align-items: center; gap: 8px; }
+  .rc-id { font-size: 12px; font-weight: 600; color: var(--series-1); }
+  .rc-when { margin-left: auto; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+  .rc-title { font-family: var(--gb-font-display); font-size: 16px; line-height: 1.25;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .rc-act { font-size: 12.5px; color: var(--text-secondary);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  @media (prefers-reduced-motion: reduce) { .recent-card:hover { transform: none; } }
+
+  details.overview { border: 1px solid var(--border); border-radius: 14px; background: var(--surface-1); margin-bottom: 14px; padding: 0 16px 6px; }
+  details.overview > summary { cursor: pointer; list-style: none; padding: 16px 2px; display: flex; align-items: baseline; gap: 12px; font-weight: 600; }
+  details.overview > summary::-webkit-details-marker { display: none; }
+  details.overview > summary::after { content: "\25BE"; margin-left: auto; color: var(--text-secondary); transition: transform .18s ease; }
+  details.overview[open] > summary::after { transform: rotate(180deg); }
+  details.overview .ov-title { font-size: 17px; }
+  details.overview .ov-hint { font-size: 13px; color: var(--text-secondary); }
+  @media (prefers-reduced-motion: reduce) { details.overview > summary::after { transition: none; } }
+
+  /* modal status timeline */
+  .m-stage { margin: 2px 0 2px; }
+  .m-stage .gb-timeline { margin: 4px 0; }
+  .m-stage-cap { font-size: 12px; color: var(--text-secondary); margin: 10px 0 0; }
 </style>
 <script>
   // Apply a saved theme choice before first paint to avoid a flash of the
@@ -453,55 +503,85 @@
     <p class="sub">The full dataset covers 50+ jurisdictions and can take a few seconds on slower connections.</p>
   </div>
 
-  <div class="filters" id="filters">
-    <div class="search-wrap">
-      <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+  <!-- Search-first: the primary way in -->
+  <section class="explore-search" aria-label="Search bills">
+    <div class="search-wrap big">
+      <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
         <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle>
         <line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
       </svg>
-      <input type="search" id="f-search" placeholder="Search title or bill number…" aria-label="Search bills">
+      <input type="search" id="f-search" placeholder="Search bills, sponsors, topics…" aria-label="Search bills">
     </div>
-    <div class="msel" id="f-states"></div>
-    <select id="f-session" aria-label="Session"></select>
-    <select id="f-chamber" aria-label="Chamber"></select>
-    <div class="msel" id="f-tags"></div>
-    <select id="f-daterange" aria-label="Last action date range">
-      <option value="">Any date</option>
-      <option value="7d">Last 7 days</option>
-      <option value="30d">Last 30 days</option>
-      <option value="90d">Last 3 months</option>
-      <option value="365d">Last 12 months</option>
-      <option value="custom">Custom range…</option>
-    </select>
-    <span class="daterange-custom" id="f-daterange-custom" hidden>
-      <input type="date" id="f-date-from" aria-label="Last action from date">
-      <span class="daterange-sep">to</span>
-      <input type="date" id="f-date-to" aria-label="Last action to date">
-    </span>
+    <p class="explore-hint">Search by bill number, title or sponsor — or browse by state and topic below.</p>
+  </section>
+
+  <!-- Primary browse (state + topic); everything else behind progressive disclosure -->
+  <div class="filters" id="filters">
+    <div class="browse-field">
+      <span class="browse-label">State</span>
+      <div class="msel" id="f-states"></div>
+    </div>
+    <div class="browse-field">
+      <span class="browse-label">Topic</span>
+      <div class="msel" id="f-tags"></div>
+    </div>
+    <details class="more-filters">
+      <summary>More filters</summary>
+      <div class="more-grid">
+        <label class="mf-field"><span>Session</span><select id="f-session" aria-label="Session"></select></label>
+        <label class="mf-field"><span>Chamber</span><select id="f-chamber" aria-label="Chamber"></select></label>
+        <label class="mf-field"><span>Last action</span>
+          <select id="f-daterange" aria-label="Last action date range">
+            <option value="">Any date</option>
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+            <option value="90d">Last 3 months</option>
+            <option value="365d">Last 12 months</option>
+            <option value="custom">Custom range…</option>
+          </select>
+        </label>
+        <span class="daterange-custom" id="f-daterange-custom" hidden>
+          <input type="date" id="f-date-from" aria-label="Last action from date">
+          <span class="daterange-sep">to</span>
+          <input type="date" id="f-date-to" aria-label="Last action to date">
+        </span>
+      </div>
+    </details>
     <button class="clear-btn" id="f-clear" disabled>Clear filters</button>
   </div>
 
-  <div class="tiles" id="tiles"></div>
-
-  <div class="grid2">
-    <div class="card card--accent card--jurisdiction">
-      <h2>Bills by jurisdiction</h2>
-      <p class="sub">Click a bar to filter</p>
-      <div id="chart-states" class="hbar-scroll"></div>
-      <p class="pending-note" id="pending-note" hidden></p>
+  <!-- Recent activity: a fast entry point into what is moving -->
+  <section class="recent" id="recent" aria-label="Recent activity">
+    <div class="section-head-lite">
+      <h2>Recent activity</h2>
+      <span class="sub">Bills with the newest recorded action across all jurisdictions</span>
     </div>
-    <div class="card card--accent card--topic">
-      <h2>Bills by topic</h2>
-      <p class="sub">Click a bar to filter · a bill can carry several topics</p>
-      <div id="chart-tags" class="hbar-scroll"></div>
-    </div>
-  </div>
+    <div class="recent-list" id="recent-list"></div>
+  </section>
 
-  <div class="card card--accent card--activity" id="activity-card">
-    <h2>Activity by month</h2>
-    <p class="sub" id="activity-sub">Bills with their most recent action in each month</p>
-    <div id="chart-months"></div>
-  </div>
+  <!-- Analytics behind progressive disclosure (dense charts deeper) -->
+  <details class="overview">
+    <summary><span class="ov-title">Overview &amp; charts</span><span class="ov-hint">jurisdiction · topic · monthly activity</span></summary>
+    <div class="tiles" id="tiles"></div>
+    <div class="grid2">
+      <div class="card card--accent card--jurisdiction">
+        <h2>Bills by jurisdiction</h2>
+        <p class="sub">Click a bar to filter</p>
+        <div id="chart-states" class="hbar-scroll"></div>
+        <p class="pending-note" id="pending-note" hidden></p>
+      </div>
+      <div class="card card--accent card--topic">
+        <h2>Bills by topic</h2>
+        <p class="sub">Click a bar to filter · a bill can carry several topics</p>
+        <div id="chart-tags" class="hbar-scroll"></div>
+      </div>
+    </div>
+    <div class="card card--accent card--activity" id="activity-card">
+      <h2>Activity by month</h2>
+      <p class="sub" id="activity-sub">Bills with their most recent action in each month</p>
+      <div id="chart-months"></div>
+    </div>
+  </details>
 
   <div class="card card--accent card--bills" style="margin-top:12px">
     <h2 id="table-title">Bills</h2>
@@ -678,10 +758,11 @@
     footer.append(code, document.createTextNode(" after `govbot clone` / `govbot tag`."));
 
     // Deep-link support: the hearings page and the "Share this bill" control
-    // link bills here as index.html#q=HB1643 (or ?q=), so opening the link lands
+    // link bills here as legislation.html#q=HB1643 (or ?q=), so opening the link lands
     // pre-filtered on that bill.
     applyDeepLink();
 
+    renderRecent();
     render();
   }
 
@@ -1500,6 +1581,61 @@
   }
 
   let modalKey = 0;
+  // ---- Recent activity (unfiltered entry point) --------------------------
+  function relDate(iso) {
+    if (!iso) return "";
+    const d = new Date(iso); if (isNaN(d)) return String(iso).slice(0, 10);
+    const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+    if (days <= 0) return "today";
+    if (days === 1) return "yesterday";
+    if (days < 30) return days + " days ago";
+    if (days < 365) return Math.round(days / 30) + " mo ago";
+    return d.toISOString().slice(0, 10);
+  }
+  function renderRecent() {
+    const host = $("recent-list"); if (!host || !state.data) return;
+    const bills = state.data.bills.slice()
+      .filter((b) => b.latest_action)
+      .sort((a, b) => (a.latest_action < b.latest_action ? 1 : a.latest_action > b.latest_action ? -1 : 0))
+      .slice(0, 12);
+    host.textContent = "";
+    if (!bills.length) { const sec = $("recent"); if (sec) sec.hidden = true; return; }
+    bills.forEach((b) => {
+      const card = mkel("button", "recent-card"); card.type = "button";
+      const top = mkel("div", "rc-top");
+      const stName = state.stateNames[b.state] || (b.state || "").toUpperCase();
+      top.append(mchip(stName, "is-state"), mkel("span", "rc-id", b.id), mkel("span", "rc-when", relDate(b.latest_action)));
+      card.append(top, mkel("div", "rc-title", b.title || b.id));
+      if (b.latest_action_desc) card.append(mkel("div", "rc-act", b.latest_action_desc));
+      card.addEventListener("click", () => openDetails(b));
+      host.append(card);
+    });
+  }
+
+  // ---- Status timeline: furthest stage inferred from the recorded actions -
+  const STAGES = ["Introduced", "Committee", "Passed House", "Senate", "Governor"];
+  function billStageIndex(b, meta) {
+    const acts = (meta && meta.actions ? meta.actions.map((a) => a.description || "") : []);
+    const all = (acts.join(" | ") + " | " + (b.latest_action_desc || "")).toLowerCase();
+    let i = 0;
+    if (/committee|referred|assigned to|first reading|second reading|do pass|reported/.test(all)) i = Math.max(i, 1);
+    if (/passed (the )?house|house passed|passed lower|third reading/.test(all)) i = Math.max(i, 2);
+    if (/passed (the )?senate|senate passed|passed upper|concurred|sent to (the )?senate/.test(all)) i = Math.max(i, 3);
+    if (/governor|signed into law|public act|chaptered|enacted|approved by governor|became law|delivered to (the )?governor/.test(all)) i = Math.max(i, 4);
+    return i;
+  }
+  function stageTimeline(b, meta) {
+    const idx = billStageIndex(b, meta);
+    const tl = mkel("div", "gb-timeline");
+    STAGES.forEach((label, i) => {
+      if (i > 0) tl.append(mkel("div", "bar" + (i <= idx ? " done" : "")));
+      const step = mkel("div", "step" + (i < idx ? " done" : i === idx ? " current" : ""));
+      step.append(mkel("div", "node"), mkel("div", "lbl", label));
+      tl.append(step);
+    });
+    return tl;
+  }
+
   function openDetails(b) {
     const overlay = $("bill-modal");
     const myKey = ++modalKey;
@@ -1555,6 +1691,11 @@
         "The full govbot record couldn’t be loaded for this bill — showing the basics; use the links below for the official source."));
     }
     addSection(body, "What is this bill about", mkel("p", "m-plain", plainSummary(b, meta)));
+
+    { const wrap = mkel("div", "m-stage");
+      wrap.append(stageTimeline(b, meta),
+        mkel("p", "m-stage-cap", "Progress is inferred from the recorded actions below."));
+      addSection(body, "Status", wrap); }
 
     if (meta && meta.sponsorships && meta.sponsorships.length) {
       const people = meta.sponsorships.filter((s) => s.name && s.entity_type !== "organization");

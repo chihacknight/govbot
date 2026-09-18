@@ -143,7 +143,13 @@ mobile nav drawer, back-to-top, global search). `docs/src/dashboard/index.html` 
 **Homepage** landing page (Lady Liberty gold line-art hero, "What do you want to know?" cards,
 live "What's happening now" fetched fail-soft from `data.json`/`hearings.json`/`elections.json`).
 Pages migrate to the shared system one at a time; the old per-page "New Design" skins + toggle
-are retired as each page is migrated.
+are retired as each page is migrated. `legislation.html` has had its content redesigned
+**search-first**: a prominent search hero, State + Topic as primary browse with Session/Chamber/
+date behind a "More filters" `<details>`, a "Recent activity" card strip (`#recent-list`, newest
+recorded actions, unfiltered, click → bill modal), the charts/tiles collapsed under an
+"Overview &amp; charts" `<details>`, and the dense sortable table kept below. The bill modal now
+leads with an inferred **status timeline** (Introduced → Committee → Passed House → Senate →
+Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component).
 
 The Pages site has a **Homepage plus three dashboards plus a How-Govbot-Works page**:
 `docs/src/dashboard/index.html` (the **Homepage**),
