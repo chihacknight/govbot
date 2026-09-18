@@ -167,7 +167,8 @@ Springfield, picker) is unchanged.
 `hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
 "Hearings & Public Comment", tagline "Government isn't just something you watch — you can
 participate.", a dynamic "N upcoming · N open to public comment · N jurisdictions" line, a gold
-capitol line-art motif, and a "See upcoming hearings" CTA; the America-250 `250th` fireworks
+detailed gold White House line-art (`assets/whitehouse-hero.png`, a transparent-background raster
+so it drops onto the dark hero in both themes), and a "See upcoming hearings" CTA; the America-250 `250th` fireworks
 brandbar is kept). Each hearing now makes participation obvious: a green **"Public comment open"**
 badge on the date column and the witness-slip/comment action elevated into a filled green
 `.file-link` pill. The `<title>` was also corrected (it had been a stray "Legislation Dashboard").
