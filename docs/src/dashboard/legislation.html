@@ -259,6 +259,10 @@
      the results below one page. */
   .show-more[hidden] { display: none; }
   .show-more, .show-more:hover { cursor: pointer; }
+  /* Same fix for the "No bills match" empty state: .gb-state sets display:flex,
+     which beats [hidden]{display:none}, so it must be re-hidden explicitly.
+     Without this the empty state showed under a full table. */
+  .gb-state[hidden] { display: none; }
 
   footer { margin-top: 28px; color: var(--text-muted); font-size: 12.5px; }
   footer code { background: var(--surface-1); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; }
@@ -419,6 +423,18 @@
   .search-wrap.big .search-icon { width: 20px; height: 20px; left: 16px; }
   .explore-hint { margin: 9px 2px 0; font-size: 13.5px; color: var(--text-secondary); }
 
+  /* Table-level search: a second, in-place filter box sitting right above the
+     dense bills table (mirrors the top hero search / state.filters.search). */
+  .table-search { display: flex; margin: 2px 0 14px; max-width: 460px; }
+  .table-search input[type="search"] {
+    width: 100%; font: inherit; font-size: 14px; padding: 10px 12px 10px 38px;
+    background: var(--surface-2, var(--surface-1)); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 10px;
+  }
+  .table-search input[type="search"]::placeholder { color: var(--text-muted); }
+  .table-search input[type="search"]:focus-visible { outline: 2px solid var(--series-3); outline-offset: 1px; border-color: var(--series-3); }
+  .table-search .search-icon { width: 16px; height: 16px; left: 13px; }
+
   .filters { align-items: flex-end; }
   .browse-field { display: flex; flex-direction: column; gap: 6px; }
   .browse-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gb-gold); font-weight: 600; }
@@ -449,13 +465,25 @@
   @media (prefers-reduced-motion: reduce) { .recent-card:hover { transform: none; } }
 
   details.overview { border: 1px solid var(--border); border-radius: 14px; background: var(--surface-1); margin-bottom: 14px; padding: 0 16px 6px; }
-  details.overview > summary { cursor: pointer; list-style: none; padding: 16px 2px; display: flex; align-items: baseline; gap: 12px; font-weight: 600; }
+  details.overview > summary { cursor: pointer; list-style: none; padding: 16px 2px; display: flex; align-items: center; gap: 12px; font-weight: 600; }
   details.overview > summary::-webkit-details-marker { display: none; }
-  details.overview > summary::after { content: "\25BE"; margin-left: auto; color: var(--text-secondary); transition: transform .18s ease; }
-  details.overview[open] > summary::after { transform: rotate(180deg); }
   details.overview .ov-title { font-size: 17px; }
   details.overview .ov-hint { font-size: 13px; color: var(--text-secondary); }
-  @media (prefers-reduced-motion: reduce) { details.overview > summary::after { transition: none; } }
+  /* Explicit expand affordance: a gold pill that says what a click will do. */
+  details.overview .ov-toggle {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 7px;
+    font-size: 13px; font-weight: 600; color: var(--gb-gold);
+    border: 1px solid var(--gb-gold); border-radius: 999px; padding: 6px 12px;
+    white-space: nowrap; transition: background .15s ease;
+  }
+  details.overview > summary:hover .ov-toggle { background: var(--hover-wash); }
+  details.overview .ov-toggle::after { content: "\25BE"; font-size: 11px; transition: transform .18s ease; }
+  details.overview[open] .ov-toggle::after { transform: rotate(180deg); }
+  details.overview .ov-toggle-hide { display: none; }
+  details.overview[open] .ov-toggle-show { display: none; }
+  details.overview[open] .ov-toggle-hide { display: inline; }
+  @media (max-width: 560px) { details.overview .ov-hint { display: none; } }
+  @media (prefers-reduced-motion: reduce) { details.overview .ov-toggle, details.overview .ov-toggle::after { transition: none; } }
 
   /* modal status timeline */
   .m-stage { margin: 2px 0 2px; }
@@ -533,7 +561,7 @@
       </div>
     </div>
     <a class="gb-nav-plain" href="architecture.html">How Govbot Works</a>
-    <a class="gb-nav-plain" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">About ↗</a>
+    <a class="gb-nav-plain" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub Repo ↗</a>
   </nav>
   <div class="gb-header-utils">
     <form class="gb-search" role="search" data-gb-search>
@@ -561,7 +589,7 @@
   <a href="hearings.html">Hearings &amp; Public Comment</a>
   <a href="elections.html">Illinois Elections</a>
   <a href="architecture.html">How Govbot Works</a>
-  <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">About / GitHub ↗</a>
+  <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub Repo ↗</a>
 </div>
 
 <div class="wrap">
@@ -638,7 +666,7 @@
 
   <!-- Analytics behind progressive disclosure (dense charts deeper) -->
   <details class="overview">
-    <summary><span class="ov-title">Overview &amp; charts</span><span class="ov-hint">jurisdiction · topic · monthly activity</span></summary>
+    <summary><span class="ov-title">Overview &amp; charts</span><span class="ov-hint">jurisdiction · topic · monthly activity</span><span class="ov-toggle"><span class="ov-toggle-show">Show charts</span><span class="ov-toggle-hide">Hide charts</span></span></summary>
     <div class="tiles" id="tiles"></div>
     <div class="grid2">
       <div class="card card--accent card--jurisdiction">
@@ -663,6 +691,13 @@
   <div class="card card--accent card--bills" style="margin-top:12px">
     <h2 id="table-title">Bills</h2>
     <p class="sub">Click a column header to sort</p>
+    <div class="search-wrap table-search">
+      <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+        <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle>
+        <line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+      </svg>
+      <input type="search" id="f-search-table" placeholder="Filter these bills…" aria-label="Filter the bills table">
+    </div>
     <div class="table-scroll">
       <table>
         <thead><tr id="thead-row"></tr></thead>
@@ -789,15 +824,29 @@
     initDateRange();
 
     let searchTimer;
-    $("f-search").addEventListener("input", (e) => {
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => {
-        state.filters.search = e.target.value.trim().toLowerCase();
-        render();
-      }, 150); // debounced: each render scans the full dataset
-    });
+    // Two boxes drive the same filter: the hero search up top and the
+    // table-level search right above the bills table. Typing in either mirrors
+    // the text into the other and re-renders (debounced: each render scans the
+    // full dataset).
+    function wireSearchBox(id, otherId) {
+      const el = $(id);
+      if (!el) return;
+      el.addEventListener("input", (e) => {
+        const v = e.target.value;
+        const other = $(otherId); if (other) other.value = v;
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+          state.filters.search = v.trim().toLowerCase();
+          render();
+        }, 150);
+      });
+    }
+    wireSearchBox("f-search", "f-search-table");
+    wireSearchBox("f-search-table", "f-search");
     $("f-clear").addEventListener("click", () => {
-      state.filters.search = ""; $("f-search").value = "";
+      state.filters.search = "";
+      $("f-search").value = "";
+      { const t = $("f-search-table"); if (t) t.value = ""; }
       state.filters.states.clear(); state.filters.tags.clear();
       state.filters.session = ""; $("f-session").value = "";
       state.filters.chamber = ""; $("f-chamber").value = "";
@@ -872,6 +921,7 @@
       if (q) {
         state.filters.search = q.toLowerCase();
         const el = $("f-search"); if (el) el.value = q;
+        const et = $("f-search-table"); if (et) et.value = q;
         return true;
       }
     } catch (e) { /* ignore malformed */ }
@@ -1173,7 +1223,10 @@
 
     const tbody = $("tbody");
     tbody.textContent = "";
-    $("empty").hidden = sorted.length > 0;
+    // Show the "nothing matches" state only when a search/filter is actually
+    // active — an empty result with no filters would be a data problem, not a
+    // too-narrow search, so we don't tell the user to "broaden" then.
+    $("empty").hidden = sorted.length > 0 || !anyFilterActive();
     sorted.slice(0, state.limit).forEach((b) => {
       const tr = document.createElement("tr");
 

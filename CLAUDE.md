@@ -153,7 +153,15 @@ are retired as each page is migrated. `legislation.html` has had its content red
 **search-first**: a prominent search hero, State + Topic as primary browse with Session/Chamber/
 date behind a "More filters" `<details>`, a "Recent activity" card strip (`#recent-list`, newest
 recorded actions, unfiltered, click → bill modal), the charts/tiles collapsed under an
-"Overview &amp; charts" `<details>`, and the dense sortable table kept below. The bill modal now
+"Overview &amp; charts" `<details>` (its `<summary>` carries an explicit gold **"Show charts" /
+"Hide charts"** pill toggle, `.ov-toggle`, so the expand affordance is obvious), and the dense
+sortable table kept below — with a **second, table-level search box** (`#f-search-table`, "Filter
+these bills…") sitting directly above that table that mirrors the hero search (`#f-search`) both
+ways into the same `state.filters.search`. The "No bills match" empty state (`#empty`) now shows
+**only when a filter/search is active and nothing matches** — `renderTable` hides it unless
+`anyFilterActive()`, and a `.gb-state[hidden] { display:none }` rule was added so the `hidden`
+attribute actually wins over `.gb-state`'s `display:flex` (previously the empty state showed under
+a full table). The bill modal now
 leads with an inferred **status timeline** (Introduced → Committee → Passed House → Senate →
 Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component).
 `elections.html` has been reframed **ballot-first**: a Capitol hero — `#hero-flag` (populated by
@@ -198,7 +206,8 @@ three backend pipelines). **Every page now wears the same shell as the Homepage*
 per-page tab bar + brandbar (logo + 3-button light/auto/dark theme pill) have been **retired**.
 All five pages share, byte-for-byte, the global-nav header (`.gb-header`: the `assets/govbot-mark.png`
 robot logo linking to the Homepage, the Explore / Follow / Data mega-menus + How Govbot Works /
-About plain links, the global `.gb-search`, and a single `[data-gb-theme-toggle]` icon button), the
+**GitHub Repo** plain links (the "GitHub Repo ↗" link → the repo, in a new tab; formerly labelled
+"About"), the global `.gb-search`, and a single `[data-gb-theme-toggle]` icon button), the
 mobile `.gb-drawer` (hamburger → flat link list + search), the civic `.gb-footer` (the
 `assets/govbot-mark.png` robot logo + brand blurb + a `.gb-social` row of gold-outline social chips —
 Bluesky / Threads / X / Instagram, styled in `govbot.css` off the `--gb-gold` tokens so they adapt
