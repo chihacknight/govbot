@@ -157,11 +157,12 @@ recorded actions, unfiltered, click → bill modal), the charts/tiles collapsed 
 leads with an inferred **status timeline** (Introduced → Committee → Passed House → Senate →
 Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component).
 `elections.html` has been reframed **ballot-first**: a Capitol hero — `#hero-flag` (populated by
-`renderElectionHero`) shows `assets/il-capitol-hero.png`, the **Illinois State Capitol** as gold
-line-art with the **Illinois flag flying above the dome** (both baked into the raster, keyed to a
-transparent background so it drops onto the dark hero in both themes). This replaced the earlier
-flag-on-a-pole SVG and its JS ripple; the old mouse-following "flag cursor" flourish is also gone.
-Copy: "Illinois Elections" / "Know who's on
+`renderElectionHero`) shows `assets/il-capitol-building.png`, the **Illinois State Capitol** as gold
+line-art (keyed to a transparent background so it drops onto the dark hero in both themes), with a
+separate **waving Illinois flag** SVG (`.cap-flag`/`.ilwave`, a CSS `@keyframes capflag`, off under
+`prefers-reduced-motion`) overlaid on the building's flagpole so the flag animates. This replaced the
+earlier flag-on-a-pole SVG and its JS ripple; the old mouse-following "flag cursor" flourish is also
+gone. Copy: "Illinois Elections" / "Know who's on
 your ballot before you vote." / a dynamic "Next election" line / an "Explore races" CTA) and a "What's on your ballot?" selector
 (`#ballot-cards`, one card per distinct `ballot_date` with its stage label + office/candidate
 counts) that drives the existing `#f-ballot` filter, reveals the sections, and scrolls to
