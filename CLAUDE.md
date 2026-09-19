@@ -156,12 +156,12 @@ recorded actions, unfiltered, click → bill modal), the charts/tiles collapsed 
 "Overview &amp; charts" `<details>`, and the dense sortable table kept below. The bill modal now
 leads with an inferred **status timeline** (Introduced → Committee → Passed House → Senate →
 Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component).
-`elections.html` has been reframed **ballot-first**: an Illinois-flag hero (the accurate flag
-asset `assets/il-flag.png` on a gold pole, its cloth rippled by an SVG turbulence/`feDisplacementMap`
-"wave" whose `feTurbulence` baseFrequency + `feDisplacementMap` scale are driven each frame in JS
-(`requestAnimationFrame`, on `#hero-flag._waveRaf`) so it visibly flaps — SMIL `<animate>` on filter
-primitives doesn't reliably repaint; a static `<img>` under `prefers-reduced-motion`. The old
-mouse-following "flag cursor" flourish has been **removed**. Copy: "Illinois Elections" / "Know who's on
+`elections.html` has been reframed **ballot-first**: a Capitol hero — `#hero-flag` (populated by
+`renderElectionHero`) shows `assets/il-capitol-hero.png`, the **Illinois State Capitol** as gold
+line-art with the **Illinois flag flying above the dome** (both baked into the raster, keyed to a
+transparent background so it drops onto the dark hero in both themes). This replaced the earlier
+flag-on-a-pole SVG and its JS ripple; the old mouse-following "flag cursor" flourish is also gone.
+Copy: "Illinois Elections" / "Know who's on
 your ballot before you vote." / a dynamic "Next election" line / an "Explore races" CTA) and a "What's on your ballot?" selector
 (`#ballot-cards`, one card per distinct `ballot_date` with its stage label + office/candidate
 counts) that drives the existing `#f-ballot` filter, reveals the sections, and scrolls to
@@ -182,9 +182,9 @@ Validate + normalize → AI topic tagging → Open data → Your dashboards) and
 trustworthy" card strip (`.gw-trust`: twice-daily refresh, source lineage, fail-soft, open RSS,
 open source, known limits), with the existing detailed per-pipeline diagrams kept below as the
 "full picture" (progressive disclosure). Stale product labels were updated to the new names.
-All five pages share a single **browser-tab favicon**: an inline SVG data-URI of the Govbot robot
-face (dark rounded tile, silver dome, gold antenna + eyes, green mouth bar) in the civic palette,
-crisp at 16px — replacing the old per-page torch/pinwheel icons.
+All five pages share a single **browser-tab favicon**: an inline SVG data-URI of a **gold gavel**
+(flared drum head with a gold center band, a turned handle, and a sound block) on the dark rounded
+civic tile, crisp at 16px — replacing the earlier robot-face and per-page torch/pinwheel icons.
 
 The Pages site has a **Homepage plus three dashboards plus a How-Govbot-Works page**:
 `docs/src/dashboard/index.html` (the **Homepage**),
