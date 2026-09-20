@@ -159,9 +159,13 @@ sortable table kept below — with a **second, table-level search box** (`#f-sea
 these bills…") sitting directly above that table that mirrors the hero search (`#f-search`) both
 ways into the same `state.filters.search`. The "No bills match" empty state (`#empty`) now shows
 **only when a filter/search is active and nothing matches** — `renderTable` hides it unless
-`anyFilterActive()`, and a `.gb-state[hidden] { display:none }` rule was added so the `hidden`
-attribute actually wins over `.gb-state`'s `display:flex` (previously the empty state showed under
-a full table). The bill modal now
+`anyFilterActive()`. Both `.gb-state` and `.gb-loading` set `display:flex`, which (author CSS)
+beats the UA `[hidden]{display:none}`, so the shared `govbot.css` now carries a
+`.gb-state[hidden], .gb-loading[hidden] { display:none }` rule that re-asserts `[hidden]` for both
+state components everywhere — without it the legislation empty state showed under a full table, the
+**elections** page kept a *forever* "Loading Illinois & Chicago races…" spinner (its
+`$("loading").hidden = true` never took) and a stray "No races match" box, and the hearings empty
+state was a bare dashed box. The bill modal now
 leads with an inferred **status timeline** (Introduced → Committee → Passed House → Senate →
 Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component).
 `elections.html` has been reframed **ballot-first**: a Capitol hero — `#hero-flag` (populated by

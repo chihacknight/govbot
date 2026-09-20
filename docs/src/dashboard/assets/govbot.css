@@ -316,6 +316,14 @@ h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spaci
 @keyframes gb-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .gb-spinner { animation-duration: 2.4s; } }
 
+/* Both state components set display:flex, which (author CSS) beats the UA
+   stylesheet's [hidden]{display:none}. Without this a page that toggles them
+   via the `hidden` attribute — e.g. `el.hidden = true` to dismiss the loading
+   spinner, or to keep the empty state hidden while results are showing — could
+   never actually hide them (a "forever" spinner, or a stray empty box under a
+   full list). Re-assert [hidden] for both. */
+.gb-state[hidden], .gb-loading[hidden] { display: none; }
+
 /* ===================== GLOBAL-NAV MEGA-MENU ========================= */
 .gb-nav-item { position: relative; display: inline-flex; }
 .gb-nav-trigger {
