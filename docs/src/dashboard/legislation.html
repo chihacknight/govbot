@@ -249,8 +249,8 @@
   tbody tr:hover { background: var(--hover-wash); }
   td.num, td.date { font-variant-numeric: tabular-nums; white-space: nowrap; }
   td .bill-id { font-weight: 600; white-space: nowrap; }
-  td .bill-title { color: var(--text-secondary); }
-  td .action-desc { color: var(--text-muted); font-size: 12px; }
+  td .bill-title { color: var(--text-primary); }
+  td .action-desc { color: var(--text-primary); font-size: 12px; }
   .empty { color: var(--text-muted); padding: 24px; text-align: center; }
   .show-more { margin: 12px auto 0; display: block; }
   /* The `hidden` attribute must win over the display:block above (author CSS
@@ -422,18 +422,6 @@
   .search-wrap.big .search-icon { width: 20px; height: 20px; left: 16px; }
   .explore-hint { margin: 9px 2px 0; font-size: 13.5px; color: var(--text-secondary); }
 
-  /* Table-level search: a second, in-place filter box sitting right above the
-     dense bills table (mirrors the top hero search / state.filters.search). */
-  .table-search { display: flex; margin: 2px 0 14px; max-width: 460px; }
-  .table-search input[type="search"] {
-    width: 100%; font: inherit; font-size: 14px; padding: 10px 12px 10px 38px;
-    background: var(--surface-2, var(--surface-1)); color: var(--text-primary);
-    border: 1px solid var(--border); border-radius: 10px;
-  }
-  .table-search input[type="search"]::placeholder { color: var(--text-muted); }
-  .table-search input[type="search"]:focus-visible { outline: 2px solid var(--series-3); outline-offset: 1px; border-color: var(--series-3); }
-  .table-search .search-icon { width: 16px; height: 16px; left: 13px; }
-
   .filters { align-items: flex-end; }
   .browse-field { display: flex; flex-direction: column; gap: 6px; }
   .browse-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gb-gold); font-weight: 600; }
@@ -448,6 +436,20 @@
   .section-head-lite { display: flex; align-items: baseline; gap: 12px; margin: 4px 0 12px; flex-wrap: wrap; }
   .section-head-lite h2 { margin: 0; }
   .recent { margin-bottom: 18px; }
+  /* When a search is active the Recent-activity list collapses (it's an
+     unfiltered entry point that would only distract from search results); the
+     pill in the section head lets the reader expand it again. */
+  .recent.is-collapsed .recent-list { display: none; }
+  .recent-toggle {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    font: inherit; font-size: 13px; font-weight: 600; color: var(--gb-gold);
+    background: none; border: 1px solid var(--gb-gold); border-radius: 999px; padding: 5px 12px;
+    white-space: nowrap; transition: background .15s ease;
+  }
+  .recent-toggle:hover { background: var(--hover-wash); }
+  .recent-toggle::after { content: "\25BE"; font-size: 11px; transition: transform .18s ease; }
+  .recent-toggle[aria-expanded="true"]::after { transform: rotate(180deg); }
+  @media (prefers-reduced-motion: reduce) { .recent-toggle, .recent-toggle::after { transition: none; } }
   .recent-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(278px, 1fr)); gap: 12px; }
   .recent-card { text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 7px;
     background: var(--surface-1); border: 1px solid var(--border); border-left: 3px solid var(--series-1);
@@ -607,8 +609,19 @@
     <p>Loading bill data… the full dataset covers 50+ jurisdictions and can take a few seconds.</p>
   </div>
 
-  <!-- Search-first: the primary way in -->
-  <section class="explore-search" aria-label="Search bills">
+  <!-- Recent activity: a fast entry point into what is moving -->
+  <section class="recent" id="recent" aria-label="Recent activity">
+    <div class="section-head-lite">
+      <h2>Recent activity</h2>
+      <span class="sub">Bills with the newest recorded action across all jurisdictions</span>
+      <button type="button" class="recent-toggle" id="recent-toggle" hidden aria-expanded="true" aria-controls="recent-list">Show recent activity</button>
+    </div>
+    <div class="recent-list" id="recent-list"></div>
+  </section>
+
+  <!-- The single search + filter control: narrows the charts and the bills
+       table below (sits between Recent activity and the analytics). -->
+  <section class="explore-search" aria-label="Search and filter bills">
     <div class="search-wrap big">
       <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
         <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle>
@@ -617,50 +630,39 @@
       <input type="search" id="f-search" placeholder="Search bills, sponsors, topics…" aria-label="Search bills">
     </div>
     <p class="explore-hint">Search by bill number, title or sponsor — or browse by state and topic below.</p>
-  </section>
-
-  <!-- Primary browse (state + topic); everything else behind progressive disclosure -->
-  <div class="filters" id="filters">
-    <div class="browse-field">
-      <span class="browse-label">State</span>
-      <div class="msel" id="f-states"></div>
-    </div>
-    <div class="browse-field">
-      <span class="browse-label">Topic</span>
-      <div class="msel" id="f-tags"></div>
-    </div>
-    <details class="more-filters">
-      <summary>More filters</summary>
-      <div class="more-grid">
-        <label class="mf-field"><span>Session</span><select id="f-session" aria-label="Session"></select></label>
-        <label class="mf-field"><span>Chamber</span><select id="f-chamber" aria-label="Chamber"></select></label>
-        <label class="mf-field"><span>Last action</span>
-          <select id="f-daterange" aria-label="Last action date range">
-            <option value="">Any date</option>
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 3 months</option>
-            <option value="365d">Last 12 months</option>
-            <option value="custom">Custom range…</option>
-          </select>
-        </label>
-        <span class="daterange-custom" id="f-daterange-custom" hidden>
-          <input type="date" id="f-date-from" aria-label="Last action from date">
-          <span class="daterange-sep">to</span>
-          <input type="date" id="f-date-to" aria-label="Last action to date">
-        </span>
+    <div class="filters" id="filters">
+      <div class="browse-field">
+        <span class="browse-label">State</span>
+        <div class="msel" id="f-states"></div>
       </div>
-    </details>
-    <button class="clear-btn" id="f-clear" disabled>Clear filters</button>
-  </div>
-
-  <!-- Recent activity: a fast entry point into what is moving -->
-  <section class="recent" id="recent" aria-label="Recent activity">
-    <div class="section-head-lite">
-      <h2>Recent activity</h2>
-      <span class="sub">Bills with the newest recorded action across all jurisdictions</span>
+      <div class="browse-field">
+        <span class="browse-label">Topic</span>
+        <div class="msel" id="f-tags"></div>
+      </div>
+      <details class="more-filters">
+        <summary>More filters</summary>
+        <div class="more-grid">
+          <label class="mf-field"><span>Session</span><select id="f-session" aria-label="Session"></select></label>
+          <label class="mf-field"><span>Chamber</span><select id="f-chamber" aria-label="Chamber"></select></label>
+          <label class="mf-field"><span>Last action</span>
+            <select id="f-daterange" aria-label="Last action date range">
+              <option value="">Any date</option>
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="90d">Last 3 months</option>
+              <option value="365d">Last 12 months</option>
+              <option value="custom">Custom range…</option>
+            </select>
+          </label>
+          <span class="daterange-custom" id="f-daterange-custom" hidden>
+            <input type="date" id="f-date-from" aria-label="Last action from date">
+            <span class="daterange-sep">to</span>
+            <input type="date" id="f-date-to" aria-label="Last action to date">
+          </span>
+        </div>
+      </details>
+      <button class="clear-btn" id="f-clear" disabled>Clear filters</button>
     </div>
-    <div class="recent-list" id="recent-list"></div>
   </section>
 
   <!-- Analytics behind progressive disclosure (dense charts deeper) -->
@@ -690,13 +692,6 @@
   <div class="card card--accent card--bills" style="margin-top:12px">
     <h2 id="table-title">Bills</h2>
     <p class="sub">Click a column header to sort</p>
-    <div class="search-wrap table-search">
-      <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
-        <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle>
-        <line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
-      </svg>
-      <input type="search" id="f-search-table" placeholder="Filter these bills…" aria-label="Filter the bills table">
-    </div>
     <div class="table-scroll">
       <table>
         <thead><tr id="thead-row"></tr></thead>
@@ -740,7 +735,6 @@
     <div>
       <h4>Transparency</h4>
       <a href="architecture.html">Architecture</a>
-      <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">Sources &amp; methodology ↗</a>
       <a href="../index.html" target="_blank" rel="noopener">Govbot docs ↗</a>
       <a href="elections.xml">RSS feeds</a>
     </div>
@@ -823,29 +817,21 @@
     initDateRange();
 
     let searchTimer;
-    // Two boxes drive the same filter: the hero search up top and the
-    // table-level search right above the bills table. Typing in either mirrors
-    // the text into the other and re-renders (debounced: each render scans the
-    // full dataset).
-    function wireSearchBox(id, otherId) {
-      const el = $(id);
-      if (!el) return;
-      el.addEventListener("input", (e) => {
-        const v = e.target.value;
-        const other = $(otherId); if (other) other.value = v;
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => {
-          state.filters.search = v.trim().toLowerCase();
-          render();
-        }, 150);
-      });
-    }
-    wireSearchBox("f-search", "f-search-table");
-    wireSearchBox("f-search-table", "f-search");
+    // The single search box drives state.filters.search (debounced: each render
+    // scans the full dataset).
+    { const el = $("f-search"); if (el) el.addEventListener("input", (e) => {
+      const v = e.target.value;
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        state.filters.search = v.trim().toLowerCase();
+        render();
+      }, 150);
+    }); }
+    // Pill toggles the Recent-activity list open/closed for the current search.
+    { const rt = $("recent-toggle"); if (rt) rt.addEventListener("click", () => { recentUserExpanded = !recentUserExpanded; syncRecentCollapse(); }); }
     $("f-clear").addEventListener("click", () => {
       state.filters.search = "";
       $("f-search").value = "";
-      { const t = $("f-search-table"); if (t) t.value = ""; }
       state.filters.states.clear(); state.filters.tags.clear();
       state.filters.session = ""; $("f-session").value = "";
       state.filters.chamber = ""; $("f-chamber").value = "";
@@ -920,7 +906,6 @@
       if (q) {
         state.filters.search = q.toLowerCase();
         const el = $("f-search"); if (el) el.value = q;
-        const et = $("f-search-table"); if (et) et.value = q;
         return true;
       }
     } catch (e) { /* ignore malformed */ }
@@ -986,6 +971,26 @@
     renderTagChart(bills);
     renderMonthChart(bills);
     renderTable(bills);
+    syncRecentCollapse();
+  }
+
+  // Recent activity collapses while a search query is active (it's an
+  // unfiltered entry point that would compete with the results the reader is
+  // now searching for). The pill in the section head lets them expand it again
+  // for that query; clearing the search restores the default expanded view.
+  let recentUserExpanded = false;
+  function syncRecentCollapse() {
+    const sec = $("recent"); if (!sec) return;
+    const searching = !!state.filters.search;
+    if (!searching) recentUserExpanded = false;   // fresh search always starts collapsed
+    const collapsed = searching && !recentUserExpanded;
+    sec.classList.toggle("is-collapsed", collapsed);
+    const btn = $("recent-toggle");
+    if (btn) {
+      btn.hidden = !searching;                     // pill only appears while searching
+      btn.setAttribute("aria-expanded", String(!collapsed));
+      btn.textContent = collapsed ? "Show recent activity" : "Hide recent activity";
+    }
   }
 
   function renderTiles(bills) {
@@ -1739,12 +1744,22 @@
     if (days < 365) return Math.round(days / 30) + " mo ago";
     return d.toISOString().slice(0, 10);
   }
+  const RECENT_MAX = 12, RECENT_PER_STATE = 2;
   function renderRecent() {
     const host = $("recent-list"); if (!host || !state.data) return;
-    const bills = state.data.bills.slice()
+    const sorted = state.data.bills.slice()
       .filter((b) => b.latest_action)
-      .sort((a, b) => (a.latest_action < b.latest_action ? 1 : a.latest_action > b.latest_action ? -1 : 0))
-      .slice(0, 12);
+      .sort((a, b) => (a.latest_action < b.latest_action ? 1 : a.latest_action > b.latest_action ? -1 : 0));
+    // Cap each jurisdiction to RECENT_PER_STATE so one busy state can't
+    // monopolize the strip — keep newest-first order, take up to RECENT_MAX.
+    const perState = Object.create(null);
+    const bills = [];
+    for (const b of sorted) {
+      const k = b.state || "";
+      perState[k] = (perState[k] || 0) + 1;
+      if (perState[k] <= RECENT_PER_STATE) bills.push(b);
+      if (bills.length >= RECENT_MAX) break;
+    }
     host.textContent = "";
     if (!bills.length) { const sec = $("recent"); if (sec) sec.hidden = true; return; }
     bills.forEach((b) => {

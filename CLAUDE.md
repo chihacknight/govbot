@@ -148,16 +148,48 @@ The shared CSS also provides designed **state** components — `.gb-state` (empt
 desktop + click, Escape/outside-click to close; the mobile drawer stays a flat link list). `docs/src/dashboard/index.html` is now the
 **Homepage** landing page (a realistic golden wireframe Lady Liberty raster hero, `assets/liberty-hero.png`, luminance-keyed to a transparent background so it drops cleanly onto the hero in both themes; the robot mark `assets/govbot-mark.png` is the header logo; "What do you want to know?" cards,
 live "What's happening now" fetched fail-soft from `data.json`/`hearings.json`/`elections.json`).
+The homepage's **"Recent legislative activity"** card shows **one bill per state** (up to 4) as rich
+`.activity-row.rich` rows: the bill's topic tags (`.ar-topic` chips) plus its sponsors as
+**real-headshot avatar chips** (`.ar-av` with an `<img>`, name + party letter, first 3 then
+"+N more"). **The homepage avatars are always real photos — never an initials monogram.** A sponsor
+is pictured only when a headshot was vendored for them; a sponsor without a photo is simply not
+given an avatar (still counted in "+N more"), and a runtime image error drops the whole `.ar-spon`
+chip rather than showing an empty circle. The card just shows the newest bill per state (no
+photographed-bill preference); a state whose sponsors have no photo shows its bill + tags with no
+avatars — never initials. Party + full name are resolved from `people.json` with the same matcher
+legislation.html uses (`matchLeg`, surname-only / "Surname, F" / "First Last", never guessing an
+ambiguous surname). **Photos are vendored at deploy, never committed** by
+`scripts/fetch_sponsor_photos.py` (deploy-docs.yml, "Vendor sponsor photos for on-screen bills",
+after `data.json` is built) — only for the sponsors of the on-screen bills (newest 1/state, small
+cap) — into `docs/src/dashboard/assets/legislators/` + a manifest `legislator_images.json`
+(`{"<state>:<full name lower>": "assets/legislators/<file>"}` — the frontend's lookup key). Both the
+image dir and the manifest are **`.gitignore`d build artifacts** — fetched during the Pages build,
+published by mdbook with the site, so no photo dump lands in git. It tries **two public sources in
+order, falling back if the first fails**: (1) the Open States CC0 `image:` URL (a retrying
+downloader), then (2) a **Wikipedia/Wikimedia** page thumbnail, accepted only when the page summary
+confidently ties the person to that state's legislature (`wiki_thumbnail`: a legislative-role word
+*and* the state name must appear, and it must not be a disambiguation page — otherwise no photo, so
+a namesake's face is never attached). Reuses the `/tmp/openstates-people` checkout from the roster
+step; fully fail-soft (no checkout / both sources fail → that sponsor just isn't pictured).
+Offline-tested with injected fetch + wiki functions: `python3 scripts/test_fetch_sponsor_photos.py`. The **"Next hearings open to comment"** card renders each date as a little
+**calendar figure** (`.mini-date`: a gold month band with two binding rings, a big day numeral, and
+the weekday + year, e.g. "Sun · 2026").
 Pages migrate to the shared system one at a time; the old per-page "New Design" skins + toggle
-are retired as each page is migrated. `legislation.html` has had its content redesigned
-**search-first**: a prominent search hero, State + Topic as primary browse with Session/Chamber/
-date behind a "More filters" `<details>`, a "Recent activity" card strip (`#recent-list`, newest
-recorded actions, unfiltered, click → bill modal), the charts/tiles collapsed under an
+are retired as each page is migrated. `legislation.html` opens with a "Recent activity" card strip
+(`#recent-list`, newest recorded actions, unfiltered, click → bill modal — capped at
+`RECENT_PER_STATE` (2) per jurisdiction so one busy state can't monopolize the strip, up to
+`RECENT_MAX` (12) cards; and it **collapses while a search query is active**, with a gold
+`.recent-toggle` "Show / Hide recent activity" pill in the section head to expand it for that query,
+`syncRecentCollapse()` — a fresh search always starts collapsed, clearing it restores the expanded
+default). Below Recent activity, above the analytics, sits **one** search-and-filter block
+(`.explore-search`): a single search box (`#f-search`, "Search bills, sponsors, topics…", the
+page's only bill search — the old top hero search and the per-table search box were consolidated
+into this one) plus State + Topic as primary browse with Session/Chamber/date behind a "More
+filters" `<details>` (`#filters`). Then the charts/tiles collapsed under an
 "Overview &amp; charts" `<details>` (its `<summary>` carries an explicit gold **"Show charts" /
 "Hide charts"** pill toggle, `.ov-toggle`, so the expand affordance is obvious), and the dense
-sortable table kept below — with a **second, table-level search box** (`#f-search-table`, "Filter
-these bills…") sitting directly above that table that mirrors the hero search (`#f-search`) both
-ways into the same `state.filters.search`. The "No bills match" empty state (`#empty`) now shows
+sortable table kept below. The table's Title + latest-action cell text is `--text-primary`
+(full-contrast, not dimmed). The "No bills match" empty state (`#empty`) now shows
 **only when a filter/search is active and nothing matches** — `renderTable` hides it unless
 `anyFilterActive()`. Both `.gb-state` and `.gb-loading` set `display:flex`, which (author CSS)
 beats the UA `[hidden]{display:none}`, so the shared `govbot.css` now carries a
@@ -167,7 +199,9 @@ state components everywhere — without it the legislation empty state showed un
 `$("loading").hidden = true` never took) and a stray "No races match" box, and the hearings empty
 state was a bare dashed box. The bill modal now
 leads with an inferred **status timeline** (Introduced → Committee → Passed House → Senate →
-Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component).
+Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component; its
+**current** node — the bill's latest recorded stage — pulses via `@keyframes gb-node-pulse`, off
+under `prefers-reduced-motion`, so the eye lands on where the bill is now).
 `elections.html` has been reframed **ballot-first**: a Capitol hero — `#hero-flag` (populated by
 `renderElectionHero`) shows `assets/il-capitol-building.png`, the **Illinois State Capitol** as gold
 line-art (keyed to a transparent background so it drops onto the dark hero in both themes), with a
@@ -182,10 +216,13 @@ counts) that drives the existing `#f-ballot` filter, reveals the sections, and s
 Springfield, picker) is unchanged.
 `hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
 "Hearings & Public Comment", tagline "Government isn't just something you watch — you can
-participate.", a dynamic "N upcoming · N open to public comment · N jurisdictions" line, a gold
+participate.", the live metrics foregrounded as a row of **gold civic stat tiles** (`.hh-stats` /
+`.hh-stat` — display numerals on faint glass: "N upcoming hearings", "N open to public comment",
+"N jurisdictions"), and a
 detailed gold White House line-art (`assets/whitehouse-hero.png`, a transparent-background raster
-so it drops onto the dark hero in both themes), and a "See upcoming hearings" CTA; the America-250 `250th` fireworks
-brandbar is kept). Each hearing now makes participation obvious: a green **"Public comment open"**
+so it drops onto the dark hero in both themes); the America-250 `250th` fireworks
+brandbar is kept. (The earlier "See upcoming hearings" CTA button was removed — the metrics carry
+the hero.) Each hearing now makes participation obvious: a green **"Public comment open"**
 badge on the date column and the witness-slip/comment action elevated into a filled green
 `.file-link` pill. The `<title>` was also corrected (it had been a stray "Legislation Dashboard").
 The hearing/participation render engine is otherwise unchanged.

@@ -54,9 +54,51 @@
   .activity-row .tag { font-size: 12px; font-weight: 600; color: var(--gb-blue-hi); min-width: 74px; }
   .activity-row .desc { font-size: 15px; color: var(--gb-text); flex-grow: 1; }
   .activity-row .when { font-size: 12px; color: var(--gb-text-2); white-space: nowrap; }
-  .mini-date { text-align: center; min-width: 46px; }
-  .mini-date .d { font-family: var(--gb-font-display); font-size: 22px; line-height: 1; color: var(--gb-gold-hi); }
-  .mini-date .m { font-size: 11px; color: var(--gb-text-2); text-transform: uppercase; }
+  /* Rich recent-activity rows: one bill per state, with its topic tags and the
+     sponsors (initials avatar + name + party — no photo is shipped in the
+     roster, so the circle is a party-tinted monogram). */
+  .activity-row.rich { flex-direction: column; align-items: stretch; gap: 9px; }
+  .activity-row.rich .ar-head { display: flex; align-items: baseline; gap: 12px; }
+  .activity-row.rich .ar-head .tag { min-width: 0; }
+  .activity-row.rich .ar-head .when { margin-left: auto; }
+  .activity-row.rich .desc { font-size: 14.5px; line-height: 1.35; }
+  .ar-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ar-topic { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 999px;
+    background: var(--gb-surface-2); color: var(--gb-text-2); border: 1px solid var(--gb-border); }
+  .ar-sponsors { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+  .ar-spon { display: inline-flex; align-items: center; gap: 7px; }
+  .ar-av { position: relative; overflow: hidden; width: 26px; height: 26px; border-radius: 50%;
+    flex: none; display: inline-flex; align-items: center; justify-content: center; font-size: 10px;
+    font-weight: 700; color: #fff; letter-spacing: .02em; border: 1.5px solid rgba(255,255,255,0.16); }
+  .ar-av.is-dem { background: var(--gb-blue); }
+  .ar-av.is-rep { background: var(--gb-red); }
+  .ar-av.is-oth { background: var(--gb-gold); color: #1a1205; }
+  .ar-av.is-unk { background: var(--gb-surface-2); color: var(--gb-text-2); border-color: var(--gb-border); }
+  /* A real headshot (vendored at deploy) covers the monogram; if it 404s the
+     <img> is removed and the party-tinted monogram shows through. */
+  .ar-av-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ar-spon-name { font-size: 12.5px; color: var(--gb-text); font-weight: 500; }
+  .ar-party { font-size: 10px; font-weight: 700; margin-left: 3px; }
+  .ar-party.is-dem { color: var(--gb-blue-hi); }
+  .ar-party.is-rep { color: var(--gb-red); }
+  .ar-party.is-oth { color: var(--gb-gold); }
+  .ar-more { font-size: 12px; color: var(--gb-text-2); font-weight: 600; align-self: center; }
+  /* Upcoming-hearing dates rendered as a little calendar page: a gold month
+     band with two binding rings, a big day numeral, and the weekday + year. */
+  .hearing-row { align-items: center; gap: 12px; }
+  .mini-date { flex: none; width: 58px; text-align: center; border-radius: 10px; overflow: hidden;
+    background: var(--gb-surface-2); border: 1px solid var(--gb-border); position: relative;
+    box-shadow: 0 2px 7px rgba(0,0,0,0.12); }
+  .mini-date .cal-band { position: relative; background: var(--gb-gold); color: #1a1205;
+    font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 6px 0 3px; }
+  .mini-date .cal-band::before, .mini-date .cal-band::after {
+    content: ""; position: absolute; top: 2px; width: 3px; height: 5px; border-radius: 2px;
+    background: color-mix(in srgb, #1a1205 42%, transparent); }
+  .mini-date .cal-band::before { left: 34%; }
+  .mini-date .cal-band::after { right: 34%; }
+  .mini-date .cal-day { font-family: var(--gb-font-display); font-size: 24px; line-height: 1.05;
+    color: var(--gb-text); padding: 4px 0 0; }
+  .mini-date .cal-sub { font-size: 9.5px; color: var(--gb-text-2); padding: 1px 0 5px; letter-spacing: .02em; }
   .election-card { background: linear-gradient(160deg, rgba(63,179,127,0.10), var(--gb-surface) 62%); }
 
   .follow-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
@@ -255,7 +297,7 @@
       <div class="gb-card">
         <div class="gb-overline" style="margin-bottom:14px;">Next hearings open to comment</div>
         <div id="hearings-list">
-          <div class="activity-row" style="border:none;padding-top:0;"><div class="mini-date"><div class="d">—</div><div class="m">soon</div></div><span class="desc">Loading upcoming hearings…</span></div>
+          <div class="activity-row hearing-row" style="border:none;padding-top:0;"><div class="mini-date"><div class="cal-band">—</div><div class="cal-day">—</div><div class="cal-sub">soon</div></div><span class="desc">Loading upcoming hearings…</span></div>
         </div>
       </div>
       <div class="gb-card election-card">
@@ -315,7 +357,6 @@
     <div>
       <h4>Transparency</h4>
       <a href="architecture.html">Architecture</a>
-      <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">Sources &amp; methodology ↗</a>
       <a href="../index.html" target="_blank" rel="noopener">Govbot docs ↗</a>
       <a href="elections.xml">RSS feeds</a>
     </div>
@@ -354,23 +395,102 @@
   function escAttr(s) { return esc(s).replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
 
   // ---- recent legislative activity ----
-  fetch("data.json").then(function (r) { return r.json(); }).then(function (d) {
-    var bills = (d && d.bills) || [];
+  // Resolve a sponsor to a single roster legislator [given, full, party, area],
+  // or null when it can't be pinned to exactly one person (never guess). Mirrors
+  // legislation.html's matcher: surname-only, "Surname, F", or "First Last".
+  function matchLeg(state, name, people) {
+    if (!name || !people) return null;
+    var roster = people[state]; if (!roster) return null;
+    var raw = String(name).trim(), family = raw, first = "", comma = raw.indexOf(",");
+    if (comma !== -1) { family = raw.slice(0, comma).trim(); first = raw.slice(comma + 1).replace(/[^A-Za-z]/g, ""); }
+    else if (/\s/.test(raw)) { var parts = raw.split(/\s+/); first = parts[0]; family = parts[parts.length - 1]; }
+    var cands = roster[family.toLowerCase()];
+    if (!cands || !cands.length) return null;
+    if (cands.length === 1) return cands[0];
+    if (first) { var fi = first.charAt(0).toLowerCase();
+      var hits = cands.filter(function (c) { return (c[0] || "").trim().toLowerCase().charAt(0) === fi; });
+      if (hits.length === 1) return hits[0]; }
+    return null;
+  }
+  function partyMeta(party) {
+    var p = (party || "").toLowerCase();
+    if (p.indexOf("democrat") === 0) return { letter: "D", cls: "is-dem" };
+    if (p.indexOf("republican") === 0) return { letter: "R", cls: "is-rep" };
+    if (!party) return { letter: "", cls: "is-unk" };
+    return { letter: party.charAt(0).toUpperCase(), cls: "is-oth" };
+  }
+  Promise.all([
+    fetch("data.json").then(function (r) { return r.json(); }).catch(function () { return null; }),
+    fetch("people.json").then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+    // Vendored sponsor headshots (built at deploy). Absent in local dev / before
+    // the first deploy — everyone just gets monograms. Fail-soft.
+    fetch("legislator_images.json").then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+  ]).then(function (res) {
+    var d = res[0] || {}, people = res[1] || {}, photos = res[2] || {};
+    var bills = d.bills || [];
     var dated = bills.filter(function (b) { return b.latest_action; })
       .sort(function (a, b) { return String(b.latest_action).localeCompare(String(a.latest_action)); });
-    var rows = (dated.length ? dated : bills).slice(0, 4);
+    var pool = dated.length ? dated : bills;
+    // The vendored photo path for one sponsor of a bill, or "" — resolves the
+    // sponsor to a full name, then looks it up in the deploy-built manifest.
+    function photoFor(b, name) {
+      var m = matchLeg(b.state, name, people);
+      var full = m ? m[1] : name;
+      return photos[(b.state || "").toLowerCase() + ":" + String(full).trim().toLowerCase()] || "";
+    }
+    // One bill per state (newest-first), up to 4 — no state monopolizes the strip.
+    var seen = {}, rows = [];
+    for (var i = 0; i < pool.length && rows.length < 4; i++) {
+      var stk = pool[i].state || "";
+      if (seen[stk]) continue;
+      seen[stk] = 1; rows.push(pool[i]);
+    }
     if (!rows.length) return;
+    var MAX_SPON = 3;
     var html = rows.map(function (b) {
       var st = (b.state || "").toUpperCase();
       var desc = b.latest_action_desc || b.title || "";
       if (desc.length > 92) desc = desc.slice(0, 90) + "…";
       var q = String(b.id || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-      return '<a class="activity-row" style="text-decoration:none;color:inherit;" href="legislation.html#q=' + escAttr(q) + '">' +
-        '<span class="tag">' + esc(st) + ' · ' + esc(b.id) + '</span>' +
-        '<span class="desc">' + esc(desc) + '</span>' +
-        '<span class="when">' + esc(ago(b.latest_action)) + '</span></a>';
+      var tags = (b.tags || []).slice(0, 3).map(function (t) {
+        return '<span class="ar-topic">' + esc(t) + '</span>';
+      }).join("");
+      var tagsHtml = tags ? '<div class="ar-tags">' + tags + '</div>' : "";
+      var sp = b.sponsors || [];
+      // Only sponsors we have a real photo for get an avatar — the homepage
+      // never shows an initials monogram. A sponsor without a headshot is simply
+      // not pictured (still counted in "+N more").
+      var pics = [];
+      sp.forEach(function (name) {
+        var photo = photoFor(b, name);
+        if (!photo) return;
+        var m = matchLeg(b.state, name, people);
+        var full = m ? m[1] : name;
+        var pm = partyMeta(m ? (m[2] || "") : "");
+        pics.push({ full: full, pm: pm, photo: photo });
+      });
+      var shown = pics.slice(0, MAX_SPON);
+      var spItems = shown.map(function (p) {
+        var av = '<span class="ar-av ' + p.pm.cls + '">' +
+          '<img class="ar-av-img" src="' + escAttr(p.photo) + '" alt="" loading="lazy"></span>';
+        var pl = p.pm.letter ? ' <span class="ar-party ' + p.pm.cls + '">' + esc(p.pm.letter) + '</span>' : "";
+        return '<span class="ar-spon">' + av + '<span class="ar-spon-name">' + esc(p.full) + pl + '</span></span>';
+      }).join("");
+      var moreN = sp.length - shown.length;
+      var moreHtml = moreN > 0 ? '<span class="ar-more">+' + moreN + ' more</span>' : "";
+      var sponHtml = spItems ? '<div class="ar-sponsors">' + spItems + moreHtml + '</div>' : "";
+      return '<a class="activity-row rich" style="text-decoration:none;color:inherit;" href="legislation.html#q=' + escAttr(q) + '">' +
+        '<div class="ar-head"><span class="tag">' + esc(st) + ' · ' + esc(b.id) + '</span>' +
+        '<span class="when">' + esc(ago(b.latest_action)) + '</span></div>' +
+        '<div class="desc">' + esc(desc) + '</div>' + tagsHtml + sponHtml + '</a>';
     }).join("");
     document.getElementById("activity-list").innerHTML = html;
+    // If a headshot fails to load at runtime, drop the whole sponsor chip so the
+    // homepage never falls back to an empty circle or initials.
+    var imgs = document.querySelectorAll("#activity-list .ar-av-img");
+    for (var j = 0; j < imgs.length; j++) {
+      imgs[j].onerror = function () { var c = this.closest(".ar-spon"); if (c) c.remove(); };
+    }
   }).catch(function () {});
 
   // ---- next hearings open to comment ----
@@ -383,15 +503,20 @@
     if (!up.length) { document.getElementById("hearings-list").innerHTML = '<div class="activity-row" style="border:none;padding-top:0;color:var(--gb-text-2);font-size:14px;">No upcoming hearings in the current window.</div>'; return; }
     var html = up.map(function (x, i) {
       var d = new Date(x.scheduled_iso);
-      var day = isNaN(d) ? "—" : d.getDate();
-      var mon = isNaN(d) ? "" : d.toLocaleString("en-US", { month: "short" });
+      var bad = isNaN(d);
+      var day = bad ? "—" : d.getDate();
+      var mon = bad ? "" : d.toLocaleString("en-US", { month: "short" });
+      var wd = bad ? "" : d.toLocaleString("en-US", { weekday: "short" });
+      var yr = bad ? "" : d.getFullYear();
+      var sub = bad ? "soon" : (wd + " · " + yr);
       var juris = (x.jurisdiction || "").toUpperCase();
       var label = (x.committee || x.title || "Hearing");
       if (label.length > 60) label = label.slice(0, 58) + "…";
       var url = x.witness_slip_url || x.details_url || "hearings.html";
       var border = i === 0 ? "border:none;padding-top:0;" : "";
-      return '<a class="activity-row" style="' + border + 'text-decoration:none;color:inherit;" href="' + escAttr(url) + '">' +
-        '<div class="mini-date"><div class="d">' + esc(day) + '</div><div class="m">' + esc(mon) + '</div></div>' +
+      return '<a class="activity-row hearing-row" style="' + border + 'text-decoration:none;color:inherit;" href="' + escAttr(url) + '">' +
+        '<div class="mini-date"><div class="cal-band">' + esc(mon) + '</div>' +
+        '<div class="cal-day">' + esc(day) + '</div><div class="cal-sub">' + esc(sub) + '</div></div>' +
         '<span class="desc">' + esc(juris) + ' — ' + esc(label) + '</span></a>';
     }).join("");
     document.getElementById("hearings-list").innerHTML = html;

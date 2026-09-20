@@ -274,10 +274,17 @@ h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spaci
   display: inline-flex; align-items: center; gap: 8px;
   padding: 11px 16px; font: inherit; font-size: 13px; font-weight: 600;
   color: var(--gb-text); cursor: pointer;
-  background: color-mix(in srgb, var(--gb-elevated) 78%, transparent);
-  border: 1px solid var(--gb-border); border-radius: var(--gb-radius-pill);
-  backdrop-filter: blur(12px) saturate(150%);
-  box-shadow: var(--gb-shadow);
+  /* Liquid glass: a very translucent fill over a heavy, saturated blur, a
+     faint glassy rim, and a bright top-edge highlight so the pill reads as a
+     pane of glass floating over the page. */
+  background: color-mix(in srgb, var(--gb-elevated) 38%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gb-text) 14%, transparent);
+  border-radius: var(--gb-radius-pill);
+  backdrop-filter: blur(22px) saturate(200%);
+  -webkit-backdrop-filter: blur(22px) saturate(200%);
+  box-shadow: var(--gb-shadow),
+    inset 0 1px 0 color-mix(in srgb, #fff 30%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, #fff 6%, transparent);
   opacity: 0; visibility: hidden; transform: translateY(8px);
   transition: opacity .25s ease, transform .25s ease, visibility .25s;
 }
@@ -289,7 +296,15 @@ h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spaci
 .gb-timeline .step { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
 .gb-timeline .node { width: 18px; height: 18px; border-radius: 50%; background: var(--gb-surface-2); border: 2px solid var(--gb-border-strong); }
 .gb-timeline .step.done .node { background: var(--gb-green); border-color: var(--gb-green); }
-.gb-timeline .step.current .node { background: var(--gb-gold-hi); border-color: var(--gb-gold-hi); box-shadow: 0 0 0 4px rgba(240,201,105,0.2); }
+.gb-timeline .step.current .node { background: var(--gb-gold-hi); border-color: var(--gb-gold-hi); box-shadow: 0 0 0 4px rgba(240,201,105,0.2); animation: gb-node-pulse 1.8s ease-out infinite; }
+/* The current stage is the bill's latest recorded action — pulse its node so
+   the reader's eye lands on "where this bill is now". */
+@keyframes gb-node-pulse {
+  0%   { box-shadow: 0 0 0 4px rgba(240,201,105,0.2), 0 0 0 0 rgba(240,201,105,0.5); }
+  70%  { box-shadow: 0 0 0 4px rgba(240,201,105,0.2), 0 0 0 12px rgba(240,201,105,0); }
+  100% { box-shadow: 0 0 0 4px rgba(240,201,105,0.2), 0 0 0 0 rgba(240,201,105,0); }
+}
+@media (prefers-reduced-motion: reduce) { .gb-timeline .step.current .node { animation: none; } }
 .gb-timeline .step .lbl { font-size: 13px; color: var(--gb-text-2); }
 .gb-timeline .step.done .lbl, .gb-timeline .step.current .lbl { color: var(--gb-text); font-weight: 600; }
 .gb-timeline .bar { height: 2px; background: var(--gb-border); flex: 1; margin-top: 8px; }

@@ -127,3 +127,9 @@ sample_data/*
 
 
 reviews/
+
+# Vendored legislator sponsor photos + manifest: build artifacts fetched during
+# the Pages deploy (scripts/fetch_sponsor_photos.py) and published with the
+# site, never committed — so no photo dump lands in git history.
+docs/src/dashboard/assets/legislators/
+docs/src/dashboard/legislator_images.json
