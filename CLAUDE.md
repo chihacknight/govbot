@@ -154,22 +154,24 @@ The homepage's **"Recent legislative activity"** card shows **one bill per state
 "+N more"). **The homepage avatars are always real photos — never an initials monogram.** A sponsor
 is pictured only when a headshot was vendored for them; a sponsor without a photo is simply not
 given an avatar (still counted in "+N more"), and a runtime image error drops the whole `.ar-spon`
-chip rather than showing an empty circle. To keep faces present, the per-state pick prefers the
-newest bill whose sponsors we have photos for (`billHasPhoto`/`photoFor`); if a state has none, that
-row shows its bill + tags with no avatars (never initials), so a total photo-outage degrades to
-tags, never to monograms. Party + full name are resolved from `people.json` with the same matcher
+chip rather than showing an empty circle. The card just shows the newest bill per state (no
+photographed-bill preference); a state whose sponsors have no photo shows its bill + tags with no
+avatars — never initials. Party + full name are resolved from `people.json` with the same matcher
 legislation.html uses (`matchLeg`, surname-only / "Surname, F" / "First Last", never guessing an
-ambiguous surname). **Photos are vendored at deploy, never committed:**
+ambiguous surname). **Photos are vendored at deploy, never committed** by
 `scripts/fetch_sponsor_photos.py` (deploy-docs.yml, "Vendor sponsor photos for on-screen bills",
-after `data.json` is built, `--per-state 3 --max-bills 30`) downloads the public CC0 Open States
-`image:` URLs for the sponsors of the newest few bills per state (a small candidate pool so each
-on-screen state has a photographed bill available) into `docs/src/dashboard/assets/legislators/` +
-a manifest `legislator_images.json` (`{"<state>:<full name lower>": "assets/legislators/<file>"}` —
-the frontend's lookup key). Both the image dir and the manifest are **`.gitignore`d build
-artifacts** — fetched during the Pages build, published by mdbook with the site, so no photo dump
-lands in git. The vendor reuses the `/tmp/openstates-people` checkout from the roster step and is
-fully fail-soft (no checkout / a failed image → that sponsor just isn't pictured). Offline-tested
-with an injected fetcher: `python3 scripts/test_fetch_sponsor_photos.py`. The **"Next hearings open to comment"** card renders each date as a little
+after `data.json` is built) — only for the sponsors of the on-screen bills (newest 1/state, small
+cap) — into `docs/src/dashboard/assets/legislators/` + a manifest `legislator_images.json`
+(`{"<state>:<full name lower>": "assets/legislators/<file>"}` — the frontend's lookup key). Both the
+image dir and the manifest are **`.gitignore`d build artifacts** — fetched during the Pages build,
+published by mdbook with the site, so no photo dump lands in git. It tries **two public sources in
+order, falling back if the first fails**: (1) the Open States CC0 `image:` URL (a retrying
+downloader), then (2) a **Wikipedia/Wikimedia** page thumbnail, accepted only when the page summary
+confidently ties the person to that state's legislature (`wiki_thumbnail`: a legislative-role word
+*and* the state name must appear, and it must not be a disambiguation page — otherwise no photo, so
+a namesake's face is never attached). Reuses the `/tmp/openstates-people` checkout from the roster
+step; fully fail-soft (no checkout / both sources fail → that sponsor just isn't pictured).
+Offline-tested with injected fetch + wiki functions: `python3 scripts/test_fetch_sponsor_photos.py`. The **"Next hearings open to comment"** card renders each date as a little
 **calendar figure** (`.mini-date`: a gold month band with two binding rings, a big day numeral, and
 the weekday + year, e.g. "Sun · 2026").
 Pages migrate to the shared system one at a time; the old per-page "New Design" skins + toggle

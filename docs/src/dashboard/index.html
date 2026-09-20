@@ -438,24 +438,12 @@
       var full = m ? m[1] : name;
       return photos[(b.state || "").toLowerCase() + ":" + String(full).trim().toLowerCase()] || "";
     }
-    function billHasPhoto(b) {
-      return (b.sponsors || []).some(function (n) { return !!photoFor(b, n); });
-    }
-    // One bill per state, up to 4 — but for each state prefer its newest bill
-    // whose sponsors we actually have photos for, so every avatar on screen is a
-    // real face (never a monogram). Fall back to the newest bill if a state has
-    // no photographed sponsor (that row just shows no avatars, never initials).
-    var order = [], byState = {};
-    for (var i = 0; i < pool.length; i++) {
+    // One bill per state (newest-first), up to 4 — no state monopolizes the strip.
+    var seen = {}, rows = [];
+    for (var i = 0; i < pool.length && rows.length < 4; i++) {
       var stk = pool[i].state || "";
-      if (!byState[stk]) { byState[stk] = []; order.push(stk); }
-      byState[stk].push(pool[i]);
-    }
-    var rows = [];
-    for (var s = 0; s < order.length && rows.length < 4; s++) {
-      var list = byState[order[s]], pick = null;
-      for (var k = 0; k < list.length; k++) { if (billHasPhoto(list[k])) { pick = list[k]; break; } }
-      rows.push(pick || list[0]);
+      if (seen[stk]) continue;
+      seen[stk] = 1; rows.push(pool[i]);
     }
     if (!rows.length) return;
     var MAX_SPON = 3;

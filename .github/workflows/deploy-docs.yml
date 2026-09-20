@@ -153,8 +153,7 @@ jobs:
               --people-dir /tmp/openstates-people \
               --out-dir docs/src/dashboard/assets/legislators \
               --manifest docs/src/dashboard/legislator_images.json \
-              --per-state 3 --max-bills 30 \
-              || echo "::warning::sponsor-photo vendor reported errors; homepage shows fewer photographed bills"
+              || echo "::warning::sponsor-photo vendor reported errors; those sponsors just aren't pictured"
           else
             echo "::warning::no openstates/people checkout; skipping sponsor photos (monogram fallback)"
           fi
