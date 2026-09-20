@@ -80,9 +80,22 @@
   .ar-party.is-rep { color: var(--gb-red); }
   .ar-party.is-oth { color: var(--gb-gold); }
   .ar-more { font-size: 12px; color: var(--gb-text-2); font-weight: 600; align-self: center; }
-  .mini-date { text-align: center; min-width: 46px; }
-  .mini-date .d { font-family: var(--gb-font-display); font-size: 22px; line-height: 1; color: var(--gb-gold-hi); }
-  .mini-date .m { font-size: 11px; color: var(--gb-text-2); text-transform: uppercase; }
+  /* Upcoming-hearing dates rendered as a little calendar page: a gold month
+     band with two binding rings, a big day numeral, and the weekday + year. */
+  .hearing-row { align-items: center; gap: 12px; }
+  .mini-date { flex: none; width: 58px; text-align: center; border-radius: 10px; overflow: hidden;
+    background: var(--gb-surface-2); border: 1px solid var(--gb-border); position: relative;
+    box-shadow: 0 2px 7px rgba(0,0,0,0.12); }
+  .mini-date .cal-band { position: relative; background: var(--gb-gold); color: #1a1205;
+    font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 6px 0 3px; }
+  .mini-date .cal-band::before, .mini-date .cal-band::after {
+    content: ""; position: absolute; top: 2px; width: 3px; height: 5px; border-radius: 2px;
+    background: color-mix(in srgb, #1a1205 42%, transparent); }
+  .mini-date .cal-band::before { left: 34%; }
+  .mini-date .cal-band::after { right: 34%; }
+  .mini-date .cal-day { font-family: var(--gb-font-display); font-size: 24px; line-height: 1.05;
+    color: var(--gb-text); padding: 4px 0 0; }
+  .mini-date .cal-sub { font-size: 9.5px; color: var(--gb-text-2); padding: 1px 0 5px; letter-spacing: .02em; }
   .election-card { background: linear-gradient(160deg, rgba(63,179,127,0.10), var(--gb-surface) 62%); }
 
   .follow-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
@@ -281,7 +294,7 @@
       <div class="gb-card">
         <div class="gb-overline" style="margin-bottom:14px;">Next hearings open to comment</div>
         <div id="hearings-list">
-          <div class="activity-row" style="border:none;padding-top:0;"><div class="mini-date"><div class="d">—</div><div class="m">soon</div></div><span class="desc">Loading upcoming hearings…</span></div>
+          <div class="activity-row hearing-row" style="border:none;padding-top:0;"><div class="mini-date"><div class="cal-band">—</div><div class="cal-day">—</div><div class="cal-sub">soon</div></div><span class="desc">Loading upcoming hearings…</span></div>
         </div>
       </div>
       <div class="gb-card election-card">
@@ -467,15 +480,20 @@
     if (!up.length) { document.getElementById("hearings-list").innerHTML = '<div class="activity-row" style="border:none;padding-top:0;color:var(--gb-text-2);font-size:14px;">No upcoming hearings in the current window.</div>'; return; }
     var html = up.map(function (x, i) {
       var d = new Date(x.scheduled_iso);
-      var day = isNaN(d) ? "—" : d.getDate();
-      var mon = isNaN(d) ? "" : d.toLocaleString("en-US", { month: "short" });
+      var bad = isNaN(d);
+      var day = bad ? "—" : d.getDate();
+      var mon = bad ? "" : d.toLocaleString("en-US", { month: "short" });
+      var wd = bad ? "" : d.toLocaleString("en-US", { weekday: "short" });
+      var yr = bad ? "" : d.getFullYear();
+      var sub = bad ? "soon" : (wd + " · " + yr);
       var juris = (x.jurisdiction || "").toUpperCase();
       var label = (x.committee || x.title || "Hearing");
       if (label.length > 60) label = label.slice(0, 58) + "…";
       var url = x.witness_slip_url || x.details_url || "hearings.html";
       var border = i === 0 ? "border:none;padding-top:0;" : "";
-      return '<a class="activity-row" style="' + border + 'text-decoration:none;color:inherit;" href="' + escAttr(url) + '">' +
-        '<div class="mini-date"><div class="d">' + esc(day) + '</div><div class="m">' + esc(mon) + '</div></div>' +
+      return '<a class="activity-row hearing-row" style="' + border + 'text-decoration:none;color:inherit;" href="' + escAttr(url) + '">' +
+        '<div class="mini-date"><div class="cal-band">' + esc(mon) + '</div>' +
+        '<div class="cal-day">' + esc(day) + '</div><div class="cal-sub">' + esc(sub) + '</div></div>' +
         '<span class="desc">' + esc(juris) + ' — ' + esc(label) + '</span></a>';
     }).join("");
     document.getElementById("hearings-list").innerHTML = html;

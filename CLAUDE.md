@@ -155,7 +155,9 @@ gold other / gray unknown — + name + party letter, first 3 then "+N more"). Pa
 resolved from `people.json` with the same matcher legislation.html uses (`matchLeg`, surname-only /
 "Surname, F" / "First Last", never guessing an ambiguous surname); no photo ships in the roster, so
 the circle is a monogram. Fail-soft: an unresolved sponsor (e.g. a committee) shows a neutral gray
-avatar with no party.
+avatar with no party. The **"Next hearings open to comment"** card renders each date as a little
+**calendar figure** (`.mini-date`: a gold month band with two binding rings, a big day numeral, and
+the weekday + year, e.g. "Sun · 2026").
 Pages migrate to the shared system one at a time; the old per-page "New Design" skins + toggle
 are retired as each page is migrated. `legislation.html` opens with a "Recent activity" card strip
 (`#recent-list`, newest recorded actions, unfiltered, click → bill modal — capped at
