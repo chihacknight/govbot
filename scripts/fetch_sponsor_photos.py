@@ -7,9 +7,13 @@ public (the Open States people repo ships an ``image:`` URL per person, sourced
 from the official legislature sites), so this makes the avatars real photos
 instead of monograms.
 
-**Deliberately bounded.** We only fetch photos for the sponsors of the handful
-of bills that appear on screen (newest-first, one per state, a small cap) — not
-the whole roster. The downloaded images and the manifest are *build artifacts*:
+**Deliberately bounded.** We only fetch photos for the sponsors of the newest
+few bills per state — a small candidate pool for the homepage strip, not the
+whole roster. The homepage shows one bill per state and picks, per state, the
+newest bill it has photos for, so every avatar on screen is a real face and
+never an initials monogram; the extra depth here is just so that when a state's
+very newest bill is committee-sponsored (no photo), the next one can supply the
+faces. The downloaded images and the manifest are *build artifacts*:
 `.gitignore`d, produced during the Pages deploy, and published with the site.
 They are never committed, so the repo carries no photo dump.
 
@@ -49,7 +53,7 @@ import yaml
 # (newest recorded action first, one bill per state) with a little headroom, so
 # every sponsor the card can show has a photo but we never fetch the whole set.
 # ----------------------------------------------------------------------------
-def onscreen_bills(bills, per_state=1, max_bills=6):
+def onscreen_bills(bills, per_state=3, max_bills=30):
     dated = [b for b in bills if b.get("latest_action")]
     pool = sorted(dated or bills,
                   key=lambda b: str(b.get("latest_action") or ""), reverse=True)
@@ -148,7 +152,7 @@ def default_fetch(url, timeout=15):
 
 
 def vendor(bills, index, out_dir, manifest_path, fetch=default_fetch,
-           per_state=1, max_bills=6, max_bytes=3_000_000):
+           per_state=3, max_bills=30, max_bytes=3_000_000):
     """Download photos for the on-screen sponsors and write the manifest.
 
     Returns (downloaded, wanted). ``fetch`` is injectable so tests stay offline.
@@ -197,8 +201,8 @@ def main(argv=None):
                     help="checkout of github.com/openstates/people (for image URLs)")
     ap.add_argument("--out-dir", required=True, help="where to write the images")
     ap.add_argument("--manifest", required=True, help="where to write the JSON manifest")
-    ap.add_argument("--per-state", type=int, default=1)
-    ap.add_argument("--max-bills", type=int, default=6)
+    ap.add_argument("--per-state", type=int, default=3)
+    ap.add_argument("--max-bills", type=int, default=30)
     args = ap.parse_args(argv)
 
     try:
