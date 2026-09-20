@@ -895,10 +895,24 @@
     render();
   }
 
-  // Read a #q= / ?q= deep link into the search filter. Returns true when it set
-  // a query (so callers can decide whether to re-render). Runs on first load and
-  // on every hashchange, so pasting a share link into an open tab filters live.
+  // A bill's unique deep-link key: state + session + id (an id like "HB0002"
+  // repeats across states/sessions, so #q= alone can't pick one bill out).
+  function billKey(b) {
+    return encodeURIComponent(b.state || "") + "~" +
+           encodeURIComponent(b.session || "") + "~" +
+           encodeURIComponent(b.id || "");
+  }
+  // Read a deep link. #bill=<state>~<session>~<id> opens that exact bill's card
+  // (the homepage's Recent-activity rows use this); #q=/?q= sets the search
+  // filter. Returns true only when it changed the filter (so the caller
+  // re-renders). Runs on first load and on every hashchange.
   function applyDeepLink() {
+    const billDeep = location.hash.match(/[#&]bill=([^&]+)/);
+    if (billDeep) {
+      const key = billDeep[1];
+      const b = ((state.data && state.data.bills) || []).find((x) => billKey(x) === key);
+      if (b) { openDetails(b); return false; }   // opened the exact bill; no filtering
+    }
     const deep = (location.hash.match(/[#&]q=([^&]+)/) || location.search.match(/[?&]q=([^&]+)/));
     if (!deep) return false;
     try {

@@ -57,7 +57,17 @@
   /* Rich recent-activity rows: one bill per state, with its topic tags and the
      sponsors (initials avatar + name + party — no photo is shipped in the
      roster, so the circle is a party-tinted monogram). */
-  .activity-row.rich { flex-direction: column; align-items: stretch; gap: 9px; }
+  /* Each recent-activity item is its own card, and consecutive items alternate
+     tint + left-accent colour so bills read as distinct blocks at a glance. */
+  #activity-list { display: flex; flex-direction: column; gap: 8px; }
+  .activity-row.rich { flex-direction: column; align-items: stretch; gap: 9px;
+    border-top: none; padding: 12px 14px; border-radius: 10px;
+    border: 1px solid var(--gb-border); border-left: 3px solid var(--gb-blue-hi);
+    background: var(--gb-surface-2); transition: transform .12s ease, border-color .12s ease; }
+  .activity-row.rich:nth-of-type(even) { border-left-color: var(--gb-gold);
+    background: color-mix(in srgb, var(--gb-gold) 7%, var(--gb-surface)); }
+  .activity-row.rich:hover { transform: translateY(-1px); border-color: var(--gb-border-strong); }
+  @media (prefers-reduced-motion: reduce) { .activity-row.rich:hover { transform: none; } }
   .activity-row.rich .ar-head { display: flex; align-items: baseline; gap: 12px; }
   .activity-row.rich .ar-head .tag { min-width: 0; }
   .activity-row.rich .ar-head .when { margin-left: auto; }
@@ -447,11 +457,18 @@
     }
     if (!rows.length) return;
     var MAX_SPON = 3;
+    // A bill's unique key (state + session + id) so the link opens that exact
+    // bill's card on the legislation page — an id like "HB0002" repeats across
+    // states, so a plain #q= search would surface many bills. Must match the
+    // billKey() legislation.html uses to resolve #bill=.
+    function billKey(b) {
+      return encodeURIComponent(b.state || "") + "~" +
+        encodeURIComponent(b.session || "") + "~" + encodeURIComponent(b.id || "");
+    }
     var html = rows.map(function (b) {
       var st = (b.state || "").toUpperCase();
       var desc = b.latest_action_desc || b.title || "";
       if (desc.length > 92) desc = desc.slice(0, 90) + "…";
-      var q = String(b.id || "").toLowerCase().replace(/[^a-z0-9]/g, "");
       var tags = (b.tags || []).slice(0, 3).map(function (t) {
         return '<span class="ar-topic">' + esc(t) + '</span>';
       }).join("");
@@ -479,7 +496,7 @@
       var moreN = sp.length - shown.length;
       var moreHtml = moreN > 0 ? '<span class="ar-more">+' + moreN + ' more</span>' : "";
       var sponHtml = spItems ? '<div class="ar-sponsors">' + spItems + moreHtml + '</div>' : "";
-      return '<a class="activity-row rich" style="text-decoration:none;color:inherit;" href="legislation.html#q=' + escAttr(q) + '">' +
+      return '<a class="activity-row rich" style="text-decoration:none;color:inherit;" href="legislation.html#bill=' + escAttr(billKey(b)) + '">' +
         '<div class="ar-head"><span class="tag">' + esc(st) + ' · ' + esc(b.id) + '</span>' +
         '<span class="when">' + esc(ago(b.latest_action)) + '</span></div>' +
         '<div class="desc">' + esc(desc) + '</div>' + tagsHtml + sponHtml + '</a>';
