@@ -149,21 +149,21 @@ desktop + click, Escape/outside-click to close; the mobile drawer stays a flat l
 **Homepage** landing page (a realistic golden wireframe Lady Liberty raster hero, `assets/liberty-hero.png`, luminance-keyed to a transparent background so it drops cleanly onto the hero in both themes; the robot mark `assets/govbot-mark.png` is the header logo; "What do you want to know?" cards,
 live "What's happening now" fetched fail-soft from `data.json`/`hearings.json`/`elections.json`).
 Pages migrate to the shared system one at a time; the old per-page "New Design" skins + toggle
-are retired as each page is migrated. `legislation.html` has had its content redesigned
-**search-first**: a prominent search hero, State + Topic as primary browse with Session/Chamber/
-date behind a "More filters" `<details>`, a "Recent activity" card strip (`#recent-list`, newest
-recorded actions, unfiltered, click → bill modal — capped at `RECENT_PER_STATE` (2) per
-jurisdiction so one busy state can't monopolize the strip, up to `RECENT_MAX` (12) cards; and it
-**collapses while a search query is active**, with a gold `.recent-toggle` "Show / Hide recent
-activity" pill in the section head to expand it for that query, `syncRecentCollapse()` — a fresh
-search always starts collapsed, clearing it restores the expanded default), the charts/tiles
-collapsed under an
+are retired as each page is migrated. `legislation.html` opens with a "Recent activity" card strip
+(`#recent-list`, newest recorded actions, unfiltered, click → bill modal — capped at
+`RECENT_PER_STATE` (2) per jurisdiction so one busy state can't monopolize the strip, up to
+`RECENT_MAX` (12) cards; and it **collapses while a search query is active**, with a gold
+`.recent-toggle` "Show / Hide recent activity" pill in the section head to expand it for that query,
+`syncRecentCollapse()` — a fresh search always starts collapsed, clearing it restores the expanded
+default). Below Recent activity, above the analytics, sits **one** search-and-filter block
+(`.explore-search`): a single search box (`#f-search`, "Search bills, sponsors, topics…", the
+page's only bill search — the old top hero search and the per-table search box were consolidated
+into this one) plus State + Topic as primary browse with Session/Chamber/date behind a "More
+filters" `<details>` (`#filters`). Then the charts/tiles collapsed under an
 "Overview &amp; charts" `<details>` (its `<summary>` carries an explicit gold **"Show charts" /
 "Hide charts"** pill toggle, `.ov-toggle`, so the expand affordance is obvious), and the dense
-sortable table kept below — with a **second, table-level search box** (`#f-search-table`, same
-"Search bills, sponsors, topics…" placeholder as the hero) sitting directly above that table that
-mirrors the hero search (`#f-search`) both ways into the same `state.filters.search`. The table's
-Title + latest-action cell text is `--text-primary` (full-contrast, not dimmed). The "No bills match" empty state (`#empty`) now shows
+sortable table kept below. The table's Title + latest-action cell text is `--text-primary`
+(full-contrast, not dimmed). The "No bills match" empty state (`#empty`) now shows
 **only when a filter/search is active and nothing matches** — `renderTable` hides it unless
 `anyFilterActive()`. Both `.gb-state` and `.gb-loading` set `display:flex`, which (author CSS)
 beats the UA `[hidden]{display:none}`, so the shared `govbot.css` now carries a
@@ -190,10 +190,13 @@ counts) that drives the existing `#f-ballot` filter, reveals the sections, and s
 Springfield, picker) is unchanged.
 `hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
 "Hearings & Public Comment", tagline "Government isn't just something you watch — you can
-participate.", a dynamic "N upcoming · N open to public comment · N jurisdictions" line, a gold
+participate.", the live metrics foregrounded as a row of **gold civic stat tiles** (`.hh-stats` /
+`.hh-stat` — display numerals on faint glass: "N upcoming hearings", "N open to public comment",
+"N jurisdictions"), and a
 detailed gold White House line-art (`assets/whitehouse-hero.png`, a transparent-background raster
-so it drops onto the dark hero in both themes), and a "See upcoming hearings" CTA; the America-250 `250th` fireworks
-brandbar is kept). Each hearing now makes participation obvious: a green **"Public comment open"**
+so it drops onto the dark hero in both themes); the America-250 `250th` fireworks
+brandbar is kept. (The earlier "See upcoming hearings" CTA button was removed — the metrics carry
+the hero.) Each hearing now makes participation obvious: a green **"Public comment open"**
 badge on the date column and the witness-slip/comment action elevated into a filled green
 `.file-link` pill. The `<title>` was also corrected (it had been a stray "Legislation Dashboard").
 The hearing/participation render engine is otherwise unchanged.

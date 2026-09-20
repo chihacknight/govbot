@@ -498,13 +498,19 @@
   .hh-hero-copy, .hh-hero-art { position: relative; z-index: 1; }
   .hh-hero .hh-title { color: #fff; }
   .hh-hero .hh-tagline { color: rgba(244,245,247,0.88); }
-  .hh-hero .hh-stats { color: rgba(214,222,235,0.80); }
   .hh-hero .hh-docs .docs-link { color: #9db8ff; }
   .hh-hero-copy { flex: 1 1 auto; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
   .hh-title { margin: 2px 0 0; font-size: 52px; line-height: 1.0; }
   .hh-tagline { margin: 0; font-family: var(--gb-font-display); font-size: 20px; color: var(--text-secondary); max-width: 46ch; }
-  .hh-stats { margin: 4px 0 0; font-size: 14px; color: var(--series-3); font-weight: 600; }
-  .hh-cta-row { margin-top: 4px; }
+  /* Live metrics, foregrounded as a row of civic stat tiles (gold display
+     numerals on faint glass) so the real-time activity reads at a glance. */
+  .hh-stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 2px; }
+  .hh-stat { display: flex; flex-direction: column; gap: 3px; padding: 12px 18px 11px;
+    border-radius: 14px; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(240,201,105,0.30); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+  .hh-stat-num { font-family: var(--gb-font-display); font-weight: 600; font-size: 34px; line-height: 1;
+    color: var(--series-3); font-variant-numeric: tabular-nums; }
+  .hh-stat-lbl { font-size: 12.5px; font-weight: 500; letter-spacing: .03em; color: rgba(224,231,242,0.86); }
   .hh-docs { margin: 8px 0 0; font-size: 13px; }
   .hh-hero-art { flex: 0 0 auto; width: 340px; max-width: 46%; filter: drop-shadow(0 0 22px rgba(214,168,79,0.22)); }
   .hh-hero-art img { width: 100%; height: auto; display: block; opacity: 0.95; }
@@ -636,8 +642,7 @@
         <div class="gb-overline" style="color:var(--series-3)">Hearings &amp; Public Comment</div>
         <h1 class="hh-title">Have your say.</h1>
         <p class="hh-tagline">Government isn’t just something you watch — you can participate.</p>
-        <p class="hh-stats" id="hh-stats"></p>
-        <div class="hh-cta-row"><a class="gb-btn gb-btn-primary" href="#hearings-card">See upcoming hearings</a></div>
+        <div class="hh-stats" id="hh-stats" role="group" aria-label="Live hearing activity"></div>
       </div>
       <div class="hh-hero-art" aria-hidden="true">
         <img src="assets/whitehouse-hero.png" alt="" width="720" height="366">
@@ -793,8 +798,20 @@
     const openComment = hearings.filter((h) => h.status !== "canceled" && h.witness_slip_url).length;
     const jurCount = new Set(hearings.map((h) => h.jurisdiction)).size;
     const stEl = $("hh-stats");
-    if (stEl) stEl.textContent = hearings.length + " upcoming hearing" + (hearings.length === 1 ? "" : "s") +
-      " · " + openComment + " open to public comment · " + jurCount + " jurisdiction" + (jurCount === 1 ? "" : "s");
+    if (stEl) {
+      const stat = (num, label) => {
+        const d = document.createElement("div"); d.className = "hh-stat";
+        const n = document.createElement("span"); n.className = "hh-stat-num"; n.textContent = String(num);
+        const l = document.createElement("span"); l.className = "hh-stat-lbl"; l.textContent = label;
+        d.append(n, l); return d;
+      };
+      stEl.textContent = "";
+      stEl.append(
+        stat(hearings.length, "upcoming hearing" + (hearings.length === 1 ? "" : "s")),
+        stat(openComment, "open to public comment"),
+        stat(jurCount, "jurisdiction" + (jurCount === 1 ? "" : "s")),
+      );
+    }
 
     const asof = formatAsOf(data.generated_at);
     if (asof) $("hearings-asof").textContent = "Updated " + asof;
