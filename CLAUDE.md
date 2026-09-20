@@ -184,7 +184,9 @@ are retired as each page is migrated. `legislation.html` opens with a "Recent ac
 (`#recent-list`, newest recorded actions, unfiltered, click → bill modal — capped at
 `RECENT_PER_STATE` (2) per jurisdiction so one busy state can't monopolize the strip, up to
 `RECENT_MAX` (12) cards; and it **collapses while a search query is active**, with a gold
-`.recent-toggle` "Show / Hide recent activity" pill in the section head to expand it for that query,
+`.recent-toggle` "Show / Hide recent activity" pill in the section head to expand it for that query
+— and while searching the **whole section header** (`.recent-toggleable .section-head-lite`, not
+just the pill) is clickable to toggle, the pill remaining the keyboard-accessible control;
 `syncRecentCollapse()` — a fresh search always starts collapsed, clearing it restores the expanded
 default). Below Recent activity, above the analytics, sits **one** search-and-filter block
 (`.explore-search`): a single search box (`#f-search`, "Search bills, sponsors, topics…", the
@@ -214,7 +216,8 @@ separate **waving Illinois flag** SVG (`.cap-flag`/`.ilwave`, a CSS `@keyframes 
 `prefers-reduced-motion`) overlaid on the building's flagpole so the flag animates. This replaced the
 earlier flag-on-a-pole SVG and its JS ripple; the old mouse-following "flag cursor" flourish is also
 gone. Copy: "Illinois Elections" / "Know who's on
-your ballot before you vote." / a dynamic "Next election" line / an "Explore races" CTA) and a "What's on your ballot?" selector
+your ballot before you vote." / a dynamic "Next election" line (the earlier "Explore races" CTA
+button was removed)) and a "What's on your ballot?" selector
 (`#ballot-cards`, one card per distinct `ballot_date` with its stage label + office/candidate
 counts) that drives the existing `#f-ballot` filter, reveals the sections, and scrolls to
 `#groups` (`renderElectionHero`). The rich race engine (groups, five drawers, calendar,

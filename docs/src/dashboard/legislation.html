@@ -450,6 +450,11 @@
   .recent-toggle::after { content: "\25BE"; font-size: 11px; transition: transform .18s ease; }
   .recent-toggle[aria-expanded="true"]::after { transform: rotate(180deg); }
   @media (prefers-reduced-motion: reduce) { .recent-toggle, .recent-toggle::after { transition: none; } }
+  /* While searching, the whole header (not just the pill) toggles the list. */
+  .recent-toggleable .section-head-lite { cursor: pointer; user-select: none;
+    padding: 6px 8px; margin-left: -8px; margin-right: -8px; border-radius: 10px; transition: background .15s ease; }
+  .recent-toggleable .section-head-lite:hover { background: var(--hover-wash); }
+  .recent-toggleable .section-head-lite:hover .recent-toggle { background: var(--hover-wash); }
   .recent-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(278px, 1fr)); gap: 12px; }
   .recent-card { text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 7px;
     background: var(--surface-1); border: 1px solid var(--border); border-left: 3px solid var(--series-1);
@@ -827,8 +832,14 @@
         render();
       }, 150);
     }); }
-    // Pill toggles the Recent-activity list open/closed for the current search.
-    { const rt = $("recent-toggle"); if (rt) rt.addEventListener("click", () => { recentUserExpanded = !recentUserExpanded; syncRecentCollapse(); }); }
+    // The whole Recent-activity header (not just the pill inside it) toggles the
+    // list open/closed while a search is active — clicking the pill bubbles here,
+    // so it toggles once. The pill stays the keyboard-accessible control.
+    { const rh = document.querySelector("#recent .section-head-lite");
+      if (rh) rh.addEventListener("click", () => {
+        if (!state.filters.search) return;   // only interactive while searching
+        recentUserExpanded = !recentUserExpanded; syncRecentCollapse();
+      }); }
     $("f-clear").addEventListener("click", () => {
       state.filters.search = "";
       $("f-search").value = "";
@@ -999,6 +1010,7 @@
     if (!searching) recentUserExpanded = false;   // fresh search always starts collapsed
     const collapsed = searching && !recentUserExpanded;
     sec.classList.toggle("is-collapsed", collapsed);
+    sec.classList.toggle("recent-toggleable", searching);  // whole header clickable while searching
     const btn = $("recent-toggle");
     if (btn) {
       btn.hidden = !searching;                     // pill only appears while searching

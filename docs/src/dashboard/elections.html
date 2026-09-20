@@ -590,7 +590,6 @@
         <p class="el-tagline">Know who’s on your ballot before you vote.</p>
         <p class="el-next" id="el-next"></p>
         <div class="el-cta-row">
-          <button type="button" class="gb-btn gb-btn-primary" id="explore-races">Explore races</button>
           <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
         </div>
       </div>
@@ -845,8 +844,6 @@
       const el = $("el-next");
       if (el) el.textContent = "Next election: " + prettyDate(next) + " · " + n + " race" + (n === 1 ? "" : "s") + " on the ballot";
     }
-    const btn = $("explore-races");
-    if (btn) btn.addEventListener("click", () => { revealAllSections(); render(); scrollToRaces(); });
     const host = $("ballot-cards"); if (!host) return;
     host.textContent = "";
     dates.forEach((d) => {
