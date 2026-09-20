@@ -448,6 +448,20 @@
   .section-head-lite { display: flex; align-items: baseline; gap: 12px; margin: 4px 0 12px; flex-wrap: wrap; }
   .section-head-lite h2 { margin: 0; }
   .recent { margin-bottom: 18px; }
+  /* When a search is active the Recent-activity list collapses (it's an
+     unfiltered entry point that would only distract from search results); the
+     pill in the section head lets the reader expand it again. */
+  .recent.is-collapsed .recent-list { display: none; }
+  .recent-toggle {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    font: inherit; font-size: 13px; font-weight: 600; color: var(--gb-gold);
+    background: none; border: 1px solid var(--gb-gold); border-radius: 999px; padding: 5px 12px;
+    white-space: nowrap; transition: background .15s ease;
+  }
+  .recent-toggle:hover { background: var(--hover-wash); }
+  .recent-toggle::after { content: "\25BE"; font-size: 11px; transition: transform .18s ease; }
+  .recent-toggle[aria-expanded="true"]::after { transform: rotate(180deg); }
+  @media (prefers-reduced-motion: reduce) { .recent-toggle, .recent-toggle::after { transition: none; } }
   .recent-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(278px, 1fr)); gap: 12px; }
   .recent-card { text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 7px;
     background: var(--surface-1); border: 1px solid var(--border); border-left: 3px solid var(--series-1);
@@ -659,6 +673,7 @@
     <div class="section-head-lite">
       <h2>Recent activity</h2>
       <span class="sub">Bills with the newest recorded action across all jurisdictions</span>
+      <button type="button" class="recent-toggle" id="recent-toggle" hidden aria-expanded="true" aria-controls="recent-list">Show recent activity</button>
     </div>
     <div class="recent-list" id="recent-list"></div>
   </section>
@@ -740,7 +755,6 @@
     <div>
       <h4>Transparency</h4>
       <a href="architecture.html">Architecture</a>
-      <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">Sources &amp; methodology ↗</a>
       <a href="../index.html" target="_blank" rel="noopener">Govbot docs ↗</a>
       <a href="elections.xml">RSS feeds</a>
     </div>
@@ -842,6 +856,8 @@
     }
     wireSearchBox("f-search", "f-search-table");
     wireSearchBox("f-search-table", "f-search");
+    // Pill toggles the Recent-activity list open/closed for the current search.
+    { const rt = $("recent-toggle"); if (rt) rt.addEventListener("click", () => { recentUserExpanded = !recentUserExpanded; syncRecentCollapse(); }); }
     $("f-clear").addEventListener("click", () => {
       state.filters.search = "";
       $("f-search").value = "";
@@ -986,6 +1002,26 @@
     renderTagChart(bills);
     renderMonthChart(bills);
     renderTable(bills);
+    syncRecentCollapse();
+  }
+
+  // Recent activity collapses while a search query is active (it's an
+  // unfiltered entry point that would compete with the results the reader is
+  // now searching for). The pill in the section head lets them expand it again
+  // for that query; clearing the search restores the default expanded view.
+  let recentUserExpanded = false;
+  function syncRecentCollapse() {
+    const sec = $("recent"); if (!sec) return;
+    const searching = !!state.filters.search;
+    if (!searching) recentUserExpanded = false;   // fresh search always starts collapsed
+    const collapsed = searching && !recentUserExpanded;
+    sec.classList.toggle("is-collapsed", collapsed);
+    const btn = $("recent-toggle");
+    if (btn) {
+      btn.hidden = !searching;                     // pill only appears while searching
+      btn.setAttribute("aria-expanded", String(!collapsed));
+      btn.textContent = collapsed ? "Show recent activity" : "Hide recent activity";
+    }
   }
 
   function renderTiles(bills) {
@@ -1739,12 +1775,22 @@
     if (days < 365) return Math.round(days / 30) + " mo ago";
     return d.toISOString().slice(0, 10);
   }
+  const RECENT_MAX = 12, RECENT_PER_STATE = 2;
   function renderRecent() {
     const host = $("recent-list"); if (!host || !state.data) return;
-    const bills = state.data.bills.slice()
+    const sorted = state.data.bills.slice()
       .filter((b) => b.latest_action)
-      .sort((a, b) => (a.latest_action < b.latest_action ? 1 : a.latest_action > b.latest_action ? -1 : 0))
-      .slice(0, 12);
+      .sort((a, b) => (a.latest_action < b.latest_action ? 1 : a.latest_action > b.latest_action ? -1 : 0));
+    // Cap each jurisdiction to RECENT_PER_STATE so one busy state can't
+    // monopolize the strip — keep newest-first order, take up to RECENT_MAX.
+    const perState = Object.create(null);
+    const bills = [];
+    for (const b of sorted) {
+      const k = b.state || "";
+      perState[k] = (perState[k] || 0) + 1;
+      if (perState[k] <= RECENT_PER_STATE) bills.push(b);
+      if (bills.length >= RECENT_MAX) break;
+    }
     host.textContent = "";
     if (!bills.length) { const sec = $("recent"); if (sec) sec.hidden = true; return; }
     bills.forEach((b) => {

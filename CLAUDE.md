@@ -152,7 +152,12 @@ Pages migrate to the shared system one at a time; the old per-page "New Design" 
 are retired as each page is migrated. `legislation.html` has had its content redesigned
 **search-first**: a prominent search hero, State + Topic as primary browse with Session/Chamber/
 date behind a "More filters" `<details>`, a "Recent activity" card strip (`#recent-list`, newest
-recorded actions, unfiltered, click → bill modal), the charts/tiles collapsed under an
+recorded actions, unfiltered, click → bill modal — capped at `RECENT_PER_STATE` (2) per
+jurisdiction so one busy state can't monopolize the strip, up to `RECENT_MAX` (12) cards; and it
+**collapses while a search query is active**, with a gold `.recent-toggle` "Show / Hide recent
+activity" pill in the section head to expand it for that query, `syncRecentCollapse()` — a fresh
+search always starts collapsed, clearing it restores the expanded default), the charts/tiles
+collapsed under an
 "Overview &amp; charts" `<details>` (its `<summary>` carries an explicit gold **"Show charts" /
 "Hide charts"** pill toggle, `.ov-toggle`, so the expand affordance is obvious), and the dense
 sortable table kept below — with a **second, table-level search box** (`#f-search-table`, "Filter
