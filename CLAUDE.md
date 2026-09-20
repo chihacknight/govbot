@@ -149,7 +149,12 @@ desktop + click, Escape/outside-click to close; the mobile drawer stays a flat l
 **Homepage** landing page (a realistic golden wireframe Lady Liberty raster hero, `assets/liberty-hero.png`, luminance-keyed to a transparent background so it drops cleanly onto the hero in both themes; the robot mark `assets/govbot-mark.png` is the header logo; "What do you want to know?" cards,
 live "What's happening now" fetched fail-soft from `data.json`/`hearings.json`/`elections.json`).
 The homepage's **"Recent legislative activity"** card shows **one bill per state** (up to 4) as rich
-`.activity-row.rich` rows: the bill's topic tags (`.ar-topic` chips) plus its sponsors as
+`.activity-row.rich` rows — each an **alternating card** (consecutive rows swap tint + a blue/gold
+left-accent, `:nth-of-type(even)`, so bills read as distinct blocks) that **links to that exact
+bill's card** via `legislation.html#bill=<state~session~id>` (a plain `#q=<id>` would surface every
+state's same-numbered bill; the unique key opens just the one — `billKey` here matches `billKey` +
+the `#bill=` branch of `applyDeepLink` in legislation.html, which calls `openDetails` on the
+matching bill). Each row carries the bill's topic tags (`.ar-topic` chips) plus its sponsors as
 **real-headshot avatar chips** (`.ar-av` with an `<img>`, name + party letter, first 3 then
 "+N more"). **The homepage avatars are always real photos — never an initials monogram.** A sponsor
 is pictured only when a headshot was vendored for them; a sponsor without a photo is simply not
@@ -179,7 +184,9 @@ are retired as each page is migrated. `legislation.html` opens with a "Recent ac
 (`#recent-list`, newest recorded actions, unfiltered, click → bill modal — capped at
 `RECENT_PER_STATE` (2) per jurisdiction so one busy state can't monopolize the strip, up to
 `RECENT_MAX` (12) cards; and it **collapses while a search query is active**, with a gold
-`.recent-toggle` "Show / Hide recent activity" pill in the section head to expand it for that query,
+`.recent-toggle` "Show / Hide recent activity" pill in the section head to expand it for that query
+— and while searching the **whole section header** (`.recent-toggleable .section-head-lite`, not
+just the pill) is clickable to toggle, the pill remaining the keyboard-accessible control;
 `syncRecentCollapse()` — a fresh search always starts collapsed, clearing it restores the expanded
 default). Below Recent activity, above the analytics, sits **one** search-and-filter block
 (`.explore-search`): a single search box (`#f-search`, "Search bills, sponsors, topics…", the
@@ -209,7 +216,8 @@ separate **waving Illinois flag** SVG (`.cap-flag`/`.ilwave`, a CSS `@keyframes 
 `prefers-reduced-motion`) overlaid on the building's flagpole so the flag animates. This replaced the
 earlier flag-on-a-pole SVG and its JS ripple; the old mouse-following "flag cursor" flourish is also
 gone. Copy: "Illinois Elections" / "Know who's on
-your ballot before you vote." / a dynamic "Next election" line / an "Explore races" CTA) and a "What's on your ballot?" selector
+your ballot before you vote." / a dynamic "Next election" line (the earlier "Explore races" CTA
+button was removed)) and a "What's on your ballot?" selector
 (`#ballot-cards`, one card per distinct `ballot_date` with its stage label + office/candidate
 counts) that drives the existing `#f-ballot` filter, reveals the sections, and scrolls to
 `#groups` (`renderElectionHero`). The rich race engine (groups, five drawers, calendar,
@@ -217,8 +225,8 @@ Springfield, picker) is unchanged.
 `hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
 "Hearings & Public Comment", tagline "Government isn't just something you watch — you can
 participate.", the live metrics foregrounded as a row of **gold civic stat tiles** (`.hh-stats` /
-`.hh-stat` — display numerals on faint glass: "N upcoming hearings", "N open to public comment",
-"N jurisdictions"), and a
+`.hh-stat` — display numerals on faint glass: **two** tiles, "N upcoming hearings and open to
+public comment" (the count that are both upcoming and comment-open) and "N jurisdictions"), and a
 detailed gold White House line-art (`assets/whitehouse-hero.png`, a transparent-background raster
 so it drops onto the dark hero in both themes); the America-250 `250th` fireworks
 brandbar is kept. (The earlier "See upcoming hearings" CTA button was removed — the metrics carry

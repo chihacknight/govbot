@@ -450,6 +450,11 @@
   .recent-toggle::after { content: "\25BE"; font-size: 11px; transition: transform .18s ease; }
   .recent-toggle[aria-expanded="true"]::after { transform: rotate(180deg); }
   @media (prefers-reduced-motion: reduce) { .recent-toggle, .recent-toggle::after { transition: none; } }
+  /* While searching, the whole header (not just the pill) toggles the list. */
+  .recent-toggleable .section-head-lite { cursor: pointer; user-select: none;
+    padding: 6px 8px; margin-left: -8px; margin-right: -8px; border-radius: 10px; transition: background .15s ease; }
+  .recent-toggleable .section-head-lite:hover { background: var(--hover-wash); }
+  .recent-toggleable .section-head-lite:hover .recent-toggle { background: var(--hover-wash); }
   .recent-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(278px, 1fr)); gap: 12px; }
   .recent-card { text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 7px;
     background: var(--surface-1); border: 1px solid var(--border); border-left: 3px solid var(--series-1);
@@ -827,8 +832,14 @@
         render();
       }, 150);
     }); }
-    // Pill toggles the Recent-activity list open/closed for the current search.
-    { const rt = $("recent-toggle"); if (rt) rt.addEventListener("click", () => { recentUserExpanded = !recentUserExpanded; syncRecentCollapse(); }); }
+    // The whole Recent-activity header (not just the pill inside it) toggles the
+    // list open/closed while a search is active — clicking the pill bubbles here,
+    // so it toggles once. The pill stays the keyboard-accessible control.
+    { const rh = document.querySelector("#recent .section-head-lite");
+      if (rh) rh.addEventListener("click", () => {
+        if (!state.filters.search) return;   // only interactive while searching
+        recentUserExpanded = !recentUserExpanded; syncRecentCollapse();
+      }); }
     $("f-clear").addEventListener("click", () => {
       state.filters.search = "";
       $("f-search").value = "";
@@ -895,10 +906,24 @@
     render();
   }
 
-  // Read a #q= / ?q= deep link into the search filter. Returns true when it set
-  // a query (so callers can decide whether to re-render). Runs on first load and
-  // on every hashchange, so pasting a share link into an open tab filters live.
+  // A bill's unique deep-link key: state + session + id (an id like "HB0002"
+  // repeats across states/sessions, so #q= alone can't pick one bill out).
+  function billKey(b) {
+    return encodeURIComponent(b.state || "") + "~" +
+           encodeURIComponent(b.session || "") + "~" +
+           encodeURIComponent(b.id || "");
+  }
+  // Read a deep link. #bill=<state>~<session>~<id> opens that exact bill's card
+  // (the homepage's Recent-activity rows use this); #q=/?q= sets the search
+  // filter. Returns true only when it changed the filter (so the caller
+  // re-renders). Runs on first load and on every hashchange.
   function applyDeepLink() {
+    const billDeep = location.hash.match(/[#&]bill=([^&]+)/);
+    if (billDeep) {
+      const key = billDeep[1];
+      const b = ((state.data && state.data.bills) || []).find((x) => billKey(x) === key);
+      if (b) { openDetails(b); return false; }   // opened the exact bill; no filtering
+    }
     const deep = (location.hash.match(/[#&]q=([^&]+)/) || location.search.match(/[?&]q=([^&]+)/));
     if (!deep) return false;
     try {
@@ -985,6 +1010,7 @@
     if (!searching) recentUserExpanded = false;   // fresh search always starts collapsed
     const collapsed = searching && !recentUserExpanded;
     sec.classList.toggle("is-collapsed", collapsed);
+    sec.classList.toggle("recent-toggleable", searching);  // whole header clickable while searching
     const btn = $("recent-toggle");
     if (btn) {
       btn.hidden = !searching;                     // pill only appears while searching

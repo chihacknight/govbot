@@ -510,7 +510,7 @@
     border: 1px solid rgba(240,201,105,0.30); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
   .hh-stat-num { font-family: var(--gb-font-display); font-weight: 600; font-size: 34px; line-height: 1;
     color: var(--series-3); font-variant-numeric: tabular-nums; }
-  .hh-stat-lbl { font-size: 12.5px; font-weight: 500; letter-spacing: .03em; color: rgba(224,231,242,0.86); }
+  .hh-stat-lbl { font-size: 12.5px; font-weight: 500; letter-spacing: .03em; color: rgba(224,231,242,0.86); max-width: 20ch; }
   .hh-docs { margin: 8px 0 0; font-size: 13px; }
   .hh-hero-art { flex: 0 0 auto; width: 340px; max-width: 46%; filter: drop-shadow(0 0 22px rgba(214,168,79,0.22)); }
   .hh-hero-art img { width: 100%; height: auto; display: block; opacity: 0.95; }
@@ -807,8 +807,7 @@
       };
       stEl.textContent = "";
       stEl.append(
-        stat(hearings.length, "upcoming hearing" + (hearings.length === 1 ? "" : "s")),
-        stat(openComment, "open to public comment"),
+        stat(openComment, "upcoming hearings and open to public comment"),
         stat(jurCount, "jurisdiction" + (jurCount === 1 ? "" : "s")),
       );
     }
