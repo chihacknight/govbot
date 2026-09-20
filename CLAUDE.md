@@ -160,9 +160,10 @@ search always starts collapsed, clearing it restores the expanded default), the 
 collapsed under an
 "Overview &amp; charts" `<details>` (its `<summary>` carries an explicit gold **"Show charts" /
 "Hide charts"** pill toggle, `.ov-toggle`, so the expand affordance is obvious), and the dense
-sortable table kept below — with a **second, table-level search box** (`#f-search-table`, "Filter
-these bills…") sitting directly above that table that mirrors the hero search (`#f-search`) both
-ways into the same `state.filters.search`. The "No bills match" empty state (`#empty`) now shows
+sortable table kept below — with a **second, table-level search box** (`#f-search-table`, same
+"Search bills, sponsors, topics…" placeholder as the hero) sitting directly above that table that
+mirrors the hero search (`#f-search`) both ways into the same `state.filters.search`. The table's
+Title + latest-action cell text is `--text-primary` (full-contrast, not dimmed). The "No bills match" empty state (`#empty`) now shows
 **only when a filter/search is active and nothing matches** — `renderTable` hides it unless
 `anyFilterActive()`. Both `.gb-state` and `.gb-loading` set `display:flex`, which (author CSS)
 beats the UA `[hidden]{display:none}`, so the shared `govbot.css` now carries a
@@ -172,7 +173,9 @@ state components everywhere — without it the legislation empty state showed un
 `$("loading").hidden = true` never took) and a stray "No races match" box, and the hearings empty
 state was a bare dashed box. The bill modal now
 leads with an inferred **status timeline** (Introduced → Committee → Passed House → Senate →
-Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component).
+Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component; its
+**current** node — the bill's latest recorded stage — pulses via `@keyframes gb-node-pulse`, off
+under `prefers-reduced-motion`, so the eye lands on where the bill is now).
 `elections.html` has been reframed **ballot-first**: a Capitol hero — `#hero-flag` (populated by
 `renderElectionHero`) shows `assets/il-capitol-building.png`, the **Illinois State Capitol** as gold
 line-art (keyed to a transparent background so it drops onto the dark hero in both themes), with a
