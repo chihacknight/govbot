@@ -137,6 +137,29 @@ jobs:
           fi
           ls -lh docs/src/dashboard/data.json
 
+      # Vendor sponsor headshots for the bills the homepage shows. Public CC0
+      # legislator photos (Open States ``image:`` URLs) are downloaded ONLY for
+      # the sponsors of the on-screen recent bills, into an asset dir + manifest
+      # that are .gitignore'd — build artifacts published with the site, never
+      # committed. Reuses the /tmp/openstates-people checkout from the roster
+      # step. Fully fail-soft: a missing checkout or a failed image just leaves
+      # those sponsors as monogram avatars; the deploy never breaks.
+      - name: Vendor sponsor photos for on-screen bills
+        run: |
+          set -uo pipefail
+          if [ -d /tmp/openstates-people/data ]; then
+            python3 scripts/fetch_sponsor_photos.py \
+              --data docs/src/dashboard/data.json \
+              --people-dir /tmp/openstates-people \
+              --out-dir docs/src/dashboard/assets/legislators \
+              --manifest docs/src/dashboard/legislator_images.json \
+              || echo "::warning::sponsor-photo vendor reported errors; homepage falls back to monograms"
+          else
+            echo "::warning::no openstates/people checkout; skipping sponsor photos (monogram fallback)"
+          fi
+          ls -lh docs/src/dashboard/legislator_images.json 2>/dev/null || true
+          ls -1 docs/src/dashboard/assets/legislators/ 2>/dev/null | wc -l || true
+
       # Live committee hearings + witness-slip windows (IL: ilga.gov, WA:
       # leg.wa.gov, MA: malegislature.gov, AK: akleg.gov). This is a rolling near-future window, separate from the
       # daily bill snapshot, so it has its own file. The scraper is fail-soft

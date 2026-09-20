@@ -153,9 +153,20 @@ to 4) as rich `.activity-row.rich` rows: the bill's topic tags (`.ar-topic` chip
 sponsors as **party-tinted initials-avatar chips** (`.ar-av` monogram circle — blue D / red R /
 gold other / gray unknown — + name + party letter, first 3 then "+N more"). Party + full name are
 resolved from `people.json` with the same matcher legislation.html uses (`matchLeg`, surname-only /
-"Surname, F" / "First Last", never guessing an ambiguous surname); no photo ships in the roster, so
-the circle is a monogram. Fail-soft: an unresolved sponsor (e.g. a committee) shows a neutral gray
-avatar with no party. The **"Next hearings open to comment"** card renders each date as a little
+"Surname, F" / "First Last", never guessing an ambiguous surname). Each avatar shows the sponsor's
+**real headshot** when one was vendored, falling back to the party-tinted monogram (a broken/blocked
+`<img>` removes itself → monogram). Fail-soft: an unresolved sponsor (e.g. a committee) shows a
+neutral gray monogram with no party. **Photos are vendored at deploy, never committed:**
+`scripts/fetch_sponsor_photos.py` (deploy-docs.yml, "Vendor sponsor photos for on-screen bills",
+after `data.json` is built) downloads the public CC0 Open States `image:` URLs **only for the
+sponsors of the on-screen recent bills** (newest-first, 1/state, small cap) into
+`docs/src/dashboard/assets/legislators/` + a manifest `legislator_images.json`
+(`{"<state>:<full name lower>": "assets/legislators/<file>"}` — the frontend's lookup key). Both the
+image dir and the manifest are **`.gitignore`d build artifacts** — fetched during the Pages build,
+published by mdbook with the site, so no photo dump lands in git. The vendor reuses the
+`/tmp/openstates-people` checkout from the roster step and is fully fail-soft (no checkout / a failed
+image → that sponsor stays a monogram). Offline-tested with an injected fetcher:
+`python3 scripts/test_fetch_sponsor_photos.py`. The **"Next hearings open to comment"** card renders each date as a little
 **calendar figure** (`.mini-date`: a gold month band with two binding rings, a big day numeral, and
 the weekday + year, e.g. "Sun · 2026").
 Pages migrate to the shared system one at a time; the old per-page "New Design" skins + toggle
