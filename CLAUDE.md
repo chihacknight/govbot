@@ -148,6 +148,14 @@ The shared CSS also provides designed **state** components — `.gb-state` (empt
 desktop + click, Escape/outside-click to close; the mobile drawer stays a flat link list). `docs/src/dashboard/index.html` is now the
 **Homepage** landing page (a realistic golden wireframe Lady Liberty raster hero, `assets/liberty-hero.png`, luminance-keyed to a transparent background so it drops cleanly onto the hero in both themes; the robot mark `assets/govbot-mark.png` is the header logo; "What do you want to know?" cards,
 live "What's happening now" fetched fail-soft from `data.json`/`hearings.json`/`elections.json`).
+The homepage's **"Recent legislative activity"** card shows **one bill per state** (newest-first, up
+to 4) as rich `.activity-row.rich` rows: the bill's topic tags (`.ar-topic` chips) plus its
+sponsors as **party-tinted initials-avatar chips** (`.ar-av` monogram circle — blue D / red R /
+gold other / gray unknown — + name + party letter, first 3 then "+N more"). Party + full name are
+resolved from `people.json` with the same matcher legislation.html uses (`matchLeg`, surname-only /
+"Surname, F" / "First Last", never guessing an ambiguous surname); no photo ships in the roster, so
+the circle is a monogram. Fail-soft: an unresolved sponsor (e.g. a committee) shows a neutral gray
+avatar with no party.
 Pages migrate to the shared system one at a time; the old per-page "New Design" skins + toggle
 are retired as each page is migrated. `legislation.html` opens with a "Recent activity" card strip
 (`#recent-list`, newest recorded actions, unfiltered, click → bill modal — capped at

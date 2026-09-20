@@ -54,6 +54,32 @@
   .activity-row .tag { font-size: 12px; font-weight: 600; color: var(--gb-blue-hi); min-width: 74px; }
   .activity-row .desc { font-size: 15px; color: var(--gb-text); flex-grow: 1; }
   .activity-row .when { font-size: 12px; color: var(--gb-text-2); white-space: nowrap; }
+  /* Rich recent-activity rows: one bill per state, with its topic tags and the
+     sponsors (initials avatar + name + party — no photo is shipped in the
+     roster, so the circle is a party-tinted monogram). */
+  .activity-row.rich { flex-direction: column; align-items: stretch; gap: 9px; }
+  .activity-row.rich .ar-head { display: flex; align-items: baseline; gap: 12px; }
+  .activity-row.rich .ar-head .tag { min-width: 0; }
+  .activity-row.rich .ar-head .when { margin-left: auto; }
+  .activity-row.rich .desc { font-size: 14.5px; line-height: 1.35; }
+  .ar-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ar-topic { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 999px;
+    background: var(--gb-surface-2); color: var(--gb-text-2); border: 1px solid var(--gb-border); }
+  .ar-sponsors { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+  .ar-spon { display: inline-flex; align-items: center; gap: 7px; }
+  .ar-av { width: 26px; height: 26px; border-radius: 50%; flex: none; display: inline-flex;
+    align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff;
+    letter-spacing: .02em; border: 1.5px solid rgba(255,255,255,0.16); }
+  .ar-av.is-dem { background: var(--gb-blue); }
+  .ar-av.is-rep { background: var(--gb-red); }
+  .ar-av.is-oth { background: var(--gb-gold); color: #1a1205; }
+  .ar-av.is-unk { background: var(--gb-surface-2); color: var(--gb-text-2); border-color: var(--gb-border); }
+  .ar-spon-name { font-size: 12.5px; color: var(--gb-text); font-weight: 500; }
+  .ar-party { font-size: 10px; font-weight: 700; margin-left: 3px; }
+  .ar-party.is-dem { color: var(--gb-blue-hi); }
+  .ar-party.is-rep { color: var(--gb-red); }
+  .ar-party.is-oth { color: var(--gb-gold); }
+  .ar-more { font-size: 12px; color: var(--gb-text-2); font-weight: 600; align-self: center; }
   .mini-date { text-align: center; min-width: 46px; }
   .mini-date .d { font-family: var(--gb-font-display); font-size: 22px; line-height: 1; color: var(--gb-gold-hi); }
   .mini-date .m { font-size: 11px; color: var(--gb-text-2); text-transform: uppercase; }
@@ -353,21 +379,80 @@
   function escAttr(s) { return esc(s).replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
 
   // ---- recent legislative activity ----
-  fetch("data.json").then(function (r) { return r.json(); }).then(function (d) {
-    var bills = (d && d.bills) || [];
+  // Two-letter monogram from a name ("Celina Villanueva" -> "CV").
+  function initialsOf(name) {
+    var parts = String(name || "").replace(/[.,]/g, " ").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "?";
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  }
+  // Resolve a sponsor to a single roster legislator [given, full, party, area],
+  // or null when it can't be pinned to exactly one person (never guess). Mirrors
+  // legislation.html's matcher: surname-only, "Surname, F", or "First Last".
+  function matchLeg(state, name, people) {
+    if (!name || !people) return null;
+    var roster = people[state]; if (!roster) return null;
+    var raw = String(name).trim(), family = raw, first = "", comma = raw.indexOf(",");
+    if (comma !== -1) { family = raw.slice(0, comma).trim(); first = raw.slice(comma + 1).replace(/[^A-Za-z]/g, ""); }
+    else if (/\s/.test(raw)) { var parts = raw.split(/\s+/); first = parts[0]; family = parts[parts.length - 1]; }
+    var cands = roster[family.toLowerCase()];
+    if (!cands || !cands.length) return null;
+    if (cands.length === 1) return cands[0];
+    if (first) { var fi = first.charAt(0).toLowerCase();
+      var hits = cands.filter(function (c) { return (c[0] || "").trim().toLowerCase().charAt(0) === fi; });
+      if (hits.length === 1) return hits[0]; }
+    return null;
+  }
+  function partyMeta(party) {
+    var p = (party || "").toLowerCase();
+    if (p.indexOf("democrat") === 0) return { letter: "D", cls: "is-dem" };
+    if (p.indexOf("republican") === 0) return { letter: "R", cls: "is-rep" };
+    if (!party) return { letter: "", cls: "is-unk" };
+    return { letter: party.charAt(0).toUpperCase(), cls: "is-oth" };
+  }
+  Promise.all([
+    fetch("data.json").then(function (r) { return r.json(); }).catch(function () { return null; }),
+    fetch("people.json").then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+  ]).then(function (res) {
+    var d = res[0] || {}, people = res[1] || {};
+    var bills = d.bills || [];
     var dated = bills.filter(function (b) { return b.latest_action; })
       .sort(function (a, b) { return String(b.latest_action).localeCompare(String(a.latest_action)); });
-    var rows = (dated.length ? dated : bills).slice(0, 4);
+    var pool = dated.length ? dated : bills;
+    // One bill per state (newest-first), up to 4 — no state monopolizes the strip.
+    var seen = {}, rows = [];
+    for (var i = 0; i < pool.length && rows.length < 4; i++) {
+      var stk = pool[i].state || "";
+      if (seen[stk]) continue;
+      seen[stk] = 1; rows.push(pool[i]);
+    }
     if (!rows.length) return;
+    var MAX_SPON = 3;
     var html = rows.map(function (b) {
       var st = (b.state || "").toUpperCase();
       var desc = b.latest_action_desc || b.title || "";
       if (desc.length > 92) desc = desc.slice(0, 90) + "…";
       var q = String(b.id || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-      return '<a class="activity-row" style="text-decoration:none;color:inherit;" href="legislation.html#q=' + escAttr(q) + '">' +
-        '<span class="tag">' + esc(st) + ' · ' + esc(b.id) + '</span>' +
-        '<span class="desc">' + esc(desc) + '</span>' +
-        '<span class="when">' + esc(ago(b.latest_action)) + '</span></a>';
+      var tags = (b.tags || []).slice(0, 3).map(function (t) {
+        return '<span class="ar-topic">' + esc(t) + '</span>';
+      }).join("");
+      var tagsHtml = tags ? '<div class="ar-tags">' + tags + '</div>' : "";
+      var sp = b.sponsors || [];
+      var spItems = sp.slice(0, MAX_SPON).map(function (name) {
+        var m = matchLeg(b.state, name, people);
+        var full = m ? m[1] : name;
+        var pm = partyMeta(m ? (m[2] || "") : "");
+        var av = '<span class="ar-av ' + pm.cls + '">' + esc(initialsOf(full)) + '</span>';
+        var pl = pm.letter ? ' <span class="ar-party ' + pm.cls + '">' + esc(pm.letter) + '</span>' : "";
+        return '<span class="ar-spon">' + av + '<span class="ar-spon-name">' + esc(full) + pl + '</span></span>';
+      }).join("");
+      var moreN = sp.length - MAX_SPON;
+      var moreHtml = moreN > 0 ? '<span class="ar-more">+' + moreN + ' more</span>' : "";
+      var sponHtml = spItems ? '<div class="ar-sponsors">' + spItems + moreHtml + '</div>' : "";
+      return '<a class="activity-row rich" style="text-decoration:none;color:inherit;" href="legislation.html#q=' + escAttr(q) + '">' +
+        '<div class="ar-head"><span class="tag">' + esc(st) + ' · ' + esc(b.id) + '</span>' +
+        '<span class="when">' + esc(ago(b.latest_action)) + '</span></div>' +
+        '<div class="desc">' + esc(desc) + '</div>' + tagsHtml + sponHtml + '</a>';
     }).join("");
     document.getElementById("activity-list").innerHTML = html;
   }).catch(function () {});
