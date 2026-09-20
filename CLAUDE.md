@@ -153,15 +153,28 @@ are retired as each page is migrated. `legislation.html` has had its content red
 **search-first**: a prominent search hero, State + Topic as primary browse with Session/Chamber/
 date behind a "More filters" `<details>`, a "Recent activity" card strip (`#recent-list`, newest
 recorded actions, unfiltered, click → bill modal), the charts/tiles collapsed under an
-"Overview &amp; charts" `<details>`, and the dense sortable table kept below. The bill modal now
+"Overview &amp; charts" `<details>` (its `<summary>` carries an explicit gold **"Show charts" /
+"Hide charts"** pill toggle, `.ov-toggle`, so the expand affordance is obvious), and the dense
+sortable table kept below — with a **second, table-level search box** (`#f-search-table`, "Filter
+these bills…") sitting directly above that table that mirrors the hero search (`#f-search`) both
+ways into the same `state.filters.search`. The "No bills match" empty state (`#empty`) now shows
+**only when a filter/search is active and nothing matches** — `renderTable` hides it unless
+`anyFilterActive()`. Both `.gb-state` and `.gb-loading` set `display:flex`, which (author CSS)
+beats the UA `[hidden]{display:none}`, so the shared `govbot.css` now carries a
+`.gb-state[hidden], .gb-loading[hidden] { display:none }` rule that re-asserts `[hidden]` for both
+state components everywhere — without it the legislation empty state showed under a full table, the
+**elections** page kept a *forever* "Loading Illinois & Chicago races…" spinner (its
+`$("loading").hidden = true` never took) and a stray "No races match" box, and the hearings empty
+state was a bare dashed box. The bill modal now
 leads with an inferred **status timeline** (Introduced → Committee → Passed House → Senate →
 Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component).
-`elections.html` has been reframed **ballot-first**: an Illinois-flag hero (the accurate flag
-asset `assets/il-flag.png` on a gold pole, its cloth rippled by an SVG turbulence/`feDisplacementMap`
-"wave" whose `feTurbulence` baseFrequency + `feDisplacementMap` scale are driven each frame in JS
-(`requestAnimationFrame`, on `#hero-flag._waveRaf`) so it visibly flaps — SMIL `<animate>` on filter
-primitives doesn't reliably repaint; a static `<img>` under `prefers-reduced-motion`. The old
-mouse-following "flag cursor" flourish has been **removed**. Copy: "Illinois Elections" / "Know who's on
+`elections.html` has been reframed **ballot-first**: a Capitol hero — `#hero-flag` (populated by
+`renderElectionHero`) shows `assets/il-capitol-building.png`, the **Illinois State Capitol** as gold
+line-art (keyed to a transparent background so it drops onto the dark hero in both themes), with a
+separate **waving Illinois flag** SVG (`.cap-flag`/`.ilwave`, a CSS `@keyframes capflag`, off under
+`prefers-reduced-motion`) overlaid on the building's flagpole so the flag animates. This replaced the
+earlier flag-on-a-pole SVG and its JS ripple; the old mouse-following "flag cursor" flourish is also
+gone. Copy: "Illinois Elections" / "Know who's on
 your ballot before you vote." / a dynamic "Next election" line / an "Explore races" CTA) and a "What's on your ballot?" selector
 (`#ballot-cards`, one card per distinct `ballot_date` with its stage label + office/candidate
 counts) that drives the existing `#f-ballot` filter, reveals the sections, and scrolls to
@@ -182,9 +195,9 @@ Validate + normalize → AI topic tagging → Open data → Your dashboards) and
 trustworthy" card strip (`.gw-trust`: twice-daily refresh, source lineage, fail-soft, open RSS,
 open source, known limits), with the existing detailed per-pipeline diagrams kept below as the
 "full picture" (progressive disclosure). Stale product labels were updated to the new names.
-All five pages share a single **browser-tab favicon**: an inline SVG data-URI of the Govbot robot
-face (dark rounded tile, silver dome, gold antenna + eyes, green mouth bar) in the civic palette,
-crisp at 16px — replacing the old per-page torch/pinwheel icons.
+All five pages share a single **browser-tab favicon**: an inline SVG data-URI of a **gold gavel**
+(flared drum head with a gold center band, a turned handle, and a sound block) on the dark rounded
+civic tile, crisp at 16px — replacing the earlier robot-face and per-page torch/pinwheel icons.
 
 The Pages site has a **Homepage plus three dashboards plus a How-Govbot-Works page**:
 `docs/src/dashboard/index.html` (the **Homepage**),
@@ -197,9 +210,12 @@ three backend pipelines). **Every page now wears the same shell as the Homepage*
 per-page tab bar + brandbar (logo + 3-button light/auto/dark theme pill) have been **retired**.
 All five pages share, byte-for-byte, the global-nav header (`.gb-header`: the `assets/govbot-mark.png`
 robot logo linking to the Homepage, the Explore / Follow / Data mega-menus + How Govbot Works /
-About plain links, the global `.gb-search`, and a single `[data-gb-theme-toggle]` icon button), the
-mobile `.gb-drawer` (hamburger → flat link list + search), the civic `.gb-footer` (Explore /
-Transparency / Community columns), and the floating `.gb-to-top` liquid-glass "Back to Top" pill —
+**GitHub Repo** plain links (the "GitHub Repo ↗" link → the repo, in a new tab; formerly labelled
+"About"), the global `.gb-search`, and a single `[data-gb-theme-toggle]` icon button), the
+mobile `.gb-drawer` (hamburger → flat link list + search), the civic `.gb-footer` (the
+`assets/govbot-mark.png` robot logo + brand blurb + a `.gb-social` row of gold-outline social chips —
+Bluesky / Threads / X / Instagram, styled in `govbot.css` off the `--gb-gold` tokens so they adapt
+per theme — plus Explore / Transparency / Community columns), and the floating `.gb-to-top` liquid-glass "Back to Top" pill —
 all wired by the shared `assets/govbot-shell.js` (so every page also loads that script). The active
 section is marked `aria-current="page"` in the header's Explore mega-menu (and the top-level How
 Govbot Works link on architecture) + the drawer. Each flagship keeps its own **signature hero**

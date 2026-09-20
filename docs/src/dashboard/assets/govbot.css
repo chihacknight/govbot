@@ -258,6 +258,15 @@ h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spaci
 .gb-footer a:hover { color: var(--gb-text); }
 .gb-footer-bottom { max-width: 1200px; margin: 0 auto; padding: 18px 24px 40px; font-size: 12.5px; color: var(--gb-text-muted); border-top: 1px solid var(--gb-border); }
 @media (max-width: 860px) { .gb-footer .gb-footer-grid { grid-template-columns: 1fr 1fr; gap: 24px; } }
+/* Footer social row — gold-outline platform chips */
+.gb-social { display: flex; gap: 10px; margin-top: 16px; }
+.gb-social a {
+  width: 34px; height: 34px; flex: none; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--gb-gold); border-radius: 999px; color: var(--gb-gold-hi);
+}
+.gb-social a:hover { border-color: var(--gb-gold-hi); color: var(--gb-gold-hi); background: color-mix(in srgb, var(--gb-gold) 12%, transparent); }
+.gb-social svg { width: 17px; height: 17px; display: block; }
 
 /* ============================== BACK TO TOP ============================= */
 .gb-to-top {
@@ -306,6 +315,14 @@ h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spaci
 .gb-spinner { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--gb-border); border-top-color: var(--gb-gold); animation: gb-spin .8s linear infinite; }
 @keyframes gb-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .gb-spinner { animation-duration: 2.4s; } }
+
+/* Both state components set display:flex, which (author CSS) beats the UA
+   stylesheet's [hidden]{display:none}. Without this a page that toggles them
+   via the `hidden` attribute — e.g. `el.hidden = true` to dismiss the loading
+   spinner, or to keep the empty state hidden while results are showing — could
+   never actually hide them (a "forever" spinner, or a stray empty box under a
+   full list). Re-assert [hidden] for both. */
+.gb-state[hidden], .gb-loading[hidden] { display: none; }
 
 /* ===================== GLOBAL-NAV MEGA-MENU ========================= */
 .gb-nav-item { position: relative; display: inline-flex; }
