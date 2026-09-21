@@ -420,7 +420,6 @@
   .search-wrap.big input[type="search"]::placeholder { color: var(--text-muted); }
   .search-wrap.big input[type="search"]:focus-visible { outline: 2px solid var(--series-1); outline-offset: 1px; border-color: var(--series-1); }
   .search-wrap.big .search-icon { width: 20px; height: 20px; left: 16px; }
-  .explore-hint { margin: 9px 2px 0; font-size: 13.5px; color: var(--text-secondary); }
 
   .filters { align-items: flex-end; }
   .browse-field { display: flex; flex-direction: column; gap: 6px; }
@@ -495,6 +494,78 @@
   .m-stage { margin: 2px 0 2px; }
   .m-stage .gb-timeline { margin: 4px 0; }
   .m-stage-cap { font-size: 12px; color: var(--text-secondary); margin: 10px 0 0; }
+
+  /* ---- Explore-by-place entry: US heat map + list ---- */
+  .explore-entry { margin: 4px 0 24px; }
+  .ee-head { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .ee-toggle { display: inline-flex; padding: 4px; gap: 4px; background: var(--gb-surface-2); border: 1px solid var(--gb-border); border-radius: 12px; }
+  .ee-seg { display: inline-flex; align-items: center; gap: 8px; padding: 8px 15px; border-radius: 9px; border: none; background: none; color: var(--gb-text-2); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .ee-seg svg { width: 16px; height: 16px; }
+  .ee-seg.is-on { background: #E7B34B; color: #0D111A; }
+  :root[data-theme="light"] .ee-seg.is-on { background: #A9791F; color: #fff; }
+  .ee-total { font-size: 14px; color: var(--gb-text); font-weight: 500; }
+  .ee-total-num { font-family: var(--gb-font-display); font-size: 26px; font-weight: 600; color: var(--gb-gold); margin-right: 3px; font-variant-numeric: tabular-nums; }
+  .ee-mapcol { display: flex; gap: 22px; align-items: stretch; }
+  .ee-mappanel { flex: 1; min-width: 0; background: var(--gb-surface); border: 1px solid var(--gb-border); border-radius: 16px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .ee-maphead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .ee-maphead h2 { margin: 0; font-family: var(--gb-font-display); font-size: 18px; font-weight: 600; color: var(--gb-text); }
+  .ee-maphint { font-size: 12.5px; color: var(--gb-text-2); }
+  .ee-mapwrap { position: relative; width: 100%; aspect-ratio: 1028 / 746; overflow: hidden; border-radius: 12px; background: #0A0E16; border: 1px solid #1C2434; touch-action: none; }
+  .ee-mapzoom { width: 100%; height: 100%; transform-origin: 0 0; }
+  .ee-mapzoom svg { display: block; width: 100%; height: 100%; }
+  .ee-st { cursor: pointer; transition: filter .15s ease; }
+  .ee-st:hover { filter: brightness(1.16); }
+  .ee-st:focus-visible { outline: none; filter: brightness(1.3); }
+  .ee-st.is-sel { animation: ee-pulse 1.4s ease-in-out infinite; }
+  @keyframes ee-pulse { 0%, 100% { stroke-width: 2.4px; filter: drop-shadow(0 0 2px rgba(240,201,105,.55)); } 50% { stroke-width: 4px; filter: drop-shadow(0 0 10px rgba(240,201,105,.98)); } }
+  @media (prefers-reduced-motion: reduce) { .ee-st.is-sel { animation: none; } }
+  .ee-zoomctl { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .ee-zoomctl button { width: 34px; height: 34px; border-radius: 9px; border: 1px solid #273042; background: rgba(16,21,31,.92); color: #F4F5F7; font-size: 19px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .ee-zoomctl button svg { width: 15px; height: 15px; }
+  .ee-zpct { position: absolute; bottom: 10px; left: 10px; font-size: 11px; font-weight: 600; color: #E6E9EF; background: rgba(16,21,31,.9); border: 1px solid #273042; border-radius: 999px; padding: 3px 9px; font-variant-numeric: tabular-nums; }
+  .ee-terr { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .ee-terr-lbl { font-size: 11px; font-weight: 600; letter-spacing: .11em; text-transform: uppercase; color: var(--gb-text-2); }
+  .ee-terr-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ee-chip { display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; padding: 7px 12px; cursor: pointer; font: inherit; transition: filter .15s ease; }
+  .ee-chip:hover { filter: brightness(1.12); }
+  .ee-chip .code { font-weight: 700; font-size: 12px; }
+  .ee-chip .nm { font-size: 12px; }
+  .ee-legend { display: flex; align-items: center; gap: 18px; border-top: 1px solid var(--gb-border); padding-top: 10px; flex-wrap: wrap; }
+  .ee-legend-scale, .ee-legend-nt { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--gb-text-2); }
+  .ee-sw { width: 22px; height: 14px; border-radius: 4px; display: inline-block; }
+  .ee-sw-hatch { border: 1px solid #3A455C; background: repeating-linear-gradient(45deg, #161C28 0, #161C28 3px, #5A5029 3px, #5A5029 5px); }
+  .ee-detail { width: 330px; flex: none; background: var(--gb-surface); border: 1px solid var(--gb-border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; }
+  .ee-d-over { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--gb-text-2); }
+  .ee-d-titlerow { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 4px; }
+  .ee-d-titlerow h3 { margin: 0; font-family: var(--gb-font-display); font-size: 25px; font-weight: 600; line-height: 1.05; color: var(--gb-text); }
+  .ee-d-pill { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; background: var(--gb-elevated); border: 1px solid var(--gb-border); white-space: nowrap; }
+  .ee-d-dot { width: 8px; height: 8px; border-radius: 999px; }
+  .ee-d-pill span:last-child { font-size: 12.5px; font-weight: 600; color: var(--gb-text); }
+  .ee-d-countrow { margin-top: 14px; display: flex; align-items: baseline; gap: 9px; }
+  .ee-d-count { font-family: var(--gb-font-display); font-size: 28px; font-weight: 600; color: var(--gb-gold); line-height: 1; font-variant-numeric: tabular-nums; }
+  .ee-d-countrow span:last-child { font-size: 13.5px; color: var(--gb-text); }
+  .ee-d-recent { margin-top: 14px; border-top: 1px solid var(--gb-border); padding-top: 12px; flex: 1; min-height: 0; overflow: auto; }
+  .ee-d-recent-lbl { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--gb-text-2); margin-bottom: 6px; }
+  .ee-mrow { display: flex; flex-direction: column; gap: 3px; width: 100%; text-align: left; padding: 8px; margin: 0 -8px; border: none; border-left: 2px solid var(--gb-blue-hi); background: none; border-radius: 8px; cursor: pointer; font: inherit; color: var(--gb-text); }
+  .ee-mrow:hover { background: var(--gb-elevated); }
+  .ee-mrow-top { display: flex; align-items: baseline; gap: 8px; }
+  .ee-mrow-tag { font-size: 11.5px; font-weight: 600; color: var(--gb-gold); font-variant-numeric: tabular-nums; }
+  .ee-mrow-when { margin-left: auto; font-size: 11.5px; font-weight: 600; color: var(--gb-text); }
+  .ee-mrow-title { font-size: 13px; font-weight: 600; line-height: 1.25; color: var(--gb-text); }
+  .ee-mrow-act { font-size: 12px; color: var(--gb-text-2); }
+  .ee-d-empty { font-size: 13px; color: var(--gb-text-2); }
+  .ee-d-actions { margin-top: 14px; padding-top: 8px; }
+  .ee-d-open { width: 100%; height: 44px; border-radius: 12px; border: none; background: #E7B34B; color: #0D111A; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  :root[data-theme="light"] .ee-d-open { background: #A9791F; color: #fff; }
+  .ee-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .ee-card { display: flex; align-items: center; gap: 14px; background: var(--gb-surface); border: 1px solid var(--gb-border); border-radius: 14px; padding: 14px 16px; cursor: pointer; font: inherit; text-align: left; color: var(--gb-text); }
+  .ee-card:hover { border-color: var(--gb-border-strong); transform: translateY(-2px); transition: transform .12s ease; }
+  .ee-card-flag { width: 34px; height: auto; flex: none; border-radius: 4px; border: 1px solid var(--gb-border); box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+  .ee-card-body { flex: 1; min-width: 0; }
+  .ee-card-name { font-family: var(--gb-font-display); font-size: 17px; font-weight: 600; line-height: 1.15; color: var(--gb-text); }
+  .ee-card-sub { font-size: 12.5px; color: var(--gb-text-2); margin-top: 2px; }
+  .ee-card-arr { flex: none; color: var(--gb-text-2); }
+  @media (max-width: 900px) { .ee-mapcol { flex-direction: column; } .ee-detail { width: auto; } }
 </style>
 <script>
   // Apply a saved theme choice before first paint to avoid a flash of the
@@ -614,6 +685,68 @@
     <p>Loading bill data… the full dataset covers 50+ jurisdictions and can take a few seconds.</p>
   </div>
 
+  <!-- Explore by place: US heat map + list entry -->
+  <section class="explore-entry" id="explore-entry" hidden aria-label="Explore legislation by place">
+    <div class="ee-head">
+      <div class="ee-toggle" role="group" aria-label="Choose view">
+        <button type="button" id="ee-map-btn" class="ee-seg is-on" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"></path><path d="M9 4v14M15 6v14"></path></svg>
+          Map view
+        </button>
+        <button type="button" id="ee-list-btn" class="ee-seg" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>
+          List view
+        </button>
+      </div>
+      <div class="ee-total"><span class="ee-total-num" id="ee-total-num">—</span> bills Govbot is tracking</div>
+    </div>
+    <div class="ee-body">
+      <div class="ee-mapcol" id="ee-mapcol">
+        <div class="ee-mappanel">
+          <div class="ee-maphead">
+            <h2>Where bills are moving</h2>
+            <span class="ee-maphint">Click a state · scroll or + / − to zoom · drag to pan</span>
+          </div>
+          <div class="ee-mapwrap" id="ee-mapwrap">
+            <div class="ee-mapzoom" id="ee-mapzoom"></div>
+            <div class="ee-zoomctl">
+              <button type="button" id="ee-zin" aria-label="Zoom in">+</button>
+              <button type="button" id="ee-zout" aria-label="Zoom out">&#8722;</button>
+              <button type="button" id="ee-zreset" aria-label="Reset zoom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.5"></path><path d="M21 4v5h-5"></path></svg></button>
+            </div>
+            <div class="ee-zpct" id="ee-zpct">100%</div>
+          </div>
+          <div class="ee-terr">
+            <span class="ee-terr-lbl">Federal &amp; territories</span>
+            <div class="ee-terr-chips" id="ee-terr-chips"></div>
+          </div>
+          <div class="ee-legend">
+            <div class="ee-legend-scale"><span>Quieter</span><span class="ee-sw" style="background:#202638"></span><span class="ee-sw" style="background:#4B4326"></span><span class="ee-sw" style="background:#9C7B2E"></span><span class="ee-sw" style="background:#E7B34B"></span><span>Busier</span></div>
+            <div class="ee-legend-nt"><span class="ee-sw ee-sw-hatch"></span><span>Not yet tracked</span></div>
+          </div>
+        </div>
+        <aside class="ee-detail" id="ee-detail" aria-live="polite">
+          <span class="ee-d-over">Jurisdiction</span>
+          <div class="ee-d-titlerow">
+            <h3 id="ee-d-name">—</h3>
+            <span class="ee-d-pill"><span class="ee-d-dot" id="ee-d-dot"></span><span id="ee-d-label"></span></span>
+          </div>
+          <div class="ee-d-countrow"><span class="ee-d-count" id="ee-d-count">0</span><span>bills tracked here</span></div>
+          <div class="ee-d-recent">
+            <div class="ee-d-recent-lbl">Recent legislative activity</div>
+            <div id="ee-d-recent-list"></div>
+          </div>
+          <div class="ee-d-actions">
+            <button type="button" class="ee-d-open" id="ee-d-open">Open bills</button>
+          </div>
+        </aside>
+      </div>
+      <div class="ee-listpanel" id="ee-listpanel" hidden>
+        <div class="ee-cards" id="ee-cards"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- Recent activity: a fast entry point into what is moving -->
   <section class="recent" id="recent" aria-label="Recent activity">
     <div class="section-head-lite">
@@ -634,12 +767,8 @@
       </svg>
       <input type="search" id="f-search" placeholder="Search bills, sponsors, topics…" aria-label="Search bills">
     </div>
-    <p class="explore-hint">Search by bill number, title or sponsor — or browse by state and topic below.</p>
     <div class="filters" id="filters">
-      <div class="browse-field">
-        <span class="browse-label">State</span>
-        <div class="msel" id="f-states"></div>
-      </div>
+      <!-- Jurisdiction is picked from the map / list entry above; no State dropdown here. -->
       <div class="browse-field">
         <span class="browse-label">Topic</span>
         <div class="msel" id="f-tags"></div>
@@ -807,9 +936,9 @@
     // Fixed slot per tag from the full dataset order — filtering never repaints.
     data.tags.forEach((t, i) => { state.tagColor[t.name] = SERIES[i % SERIES.length]; });
 
-    buildMultiSelect($("f-states"), "All jurisdictions",
-      data.states.map((s) => ({ value: s.code, label: s.name })),
-      state.filters.states, countBillsByState());
+    // Jurisdiction is chosen via the map / list entry above, so there is no
+    // State multiselect here — but state.filters.states is still the underlying
+    // filter that the map, the "By state" chart, and Clear filters drive.
     buildMultiSelect($("f-tags"), "All topics",
       data.tags.map((t) => ({ value: t.name, label: t.name, title: t.description })),
       state.filters.tags, countBillsByTag());
@@ -910,6 +1039,7 @@
     applyDeepLink();
 
     renderRecent();
+    renderExplore();
     render();
   }
 
@@ -1415,7 +1545,8 @@
   }
 
   function syncMultiSelects() {
-    [$("f-states"), $("f-tags")].forEach((m) => m._sync && m._sync());
+    // f-states was removed (jurisdiction is picked on the map), so guard for it.
+    [$("f-states"), $("f-tags")].forEach((m) => m && m._sync && m._sync());
   }
 
   /* ---------- last-action date range ---------- */
@@ -1794,6 +1925,198 @@
     if (days < 365) return Math.round(days / 30) + " mo ago";
     return d.toISOString().slice(0, 10);
   }
+  /* ---------- Explore-by-place: US heat map + list entry ---------- */
+  const EE_FILL = { "-1": "url(#ee-hatch)", "0": "#202638", "1": "#4B4326", "2": "#9C7B2E", "3": "#E7B34B" };
+  const EE_LBL = { "-1": "Not yet tracked", "0": "No current bills", "1": "Some activity", "2": "Active", "3": "Busy" };
+  const EE_DOT = { "-1": "#8A93A6", "0": "#8A93A6", "1": "#D6A84F", "2": "#E0A83C", "3": "#F0C969" };
+  const EE_TERR = [["gu", "Guam"], ["pr", "Puerto Rico"], ["vi", "U.S. Virgin Islands"], ["mp", "N. Mariana Islands"]];
+  let eeGeo = null, eeSel = null, eeScale = 1, eeX = 0, eeY = 0, eeLevel = {}, eeCounts = {}, eeTracked = null, eeWired = false;
+
+  function eeNameFor(code) {
+    if (code === "usa") return "United States (Federal)";
+    const t = EE_TERR.find((x) => x[0] === code); if (t) return t[1];
+    return state.stateNames[code] || (code || "").toUpperCase();
+  }
+  function eeFlagSrc(code) { return "flags/" + (code === "usa" ? "us" : code) + ".png"; }
+
+  function renderExplore() {
+    const sec = $("explore-entry"); if (!sec || !state.data) return;
+    fetch("assets/us-states.json")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("us-states " + r.status))))
+      .then((geo) => {
+        eeGeo = geo;
+        eeCounts = countBillsByState();
+        const empties = (state.data.empty_jurisdictions || []).map((e) => (e && e.code) ? e.code : e);
+        eeTracked = new Set([].concat(
+          state.data.states.map((s) => s.code), empties, EE_TERR.map((t) => t[0]), ["usa"]));
+        // Heat levels from quantiles of the nonzero state counts.
+        const nz = geo.states.map((g) => eeCounts[g.id.toLowerCase()] || 0).filter((n) => n > 0).sort((a, b) => a - b);
+        const q = (p) => (nz.length ? nz[Math.min(nz.length - 1, Math.floor((nz.length - 1) * p))] : 0);
+        const t1 = q(0.34), t2 = q(0.67), t3 = q(0.9);
+        const lvl = (code) => {
+          if (!eeTracked.has(code)) return -1;
+          const n = eeCounts[code] || 0;
+          if (n <= 0) return 0;
+          if (t3 > 0 && n >= t3) return 3;
+          if (t2 > 0 && n >= t2) return 2;
+          return 1;
+        };
+        eeLevel = {};
+        geo.states.forEach((g) => { eeLevel[g.id.toLowerCase()] = lvl(g.id.toLowerCase()); });
+        EE_TERR.forEach((t) => { eeLevel[t[0]] = lvl(t[0]); });
+        eeLevel["usa"] = lvl("usa");
+        // Default selection: busiest tracked jurisdiction.
+        let best = null, bestN = -1;
+        const consider = (code) => { if (eeTracked.has(code)) { const n = eeCounts[code] || 0; if (n > bestN) { bestN = n; best = code; } } };
+        geo.states.forEach((g) => consider(g.id.toLowerCase()));
+        EE_TERR.forEach((t) => consider(t[0])); consider("usa");
+        eeSel = best || (geo.states[0] && geo.states[0].id.toLowerCase());
+        let total = 0; Object.keys(eeCounts).forEach((k) => { total += eeCounts[k]; });
+        $("ee-total-num").textContent = total.toLocaleString("en-US");
+        eeBuildMap(); eeBuildTerr(); eeBuildList(); eeRenderDetail(); eeWire();
+        sec.hidden = false;
+      })
+      .catch(() => { /* fail-soft: no map, the rest of the page still works */ });
+  }
+
+  function eeBuildMap() {
+    const zoom = $("ee-mapzoom"); if (!zoom) return; zoom.textContent = "";
+    const svg = mkSvg("svg", { viewBox: eeGeo.viewBox, role: "img",
+      "aria-label": "Heat map of U.S. states by number of bills Govbot tracks; the list view has a full breakdown." });
+    const defs = mkSvg("defs", {});
+    const pat = mkSvg("pattern", { id: "ee-hatch", width: 8, height: 8, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" });
+    pat.append(mkSvg("rect", { width: 8, height: 8, fill: "#161C28" }), mkSvg("line", { x1: 2, y1: 0, x2: 2, y2: 8, stroke: "#5A5029", "stroke-width": 2.6 }));
+    defs.append(pat); svg.append(defs);
+    eeGeo.states.forEach((g) => {
+      const code = g.id.toLowerCase(), lv = eeLevel[code], on = code === eeSel;
+      const p = mkSvg("path", { d: g.d, fill: EE_FILL[lv], stroke: on ? "#F0C969" : "#B8963F",
+        "stroke-width": on ? 2.6 : 1.4, class: "ee-st" + (on ? " is-sel" : "") });
+      p.setAttribute("aria-label", g.name + (lv === -1 ? ", not yet tracked" : ", " + (eeCounts[code] || 0) + " bills") + (on ? " (selected)" : ""));
+      if (lv !== -1) {
+        p.setAttribute("role", "button"); p.setAttribute("tabindex", "0");
+        p.addEventListener("click", () => eeSelect(code));
+        p.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); eeSelect(code); } });
+      }
+      svg.append(p);
+    });
+    zoom.append(svg);
+    eeApplyTransform();
+  }
+
+  function eeChip(code, codeLabel, name, lv, federal) {
+    const on = code === eeSel;
+    const btn = mkel("button", "ee-chip"); btn.type = "button";
+    if (federal) { btn.style.background = "#14264A"; btn.style.color = "#9DBBFF"; btn.style.border = "1px solid #2F6BFF"; }
+    else {
+      const bg = { "0": "#202638", "1": "#4B4326", "2": "#9C7B2E", "3": "#E7B34B" }[String(lv < 0 ? 0 : lv)];
+      const fg = { "0": "#F1F3F7", "1": "#F1E6C9", "2": "#0D111A", "3": "#0D111A" }[String(lv < 0 ? 0 : lv)];
+      const bd = { "0": "#2E3852", "1": "#5C5330", "2": "#B0862F", "3": "#F0C969" }[String(lv < 0 ? 0 : lv)];
+      btn.style.background = bg; btn.style.color = fg; btn.style.border = "1px solid " + bd;
+    }
+    if (on) btn.style.boxShadow = "0 0 0 3px #F0C969";
+    btn.setAttribute("aria-label", name + ", " + (eeCounts[code] || 0) + " bills" + (on ? " (selected)" : ""));
+    btn.append(mkel("span", "code", codeLabel), mkel("span", "nm", name));
+    btn.addEventListener("click", () => eeSelect(code));
+    return btn;
+  }
+  function eeBuildTerr() {
+    const host = $("ee-terr-chips"); if (!host) return; host.textContent = "";
+    host.append(eeChip("usa", "USA", "Federal", eeLevel["usa"], true));
+    EE_TERR.forEach((t) => host.append(eeChip(t[0], t[0].toUpperCase(), t[1], eeLevel[t[0]], false)));
+  }
+
+  function eeBuildList() {
+    const host = $("ee-cards"); if (!host) return; host.textContent = "";
+    const items = [];
+    eeGeo.states.forEach((g) => { const c = g.id.toLowerCase(); if (eeTracked.has(c)) items.push({ code: c, name: g.name, kind: "State" }); });
+    EE_TERR.forEach((t) => items.push({ code: t[0], name: t[1], kind: "Territory" }));
+    items.push({ code: "usa", name: "United States (Federal)", kind: "Federal" });
+    items.sort((a, b) => (eeCounts[b.code] || 0) - (eeCounts[a.code] || 0) || a.name.localeCompare(b.name));
+    items.forEach((it) => {
+      const card = mkel("button", "ee-card"); card.type = "button";
+      const flag = mkel("img", "ee-card-flag"); flag.src = eeFlagSrc(it.code); flag.alt = ""; flag.loading = "lazy";
+      flag.addEventListener("error", () => { flag.style.display = "none"; });
+      const body = mkel("div", "ee-card-body");
+      body.append(mkel("div", "ee-card-name", it.name),
+        mkel("div", "ee-card-sub", (eeCounts[it.code] || 0).toLocaleString("en-US") + " bills · " + it.kind));
+      const arr = mkSvg("svg", { viewBox: "0 0 24 24", width: 18, height: 18, fill: "none", stroke: "currentColor", "stroke-width": 2, class: "ee-card-arr" });
+      arr.append(mkSvg("path", { d: "M5 12h14M13 6l6 6-6 6" }));
+      card.append(flag, body, arr);
+      card.addEventListener("click", () => eeApplyFilter(it.code));
+      host.append(card);
+    });
+  }
+
+  function eeRenderDetail() {
+    const code = eeSel; if (!code) return;
+    const lv = (eeLevel[code] != null ? eeLevel[code] : 0), n = eeCounts[code] || 0, name = eeNameFor(code);
+    $("ee-d-name").textContent = name;
+    $("ee-d-count").textContent = n.toLocaleString("en-US");
+    $("ee-d-dot").style.background = EE_DOT[String(lv)];
+    $("ee-d-label").textContent = EE_LBL[String(lv)];
+    const host = $("ee-d-recent-list"); host.textContent = "";
+    const rows = state.data.bills.filter((b) => b.state === code && b.latest_action)
+      .sort((a, b) => (a.latest_action < b.latest_action ? 1 : a.latest_action > b.latest_action ? -1 : 0)).slice(0, 3);
+    if (!rows.length) { host.append(mkel("div", "ee-d-empty", "No recent recorded activity yet.")); }
+    rows.forEach((b) => {
+      const row = mkel("button", "ee-mrow"); row.type = "button";
+      const top = mkel("div", "ee-mrow-top");
+      top.append(mkel("span", "ee-mrow-tag", code.toUpperCase() + " · " + b.id), mkel("span", "ee-mrow-when", relDate(b.latest_action)));
+      row.append(top, mkel("div", "ee-mrow-title", b.title || b.id));
+      if (b.latest_action_desc) row.append(mkel("div", "ee-mrow-act", b.latest_action_desc));
+      row.addEventListener("click", () => openDetails(b));
+      host.append(row);
+    });
+    const btn = $("ee-d-open");
+    btn.textContent = n > 0 ? ("Open all " + n.toLocaleString("en-US") + " " + name + " bills") : ("Browse " + name);
+    btn.onclick = () => eeApplyFilter(code);
+  }
+
+  function eeSelect(code) { eeSel = code; eeBuildMap(); eeBuildTerr(); eeRenderDetail(); }
+
+  function eeApplyFilter(code) {
+    state.filters.states.clear(); state.filters.states.add(code);
+    syncMultiSelects(); render();
+    const t = document.querySelector(".explore-search"); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function eeMapDims() { const w = $("ee-mapwrap"); return { W: w ? w.clientWidth : 700, H: w ? w.clientHeight : 470 }; }
+  function eeClamp() { const d = eeMapDims(); const minX = d.W * (1 - eeScale), minY = d.H * (1 - eeScale); eeX = Math.min(0, Math.max(minX, eeX)); eeY = Math.min(0, Math.max(minY, eeY)); }
+  function eeApplyTransform() {
+    const z = $("ee-mapzoom"); if (z) z.style.transform = "translate(" + eeX + "px, " + eeY + "px) scale(" + eeScale + ")";
+    const zp = $("ee-zpct"); if (zp) zp.textContent = Math.round(eeScale * 100) + "%";
+    const w = $("ee-mapwrap"); if (w) w.style.cursor = eeScale > 1 ? "grab" : "default";
+  }
+  function eeZoom(f) {
+    const s0 = eeScale; eeScale = Math.min(6, Math.max(1, s0 * f));
+    const d = eeMapDims(), cx = d.W / 2, cy = d.H / 2;
+    eeX = cx - (cx - eeX) * (eeScale / s0); eeY = cy - (cy - eeY) * (eeScale / s0);
+    eeClamp(); eeApplyTransform();
+  }
+  function eeWire() {
+    if (eeWired) return; eeWired = true;
+    const wrap = $("ee-mapwrap"); let drag = null;
+    if (wrap) {
+      wrap.addEventListener("pointerdown", (e) => { if (e.target.closest && e.target.closest(".ee-zoomctl")) return; if (eeScale <= 1) return; drag = { sx: e.clientX, sy: e.clientY, px: eeX, py: eeY }; try { wrap.setPointerCapture(e.pointerId); } catch (_) {} });
+      wrap.addEventListener("pointermove", (e) => { if (!drag) return; eeX = drag.px + (e.clientX - drag.sx); eeY = drag.py + (e.clientY - drag.sy); eeClamp(); eeApplyTransform(); });
+      wrap.addEventListener("pointerup", () => { drag = null; });
+      wrap.addEventListener("pointerleave", () => { drag = null; });
+      wrap.addEventListener("wheel", (e) => { e.preventDefault(); eeZoom(e.deltaY < 0 ? 1.15 : 1 / 1.15); }, { passive: false });
+    }
+    const zin = $("ee-zin"), zout = $("ee-zout"), zr = $("ee-zreset");
+    if (zin) zin.addEventListener("click", () => eeZoom(1.4));
+    if (zout) zout.addEventListener("click", () => eeZoom(1 / 1.4));
+    if (zr) zr.addEventListener("click", () => { eeScale = 1; eeX = 0; eeY = 0; eeApplyTransform(); });
+    const mapBtn = $("ee-map-btn"), listBtn = $("ee-list-btn");
+    const setView = (map) => {
+      mapBtn.classList.toggle("is-on", map); mapBtn.setAttribute("aria-pressed", String(map));
+      listBtn.classList.toggle("is-on", !map); listBtn.setAttribute("aria-pressed", String(!map));
+      $("ee-mapcol").hidden = !map; $("ee-listpanel").hidden = map;
+    };
+    if (mapBtn) mapBtn.addEventListener("click", () => setView(true));
+    if (listBtn) listBtn.addEventListener("click", () => setView(false));
+  }
+
   const RECENT_MAX = 12, RECENT_PER_STATE = 2;
   function renderRecent() {
     const host = $("recent-list"); if (!host || !state.data) return;
@@ -1848,6 +2171,11 @@
     return tl;
   }
 
+  // Tracks whether the currently-open bill modal pushed its own history entry
+  // (so Back closes it). False when the modal was opened FROM a #bill= deep link
+  // (the entry already exists) or when history is unavailable.
+  let modalPushed = false;
+
   function openDetails(b) {
     const overlay = $("bill-modal");
     const myKey = ++modalKey;
@@ -1868,7 +2196,7 @@
     const h2 = mkel("h2", null, b.title || b.id); h2.id = "bill-modal-title"; htxt.append(h2);
     head.append(htxt);
     const close = mkel("button", "modal-close", "✕");
-    close.setAttribute("aria-label", "Close"); close.addEventListener("click", closeDetails);
+    close.setAttribute("aria-label", "Close"); close.addEventListener("click", () => closeDetails());
     head.append(close);
     card.append(head);
 
@@ -1882,19 +2210,44 @@
     overlay.onclick = (e) => { if (e.target === overlay) closeDetails(); };
     document.addEventListener("keydown", escClose);
 
+    // Reflect the open bill in a shareable URL (#bill=<state~session~id>) so the
+    // link can be copied/bookmarked and the browser Back button closes the modal.
+    try {
+      const target = "#bill=" + billKey(b);
+      if (location.hash !== target) {
+        if (modalPushed) history.replaceState({ bill: 1 }, "", target); // swap bills, don't stack
+        else { history.pushState({ bill: 1 }, "", target); modalPushed = true; }
+      } else { modalPushed = false; }  // opened from the deep link itself — no entry of ours
+    } catch (e) { /* history unavailable — the modal still works */ }
+
     fetch(govbotMetaUrl(b))
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null)
       .then((meta) => { if (myKey === modalKey) renderDetailsBody(body, b, meta); });
   }
 
-  function closeDetails() {
+  function closeDetails(fromPop) {
     const o = $("bill-modal");
     o.classList.remove("open");
     document.removeEventListener("keydown", escClose);
     setTimeout(() => { o.hidden = true; o.textContent = ""; }, 200);
+    // Keep the URL in sync: pop our pushed entry (so Back == close), or strip a
+    // deep-link hash we didn't push. When closing came from a popstate the entry
+    // is already gone, so touch nothing.
+    try {
+      if (!fromPop) {
+        if (modalPushed) history.back();
+        else if (/[#&]bill=/.test(location.hash)) history.replaceState(null, "", location.pathname + location.search);
+      }
+    } catch (e) { /* history unavailable */ }
+    modalPushed = false;
   }
   function escClose(e) { if (e.key === "Escape") closeDetails(); }
+  // Browser Back closes an open bill modal (matching the pushed #bill= entry).
+  window.addEventListener("popstate", () => {
+    const o = $("bill-modal");
+    if (o && !o.hidden) closeDetails(true);
+  });
 
   function renderDetailsBody(body, b, meta) {
     body.textContent = "";
