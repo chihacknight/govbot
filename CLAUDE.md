@@ -202,7 +202,26 @@ visibility gate the rAF loop, and a mobile branch tucks the hub left so the full
 fit. `assets/govbot-bot.png` is the robot mark with its baked beige background flood-filled to
 transparent (borders → inward, stopping at the robot's outline).
 Pages migrate to the shared system one at a time; the old per-page "New Design" skins + toggle
-are retired as each page is migrated. `legislation.html` opens with a "Recent activity" card strip
+are retired as each page is migrated. `legislation.html` opens with an **"Explore by place" entry**
+(`#explore-entry`, `renderExplore()`): a **Map view / List view** toggle over the whole country. The
+**map** is a geographic **US heat-map choropleth** — real per-state SVG paths from
+`assets/us-states.json` (50 states + DC, Alaska/Hawaii insets; committed, fetched fail-soft), each
+state **shaded by its real bill count** from `countBillsByState()` bucketed into gold tiers by
+quantile, gold outlines, the selected state **pulsing** (`.ee-st.is-sel` / `@keyframes ee-pulse`),
+and a **diagonal-hatch** `<pattern>` for jurisdictions not in the current dataset. It has **zoom + pan**
+(± / reset buttons, wheel-zoom, drag-to-pan with clamping; the zoom controls sit inside the pan
+surface so their `pointerdown` is skipped by the pan handler) and a live zoom-%. **Federal (USA) and
+the four territories** (Guam, PR, USVI, N. Mariana) ride as clickable heat chips below the map (the
+50-state geography can't hold them). Clicking any state/chip previews it in a **detail card** —
+jurisdiction name, its **bill count**, and its **recent legislative activity** (real bills for that
+code, newest→oldest, click → bill modal) — and "Open all N bills" applies `state.filters.states`
+(via `syncMultiSelects()` + `render()`) and scrolls to the results. The **list view** is a
+flag-forward grid of jurisdiction cards (committed `flags/<code>.png`, `us.png` for federal), sorted
+by count, click → same filter. A single **"N bills Govbot is tracking"** scorecard sits in the head.
+The whole entry uses the shared `govbot.css` tokens so it adapts light/dark (the map viewport stays a
+fixed dark surface in both themes so the heat encoding reads); fail-soft — if the paths file doesn't
+load the entry stays hidden and the rest of the page is unaffected. Below it, the classic
+"Recent activity" card strip remains
 (`#recent-list`, newest recorded actions, unfiltered, click → bill modal — capped at
 `RECENT_PER_STATE` (2) per jurisdiction so one busy state can't monopolize the strip, up to
 `RECENT_MAX` (12) cards; a gold `.recent-toggle` "Show / Hide recent activity" pill in the section
