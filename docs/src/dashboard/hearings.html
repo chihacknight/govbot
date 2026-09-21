@@ -724,15 +724,18 @@
   // color theme handled by shared assets/govbot-shell.js
 
 
-  // ISO "2026-07-05T21:02:28Z" -> "July 5, 2026, 21:02 UTC"; robust to a
-  // bare date or a bad value (falls back to the raw string, then null).
+  // AP-style month abbreviations (short months clipped + period; March–July
+  // spelled out) — shared by the UTC and Central labels so both read the same.
+  const AP_MONTHS = ["Jan.","Feb.","March","April","May","June",
+                     "July","Aug.","Sept.","Oct.","Nov.","Dec."];
+  // ISO "2026-09-21T03:28:00Z" -> "Sept. 21, 2026, 03:28 UTC (Sept. 20, 2026,
+  // 10:28 PM CDT)"; robust to a bare date or a bad value (falls back to the raw
+  // string, then null).
   function formatAsOf(iso) {
     if (!iso) return null;
     const d = new Date(iso);
     if (isNaN(d)) return typeof iso === "string" ? iso : null;
-    const months = ["January","February","March","April","May","June",
-                    "July","August","September","October","November","December"];
-    let s = months[d.getUTCMonth()] + " " + d.getUTCDate() + ", " + d.getUTCFullYear();
+    let s = AP_MONTHS[d.getUTCMonth()] + " " + d.getUTCDate() + ", " + d.getUTCFullYear();
     if (/T\d/.test(iso)) {
       s += ", " + String(d.getUTCHours()).padStart(2, "0") +
            ":" + String(d.getUTCMinutes()).padStart(2, "0") + " UTC";
@@ -744,16 +747,21 @@
     }
     return s;
   }
-  // "09/01/2026, 16:15 CDT" for the given Date in America/Chicago, or null if
-  // Intl can't resolve the zone (very old engines) — the UTC label still stands
-  // alone. The MM/DD/YYYY date is included because the Central calendar day can
-  // differ from the spelled-out UTC date on late-evening builds.
+  // "Sept. 20, 2026, 10:28 PM CDT" for the given Date in America/Chicago, or null
+  // if Intl can't resolve the zone (very old engines) — the UTC label still
+  // stands alone. The full date is included because the Central calendar day can
+  // differ from the UTC date on late-evening builds.
   function centralTime(d) {
     try {
-      return new Intl.DateTimeFormat("en-US", {
-        timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit",
-        hour: "2-digit", minute: "2-digit", hour12: false, timeZoneName: "short",
-      }).format(d);
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/Chicago", year: "numeric", month: "numeric", day: "numeric",
+        hour: "numeric", minute: "2-digit", hour12: true, timeZoneName: "short",
+      }).formatToParts(d);
+      const p = {};
+      for (const part of parts) p[part.type] = part.value;
+      return AP_MONTHS[Number(p.month) - 1] + " " + p.day + ", " + p.year + ", " +
+        p.hour + ":" + p.minute + " " + String(p.dayPeriod || "").toUpperCase() +
+        " " + p.timeZoneName;
     } catch (e) {
       return null;
     }
@@ -829,7 +837,7 @@
     }
 
     const asof = formatAsOf(data.generated_at);
-    if (asof) $("hearings-asof").textContent = "Updated " + asof;
+    if (asof) $("hearings-asof").textContent = "Data as of " + asof;
 
     const portals = {};
     (data.jurisdictions || []).forEach((j) => { portals[j.code] = j; });

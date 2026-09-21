@@ -1845,27 +1845,45 @@
     if (!m) return iso || "";
     return MONTHS[Number(m[2]) - 1] + " " + Number(m[3]) + ", " + m[1];
   }
+  // AP-style month abbreviations (short months clipped + period; March–July
+  // spelled out) — shared by the UTC and Central labels so both read the same.
+  const AP_MONTHS = ["Jan.","Feb.","March","April","May","June",
+                     "July","Aug.","Sept.","Oct.","Nov.","Dec."];
+  // ISO "2026-09-21T03:28:00Z" -> "Sept. 21, 2026, 03:28 UTC (Sept. 20, 2026,
+  // 10:28 PM CDT)"; robust to a bare date or a bad value (falls back to the raw
+  // string, then null).
   function formatAsOf(iso) {
     if (!iso) return null;
     const d = new Date(iso);
     if (isNaN(d)) return typeof iso === "string" ? iso : null;
-    const months = ["January","February","March","April","May","June","July",
-                    "August","September","October","November","December"];
-    let s = months[d.getUTCMonth()] + " " + d.getUTCDate() + ", " + d.getUTCFullYear();
+    let s = AP_MONTHS[d.getUTCMonth()] + " " + d.getUTCDate() + ", " + d.getUTCFullYear();
     if (/T\d/.test(iso)) {
       s += ", " + String(d.getUTCHours()).padStart(2, "0") + ":" +
         String(d.getUTCMinutes()).padStart(2, "0") + " UTC";
       // Also show Chicago local time & date — this is a Chicago/Illinois site, and
       // the RSS feeds already publish in America/Chicago (CST/CDT).
-      try {
-        const chi = new Intl.DateTimeFormat("en-US", {
-          timeZone: "America/Chicago", month: "short", day: "numeric",
-          year: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short",
-        }).format(d);
-        s += " (" + chi + ")";
-      } catch (e) { /* Intl/tz unavailable — UTC alone still reads fine */ }
+      const central = centralTime(d);
+      if (central) s += " (" + central + ")";
     }
     return s;
+  }
+  // "Sept. 20, 2026, 10:28 PM CDT" for the given Date in America/Chicago, or null
+  // if Intl can't resolve the zone (very old engines) — the UTC label still
+  // stands alone.
+  function centralTime(d) {
+    try {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/Chicago", year: "numeric", month: "numeric", day: "numeric",
+        hour: "numeric", minute: "2-digit", hour12: true, timeZoneName: "short",
+      }).formatToParts(d);
+      const p = {};
+      for (const part of parts) p[part.type] = part.value;
+      return AP_MONTHS[Number(p.month) - 1] + " " + p.day + ", " + p.year + ", " +
+        p.hour + ":" + p.minute + " " + String(p.dayPeriod || "").toUpperCase() +
+        " " + p.timeZoneName;
+    } catch (e) {
+      return null;
+    }
   }
 })();
 </script>

@@ -69,9 +69,14 @@
   .activity-row.rich:hover { transform: translateY(-1px); border-color: var(--gb-border-strong); }
   @media (prefers-reduced-motion: reduce) { .activity-row.rich:hover { transform: none; } }
   .activity-row.rich .ar-head { display: flex; align-items: baseline; gap: 12px; }
-  .activity-row.rich .ar-head .tag { min-width: 0; }
-  .activity-row.rich .ar-head .when { margin-left: auto; }
-  .activity-row.rich .ar-title { font-size: 15px; font-weight: 600; line-height: 1.3; color: var(--gb-text);
+  /* Bill number + title share one line: the tag stays put, the title flows
+     beside it and wraps under it only when it's long. */
+  .activity-row.rich .ar-idtitle { flex: 1; min-width: 0; display: flex; flex-wrap: wrap;
+    align-items: baseline; gap: 3px 9px; }
+  .activity-row.rich .ar-head .tag { flex: none; min-width: 0; }
+  .activity-row.rich .ar-head .when { flex: none; margin-left: auto; }
+  .activity-row.rich .ar-title { flex: 1; min-width: 14ch; font-size: 15px; font-weight: 600;
+    line-height: 1.3; color: var(--gb-text);
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .activity-row.rich .desc { font-size: 13px; line-height: 1.35; color: var(--gb-text-2); }
   .ar-tags { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -123,17 +128,26 @@
       radial-gradient(120% 150% at 50% 42%, color-mix(in srgb, var(--gb-gold) 9%, transparent), transparent 60%),
       var(--gb-surface-2); }
   #stream-canvas { display: block; width: 100%; height: 100%; }
+  /* The robot hub carries the Govbot wordmark under it. The wrapper is sized to
+     the image (the name is positioned out of flow) so translate(-50%,-50%) keeps
+     the robot centred exactly on the canvas hub. */
   .stream-bot { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
-    width: clamp(84px, 14%, 124px); height: auto; z-index: 2; pointer-events: none;
+    width: clamp(84px, 14%, 124px); z-index: 2; pointer-events: none; }
+  .stream-bot-img { display: block; width: 100%; height: auto;
     filter: drop-shadow(0 0 20px color-mix(in srgb, var(--gb-gold) 45%, transparent));
     animation: stream-bot-pulse 3.4s ease-in-out infinite; }
+  .stream-bot-name { position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    margin-top: 7px; font-family: var(--gb-font-display); font-weight: 700; font-size: 15px;
+    letter-spacing: .04em; color: var(--gb-gold); white-space: nowrap;
+    text-shadow: 0 1px 10px color-mix(in srgb, var(--gb-surface-2) 85%, transparent); }
   @keyframes stream-bot-pulse {
     0%,100% { filter: drop-shadow(0 0 16px color-mix(in srgb, var(--gb-gold) 33%, transparent)); }
     50%     { filter: drop-shadow(0 0 34px color-mix(in srgb, var(--gb-gold) 62%, transparent)); } }
   .stream-cap { position: absolute; inset: auto 0 14px 0; display: flex; justify-content: space-between;
     padding: 0 20px; font-size: 11px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase;
     color: var(--gb-text-2); z-index: 2; pointer-events: none; }
-  @media (prefers-reduced-motion: reduce) { .stream-bot { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .stream-bot-img { animation: none; } }
+  @media (max-width: 560px) { .stream-bot-name { font-size: 13px; margin-top: 5px; } }
   @media (max-width: 620px) { .stream-figure { height: 340px; } }
   @media (max-width: 560px) { .stream-cap { display: none; } }
 
@@ -367,12 +381,14 @@
 <section class="band" id="stream">
   <div class="section-head">
     <h2>From the firehose to the point.</h2>
-    <div class="aside">Bills, hearings, elections and open data — sorted into the topics you live in.</div>
   </div>
   <figure class="stream-figure">
     <canvas id="stream-canvas" role="img"
       aria-label="Animation: a chaotic stream of raw government records — bills, hearings, votes, ballots, filings — flows in from the left into the Govbot robot, which sorts them into calm, labeled topic lanes on the right: AI and data centers, education, housing, healthcare, labor, transportation, and more."></canvas>
-    <img class="stream-bot" src="assets/govbot-bot.png" alt="" width="124" height="124" aria-hidden="true">
+    <div class="stream-bot" aria-hidden="true">
+      <img class="stream-bot-img" src="assets/govbot-bot.png" alt="" width="124" height="124">
+      <span class="stream-bot-name">Govbot</span>
+    </div>
     <figcaption class="stream-cap">
       <span class="stream-cap-l">Raw government activity</span>
       <span class="stream-cap-r">Understandable topics</span>
@@ -443,6 +459,27 @@
   function esc(s) { var e = document.createElement("div"); e.textContent = s == null ? "" : String(s); return e.innerHTML; }
   // Attribute-safe: esc() escapes <>& but not quotes, which would break out of a quoted attribute.
   function escAttr(s) { return esc(s).replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+  // Title-case a bill title for display. Legislative titles arrive ALL CAPS
+  // ("AN ACT CONCERNING...") or lowercase; normalize each word to Title Case,
+  // keeping minor words lowercase (except first), and preserving an existing
+  // acronym (AI, CPS) only when the source is already mixed-case.
+  var TC_MINOR = { a: 1, an: 1, and: 1, as: 1, at: 1, but: 1, by: 1, en: 1, for: 1, "if": 1,
+    "in": 1, "of": 1, on: 1, or: 1, per: 1, the: 1, to: 1, via: 1, vs: 1, "with": 1, nor: 1 };
+  function titleCase(s) {
+    s = String(s == null ? "" : s).trim();
+    if (!s) return s;
+    var allCaps = /[A-Z]/.test(s) && s === s.toUpperCase();
+    var n = 0;
+    return s.replace(/[^\s]+/g, function (w) {
+      var isFirst = n === 0; n++;
+      // Keep an acronym intact in a mixed-case title (never when it's all-caps).
+      if (!allCaps && w.length <= 5 && /[A-Z]/.test(w) && w === w.toUpperCase()) return w;
+      var wl = w.toLowerCase();
+      var key = wl.replace(/[^a-z]/g, "");
+      if (!isFirst && TC_MINOR[key]) return wl;
+      return wl.charAt(0).toUpperCase() + wl.slice(1);
+    });
+  }
 
   // ---- recent legislative activity ----
   // Resolve a sponsor to a single roster legislator [given, full, party, area],
@@ -507,9 +544,9 @@
     }
     var html = rows.map(function (b) {
       var st = (b.state || "").toUpperCase();
-      // Lead with the bill's title (its name); the latest recorded action is a
-      // secondary line beneath it.
-      var title = (b.title || "").trim();
+      // The bill number + its (Title-Cased) title share the head line; the latest
+      // recorded action is a secondary line beneath.
+      var title = titleCase((b.title || "").trim());
       var action = (b.latest_action_desc || "").trim();
       if (!title) { title = action; action = ""; }
       if (title.length > 96) title = title.slice(0, 94) + "…";
@@ -541,12 +578,13 @@
       var moreN = sp.length - shown.length;
       var moreHtml = moreN > 0 ? '<span class="ar-more">+' + moreN + ' more</span>' : "";
       var sponHtml = spItems ? '<div class="ar-sponsors">' + spItems + moreHtml + '</div>' : "";
-      var titleHtml = '<div class="ar-title">' + esc(title) + '</div>';
+      var titleHtml = title ? '<span class="ar-title">' + esc(title) + '</span>' : "";
       var descHtml = action ? '<div class="desc">' + esc(action) + '</div>' : "";
       return '<a class="activity-row rich" style="text-decoration:none;color:inherit;" href="legislation.html#bill=' + escAttr(billKey(b)) + '">' +
-        '<div class="ar-head"><span class="tag">' + esc(st) + ' · ' + esc(b.id) + '</span>' +
+        '<div class="ar-head"><span class="ar-idtitle"><span class="tag">' + esc(st) + ' · ' + esc(b.id) + '</span>' +
+        titleHtml + '</span>' +
         '<span class="when">' + esc(ago(b.latest_action)) + '</span></div>' +
-        titleHtml + descHtml + tagsHtml + sponHtml + '</a>';
+        descHtml + tagsHtml + sponHtml + '</a>';
     }).join("");
     document.getElementById("activity-list").innerHTML = html;
     // If a headshot fails to load at runtime, drop the whole sponsor chip so the
