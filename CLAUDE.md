@@ -254,6 +254,14 @@ Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` comp
 **current** node — the bill's latest recorded stage — pulses via `@keyframes gb-node-pulse` (a
 clearly visible grow, `transform: scale` up to 1.28 so it doesn't reflow the label, plus an
 expanding gold halo), off under `prefers-reduced-motion`, so the eye lands on where the bill is now).
+**Opening a bill makes the URL a shareable deep link**: `openDetails` pushes `#bill=<billKey>` (via
+`history.pushState`, a `modalPushed` flag guarding it — no push when the modal was opened *from* a
+`#bill=` link, and a `replaceState` swap when jumping straight from one bill to another so history
+doesn't stack), so the address bar / "Share this bill" link is always copyable and bookmarkable, and
+**browser Back closes the modal** (a `popstate` listener). `closeDetails(fromPop)` pops that entry
+(Back == close) or strips a deep-link hash it didn't push, and cleans up only when the close didn't
+come from the pop; the ✕ handler calls `closeDetails()` with no argument so the click event isn't
+mistaken for `fromPop`.
 `elections.html` has been reframed **ballot-first**: a Capitol hero — `#hero-flag` (populated by
 `renderElectionHero`) shows `assets/il-capitol-building.png`, the **Illinois State Capitol** as gold
 line-art (keyed to a transparent background so it drops onto the dark hero in both themes), with a

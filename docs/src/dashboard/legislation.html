@@ -2175,6 +2175,11 @@
     return tl;
   }
 
+  // Tracks whether the currently-open bill modal pushed its own history entry
+  // (so Back closes it). False when the modal was opened FROM a #bill= deep link
+  // (the entry already exists) or when history is unavailable.
+  let modalPushed = false;
+
   function openDetails(b) {
     const overlay = $("bill-modal");
     const myKey = ++modalKey;
@@ -2195,7 +2200,7 @@
     const h2 = mkel("h2", null, b.title || b.id); h2.id = "bill-modal-title"; htxt.append(h2);
     head.append(htxt);
     const close = mkel("button", "modal-close", "✕");
-    close.setAttribute("aria-label", "Close"); close.addEventListener("click", closeDetails);
+    close.setAttribute("aria-label", "Close"); close.addEventListener("click", () => closeDetails());
     head.append(close);
     card.append(head);
 
@@ -2209,19 +2214,44 @@
     overlay.onclick = (e) => { if (e.target === overlay) closeDetails(); };
     document.addEventListener("keydown", escClose);
 
+    // Reflect the open bill in a shareable URL (#bill=<state~session~id>) so the
+    // link can be copied/bookmarked and the browser Back button closes the modal.
+    try {
+      const target = "#bill=" + billKey(b);
+      if (location.hash !== target) {
+        if (modalPushed) history.replaceState({ bill: 1 }, "", target); // swap bills, don't stack
+        else { history.pushState({ bill: 1 }, "", target); modalPushed = true; }
+      } else { modalPushed = false; }  // opened from the deep link itself — no entry of ours
+    } catch (e) { /* history unavailable — the modal still works */ }
+
     fetch(govbotMetaUrl(b))
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null)
       .then((meta) => { if (myKey === modalKey) renderDetailsBody(body, b, meta); });
   }
 
-  function closeDetails() {
+  function closeDetails(fromPop) {
     const o = $("bill-modal");
     o.classList.remove("open");
     document.removeEventListener("keydown", escClose);
     setTimeout(() => { o.hidden = true; o.textContent = ""; }, 200);
+    // Keep the URL in sync: pop our pushed entry (so Back == close), or strip a
+    // deep-link hash we didn't push. When closing came from a popstate the entry
+    // is already gone, so touch nothing.
+    try {
+      if (!fromPop) {
+        if (modalPushed) history.back();
+        else if (/[#&]bill=/.test(location.hash)) history.replaceState(null, "", location.pathname + location.search);
+      }
+    } catch (e) { /* history unavailable */ }
+    modalPushed = false;
   }
   function escClose(e) { if (e.key === "Escape") closeDetails(); }
+  // Browser Back closes an open bill modal (matching the pushed #bill= entry).
+  window.addEventListener("popstate", () => {
+    const o = $("bill-modal");
+    if (o && !o.hidden) closeDetails(true);
+  });
 
   function renderDetailsBody(body, b, meta) {
     body.textContent = "";
