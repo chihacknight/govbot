@@ -188,10 +188,13 @@ Offline-tested with injected fetch + wiki functions: `python3 scripts/test_fetch
 the weekday + year, e.g. "Sun · 2026") and labels each hearing's jurisdiction with its **full
 name, never an abbreviation** (a shared code→name `JURIS` map + `jurisName()` helper, `us` →
 "USA (Federal)"). The homepage's **closing section** ("From the firehose to
-the point.", `#stream`) is a self-contained **canvas animation** ("chaos becomes understandable"): a
+the point.", `#stream`, no sub-copy under the heading) is a self-contained **canvas animation**
+("chaos becomes understandable"): a
 chaotic stream of raw government records (bills, hearings, votes, ballots, filings — muted, tilted
 scraps) flows in from the left into the **Govbot hub** (the robot mark, keyed transparent as
-`assets/govbot-bot.png` so it drops onto the dark panel), which emits clean colour-coded packets
+`assets/govbot-bot.png` so it drops onto the dark panel, overlaid as a DOM `.stream-bot` centred on
+the canvas hub and captioned with a gold **"Govbot"** wordmark, `.stream-bot-name`, positioned out
+of flow so the robot stays dead-centre on the hub), which emits clean colour-coded packets
 into orderly labeled **topic lanes** on the right (AI + data centers, education, housing, healthcare,
 labor, transportation, …and more). Palette read live from the CSS tokens (re-read on theme flip),
 `prefers-reduced-motion` renders a single static composed frame, an IntersectionObserver + the tab's
