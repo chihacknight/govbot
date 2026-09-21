@@ -235,8 +235,12 @@ the **whole section header** (`.recent-toggleable .section-head-lite`) is also a
 pill `stopPropagation`s so it isn't double-toggled). Below Recent activity, above the analytics, sits **one** search-and-filter block
 (`.explore-search`): a single search box (`#f-search`, "Search bills, sponsors, topics…", the
 page's only bill search — the old top hero search and the per-table search box were consolidated
-into this one) plus State + Topic as primary browse with Session/Chamber/date behind a "More
-filters" `<details>` (`#filters`). Then the charts/tiles collapsed under an
+into this one) plus **Topic** as the primary browse filter with Session/Chamber/date behind a "More
+filters" `<details>` (`#filters`). **There is no State dropdown** — jurisdiction is picked from the
+map / list entry above (or the "By state" overview chart); both still drive `state.filters.states`,
+which stays the underlying filter (Clear filters resets it, `syncMultiSelects` guards for the
+removed `#f-states`). The redundant `.explore-hint` copy under the search box was removed (the
+placeholder already conveys it). Then the charts/tiles collapsed under an
 "Overview &amp; charts" `<details>` (its `<summary>` carries an explicit gold **"Show charts" /
 "Hide charts"** pill toggle, `.ov-toggle`, so the expand affordance is obvious), and the dense
 sortable table kept below. The table's Title + latest-action cell text is `--text-primary`

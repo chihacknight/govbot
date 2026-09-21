@@ -768,10 +768,7 @@
       <input type="search" id="f-search" placeholder="Search bills, sponsors, topics…" aria-label="Search bills">
     </div>
     <div class="filters" id="filters">
-      <div class="browse-field">
-        <span class="browse-label">State</span>
-        <div class="msel" id="f-states"></div>
-      </div>
+      <!-- Jurisdiction is picked from the map / list entry above; no State dropdown here. -->
       <div class="browse-field">
         <span class="browse-label">Topic</span>
         <div class="msel" id="f-tags"></div>
@@ -939,9 +936,9 @@
     // Fixed slot per tag from the full dataset order — filtering never repaints.
     data.tags.forEach((t, i) => { state.tagColor[t.name] = SERIES[i % SERIES.length]; });
 
-    buildMultiSelect($("f-states"), "All jurisdictions",
-      data.states.map((s) => ({ value: s.code, label: s.name })),
-      state.filters.states, countBillsByState());
+    // Jurisdiction is chosen via the map / list entry above, so there is no
+    // State multiselect here — but state.filters.states is still the underlying
+    // filter that the map, the "By state" chart, and Clear filters drive.
     buildMultiSelect($("f-tags"), "All topics",
       data.tags.map((t) => ({ value: t.name, label: t.name, title: t.description })),
       state.filters.tags, countBillsByTag());
@@ -1548,7 +1545,8 @@
   }
 
   function syncMultiSelects() {
-    [$("f-states"), $("f-tags")].forEach((m) => m._sync && m._sync());
+    // f-states was removed (jurisdiction is picked on the map), so guard for it.
+    [$("f-states"), $("f-tags")].forEach((m) => m && m._sync && m._sync());
   }
 
   /* ---------- last-action date range ---------- */
