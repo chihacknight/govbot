@@ -214,8 +214,11 @@ surface so their `pointerdown` is skipped by the pan handler) and a live zoom-%.
 the four territories** (Guam, PR, USVI, N. Mariana) ride as clickable heat chips below the map (the
 50-state geography can't hold them). Clicking any state/chip previews it in a **detail card** —
 jurisdiction name, its **bill count**, and its **recent legislative activity** (real bills for that
-code, newest→oldest, click → bill modal) — and "Open all N bills" applies `state.filters.states`
-(via `syncMultiSelects()` + `render()`) and scrolls to the results. The **list view** is a
+code, newest→oldest, click → bill modal) — and "Open all N bills" (or a list-card click) applies
+`state.filters.states` and switches the page into **results mode** (see below). The map's pan is
+capture-free (an `eeDidDrag` threshold flag distinguishes a drag from a click) so **selecting a state
+works while zoomed in**; switching to **list view** hides the map column entirely (`eeSetView`). The
+**list view** is a
 flag-forward grid of jurisdiction cards (committed `flags/<code>.png`, `us.png` for federal), sorted
 by count, click → same filter. A single **"N bills Govbot is tracking"** scorecard sits in the head.
 The whole entry uses the shared `govbot.css` tokens so it adapts light/dark (the map viewport stays a
@@ -237,13 +240,16 @@ pill `stopPropagation`s so it isn't double-toggled). Below Recent activity, abov
 page's only bill search — the old top hero search and the per-table search box were consolidated
 into this one) plus **Topic** as the primary browse filter with Session/Chamber/date behind a "More
 filters" `<details>` (`#filters`). **There is no State dropdown** — jurisdiction is picked from the
-map / list entry above (or the "By state" overview chart); both still drive `state.filters.states`,
-which stays the underlying filter (Clear filters resets it, `syncMultiSelects` guards for the
-removed `#f-states`). The redundant `.explore-hint` copy under the search box was removed (the
-placeholder already conveys it). Then the charts/tiles collapsed under an
-"Overview &amp; charts" `<details>` (its `<summary>` carries an explicit gold **"Show charts" /
-"Hide charts"** pill toggle, `.ov-toggle`, so the expand affordance is obvious), and the dense
-sortable table kept below. The table's Title + latest-action cell text is `--text-primary`
+map / list entry above; it drives `state.filters.states`, which stays the underlying filter (Clear
+filters resets it, `syncMultiSelects` guards for the removed `#f-states`). The redundant
+`.explore-hint` copy under the search box was removed (the placeholder already conveys it). The
+**"Overview & charts"** analytics block (tiles + jurisdiction/topic/month charts) was **removed**.
+The page now runs in **two modes** (`setMode()`, called from `render()`): **browse** (map + Recent
+activity shown, the results table hidden) and **results** (any filter/search active → map + Recent
+hidden, the `#results-card` bills table shown, scrolled to). The results table carries a
+`.results-head` with a **"← Back to map"** link (`eeBackToMap`, shown only when a single jurisdiction
+is in view — clears the filter and returns to browse) and a title that names the jurisdiction
+(`resultsTitle` → "Wyoming bills (N)"). Its Title + latest-action cell text is `--text-primary`
 (full-contrast, not dimmed). The "No bills match" empty state (`#empty`) now shows
 **only when a filter/search is active and nothing matches** — `renderTable` hides it unless
 `anyFilterActive()`. Both `.gb-state` and `.gb-loading` set `display:flex`, which (author CSS)
@@ -406,10 +412,11 @@ The page has an "On this page" table of contents; every RSS control reads "Follo
 race (RSS)" in red; each major section carries a thick colored top border; the Legislation
 Dashboard's Bill column is plain text (the official-source link lives in the details card). Each
 bill row also has a **"Share"** button beside "Details" (and a "Share this bill" link in the
-details card's Sources) that copies a deep link `legislation.html#q=<billid>` (id lowercased, punctuation
-stripped, e.g. `#q=sb813`); opening it lands the dashboard pre-filtered to that bill — the search
-filter now also matches ids ignoring spaces/punctuation, and a `hashchange` listener re-applies the
-`#q=` filter live. The details card lists each **sponsor/co-sponsor with their current party (a
+details card's Sources) that copies the **exact-bill deep link** `legislation.html#bill=<state~session~id>`
+(`billShareUrl` → `billKey`); opening it lands straight on that bill's modal (`applyDeepLink`'s
+`#bill=` branch → `openDetails`). `#q=<billid>` deep links still work (id lowercased, punctuation
+stripped, e.g. `#q=sb813`): they pre-filter the search — which matches ids ignoring
+spaces/punctuation — and a `hashchange` listener re-applies the `#q=` filter live. The details card lists each **sponsor/co-sponsor with their current party (a
 tinted D/R/other tag) and seat** (chamber + district, e.g. "Senate District 39"), resolved from the
 `people.json` roster: `scripts/build_people_roster.py` now emits `[given, full, party, area]` per
 legislator (from the Open States people repo — the current party role and current legislative seat;
