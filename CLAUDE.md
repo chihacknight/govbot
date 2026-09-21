@@ -178,7 +178,17 @@ a namesake's face is never attached). Reuses the `/tmp/openstates-people` checko
 step; fully fail-soft (no checkout / both sources fail → that sponsor just isn't pictured).
 Offline-tested with injected fetch + wiki functions: `python3 scripts/test_fetch_sponsor_photos.py`. The **"Next hearings open to comment"** card renders each date as a little
 **calendar figure** (`.mini-date`: a gold month band with two binding rings, a big day numeral, and
-the weekday + year, e.g. "Sun · 2026").
+the weekday + year, e.g. "Sun · 2026"). The homepage's **closing section** ("From the firehose to
+the point.", `#stream`) is a self-contained **canvas animation** ("chaos becomes understandable"): a
+chaotic stream of raw government records (bills, hearings, votes, ballots, filings — muted, tilted
+scraps) flows in from the left into the **Govbot hub** (the robot mark, keyed transparent as
+`assets/govbot-bot.png` so it drops onto the dark panel), which emits clean colour-coded packets
+into orderly labeled **topic lanes** on the right (AI + data centers, education, housing, healthcare,
+labor, transportation, …and more). Palette read live from the CSS tokens (re-read on theme flip),
+`prefers-reduced-motion` renders a single static composed frame, an IntersectionObserver + the tab's
+visibility gate the rAF loop, and a mobile branch tucks the hub left so the full topic labels still
+fit. `assets/govbot-bot.png` is the robot mark with its baked beige background flood-filled to
+transparent (borders → inward, stopping at the robot's outline).
 Pages migrate to the shared system one at a time; the old per-page "New Design" skins + toggle
 are retired as each page is migrated. `legislation.html` opens with a "Recent activity" card strip
 (`#recent-list`, newest recorded actions, unfiltered, click → bill modal — capped at
