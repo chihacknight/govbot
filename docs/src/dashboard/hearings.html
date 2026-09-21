@@ -503,14 +503,25 @@
   .hh-title { margin: 2px 0 0; font-size: 52px; line-height: 1.0; }
   .hh-tagline { margin: 0; font-family: var(--gb-font-display); font-size: 20px; color: var(--text-secondary); max-width: 46ch; }
   /* Live metrics, foregrounded as a row of civic stat tiles (gold display
-     numerals on faint glass) so the real-time activity reads at a glance. */
-  .hh-stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 2px; }
+     numerals) below the hero, so they read on the page ground in both themes. */
+  .hh-below { display: flex; flex-direction: column; gap: 12px; margin: -8px 0 18px; }
+  .hh-stats { display: flex; flex-wrap: wrap; gap: 10px; }
   .hh-stat { display: flex; flex-direction: column; gap: 3px; padding: 12px 18px 11px;
-    border-radius: 14px; background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(240,201,105,0.30); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+    border-radius: 14px; background: var(--surface-1);
+    border: 1px solid color-mix(in srgb, var(--gb-gold) 32%, var(--border)); }
   .hh-stat-num { font-family: var(--gb-font-display); font-weight: 600; font-size: 34px; line-height: 1;
     color: var(--series-3); font-variant-numeric: tabular-nums; }
-  .hh-stat-lbl { font-size: 12.5px; font-weight: 500; letter-spacing: .03em; color: rgba(224,231,242,0.86); max-width: 20ch; }
+  .hh-stat-lbl { font-size: 12.5px; font-weight: 500; letter-spacing: .03em; color: var(--text-secondary); max-width: 20ch; }
+  /* Quick-nav: jump straight to a jurisdiction's hearings. */
+  .hh-jump { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .hh-jump .hh-jump-lbl { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text-muted); margin-right: 2px; }
+  .hh-jump a { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13px;
+    font-weight: 600; text-decoration: none; color: var(--text-primary); background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; }
+  .hh-jump a:hover { border-color: var(--baseline); background: var(--hover-wash); }
+  .hh-jump a .jn-count { color: var(--text-muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .hgroup { scroll-margin-top: 84px; }
   .hh-docs { margin: 8px 0 0; font-size: 13px; }
   .hh-hero-art { flex: 0 0 auto; width: 340px; max-width: 46%; filter: drop-shadow(0 0 22px rgba(214,168,79,0.22)); }
   .hh-hero-art img { width: 100%; height: auto; display: block; opacity: 0.95; }
@@ -642,13 +653,18 @@
         <div class="gb-overline" style="color:var(--series-3)">Hearings &amp; Public Comment</div>
         <h1 class="hh-title">Have your say.</h1>
         <p class="hh-tagline">Government isn’t just something you watch — you can participate.</p>
-        <div class="hh-stats" id="hh-stats" role="group" aria-label="Live hearing activity"></div>
       </div>
       <div class="hh-hero-art" aria-hidden="true">
         <img src="assets/whitehouse-hero.png" alt="" width="720" height="366">
       </div>
     </div>
   </header>
+
+  <!-- Live metrics + jump-to-jurisdiction, below the hero -->
+  <div class="hh-below">
+    <div class="hh-stats" id="hh-stats" role="group" aria-label="Live hearing activity"></div>
+    <nav class="hh-jump" id="hh-jump" aria-label="Jump to a jurisdiction" hidden></nav>
+  </div>
 
   <section class="card card--accent card--hearings" id="hearings-card" hidden>
     <div class="hearings-head">
@@ -829,9 +845,11 @@
     if (participation.length) renderParticipation(pFilter);
 
     // USA (Federal) leads, then states alphabetically.
-    Object.keys(byJur).sort((a, b) => (b === "us") - (a === "us") || a.localeCompare(b)).forEach((code, gi) => {
+    const orderedCodes = Object.keys(byJur).sort((a, b) => (b === "us") - (a === "us") || a.localeCompare(b));
+    orderedCodes.forEach((code, gi) => {
       const juris = portals[code] || { name: code.toUpperCase() };
       const group = eln("div", "hgroup");
+      group.id = "hg-" + code;
       // Per-state accent for the card border / header rule, cycling the palette.
       group.style.setProperty("--hg-accent", "var(" + HG_ACCENTS[gi % HG_ACCENTS.length] + ")");
       const head = eln("div", "hgroup-head");
@@ -850,6 +868,23 @@
       group.append(rows);
       body.append(group);
     });
+
+    // Jump-to-jurisdiction nav (mirrors the group order), so a reader can scroll
+    // straight to the state/jurisdiction they care about.
+    const jump = $("hh-jump");
+    if (jump) {
+      jump.textContent = "";
+      jump.append(eln("span", "hh-jump-lbl", "Jump to"));
+      orderedCodes.forEach((code) => {
+        const juris = portals[code] || { name: code.toUpperCase() };
+        const a = eln("a", null);
+        a.href = "#hg-" + code;
+        a.append(document.createTextNode(juris.name));
+        a.append(eln("span", "jn-count", String(byJur[code].length)));
+        jump.append(a);
+      });
+      jump.hidden = orderedCodes.length < 2;
+    }
 
     card.hidden = false;
     const f = $("footer");
