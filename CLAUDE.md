@@ -149,9 +149,13 @@ desktop + click, Escape/outside-click to close; the mobile drawer stays a flat l
 **Homepage** landing page (a realistic golden wireframe Lady Liberty raster hero, `assets/liberty-hero.png`, luminance-keyed to a transparent background so it drops cleanly onto the hero in both themes; the robot mark `assets/govbot-mark.png` is the header logo; "What do you want to know?" cards,
 live "What's happening now" fetched fail-soft from `data.json`/`hearings.json`/`elections.json`).
 The homepage's **"Recent legislative activity"** card shows **one bill per state** (up to 4) as rich
-`.activity-row.rich` rows — each **leads with the bill's title** (`.ar-title`, full-contrast, 2-line
-clamp) with the latest recorded action demoted to a secondary muted `.desc` line beneath (falling
-back to the action as the title when a bill has no title), and each is an **alternating card**
+`.activity-row.rich` rows — each row's head line carries the **state + bill number** (`.tag`) and
+the **bill's title on the same line** (`.ar-idtitle` wraps the `.tag` + `.ar-title`, the title
+`Title-Cased` by a shared `titleCase()` helper so ALL-CAPS legislative titles like "AN ACT
+CONCERNING…" read as "An Act Concerning…", minor words kept lowercase, existing acronyms preserved
+in mixed-case titles), with the latest recorded action demoted to a secondary muted `.desc` line
+beneath (falling back to the action as the title when a bill has no title), and each is an
+**alternating card**
 (consecutive rows swap tint + a blue/gold
 left-accent, `:nth-of-type(even)`, so bills read as distinct blocks) that **links to that exact
 bill's card** via `legislation.html#bill=<state~session~id>` (a plain `#q=<id>` would surface every
@@ -198,12 +202,15 @@ Pages migrate to the shared system one at a time; the old per-page "New Design" 
 are retired as each page is migrated. `legislation.html` opens with a "Recent activity" card strip
 (`#recent-list`, newest recorded actions, unfiltered, click → bill modal — capped at
 `RECENT_PER_STATE` (2) per jurisdiction so one busy state can't monopolize the strip, up to
-`RECENT_MAX` (12) cards; and it **collapses while a search query is active**, with a gold
-`.recent-toggle` "Show / Hide recent activity" pill in the section head to expand it for that query
-— and while searching the **whole section header** (`.recent-toggleable .section-head-lite`, not
-just the pill) is clickable to toggle, the pill remaining the keyboard-accessible control;
-`syncRecentCollapse()` — a fresh search always starts collapsed, clearing it restores the expanded
-default). Below Recent activity, above the analytics, sits **one** search-and-filter block
+`RECENT_MAX` (12) cards; a gold `.recent-toggle` "Show / Hide recent activity" pill in the section
+head **is always visible and toggles the strip open/closed at any time** (`toggleRecent()` flips a
+`recentPref` override that beats the default), so a reader can collapse it even without searching.
+Its **default** is expanded while browsing and **collapsed while a search query is active** (an
+unfiltered strip that would compete with the results); `syncRecentCollapse()` reads that default and
+resets `recentPref` whenever the search state flips, so a fresh search starts collapsed and clearing
+it restores the expanded default, while the pill's explicit choice sticks in between. While searching
+the **whole section header** (`.recent-toggleable .section-head-lite`) is also a click target (the
+pill `stopPropagation`s so it isn't double-toggled). Below Recent activity, above the analytics, sits **one** search-and-filter block
 (`.explore-search`): a single search box (`#f-search`, "Search bills, sponsors, topics…", the
 page's only bill search — the old top hero search and the per-table search box were consolidated
 into this one) plus State + Topic as primary browse with Session/Chamber/date behind a "More
@@ -222,8 +229,9 @@ state components everywhere — without it the legislation empty state showed un
 state was a bare dashed box. The bill modal now
 leads with an inferred **status timeline** (Introduced → Committee → Passed House → Senate →
 Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component; its
-**current** node — the bill's latest recorded stage — pulses via `@keyframes gb-node-pulse`, off
-under `prefers-reduced-motion`, so the eye lands on where the bill is now).
+**current** node — the bill's latest recorded stage — pulses via `@keyframes gb-node-pulse` (a
+clearly visible grow, `transform: scale` up to 1.28 so it doesn't reflow the label, plus an
+expanding gold halo), off under `prefers-reduced-motion`, so the eye lands on where the bill is now).
 `elections.html` has been reframed **ballot-first**: a Capitol hero — `#hero-flag` (populated by
 `renderElectionHero`) shows `assets/il-capitol-building.png`, the **Illinois State Capitol** as gold
 line-art (keyed to a transparent background so it drops onto the dark hero in both themes), with a

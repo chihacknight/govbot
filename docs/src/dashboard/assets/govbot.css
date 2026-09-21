@@ -296,13 +296,14 @@ h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spaci
 .gb-timeline .step { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
 .gb-timeline .node { width: 18px; height: 18px; border-radius: 50%; background: var(--gb-surface-2); border: 2px solid var(--gb-border-strong); }
 .gb-timeline .step.done .node { background: var(--gb-green); border-color: var(--gb-green); }
-.gb-timeline .step.current .node { background: var(--gb-gold-hi); border-color: var(--gb-gold-hi); box-shadow: 0 0 0 4px rgba(240,201,105,0.2); animation: gb-node-pulse 1.8s ease-out infinite; }
-/* The current stage is the bill's latest recorded action — pulse its node so
-   the reader's eye lands on "where this bill is now". */
+.gb-timeline .step.current .node { background: var(--gb-gold-hi); border-color: var(--gb-gold-hi); box-shadow: 0 0 0 5px rgba(240,201,105,0.30); animation: gb-node-pulse 1.4s ease-out infinite; }
+/* The current stage is the bill's latest recorded action — pulse its node
+   (a clearly visible grow + expanding gold halo) so the reader's eye lands on
+   "where this bill is now". transform:scale doesn't reflow, so the label stays put. */
 @keyframes gb-node-pulse {
-  0%   { box-shadow: 0 0 0 4px rgba(240,201,105,0.2), 0 0 0 0 rgba(240,201,105,0.5); }
-  70%  { box-shadow: 0 0 0 4px rgba(240,201,105,0.2), 0 0 0 12px rgba(240,201,105,0); }
-  100% { box-shadow: 0 0 0 4px rgba(240,201,105,0.2), 0 0 0 0 rgba(240,201,105,0); }
+  0%   { transform: scale(1);    box-shadow: 0 0 0 5px rgba(240,201,105,0.35), 0 0 0 0 rgba(240,201,105,0.75); }
+  70%  { transform: scale(1.28); box-shadow: 0 0 0 5px rgba(240,201,105,0.12), 0 0 0 22px rgba(240,201,105,0); }
+  100% { transform: scale(1);    box-shadow: 0 0 0 5px rgba(240,201,105,0.35), 0 0 0 0 rgba(240,201,105,0); }
 }
 @media (prefers-reduced-motion: reduce) { .gb-timeline .step.current .node { animation: none; } }
 .gb-timeline .step .lbl { font-size: 13px; color: var(--gb-text-2); }

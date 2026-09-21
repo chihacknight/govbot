@@ -832,13 +832,20 @@
         render();
       }, 150);
     }); }
-    // The whole Recent-activity header (not just the pill inside it) toggles the
-    // list open/closed while a search is active — clicking the pill bubbles here,
-    // so it toggles once. The pill stays the keyboard-accessible control.
+    // The Show/Hide pill toggles the Recent-activity list open/closed at any time
+    // (with or without a search active). It stops propagation so it doesn't also
+    // trigger the whole-header handler below and cancel itself out.
+    { const pill = $("recent-toggle");
+      if (pill) pill.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleRecent();
+      }); }
+    // While a search is active the whole header (its empty background, not just
+    // the pill) is also clickable as a bigger hit target.
     { const rh = document.querySelector("#recent .section-head-lite");
       if (rh) rh.addEventListener("click", () => {
-        if (!state.filters.search) return;   // only interactive while searching
-        recentUserExpanded = !recentUserExpanded; syncRecentCollapse();
+        if (!state.filters.search) return;   // background only interactive while searching
+        toggleRecent();
       }); }
     $("f-clear").addEventListener("click", () => {
       state.filters.search = "";
@@ -999,21 +1006,30 @@
     syncRecentCollapse();
   }
 
-  // Recent activity collapses while a search query is active (it's an
-  // unfiltered entry point that would compete with the results the reader is
-  // now searching for). The pill in the section head lets them expand it again
-  // for that query; clearing the search restores the default expanded view.
-  let recentUserExpanded = false;
+  // Recent activity can be collapsed at any time via the Show/Hide pill, which is
+  // always visible. Its DEFAULT is expanded when browsing and collapsed while a
+  // search is active (an unfiltered entry point that would compete with the
+  // results the reader is now searching for). recentPref holds an explicit user
+  // choice (true=expanded, false=collapsed) that overrides the default until the
+  // search state flips, at which point the default takes over again.
+  let recentPref = null;          // null = follow the default
+  let recentLastSearching = false;
+  function toggleRecent() {
+    // Flip relative to what's on screen now, then persist that as the user's pref.
+    const collapsedNow = $("recent").classList.contains("is-collapsed");
+    recentPref = collapsedNow;    // was collapsed -> expand (true); was open -> collapse (false)
+    syncRecentCollapse();
+  }
   function syncRecentCollapse() {
     const sec = $("recent"); if (!sec) return;
     const searching = !!state.filters.search;
-    if (!searching) recentUserExpanded = false;   // fresh search always starts collapsed
-    const collapsed = searching && !recentUserExpanded;
+    if (searching !== recentLastSearching) { recentPref = null; recentLastSearching = searching; }
+    const collapsed = recentPref === null ? searching : !recentPref;
     sec.classList.toggle("is-collapsed", collapsed);
     sec.classList.toggle("recent-toggleable", searching);  // whole header clickable while searching
     const btn = $("recent-toggle");
     if (btn) {
-      btn.hidden = !searching;                     // pill only appears while searching
+      btn.hidden = false;                          // pill is always available
       btn.setAttribute("aria-expanded", String(!collapsed));
       btn.textContent = collapsed ? "Show recent activity" : "Hide recent activity";
     }
