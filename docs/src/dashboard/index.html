@@ -71,7 +71,9 @@
   .activity-row.rich .ar-head { display: flex; align-items: baseline; gap: 12px; }
   .activity-row.rich .ar-head .tag { min-width: 0; }
   .activity-row.rich .ar-head .when { margin-left: auto; }
-  .activity-row.rich .desc { font-size: 14.5px; line-height: 1.35; }
+  .activity-row.rich .ar-title { font-size: 15px; font-weight: 600; line-height: 1.3; color: var(--gb-text);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .activity-row.rich .desc { font-size: 13px; line-height: 1.35; color: var(--gb-text-2); }
   .ar-tags { display: flex; flex-wrap: wrap; gap: 6px; }
   .ar-topic { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 999px;
     background: var(--gb-surface-2); color: var(--gb-text-2); border: 1px solid var(--gb-border); }
@@ -344,7 +346,7 @@
 
 <!-- ==================== FOLLOW ==================== -->
 <section class="band" id="follow">
-  <div class="section-head"><h2>Don't keep checking. Follow it.</h2><div class="aside">RSS is a first-class Govbot feature.</div></div>
+  <div class="section-head"><h2>Don't keep checking. Follow it.</h2></div>
   <div class="follow-strip">
     <a class="gb-card gb-card-link follow-item" href="elections.xml">
       <span class="gb-badge gb-badge-official" style="border-radius:8px;">RSS</span>
@@ -505,8 +507,13 @@
     }
     var html = rows.map(function (b) {
       var st = (b.state || "").toUpperCase();
-      var desc = b.latest_action_desc || b.title || "";
-      if (desc.length > 92) desc = desc.slice(0, 90) + "…";
+      // Lead with the bill's title (its name); the latest recorded action is a
+      // secondary line beneath it.
+      var title = (b.title || "").trim();
+      var action = (b.latest_action_desc || "").trim();
+      if (!title) { title = action; action = ""; }
+      if (title.length > 96) title = title.slice(0, 94) + "…";
+      if (action.length > 84) action = action.slice(0, 82) + "…";
       var tags = (b.tags || []).slice(0, 3).map(function (t) {
         return '<span class="ar-topic">' + esc(t) + '</span>';
       }).join("");
@@ -534,10 +541,12 @@
       var moreN = sp.length - shown.length;
       var moreHtml = moreN > 0 ? '<span class="ar-more">+' + moreN + ' more</span>' : "";
       var sponHtml = spItems ? '<div class="ar-sponsors">' + spItems + moreHtml + '</div>' : "";
+      var titleHtml = '<div class="ar-title">' + esc(title) + '</div>';
+      var descHtml = action ? '<div class="desc">' + esc(action) + '</div>' : "";
       return '<a class="activity-row rich" style="text-decoration:none;color:inherit;" href="legislation.html#bill=' + escAttr(billKey(b)) + '">' +
         '<div class="ar-head"><span class="tag">' + esc(st) + ' · ' + esc(b.id) + '</span>' +
         '<span class="when">' + esc(ago(b.latest_action)) + '</span></div>' +
-        '<div class="desc">' + esc(desc) + '</div>' + tagsHtml + sponHtml + '</a>';
+        titleHtml + descHtml + tagsHtml + sponHtml + '</a>';
     }).join("");
     document.getElementById("activity-list").innerHTML = html;
     // If a headshot fails to load at runtime, drop the whole sponsor chip so the
@@ -547,6 +556,22 @@
       imgs[j].onerror = function () { var c = this.closest(".ar-spon"); if (c) c.remove(); };
     }
   }).catch(function () {});
+
+  // Jurisdiction code -> readable full name (federal reads "USA (Federal)").
+  var JURIS = { us: "USA (Federal)", al: "Alabama", ak: "Alaska", az: "Arizona", ar: "Arkansas",
+    ca: "California", co: "Colorado", ct: "Connecticut", de: "Delaware", fl: "Florida", ga: "Georgia",
+    hi: "Hawaii", id: "Idaho", il: "Illinois", "in": "Indiana", ia: "Iowa", ks: "Kansas", ky: "Kentucky",
+    la: "Louisiana", me: "Maine", md: "Maryland", ma: "Massachusetts", mi: "Michigan", mn: "Minnesota",
+    ms: "Mississippi", mo: "Missouri", mt: "Montana", ne: "Nebraska", nv: "Nevada", nh: "New Hampshire",
+    nj: "New Jersey", nm: "New Mexico", ny: "New York", nc: "North Carolina", nd: "North Dakota",
+    oh: "Ohio", ok: "Oklahoma", or: "Oregon", pa: "Pennsylvania", ri: "Rhode Island", sc: "South Carolina",
+    sd: "South Dakota", tn: "Tennessee", tx: "Texas", ut: "Utah", vt: "Vermont", va: "Virginia",
+    wa: "Washington", wv: "West Virginia", wi: "Wisconsin", wy: "Wyoming", dc: "District of Columbia",
+    pr: "Puerto Rico", gu: "Guam", vi: "Virgin Islands", as: "American Samoa", mp: "Northern Mariana Islands" };
+  function jurisName(code) {
+    var k = String(code || "").toLowerCase();
+    return JURIS[k] || (code ? String(code).toUpperCase() : "");
+  }
 
   // ---- next hearings open to comment ----
   fetch("hearings.json").then(function (r) { return r.json(); }).then(function (h) {
@@ -564,7 +589,7 @@
       var wd = bad ? "" : d.toLocaleString("en-US", { weekday: "short" });
       var yr = bad ? "" : d.getFullYear();
       var sub = bad ? "soon" : (wd + " · " + yr);
-      var juris = (x.jurisdiction || "").toUpperCase();
+      var juris = jurisName(x.jurisdiction);
       var label = (x.committee || x.title || "Hearing");
       if (label.length > 60) label = label.slice(0, 58) + "…";
       var url = x.witness_slip_url || x.details_url || "hearings.html";

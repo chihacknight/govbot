@@ -149,7 +149,10 @@ desktop + click, Escape/outside-click to close; the mobile drawer stays a flat l
 **Homepage** landing page (a realistic golden wireframe Lady Liberty raster hero, `assets/liberty-hero.png`, luminance-keyed to a transparent background so it drops cleanly onto the hero in both themes; the robot mark `assets/govbot-mark.png` is the header logo; "What do you want to know?" cards,
 live "What's happening now" fetched fail-soft from `data.json`/`hearings.json`/`elections.json`).
 The homepage's **"Recent legislative activity"** card shows **one bill per state** (up to 4) as rich
-`.activity-row.rich` rows — each an **alternating card** (consecutive rows swap tint + a blue/gold
+`.activity-row.rich` rows — each **leads with the bill's title** (`.ar-title`, full-contrast, 2-line
+clamp) with the latest recorded action demoted to a secondary muted `.desc` line beneath (falling
+back to the action as the title when a bill has no title), and each is an **alternating card**
+(consecutive rows swap tint + a blue/gold
 left-accent, `:nth-of-type(even)`, so bills read as distinct blocks) that **links to that exact
 bill's card** via `legislation.html#bill=<state~session~id>` (a plain `#q=<id>` would surface every
 state's same-numbered bill; the unique key opens just the one — `billKey` here matches `billKey` +
@@ -178,7 +181,9 @@ a namesake's face is never attached). Reuses the `/tmp/openstates-people` checko
 step; fully fail-soft (no checkout / both sources fail → that sponsor just isn't pictured).
 Offline-tested with injected fetch + wiki functions: `python3 scripts/test_fetch_sponsor_photos.py`. The **"Next hearings open to comment"** card renders each date as a little
 **calendar figure** (`.mini-date`: a gold month band with two binding rings, a big day numeral, and
-the weekday + year, e.g. "Sun · 2026"). The homepage's **closing section** ("From the firehose to
+the weekday + year, e.g. "Sun · 2026") and labels each hearing's jurisdiction with its **full
+name, never an abbreviation** (a shared code→name `JURIS` map + `jurisName()` helper, `us` →
+"USA (Federal)"). The homepage's **closing section** ("From the firehose to
 the point.", `#stream`) is a self-contained **canvas animation** ("chaos becomes understandable"): a
 chaotic stream of raw government records (bills, hearings, votes, ballots, filings — muted, tilted
 scraps) flows in from the left into the **Govbot hub** (the robot mark, keyed transparent as
@@ -234,13 +239,19 @@ counts) that drives the existing `#f-ballot` filter, reveals the sections, and s
 Springfield, picker) is unchanged.
 `hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
 "Hearings & Public Comment", tagline "Government isn't just something you watch — you can
-participate.", the live metrics foregrounded as a row of **gold civic stat tiles** (`.hh-stats` /
-`.hh-stat` — display numerals on faint glass: **two** tiles, "N upcoming hearings and open to
-public comment" (the count that are both upcoming and comment-open) and "N jurisdictions"), and a
+participate."), and a
 detailed gold White House line-art (`assets/whitehouse-hero.png`, a transparent-background raster
 so it drops onto the dark hero in both themes); the America-250 `250th` fireworks
-brandbar is kept. (The earlier "See upcoming hearings" CTA button was removed — the metrics carry
-the hero.) Each hearing now makes participation obvious: a green **"Public comment open"**
+brandbar is kept. (The earlier "See upcoming hearings" CTA button was removed.) **Below** the hero
+sits a `.hh-below` strip carrying two things: the live metrics as a row of **gold civic stat tiles**
+(`.hh-stats` / `.hh-stat` — theme-aware, gold display numerals on `--surface-1` glass with a
+gold-tinted border: **two** tiles, "N upcoming hearings and open to public comment" (the count that
+are both upcoming and comment-open) and "N jurisdictions"), and a **jump-to-jurisdiction nav**
+(`.hh-jump`, `#hh-jump`) — a "Jump to" label plus one pill chip per jurisdiction (its full name +
+a `.jn-count` count) linking to that section's `#hg-<code>` anchor (each `.hgroup` gets
+`id="hg-<code>"` in `renderHearings`, ordered federal-first like the groups; `.hgroup` has
+`scroll-margin-top` so the sticky header doesn't cover the target). The nav is hidden with fewer
+than two jurisdictions. Each hearing still makes participation obvious: a green **"Public comment open"**
 badge on the date column and the witness-slip/comment action elevated into a filled green
 `.file-link` pill. The `<title>` was also corrected (it had been a stray "Legislation Dashboard").
 The hearing/participation render engine is otherwise unchanged.
