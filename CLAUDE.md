@@ -284,7 +284,23 @@ button was removed)) and a "What's on your ballot?" selector
 (`#ballot-cards`, one card per distinct `ballot_date` with its stage label + office/candidate
 counts) that drives the existing `#f-ballot` filter, reveals the sections, and scrolls to
 `#groups` (`renderElectionHero`). The rich race engine (groups, five drawers, calendar,
-Springfield, picker) is unchanged.
+Springfield, picker) is unchanged. Above the ballot-picker sits a **"Find your ballot"** map-first
+entry (`#bfinder`, `renderBallotFinder`): a geographic **Illinois county choropleth** — all 102
+county paths + the state outline from the committed `assets/il-counties.json` (generated from US
+Census county geometry, equirectangular north-up with a cos(lat) correction; fetched fail-soft, so
+the whole finder stays hidden if it doesn't load), rendered on the same dark viewport as
+legislation's map with gold county borders, **Cook County (Chicago) highlighted**, a gold glow
+outline, and the selected county pulsing (`.bf-cty.is-sel`). A **place picker** beside it (Chicago /
+Elsewhere-in-Illinois chips + a Chicago **ward** `<select>`, plus a live "Coming up" list of the
+upcoming `ballot_date`s with race counts) and clicking a county both resolve a voter to their ballot
+(`resolveBallot`): Chicago → the city groups (citywide, council, cps_board,
+police_district_council) **plus** the statewide/federal groups, with the 50-ward Alderperson list
+narrowed to the chosen ward via a new `state.filters.ward` (matches `r.district === "Ward "+N`, only
+on the `council` group); any other county → statewide + federal only, with a note that local races
+for that county aren't tracked yet. It drives the same `state.view` Set + `applyView()` the picker
+uses (so the sections reveal and the page scrolls to `#groups`), and `#f-clear` also drops the ward
+and the finder's selection. The lookup is **map + picker only** (no address/ZIP geocoding) so it is
+fully offline and deterministic.
 `hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
 "Hearings & Public Comment", tagline "Government isn't just something you watch — you can
 participate."), and a
