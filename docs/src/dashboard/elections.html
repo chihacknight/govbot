@@ -531,6 +531,17 @@
   .bf-up-n { text-align: right; flex: none; }
   .bf-up-n b { font-family: var(--gb-font-display); font-size: 17px; color: var(--gb-gold-hi); }
   .bf-up-n span { display: block; font-size: 10.5px; color: var(--text-secondary); }
+
+  /* 2026 federal midterm callout */
+  .midterm-banner { width: 100%; text-align: left; font: inherit; cursor: pointer; display: flex; align-items: center; gap: 16px; margin: 0 0 22px; padding: 15px 20px; border: 1px solid var(--border); border-left: 4px solid var(--gb-blue); border-radius: 14px; background: var(--surface-1); color: var(--text-primary); }
+  .midterm-banner:hover { border-color: var(--baseline); transform: translateY(-1px); transition: transform .12s ease; }
+  .midterm-banner:focus-visible { outline: 2px solid var(--gb-blue); outline-offset: 2px; }
+  .mb-flag { font-size: 26px; line-height: 1; flex: none; }
+  .mb-copy { flex-grow: 1; font-size: 14px; line-height: 1.5; }
+  .mb-copy b { font-family: var(--gb-font-display); font-weight: 600; font-size: 16px; }
+  .mb-cta { flex: none; font-size: 13.5px; font-weight: 700; color: var(--gb-gold-hi); white-space: nowrap; }
+  @media (prefers-reduced-motion: reduce) { .midterm-banner:hover { transform: none; } }
+  @media (max-width: 640px) { .midterm-banner { flex-wrap: wrap; } .mb-cta { width: 100%; } }
   @media (max-width: 760px) {
     .bf-grid { grid-template-columns: 1fr; }
     .bf-viewport { min-height: 300px; }
@@ -692,6 +703,13 @@
       </div>
     </div>
   </section>
+
+  <!-- 2026 federal midterm callout: jumps to the U.S. Senate & House races already on the ballot -->
+  <button type="button" class="midterm-banner" id="midterm-banner" hidden>
+    <span class="mb-flag" aria-hidden="true">🇺🇸</span>
+    <span class="mb-copy"><b>The 2026 midterms decide control of Congress.</b> On Nov 3, Illinois votes for a U.S. Senate seat and all 17 U.S. House districts — part of the national midterm that sets the balance of power in Washington.</span>
+    <span class="mb-cta">See the federal races →</span>
+  </button>
 
   <!-- Ballot-first entry: pick a ballot to see every office on it -->
   <section class="ballot-picker" id="ballot-picker" aria-label="What is on your ballot">
@@ -969,6 +987,13 @@
     buildPicker(data);                          // the "Build your view" section chooser
     renderBallotFinder(data);                   // the Illinois map + place picker ("find your ballot")
 
+    // 2026 federal midterm callout — shown only when the federal races are present
+    const mb = $("midterm-banner");
+    if (mb && data.races.some((r) => r.office_group === "us_senate" || r.office_group === "us_house")) {
+      mb.hidden = false;
+      mb.addEventListener("click", revealFederal);
+    }
+
     // District locator maps (fail-soft; re-render when they arrive).
     fetch("maps.json")
       .then((r) => (r.ok ? r.json() : null))
@@ -1220,6 +1245,17 @@
     scrollToRaces();
   }
 
+  // The midterm callout reveals the federal (U.S. Senate + House) sections and
+  // scrolls to them, without disturbing whatever else the reader already has open.
+  function revealFederal() {
+    ["us_senate", "us_house"].filter((g) => state.data.races.some((r) => r.office_group === g))
+      .forEach((g) => state.view.add("grp:" + g));
+    syncPickerChecks();
+    applyView();
+    const t = document.getElementById("grp-us_senate") || document.getElementById("grp-us_house") || $("groups");
+    if (t) t.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
+  }
+
   /* ---------- "Build your view" section picker ---------- */
   function pickerOptions(data) {
     // "Data sources" is intentionally NOT here — it stays pinned at the bottom.
@@ -1369,6 +1405,7 @@
       const meta = GROUP_META[g] || { label: g, emoji: "🗳️", color: "--series-2" };
       const section = document.createElement("section");
       section.className = "group";
+      section.id = "grp-" + g;   // anchor target (e.g. the midterm callout jumps here)
       section.style.setProperty("--gc", "var(" + meta.color + ")");
 
       const head = document.createElement("div");

@@ -300,7 +300,12 @@ on the `council` group); any other county → statewide + federal only, with a n
 for that county aren't tracked yet. It drives the same `state.view` Set + `applyView()` the picker
 uses (so the sections reveal and the page scrolls to `#groups`), and `#f-clear` also drops the ward
 and the finder's selection. The lookup is **map + picker only** (no address/ZIP geocoding) so it is
-fully offline and deterministic.
+fully offline and deterministic. Below the finder sits a **2026 federal-midterm callout**
+(`#midterm-banner`, "The 2026 midterms decide control of Congress") — shown only when the federal
+races are present; clicking it (`revealFederal`) adds the `us_senate` + `us_house` groups to the
+view and scrolls to the U.S. Senate section (each race `<section>` now carries an `id="grp-<group>"`
+anchor). The federal races themselves (Illinois's U.S. Senate seat + all 17 U.S. House districts on
+the Nov 3, 2026 ballot) were already in the data; the callout just surfaces them.
 `hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
 "Hearings & Public Comment", tagline "Government isn't just something you watch — you can
 participate."), and a
