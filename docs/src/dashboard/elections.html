@@ -479,6 +479,73 @@
   .bc-count { font-size: 13.5px; color: var(--text-secondary); }
   .bc-go { font-size: 13.5px; font-weight: 600; color: var(--series-2); margin-top: 4px; }
   @media (prefers-reduced-motion: reduce) { .ballot-card:hover { transform: none; } }
+
+  /* ===== Find your ballot — Illinois county map + place picker ===== */
+  .bfinder { margin: 6px 0 24px; }
+  .bf-title { margin: 0 0 4px; font-size: 27px; }
+  .bf-sub { margin: 0 0 16px; color: var(--text-secondary); font-size: 14px; max-width: 70ch; }
+  .bf-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 20px; align-items: start; }
+  .bf-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .bf-maphead { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; }
+  .bf-maphead .bf-hint { color: var(--text-secondary); font-weight: 500; }
+  .bf-viewport { position: relative; flex-grow: 1; min-height: 340px; background: #0A0E16; border: 1px solid #1C2434; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .bf-viewport svg { width: auto; height: 100%; max-height: 460px; display: block; }
+  .bf-glow { filter: drop-shadow(0 0 1.6px rgba(240,201,105,.5)); }
+  .bf-cty { cursor: pointer; transition: fill .12s ease, filter .12s ease; }
+  .bf-cty:hover { fill: #2B3346; }
+  .bf-cty:focus-visible { outline: none; filter: brightness(1.35); }
+  .bf-cty.is-cook { fill: #9C7B2E; }
+  .bf-cty.is-cook:hover { fill: #B8933A; }
+  .bf-cty.is-sel { fill: #E7B34B; stroke: #F0C969 !important; stroke-width: 1.4 !important; animation: bf-pulse 1.6s ease-in-out infinite; }
+  @keyframes bf-pulse { 0%,100% { filter: drop-shadow(0 0 2px rgba(240,201,105,.55)); } 50% { filter: drop-shadow(0 0 8px rgba(240,201,105,1)); } }
+  @media (prefers-reduced-motion: reduce) { .bf-cty.is-sel { animation: none; } }
+  .bf-cook-tag { position: absolute; top: 12px; right: 12px; font-size: 11px; font-weight: 700; color: #0A0A0A; background: #F0C969; border-radius: 6px; padding: 3px 9px; pointer-events: none; }
+  .bf-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary); }
+  .bf-legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .bf-sw { width: 13px; height: 13px; border-radius: 3px; }
+  .bf-pickcard { justify-content: flex-start; gap: 16px; }
+  .bf-plabel { font-size: 11.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--series-2); font-weight: 600; }
+  .bf-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .bf-chip { font: inherit; font-size: 13.5px; cursor: pointer; color: var(--text-primary); background: var(--gb-elevated); border: 1px solid var(--border); border-radius: 999px; padding: 8px 15px; }
+  .bf-chip:hover { border-color: var(--baseline); }
+  .bf-chip.is-on { background: var(--series-2); border-color: var(--series-2); color: #fff; font-weight: 600; }
+  .bf-chip:focus-visible { outline: 2px solid var(--series-2); outline-offset: 2px; }
+  .bf-ward { display: none; flex-direction: column; gap: 8px; }
+  .bf-ward.is-shown { display: flex; }
+  .bf-ward label { font-size: 13px; color: var(--text-secondary); font-weight: 600; }
+  .bf-ward select { font: inherit; font-size: 15px; color: var(--text-primary); background: var(--surface-1); border: 1.5px solid var(--border); border-radius: 11px; padding: 11px 13px; width: 100%; }
+  .bf-go { font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; color: #0A0A0A; background: var(--gb-gold-hi); border: none; border-radius: 12px; padding: 13px 20px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  .bf-go:hover { background: var(--gb-gold); }
+  .bf-go:disabled { opacity: .5; cursor: default; }
+  .bf-status { font-size: 13px; color: var(--text-secondary); line-height: 1.5; min-height: 1.2em; }
+  .bf-status b { color: var(--text-primary); }
+  .bf-upcoming { display: flex; flex-direction: column; gap: 9px; }
+  .bf-up { display: flex; gap: 12px; align-items: center; background: var(--gb-elevated); border: 1px solid var(--border); border-left: 3px solid var(--series-2); border-radius: 11px; padding: 10px 13px; }
+  .bf-up-d { width: 50px; flex: none; text-align: center; }
+  .bf-up-mo { font-size: 10px; font-weight: 700; letter-spacing: .06em; color: var(--series-2); text-transform: uppercase; }
+  .bf-up-day { font-family: var(--gb-font-display); font-size: 20px; font-weight: 700; line-height: 1; }
+  .bf-up-yr { font-size: 9.5px; color: var(--text-secondary); }
+  .bf-up-main { flex-grow: 1; min-width: 0; }
+  .bf-up-t { font-size: 13.5px; font-weight: 600; }
+  .bf-up-sub { font-size: 11.5px; color: var(--text-secondary); }
+  .bf-up-n { text-align: right; flex: none; }
+  .bf-up-n b { font-family: var(--gb-font-display); font-size: 17px; color: var(--gb-gold-hi); }
+  .bf-up-n span { display: block; font-size: 10.5px; color: var(--text-secondary); }
+
+  /* 2026 federal midterm callout */
+  .midterm-banner { width: 100%; text-align: left; font: inherit; cursor: pointer; display: flex; align-items: center; gap: 16px; margin: 0 0 22px; padding: 15px 20px; border: 1px solid var(--border); border-left: 4px solid var(--gb-blue); border-radius: 14px; background: var(--surface-1); color: var(--text-primary); }
+  .midterm-banner:hover { border-color: var(--baseline); transform: translateY(-1px); transition: transform .12s ease; }
+  .midterm-banner:focus-visible { outline: 2px solid var(--gb-blue); outline-offset: 2px; }
+  .mb-flag { font-size: 26px; line-height: 1; flex: none; }
+  .mb-copy { flex-grow: 1; font-size: 14px; line-height: 1.5; }
+  .mb-copy b { font-family: var(--gb-font-display); font-weight: 600; font-size: 16px; }
+  .mb-cta { flex: none; font-size: 13.5px; font-weight: 700; color: var(--gb-gold-hi); white-space: nowrap; }
+  @media (prefers-reduced-motion: reduce) { .midterm-banner:hover { transform: none; } }
+  @media (max-width: 640px) { .midterm-banner { flex-wrap: wrap; } .mb-cta { width: 100%; } }
+  @media (max-width: 760px) {
+    .bf-grid { grid-template-columns: 1fr; }
+    .bf-viewport { min-height: 300px; }
+  }
 </style>
 <script>
   // Apply a saved theme choice before first paint. Shared localStorage key, so
@@ -599,6 +666,50 @@
 
   <!-- Decorative Illinois flag, waving, top-right (desktop only, never blocks clicks) -->
   <div class="corner-flag" id="corner-flag" aria-hidden="true"></div>
+
+  <!-- Find your ballot: click the Illinois map (or pick your place) to see only your races -->
+  <section class="bfinder" id="bfinder" aria-label="Find your ballot" hidden>
+    <h2 class="bf-title">Find your ballot</h2>
+    <p class="bf-sub">Pick where you live — click a county, or choose Chicago and your ward. We’ll show every race you can vote in.</p>
+    <div class="bf-grid">
+      <div class="bf-card">
+        <div class="bf-maphead"><span>Illinois</span><span class="bf-hint">click a county</span></div>
+        <div class="bf-viewport" id="bf-viewport" role="group" aria-label="Map of Illinois counties"></div>
+        <div class="bf-legend">
+          <span><span class="bf-sw" style="background:#E7B34B"></span>Selected</span>
+          <span><span class="bf-sw" style="background:#9C7B2E"></span>Chicago (Cook)</span>
+          <span><span class="bf-sw" style="background:#141A26;border:1.5px solid #C79A3C"></span>102 counties</span>
+        </div>
+      </div>
+      <div class="bf-card bf-pickcard">
+        <div>
+          <div class="bf-plabel">Where do you vote?</div>
+          <div class="bf-chips" id="bf-chips" role="group" aria-label="Choose your jurisdiction">
+            <button type="button" class="bf-chip" data-place="chicago">Chicago</button>
+            <button type="button" class="bf-chip" data-place="illinois">Elsewhere in Illinois</button>
+          </div>
+        </div>
+        <div class="bf-ward" id="bf-ward">
+          <label for="bf-ward-sel">Your Chicago ward</label>
+          <select id="bf-ward-sel" aria-label="Chicago ward"></select>
+        </div>
+        <button type="button" class="bf-go" id="bf-go" disabled>
+          See my ballot
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <p class="bf-status" id="bf-status">Everyone in Illinois votes the statewide &amp; federal races. Chicago voters also get city, ward, CPS board &amp; police-council races.</p>
+        <div class="bf-plabel">Coming up</div>
+        <div class="bf-upcoming" id="bf-upcoming"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2026 federal midterm callout: jumps to the U.S. Senate & House races already on the ballot -->
+  <button type="button" class="midterm-banner" id="midterm-banner" hidden>
+    <span class="mb-flag" aria-hidden="true">🇺🇸</span>
+    <span class="mb-copy"><b>The 2026 midterms decide control of Congress.</b> On Nov 3, Illinois votes for a U.S. Senate seat and all 17 U.S. House districts — part of the national midterm that sets the balance of power in Washington.</span>
+    <span class="mb-cta">See the federal races →</span>
+  </button>
 
   <!-- Ballot-first entry: pick a ballot to see every office on it -->
   <section class="ballot-picker" id="ballot-picker" aria-label="What is on your ballot">
@@ -772,7 +883,7 @@
 
   const state = {
     data: null,
-    filters: { search: "", group: "", ballot: "", hasCands: false },
+    filters: { search: "", group: "", ballot: "", hasCands: false, ward: "" },
     // Per-section quick filter (keyed by office_group), applied within a single
     // group's card grid. Kept apart from the top-level `filters` so it survives
     // the global re-render and doesn't disturb the other sections.
@@ -874,6 +985,14 @@
     initSpringfield(data.springfield || []);  // populates; visibility is the picker's job
     setupFlourishes();                          // waving corner flag + flag cursor
     buildPicker(data);                          // the "Build your view" section chooser
+    renderBallotFinder(data);                   // the Illinois map + place picker ("find your ballot")
+
+    // 2026 federal midterm callout — shown only when the federal races are present
+    const mb = $("midterm-banner");
+    if (mb && data.races.some((r) => r.office_group === "us_senate" || r.office_group === "us_house")) {
+      mb.hidden = false;
+      mb.addEventListener("click", revealFederal);
+    }
 
     // District locator maps (fail-soft; re-render when they arrive).
     fetch("maps.json")
@@ -907,9 +1026,11 @@
       render();
     });
     $("f-clear").addEventListener("click", () => {
-      state.filters = { search: "", group: "", ballot: "", hasCands: false };
+      state.filters = { search: "", group: "", ballot: "", hasCands: false, ward: "" };
       $("f-search").value = ""; $("f-ballot").value = "";
       $("f-hascands").setAttribute("aria-pressed", "false");
+      const bw = $("bf-status"); // clearing filters also drops the ward the finder set
+      if (bw && state._bfPlace) { state._bfPlace = null; syncBfChips(); }
       render();
     });
     document.querySelectorAll("[data-clear-filters]").forEach((b) =>
@@ -946,6 +1067,9 @@
       if (f.group && r.office_group !== f.group) return false;
       if (f.ballot && r.ballot_date !== f.ballot) return false;
       if (f.hasCands && !(r.candidates && r.candidates.length)) return false;
+      // Ward narrows the 50-ward Alderperson list to just the reader's ward
+      // (only that group has a ward district; every other office is left alone).
+      if (f.ward && r.office_group === "council" && r.district !== "Ward " + f.ward) return false;
       if (f.search) {
         const hay = [r.office, r.district || "",
           (r.candidates || []).map((c) => c.name).join(" "),
@@ -958,7 +1082,7 @@
   }
   function anyFilter() {
     const f = state.filters;
-    return !!(f.search || f.group || f.ballot || f.hasCands);
+    return !!(f.search || f.group || f.ballot || f.hasCands || f.ward);
   }
 
   /* ---------- Illinois-flag flourishes ---------- */
@@ -992,6 +1116,144 @@
   function setupFlourishes() {
     // The waving flag now lives only in the hero (`#hero-flag`). The old
     // mouse-following flag cursor has been removed.
+  }
+
+  /* ---------- Find your ballot: Illinois county map + place picker ---------- */
+  // Everyone in IL votes statewide + federal; Chicagoans also get the city ballot.
+  const BF_CHI_GROUPS = ["citywide", "council", "cps_board", "police_district_council"];
+  const BF_STATEFED_GROUPS = ["il_exec", "il_senate", "il_house", "us_senate", "us_house",
+                              "cook_county", "suburban", "judicial", "state", "federal"];
+  // (SVGNS is declared once, lower down, near the per-race map helpers.)
+  function mkBf(tag, attrs) { const e = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
+  function bfGroupsPresent(data, list) { return list.filter((g) => data.races.some((r) => r.office_group === g)); }
+
+  function renderBallotFinder(data) {
+    const vp = $("bf-viewport");
+    if (!vp) return;
+    const sel = $("bf-ward-sel");
+    if (sel) {
+      const o0 = document.createElement("option"); o0.value = ""; o0.textContent = "All Chicago wards"; sel.append(o0);
+      for (let w = 1; w <= 50; w++) { const o = document.createElement("option"); o.value = String(w); o.textContent = "Ward " + w; sel.append(o); }
+      sel.addEventListener("change", () => {   // live re-apply once a Chicago ballot is showing
+        if (state._bfPlace === "chicago" && state.view.has("grp:council")) resolveBallot(data);
+      });
+    }
+    $("bf-chips").querySelectorAll(".bf-chip").forEach((ch) =>
+      ch.addEventListener("click", () => selectBfPlace(ch.getAttribute("data-place"))));
+    $("bf-go").addEventListener("click", () => resolveBallot(data));
+    renderBfUpcoming(data);
+
+    fetch("assets/il-counties.json")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("il-counties " + r.status))))
+      .then((geo) => { drawBfMap(geo); $("bfinder").hidden = false; })
+      .catch(() => { /* finder stays hidden; the rest of the page is unaffected */ });
+  }
+
+  function renderBfUpcoming(data) {
+    const box = $("bf-upcoming"); if (!box) return;
+    const byDate = {};
+    data.races.forEach((r) => { if (r.ballot_date) (byDate[r.ballot_date] = byDate[r.ballot_date] || []).push(r); });
+    const all = Object.keys(byDate).sort();
+    const now = state.nowDate || new Date().toISOString().slice(0, 10);
+    const upcoming = all.filter((d) => d >= now);
+    const list = (upcoming.length ? upcoming : all).slice(0, 3);
+    box.textContent = "";
+    list.forEach((d) => {
+      const rs = byDate[d], dt = new Date(d + "T00:00:00");
+      const row = document.createElement("div"); row.className = "bf-up";
+      const dd = document.createElement("div"); dd.className = "bf-up-d";
+      dd.innerHTML = '<div class="bf-up-mo">' + dt.toLocaleString("en-US", { month: "short" }) +
+        '</div><div class="bf-up-day">' + dt.getDate() + '</div><div class="bf-up-yr">' + dt.getFullYear() + '</div>';
+      const mn = document.createElement("div"); mn.className = "bf-up-main";
+      const t = document.createElement("div"); t.className = "bf-up-t"; t.textContent = ballotStageLabel(rs);
+      const sub = document.createElement("div"); sub.className = "bf-up-sub"; sub.textContent = prettyDate(d);
+      mn.append(t, sub);
+      const n = document.createElement("div"); n.className = "bf-up-n";
+      n.innerHTML = "<b>" + rs.length + "</b><span>races</span>";
+      row.append(dd, mn, n); box.append(row);
+    });
+  }
+
+  function drawBfMap(geo) {
+    const vp = $("bf-viewport"); vp.textContent = "";
+    const svg = mkBf("svg", { viewBox: geo.viewBox, role: "img", "aria-label": "Map of Illinois — click a county to pick your ballot" });
+    svg.append(mkBf("path", { d: geo.state_d, fill: "#141A26" }));
+    state._bfPaths = {};
+    geo.counties.forEach((c) => {
+      const isCook = c.id === "Cook";
+      const p = mkBf("path", { d: c.d, fill: isCook ? "#9C7B2E" : "#141A26", stroke: "#C79A3C",
+        "stroke-width": "0.5", "stroke-linejoin": "round",
+        class: "bf-cty" + (isCook ? " is-cook" : ""), tabindex: "0", role: "button", "aria-label": c.name + " County" });
+      p.addEventListener("click", () => selectBfCounty(c.id));
+      p.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectBfCounty(c.id); } });
+      state._bfPaths[c.id] = p;
+      svg.append(p);
+    });
+    svg.append(mkBf("path", { d: geo.state_d, fill: "none", stroke: "#F0C969", "stroke-width": "1.4",
+      "stroke-linejoin": "round", class: "bf-glow", "pointer-events": "none" }));
+    vp.append(svg);
+    const tag = document.createElement("span"); tag.className = "bf-cook-tag"; tag.textContent = "Chicago · 50 wards"; vp.append(tag);
+  }
+
+  function markBfCounty(id) {
+    Object.values(state._bfPaths || {}).forEach((p) => p.classList.remove("is-sel"));
+    const p = state._bfPaths && state._bfPaths[id]; if (p) p.classList.add("is-sel");
+  }
+
+  function selectBfCounty(id) {
+    if (id === "Cook") { selectBfPlace("chicago"); return; }
+    selectBfPlace("illinois");
+    markBfCounty(id);
+    state._bfCounty = id;
+    $("bf-status").innerHTML = "<b>" + id + " County.</b> Local " + id +
+      " races aren’t tracked yet — you’ll see the statewide &amp; federal races on your ballot.";
+  }
+
+  function selectBfPlace(place) {
+    state._bfPlace = place;
+    if (place === "chicago") {
+      markBfCounty("Cook"); state._bfCounty = "Cook";
+      $("bf-status").innerHTML = "<b>Chicago.</b> Pick your ward to narrow the City Council race — everything else on your ballot shows too.";
+    }
+    syncBfChips();
+    $("bf-ward").classList.toggle("is-shown", place === "chicago");
+    $("bf-go").disabled = !place;
+  }
+
+  function syncBfChips() {
+    document.querySelectorAll("#bf-chips .bf-chip").forEach((ch) => {
+      const on = ch.getAttribute("data-place") === state._bfPlace;
+      ch.classList.toggle("is-on", on); ch.setAttribute("aria-pressed", String(on));
+    });
+    if (!state._bfPlace) { $("bf-ward").classList.remove("is-shown"); $("bf-go").disabled = true; markBfCounty("__none__"); }
+  }
+
+  function resolveBallot(data) {
+    const place = state._bfPlace; if (!place) return;
+    const groups = place === "chicago"
+      ? bfGroupsPresent(data, BF_CHI_GROUPS).concat(bfGroupsPresent(data, BF_STATEFED_GROUPS))
+      : bfGroupsPresent(data, BF_STATEFED_GROUPS);
+    state.view.clear();
+    groups.forEach((g) => state.view.add("grp:" + g));
+    state.view.add("calendar");
+    syncPickerChecks();
+    state.filters.search = ""; state.filters.group = ""; state.filters.ballot = ""; state.filters.hasCands = false;
+    state.filters.ward = place === "chicago" ? ($("bf-ward-sel").value || "") : "";
+    const fs = $("f-search"); if (fs) fs.value = "";
+    const fb = $("f-ballot"); if (fb) fb.value = "";
+    applyView();          // toggles the sections on, then re-renders
+    scrollToRaces();
+  }
+
+  // The midterm callout reveals the federal (U.S. Senate + House) sections and
+  // scrolls to them, without disturbing whatever else the reader already has open.
+  function revealFederal() {
+    ["us_senate", "us_house"].filter((g) => state.data.races.some((r) => r.office_group === g))
+      .forEach((g) => state.view.add("grp:" + g));
+    syncPickerChecks();
+    applyView();
+    const t = document.getElementById("grp-us_senate") || document.getElementById("grp-us_house") || $("groups");
+    if (t) t.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
   }
 
   /* ---------- "Build your view" section picker ---------- */
@@ -1143,6 +1405,7 @@
       const meta = GROUP_META[g] || { label: g, emoji: "🗳️", color: "--series-2" };
       const section = document.createElement("section");
       section.className = "group";
+      section.id = "grp-" + g;   // anchor target (e.g. the midterm callout jumps here)
       section.style.setProperty("--gc", "var(" + meta.color + ")");
 
       const head = document.createElement("div");

@@ -566,6 +566,13 @@
   .ee-card-sub { font-size: 12.5px; color: var(--gb-text-2); margin-top: 2px; }
   .ee-card-arr { flex: none; color: var(--gb-text-2); }
   @media (max-width: 900px) { .ee-mapcol { flex-direction: column; } .ee-detail { width: auto; } }
+  /* Results view header (shown when a jurisdiction/search is active) */
+  .results-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+  .results-head h2 { margin: 0; }
+  .results-head .sub { margin: 0; margin-left: auto; }
+  .results-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--text-secondary); text-decoration: none; }
+  .results-back:hover { color: var(--text-primary); }
+  .results-back svg { width: 16px; height: 16px; }
 </style>
 <script>
   // Apply a saved theme choice before first paint to avoid a flash of the
@@ -704,7 +711,6 @@
       <div class="ee-mapcol" id="ee-mapcol">
         <div class="ee-mappanel">
           <div class="ee-maphead">
-            <h2>Where bills are moving</h2>
             <span class="ee-maphint">Click a state · scroll or + / − to zoom · drag to pan</span>
           </div>
           <div class="ee-mapwrap" id="ee-mapwrap">
@@ -731,7 +737,7 @@
             <h3 id="ee-d-name">—</h3>
             <span class="ee-d-pill"><span class="ee-d-dot" id="ee-d-dot"></span><span id="ee-d-label"></span></span>
           </div>
-          <div class="ee-d-countrow"><span class="ee-d-count" id="ee-d-count">0</span><span>bills tracked here</span></div>
+          <div class="ee-d-countrow"><span class="ee-d-count" id="ee-d-count">0</span><span>bills</span></div>
           <div class="ee-d-recent">
             <div class="ee-d-recent-lbl">Recent legislative activity</div>
             <div id="ee-d-recent-list"></div>
@@ -799,33 +805,15 @@
     </div>
   </section>
 
-  <!-- Analytics behind progressive disclosure (dense charts deeper) -->
-  <details class="overview">
-    <summary><span class="ov-title">Overview &amp; charts</span><span class="ov-hint">jurisdiction · topic · monthly activity</span><span class="ov-toggle"><span class="ov-toggle-show">Show charts</span><span class="ov-toggle-hide">Hide charts</span></span></summary>
-    <div class="tiles" id="tiles"></div>
-    <div class="grid2">
-      <div class="card card--accent card--jurisdiction">
-        <h2>Bills by jurisdiction</h2>
-        <p class="sub">Click a bar to filter</p>
-        <div id="chart-states" class="hbar-scroll"></div>
-        <p class="pending-note" id="pending-note" hidden></p>
-      </div>
-      <div class="card card--accent card--topic">
-        <h2>Bills by topic</h2>
-        <p class="sub">Click a bar to filter · a bill can carry several topics</p>
-        <div id="chart-tags" class="hbar-scroll"></div>
-      </div>
+  <div class="card card--accent card--bills" id="results-card" hidden style="margin-top:12px">
+    <div class="results-head">
+      <a href="#" class="results-back" id="results-back" hidden>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        Back to map
+      </a>
+      <h2 id="table-title">Bills</h2>
+      <p class="sub">Click a column header to sort</p>
     </div>
-    <div class="card card--accent card--activity" id="activity-card">
-      <h2>Activity by month</h2>
-      <p class="sub" id="activity-sub">Bills with their most recent action in each month</p>
-      <div id="chart-months"></div>
-    </div>
-  </details>
-
-  <div class="card card--accent card--bills" style="margin-top:12px">
-    <h2 id="table-title">Bills</h2>
-    <p class="sub">Click a column header to sort</p>
     <div class="table-scroll">
       <table>
         <thead><tr id="thead-row"></tr></thead>
@@ -1128,12 +1116,27 @@
     const bills = filteredBills();
     state.limit = PAGE_SIZE;
     $("f-clear").disabled = !anyFilterActive();
-    renderTiles(bills);
-    renderStateChart(bills);
-    renderTagChart(bills);
-    renderMonthChart(bills);
     renderTable(bills);
     syncRecentCollapse();
+    setMode();
+  }
+
+  // Two modes: BROWSE (map + recent activity, no results table) and RESULTS
+  // (the map/recent hidden, the filtered bills table shown with a "Back to map"
+  // header). Any active filter/search flips to results; clearing returns to browse.
+  function setMode() {
+    const active = anyFilterActive();
+    const map = $("explore-entry"), recent = $("recent"), card = $("results-card");
+    // Only toggle the map's visibility once it has actually loaded (fail-soft:
+    // if the paths file never loaded the entry stays hidden, don't reveal it).
+    if (map && eeLoaded) map.hidden = active;
+    // Hide Recent in results mode; in browse mode show it only if it has cards
+    // (renderRecent hides an empty strip).
+    if (recent) recent.hidden = active || !($("recent-list") && $("recent-list").children.length);
+    if (card) card.hidden = !active;
+    const back = $("results-back");
+    // "Back to map" only makes sense when a single jurisdiction is in view.
+    if (back) back.hidden = !(state.filters.states.size === 1);
   }
 
   // Recent activity can be collapsed at any time via the Show/Hide pill, which is
@@ -1364,8 +1367,15 @@
     { key: "latest_action", label: "Last action" },
   ];
 
+  function resultsTitle(n) {
+    if (state.filters.states.size === 1) {
+      const code = Array.from(state.filters.states)[0];
+      return eeNameFor(code) + " bills (" + fmt(n) + ")";
+    }
+    return "Bills (" + fmt(n) + ")";
+  }
   function renderTable(bills) {
-    $("table-title").textContent = "Bills (" + fmt(bills.length) + ")";
+    $("table-title").textContent = resultsTitle(bills.length);
     const thead = $("thead-row");
     thead.textContent = "";
     COLS.forEach((c) => {
@@ -1733,7 +1743,10 @@
   // and the search box match against.
   function billQuery(b) { return String(b.id || "").replace(/[^a-z0-9]/gi, "").toLowerCase(); }
   // A shareable URL that opens the dashboard pre-filtered to this one bill.
-  function billShareUrl(b) { return location.origin + location.pathname + "#q=" + billQuery(b); }
+  // Share the EXACT bill via the #bill=<state~session~id> deep link (opens the
+  // bill's modal straight away), not #q= (which only filters and could surface
+  // several states' same-numbered bills).
+  function billShareUrl(b) { return location.origin + location.pathname + "#bill=" + billKey(b); }
   // Copy a bill's share link to the clipboard; `flash(msg)` shows brief feedback.
   // Copy-only (no navigation) so the current view isn't disturbed — recipients
   // who open the link get filtered to the bill by applyDeepLink() on load.
@@ -1930,7 +1943,7 @@
   const EE_LBL = { "-1": "Not yet tracked", "0": "No current bills", "1": "Some activity", "2": "Active", "3": "Busy" };
   const EE_DOT = { "-1": "#8A93A6", "0": "#8A93A6", "1": "#D6A84F", "2": "#E0A83C", "3": "#F0C969" };
   const EE_TERR = [["gu", "Guam"], ["pr", "Puerto Rico"], ["vi", "U.S. Virgin Islands"], ["mp", "N. Mariana Islands"]];
-  let eeGeo = null, eeSel = null, eeScale = 1, eeX = 0, eeY = 0, eeLevel = {}, eeCounts = {}, eeTracked = null, eeWired = false;
+  let eeGeo = null, eeSel = null, eeScale = 1, eeX = 0, eeY = 0, eeLevel = {}, eeCounts = {}, eeTracked = null, eeWired = false, eeDidDrag = false, eeLoaded = false;
 
   function eeNameFor(code) {
     if (code === "usa") return "United States (Federal)";
@@ -1974,7 +1987,8 @@
         let total = 0; Object.keys(eeCounts).forEach((k) => { total += eeCounts[k]; });
         $("ee-total-num").textContent = total.toLocaleString("en-US");
         eeBuildMap(); eeBuildTerr(); eeBuildList(); eeRenderDetail(); eeWire();
-        sec.hidden = false;
+        eeLoaded = true; sec.hidden = false;
+        setMode();   // reconcile browse/results visibility now the map is present
       })
       .catch(() => { /* fail-soft: no map, the rest of the page still works */ });
   }
@@ -1994,7 +2008,7 @@
       p.setAttribute("aria-label", g.name + (lv === -1 ? ", not yet tracked" : ", " + (eeCounts[code] || 0) + " bills") + (on ? " (selected)" : ""));
       if (lv !== -1) {
         p.setAttribute("role", "button"); p.setAttribute("tabindex", "0");
-        p.addEventListener("click", () => eeSelect(code));
+        p.addEventListener("click", () => { if (eeDidDrag) return; eeSelect(code); });
         p.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); eeSelect(code); } });
       }
       svg.append(p);
@@ -2076,8 +2090,22 @@
 
   function eeApplyFilter(code) {
     state.filters.states.clear(); state.filters.states.add(code);
+    syncMultiSelects(); render();   // render() -> setMode() reveals the results table, hides the map
+    const t = $("results-card"); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  // Show the map/list entry again and clear the jurisdiction filter (Back to map).
+  function eeBackToMap() {
+    state.filters.states.clear();
+    eeSetView(true);
     syncMultiSelects(); render();
-    const t = document.querySelector(".explore-search"); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+    const t = $("explore-entry"); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function eeSetView(map) {
+    const mapBtn = $("ee-map-btn"), listBtn = $("ee-list-btn");
+    if (mapBtn) { mapBtn.classList.toggle("is-on", map); mapBtn.setAttribute("aria-pressed", String(map)); }
+    if (listBtn) { listBtn.classList.toggle("is-on", !map); listBtn.setAttribute("aria-pressed", String(!map)); }
+    const mc = $("ee-mapcol"), lp = $("ee-listpanel");
+    if (mc) mc.hidden = !map; if (lp) lp.hidden = map;
   }
 
   function eeMapDims() { const w = $("ee-mapwrap"); return { W: w ? w.clientWidth : 700, H: w ? w.clientHeight : 470 }; }
@@ -2095,10 +2123,23 @@
   }
   function eeWire() {
     if (eeWired) return; eeWired = true;
+    // Pan without pointer-capture, so a plain click still reaches the state path
+    // (capture was stealing the click and breaking selection while zoomed in). A
+    // drag past a small threshold sets eeDidDrag, which the path click handler
+    // checks so a pan doesn't count as a selection.
     const wrap = $("ee-mapwrap"); let drag = null;
     if (wrap) {
-      wrap.addEventListener("pointerdown", (e) => { if (e.target.closest && e.target.closest(".ee-zoomctl")) return; if (eeScale <= 1) return; drag = { sx: e.clientX, sy: e.clientY, px: eeX, py: eeY }; try { wrap.setPointerCapture(e.pointerId); } catch (_) {} });
-      wrap.addEventListener("pointermove", (e) => { if (!drag) return; eeX = drag.px + (e.clientX - drag.sx); eeY = drag.py + (e.clientY - drag.sy); eeClamp(); eeApplyTransform(); });
+      wrap.addEventListener("pointerdown", (e) => {
+        if (e.target.closest && e.target.closest(".ee-zoomctl")) return;
+        eeDidDrag = false;
+        drag = { sx: e.clientX, sy: e.clientY, px: eeX, py: eeY };
+      });
+      wrap.addEventListener("pointermove", (e) => {
+        if (!drag) return;
+        const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+        if (Math.abs(dx) + Math.abs(dy) > 3) eeDidDrag = true;
+        if (eeScale > 1) { eeX = drag.px + dx; eeY = drag.py + dy; eeClamp(); eeApplyTransform(); }
+      });
       wrap.addEventListener("pointerup", () => { drag = null; });
       wrap.addEventListener("pointerleave", () => { drag = null; });
       wrap.addEventListener("wheel", (e) => { e.preventDefault(); eeZoom(e.deltaY < 0 ? 1.15 : 1 / 1.15); }, { passive: false });
@@ -2108,13 +2149,10 @@
     if (zout) zout.addEventListener("click", () => eeZoom(1 / 1.4));
     if (zr) zr.addEventListener("click", () => { eeScale = 1; eeX = 0; eeY = 0; eeApplyTransform(); });
     const mapBtn = $("ee-map-btn"), listBtn = $("ee-list-btn");
-    const setView = (map) => {
-      mapBtn.classList.toggle("is-on", map); mapBtn.setAttribute("aria-pressed", String(map));
-      listBtn.classList.toggle("is-on", !map); listBtn.setAttribute("aria-pressed", String(!map));
-      $("ee-mapcol").hidden = !map; $("ee-listpanel").hidden = map;
-    };
-    if (mapBtn) mapBtn.addEventListener("click", () => setView(true));
-    if (listBtn) listBtn.addEventListener("click", () => setView(false));
+    if (mapBtn) mapBtn.addEventListener("click", () => eeSetView(true));
+    if (listBtn) listBtn.addEventListener("click", () => eeSetView(false));
+    const back = $("results-back");
+    if (back) back.addEventListener("click", (e) => { e.preventDefault(); eeBackToMap(); });
   }
 
   const RECENT_MAX = 12, RECENT_PER_STATE = 2;
