@@ -520,6 +520,7 @@
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .rc-act { font-size: 12.5px; color: var(--text-secondary);
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .rc-tags { display: flex; flex-wrap: wrap; gap: 2px 0; margin-top: 1px; }
   @media (prefers-reduced-motion: reduce) { .recent-card:hover { transform: none; } }
 
   details.overview { border: 1px solid var(--border); border-radius: 14px; background: var(--surface-1); margin-bottom: 14px; padding: 0 16px 6px; }
@@ -2301,6 +2302,18 @@
       top.append(mchip(stName, "is-state"), mkel("span", "rc-id", b.id), mkel("span", "rc-when", relDate(b.latest_action)));
       card.append(top, mkel("div", "rc-title", b.title || b.id));
       if (b.latest_action_desc) card.append(mkel("div", "rc-act", b.latest_action_desc));
+      const tags = b.tags || [];
+      if (tags.length) {
+        const trow = mkel("div", "rc-tags");
+        tags.forEach((t) => {
+          const chip = mkel("span", "chip");
+          const dot = mkel("span", "dot");
+          dot.style.background = "var(" + (state.tagColor[t] || SERIES[0]) + ")";
+          chip.append(dot, document.createTextNode(t));
+          trow.append(chip);
+        });
+        card.append(trow);
+      }
       card.addEventListener("click", () => openDetails(b));
       host.append(card);
     });

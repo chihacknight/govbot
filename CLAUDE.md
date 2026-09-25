@@ -232,7 +232,9 @@ load the entry stays hidden and the rest of the page is unaffected. Below it, th
 "Recent activity" card strip remains
 (`#recent-list`, newest recorded actions, unfiltered, click → bill modal — capped at
 `RECENT_PER_STATE` (2) per jurisdiction so one busy state can't monopolize the strip, up to
-`RECENT_MAX` (12) cards; a gold `.recent-toggle` "Show / Hide recent activity" pill in the section
+`RECENT_MAX` (12) cards; each card shows the state badge · bill id · relative date · title · latest
+action · the bill's **topic chips** (`.rc-tags`, colored dots from `state.tagColor`, omitted when a
+bill has no tags); a gold `.recent-toggle` "Show / Hide recent activity" pill in the section
 head **is always visible and toggles the strip open/closed at any time** (`toggleRecent()` flips a
 `recentPref` override that beats the default), so a reader can collapse it even without searching.
 Its **default** is expanded while browsing and **collapsed while a search query is active** (an
@@ -340,8 +342,13 @@ date cards → the revealed races → the sources cabinet (now collapsed). The *
 **"Recent Illinois legislative activity"** section (`#il-recent`, `renderIlRecent`) lists every IL
 bill Govbot tracks — fetched fail-soft from the legislation `data.json` (filtered to `state==="il"`,
 newest recorded action first, capped at 25), with a **search box** (`#ilr-search`, matches
-id/title/sponsor/topic); each row deep-links to `legislation.html#bill=<state~session~id>` and the
-section stays hidden when no IL bills load.
+id/title/sponsor/topic). It renders as **the same card format as the legislation "Recent activity"
+strip** (`.ilr-card` mirroring `.recent-card`): an "Illinois" state badge · bill id · relative date
+(`ilRelDate`, "yesterday"/"N days ago") · title · latest action · the bill's **topic chips**
+(`.ilrc-tags`, colored dots from `state.ilTagColor`, which maps each topic to the same fixed
+`--series-N` color the legislation site uses so a topic reads the same color on both pages). Each card
+deep-links to `legislation.html#bill=<state~session~id>` and the section stays hidden when no IL bills
+load.
 `hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
 "Hearings & Public Comment", tagline "Government isn't just something you watch — you can
 participate."), and a

@@ -564,15 +564,29 @@
   .ilr-searchwrap input { width: 100%; box-sizing: border-box; font: inherit; font-size: 15px; color: var(--text-primary); background: var(--surface-1); border: 1.5px solid var(--border); border-radius: 12px; padding: 11px 14px 11px 40px; }
   .ilr-searchwrap input:focus { outline: none; border-color: var(--series-2); }
   .ilr-searchicon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
-  .ilr-list { display: flex; flex-direction: column; }
-  .ilr-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 14px; align-items: baseline; padding: 12px 6px; border-top: 1px solid var(--border); text-decoration: none; color: inherit; border-radius: 8px; }
-  .ilr-row:first-child { border-top: none; }
-  .ilr-row:hover { background: var(--hover-wash); }
-  .ilr-idt { grid-column: 1; font-size: 15px; line-height: 1.4; }
-  .ilr-tag { font-weight: 700; color: var(--series-2); margin-right: 8px; white-space: nowrap; }
-  .ilr-title { color: var(--text-primary); }
-  .ilr-desc { grid-column: 1; font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
-  .ilr-when { grid-column: 2; grid-row: 1; font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+  /* Recent IL activity — same card format as the Explore Legislation "Recent
+     activity" strip (state badge · bill id · when · title · latest action · topic chips). */
+  .ilr-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(278px, 1fr)); gap: 12px; }
+  .ilr-card { text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 7px;
+    background: var(--surface-1); border: 1px solid var(--border); border-left: 3px solid var(--series-1);
+    border-radius: 12px; padding: 14px 16px; font: inherit; color: var(--text-primary); text-decoration: none; }
+  .ilr-card:hover { border-color: var(--series-1); transform: translateY(-2px); transition: transform .12s ease; }
+  .ilr-card:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
+  .ilrc-top { display: flex; align-items: center; gap: 8px; }
+  .ilrc-badge { font-size: 11px; font-weight: 650; letter-spacing: 0.02em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 999px; color: #fff; background: var(--series-1); border: 1px solid var(--series-1); }
+  .ilrc-id { font-size: 12px; font-weight: 600; color: var(--series-1); }
+  .ilrc-when { margin-left: auto; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+  .ilrc-title { font-family: var(--gb-font-display); font-size: 16px; line-height: 1.25; color: var(--text-primary);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .ilrc-act { font-size: 12.5px; color: var(--text-secondary);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .ilrc-tags { display: flex; flex-wrap: wrap; gap: 2px 0; margin-top: 1px; }
+  .ilrc-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border);
+    border-radius: 999px; padding: 1px 8px 1px 6px; margin: 1px 2px 1px 0; font-size: 11.5px;
+    color: var(--text-secondary); white-space: nowrap; }
+  .ilrc-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  @media (prefers-reduced-motion: reduce) { .ilr-card:hover { transform: none; } }
   .ilr-empty { color: var(--text-secondary); font-size: 14px; padding: 12px 6px; }
 </style>
 <script>
@@ -1152,8 +1166,23 @@
 
   /* ---------- Recent Illinois legislative activity (all IL bills we track) ---------- */
   const IL_RECENT_MAX = 25;
+  // Same fixed 8-color series the legislation dashboard cycles its topic tags
+  // through, so a topic reads the same color on both sites.
+  const IL_SERIES = ["--series-1","--series-2","--series-3","--series-4",
+                     "--series-5","--series-6","--series-7","--series-8"];
   function ilBillKey(b) {
     return encodeURIComponent(b.state || "") + "~" + encodeURIComponent(b.session || "") + "~" + encodeURIComponent(b.id || "");
+  }
+  // Relative date to match the legislation "Recent activity" cards ("yesterday", "3 days ago", …).
+  function ilRelDate(iso) {
+    if (!iso) return "";
+    const d = new Date(iso); if (isNaN(d)) return String(iso).slice(0, 10);
+    const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+    if (days <= 0) return "today";
+    if (days === 1) return "yesterday";
+    if (days < 30) return days + " days ago";
+    if (days < 365) return Math.round(days / 30) + " mo ago";
+    return d.toISOString().slice(0, 10);
   }
   function renderIlRecent() {
     fetch("data.json")
@@ -1163,6 +1192,9 @@
         const bills = (d.bills || []).filter((b) => (b.state || "").toLowerCase() === "il");
         if (!bills.length) return;   // fail-soft: no IL bills locally (mock) → section stays hidden
         bills.sort((a, b) => (a.latest_action < b.latest_action ? 1 : a.latest_action > b.latest_action ? -1 : 0));
+        // Map each topic to a stable series color (same scheme as the legislation site).
+        state.ilTagColor = {};
+        (d.tags || []).forEach((t, i) => { state.ilTagColor[t.name] = IL_SERIES[i % IL_SERIES.length]; });
         state.ilBills = bills;
         $("il-recent").hidden = false;
         renderIlList("");
@@ -1182,15 +1214,32 @@
     }
     $("ilr-empty").hidden = !(q && bills.length === 0);
     box.textContent = "";
+    const tagColor = state.ilTagColor || {};
     bills.slice(0, IL_RECENT_MAX).forEach((b) => {
-      const a = document.createElement("a"); a.className = "ilr-row"; a.href = "legislation.html#bill=" + ilBillKey(b);
-      const idt = document.createElement("div"); idt.className = "ilr-idt";
-      const tag = document.createElement("span"); tag.className = "ilr-tag"; tag.textContent = "IL " + (b.id || "");
-      const ttl = document.createElement("span"); ttl.className = "ilr-title"; ttl.textContent = b.title || b.latest_action_desc || "(untitled)";
-      idt.append(tag, ttl);
-      const desc = document.createElement("div"); desc.className = "ilr-desc"; desc.textContent = b.latest_action_desc || "";
-      const when = document.createElement("div"); when.className = "ilr-when"; when.textContent = b.latest_action ? prettyDate(b.latest_action) : "";
-      a.append(idt, desc, when); box.append(a);
+      // Same card shape as the legislation "Recent activity" strip: state badge ·
+      // bill id · when · title · latest action · topic chips.
+      const a = document.createElement("a"); a.className = "ilr-card"; a.href = "legislation.html#bill=" + ilBillKey(b);
+      const top = document.createElement("div"); top.className = "ilrc-top";
+      const badge = document.createElement("span"); badge.className = "ilrc-badge"; badge.textContent = "Illinois";
+      const id = document.createElement("span"); id.className = "ilrc-id"; id.textContent = b.id || "";
+      const when = document.createElement("span"); when.className = "ilrc-when"; when.textContent = ilRelDate(b.latest_action);
+      top.append(badge, id, when);
+      const ttl = document.createElement("div"); ttl.className = "ilrc-title"; ttl.textContent = b.title || b.id || "(untitled)";
+      a.append(top, ttl);
+      if (b.latest_action_desc) { const act = document.createElement("div"); act.className = "ilrc-act"; act.textContent = b.latest_action_desc; a.append(act); }
+      const tags = b.tags || [];
+      if (tags.length) {
+        const trow = document.createElement("div"); trow.className = "ilrc-tags";
+        tags.forEach((t) => {
+          const chip = document.createElement("span"); chip.className = "ilrc-chip";
+          const dot = document.createElement("span"); dot.className = "ilrc-dot";
+          dot.style.background = "var(" + (tagColor[t] || IL_SERIES[0]) + ")";
+          chip.append(dot, document.createTextNode(t));
+          trow.append(chip);
+        });
+        a.append(trow);
+      }
+      box.append(a);
     });
   }
 
