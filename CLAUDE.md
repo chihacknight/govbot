@@ -322,8 +322,10 @@ legislation's map with gold county borders, **Cook County (Chicago) highlighted 
 a gold glow outline, and the selected county pulsing (`.bf-cty.is-sel`). The map SVG is sized with
 `height: 100%`, so `.bf-viewport` must carry a **definite `height`** (not just `min-height`) — a
 percentage height resolves to 0 in WebKit/iOS Safari when the flex-item parent's height is
-indefinite, which rendered the whole map as a **black square on mobile**; the viewport is 380px
-(340px under 760px). (Legislation's US map avoids this via `aspect-ratio` on `.ee-mapwrap`.) A **place picker** beside it (Chicago /
+indefinite, which rendered the whole map as a **black square on mobile**; the viewport is 300px
+(260px under 760px) — deliberately kept small since the detailed Chicago exploration lives in the
+separate **Explore Chicago** map below. (Legislation's US map avoids the same bug via `aspect-ratio`
+on `.ee-mapwrap`.) A **place picker** beside it (Chicago /
 Elsewhere-in-Illinois chips + a Chicago **ward** `<select>`) and clicking a county both resolve a voter to their ballot
 (`resolveBallot`): Chicago → the city groups (citywide, council, cps_board,
 police_district_council) **plus** the statewide/federal groups, with the 50-ward Alderperson list
@@ -337,7 +339,30 @@ inline `.bf-coverage` note, the map legend, and the corner "click a county" hint
 the finder clean.) It drives the same `state.view` Set + `applyView()` the picker
 uses (so the sections reveal and the page scrolls to `#groups`), and `#f-clear` also drops the ward
 and the finder's selection. The lookup is **map + picker only** (no address/ZIP geocoding) so it is
-fully offline and deterministic. Below the finder sits a **2026 federal-midterm callout**
+fully offline and deterministic. Below the finder sits an **"Explore Chicago"** section (`#chimap`,
+`renderChicagoMap`): a **colorful, zoomable geographic choropleth of Chicago** with a **Wards (50) /
+Neighborhoods (77) toggle** (`cm-seg`). Geometry is the committed `assets/chicago-map.json`, generated
+by **`scripts/build_chicago_map.py`** — it fetches the two authoritative boundary sets from the City
+of Chicago open-data portal (the 50 City Council **wards**, dataset `p293-wvbd`, and the 77
+**community areas**/neighborhoods, dataset `igwz-8jzy`), projects BOTH into one shared SVG space (so
+ward and neighborhood polygons overlay exactly), Douglas-Peucker-simplifies each ring, and — crucially
+— computes the **neighborhood↔ward correspondence by spatially sampling a dense grid** (each point's
+community area and ward found by point-in-polygon, co-occurrence tallied), so every area carries its
+ranked overlapping wards and vice-versa (validated: Loop→42, Lincoln Park→43/32/2, Lakeview→44/32/47/46,
+Hyde Park→5/4, O'Hare→41). Pure stdlib (no geo deps), `--self-test` for the geometry helpers; fail-soft
+(a portal outage leaves the committed asset in place). The map has **zoom + pan** (± / reset buttons,
+wheel-zoom about the cursor, drag-to-pan with clamping, a `cmDidDrag` flag so a drag isn't a click) and
+each region is a `.cm-reg` filled from a vivid `CM_PALETTE` with gold selection + pulse. The
+`.cm-mapwrap` carries a **definite height** (560px; 440px under 820px) so the `svg{height:100%}` isn't
+the WebKit black-square bug. Clicking a region fills a **detail card** (`.cm-detail`, styled like
+legislation's `.ee-detail`): a **ward** shows "Ward N", the neighborhoods it covers, its Alderperson
+race (via `cmWardRace`, `r.district === "Ward "+N`) + a "plus citywide / CPS / police / statewide &
+federal" summary, and a **"See Ward N's full ballot →"** button (`cmOpenWardBallot` reuses the finder's
+`state.view`/`state.filters.ward`/`applyView` plumbing to reveal the Chicago + statewide/federal
+sections, pinned to that ward, then scrolls down); a **neighborhood** shows its name (`cmNiceName`
+title-cases, fixes O'Hare/Lakeview/McKinley Park), how many wards it spans, and **tappable ward chips**
+(→ switch to ward view, select + `cmFocusRegion` zooms to it). Below Explore Chicago sits a
+**2026 federal-midterm callout**
 (`#midterm-banner`, "The 2026 midterms decide control of Congress") — shown only when the federal
 races are present; clicking it (`revealFederal`) adds the `us_senate` + `us_house` groups to the
 view and scrolls to the U.S. Senate section (each race `<section>` now carries an `id="grp-<group>"`
