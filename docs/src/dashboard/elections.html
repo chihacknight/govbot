@@ -357,7 +357,9 @@
   .tl-item:last-child { padding-bottom: 0; }
   .tl-dot { position: absolute; left: 0; top: 1px; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--baseline); background: var(--surface-1); box-shadow: 0 0 0 3px var(--surface-1); display: flex; align-items: center; justify-content: center; font-size: 9px; }
   .tl-item.done .tl-dot { border-color: var(--series-2); background: var(--series-2); color: #fff; }
-  .tl-item.next .tl-dot { border-color: var(--tl-accent, var(--series-1)); background: var(--tl-accent, var(--series-1)); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--tl-accent, var(--series-1)) 25%, var(--surface-1)); }
+  .tl-item.next .tl-dot { border-color: var(--tl-accent, var(--series-1)); background: var(--tl-accent, var(--series-1)); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--tl-accent, var(--series-1)) 25%, var(--surface-1)); animation: tl-pulse 1.6s ease-in-out infinite; }
+  @keyframes tl-pulse { 0%,100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--tl-accent, var(--series-1)) 25%, var(--surface-1)); } 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--tl-accent, var(--series-1)) 30%, var(--surface-1)), 0 0 12px color-mix(in srgb, var(--tl-accent, var(--series-1)) 60%, transparent); } }
+  @media (prefers-reduced-motion: reduce) { .tl-item.next .tl-dot { animation: none; } }
   .tl-item.future .tl-dot { border-color: var(--baseline); }
   .tl-date { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-primary); }
   .tl-item.future .tl-date, .tl-item.future .tl-label { color: var(--text-muted); }
@@ -443,9 +445,9 @@
   .el-next { margin: 4px 0 0; font-size: 14px; color: var(--series-2); font-weight: 600; }
   .el-cta-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
   /* Tiny hero chip: makes the current coverage scope clear up top. */
-  .el-cov { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text-secondary); background: var(--surface-1); border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; }
-  .el-cov strong { color: var(--text-primary); font-weight: 600; }
-  .el-cov-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gb-green); box-shadow: 0 0 7px var(--gb-green); flex: none; }
+  .el-cov { display: flex; align-items: flex-start; gap: 8px; font-size: 13.5px; line-height: 1.5; color: var(--text-secondary); max-width: 62ch; }
+  .el-cov strong { color: var(--text-primary); font-weight: 700; }
+  .el-cov-dot { width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--gb-green); box-shadow: 0 0 8px var(--gb-green); flex: none; }
   .el-docs { margin: 8px 0 0; font-size: 13px; }
   .el-hero-flag { flex: 0 0 auto; width: 440px; max-width: 52%; filter: drop-shadow(0 0 26px rgba(214,168,79,0.26)); }
   .el-hero-flag svg, .el-hero-flag img { width: 100%; height: auto; display: block; }
@@ -502,11 +504,11 @@
   .bf-cty { cursor: pointer; transition: fill .12s ease, filter .12s ease; }
   .bf-cty:hover { fill: #2B3346; }
   .bf-cty:focus-visible { outline: none; filter: brightness(1.35); }
-  .bf-cty.is-cook { fill: #9C7B2E; }
+  .bf-cty.is-cook { fill: #9C7B2E; stroke: #F0C969; stroke-width: 1; animation: bf-pulse 1.9s ease-in-out infinite; }
   .bf-cty.is-cook:hover { fill: #B8933A; }
   .bf-cty.is-sel { fill: #E7B34B; stroke: #F0C969 !important; stroke-width: 1.4 !important; animation: bf-pulse 1.6s ease-in-out infinite; }
   @keyframes bf-pulse { 0%,100% { filter: drop-shadow(0 0 2px rgba(240,201,105,.55)); } 50% { filter: drop-shadow(0 0 8px rgba(240,201,105,1)); } }
-  @media (prefers-reduced-motion: reduce) { .bf-cty.is-sel { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .bf-cty.is-sel, .bf-cty.is-cook { animation: none; } }
   .bf-cook-tag { position: absolute; top: 12px; right: 12px; font-size: 11px; font-weight: 700; color: #0A0A0A; background: #F0C969; border-radius: 6px; padding: 3px 9px; pointer-events: none; }
   .bf-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary); }
   .bf-legend span { display: inline-flex; align-items: center; gap: 7px; }
@@ -554,6 +556,24 @@
     .bf-grid { grid-template-columns: 1fr; }
     .bf-viewport { min-height: 300px; }
   }
+  /* Recent Illinois legislative activity (all IL bills we track) + search */
+  .il-recent { margin: 26px 0; }
+  .ilr-head h2 { margin: 0 0 4px; font-size: 22px; }
+  .ilr-sub { margin: 0 0 14px; color: var(--text-secondary); font-size: 13.5px; max-width: 74ch; }
+  .ilr-searchwrap { position: relative; margin-bottom: 12px; max-width: 560px; }
+  .ilr-searchwrap input { width: 100%; box-sizing: border-box; font: inherit; font-size: 15px; color: var(--text-primary); background: var(--surface-1); border: 1.5px solid var(--border); border-radius: 12px; padding: 11px 14px 11px 40px; }
+  .ilr-searchwrap input:focus { outline: none; border-color: var(--series-2); }
+  .ilr-searchicon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+  .ilr-list { display: flex; flex-direction: column; }
+  .ilr-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 14px; align-items: baseline; padding: 12px 6px; border-top: 1px solid var(--border); text-decoration: none; color: inherit; border-radius: 8px; }
+  .ilr-row:first-child { border-top: none; }
+  .ilr-row:hover { background: var(--hover-wash); }
+  .ilr-idt { grid-column: 1; font-size: 15px; line-height: 1.4; }
+  .ilr-tag { font-weight: 700; color: var(--series-2); margin-right: 8px; white-space: nowrap; }
+  .ilr-title { color: var(--text-primary); }
+  .ilr-desc { grid-column: 1; font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .ilr-when { grid-column: 2; grid-row: 1; font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+  .ilr-empty { color: var(--text-secondary); font-size: 14px; padding: 12px 6px; }
 </style>
 <script>
   // Apply a saved theme choice before first paint. Shared localStorage key, so
@@ -665,7 +685,7 @@
         <p class="el-tagline">Know who’s on your ballot before you vote.</p>
         <p class="el-next" id="el-next"></p>
         <div class="el-cta-row">
-          <span class="el-cov"><span class="el-cov-dot" aria-hidden="true"></span><strong>Chicago &amp; Cook County</strong>&nbsp;· more of Illinois soon</span>
+          <span class="el-cov"><span class="el-cov-dot" aria-hidden="true"></span><span><strong>Live now:</strong> local races for Chicago &amp; Cook County, plus every Illinois statewide &amp; federal race. Local races for the rest of Illinois are coming soon.</span></span>
           <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
         </div>
       </div>
@@ -680,16 +700,10 @@
   <section class="bfinder" id="bfinder" aria-label="Find your ballot" hidden>
     <h2 class="bf-title">Find your ballot</h2>
     <p class="bf-sub">Pick where you live — click a county, or choose Chicago and your ward. We’ll show every race you can vote in.</p>
-    <p class="bf-coverage"><span class="bf-cov-dot" aria-hidden="true"></span><span><b>Live now:</b> local races for <b>Chicago &amp; Cook County</b>, plus every Illinois <b>statewide &amp; federal</b> race. Local races for the rest of Illinois are <b>coming soon</b>.</span></p>
     <div class="bf-grid">
       <div class="bf-card">
-        <div class="bf-maphead"><span>Illinois</span><span class="bf-hint">click a county</span></div>
+        <div class="bf-maphead"><span>Illinois</span></div>
         <div class="bf-viewport" id="bf-viewport" role="group" aria-label="Map of Illinois counties"></div>
-        <div class="bf-legend">
-          <span><span class="bf-sw" style="background:#9C7B2E"></span>Cook County — local races live</span>
-          <span><span class="bf-sw" style="background:#141A26;border:1.5px solid #C79A3C"></span>Rest of Illinois — statewide &amp; federal (local soon)</span>
-          <span><span class="bf-sw" style="background:#E7B34B"></span>Selected</span>
-        </div>
       </div>
       <div class="bf-card bf-pickcard">
         <div>
@@ -796,6 +810,20 @@
     <p>Nothing matches your current search or ballot filter. Clear the filters to see every office on the ballot.</p>
     <div class="gb-state-actions"><button type="button" class="clear-btn" data-clear-filters>Clear filters</button></div>
   </div>
+
+  <!-- Recent activity across all Illinois bills we track (from the legislation dataset) -->
+  <section class="il-recent" id="il-recent" hidden aria-label="Recent Illinois legislative activity">
+    <div class="ilr-head">
+      <h2>Recent Illinois legislative activity</h2>
+      <p class="ilr-sub">Every Illinois bill Govbot is tracking in the General Assembly — newest recorded action first. Opens the full bill in Explore Legislation.</p>
+    </div>
+    <div class="ilr-searchwrap">
+      <svg class="ilr-searchicon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
+      <input type="search" id="ilr-search" placeholder="Search Illinois bills by number, title, sponsor or topic…" aria-label="Search Illinois bills">
+    </div>
+    <div class="ilr-list" id="ilr-list"></div>
+    <p class="ilr-empty" id="ilr-empty" hidden>No Illinois bills match your search.</p>
+  </section>
 
   <details class="cabinet" id="cabinet">
     <summary>📂 Where the data comes from</summary>
@@ -989,6 +1017,7 @@
     setupFlourishes();                          // waving corner flag + flag cursor
     buildPicker(data);                          // the "Build your view" section chooser
     renderBallotFinder(data);                   // the Illinois map + place picker ("find your ballot")
+    renderIlRecent();                           // recent activity across all IL bills we track (from data.json)
 
     // 2026 federal midterm callout — shown only when the federal races are present
     const mb = $("midterm-banner");
@@ -1119,6 +1148,50 @@
   function setupFlourishes() {
     // The waving flag now lives only in the hero (`#hero-flag`). The old
     // mouse-following flag cursor has been removed.
+  }
+
+  /* ---------- Recent Illinois legislative activity (all IL bills we track) ---------- */
+  const IL_RECENT_MAX = 25;
+  function ilBillKey(b) {
+    return encodeURIComponent(b.state || "") + "~" + encodeURIComponent(b.session || "") + "~" + encodeURIComponent(b.id || "");
+  }
+  function renderIlRecent() {
+    fetch("data.json")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return;
+        const bills = (d.bills || []).filter((b) => (b.state || "").toLowerCase() === "il");
+        if (!bills.length) return;   // fail-soft: no IL bills locally (mock) → section stays hidden
+        bills.sort((a, b) => (a.latest_action < b.latest_action ? 1 : a.latest_action > b.latest_action ? -1 : 0));
+        state.ilBills = bills;
+        $("il-recent").hidden = false;
+        renderIlList("");
+        const s = $("ilr-search");
+        if (s) { let t; s.addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => renderIlList(s.value.trim().toLowerCase()), 120); }); }
+      })
+      .catch(() => { /* legislation data unavailable — section stays hidden */ });
+  }
+  function renderIlList(q) {
+    const box = $("ilr-list"); if (!box) return;
+    let bills = state.ilBills || [];
+    if (q) {
+      bills = bills.filter((b) => {
+        const spon = (b.sponsors || []).map((s) => (typeof s === "string" ? s : (s && s.name) || "")).join(" ");
+        return [b.id, b.title, b.latest_action_desc, spon, (b.tags || []).join(" ")].join(" ").toLowerCase().includes(q);
+      });
+    }
+    $("ilr-empty").hidden = !(q && bills.length === 0);
+    box.textContent = "";
+    bills.slice(0, IL_RECENT_MAX).forEach((b) => {
+      const a = document.createElement("a"); a.className = "ilr-row"; a.href = "legislation.html#bill=" + ilBillKey(b);
+      const idt = document.createElement("div"); idt.className = "ilr-idt";
+      const tag = document.createElement("span"); tag.className = "ilr-tag"; tag.textContent = "IL " + (b.id || "");
+      const ttl = document.createElement("span"); ttl.className = "ilr-title"; ttl.textContent = b.title || b.latest_action_desc || "(untitled)";
+      idt.append(tag, ttl);
+      const desc = document.createElement("div"); desc.className = "ilr-desc"; desc.textContent = b.latest_action_desc || "";
+      const when = document.createElement("div"); when.className = "ilr-when"; when.textContent = b.latest_action ? prettyDate(b.latest_action) : "";
+      a.append(idt, desc, when); box.append(a);
+    });
   }
 
   /* ---------- Find your ballot: Illinois county map + place picker ---------- */
@@ -1317,7 +1390,9 @@
     const v = state.view;
     state.visibleGroups = new Set([...v].filter((k) => k.indexOf("grp:") === 0).map((k) => k.slice(4)));
 
-    $("calendar").hidden = !v.has("calendar");
+    // The election calendar is always shown (not gated by the picker) whenever it
+    // has content — it's core context for the page.
+    $("calendar").hidden = !($("cal-grid") && $("cal-grid").children.length);
     const sf = document.getElementById("springfield"); if (sf) sf.hidden = !v.has("springfield");
     // Data sources (#cabinet) is always shown at the bottom — never picker-gated.
 

@@ -297,18 +297,19 @@ entry (`#bfinder`, `renderBallotFinder`): a geographic **Illinois county choropl
 county paths + the state outline from the committed `assets/il-counties.json` (generated from US
 Census county geometry, equirectangular north-up with a cos(lat) correction; fetched fail-soft, so
 the whole finder stays hidden if it doesn't load), rendered on the same dark viewport as
-legislation's map with gold county borders, **Cook County (Chicago) highlighted**, a gold glow
-outline, and the selected county pulsing (`.bf-cty.is-sel`). A **place picker** beside it (Chicago /
+legislation's map with gold county borders, **Cook County (Chicago) highlighted and gently pulsing** (`.bf-cty.is-cook`, marking the covered area),
+a gold glow outline, and the selected county pulsing (`.bf-cty.is-sel`). A **place picker** beside it (Chicago /
 Elsewhere-in-Illinois chips + a Chicago **ward** `<select>`) and clicking a county both resolve a voter to their ballot
 (`resolveBallot`): Chicago → the city groups (citywide, council, cps_board,
 police_district_council) **plus** the statewide/federal groups, with the 50-ward Alderperson list
 narrowed to the chosen ward via a new `state.filters.ward` (matches `r.district === "Ward "+N`, only
 on the `council` group); any other county → statewide + federal only, with a note that local races
-for that county aren't tracked yet. A **coverage note** under the finder heading (`.bf-coverage`)
-and the map **legend labels** make the scope explicit: local races are live for **Chicago & Cook
-County** today (plus every Illinois statewide & federal race), and **local races for the rest of
-Illinois are coming soon** — the "Elsewhere in Illinois" chip sets a matching "coming soon" status,
-and the hero carries a tiny `.el-cov` coverage chip ("Chicago & Cook County · more of Illinois soon"). It drives the same `state.view` Set + `applyView()` the picker
+for that county aren't tracked yet. The **coverage scope** is stated in the hero as an `.el-cov` line ("**Live now:** local races for
+Chicago & Cook County, plus every Illinois statewide & federal race. Local races for the rest of
+Illinois are coming soon." — only "Live now:" bold); **Cook County pulses** on the map to mark the
+covered area, and the "Elsewhere in Illinois" chip sets a matching "coming soon" status. (The earlier
+inline `.bf-coverage` note, the map legend, and the corner "click a county" hint were removed to keep
+the finder clean.) It drives the same `state.view` Set + `applyView()` the picker
 uses (so the sections reveal and the page scrolls to `#groups`), and `#f-clear` also drops the ward
 and the finder's selection. The lookup is **map + picker only** (no address/ZIP geocoding) so it is
 fully offline and deterministic. Below the finder sits a **2026 federal-midterm callout**
@@ -323,7 +324,14 @@ duplicate "Coming up" list, the **"Build your view" section-picker UI** (`#picke
 `revealAllSections()` and the ballot cards still reveal the right sections) and the big "Two big
 ballots ahead" intro paragraph were all removed, leaving a clean stack: Hero → **Find your ballot**
 (map + place picker, vertically centered) → midterm callout → the two **"What's on your ballot?"**
-date cards → the revealed races → the sources cabinet (now collapsed).
+date cards → the revealed races → the sources cabinet (now collapsed). The **election calendar**
+(`#calendar`) is now **always shown** (ungated — visible whenever `#cal-grid` has cards) with the
+**current/next timeline milestone pulsing** (`.tl-item.next .tl-dot` → `@keyframes tl-pulse`). A
+**"Recent Illinois legislative activity"** section (`#il-recent`, `renderIlRecent`) lists every IL
+bill Govbot tracks — fetched fail-soft from the legislation `data.json` (filtered to `state==="il"`,
+newest recorded action first, capped at 25), with a **search box** (`#ilr-search`, matches
+id/title/sponsor/topic); each row deep-links to `legislation.html#bill=<state~session~id>` and the
+section stays hidden when no IL bills load.
 `hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
 "Hearings & Public Comment", tagline "Government isn't just something you watch — you can
 participate."), and a
