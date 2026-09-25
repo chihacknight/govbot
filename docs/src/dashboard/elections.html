@@ -603,7 +603,18 @@
   .cm-seg.is-on { background: var(--gb-gold-hi); color: #0A0A0A; }
   .cm-seg:focus-visible { outline: 2px solid var(--gb-gold-hi); outline-offset: 2px; }
   .cm-body { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 18px; align-items: stretch; }
-  .cm-mapwrap { position: relative; height: 560px; background: #0A0E16; border: 1px solid #1C2434; border-radius: 14px; overflow: hidden; touch-action: none; }
+  /* Stage holds the small Illinois locator + callout lines to the left of the big map. */
+  .cm-stage { position: relative; padding-left: 104px; }
+  .cm-locator { position: absolute; left: 2px; bottom: 10px; width: 92px; z-index: 3; }
+  .cm-locator svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 3px 7px rgba(0,0,0,.45)); }
+  .cm-loc-state { fill: color-mix(in srgb, var(--gb-gold) 20%, #0A0E16); stroke: var(--gb-gold); stroke-width: 2; stroke-linejoin: round; }
+  .cm-loc-cook { fill: var(--gb-gold-hi); stroke: var(--gb-gold-hi); stroke-width: 1; }
+  .cm-loc-dot { fill: var(--gb-gold-hi); stroke: #0A0E16; stroke-width: 2; }
+  .cm-loc-cap { position: absolute; left: 0; right: 0; bottom: -16px; text-align: center; font-size: 10px; font-weight: 700; letter-spacing: .04em; color: var(--gb-gold); }
+  .cm-connect { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; overflow: visible; }
+  .cm-connect line { stroke: var(--gb-gold); stroke-width: 1.4; stroke-dasharray: 5 4; opacity: .7; }
+  .cm-connect circle { fill: var(--gb-gold-hi); }
+  .cm-mapwrap { position: relative; height: 560px; background: #0A0E16; border: 1px solid #1C2434; border-radius: 14px; overflow: hidden; touch-action: none; z-index: 2; }
   .cm-mapzoom { width: 100%; height: 100%; transform-origin: 0 0; }
   .cm-mapzoom svg { display: block; width: 100%; height: 100%; }
   .cm-reg { cursor: pointer; stroke: #0A0E16; stroke-width: 0.6; transition: fill-opacity .12s ease, filter .12s ease; }
@@ -641,6 +652,9 @@
   @media (max-width: 820px) {
     .cm-body { grid-template-columns: 1fr; }
     .cm-mapwrap { height: 440px; }
+    /* No room for the side locator on phones — the finder above already shows Illinois. */
+    .cm-stage { padding-left: 0; }
+    .cm-locator, .cm-connect { display: none; }
   }
 </style>
 <script>
@@ -807,15 +821,20 @@
       </div>
     </div>
     <div class="cm-body">
-      <div class="cm-mapwrap" id="cm-mapwrap">
-        <div class="cm-mapzoom" id="cm-mapzoom"></div>
-        <div class="cm-zoomctl">
-          <button type="button" id="cm-zin" aria-label="Zoom in">+</button>
-          <button type="button" id="cm-zout" aria-label="Zoom out">&#8722;</button>
-          <button type="button" id="cm-zreset" aria-label="Reset zoom"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.5"/><path d="M21 4v5h-5"/></svg></button>
+      <div class="cm-stage">
+        <!-- Small Illinois locator with callout lines pointing to the enlarged Chicago map -->
+        <div class="cm-locator" id="cm-locator" aria-hidden="true"></div>
+        <svg class="cm-connect" id="cm-connect" aria-hidden="true"></svg>
+        <div class="cm-mapwrap" id="cm-mapwrap">
+          <div class="cm-mapzoom" id="cm-mapzoom"></div>
+          <div class="cm-zoomctl">
+            <button type="button" id="cm-zin" aria-label="Zoom in">+</button>
+            <button type="button" id="cm-zout" aria-label="Zoom out">&#8722;</button>
+            <button type="button" id="cm-zreset" aria-label="Reset zoom"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.5"/><path d="M21 4v5h-5"/></svg></button>
+          </div>
+          <div class="cm-zpct" id="cm-zpct">100%</div>
+          <div class="cm-hint" id="cm-hint">Scroll or +/&minus; to zoom · drag to pan</div>
         </div>
-        <div class="cm-zpct" id="cm-zpct">100%</div>
-        <div class="cm-hint" id="cm-hint">Scroll or +/&minus; to zoom · drag to pan</div>
       </div>
       <aside class="cm-detail" id="cm-detail" aria-live="polite">
         <p class="cm-empty">Click a <b>ward</b> or <b>neighborhood</b> on the map to see the races on that ballot — and which ward each neighborhood sits in.</p>
@@ -1362,8 +1381,71 @@
         cmBuild();
         cmWire();
         sec.hidden = false;
+        cmBuildLocator();      // small Illinois inset + callout lines (fail-soft)
       })
       .catch(() => { /* fail-soft: no map, the rest of the page is unaffected */ });
+  }
+
+  // Small Illinois silhouette with Cook County marked, drawn to the left of the
+  // big Chicago map, plus two dashed callout lines fanning from the Chicago dot to
+  // the map's top-left and bottom-left corners (a locator/magnifier device).
+  function cmBuildLocator() {
+    const host = $("cm-locator"); if (!host) return;
+    fetch("assets/il-counties.json")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("il-counties"))))
+      .then((il) => {
+        host.textContent = "";
+        const svg = mkBf("svg", { viewBox: il.viewBox });
+        svg.append(mkBf("path", { d: il.state_d, class: "cm-loc-state" }));
+        const cook = (il.counties || []).find((c) => (c.name || c.id) === "Cook");
+        let dot = null;
+        if (cook) {
+          svg.append(mkBf("path", { d: cook.d, class: "cm-loc-cook" }));
+          dot = mkBf("circle", { class: "cm-loc-dot", r: 12, cx: 0, cy: 0 });
+          svg.append(dot);
+        }
+        host.append(svg);
+        const cap = document.createElement("div"); cap.className = "cm-loc-cap"; cap.textContent = "CHICAGO";
+        host.append(cap);
+        requestAnimationFrame(() => {
+          if (cook && dot) {
+            try {
+              const bb = svg.querySelector(".cm-loc-cook").getBBox();
+              dot.setAttribute("cx", bb.x + bb.width / 2);
+              dot.setAttribute("cy", bb.y + bb.height / 2);
+            } catch (e) { /* getBBox unavailable — dot stays hidden at 0,0 */ }
+          }
+          requestAnimationFrame(cmDrawConnector);
+        });
+      })
+      .catch(() => { /* no locator — the big map still works */ });
+  }
+
+  // Draw the two callout lines from the Chicago dot to the map's left corners,
+  // in pixel space (recomputed on resize). Skipped when the locator is hidden.
+  function cmDrawConnector() {
+    const stage = document.querySelector("#chimap .cm-stage");
+    const connect = $("cm-connect"), loc = $("cm-locator"), map = $("cm-mapwrap");
+    if (!stage || !connect || !loc || !map) return;
+    if (getComputedStyle(loc).display === "none") { connect.textContent = ""; return; }
+    const sr = stage.getBoundingClientRect(), mr = map.getBoundingClientRect();
+    if (!sr.width || !mr.width) return;
+    const dotEl = loc.querySelector(".cm-loc-dot");
+    let dx, dy;
+    if (dotEl && dotEl.getBBox && dotEl.getBBox().width) {
+      const dr = dotEl.getBoundingClientRect();
+      dx = dr.left + dr.width / 2 - sr.left; dy = dr.top + dr.height / 2 - sr.top;
+    } else {
+      const lr = loc.getBoundingClientRect();
+      dx = lr.right - sr.left; dy = lr.top + lr.height * 0.32 - sr.top;
+    }
+    const mLeft = mr.left - sr.left, mTop = mr.top - sr.top, mBot = mr.bottom - sr.top;
+    connect.setAttribute("viewBox", "0 0 " + sr.width + " " + sr.height);
+    connect.setAttribute("width", sr.width);
+    connect.setAttribute("height", sr.height);
+    connect.textContent = "";
+    connect.append(mkBf("line", { x1: dx, y1: dy, x2: mLeft, y2: mTop + 8 }));
+    connect.append(mkBf("line", { x1: dx, y1: dy, x2: mLeft, y2: mBot - 8 }));
   }
 
   function cmRegions() { return cmLayer === "ward" ? cmData.wards : cmData.areas; }
@@ -1584,6 +1666,8 @@
       const rect = wrap.getBoundingClientRect();
       cmZoom(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - rect.left, e.clientY - rect.top);
     }, { passive: false });
+    // Callout lines are anchored to element rects, so redraw them on resize.
+    let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(cmDrawConnector, 120); });
   }
 
   /* ---------- Find your ballot: Illinois county map + place picker ---------- */

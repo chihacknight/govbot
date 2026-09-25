@@ -341,7 +341,12 @@ uses (so the sections reveal and the page scrolls to `#groups`), and `#f-clear` 
 and the finder's selection. The lookup is **map + picker only** (no address/ZIP geocoding) so it is
 fully offline and deterministic. Below the finder sits an **"Explore Chicago"** section (`#chimap`,
 `renderChicagoMap`): a **colorful, zoomable geographic choropleth of Chicago** with a **Wards (50) /
-Neighborhoods (77) toggle** (`cm-seg`). Geometry is the committed `assets/chicago-map.json`, generated
+Neighborhoods (77) toggle** (`cm-seg`). A small **Illinois locator inset** (`.cm-locator`,
+`cmBuildLocator` — the `state_d` outline + Cook County from `il-counties.json`, a gold Chicago dot at
+Cook's centroid) sits to the left with **two dashed callout lines** (`.cm-connect`, `cmDrawConnector`)
+fanning from the Chicago dot to the big map's corners — the classic magnifier/"you-are-here" device;
+it's anchored to element rects (redrawn on resize) and hidden under 820px (the finder already shows
+Illinois on phones). Geometry is the committed `assets/chicago-map.json`, generated
 by **`scripts/build_chicago_map.py`** — it fetches the two authoritative boundary sets from the City
 of Chicago open-data portal (the 50 City Council **wards**, dataset `p293-wvbd`, and the 77
 **community areas**/neighborhoods, dataset `igwz-8jzy`), projects BOTH into one shared SVG space (so
