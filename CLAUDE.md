@@ -299,8 +299,7 @@ Census county geometry, equirectangular north-up with a cos(lat) correction; fet
 the whole finder stays hidden if it doesn't load), rendered on the same dark viewport as
 legislation's map with gold county borders, **Cook County (Chicago) highlighted**, a gold glow
 outline, and the selected county pulsing (`.bf-cty.is-sel`). A **place picker** beside it (Chicago /
-Elsewhere-in-Illinois chips + a Chicago **ward** `<select>`, plus a live "Coming up" list of the
-upcoming `ballot_date`s with race counts) and clicking a county both resolve a voter to their ballot
+Elsewhere-in-Illinois chips + a Chicago **ward** `<select>`) and clicking a county both resolve a voter to their ballot
 (`resolveBallot`): Chicago → the city groups (citywide, council, cps_board,
 police_district_council) **plus** the statewide/federal groups, with the 50-ward Alderperson list
 narrowed to the chosen ward via a new `state.filters.ward` (matches `r.district === "Ward "+N`, only
@@ -314,6 +313,13 @@ races are present; clicking it (`revealFederal`) adds the `us_senate` + `us_hous
 view and scrolls to the U.S. Senate section (each race `<section>` now carries an `id="grp-<group>"`
 anchor). The federal races themselves (Illinois's U.S. Senate seat + all 17 U.S. House districts on
 the Nov 3, 2026 ballot) were already in the data; the callout just surfaces them.
+The default view was **decluttered** (it had too many overlapping entry points): the finder's
+duplicate "Coming up" list, the **"Build your view" section-picker UI** (`#picker` / `#picker-empty`
+— the `state.view` / `applyView` machinery and its `picker-all` button stay in the DOM, hidden, so
+`revealAllSections()` and the ballot cards still reveal the right sections) and the big "Two big
+ballots ahead" intro paragraph were all removed, leaving a clean stack: Hero → **Find your ballot**
+(map + place picker, vertically centered) → midterm callout → the two **"What's on your ballot?"**
+date cards → the revealed races → the sources cabinet (now collapsed).
 `hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
 "Hearings & Public Comment", tagline "Government isn't just something you watch — you can
 participate."), and a
@@ -388,7 +394,7 @@ and the per-page 3-button light/auto/dark theme pills have been **retired** — 
 design is the single default. On elections and hearings, the long list
 sections scroll inside capped-height boxes (`.group .races`, `.sf-list`, `.hgroup-rows`,
 `.participation-grid`) so the homepage isn't enormous; the elections "Where the data comes
-from" cabinet is `open` by default. The hearings
+from" cabinet is **collapsed by default** (progressive disclosure). The hearings
 page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov, leg.wa.gov,
 malegislature.gov, and akleg.gov directly (not OpenStates), plus **USA (Federal)** open comment periods from the
 Regulations.gov API (needs `REGULATIONS_GOV_API_KEY`; falls back to the committed

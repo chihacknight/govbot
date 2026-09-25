@@ -484,12 +484,12 @@
   .bfinder { margin: 6px 0 24px; }
   .bf-title { margin: 0 0 4px; font-size: 27px; }
   .bf-sub { margin: 0 0 16px; color: var(--text-secondary); font-size: 14px; max-width: 70ch; }
-  .bf-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 20px; align-items: start; }
+  .bf-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 20px; align-items: center; }
   .bf-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
   .bf-maphead { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; }
   .bf-maphead .bf-hint { color: var(--text-secondary); font-weight: 500; }
-  .bf-viewport { position: relative; flex-grow: 1; min-height: 340px; background: #0A0E16; border: 1px solid #1C2434; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-  .bf-viewport svg { width: auto; height: 100%; max-height: 460px; display: block; }
+  .bf-viewport { position: relative; flex-grow: 1; min-height: 300px; background: #0A0E16; border: 1px solid #1C2434; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .bf-viewport svg { width: auto; height: 100%; max-height: 380px; display: block; }
   .bf-glow { filter: drop-shadow(0 0 1.6px rgba(240,201,105,.5)); }
   .bf-cty { cursor: pointer; transition: fill .12s ease, filter .12s ease; }
   .bf-cty:hover { fill: #2B3346; }
@@ -698,8 +698,6 @@
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </button>
         <p class="bf-status" id="bf-status">Everyone in Illinois votes the statewide &amp; federal races. Chicago voters also get city, ward, CPS board &amp; police-council races.</p>
-        <div class="bf-plabel">Coming up</div>
-        <div class="bf-upcoming" id="bf-upcoming"></div>
       </div>
     </div>
   </section>
@@ -733,11 +731,6 @@
     <div class="picker-chips" id="picker-chips"></div>
   </div>
   <p class="picker-empty" id="picker-empty" hidden>Pick one or more sections above to explore the ballot — or “Show everything.”</p>
-
-  <div class="intro">
-    <span class="intro-ico" aria-hidden="true">🗳️</span>
-    <b>Two big ballots ahead.</b> On <b>Nov 3, 2026</b>, the <b>Illinois general election</b> fills the U.S. Senate seat and all 17 U.S. House seats, the Governor and the statewide constitutional officers, and the Illinois General Assembly (the 39 state Senate seats up this cycle and all 118 state House seats) — and on the same ballot Chicago elects a <b>Board of Education</b> for the first time by popular vote, including its <b>first-ever elected President</b>, as the mayor-appointed hybrid board is phased out. Then the <b>2027 municipal election</b> puts the Mayor, City Clerk, City Treasurer, all 50 Alderpersons, and the Police District Councils on the ballot. Candidate lists are pulled from the Chicago Board of Elections and the Illinois State Board of Elections; the November 2026 general-election nominees are compiled from public election records (each candidate links to its source), and a race with no one listed yet links to its official source rather than guessing.
-  </div>
 
   <section class="calendar" id="calendar" hidden>
     <h2>🗓️ Election calendar</h2>
@@ -794,7 +787,7 @@
     <div class="gb-state-actions"><button type="button" class="clear-btn" data-clear-filters>Clear filters</button></div>
   </div>
 
-  <details class="cabinet" id="cabinet" open>
+  <details class="cabinet" id="cabinet">
     <summary>📂 Where the data comes from</summary>
     <p class="cab-intro">This site isn't the official clerk — it's a <b>cabinet</b> that puts the sources in one place so a Chicagoan can ask "who's running in my CPS subdistrict and my ward, and when do I vote?" A fully assembled race draws on up to five drawers: <b>map · candidates · money · results · context</b>. Here's what each source owns and what's live today.</p>
     <div class="cab-grid">
@@ -1141,37 +1134,11 @@
     $("bf-chips").querySelectorAll(".bf-chip").forEach((ch) =>
       ch.addEventListener("click", () => selectBfPlace(ch.getAttribute("data-place"))));
     $("bf-go").addEventListener("click", () => resolveBallot(data));
-    renderBfUpcoming(data);
 
     fetch("assets/il-counties.json")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("il-counties " + r.status))))
       .then((geo) => { drawBfMap(geo); $("bfinder").hidden = false; })
       .catch(() => { /* finder stays hidden; the rest of the page is unaffected */ });
-  }
-
-  function renderBfUpcoming(data) {
-    const box = $("bf-upcoming"); if (!box) return;
-    const byDate = {};
-    data.races.forEach((r) => { if (r.ballot_date) (byDate[r.ballot_date] = byDate[r.ballot_date] || []).push(r); });
-    const all = Object.keys(byDate).sort();
-    const now = state.nowDate || new Date().toISOString().slice(0, 10);
-    const upcoming = all.filter((d) => d >= now);
-    const list = (upcoming.length ? upcoming : all).slice(0, 3);
-    box.textContent = "";
-    list.forEach((d) => {
-      const rs = byDate[d], dt = new Date(d + "T00:00:00");
-      const row = document.createElement("div"); row.className = "bf-up";
-      const dd = document.createElement("div"); dd.className = "bf-up-d";
-      dd.innerHTML = '<div class="bf-up-mo">' + dt.toLocaleString("en-US", { month: "short" }) +
-        '</div><div class="bf-up-day">' + dt.getDate() + '</div><div class="bf-up-yr">' + dt.getFullYear() + '</div>';
-      const mn = document.createElement("div"); mn.className = "bf-up-main";
-      const t = document.createElement("div"); t.className = "bf-up-t"; t.textContent = ballotStageLabel(rs);
-      const sub = document.createElement("div"); sub.className = "bf-up-sub"; sub.textContent = prettyDate(d);
-      mn.append(t, sub);
-      const n = document.createElement("div"); n.className = "bf-up-n";
-      n.innerHTML = "<b>" + rs.length + "</b><span>races</span>";
-      row.append(dd, mn, n); box.append(row);
-    });
   }
 
   function drawBfMap(geo) {
@@ -1315,7 +1282,9 @@
     $("picker-all").addEventListener("click", () => { allKeys().forEach((k) => state.view.add(k)); syncPickerChecks(); applyView(); });
     $("picker-clear").addEventListener("click", () => { state.view.clear(); syncPickerChecks(); applyView(); });
 
-    $("picker").hidden = false;
+    // The "Build your view" picker UI is retired (the map finder + ballot cards
+    // reveal the right sections), but its state/buttons stay in the DOM so
+    // revealAllSections() and applyView() keep working — so it stays hidden.
     applyView();
   }
 
@@ -1343,7 +1312,7 @@
     const anyGroup = state.visibleGroups.size > 0;
     $("filters").hidden = !anyGroup;
     $("tiles").hidden = !anyGroup;
-    $("picker-empty").hidden = v.size > 0;
+    $("picker-empty").hidden = true;   // retired prompt — never shown
 
     try { localStorage.setItem(VIEW_LS_KEY, JSON.stringify([...v])); } catch (e) {}
 
