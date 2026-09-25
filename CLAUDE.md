@@ -307,7 +307,8 @@ on the `council` group); any other county → statewide + federal only, with a n
 for that county aren't tracked yet. A **coverage note** under the finder heading (`.bf-coverage`)
 and the map **legend labels** make the scope explicit: local races are live for **Chicago & Cook
 County** today (plus every Illinois statewide & federal race), and **local races for the rest of
-Illinois are coming soon** — the "Elsewhere in Illinois" chip sets a matching "coming soon" status. It drives the same `state.view` Set + `applyView()` the picker
+Illinois are coming soon** — the "Elsewhere in Illinois" chip sets a matching "coming soon" status,
+and the hero carries a tiny `.el-cov` coverage chip ("Chicago & Cook County · more of Illinois soon"). It drives the same `state.view` Set + `applyView()` the picker
 uses (so the sections reveal and the page scrolls to `#groups`), and `#f-clear` also drops the ward
 and the finder's selection. The lookup is **map + picker only** (no address/ZIP geocoding) so it is
 fully offline and deterministic. Below the finder sits a **2026 federal-midterm callout**

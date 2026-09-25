@@ -441,7 +441,11 @@
   .el-hero h1 { margin: 2px 0 0; font-size: 48px; line-height: 1.02; }
   .el-tagline { margin: 0; font-family: var(--gb-font-display); font-size: 20px; color: var(--text-secondary); }
   .el-next { margin: 4px 0 0; font-size: 14px; color: var(--series-2); font-weight: 600; }
-  .el-cta-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+  .el-cta-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+  /* Tiny hero chip: makes the current coverage scope clear up top. */
+  .el-cov { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text-secondary); background: var(--surface-1); border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; }
+  .el-cov strong { color: var(--text-primary); font-weight: 600; }
+  .el-cov-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gb-green); box-shadow: 0 0 7px var(--gb-green); flex: none; }
   .el-docs { margin: 8px 0 0; font-size: 13px; }
   .el-hero-flag { flex: 0 0 auto; width: 440px; max-width: 52%; filter: drop-shadow(0 0 26px rgba(214,168,79,0.26)); }
   .el-hero-flag svg, .el-hero-flag img { width: 100%; height: auto; display: block; }
@@ -661,6 +665,7 @@
         <p class="el-tagline">Know who’s on your ballot before you vote.</p>
         <p class="el-next" id="el-next"></p>
         <div class="el-cta-row">
+          <span class="el-cov"><span class="el-cov-dot" aria-hidden="true"></span><strong>Chicago &amp; Cook County</strong>&nbsp;· more of Illinois soon</span>
           <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
         </div>
       </div>
