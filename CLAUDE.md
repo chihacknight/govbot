@@ -260,7 +260,11 @@ dimmed + `backdrop-filter` blur, `z-index:90`, `.results-overlay[hidden]{display
 filter/search is active, and adds `body.results-open` to lock scroll; the map entry + Recent activity
 stay on screen as the dimmed backdrop. The popped `#results-card` (`.results-modal`) animates in with
 `@keyframes results-pop`, carries an **X close button** (`#results-x`, top-right) and a
-jurisdiction-named title (`resultsTitle` → "Wyoming bills (N)"). The card carries a sticky
+jurisdiction-named title (`resultsTitle` → "Wyoming bills (N)"). **Every sortable column header
+carries a persistent sort arrow** — a muted up/down glyph (`.arrow.is-idle`, "⇅") when idle so the
+column reads as sortable, and a bright single caret (`.arrow.is-active`, gold ▲/▼) plus `aria-sort`
+on the actively-sorted column (the old "Click a column header to sort" subtitle was removed as
+redundant). The card carries a sticky
 **in-card search box** (`#results-search`) directly under its title that filters within the popped-up
 catalog (e.g. just that one state's bills — the same `state.filters.search`, so the count in the title
 tracks it live); it and the hidden hero box `#f-search` mirror each other via `reflectSearch()` (both
@@ -278,7 +282,12 @@ beats the UA `[hidden]{display:none}`, so the shared `govbot.css` now carries a
 state components everywhere — without it the legislation empty state showed under a full table, the
 **elections** page kept a *forever* "Loading Illinois & Chicago races…" spinner (its
 `$("loading").hidden = true` never took) and a stray "No races match" box, and the hearings empty
-state was a bare dashed box. The bill modal now
+state was a bare dashed box. **Opening a bill plays a book-open flourish** (`playBookOpen`): a small
+gold book whose pages flip over a dark veil (`.book-fx`, appended to `<body>` at a z-index above both
+the bill modal and the results overlay so it always reads on top), then the details card swings open
+like a cover (`.book-open-in` → `@keyframes card-book-open`, a `rotateY` reveal). It's decorative —
+skipped entirely under `prefers-reduced-motion` (the card just fades in) and guarded by `modalKey` so
+a superseding open never disturbs the new card. The bill modal
 leads with an inferred **status timeline** (Introduced → Committee → Passed House → Senate →
 Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component; its
 **current** node — the bill's latest recorded stage — pulses via `@keyframes gb-node-pulse` (a
@@ -310,7 +319,13 @@ county paths + the state outline from the committed `assets/il-counties.json` (g
 Census county geometry, equirectangular north-up with a cos(lat) correction; fetched fail-soft, so
 the whole finder stays hidden if it doesn't load), rendered on the same dark viewport as
 legislation's map with gold county borders, **Cook County (Chicago) highlighted and gently pulsing** (`.bf-cty.is-cook`, marking the covered area),
-a gold glow outline, and the selected county pulsing (`.bf-cty.is-sel`). A **place picker** beside it (Chicago /
+a gold glow outline, and the selected county pulsing (`.bf-cty.is-sel`). The map SVG is sized with
+`height: 100%`, so `.bf-viewport` must carry a **definite `height`** (not just `min-height`) — a
+percentage height resolves to 0 in WebKit/iOS Safari when the flex-item parent's height is
+indefinite, which rendered the whole map as a **black square on mobile**; the viewport is 300px
+(260px under 760px) — deliberately kept small since the detailed Chicago exploration lives in the
+separate **Explore Chicago** map below. (Legislation's US map avoids the same bug via `aspect-ratio`
+on `.ee-mapwrap`.) A **place picker** beside it (Chicago /
 Elsewhere-in-Illinois chips + a Chicago **ward** `<select>`) and clicking a county both resolve a voter to their ballot
 (`resolveBallot`): Chicago → the city groups (citywide, council, cps_board,
 police_district_council) **plus** the statewide/federal groups, with the 50-ward Alderperson list
@@ -324,7 +339,40 @@ inline `.bf-coverage` note, the map legend, and the corner "click a county" hint
 the finder clean.) It drives the same `state.view` Set + `applyView()` the picker
 uses (so the sections reveal and the page scrolls to `#groups`), and `#f-clear` also drops the ward
 and the finder's selection. The lookup is **map + picker only** (no address/ZIP geocoding) so it is
-fully offline and deterministic. Below the finder sits a **2026 federal-midterm callout**
+fully offline and deterministic. Below the finder sits an **"Explore Chicago"** section (`#chimap`,
+`renderChicagoMap`): a **colorful, zoomable geographic choropleth of Chicago** with a **Wards (50) /
+Neighborhoods (77) toggle** (`cm-seg`). A small **Illinois locator inset** (`.cm-locator`,
+`cmBuildLocator` — the `state_d` outline + Cook County from `il-counties.json`, a gold Chicago dot at
+Cook's centroid) sits to the left with **two dashed callout lines** (`.cm-connect`, `cmDrawConnector`)
+fanning from the Chicago dot to the big map's corners — the classic magnifier/"you-are-here" device;
+it's anchored to element rects (redrawn on resize) and hidden under 820px (the finder already shows
+Illinois on phones). Geometry is the committed `assets/chicago-map.json`, generated
+by **`scripts/build_chicago_map.py`** — it fetches the two authoritative boundary sets from the City
+of Chicago open-data portal (the 50 City Council **wards**, dataset `p293-wvbd`, and the 77
+**community areas**/neighborhoods, dataset `igwz-8jzy`), projects BOTH into one shared SVG space (so
+ward and neighborhood polygons overlay exactly), Douglas-Peucker-simplifies each ring, and — crucially
+— computes the **neighborhood↔ward correspondence by spatially sampling a dense grid** (each point's
+community area and ward found by point-in-polygon, co-occurrence tallied), so every area carries its
+ranked overlapping wards and vice-versa (validated: Loop→42, Lincoln Park→43/32/2, Lakeview→44/32/47/46,
+Hyde Park→5/4, O'Hare→41). Pure stdlib (no geo deps), `--self-test` for the geometry helpers; fail-soft
+(a portal outage leaves the committed asset in place). The map has **zoom + pan** (± / reset buttons,
+wheel-zoom about the cursor, drag-to-pan with clamping, a `cmDidDrag` flag so a drag isn't a click) and
+each region is a `.cm-reg` filled from a vivid `CM_PALETTE`; the selected region has a **large, high-contrast pulse** (`@keyframes cm-pulse` grows the gold outline 2.5→6.5px and the glow to 26px) as a low-vision aid. The
+`.cm-mapwrap` carries a **definite height** (560px; 440px under 820px) so the `svg{height:100%}` isn't
+the WebKit black-square bug. Clicking a region fills a **detail card** (`.cm-detail`, styled like
+legislation's `.ee-detail`): a **ward** shows "Ward N", the neighborhoods it covers, then the **actual races on that ballot as
+expandable rectangle bars** (`cmRaceItem`): the ward's Alderperson race (`cmWardRace`, `r.district ===
+"Ward "+N`) plus every race that's the same for all Chicago voters (`cmCommonRaces` — citywide offices,
+CPS Board President, the Illinois statewide `il_exec` offices and the U.S. Senate seat). Clicking a bar
+expands it in place to the full details (`cmRaceDetails` — each candidate with party, petition status,
+money and an official-source link), a `cmDistrictNote` flags the address-specific races (CPS
+subdistrict, police district council, IL Senate/House, U.S. House) that can't be pinned from the ward
+alone, and a **"See Ward N's full ballot →"** button (`cmOpenWardBallot` reuses the finder's
+`state.view`/`state.filters.ward`/`applyView` plumbing to reveal the Chicago + statewide/federal
+sections, pinned to that ward, then scrolls down); a **neighborhood** shows its name (`cmNiceName`
+title-cases, fixes O'Hare/Lakeview/McKinley Park), how many wards it spans, the same expandable common-race bars, and **tappable ward chips** (→ switch to ward view, select +
+`cmFocusRegion` zooms to it, since the alderperson varies by ward). Below Explore Chicago sits a
+**2026 federal-midterm callout**
 (`#midterm-banner`, "The 2026 midterms decide control of Congress") — shown only when the federal
 races are present; clicking it (`revealFederal`) adds the `us_senate` + `us_house` groups to the
 view and scrolls to the U.S. Senate section (each race `<section>` now carries an `id="grp-<group>"`
@@ -338,7 +386,7 @@ ballots ahead" intro paragraph were all removed, leaving a clean stack: Hero →
 (map + place picker, vertically centered) → midterm callout → the two **"What's on your ballot?"**
 date cards → the revealed races → the sources cabinet (now collapsed). The **election calendar**
 (`#calendar`) is now **always shown** (ungated — visible whenever `#cal-grid` has cards) with the
-**current/next timeline milestone pulsing** (`.tl-item.next .tl-dot` → `@keyframes tl-pulse`). A
+**current/next timeline milestone pulsing** (`.tl-item.next .tl-dot` → `@keyframes tl-pulse`, a **big** scale-1.32 + wide-ring pulse for low-vision readers). A
 **"Recent Illinois legislative activity"** section (`#il-recent`, `renderIlRecent`) lists every IL
 bill Govbot tracks — fetched fail-soft from the legislation `data.json` (filtered to `state==="il"`,
 newest recorded action first, capped at 25), with a **search box** (`#ilr-search`, matches
@@ -347,8 +395,9 @@ strip** (`.ilr-card` mirroring `.recent-card`): an "Illinois" state badge · bil
 (`ilRelDate`, "yesterday"/"N days ago") · title · latest action · the bill's **topic chips**
 (`.ilrc-tags`, colored dots from `state.ilTagColor`, which maps each topic to the same fixed
 `--series-N` color the legislation site uses so a topic reads the same color on both pages). Each card
-deep-links to `legislation.html#bill=<state~session~id>` and the section stays hidden when no IL bills
-load.
+deep-links to `legislation.html#bill=<state~session~id>` **in a new tab** (`target="_blank"`, a `↗` on
+the date) — the full bill lives on the legislation dashboard, so opening it must not replace the
+elections page the reader is on. The section stays hidden when no IL bills load.
 `hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
 "Hearings & Public Comment", tagline "Government isn't just something you watch — you can
 participate."), and a

@@ -357,8 +357,13 @@
   .tl-item:last-child { padding-bottom: 0; }
   .tl-dot { position: absolute; left: 0; top: 1px; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--baseline); background: var(--surface-1); box-shadow: 0 0 0 3px var(--surface-1); display: flex; align-items: center; justify-content: center; font-size: 9px; }
   .tl-item.done .tl-dot { border-color: var(--series-2); background: var(--series-2); color: #fff; }
-  .tl-item.next .tl-dot { border-color: var(--tl-accent, var(--series-1)); background: var(--tl-accent, var(--series-1)); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--tl-accent, var(--series-1)) 25%, var(--surface-1)); animation: tl-pulse 1.6s ease-in-out infinite; }
-  @keyframes tl-pulse { 0%,100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--tl-accent, var(--series-1)) 25%, var(--surface-1)); } 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--tl-accent, var(--series-1)) 30%, var(--surface-1)), 0 0 12px color-mix(in srgb, var(--tl-accent, var(--series-1)) 60%, transparent); } }
+  .tl-item.next .tl-dot { border-color: var(--tl-accent, var(--series-1)); background: var(--tl-accent, var(--series-1)); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--tl-accent, var(--series-1)) 25%, var(--surface-1)); animation: tl-pulse 1.4s ease-in-out infinite; }
+  /* Big current-milestone pulse: the dot grows and throws a wide ring + glow so
+     "where we are now" is obvious at a glance (accessibility for low vision). */
+  @keyframes tl-pulse {
+    0%,100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--tl-accent, var(--series-1)) 25%, var(--surface-1)); transform: scale(1); }
+    50%     { box-shadow: 0 0 0 12px color-mix(in srgb, var(--tl-accent, var(--series-1)) 22%, transparent), 0 0 22px color-mix(in srgb, var(--tl-accent, var(--series-1)) 75%, transparent); transform: scale(1.32); }
+  }
   @media (prefers-reduced-motion: reduce) { .tl-item.next .tl-dot { animation: none; } }
   .tl-item.future .tl-dot { border-color: var(--baseline); }
   .tl-date { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-primary); }
@@ -498,8 +503,12 @@
   .bf-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
   .bf-maphead { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; }
   .bf-maphead .bf-hint { color: var(--text-secondary); font-weight: 500; }
-  .bf-viewport { position: relative; flex-grow: 1; min-height: 300px; background: #0A0E16; border: 1px solid #1C2434; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-  .bf-viewport svg { width: auto; height: 100%; max-height: 380px; display: block; }
+  /* Explicit (definite) height — NOT just min-height. The map SVG is sized with
+     `height: 100%`, and a percentage height resolves to 0 in WebKit/iOS Safari
+     when its flex-item parent has only a min-height (indefinite), which rendered
+     the whole map as a black square on mobile. A definite height fixes it. */
+  .bf-viewport { position: relative; height: 300px; background: #0A0E16; border: 1px solid #1C2434; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .bf-viewport svg { width: auto; height: 100%; max-width: 100%; display: block; }
   .bf-glow { filter: drop-shadow(0 0 1.6px rgba(240,201,105,.5)); }
   .bf-cty { cursor: pointer; transition: fill .12s ease, filter .12s ease; }
   .bf-cty:hover { fill: #2B3346; }
@@ -554,7 +563,7 @@
   @media (max-width: 640px) { .midterm-banner { flex-wrap: wrap; } .mb-cta { width: 100%; } }
   @media (max-width: 760px) {
     .bf-grid { grid-template-columns: 1fr; }
-    .bf-viewport { min-height: 300px; }
+    .bf-viewport { height: 260px; }
   }
   /* Recent Illinois legislative activity (all IL bills we track) + search */
   .il-recent { margin: 26px 0; }
@@ -588,6 +597,93 @@
   .ilrc-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
   @media (prefers-reduced-motion: reduce) { .ilr-card:hover { transform: none; } }
   .ilr-empty { color: var(--text-secondary); font-size: 14px; padding: 12px 6px; }
+
+  /* ===== Explore Chicago: zoomable ward + neighborhood map ===== */
+  .chimap { margin: 8px 0 26px; }
+  .cm-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+  .cm-title { margin: 0 0 3px; font-size: 27px; }
+  .cm-sub { margin: 0; color: var(--text-secondary); font-size: 14px; max-width: 62ch; }
+  .cm-toggle { display: inline-flex; background: var(--surface-1); border: 1px solid var(--border); border-radius: 999px; padding: 3px; }
+  .cm-seg { font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; color: var(--text-secondary); background: none; border: none; border-radius: 999px; padding: 8px 16px; }
+  .cm-seg.is-on { background: var(--gb-gold-hi); color: #0A0A0A; }
+  .cm-seg:focus-visible { outline: 2px solid var(--gb-gold-hi); outline-offset: 2px; }
+  .cm-body { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 18px; align-items: stretch; }
+  /* Stage holds the small Illinois locator + callout lines to the left of the big map. */
+  .cm-stage { position: relative; padding-left: 104px; }
+  .cm-locator { position: absolute; left: 2px; bottom: 10px; width: 92px; z-index: 3; }
+  .cm-locator svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 3px 7px rgba(0,0,0,.45)); }
+  .cm-loc-state { fill: color-mix(in srgb, var(--gb-gold) 20%, #0A0E16); stroke: var(--gb-gold); stroke-width: 2; stroke-linejoin: round; }
+  .cm-loc-cook { fill: var(--gb-gold-hi); stroke: var(--gb-gold-hi); stroke-width: 1; }
+  .cm-loc-dot { fill: var(--gb-gold-hi); stroke: #0A0E16; stroke-width: 2; }
+  .cm-loc-cap { position: absolute; left: 0; right: 0; bottom: -16px; text-align: center; font-size: 10px; font-weight: 700; letter-spacing: .04em; color: var(--gb-gold); }
+  .cm-connect { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; overflow: visible; }
+  .cm-connect line { stroke: var(--gb-gold); stroke-width: 1.4; stroke-dasharray: 5 4; opacity: .7; }
+  .cm-connect circle { fill: var(--gb-gold-hi); }
+  .cm-mapwrap { position: relative; height: 560px; background: #0A0E16; border: 1px solid #1C2434; border-radius: 14px; overflow: hidden; touch-action: none; z-index: 2; }
+  .cm-mapzoom { width: 100%; height: 100%; transform-origin: 0 0; }
+  .cm-mapzoom svg { display: block; width: 100%; height: 100%; }
+  .cm-reg { cursor: pointer; stroke: #0A0E16; stroke-width: 0.6; transition: fill-opacity .12s ease, filter .12s ease; }
+  .cm-reg:hover { fill-opacity: 0.92 !important; }
+  /* Selected region: a big, high-contrast pulse (glow + thickening gold outline)
+     so it's unmistakable — an accessibility aid for low-vision readers. */
+  .cm-reg.is-sel { stroke: #F0C969; stroke-width: 3; fill-opacity: 1 !important; animation: cm-pulse 1.3s ease-in-out infinite; }
+  @keyframes cm-pulse {
+    0%,100% { filter: drop-shadow(0 0 5px rgba(240,201,105,.75)); stroke-width: 2.5; }
+    50%     { filter: drop-shadow(0 0 26px rgba(240,201,105,1)); stroke-width: 6.5; }
+  }
+  @media (prefers-reduced-motion: reduce) { .cm-reg.is-sel { animation: none; } }
+  .cm-lbl { fill: #fff; font-weight: 600; text-anchor: middle; paint-order: stroke; stroke: rgba(0,0,0,0.55); stroke-width: 2.4px; pointer-events: none; }
+  .cm-lbl.ward { font-size: 12px; }
+  .cm-lbl.area { font-size: 8.5px; }
+  .cm-zoomctl { position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .cm-zoomctl button { width: 34px; height: 34px; font-size: 18px; font-weight: 700; line-height: 1; cursor: pointer; color: var(--text-primary); background: color-mix(in srgb, #0A0E16 78%, transparent); border: 1px solid #2A3346; border-radius: 8px; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+  .cm-zoomctl button:hover { border-color: var(--gb-gold); }
+  .cm-zpct { position: absolute; bottom: 12px; left: 12px; font-size: 11px; font-weight: 600; color: var(--text-secondary); background: color-mix(in srgb, #0A0E16 78%, transparent); border: 1px solid #2A3346; border-radius: 6px; padding: 3px 8px; }
+  .cm-hint { position: absolute; bottom: 12px; right: 12px; font-size: 11px; color: var(--text-muted); background: color-mix(in srgb, #0A0E16 78%, transparent); border: 1px solid #2A3346; border-radius: 6px; padding: 3px 8px; pointer-events: none; }
+  .cm-detail { display: flex; flex-direction: column; background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 18px 18px 20px; overflow-y: auto; }
+  .cm-d-over { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gb-gold); font-weight: 600; }
+  .cm-d-name { margin: 4px 0 2px; font-size: 24px; font-family: var(--gb-font-display); }
+  .cm-d-meta { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+  .cm-d-lbl { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; margin: 14px 0 7px; }
+  .cm-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cm-chip { font: inherit; font-size: 12.5px; cursor: pointer; color: var(--text-primary); background: var(--gb-elevated); border: 1px solid var(--border); border-radius: 999px; padding: 4px 11px; }
+  .cm-chip:hover { border-color: var(--gb-gold); }
+  .cm-chip.plain { cursor: default; }
+  .cm-chip.plain:hover { border-color: var(--border); }
+  .cm-races { display: flex; flex-direction: column; gap: 8px; }
+  /* Each race is a rectangle bar that expands to full details when clicked. */
+  .cm-raceitem { background: var(--gb-elevated); border: 1px solid var(--border); border-left: 3px solid var(--gc, var(--series-5)); border-radius: 10px; overflow: hidden; }
+  .cm-race { display: flex; gap: 10px; align-items: baseline; width: 100%; text-align: left; font: inherit; cursor: pointer; background: none; border: none; padding: 10px 12px; color: var(--text-primary); }
+  .cm-race:hover { background: var(--hover-wash); }
+  .cm-race:focus-visible { outline: 2px solid var(--gb-gold-hi); outline-offset: -2px; }
+  .cm-race-o { font-size: 13.5px; font-weight: 600; flex-grow: 1; line-height: 1.35; }
+  .cm-race-n { font-size: 12px; color: var(--text-secondary); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+  .cm-race-car { display: inline-block; font-size: 10px; transition: transform .15s ease; }
+  .cm-raceitem.is-open .cm-race-car { transform: rotate(90deg); }
+  .cm-race-det { padding: 4px 12px 12px; border-top: 1px solid var(--border); }
+  .cm-race-why { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin: 9px 0 4px; }
+  .cm-cand { display: flex; flex-wrap: wrap; gap: 5px 10px; align-items: baseline; padding: 7px 0; border-top: 1px dashed var(--border); }
+  .cm-cand:first-of-type { border-top: none; }
+  .cm-cand-nm { font-size: 13.5px; font-weight: 600; }
+  .cm-cand-party { font-size: 11px; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 999px; padding: 0 7px; }
+  .cm-cand-st { font-size: 11px; color: var(--gb-green); font-weight: 600; }
+  .cm-cand-money { font-size: 11.5px; color: var(--gb-gold); }
+  .cm-cand-none { font-size: 12.5px; color: var(--text-secondary); padding: 9px 0 4px; }
+  .cm-race-src { display: inline-block; margin-top: 9px; font-size: 12.5px; font-weight: 600; color: var(--series-1); text-decoration: none; }
+  .cm-race-src:hover { text-decoration: underline; }
+  .cm-more { font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; margin-top: 12px; padding: 10px 12px; background: var(--gb-elevated); border: 1px dashed var(--border); border-radius: 10px; }
+  .cm-more b { color: var(--text-primary); }
+  .cm-open { margin-top: 16px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; color: #0A0A0A; background: var(--gb-gold-hi); border: none; border-radius: 12px; padding: 12px 18px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  .cm-open:hover { background: var(--gb-gold); }
+  .cm-empty { color: var(--text-secondary); font-size: 14px; line-height: 1.55; margin: auto 0; }
+  .cm-empty b { color: var(--text-primary); }
+  @media (max-width: 820px) {
+    .cm-body { grid-template-columns: 1fr; }
+    .cm-mapwrap { height: 440px; }
+    /* No room for the side locator on phones — the finder above already shows Illinois. */
+    .cm-stage { padding-left: 0; }
+    .cm-locator, .cm-connect { display: none; }
+  }
 </style>
 <script>
   // Apply a saved theme choice before first paint. Shared localStorage key, so
@@ -737,6 +833,40 @@
         </button>
         <p class="bf-status" id="bf-status">Everyone in Illinois votes the statewide &amp; federal races. Chicago voters also get city, ward, CPS board &amp; police-council races.</p>
       </div>
+    </div>
+  </section>
+
+  <!-- Explore Chicago: zoomable, colorful ward + neighborhood map -->
+  <section class="chimap" id="chimap" aria-label="Explore Chicago by ward and neighborhood" hidden>
+    <div class="cm-head">
+      <div>
+        <h2 class="cm-title">Explore Chicago</h2>
+        <p class="cm-sub">Zoom in and click your <b>ward</b> or <b>neighborhood</b> to see what's on your ballot.</p>
+      </div>
+      <div class="cm-toggle" role="group" aria-label="Map layer">
+        <button type="button" id="cm-ward-btn" class="cm-seg is-on" aria-pressed="true">50 Wards</button>
+        <button type="button" id="cm-area-btn" class="cm-seg" aria-pressed="false">77 Neighborhoods</button>
+      </div>
+    </div>
+    <div class="cm-body">
+      <div class="cm-stage">
+        <!-- Small Illinois locator with callout lines pointing to the enlarged Chicago map -->
+        <div class="cm-locator" id="cm-locator" aria-hidden="true"></div>
+        <svg class="cm-connect" id="cm-connect" aria-hidden="true"></svg>
+        <div class="cm-mapwrap" id="cm-mapwrap">
+          <div class="cm-mapzoom" id="cm-mapzoom"></div>
+          <div class="cm-zoomctl">
+            <button type="button" id="cm-zin" aria-label="Zoom in">+</button>
+            <button type="button" id="cm-zout" aria-label="Zoom out">&#8722;</button>
+            <button type="button" id="cm-zreset" aria-label="Reset zoom"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.5"/><path d="M21 4v5h-5"/></svg></button>
+          </div>
+          <div class="cm-zpct" id="cm-zpct">100%</div>
+          <div class="cm-hint" id="cm-hint">Scroll or +/&minus; to zoom · drag to pan</div>
+        </div>
+      </div>
+      <aside class="cm-detail" id="cm-detail" aria-live="polite">
+        <p class="cm-empty">Click a <b>ward</b> or <b>neighborhood</b> on the map to see the races on that ballot — and which ward each neighborhood sits in.</p>
+      </aside>
     </div>
   </section>
 
@@ -1031,6 +1161,7 @@
     setupFlourishes();                          // waving corner flag + flag cursor
     buildPicker(data);                          // the "Build your view" section chooser
     renderBallotFinder(data);                   // the Illinois map + place picker ("find your ballot")
+    renderChicagoMap(data);                     // zoomable ward + neighborhood map of Chicago
     renderIlRecent();                           // recent activity across all IL bills we track (from data.json)
 
     // 2026 federal midterm callout — shown only when the federal races are present
@@ -1217,12 +1348,16 @@
     const tagColor = state.ilTagColor || {};
     bills.slice(0, IL_RECENT_MAX).forEach((b) => {
       // Same card shape as the legislation "Recent activity" strip: state badge ·
-      // bill id · when · title · latest action · topic chips.
-      const a = document.createElement("a"); a.className = "ilr-card"; a.href = "legislation.html#bill=" + ilBillKey(b);
+      // bill id · when · title · latest action · topic chips. The full bill lives
+      // on the legislation dashboard, so open it in a NEW TAB (↗) — clicking must
+      // not replace the elections page the reader is on.
+      const a = document.createElement("a"); a.className = "ilr-card";
+      a.href = "legislation.html#bill=" + ilBillKey(b);
+      a.target = "_blank"; a.rel = "noopener";
       const top = document.createElement("div"); top.className = "ilrc-top";
       const badge = document.createElement("span"); badge.className = "ilrc-badge"; badge.textContent = "Illinois";
       const id = document.createElement("span"); id.className = "ilrc-id"; id.textContent = b.id || "";
-      const when = document.createElement("span"); when.className = "ilrc-when"; when.textContent = ilRelDate(b.latest_action);
+      const when = document.createElement("span"); when.className = "ilrc-when"; when.textContent = ilRelDate(b.latest_action) + " ↗";
       top.append(badge, id, when);
       const ttl = document.createElement("div"); ttl.className = "ilrc-title"; ttl.textContent = b.title || b.id || "(untitled)";
       a.append(top, ttl);
@@ -1241,6 +1376,392 @@
       }
       box.append(a);
     });
+  }
+
+  /* ---------- Explore Chicago: zoomable ward + neighborhood map ---------- */
+  // Colorful geographic choropleth of Chicago's 50 City Council wards and 77
+  // community areas (neighborhoods), from the committed assets/chicago-map.json
+  // (real boundaries from the City of Chicago open-data portal; each area carries
+  // the ranked list of wards that overlap it, and vice-versa). Clicking a region
+  // shows what's on that ballot and — for a neighborhood — which ward(s) it's in.
+  const CM_PALETTE = ["#E6567A", "#E8912F", "#E7C13F", "#5FBF5A", "#33B1C9", "#4C7DFF",
+                      "#9B6DE0", "#D45FC0", "#8FC24E", "#E0603C", "#2FA3A3", "#C98FD6",
+                      "#5AA9E6", "#E39A3C", "#7AC0A0", "#B084E0"];
+  let cmData = null, cmLayer = "ward", cmSel = null, cmWired = false;
+  let cmScale = 1, cmX = 0, cmY = 0, cmDidDrag = false;
+
+  // "LINCOLN PARK" -> "Lincoln Park"; a few Chicago-specific fixups.
+  const CM_NAME_FIX = { "OHARE": "O'Hare", "MCKINLEY PARK": "McKinley Park", "LAKE VIEW": "Lakeview" };
+  function cmNiceName(s) {
+    const up = (s || "").toUpperCase();
+    if (CM_NAME_FIX[up]) return CM_NAME_FIX[up];
+    return up.toLowerCase().replace(/\b([a-z])/g, (m, c) => c.toUpperCase());
+  }
+
+  function renderChicagoMap(data) {
+    const sec = $("chimap"); if (!sec) return;
+    // Only worth showing when Chicago ward races are actually present.
+    if (!data.races.some((r) => r.office_group === "council")) return;
+    fetch("assets/chicago-map.json")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("chicago-map " + r.status))))
+      .then((geo) => {
+        cmData = geo;
+        cmBuild();
+        cmWire();
+        sec.hidden = false;
+        cmBuildLocator();      // small Illinois inset + callout lines (fail-soft)
+      })
+      .catch(() => { /* fail-soft: no map, the rest of the page is unaffected */ });
+  }
+
+  // Small Illinois silhouette with Cook County marked, drawn to the left of the
+  // big Chicago map, plus two dashed callout lines fanning from the Chicago dot to
+  // the map's top-left and bottom-left corners (a locator/magnifier device).
+  function cmBuildLocator() {
+    const host = $("cm-locator"); if (!host) return;
+    fetch("assets/il-counties.json")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("il-counties"))))
+      .then((il) => {
+        host.textContent = "";
+        const svg = mkBf("svg", { viewBox: il.viewBox });
+        svg.append(mkBf("path", { d: il.state_d, class: "cm-loc-state" }));
+        const cook = (il.counties || []).find((c) => (c.name || c.id) === "Cook");
+        let dot = null;
+        if (cook) {
+          svg.append(mkBf("path", { d: cook.d, class: "cm-loc-cook" }));
+          dot = mkBf("circle", { class: "cm-loc-dot", r: 12, cx: 0, cy: 0 });
+          svg.append(dot);
+        }
+        host.append(svg);
+        const cap = document.createElement("div"); cap.className = "cm-loc-cap"; cap.textContent = "CHICAGO";
+        host.append(cap);
+        requestAnimationFrame(() => {
+          if (cook && dot) {
+            try {
+              const bb = svg.querySelector(".cm-loc-cook").getBBox();
+              dot.setAttribute("cx", bb.x + bb.width / 2);
+              dot.setAttribute("cy", bb.y + bb.height / 2);
+            } catch (e) { /* getBBox unavailable — dot stays hidden at 0,0 */ }
+          }
+          requestAnimationFrame(cmDrawConnector);
+        });
+      })
+      .catch(() => { /* no locator — the big map still works */ });
+  }
+
+  // Draw the two callout lines from the Chicago dot to the map's left corners,
+  // in pixel space (recomputed on resize). Skipped when the locator is hidden.
+  function cmDrawConnector() {
+    const stage = document.querySelector("#chimap .cm-stage");
+    const connect = $("cm-connect"), loc = $("cm-locator"), map = $("cm-mapwrap");
+    if (!stage || !connect || !loc || !map) return;
+    if (getComputedStyle(loc).display === "none") { connect.textContent = ""; return; }
+    const sr = stage.getBoundingClientRect(), mr = map.getBoundingClientRect();
+    if (!sr.width || !mr.width) return;
+    const dotEl = loc.querySelector(".cm-loc-dot");
+    let dx, dy;
+    if (dotEl && dotEl.getBBox && dotEl.getBBox().width) {
+      const dr = dotEl.getBoundingClientRect();
+      dx = dr.left + dr.width / 2 - sr.left; dy = dr.top + dr.height / 2 - sr.top;
+    } else {
+      const lr = loc.getBoundingClientRect();
+      dx = lr.right - sr.left; dy = lr.top + lr.height * 0.32 - sr.top;
+    }
+    const mLeft = mr.left - sr.left, mTop = mr.top - sr.top, mBot = mr.bottom - sr.top;
+    connect.setAttribute("viewBox", "0 0 " + sr.width + " " + sr.height);
+    connect.setAttribute("width", sr.width);
+    connect.setAttribute("height", sr.height);
+    connect.textContent = "";
+    connect.append(mkBf("line", { x1: dx, y1: dy, x2: mLeft, y2: mTop + 8 }));
+    connect.append(mkBf("line", { x1: dx, y1: dy, x2: mLeft, y2: mBot - 8 }));
+  }
+
+  function cmRegions() { return cmLayer === "ward" ? cmData.wards : cmData.areas; }
+  function cmRegId(r) { return cmLayer === "ward" ? r.ward : r.name; }
+
+  function cmBuild() {
+    const host = $("cm-mapzoom"); if (!host || !cmData) return;
+    host.textContent = "";
+    const svg = mkBf("svg", { viewBox: cmData.viewBox, preserveAspectRatio: "xMidYMid meet",
+      role: "img", "aria-label": "Map of Chicago " + (cmLayer === "ward" ? "wards" : "neighborhoods") });
+    const regions = cmRegions();
+    regions.forEach((r, i) => {
+      const id = cmRegId(r);
+      const p = mkBf("path", { d: r.d, class: "cm-reg" + (id === cmSel ? " is-sel" : ""),
+        fill: CM_PALETTE[i % CM_PALETTE.length], "fill-opacity": id === cmSel ? "1" : "0.62" });
+      p.setAttribute("aria-label", cmLayer === "ward" ? ("Ward " + id) : cmNiceName(id));
+      p.setAttribute("role", "button"); p.setAttribute("tabindex", "0");
+      p.addEventListener("click", () => { if (cmDidDrag) return; cmSelect(id); });
+      p.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cmSelect(id); } });
+      svg.append(p);
+    });
+    // Labels on top (ward numbers, or neighborhood names).
+    regions.forEach((r) => {
+      const t = mkBf("text", { x: r.cx, y: r.cy, class: "cm-lbl " + cmLayer });
+      t.textContent = cmLayer === "ward" ? r.ward : cmNiceName(r.name);
+      svg.append(t);
+    });
+    host.append(svg);
+    cmApplyTransform();
+  }
+
+  function cmMapDims() { const w = $("cm-mapwrap"); return { W: w ? w.clientWidth : 600, H: w ? w.clientHeight : 560 }; }
+  function cmClamp() { const d = cmMapDims(); const minX = d.W * (1 - cmScale), minY = d.H * (1 - cmScale); cmX = Math.min(0, Math.max(minX, cmX)); cmY = Math.min(0, Math.max(minY, cmY)); }
+  function cmApplyTransform() {
+    const z = $("cm-mapzoom"); if (z) z.style.transform = "translate(" + cmX + "px," + cmY + "px) scale(" + cmScale + ")";
+    const p = $("cm-zpct"); if (p) p.textContent = Math.round(cmScale * 100) + "%";
+  }
+  function cmZoom(factor, cx, cy) {
+    const d = cmMapDims();
+    if (cx == null) { cx = d.W / 2; cy = d.H / 2; }
+    const ns = Math.min(8, Math.max(1, cmScale * factor));
+    const k = ns / cmScale;
+    cmX = cx - (cx - cmX) * k; cmY = cy - (cy - cmY) * k;
+    cmScale = ns; cmClamp(); cmApplyTransform();
+  }
+
+  function cmSelect(id) {
+    cmSel = id;
+    // Re-flag selection without rebuilding the whole SVG (keeps zoom/pan).
+    const host = $("cm-mapzoom");
+    if (host) {
+      const paths = host.querySelectorAll(".cm-reg");
+      cmRegions().forEach((r, i) => {
+        const on = cmRegId(r) === id;
+        const p = paths[i]; if (!p) return;
+        p.classList.toggle("is-sel", on);
+        p.setAttribute("fill-opacity", on ? "1" : "0.62");
+      });
+    }
+    cmRenderDetail();
+  }
+
+  // Alderperson (council) race for a given ward number.
+  function cmWardRace(ward) {
+    return (state.data.races || []).find((r) => r.office_group === "council" && r.district === "Ward " + ward);
+  }
+  function cmGroupsForChicago() {
+    return bfGroupsPresent(state.data, BF_CHI_GROUPS).concat(bfGroupsPresent(state.data, BF_STATEFED_GROUPS));
+  }
+
+  function cmRenderDetail() {
+    const box = $("cm-detail"); if (!box) return;
+    box.textContent = "";
+    if (cmSel == null) {
+      const p = document.createElement("p"); p.className = "cm-empty";
+      p.innerHTML = "Click a <b>ward</b> or <b>neighborhood</b> on the map to see the races on that ballot — and which ward each neighborhood sits in.";
+      box.append(p); return;
+    }
+    const mkLbl = (t) => { const e = document.createElement("div"); e.className = "cm-d-lbl"; e.textContent = t; return e; };
+
+    if (cmLayer === "ward") {
+      const ward = cmSel;
+      const rec = cmData.wards.find((w) => w.ward === ward) || { areas: [] };
+      const over = document.createElement("div"); over.className = "cm-d-over"; over.textContent = "Chicago ward";
+      const nm = document.createElement("h3"); nm.className = "cm-d-name"; nm.textContent = "Ward " + ward;
+      box.append(over, nm);
+      if (rec.areas.length) {
+        const meta = document.createElement("div"); meta.className = "cm-d-meta";
+        meta.textContent = "Covers " + rec.areas.slice(0, 5).map(cmNiceName).join(", ") +
+          (rec.areas.length > 5 ? " +" + (rec.areas.length - 5) + " more" : "");
+        box.append(meta);
+      }
+      // The actual races on this ballot as expandable bars (alderperson for this
+      // ward + everything that's the same for every Chicago voter).
+      box.append(mkLbl("On this ballot — tap a race for details"));
+      const races = document.createElement("div"); races.className = "cm-races";
+      const ald = cmWardRace(ward);
+      if (ald) races.append(cmRaceItem(ald));
+      cmCommonRaces().forEach((r) => races.append(cmRaceItem(r)));
+      box.append(races);
+      box.append(cmDistrictNote());
+      const btn = document.createElement("button"); btn.type = "button"; btn.className = "cm-open";
+      btn.textContent = "See Ward " + ward + "’s full ballot →";
+      btn.addEventListener("click", () => cmOpenWardBallot(ward));
+      box.append(btn);
+    } else {
+      const name = cmSel;
+      const rec = cmData.areas.find((a) => a.name === name) || { wards: [] };
+      const over = document.createElement("div"); over.className = "cm-d-over"; over.textContent = "Chicago neighborhood";
+      const nm = document.createElement("h3"); nm.className = "cm-d-name"; nm.textContent = cmNiceName(name);
+      box.append(over, nm);
+      const meta = document.createElement("div"); meta.className = "cm-d-meta";
+      meta.textContent = rec.wards.length > 1
+        ? "This neighborhood spans " + rec.wards.length + " wards — your alderperson depends on your exact address."
+        : "This neighborhood sits in a single ward.";
+      box.append(meta);
+      box.append(mkLbl(rec.wards.length > 1 ? "Wards here — tap one for its ballot" : "Ward — tap for its ballot"));
+      const chips = document.createElement("div"); chips.className = "cm-chips";
+      rec.wards.forEach((w) => {
+        const c = document.createElement("button"); c.type = "button"; c.className = "cm-chip";
+        c.textContent = "Ward " + w;
+        c.addEventListener("click", () => { cmSetLayer("ward"); cmSelect(w); cmFocusRegion(w); });
+        chips.append(c);
+      });
+      box.append(chips);
+      // The races that are the same for everyone in this neighborhood (the
+      // alderperson varies by ward, so it's shown via the chips above, not here).
+      box.append(mkLbl("On this ballot — tap a race for details"));
+      const races = document.createElement("div"); races.className = "cm-races";
+      cmCommonRaces().forEach((r) => races.append(cmRaceItem(r)));
+      box.append(races);
+      box.append(cmDistrictNote());
+      if (rec.wards.length) {
+        const btn = document.createElement("button"); btn.type = "button"; btn.className = "cm-open";
+        btn.textContent = "See Ward " + rec.wards[0] + "’s ballot →";
+        btn.addEventListener("click", () => cmOpenWardBallot(rec.wards[0]));
+        box.append(btn);
+      }
+    }
+  }
+
+  // Races every Chicago voter shares, regardless of ward: citywide offices, the
+  // CPS Board President (the subdistricts are geography-specific), the Illinois
+  // statewide executive offices, and the U.S. Senate seat — in ballot order.
+  function cmCommonRaces() {
+    const races = state.data.races || [];
+    const pick = (g, f) => races.filter((r) => r.office_group === g && (!f || f(r)));
+    return [].concat(
+      pick("citywide"),
+      pick("cps_board", (r) => !r.district),   // President only; subdistricts vary by address
+      pick("il_exec"),
+      pick("us_senate"));
+  }
+
+  function cmDistrictNote() {
+    const p = document.createElement("p"); p.className = "cm-more";
+    p.innerHTML = "<b>➕ Your district races</b> — CPS subdistrict, police district council, Illinois Senate &amp; House, and U.S. House — depend on your exact address. Open the full ballot below to see them.";
+    return p;
+  }
+
+  // A race as a rectangle bar that expands to full details (candidates, party,
+  // status, money, source) when clicked.
+  function cmRaceItem(r) {
+    const wrap = document.createElement("div"); wrap.className = "cm-raceitem";
+    const meta = GROUP_META[r.office_group] || {};
+    if (meta.color) wrap.style.setProperty("--gc", "var(" + meta.color + ")");
+    const btn = document.createElement("button"); btn.type = "button"; btn.className = "cm-race";
+    const o = document.createElement("div"); o.className = "cm-race-o";
+    o.textContent = r.office + (r.district ? " · " + r.district : "");
+    const n = document.createElement("div"); n.className = "cm-race-n";
+    const nc = (r.candidates || []).length;
+    n.append(document.createTextNode(nc ? nc + " candidate" + (nc === 1 ? "" : "s") : "No candidates yet"));
+    const car = document.createElement("span"); car.className = "cm-race-car"; car.textContent = "▸";
+    n.append(car);
+    btn.append(o, n);
+    const det = document.createElement("div"); det.className = "cm-race-det"; det.hidden = true;
+    let built = false;
+    btn.setAttribute("aria-expanded", "false");
+    btn.addEventListener("click", () => {
+      if (!built) { det.append(cmRaceDetails(r)); built = true; }
+      const open = det.hidden; det.hidden = !open;
+      wrap.classList.toggle("is-open", open);
+      btn.setAttribute("aria-expanded", String(open));
+    });
+    wrap.append(btn, det);
+    return wrap;
+  }
+
+  function cmRaceDetails(r) {
+    const box = document.createElement("div");
+    if (r.why_note) { const w = document.createElement("div"); w.className = "cm-race-why"; w.textContent = r.why_note; box.append(w); }
+    const cands = r.candidates || [];
+    if (cands.length) {
+      cands.forEach((c) => {
+        const row = document.createElement("div"); row.className = "cm-cand";
+        const nm = document.createElement("span"); nm.className = "cm-cand-nm"; nm.textContent = c.name; row.append(nm);
+        if (r.partisan && c.party) { const pt = document.createElement("span"); pt.className = "cm-cand-party"; pt.textContent = c.party; row.append(pt); }
+        const st = c.petition_status; if (st) { const s = document.createElement("span"); s.className = "cm-cand-st"; s.textContent = STATUS_LABEL[st] || st; row.append(s); }
+        if (c.money && c.money.funds_raised != null) { const m = document.createElement("span"); m.className = "cm-cand-money"; m.textContent = "💵 " + fmtMoney(c.money.funds_raised); row.append(m); }
+        box.append(row);
+      });
+    } else {
+      const none = document.createElement("div"); none.className = "cm-cand-none";
+      none.textContent = "No candidates confirmed yet — this race fills in as official filings post.";
+      box.append(none);
+    }
+    const src = r.official_list_url || r.url || r.source;
+    if (src) {
+      const a = document.createElement("a"); a.className = "cm-race-src";
+      a.href = src; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Official source ↗";
+      box.append(a);
+    }
+    return box;
+  }
+
+  // Reuse the finder's ballot plumbing: reveal the Chicago + statewide/federal
+  // sections, pin the chosen ward, and scroll down to the races.
+  function cmOpenWardBallot(ward) {
+    state._bfPlace = "chicago";
+    const wsel = $("bf-ward-sel"); if (wsel) wsel.value = ward;
+    document.querySelectorAll("#bf-chips .bf-chip").forEach((c) => c.classList.toggle("is-on", c.dataset.place === "chicago"));
+    state.view.clear();
+    cmGroupsForChicago().forEach((g) => state.view.add("grp:" + g));
+    state.view.add("calendar");
+    syncPickerChecks();
+    state.filters.search = ""; state.filters.group = ""; state.filters.ballot = ""; state.filters.hasCands = false;
+    state.filters.ward = ward;
+    const fs = $("f-search"); if (fs) fs.value = "";
+    const fb = $("f-ballot"); if (fb) fb.value = "";
+    applyView();
+    scrollToRaces();
+  }
+
+  function cmSetLayer(layer) {
+    if (cmLayer === layer) return;
+    cmLayer = layer;
+    $("cm-ward-btn").classList.toggle("is-on", layer === "ward");
+    $("cm-ward-btn").setAttribute("aria-pressed", String(layer === "ward"));
+    $("cm-area-btn").classList.toggle("is-on", layer === "area");
+    $("cm-area-btn").setAttribute("aria-pressed", String(layer === "area"));
+    cmSel = null;
+    cmBuild();
+    cmRenderDetail();
+  }
+
+  // Center + zoom the map on a region (used when jumping from a neighborhood's
+  // ward chip to that ward).
+  function cmFocusRegion(id) {
+    const rec = cmRegions().find((r) => cmRegId(r) === id); if (!rec) return;
+    const d = cmMapDims();
+    const vb = cmData.viewBox.split(" ").map(Number);   // 0 0 W H
+    const sx = d.W / vb[2], sy = d.H / vb[3], base = Math.min(sx, sy);
+    // account for xMidYMid letterboxing offset
+    const offX = (d.W - vb[2] * base) / 2, offY = (d.H - vb[3] * base) / 2;
+    cmScale = 2.6;
+    cmX = d.W / 2 - (offX + rec.cx * base) * cmScale;
+    cmY = d.H / 2 - (offY + rec.cy * base) * cmScale;
+    cmClamp(); cmApplyTransform();
+  }
+
+  function cmWire() {
+    if (cmWired) return; cmWired = true;
+    $("cm-ward-btn").addEventListener("click", () => cmSetLayer("ward"));
+    $("cm-area-btn").addEventListener("click", () => cmSetLayer("area"));
+    $("cm-zin").addEventListener("click", () => cmZoom(1.4));
+    $("cm-zout").addEventListener("click", () => cmZoom(1 / 1.4));
+    $("cm-zreset").addEventListener("click", () => { cmScale = 1; cmX = 0; cmY = 0; cmApplyTransform(); });
+    const wrap = $("cm-mapwrap");
+    let drag = null;
+    wrap.addEventListener("pointerdown", (e) => {
+      if (e.target.closest && e.target.closest(".cm-zoomctl")) return;
+      cmDidDrag = false; drag = { sx: e.clientX, sy: e.clientY, px: cmX, py: cmY };
+    });
+    wrap.addEventListener("pointermove", (e) => {
+      if (!drag) return;
+      const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+      if (Math.abs(dx) + Math.abs(dy) > 3) cmDidDrag = true;
+      if (cmScale > 1) { cmX = drag.px + dx; cmY = drag.py + dy; cmClamp(); cmApplyTransform(); }
+    });
+    wrap.addEventListener("pointerup", () => { drag = null; });
+    wrap.addEventListener("pointerleave", () => { drag = null; });
+    wrap.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const rect = wrap.getBoundingClientRect();
+      cmZoom(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - rect.left, e.clientY - rect.top);
+    }, { passive: false });
+    // Callout lines are anchored to element rects, so redraw them on resize.
+    let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(cmDrawConnector, 120); });
   }
 
   /* ---------- Find your ballot: Illinois county map + place picker ---------- */
