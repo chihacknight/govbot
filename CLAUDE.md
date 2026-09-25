@@ -255,9 +255,16 @@ dimmed + `backdrop-filter` blur, `z-index:90`, `.results-overlay[hidden]{display
 filter/search is active, and adds `body.results-open` to lock scroll; the map entry + Recent activity
 stay on screen as the dimmed backdrop. The popped `#results-card` (`.results-modal`) animates in with
 `@keyframes results-pop`, carries an **X close button** (`#results-x`, top-right) and a
-jurisdiction-named title (`resultsTitle` → "Wyoming bills (N)"). Closing it — the X, a click on the
+jurisdiction-named title (`resultsTitle` → "Wyoming bills (N)"). The card carries a sticky
+**in-card search box** (`#results-search`) directly under its title that filters within the popped-up
+catalog (e.g. just that one state's bills — the same `state.filters.search`, so the count in the title
+tracks it live); it and the hidden hero box `#f-search` mirror each other via `reflectSearch()` (both
+share one debounced input handler, each skipping the box being typed in so the cursor doesn't jump).
+Opening a state (`eeApplyFilter`) starts its catalog fresh (clears the search); when nothing matches,
+the results empty-state "Clear filters" clears **only** the search and keeps that state's catalog open
+(rather than closing back to the map). Closing it — the X, a click on the
 backdrop, or **Escape** (deferred to the bill modal when that is open above it) — calls `eeBackToMap`,
-which clears `state.filters.states` so `setMode` hides the overlay. Its Title + latest-action cell
+which clears `state.filters.states` (and the in-card search) so `setMode` hides the overlay. Its Title + latest-action cell
 text is `--text-primary` (full-contrast, not dimmed). The "No bills match" empty state (`#empty`) now shows
 **only when a filter/search is active and nothing matches** — `renderTable` hides it unless
 `anyFilterActive()`. Both `.gb-state` and `.gb-loading` set `display:flex`, which (author CSS)

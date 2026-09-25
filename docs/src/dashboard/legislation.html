@@ -352,6 +352,25 @@
     animation: results-pop 0.30s cubic-bezier(0.2, 0.8, 0.25, 1);
   }
   .results-modal .results-head { padding-right: 44px; }  /* clear the X */
+  /* In-card search: filters within the popped-up catalog (e.g. just this
+     state's bills). Sticky so it stays reachable while the long table scrolls. */
+  .results-search {
+    position: sticky; top: 0; z-index: 3; display: flex; align-items: center;
+    padding: 4px 20px 14px; background: var(--page);
+  }
+  .results-search .search-icon {
+    position: absolute; left: 34px; width: 18px; height: 18px;
+    color: var(--text-muted); pointer-events: none;
+  }
+  .results-search input[type="search"] {
+    width: 100%; font: inherit; font-size: 15px; padding: 11px 12px 11px 42px;
+    background: var(--surface-1); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 10px;
+  }
+  .results-search input[type="search"]::placeholder { color: var(--text-muted); }
+  .results-search input[type="search"]:focus-visible {
+    outline: 2px solid var(--series-1); outline-offset: 1px; border-color: var(--series-1);
+  }
   @keyframes results-pop {
     0%   { opacity: 0; transform: scale(0.92) translateY(14px); }
     60%  { transform: scale(1.01) translateY(0); }
@@ -896,6 +915,10 @@
       <h2 id="table-title">Bills</h2>
       <p class="sub">Click a column header to sort</p>
     </div>
+    <div class="results-search">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="search" id="results-search" placeholder="Search these bills — title, number, sponsor, topic…" aria-label="Search bills in this list">
+    </div>
     <div class="table-scroll">
       <table>
         <thead><tr id="thead-row"></tr></thead>
@@ -978,16 +1001,23 @@
     initDateRange();
 
     let searchTimer;
-    // The single search box drives state.filters.search (debounced: each render
-    // scans the full dataset).
-    { const el = $("f-search"); if (el) el.addEventListener("input", (e) => {
-      const v = e.target.value;
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => {
-        state.filters.search = v.trim().toLowerCase();
-        render();
-      }, 150);
-    }); }
+    // Two search boxes drive the same state.filters.search: the (currently
+    // hidden) hero box #f-search and the in-card box #results-search that filters
+    // within a popped-up catalog (e.g. just one state's bills). They mirror each
+    // other so whichever is on screen shows the live query. Debounced: each render
+    // scans the full dataset.
+    ["f-search", "results-search"].forEach((id) => {
+      const el = $(id); if (!el) return;
+      el.addEventListener("input", (e) => {
+        const v = e.target.value;
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+          state.filters.search = v.trim().toLowerCase();
+          reflectSearch(id);   // keep the other box in sync
+          render();
+        }, 150);
+      });
+    });
     // The Show/Hide pill toggles the Recent-activity list open/closed at any time
     // (with or without a search active). It stops propagation so it doesn't also
     // trigger the whole-header handler below and cancel itself out.
@@ -1005,16 +1035,27 @@
       }); }
     $("f-clear").addEventListener("click", () => {
       state.filters.search = "";
-      $("f-search").value = "";
+      $("f-search").value = ""; reflectSearch();
       state.filters.states.clear(); state.filters.tags.clear();
       state.filters.session = ""; $("f-session").value = "";
       state.filters.chamber = ""; $("f-chamber").value = "";
       resetDateRange();
       syncMultiSelects(); render();
     });
-    // The empty-state "Clear filters" button reuses the same reset.
+    // The empty-state "Clear filters" button reuses the same reset — except the
+    // one inside the results catalog, where an active in-card search over a single
+    // state should clear just the search and keep that state's catalog open
+    // (rather than closing back to the map).
     document.querySelectorAll("[data-clear-filters]").forEach((b) =>
-      b.addEventListener("click", () => $("f-clear").click()));
+      b.addEventListener("click", () => {
+        const ov = $("results-overlay");
+        const inCatalog = ov && !ov.hidden && b.closest("#results-overlay");
+        if (inCatalog && state.filters.search && state.filters.states.size) {
+          state.filters.search = ""; reflectSearch(); render();
+        } else {
+          $("f-clear").click();
+        }
+      }));
     document.addEventListener("click", (e) => {
       document.querySelectorAll(".msel.open").forEach((m) => {
         if (!m.contains(e.target)) m.classList.remove("open");
@@ -1140,6 +1181,15 @@
         }
       }
       return true;
+    });
+  }
+
+  // Mirror the current search query into both search boxes (hidden hero +
+  // in-card), skipping the one the user is typing in so the cursor doesn't jump.
+  function reflectSearch(exceptId) {
+    ["f-search", "results-search"].forEach((id) => {
+      if (id === exceptId) return;
+      const el = $(id); if (el) el.value = state.filters.search;
     });
   }
 
@@ -2124,11 +2174,13 @@
 
   function eeApplyFilter(code) {
     state.filters.states.clear(); state.filters.states.add(code);
+    state.filters.search = ""; reflectSearch();   // open each state's catalog fresh
     syncMultiSelects(); render();   // render() -> setMode() pops up the results card over the map
   }
   // Close the results popup and clear the jurisdiction filter (X / backdrop / Escape).
   function eeBackToMap() {
     state.filters.states.clear();
+    state.filters.search = ""; reflectSearch();   // also drop any in-card search so Escape fully closes
     syncMultiSelects(); render();   // setMode() hides the overlay; the map is already behind it
   }
   function eeSetView(map) {
