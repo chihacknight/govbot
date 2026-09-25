@@ -352,6 +352,25 @@
     animation: results-pop 0.30s cubic-bezier(0.2, 0.8, 0.25, 1);
   }
   .results-modal .results-head { padding-right: 44px; }  /* clear the X */
+  /* In-card search: filters within the popped-up catalog (e.g. just this
+     state's bills). Sticky so it stays reachable while the long table scrolls. */
+  .results-search {
+    position: sticky; top: 0; z-index: 3; display: flex; align-items: center;
+    padding: 4px 20px 14px; background: var(--page);
+  }
+  .results-search .search-icon {
+    position: absolute; left: 34px; width: 18px; height: 18px;
+    color: var(--text-muted); pointer-events: none;
+  }
+  .results-search input[type="search"] {
+    width: 100%; font: inherit; font-size: 15px; padding: 11px 12px 11px 42px;
+    background: var(--surface-1); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 10px;
+  }
+  .results-search input[type="search"]::placeholder { color: var(--text-muted); }
+  .results-search input[type="search"]:focus-visible {
+    outline: 2px solid var(--series-1); outline-offset: 1px; border-color: var(--series-1);
+  }
   @keyframes results-pop {
     0%   { opacity: 0; transform: scale(0.92) translateY(14px); }
     60%  { transform: scale(1.01) translateY(0); }
@@ -424,6 +443,8 @@
   .m-links a.m-share { cursor: pointer; font-weight: 600; padding: 2px 10px;
     border: 1px solid var(--border); border-radius: 999px; }
   .m-links a.m-share:hover { background: var(--hover-wash); border-color: var(--series-1); }
+  /* Standalone Share row sits above the Status section. */
+  .m-sharerow { margin: 4px 0 16px; }
   .m-muted { color: var(--text-muted); font-size: 13px; }
   .m-tags { display: inline-flex; flex-wrap: wrap; gap: 5px; }
   .m-loading { padding: 30px 0; text-align: center; color: var(--text-muted); }
@@ -499,6 +520,7 @@
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .rc-act { font-size: 12.5px; color: var(--text-secondary);
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .rc-tags { display: flex; flex-wrap: wrap; gap: 2px 0; margin-top: 1px; }
   @media (prefers-reduced-motion: reduce) { .recent-card:hover { transform: none; } }
 
   details.overview { border: 1px solid var(--border); border-radius: 14px; background: var(--surface-1); margin-bottom: 14px; padding: 0 16px 6px; }
@@ -590,6 +612,18 @@
   .ee-d-actions { margin-top: 14px; padding-top: 8px; }
   .ee-d-open { width: 100%; height: 44px; border-radius: 12px; border: none; background: #E7B34B; color: #0D111A; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
   :root[data-theme="light"] .ee-d-open { background: #A9791F; color: #fff; }
+  /* List-view toolbar: sort dropdown. */
+  .ee-listbar { display: flex; align-items: center; justify-content: flex-end; gap: 9px; margin: 0 0 14px; }
+  .ee-sort-lbl { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gb-gold); font-weight: 600; }
+  .ee-sort {
+    font: inherit; font-size: 13.5px; color: var(--gb-text); cursor: pointer;
+    background: var(--gb-surface); border: 1px solid var(--gb-border); border-radius: 10px;
+    padding: 8px 30px 8px 12px; -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23D6A84F' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 9px center; background-size: 15px;
+  }
+  .ee-sort:hover { border-color: var(--gb-border-strong); }
+  .ee-sort:focus-visible { outline: 2px solid var(--gb-gold-hi); outline-offset: 1px; border-color: var(--gb-gold-hi); }
   .ee-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
   .ee-card { display: flex; align-items: center; gap: 14px; background: var(--gb-surface); border: 1px solid var(--gb-border); border-radius: 14px; padding: 14px 16px; cursor: pointer; font: inherit; text-align: left; color: var(--gb-text); }
   .ee-card:hover { border-color: var(--gb-border-strong); transform: translateY(-2px); transition: transform .12s ease; }
@@ -781,6 +815,15 @@
         </aside>
       </div>
       <div class="ee-listpanel" id="ee-listpanel" hidden>
+        <div class="ee-listbar">
+          <label class="ee-sort-lbl" for="ee-sort">Sort</label>
+          <select id="ee-sort" class="ee-sort" aria-label="Sort jurisdictions">
+            <option value="az">A–Z (Federal first)</option>
+            <option value="za">Z–A</option>
+            <option value="count-desc">Most bills</option>
+            <option value="count-asc">Fewest bills</option>
+          </select>
+        </div>
         <div class="ee-cards" id="ee-cards"></div>
       </div>
     </div>
@@ -894,6 +937,10 @@
       <h2 id="table-title">Bills</h2>
       <p class="sub">Click a column header to sort</p>
     </div>
+    <div class="results-search">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="search" id="results-search" placeholder="Search these bills — title, number, sponsor, topic…" aria-label="Search bills in this list">
+    </div>
     <div class="table-scroll">
       <table>
         <thead><tr id="thead-row"></tr></thead>
@@ -976,16 +1023,23 @@
     initDateRange();
 
     let searchTimer;
-    // The single search box drives state.filters.search (debounced: each render
-    // scans the full dataset).
-    { const el = $("f-search"); if (el) el.addEventListener("input", (e) => {
-      const v = e.target.value;
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => {
-        state.filters.search = v.trim().toLowerCase();
-        render();
-      }, 150);
-    }); }
+    // Two search boxes drive the same state.filters.search: the (currently
+    // hidden) hero box #f-search and the in-card box #results-search that filters
+    // within a popped-up catalog (e.g. just one state's bills). They mirror each
+    // other so whichever is on screen shows the live query. Debounced: each render
+    // scans the full dataset.
+    ["f-search", "results-search"].forEach((id) => {
+      const el = $(id); if (!el) return;
+      el.addEventListener("input", (e) => {
+        const v = e.target.value;
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+          state.filters.search = v.trim().toLowerCase();
+          reflectSearch(id);   // keep the other box in sync
+          render();
+        }, 150);
+      });
+    });
     // The Show/Hide pill toggles the Recent-activity list open/closed at any time
     // (with or without a search active). It stops propagation so it doesn't also
     // trigger the whole-header handler below and cancel itself out.
@@ -1003,16 +1057,27 @@
       }); }
     $("f-clear").addEventListener("click", () => {
       state.filters.search = "";
-      $("f-search").value = "";
+      $("f-search").value = ""; reflectSearch();
       state.filters.states.clear(); state.filters.tags.clear();
       state.filters.session = ""; $("f-session").value = "";
       state.filters.chamber = ""; $("f-chamber").value = "";
       resetDateRange();
       syncMultiSelects(); render();
     });
-    // The empty-state "Clear filters" button reuses the same reset.
+    // The empty-state "Clear filters" button reuses the same reset — except the
+    // one inside the results catalog, where an active in-card search over a single
+    // state should clear just the search and keep that state's catalog open
+    // (rather than closing back to the map).
     document.querySelectorAll("[data-clear-filters]").forEach((b) =>
-      b.addEventListener("click", () => $("f-clear").click()));
+      b.addEventListener("click", () => {
+        const ov = $("results-overlay");
+        const inCatalog = ov && !ov.hidden && b.closest("#results-overlay");
+        if (inCatalog && state.filters.search && state.filters.states.size) {
+          state.filters.search = ""; reflectSearch(); render();
+        } else {
+          $("f-clear").click();
+        }
+      }));
     document.addEventListener("click", (e) => {
       document.querySelectorAll(".msel.open").forEach((m) => {
         if (!m.contains(e.target)) m.classList.remove("open");
@@ -1138,6 +1203,15 @@
         }
       }
       return true;
+    });
+  }
+
+  // Mirror the current search query into both search boxes (hidden hero +
+  // in-card), skipping the one the user is typing in so the cursor doesn't jump.
+  function reflectSearch(exceptId) {
+    ["f-search", "results-search"].forEach((id) => {
+      if (id === exceptId) return;
+      const el = $(id); if (el) el.value = state.filters.search;
     });
   }
 
@@ -1976,6 +2050,7 @@
   const EE_DOT = { "-1": "#8A93A6", "0": "#8A93A6", "1": "#D6A84F", "2": "#E0A83C", "3": "#F0C969" };
   const EE_TERR = [["gu", "Guam"], ["pr", "Puerto Rico"], ["vi", "U.S. Virgin Islands"], ["mp", "N. Mariana Islands"]];
   let eeGeo = null, eeSel = null, eeScale = 1, eeX = 0, eeY = 0, eeLevel = {}, eeCounts = {}, eeTracked = null, eeWired = false, eeDidDrag = false, eeLoaded = false;
+  let eeSort = "az";   // list-view sort: az (default, Federal first) | za | count-desc | count-asc
 
   function eeNameFor(code) {
     if (code === "usa") return "United States (Federal)";
@@ -2077,7 +2152,12 @@
     eeGeo.states.forEach((g) => { const c = g.id.toLowerCase(); if (eeTracked.has(c)) items.push({ code: c, name: g.name, kind: "State" }); });
     EE_TERR.forEach((t) => items.push({ code: t[0], name: t[1], kind: "Territory" }));
     items.push({ code: "usa", name: "United States (Federal)", kind: "Federal" });
-    items.sort((a, b) => (eeCounts[b.code] || 0) - (eeCounts[a.code] || 0) || a.name.localeCompare(b.name));
+    const cnt = (x) => eeCounts[x.code] || 0;
+    if (eeSort === "count-desc")      items.sort((a, b) => cnt(b) - cnt(a) || a.name.localeCompare(b.name));
+    else if (eeSort === "count-asc")  items.sort((a, b) => cnt(a) - cnt(b) || a.name.localeCompare(b.name));
+    else if (eeSort === "za")         items.sort((a, b) => b.name.localeCompare(a.name));
+    else /* az: Federal (USA) pinned first, then everything A–Z by name */
+      items.sort((a, b) => (a.code === "usa" ? -1 : b.code === "usa" ? 1 : a.name.localeCompare(b.name)));
     items.forEach((it) => {
       const card = mkel("button", "ee-card"); card.type = "button";
       const flag = mkel("img", "ee-card-flag"); flag.src = eeFlagSrc(it.code); flag.alt = ""; flag.loading = "lazy";
@@ -2122,11 +2202,13 @@
 
   function eeApplyFilter(code) {
     state.filters.states.clear(); state.filters.states.add(code);
+    state.filters.search = ""; reflectSearch();   // open each state's catalog fresh
     syncMultiSelects(); render();   // render() -> setMode() pops up the results card over the map
   }
   // Close the results popup and clear the jurisdiction filter (X / backdrop / Escape).
   function eeBackToMap() {
     state.filters.states.clear();
+    state.filters.search = ""; reflectSearch();   // also drop any in-card search so Escape fully closes
     syncMultiSelects(); render();   // setMode() hides the overlay; the map is already behind it
   }
   function eeSetView(map) {
@@ -2180,6 +2262,8 @@
     const mapBtn = $("ee-map-btn"), listBtn = $("ee-list-btn");
     if (mapBtn) mapBtn.addEventListener("click", () => eeSetView(true));
     if (listBtn) listBtn.addEventListener("click", () => eeSetView(false));
+    const sortSel = $("ee-sort");
+    if (sortSel) { sortSel.value = eeSort; sortSel.addEventListener("change", (e) => { eeSort = e.target.value; eeBuildList(); }); }
     // Close the results popup: X button, click on the dimmed backdrop, or Escape
     // (but let an open bill modal take Escape first, since it sits above the popup).
     const rx = $("results-x");
@@ -2218,6 +2302,18 @@
       top.append(mchip(stName, "is-state"), mkel("span", "rc-id", b.id), mkel("span", "rc-when", relDate(b.latest_action)));
       card.append(top, mkel("div", "rc-title", b.title || b.id));
       if (b.latest_action_desc) card.append(mkel("div", "rc-act", b.latest_action_desc));
+      const tags = b.tags || [];
+      if (tags.length) {
+        const trow = mkel("div", "rc-tags");
+        tags.forEach((t) => {
+          const chip = mkel("span", "chip");
+          const dot = mkel("span", "dot");
+          dot.style.background = "var(" + (state.tagColor[t] || SERIES[0]) + ")";
+          chip.append(dot, document.createTextNode(t));
+          trow.append(chip);
+        });
+        card.append(trow);
+      }
       card.addEventListener("click", () => openDetails(b));
       host.append(card);
     });
@@ -2333,6 +2429,16 @@
     }
     addSection(body, "What is this bill about", mkel("p", "m-plain", plainSummary(b, meta)));
 
+    // Share this bill — a real link (copy-link / middle-click work) whose left-click
+    // copies the deep link. Placed prominently above the Status timeline.
+    { const shareA = mkel("a", "m-share", "Share this bill 🔗");
+      shareA.href = billShareUrl(b);
+      shareA.addEventListener("click", (e) => {
+        e.preventDefault();
+        shareBill(b, (msg) => { const o = "Share this bill 🔗"; shareA.textContent = msg; setTimeout(() => { shareA.textContent = o; }, 1400); });
+      });
+      const row = mkel("div", "m-links m-sharerow"); row.append(shareA); body.append(row); }
+
     { const wrap = mkel("div", "m-stage");
       wrap.append(stageTimeline(b, meta),
         mkel("p", "m-stage-cap", "Progress is inferred from the recorded actions below."));
@@ -2423,18 +2529,7 @@
       if (human) officialUrl = human;
     }
     const links = mkel("div", "m-links");
-    // Share this bill: a real link (so copy-link / middle-click work) whose
-    // left-click copies the deep link to the clipboard.
-    const shareA = mkel("a", "m-share", "Share this bill 🔗");
-    shareA.href = billShareUrl(b);
-    shareA.addEventListener("click", (e) => {
-      e.preventDefault();
-      shareBill(b, (msg) => {
-        const o = "Share this bill 🔗"; shareA.textContent = msg;
-        setTimeout(() => { shareA.textContent = o; }, 1400);
-      });
-    });
-    links.append(shareA);
+    // ("Share this bill" now sits above the Status section, not here.)
     if (officialUrl) links.append(mlink("Official source ↗", officialUrl));
     links.append(mlink("govbot record ↗", govbotRecordUrl(b)));
     links.append(mlink("Open States ↗",

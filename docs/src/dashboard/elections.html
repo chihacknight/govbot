@@ -357,7 +357,9 @@
   .tl-item:last-child { padding-bottom: 0; }
   .tl-dot { position: absolute; left: 0; top: 1px; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--baseline); background: var(--surface-1); box-shadow: 0 0 0 3px var(--surface-1); display: flex; align-items: center; justify-content: center; font-size: 9px; }
   .tl-item.done .tl-dot { border-color: var(--series-2); background: var(--series-2); color: #fff; }
-  .tl-item.next .tl-dot { border-color: var(--tl-accent, var(--series-1)); background: var(--tl-accent, var(--series-1)); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--tl-accent, var(--series-1)) 25%, var(--surface-1)); }
+  .tl-item.next .tl-dot { border-color: var(--tl-accent, var(--series-1)); background: var(--tl-accent, var(--series-1)); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--tl-accent, var(--series-1)) 25%, var(--surface-1)); animation: tl-pulse 1.6s ease-in-out infinite; }
+  @keyframes tl-pulse { 0%,100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--tl-accent, var(--series-1)) 25%, var(--surface-1)); } 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--tl-accent, var(--series-1)) 30%, var(--surface-1)), 0 0 12px color-mix(in srgb, var(--tl-accent, var(--series-1)) 60%, transparent); } }
+  @media (prefers-reduced-motion: reduce) { .tl-item.next .tl-dot { animation: none; } }
   .tl-item.future .tl-dot { border-color: var(--baseline); }
   .tl-date { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-primary); }
   .tl-item.future .tl-date, .tl-item.future .tl-label { color: var(--text-muted); }
@@ -441,7 +443,11 @@
   .el-hero h1 { margin: 2px 0 0; font-size: 48px; line-height: 1.02; }
   .el-tagline { margin: 0; font-family: var(--gb-font-display); font-size: 20px; color: var(--text-secondary); }
   .el-next { margin: 4px 0 0; font-size: 14px; color: var(--series-2); font-weight: 600; }
-  .el-cta-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+  .el-cta-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+  /* Tiny hero chip: makes the current coverage scope clear up top. */
+  .el-cov { display: flex; align-items: flex-start; gap: 8px; font-size: 13.5px; line-height: 1.5; color: var(--text-secondary); max-width: 62ch; }
+  .el-cov strong { color: var(--text-primary); font-weight: 700; }
+  .el-cov-dot { width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--gb-green); box-shadow: 0 0 8px var(--gb-green); flex: none; }
   .el-docs { margin: 8px 0 0; font-size: 13px; }
   .el-hero-flag { flex: 0 0 auto; width: 440px; max-width: 52%; filter: drop-shadow(0 0 26px rgba(214,168,79,0.26)); }
   .el-hero-flag svg, .el-hero-flag img { width: 100%; height: auto; display: block; }
@@ -483,22 +489,26 @@
   /* ===== Find your ballot — Illinois county map + place picker ===== */
   .bfinder { margin: 6px 0 24px; }
   .bf-title { margin: 0 0 4px; font-size: 27px; }
-  .bf-sub { margin: 0 0 16px; color: var(--text-secondary); font-size: 14px; max-width: 70ch; }
-  .bf-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 20px; align-items: start; }
+  .bf-sub { margin: 0 0 12px; color: var(--text-secondary); font-size: 14px; max-width: 70ch; }
+  /* Coverage note: what's tracked today vs. coming soon. */
+  .bf-coverage { display: flex; align-items: flex-start; gap: 9px; margin: 0 0 16px; padding: 10px 14px; font-size: 13px; line-height: 1.5; color: var(--text-secondary); background: var(--surface-1); border: 1px solid var(--border); border-left: 3px solid var(--gb-gold); border-radius: 10px; max-width: 82ch; }
+  .bf-coverage b { color: var(--text-primary); }
+  .bf-cov-dot { width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--gb-green); box-shadow: 0 0 8px var(--gb-green); flex: none; }
+  .bf-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 20px; align-items: center; }
   .bf-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
   .bf-maphead { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; }
   .bf-maphead .bf-hint { color: var(--text-secondary); font-weight: 500; }
-  .bf-viewport { position: relative; flex-grow: 1; min-height: 340px; background: #0A0E16; border: 1px solid #1C2434; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-  .bf-viewport svg { width: auto; height: 100%; max-height: 460px; display: block; }
+  .bf-viewport { position: relative; flex-grow: 1; min-height: 300px; background: #0A0E16; border: 1px solid #1C2434; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .bf-viewport svg { width: auto; height: 100%; max-height: 380px; display: block; }
   .bf-glow { filter: drop-shadow(0 0 1.6px rgba(240,201,105,.5)); }
   .bf-cty { cursor: pointer; transition: fill .12s ease, filter .12s ease; }
   .bf-cty:hover { fill: #2B3346; }
   .bf-cty:focus-visible { outline: none; filter: brightness(1.35); }
-  .bf-cty.is-cook { fill: #9C7B2E; }
+  .bf-cty.is-cook { fill: #9C7B2E; stroke: #F0C969; stroke-width: 1; animation: bf-pulse 1.9s ease-in-out infinite; }
   .bf-cty.is-cook:hover { fill: #B8933A; }
   .bf-cty.is-sel { fill: #E7B34B; stroke: #F0C969 !important; stroke-width: 1.4 !important; animation: bf-pulse 1.6s ease-in-out infinite; }
   @keyframes bf-pulse { 0%,100% { filter: drop-shadow(0 0 2px rgba(240,201,105,.55)); } 50% { filter: drop-shadow(0 0 8px rgba(240,201,105,1)); } }
-  @media (prefers-reduced-motion: reduce) { .bf-cty.is-sel { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .bf-cty.is-sel, .bf-cty.is-cook { animation: none; } }
   .bf-cook-tag { position: absolute; top: 12px; right: 12px; font-size: 11px; font-weight: 700; color: #0A0A0A; background: #F0C969; border-radius: 6px; padding: 3px 9px; pointer-events: none; }
   .bf-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary); }
   .bf-legend span { display: inline-flex; align-items: center; gap: 7px; }
@@ -546,6 +556,38 @@
     .bf-grid { grid-template-columns: 1fr; }
     .bf-viewport { min-height: 300px; }
   }
+  /* Recent Illinois legislative activity (all IL bills we track) + search */
+  .il-recent { margin: 26px 0; }
+  .ilr-head h2 { margin: 0 0 4px; font-size: 22px; }
+  .ilr-sub { margin: 0 0 14px; color: var(--text-secondary); font-size: 13.5px; max-width: 74ch; }
+  .ilr-searchwrap { position: relative; margin-bottom: 12px; max-width: 560px; }
+  .ilr-searchwrap input { width: 100%; box-sizing: border-box; font: inherit; font-size: 15px; color: var(--text-primary); background: var(--surface-1); border: 1.5px solid var(--border); border-radius: 12px; padding: 11px 14px 11px 40px; }
+  .ilr-searchwrap input:focus { outline: none; border-color: var(--series-2); }
+  .ilr-searchicon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+  /* Recent IL activity — same card format as the Explore Legislation "Recent
+     activity" strip (state badge · bill id · when · title · latest action · topic chips). */
+  .ilr-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(278px, 1fr)); gap: 12px; }
+  .ilr-card { text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 7px;
+    background: var(--surface-1); border: 1px solid var(--border); border-left: 3px solid var(--series-1);
+    border-radius: 12px; padding: 14px 16px; font: inherit; color: var(--text-primary); text-decoration: none; }
+  .ilr-card:hover { border-color: var(--series-1); transform: translateY(-2px); transition: transform .12s ease; }
+  .ilr-card:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
+  .ilrc-top { display: flex; align-items: center; gap: 8px; }
+  .ilrc-badge { font-size: 11px; font-weight: 650; letter-spacing: 0.02em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 999px; color: #fff; background: var(--series-1); border: 1px solid var(--series-1); }
+  .ilrc-id { font-size: 12px; font-weight: 600; color: var(--series-1); }
+  .ilrc-when { margin-left: auto; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+  .ilrc-title { font-family: var(--gb-font-display); font-size: 16px; line-height: 1.25; color: var(--text-primary);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .ilrc-act { font-size: 12.5px; color: var(--text-secondary);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .ilrc-tags { display: flex; flex-wrap: wrap; gap: 2px 0; margin-top: 1px; }
+  .ilrc-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border);
+    border-radius: 999px; padding: 1px 8px 1px 6px; margin: 1px 2px 1px 0; font-size: 11.5px;
+    color: var(--text-secondary); white-space: nowrap; }
+  .ilrc-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  @media (prefers-reduced-motion: reduce) { .ilr-card:hover { transform: none; } }
+  .ilr-empty { color: var(--text-secondary); font-size: 14px; padding: 12px 6px; }
 </style>
 <script>
   // Apply a saved theme choice before first paint. Shared localStorage key, so
@@ -657,6 +699,7 @@
         <p class="el-tagline">Know who’s on your ballot before you vote.</p>
         <p class="el-next" id="el-next"></p>
         <div class="el-cta-row">
+          <span class="el-cov"><span class="el-cov-dot" aria-hidden="true"></span><span><strong>Live now:</strong> local races for Chicago &amp; Cook County, plus every Illinois statewide &amp; federal race. Local races for the rest of Illinois are coming soon.</span></span>
           <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
         </div>
       </div>
@@ -673,13 +716,8 @@
     <p class="bf-sub">Pick where you live — click a county, or choose Chicago and your ward. We’ll show every race you can vote in.</p>
     <div class="bf-grid">
       <div class="bf-card">
-        <div class="bf-maphead"><span>Illinois</span><span class="bf-hint">click a county</span></div>
+        <div class="bf-maphead"><span>Illinois</span></div>
         <div class="bf-viewport" id="bf-viewport" role="group" aria-label="Map of Illinois counties"></div>
-        <div class="bf-legend">
-          <span><span class="bf-sw" style="background:#E7B34B"></span>Selected</span>
-          <span><span class="bf-sw" style="background:#9C7B2E"></span>Chicago (Cook)</span>
-          <span><span class="bf-sw" style="background:#141A26;border:1.5px solid #C79A3C"></span>102 counties</span>
-        </div>
       </div>
       <div class="bf-card bf-pickcard">
         <div>
@@ -698,8 +736,6 @@
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </button>
         <p class="bf-status" id="bf-status">Everyone in Illinois votes the statewide &amp; federal races. Chicago voters also get city, ward, CPS board &amp; police-council races.</p>
-        <div class="bf-plabel">Coming up</div>
-        <div class="bf-upcoming" id="bf-upcoming"></div>
       </div>
     </div>
   </section>
@@ -733,11 +769,6 @@
     <div class="picker-chips" id="picker-chips"></div>
   </div>
   <p class="picker-empty" id="picker-empty" hidden>Pick one or more sections above to explore the ballot — or “Show everything.”</p>
-
-  <div class="intro">
-    <span class="intro-ico" aria-hidden="true">🗳️</span>
-    <b>Two big ballots ahead.</b> On <b>Nov 3, 2026</b>, the <b>Illinois general election</b> fills the U.S. Senate seat and all 17 U.S. House seats, the Governor and the statewide constitutional officers, and the Illinois General Assembly (the 39 state Senate seats up this cycle and all 118 state House seats) — and on the same ballot Chicago elects a <b>Board of Education</b> for the first time by popular vote, including its <b>first-ever elected President</b>, as the mayor-appointed hybrid board is phased out. Then the <b>2027 municipal election</b> puts the Mayor, City Clerk, City Treasurer, all 50 Alderpersons, and the Police District Councils on the ballot. Candidate lists are pulled from the Chicago Board of Elections and the Illinois State Board of Elections; the November 2026 general-election nominees are compiled from public election records (each candidate links to its source), and a race with no one listed yet links to its official source rather than guessing.
-  </div>
 
   <section class="calendar" id="calendar" hidden>
     <h2>🗓️ Election calendar</h2>
@@ -794,7 +825,21 @@
     <div class="gb-state-actions"><button type="button" class="clear-btn" data-clear-filters>Clear filters</button></div>
   </div>
 
-  <details class="cabinet" id="cabinet" open>
+  <!-- Recent activity across all Illinois bills we track (from the legislation dataset) -->
+  <section class="il-recent" id="il-recent" hidden aria-label="Recent Illinois legislative activity">
+    <div class="ilr-head">
+      <h2>Recent Illinois legislative activity</h2>
+      <p class="ilr-sub">Every Illinois bill Govbot is tracking in the General Assembly — newest recorded action first. Opens the full bill in Explore Legislation.</p>
+    </div>
+    <div class="ilr-searchwrap">
+      <svg class="ilr-searchicon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
+      <input type="search" id="ilr-search" placeholder="Search Illinois bills by number, title, sponsor or topic…" aria-label="Search Illinois bills">
+    </div>
+    <div class="ilr-list" id="ilr-list"></div>
+    <p class="ilr-empty" id="ilr-empty" hidden>No Illinois bills match your search.</p>
+  </section>
+
+  <details class="cabinet" id="cabinet">
     <summary>📂 Where the data comes from</summary>
     <p class="cab-intro">This site isn't the official clerk — it's a <b>cabinet</b> that puts the sources in one place so a Chicagoan can ask "who's running in my CPS subdistrict and my ward, and when do I vote?" A fully assembled race draws on up to five drawers: <b>map · candidates · money · results · context</b>. Here's what each source owns and what's live today.</p>
     <div class="cab-grid">
@@ -986,6 +1031,7 @@
     setupFlourishes();                          // waving corner flag + flag cursor
     buildPicker(data);                          // the "Build your view" section chooser
     renderBallotFinder(data);                   // the Illinois map + place picker ("find your ballot")
+    renderIlRecent();                           // recent activity across all IL bills we track (from data.json)
 
     // 2026 federal midterm callout — shown only when the federal races are present
     const mb = $("midterm-banner");
@@ -1118,6 +1164,85 @@
     // mouse-following flag cursor has been removed.
   }
 
+  /* ---------- Recent Illinois legislative activity (all IL bills we track) ---------- */
+  const IL_RECENT_MAX = 25;
+  // Same fixed 8-color series the legislation dashboard cycles its topic tags
+  // through, so a topic reads the same color on both sites.
+  const IL_SERIES = ["--series-1","--series-2","--series-3","--series-4",
+                     "--series-5","--series-6","--series-7","--series-8"];
+  function ilBillKey(b) {
+    return encodeURIComponent(b.state || "") + "~" + encodeURIComponent(b.session || "") + "~" + encodeURIComponent(b.id || "");
+  }
+  // Relative date to match the legislation "Recent activity" cards ("yesterday", "3 days ago", …).
+  function ilRelDate(iso) {
+    if (!iso) return "";
+    const d = new Date(iso); if (isNaN(d)) return String(iso).slice(0, 10);
+    const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+    if (days <= 0) return "today";
+    if (days === 1) return "yesterday";
+    if (days < 30) return days + " days ago";
+    if (days < 365) return Math.round(days / 30) + " mo ago";
+    return d.toISOString().slice(0, 10);
+  }
+  function renderIlRecent() {
+    fetch("data.json")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return;
+        const bills = (d.bills || []).filter((b) => (b.state || "").toLowerCase() === "il");
+        if (!bills.length) return;   // fail-soft: no IL bills locally (mock) → section stays hidden
+        bills.sort((a, b) => (a.latest_action < b.latest_action ? 1 : a.latest_action > b.latest_action ? -1 : 0));
+        // Map each topic to a stable series color (same scheme as the legislation site).
+        state.ilTagColor = {};
+        (d.tags || []).forEach((t, i) => { state.ilTagColor[t.name] = IL_SERIES[i % IL_SERIES.length]; });
+        state.ilBills = bills;
+        $("il-recent").hidden = false;
+        renderIlList("");
+        const s = $("ilr-search");
+        if (s) { let t; s.addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => renderIlList(s.value.trim().toLowerCase()), 120); }); }
+      })
+      .catch(() => { /* legislation data unavailable — section stays hidden */ });
+  }
+  function renderIlList(q) {
+    const box = $("ilr-list"); if (!box) return;
+    let bills = state.ilBills || [];
+    if (q) {
+      bills = bills.filter((b) => {
+        const spon = (b.sponsors || []).map((s) => (typeof s === "string" ? s : (s && s.name) || "")).join(" ");
+        return [b.id, b.title, b.latest_action_desc, spon, (b.tags || []).join(" ")].join(" ").toLowerCase().includes(q);
+      });
+    }
+    $("ilr-empty").hidden = !(q && bills.length === 0);
+    box.textContent = "";
+    const tagColor = state.ilTagColor || {};
+    bills.slice(0, IL_RECENT_MAX).forEach((b) => {
+      // Same card shape as the legislation "Recent activity" strip: state badge ·
+      // bill id · when · title · latest action · topic chips.
+      const a = document.createElement("a"); a.className = "ilr-card"; a.href = "legislation.html#bill=" + ilBillKey(b);
+      const top = document.createElement("div"); top.className = "ilrc-top";
+      const badge = document.createElement("span"); badge.className = "ilrc-badge"; badge.textContent = "Illinois";
+      const id = document.createElement("span"); id.className = "ilrc-id"; id.textContent = b.id || "";
+      const when = document.createElement("span"); when.className = "ilrc-when"; when.textContent = ilRelDate(b.latest_action);
+      top.append(badge, id, when);
+      const ttl = document.createElement("div"); ttl.className = "ilrc-title"; ttl.textContent = b.title || b.id || "(untitled)";
+      a.append(top, ttl);
+      if (b.latest_action_desc) { const act = document.createElement("div"); act.className = "ilrc-act"; act.textContent = b.latest_action_desc; a.append(act); }
+      const tags = b.tags || [];
+      if (tags.length) {
+        const trow = document.createElement("div"); trow.className = "ilrc-tags";
+        tags.forEach((t) => {
+          const chip = document.createElement("span"); chip.className = "ilrc-chip";
+          const dot = document.createElement("span"); dot.className = "ilrc-dot";
+          dot.style.background = "var(" + (tagColor[t] || IL_SERIES[0]) + ")";
+          chip.append(dot, document.createTextNode(t));
+          trow.append(chip);
+        });
+        a.append(trow);
+      }
+      box.append(a);
+    });
+  }
+
   /* ---------- Find your ballot: Illinois county map + place picker ---------- */
   // Everyone in IL votes statewide + federal; Chicagoans also get the city ballot.
   const BF_CHI_GROUPS = ["citywide", "council", "cps_board", "police_district_council"];
@@ -1141,37 +1266,11 @@
     $("bf-chips").querySelectorAll(".bf-chip").forEach((ch) =>
       ch.addEventListener("click", () => selectBfPlace(ch.getAttribute("data-place"))));
     $("bf-go").addEventListener("click", () => resolveBallot(data));
-    renderBfUpcoming(data);
 
     fetch("assets/il-counties.json")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("il-counties " + r.status))))
       .then((geo) => { drawBfMap(geo); $("bfinder").hidden = false; })
       .catch(() => { /* finder stays hidden; the rest of the page is unaffected */ });
-  }
-
-  function renderBfUpcoming(data) {
-    const box = $("bf-upcoming"); if (!box) return;
-    const byDate = {};
-    data.races.forEach((r) => { if (r.ballot_date) (byDate[r.ballot_date] = byDate[r.ballot_date] || []).push(r); });
-    const all = Object.keys(byDate).sort();
-    const now = state.nowDate || new Date().toISOString().slice(0, 10);
-    const upcoming = all.filter((d) => d >= now);
-    const list = (upcoming.length ? upcoming : all).slice(0, 3);
-    box.textContent = "";
-    list.forEach((d) => {
-      const rs = byDate[d], dt = new Date(d + "T00:00:00");
-      const row = document.createElement("div"); row.className = "bf-up";
-      const dd = document.createElement("div"); dd.className = "bf-up-d";
-      dd.innerHTML = '<div class="bf-up-mo">' + dt.toLocaleString("en-US", { month: "short" }) +
-        '</div><div class="bf-up-day">' + dt.getDate() + '</div><div class="bf-up-yr">' + dt.getFullYear() + '</div>';
-      const mn = document.createElement("div"); mn.className = "bf-up-main";
-      const t = document.createElement("div"); t.className = "bf-up-t"; t.textContent = ballotStageLabel(rs);
-      const sub = document.createElement("div"); sub.className = "bf-up-sub"; sub.textContent = prettyDate(d);
-      mn.append(t, sub);
-      const n = document.createElement("div"); n.className = "bf-up-n";
-      n.innerHTML = "<b>" + rs.length + "</b><span>races</span>";
-      row.append(dd, mn, n); box.append(row);
-    });
   }
 
   function drawBfMap(geo) {
@@ -1214,6 +1313,8 @@
     if (place === "chicago") {
       markBfCounty("Cook"); state._bfCounty = "Cook";
       $("bf-status").innerHTML = "<b>Chicago.</b> Pick your ward to narrow the City Council race — everything else on your ballot shows too.";
+    } else if (place === "illinois") {
+      $("bf-status").innerHTML = "<b>Outside Chicago:</b> local county races are <b>coming soon</b> — for now your ballot shows every Illinois statewide &amp; federal race.";
     }
     syncBfChips();
     $("bf-ward").classList.toggle("is-shown", place === "chicago");
@@ -1315,7 +1416,9 @@
     $("picker-all").addEventListener("click", () => { allKeys().forEach((k) => state.view.add(k)); syncPickerChecks(); applyView(); });
     $("picker-clear").addEventListener("click", () => { state.view.clear(); syncPickerChecks(); applyView(); });
 
-    $("picker").hidden = false;
+    // The "Build your view" picker UI is retired (the map finder + ballot cards
+    // reveal the right sections), but its state/buttons stay in the DOM so
+    // revealAllSections() and applyView() keep working — so it stays hidden.
     applyView();
   }
 
@@ -1336,14 +1439,16 @@
     const v = state.view;
     state.visibleGroups = new Set([...v].filter((k) => k.indexOf("grp:") === 0).map((k) => k.slice(4)));
 
-    $("calendar").hidden = !v.has("calendar");
+    // The election calendar is always shown (not gated by the picker) whenever it
+    // has content — it's core context for the page.
+    $("calendar").hidden = !($("cal-grid") && $("cal-grid").children.length);
     const sf = document.getElementById("springfield"); if (sf) sf.hidden = !v.has("springfield");
     // Data sources (#cabinet) is always shown at the bottom — never picker-gated.
 
     const anyGroup = state.visibleGroups.size > 0;
     $("filters").hidden = !anyGroup;
     $("tiles").hidden = !anyGroup;
-    $("picker-empty").hidden = v.size > 0;
+    $("picker-empty").hidden = true;   // retired prompt — never shown
 
     try { localStorage.setItem(VIEW_LS_KEY, JSON.stringify([...v])); } catch (e) {}
 

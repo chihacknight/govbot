@@ -221,15 +221,20 @@ works while zoomed in**; switching to **list view** hides the map column entirel
 `#ee-mapcol[hidden]`; a `.ee-mapcol[hidden]{display:none}` rule is required — the author `display:flex`
 would otherwise beat `[hidden]` and leave the map visible in list view). The
 **list view** is a
-flag-forward grid of jurisdiction cards (committed `flags/<code>.png`, `us.png` for federal), sorted
-by count, click → same filter. A single **"N bills Govbot is tracking"** scorecard sits in the head.
+flag-forward grid of jurisdiction cards (committed `flags/<code>.png`, `us.png` for federal), click →
+same filter. A **Sort dropdown** (`#ee-sort`, `eeSort`, top-right of the list panel) reorders the cards:
+**A–Z (Federal first)** — the default, USA pinned first then everything alphabetical — plus Z–A, Most
+bills, Fewest bills (`eeBuildList` re-runs on change). A single **"N bills Govbot is tracking"**
+scorecard sits in the head.
 The whole entry uses the shared `govbot.css` tokens so it adapts light/dark (the map viewport stays a
 fixed dark surface in both themes so the heat encoding reads); fail-soft — if the paths file doesn't
 load the entry stays hidden and the rest of the page is unaffected. Below it, the classic
 "Recent activity" card strip remains
 (`#recent-list`, newest recorded actions, unfiltered, click → bill modal — capped at
 `RECENT_PER_STATE` (2) per jurisdiction so one busy state can't monopolize the strip, up to
-`RECENT_MAX` (12) cards; a gold `.recent-toggle` "Show / Hide recent activity" pill in the section
+`RECENT_MAX` (12) cards; each card shows the state badge · bill id · relative date · title · latest
+action · the bill's **topic chips** (`.rc-tags`, colored dots from `state.tagColor`, omitted when a
+bill has no tags); a gold `.recent-toggle` "Show / Hide recent activity" pill in the section
 head **is always visible and toggles the strip open/closed at any time** (`toggleRecent()` flips a
 `recentPref` override that beats the default), so a reader can collapse it even without searching.
 Its **default** is expanded while browsing and **collapsed while a search query is active** (an
@@ -255,9 +260,16 @@ dimmed + `backdrop-filter` blur, `z-index:90`, `.results-overlay[hidden]{display
 filter/search is active, and adds `body.results-open` to lock scroll; the map entry + Recent activity
 stay on screen as the dimmed backdrop. The popped `#results-card` (`.results-modal`) animates in with
 `@keyframes results-pop`, carries an **X close button** (`#results-x`, top-right) and a
-jurisdiction-named title (`resultsTitle` → "Wyoming bills (N)"). Closing it — the X, a click on the
+jurisdiction-named title (`resultsTitle` → "Wyoming bills (N)"). The card carries a sticky
+**in-card search box** (`#results-search`) directly under its title that filters within the popped-up
+catalog (e.g. just that one state's bills — the same `state.filters.search`, so the count in the title
+tracks it live); it and the hidden hero box `#f-search` mirror each other via `reflectSearch()` (both
+share one debounced input handler, each skipping the box being typed in so the cursor doesn't jump).
+Opening a state (`eeApplyFilter`) starts its catalog fresh (clears the search); when nothing matches,
+the results empty-state "Clear filters" clears **only** the search and keeps that state's catalog open
+(rather than closing back to the map). Closing it — the X, a click on the
 backdrop, or **Escape** (deferred to the bill modal when that is open above it) — calls `eeBackToMap`,
-which clears `state.filters.states` so `setMode` hides the overlay. Its Title + latest-action cell
+which clears `state.filters.states` (and the in-card search) so `setMode` hides the overlay. Its Title + latest-action cell
 text is `--text-primary` (full-contrast, not dimmed). The "No bills match" empty state (`#empty`) now shows
 **only when a filter/search is active and nothing matches** — `renderTable` hides it unless
 `anyFilterActive()`. Both `.gb-state` and `.gb-loading` set `display:flex`, which (author CSS)
@@ -297,15 +309,19 @@ entry (`#bfinder`, `renderBallotFinder`): a geographic **Illinois county choropl
 county paths + the state outline from the committed `assets/il-counties.json` (generated from US
 Census county geometry, equirectangular north-up with a cos(lat) correction; fetched fail-soft, so
 the whole finder stays hidden if it doesn't load), rendered on the same dark viewport as
-legislation's map with gold county borders, **Cook County (Chicago) highlighted**, a gold glow
-outline, and the selected county pulsing (`.bf-cty.is-sel`). A **place picker** beside it (Chicago /
-Elsewhere-in-Illinois chips + a Chicago **ward** `<select>`, plus a live "Coming up" list of the
-upcoming `ballot_date`s with race counts) and clicking a county both resolve a voter to their ballot
+legislation's map with gold county borders, **Cook County (Chicago) highlighted and gently pulsing** (`.bf-cty.is-cook`, marking the covered area),
+a gold glow outline, and the selected county pulsing (`.bf-cty.is-sel`). A **place picker** beside it (Chicago /
+Elsewhere-in-Illinois chips + a Chicago **ward** `<select>`) and clicking a county both resolve a voter to their ballot
 (`resolveBallot`): Chicago → the city groups (citywide, council, cps_board,
 police_district_council) **plus** the statewide/federal groups, with the 50-ward Alderperson list
 narrowed to the chosen ward via a new `state.filters.ward` (matches `r.district === "Ward "+N`, only
 on the `council` group); any other county → statewide + federal only, with a note that local races
-for that county aren't tracked yet. It drives the same `state.view` Set + `applyView()` the picker
+for that county aren't tracked yet. The **coverage scope** is stated in the hero as an `.el-cov` line ("**Live now:** local races for
+Chicago & Cook County, plus every Illinois statewide & federal race. Local races for the rest of
+Illinois are coming soon." — only "Live now:" bold); **Cook County pulses** on the map to mark the
+covered area, and the "Elsewhere in Illinois" chip sets a matching "coming soon" status. (The earlier
+inline `.bf-coverage` note, the map legend, and the corner "click a county" hint were removed to keep
+the finder clean.) It drives the same `state.view` Set + `applyView()` the picker
 uses (so the sections reveal and the page scrolls to `#groups`), and `#f-clear` also drops the ward
 and the finder's selection. The lookup is **map + picker only** (no address/ZIP geocoding) so it is
 fully offline and deterministic. Below the finder sits a **2026 federal-midterm callout**
@@ -314,6 +330,25 @@ races are present; clicking it (`revealFederal`) adds the `us_senate` + `us_hous
 view and scrolls to the U.S. Senate section (each race `<section>` now carries an `id="grp-<group>"`
 anchor). The federal races themselves (Illinois's U.S. Senate seat + all 17 U.S. House districts on
 the Nov 3, 2026 ballot) were already in the data; the callout just surfaces them.
+The default view was **decluttered** (it had too many overlapping entry points): the finder's
+duplicate "Coming up" list, the **"Build your view" section-picker UI** (`#picker` / `#picker-empty`
+— the `state.view` / `applyView` machinery and its `picker-all` button stay in the DOM, hidden, so
+`revealAllSections()` and the ballot cards still reveal the right sections) and the big "Two big
+ballots ahead" intro paragraph were all removed, leaving a clean stack: Hero → **Find your ballot**
+(map + place picker, vertically centered) → midterm callout → the two **"What's on your ballot?"**
+date cards → the revealed races → the sources cabinet (now collapsed). The **election calendar**
+(`#calendar`) is now **always shown** (ungated — visible whenever `#cal-grid` has cards) with the
+**current/next timeline milestone pulsing** (`.tl-item.next .tl-dot` → `@keyframes tl-pulse`). A
+**"Recent Illinois legislative activity"** section (`#il-recent`, `renderIlRecent`) lists every IL
+bill Govbot tracks — fetched fail-soft from the legislation `data.json` (filtered to `state==="il"`,
+newest recorded action first, capped at 25), with a **search box** (`#ilr-search`, matches
+id/title/sponsor/topic). It renders as **the same card format as the legislation "Recent activity"
+strip** (`.ilr-card` mirroring `.recent-card`): an "Illinois" state badge · bill id · relative date
+(`ilRelDate`, "yesterday"/"N days ago") · title · latest action · the bill's **topic chips**
+(`.ilrc-tags`, colored dots from `state.ilTagColor`, which maps each topic to the same fixed
+`--series-N` color the legislation site uses so a topic reads the same color on both pages). Each card
+deep-links to `legislation.html#bill=<state~session~id>` and the section stays hidden when no IL bills
+load.
 `hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
 "Hearings & Public Comment", tagline "Government isn't just something you watch — you can
 participate."), and a
@@ -388,7 +423,7 @@ and the per-page 3-button light/auto/dark theme pills have been **retired** — 
 design is the single default. On elections and hearings, the long list
 sections scroll inside capped-height boxes (`.group .races`, `.sf-list`, `.hgroup-rows`,
 `.participation-grid`) so the homepage isn't enormous; the elections "Where the data comes
-from" cabinet is `open` by default. The hearings
+from" cabinet is **collapsed by default** (progressive disclosure). The hearings
 page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov, leg.wa.gov,
 malegislature.gov, and akleg.gov directly (not OpenStates), plus **USA (Federal)** open comment periods from the
 Regulations.gov API (needs `REGULATIONS_GOV_API_KEY`; falls back to the committed
@@ -440,8 +475,8 @@ feeds stay one item per race. All feed dates (both pipelines) are published in *
 The page has an "On this page" table of contents; every RSS control reads "Follow this
 race (RSS)" in red; each major section carries a thick colored top border; the Legislation
 Dashboard's Bill column is plain text (the official-source link lives in the details card). Each
-bill row also has a **"Share"** button beside "Details" (and a "Share this bill" link in the
-details card's Sources) that copies the **exact-bill deep link** `legislation.html#bill=<state~session~id>`
+bill row also has a **"Share"** button beside "Details" (and a **"Share this bill"** pill in the bill
+modal, placed **above the Status section** — `.m-sharerow`, not in Sources) that copies the **exact-bill deep link** `legislation.html#bill=<state~session~id>`
 (`billShareUrl` → `billKey`); opening it lands straight on that bill's modal (`applyDeepLink`'s
 `#bill=` branch → `openDetails`). `#q=<billid>` deep links still work (id lowercased, punctuation
 stripped, e.g. `#q=sb813`): they pre-filter the search — which matches ids ignoring
