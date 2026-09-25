@@ -32,8 +32,32 @@
   .home-hero .cta-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   .home-hero .trust { font-size: 14px; color: var(--gb-text-2); }
   .gb-brand-mark { width: 34px; height: 34px; border-radius: 9px; display: block; }
-  .liberty { position: absolute; right: 12px; top: 0; bottom: 0; width: 50%; display: flex; align-items: flex-start; justify-content: center; pointer-events: none; z-index: 1; }
-  .liberty img { height: 100%; max-height: 820px; width: auto; filter: drop-shadow(0 0 34px rgba(240,201,105,0.32)); }
+  .liberty { position: absolute; right: 12px; top: 0; bottom: 0; width: 52%; display: flex; align-items: flex-start; justify-content: center; pointer-events: none; z-index: 1; }
+  /* A soft dark halo behind the statue so the gold line-art reads on any hero
+     background. In light mode it deepens — keeping Lady Liberty prominent instead
+     of washing out — and it fades out gradually so there's no visible disc edge. */
+  .liberty::before {
+    content: ""; position: absolute; inset: -6% -12% -2% -12%; z-index: 0;
+    background: radial-gradient(52% 58% at 52% 44%, rgba(8,11,18,0.46), rgba(8,11,18,0.22) 40%, rgba(8,11,18,0.07) 62%, transparent 80%);
+  }
+  /* Feather the image's own edges so no stray artifact reads as a hard rectangle. */
+  .liberty img {
+    position: relative; z-index: 1; height: 100%; max-height: 860px; width: auto;
+    filter: drop-shadow(0 0 34px rgba(240,201,105,0.34));
+    -webkit-mask-image: radial-gradient(78% 82% at 50% 46%, #000 68%, transparent 92%);
+            mask-image: radial-gradient(78% 82% at 50% 46%, #000 68%, transparent 92%);
+  }
+  /* Light mode: a deeper halo + more contrast/glow so she stands out. */
+  :root[data-theme="light"] .liberty::before {
+    background: radial-gradient(56% 62% at 52% 44%, rgba(10,14,22,0.80), rgba(10,14,22,0.44) 40%, rgba(10,14,22,0.14) 62%, transparent 82%);
+  }
+  :root[data-theme="light"] .liberty img { filter: contrast(1.12) saturate(1.18) brightness(1.07) drop-shadow(0 0 42px rgba(240,201,105,0.52)); }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme]) .liberty::before {
+      background: radial-gradient(56% 62% at 52% 44%, rgba(10,14,22,0.80), rgba(10,14,22,0.44) 40%, rgba(10,14,22,0.14) 62%, transparent 82%);
+    }
+    :root:not([data-theme]) .liberty img { filter: contrast(1.12) saturate(1.18) brightness(1.07) drop-shadow(0 0 42px rgba(240,201,105,0.52)); }
+  }
 
   section.band { max-width: 1200px; margin: 0 auto; padding: 20px 24px 60px; }
   .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 26px; }

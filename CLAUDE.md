@@ -146,7 +146,7 @@ The shared CSS also provides designed **state** components — `.gb-state` (empt
 (the empty state's "Clear filters" button reuses each page's `#f-clear`), and a **mega-menu**
 (`.gb-nav-item`/`.gb-mega`) on the Homepage nav (Explore / Follow / Data dropdowns, hover on
 desktop + click, Escape/outside-click to close; the mobile drawer stays a flat link list). `docs/src/dashboard/index.html` is now the
-**Homepage** landing page (a realistic golden wireframe Lady Liberty raster hero, `assets/liberty-hero.png`, luminance-keyed to a transparent background so it drops cleanly onto the hero in both themes; the robot mark `assets/govbot-mark.png` is the header logo; "What do you want to know?" cards,
+**Homepage** landing page (a realistic golden wireframe Lady Liberty raster hero, `assets/liberty-hero.png`, its background keyed to true transparency — the low-alpha (~10–22) background pixels were zeroed so no faint grey box composites onto the light hero; behind her a soft dark halo `.liberty::before` (deeper in light mode) plus a radial edge-mask on the image keep the gold statue **prominent in light mode** and drop cleanly onto the dark hero; the robot mark `assets/govbot-mark.png` is the header logo; "What do you want to know?" cards,
 live "What's happening now" fetched fail-soft from `data.json`/`hearings.json`/`elections.json`).
 The homepage's **"Recent legislative activity"** card shows **one bill per state** (up to 4) as rich
 `.activity-row.rich` rows — each row's head line carries the **state + bill number** (`.tag`) and
