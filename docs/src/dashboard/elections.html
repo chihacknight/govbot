@@ -498,8 +498,12 @@
   .bf-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
   .bf-maphead { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; }
   .bf-maphead .bf-hint { color: var(--text-secondary); font-weight: 500; }
-  .bf-viewport { position: relative; flex-grow: 1; min-height: 300px; background: #0A0E16; border: 1px solid #1C2434; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-  .bf-viewport svg { width: auto; height: 100%; max-height: 380px; display: block; }
+  /* Explicit (definite) height — NOT just min-height. The map SVG is sized with
+     `height: 100%`, and a percentage height resolves to 0 in WebKit/iOS Safari
+     when its flex-item parent has only a min-height (indefinite), which rendered
+     the whole map as a black square on mobile. A definite height fixes it. */
+  .bf-viewport { position: relative; height: 380px; background: #0A0E16; border: 1px solid #1C2434; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .bf-viewport svg { width: auto; height: 100%; max-width: 100%; display: block; }
   .bf-glow { filter: drop-shadow(0 0 1.6px rgba(240,201,105,.5)); }
   .bf-cty { cursor: pointer; transition: fill .12s ease, filter .12s ease; }
   .bf-cty:hover { fill: #2B3346; }
@@ -554,7 +558,7 @@
   @media (max-width: 640px) { .midterm-banner { flex-wrap: wrap; } .mb-cta { width: 100%; } }
   @media (max-width: 760px) {
     .bf-grid { grid-template-columns: 1fr; }
-    .bf-viewport { min-height: 300px; }
+    .bf-viewport { height: 340px; }
   }
   /* Recent Illinois legislative activity (all IL bills we track) + search */
   .il-recent { margin: 26px 0; }
@@ -588,97 +592,6 @@
   .ilrc-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
   @media (prefers-reduced-motion: reduce) { .ilr-card:hover { transform: none; } }
   .ilr-empty { color: var(--text-secondary); font-size: 14px; padding: 12px 6px; }
-
-  /* ===== In-page bill card (Recent activity) + book-open flourish ===== */
-  .ilb-overlay {
-    position: fixed; inset: 0; z-index: 100; display: flex; justify-content: center;
-    align-items: flex-start; padding: 6vh 16px; overflow-y: auto;
-    background: rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.18s ease;
-  }
-  .ilb-overlay.open { opacity: 1; }
-  .ilb-overlay[hidden] { display: none; }
-  body.ilb-modal-open { overflow: hidden; }
-  .ilb-card {
-    position: relative; width: 100%; max-width: 640px; margin: auto;
-    background: var(--surface-1); color: var(--text-primary);
-    border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 26px 64px rgba(0,0,0,0.44);
-    padding: 22px 24px 24px;
-    transform: translateY(12px) scale(0.98); opacity: 0; transition: transform 0.2s ease, opacity 0.2s ease;
-  }
-  .ilb-overlay.open .ilb-card { transform: translateY(0) scale(1); opacity: 1; }
-  .ilb-card.is-booking { opacity: 0 !important; }
-  .ilb-card.book-open-in {
-    animation: ilb-card-open 0.52s cubic-bezier(0.2,0.8,0.25,1) both; transform-origin: left center;
-  }
-  @keyframes ilb-card-open {
-    0%   { transform: perspective(1500px) rotateY(-74deg); opacity: 0; }
-    100% { transform: perspective(1500px) rotateY(0deg); opacity: 1; }
-  }
-  .ilb-x {
-    position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 999px;
-    display: flex; align-items: center; justify-content: center; cursor: pointer;
-    border: 1px solid var(--border); background: var(--surface-2, var(--elevated, #161D29)); color: var(--text-primary);
-    font-size: 18px; line-height: 1;
-  }
-  .ilb-x:hover { border-color: var(--gb-gold); }
-  .ilb-chips { display: flex; flex-wrap: wrap; gap: 6px; padding-right: 40px; margin-bottom: 8px; }
-  .ilb-chip { font-size: 11px; font-weight: 650; letter-spacing: 0.02em; text-transform: uppercase;
-    padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); }
-  .ilb-chip.is-state { color: #fff; background: var(--series-1); border-color: var(--series-1); }
-  .ilb-title { font-family: var(--gb-font-display, "Newsreader", serif); font-size: 21px; line-height: 1.25;
-    margin: 0 0 12px; color: var(--text-primary); }
-  .ilb-sec { margin-top: 14px; }
-  .ilb-lbl { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gb-gold); font-weight: 600; margin-bottom: 5px; }
-  .ilb-val { font-size: 14px; line-height: 1.5; color: var(--text-primary); }
-  .ilb-val .ilb-when { color: var(--text-secondary); }
-  .ilb-tags { display: flex; flex-wrap: wrap; gap: 3px 0; }
-  .ilb-tag { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border);
-    border-radius: 999px; padding: 1px 9px 1px 7px; margin: 2px 4px 2px 0; font-size: 12px;
-    color: var(--text-secondary); white-space: nowrap; }
-  .ilb-tag .ilb-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-  .ilb-links { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 18px; }
-  .ilb-links a { font-size: 13.5px; font-weight: 600; color: var(--series-1); text-decoration: none; }
-  .ilb-links a:hover { text-decoration: underline; }
-  .ilb-open {
-    display: inline-flex; align-items: center; gap: 6px; margin-top: 16px;
-    font-size: 13.5px; font-weight: 600; text-decoration: none;
-    color: #0D111A; background: #E7B34B; border-radius: 10px; padding: 9px 14px;
-  }
-  :root[data-theme="light"] .ilb-open { background: #A9791F; color: #fff; }
-  .ilb-open:hover { filter: brightness(1.05); }
-
-  /* Book-open flourish (shared look with the legislation dashboard). */
-  .ilb-book-fx {
-    position: fixed; inset: 0; display: grid; place-items: center; z-index: 105; pointer-events: none;
-    background: rgba(6, 9, 14, 0.74); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
-    animation: ilb-fx-fade 0.82s ease both;
-  }
-  .ilb-book-fx .book {
-    --bw: 92px; --bh: 126px; width: calc(var(--bw) * 2); height: var(--bh);
-    position: relative; perspective: 1100px; animation: ilb-book-scale 0.42s cubic-bezier(0.2,0.8,0.25,1) both;
-    filter: drop-shadow(0 18px 34px rgba(0,0,0,0.5));
-  }
-  .ilb-book-fx .cover, .ilb-book-fx .page {
-    position: absolute; top: 0; width: var(--bw); height: var(--bh);
-    border-radius: 3px 7px 7px 3px; backface-visibility: hidden;
-  }
-  .ilb-book-fx .cover.left { left: 0; transform-origin: right center; border-radius: 7px 3px 3px 7px;
-    background: linear-gradient(160deg, #F0C969, #C8912F); box-shadow: inset -6px 0 10px rgba(0,0,0,0.18); }
-  .ilb-book-fx .cover.right { left: var(--bw); background: linear-gradient(200deg, #E7B34B, #A9791F);
-    box-shadow: inset 4px 0 10px rgba(0,0,0,0.12); }
-  .ilb-book-fx .page { left: var(--bw); transform-origin: left center; background: #F7F0DE;
-    border: 1px solid rgba(0,0,0,0.10); box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
-    animation: ilb-page-flip 0.86s ease-in-out both; }
-  .ilb-book-fx .page.p1 { animation-delay: 0.04s; }
-  .ilb-book-fx .page.p2 { animation-delay: 0.19s; }
-  .ilb-book-fx .page.p3 { animation-delay: 0.34s; }
-  @keyframes ilb-page-flip { 0% { transform: rotateY(0deg); } 55%, 100% { transform: rotateY(-168deg); } }
-  @keyframes ilb-book-scale { 0% { transform: scale(0.88); } 100% { transform: scale(1); } }
-  @keyframes ilb-fx-fade { 0% { opacity: 0; } 14% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) {
-    .ilb-overlay, .ilb-card { transition: none !important; }
-    .ilb-card.book-open-in { animation: none; }
-  }
 </style>
 <script>
   // Apply a saved theme choice before first paint. Shared localStorage key, so
@@ -1308,22 +1221,16 @@
     const tagColor = state.ilTagColor || {};
     bills.slice(0, IL_RECENT_MAX).forEach((b) => {
       // Same card shape as the legislation "Recent activity" strip: state badge ·
-      // bill id · when · title · latest action · topic chips. A plain left-click
-      // opens the bill IN PLACE (lightweight card + book flourish) so the reader
-      // keeps their spot; the href stays a real deep link so middle-/⌘-click still
-      // opens the full bill on the legislation dashboard in a new tab.
+      // bill id · when · title · latest action · topic chips. The full bill lives
+      // on the legislation dashboard, so open it in a NEW TAB (↗) — clicking must
+      // not replace the elections page the reader is on.
       const a = document.createElement("a"); a.className = "ilr-card";
       a.href = "legislation.html#bill=" + ilBillKey(b);
       a.target = "_blank"; a.rel = "noopener";
-      a.addEventListener("click", (e) => {
-        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return;  // let new-tab clicks through
-        e.preventDefault();
-        openIlBill(b);
-      });
       const top = document.createElement("div"); top.className = "ilrc-top";
       const badge = document.createElement("span"); badge.className = "ilrc-badge"; badge.textContent = "Illinois";
       const id = document.createElement("span"); id.className = "ilrc-id"; id.textContent = b.id || "";
-      const when = document.createElement("span"); when.className = "ilrc-when"; when.textContent = ilRelDate(b.latest_action);
+      const when = document.createElement("span"); when.className = "ilrc-when"; when.textContent = ilRelDate(b.latest_action) + " ↗";
       top.append(badge, id, when);
       const ttl = document.createElement("div"); ttl.className = "ilrc-title"; ttl.textContent = b.title || b.id || "(untitled)";
       a.append(top, ttl);
@@ -1342,119 +1249,6 @@
       }
       box.append(a);
     });
-  }
-
-  /* ---------- In-page bill card (Recent activity) ---------- */
-  // A lightweight detail card built from the data.json bill fields (title,
-  // chamber, session, latest action, sponsors, topics, official source) so a
-  // reader can peek at a bill without leaving the elections page; a link opens
-  // the full record on the legislation dashboard.
-  const IL_CHAMBER = { lower: "House", upper: "Senate", legislature: "Legislature" };
-  function openIlBill(b) {
-    const overlay = $("il-bill-modal"); if (!overlay) return;
-    overlay.textContent = "";
-    const card = document.createElement("div"); card.className = "ilb-card";
-
-    const x = document.createElement("button"); x.className = "ilb-x"; x.type = "button";
-    x.setAttribute("aria-label", "Close"); x.textContent = "✕";
-    x.addEventListener("click", () => closeIlBill());
-    card.append(x);
-
-    const chips = document.createElement("div"); chips.className = "ilb-chips";
-    const mkChip = (txt, cls) => { const c = document.createElement("span"); c.className = "ilb-chip" + (cls ? " " + cls : ""); c.textContent = txt; return c; };
-    chips.append(mkChip("Illinois", "is-state"));
-    if (b.id) chips.append(mkChip(b.id));
-    const ch = IL_CHAMBER[(b.chamber || "").toLowerCase()]; if (ch) chips.append(mkChip(ch));
-    if (b.session) chips.append(mkChip(b.session));
-    card.append(chips);
-
-    const ttl = document.createElement("h2"); ttl.className = "ilb-title"; ttl.id = "ilb-title";
-    ttl.textContent = b.title || b.id || "(untitled)";
-    card.append(ttl);
-
-    if (b.latest_action_desc || b.latest_action) {
-      const sec = document.createElement("div"); sec.className = "ilb-sec";
-      sec.append(mkLbl("Latest action"));
-      const v = document.createElement("div"); v.className = "ilb-val";
-      v.textContent = b.latest_action_desc || "";
-      if (b.latest_action) { const w = document.createElement("span"); w.className = "ilb-when"; w.textContent = (b.latest_action_desc ? " · " : "") + prettyDate(b.latest_action); v.append(w); }
-      sec.append(v); card.append(sec);
-    }
-
-    const sponsors = (b.sponsors || []).map((s) => (typeof s === "string" ? s : (s && s.name) || "")).filter(Boolean);
-    if (sponsors.length) {
-      const sec = document.createElement("div"); sec.className = "ilb-sec";
-      sec.append(mkLbl(sponsors.length > 1 ? "Sponsors" : "Sponsor"));
-      const v = document.createElement("div"); v.className = "ilb-val"; v.textContent = sponsors.join(", ");
-      sec.append(v); card.append(sec);
-    }
-
-    const tags = b.tags || [];
-    if (tags.length) {
-      const sec = document.createElement("div"); sec.className = "ilb-sec";
-      sec.append(mkLbl("Topics"));
-      const row = document.createElement("div"); row.className = "ilb-tags";
-      const tagColor = state.ilTagColor || {};
-      tags.forEach((t) => {
-        const chip = document.createElement("span"); chip.className = "ilb-tag";
-        const dot = document.createElement("span"); dot.className = "ilb-dot";
-        dot.style.background = "var(" + (tagColor[t] || IL_SERIES[0]) + ")";
-        chip.append(dot, document.createTextNode(t));
-        row.append(chip);
-      });
-      sec.append(row); card.append(sec);
-    }
-
-    if (b.url) {
-      const links = document.createElement("div"); links.className = "ilb-links";
-      const a = document.createElement("a"); a.href = b.url; a.target = "_blank"; a.rel = "noopener";
-      a.textContent = "Official source ↗"; links.append(a);
-      card.append(links);
-    }
-
-    const full = document.createElement("a"); full.className = "ilb-open";
-    full.href = "legislation.html#bill=" + ilBillKey(b); full.target = "_blank"; full.rel = "noopener";
-    full.append(document.createTextNode("Open full bill in Explore Legislation ↗"));
-    card.append(full);
-
-    overlay.append(card);
-    overlay.hidden = false;
-    document.body.classList.add("ilb-modal-open");
-    requestAnimationFrame(() => overlay.classList.add("open"));
-    overlay.onclick = (e) => { if (e.target === overlay) closeIlBill(); };
-    document.addEventListener("keydown", ilbEsc);
-    playIlBook(card);
-  }
-  function mkLbl(txt) { const l = document.createElement("div"); l.className = "ilb-lbl"; l.textContent = txt; return l; }
-  function ilbEsc(e) { if (e.key === "Escape") closeIlBill(); }
-  function closeIlBill() {
-    const overlay = $("il-bill-modal"); if (!overlay) return;
-    overlay.classList.remove("open");
-    document.removeEventListener("keydown", ilbEsc);
-    document.body.classList.remove("ilb-modal-open");
-    setTimeout(() => { overlay.hidden = true; overlay.textContent = ""; }, 200);
-  }
-  // Book-open flourish: a little book whose pages flip over a dark veil, then the
-  // card swings open like a cover. Skipped under prefers-reduced-motion.
-  function playIlBook(card) {
-    let reduce = false;
-    try { reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { /* motion ok */ }
-    if (reduce) return;
-    card.classList.add("is-booking");
-    const fx = document.createElement("div"); fx.className = "ilb-book-fx";
-    const book = document.createElement("div"); book.className = "book";
-    ["cover left", "cover right", "page p1", "page p2", "page p3"].forEach((c) => {
-      const el = document.createElement("div"); el.className = c; book.append(el);
-    });
-    fx.append(book); document.body.appendChild(fx);
-    setTimeout(() => {
-      fx.remove();
-      const overlay = $("il-bill-modal");
-      if (!overlay || overlay.hidden || !overlay.contains(card)) return;  // closed/superseded
-      card.classList.remove("is-booking");
-      card.classList.add("book-open-in");
-      setTimeout(() => card.classList.remove("book-open-in"), 560);
-    }, 780);
   }
 
   /* ---------- Find your ballot: Illinois county map + place picker ---------- */
@@ -2507,11 +2301,6 @@
   </div>
   <div class="gb-footer-bottom">© 2026 Govbot · A nonpartisan, open civic-data project.</div>
 </footer>
-
-<!-- Lightweight in-page bill card: opening a Recent-activity bill shows its
-     details here (with the book-open flourish) instead of leaving for the
-     legislation dashboard. -->
-<div class="ilb-overlay" id="il-bill-modal" hidden role="dialog" aria-modal="true" aria-labelledby="ilb-title"></div>
 
 <button class="gb-to-top" data-gb-to-top type="button" aria-label="Back to top">
   <span aria-hidden="true">↑</span> Back to Top

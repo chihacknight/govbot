@@ -319,7 +319,11 @@ county paths + the state outline from the committed `assets/il-counties.json` (g
 Census county geometry, equirectangular north-up with a cos(lat) correction; fetched fail-soft, so
 the whole finder stays hidden if it doesn't load), rendered on the same dark viewport as
 legislation's map with gold county borders, **Cook County (Chicago) highlighted and gently pulsing** (`.bf-cty.is-cook`, marking the covered area),
-a gold glow outline, and the selected county pulsing (`.bf-cty.is-sel`). A **place picker** beside it (Chicago /
+a gold glow outline, and the selected county pulsing (`.bf-cty.is-sel`). The map SVG is sized with
+`height: 100%`, so `.bf-viewport` must carry a **definite `height`** (not just `min-height`) — a
+percentage height resolves to 0 in WebKit/iOS Safari when the flex-item parent's height is
+indefinite, which rendered the whole map as a **black square on mobile**; the viewport is 380px
+(340px under 760px). (Legislation's US map avoids this via `aspect-ratio` on `.ee-mapwrap`.) A **place picker** beside it (Chicago /
 Elsewhere-in-Illinois chips + a Chicago **ward** `<select>`) and clicking a county both resolve a voter to their ballot
 (`resolveBallot`): Chicago → the city groups (citywide, council, cps_board,
 police_district_council) **plus** the statewide/federal groups, with the 50-ward Alderperson list
@@ -355,17 +359,10 @@ id/title/sponsor/topic). It renders as **the same card format as the legislation
 strip** (`.ilr-card` mirroring `.recent-card`): an "Illinois" state badge · bill id · relative date
 (`ilRelDate`, "yesterday"/"N days ago") · title · latest action · the bill's **topic chips**
 (`.ilrc-tags`, colored dots from `state.ilTagColor`, which maps each topic to the same fixed
-`--series-N` color the legislation site uses so a topic reads the same color on both pages). **Clicking
-a card opens a lightweight bill detail card IN PLACE** (`openIlBill` → `#il-bill-modal`) rather than
-leaving the elections page: built from the `data.json` fields (Illinois/id/chamber/session chips,
-title, latest action + date, sponsors, topic chips, an "Official source ↗" link, and a gold "Open
-full bill in Explore Legislation ↗" button that deep-links to the full record). It opens with the
-**same book-open flourish** as the legislation bill modal (`playIlBook` → `.ilb-book-fx` + a
-`.ilb-card.book-open-in` `rotateY` reveal, skipped under `prefers-reduced-motion`); closes on X /
-backdrop / Escape. The card's `<a>` keeps a real `href="legislation.html#bill=…"` with
-`target="_blank"`, so a plain left-click opens the in-page card while **⌘/Ctrl/middle-click still opens
-the full bill on the legislation dashboard in a new tab**. The section stays hidden when no IL bills
-load.
+`--series-N` color the legislation site uses so a topic reads the same color on both pages). Each card
+deep-links to `legislation.html#bill=<state~session~id>` **in a new tab** (`target="_blank"`, a `↗` on
+the date) — the full bill lives on the legislation dashboard, so opening it must not replace the
+elections page the reader is on. The section stays hidden when no IL bills load.
 `hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
 "Hearings & Public Comment", tagline "Government isn't just something you watch — you can
 participate."), and a
