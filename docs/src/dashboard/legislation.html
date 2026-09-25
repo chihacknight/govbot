@@ -424,6 +424,8 @@
   .m-links a.m-share { cursor: pointer; font-weight: 600; padding: 2px 10px;
     border: 1px solid var(--border); border-radius: 999px; }
   .m-links a.m-share:hover { background: var(--hover-wash); border-color: var(--series-1); }
+  /* Standalone Share row sits above the Status section. */
+  .m-sharerow { margin: 4px 0 16px; }
   .m-muted { color: var(--text-muted); font-size: 13px; }
   .m-tags { display: inline-flex; flex-wrap: wrap; gap: 5px; }
   .m-loading { padding: 30px 0; text-align: center; color: var(--text-muted); }
@@ -2333,6 +2335,16 @@
     }
     addSection(body, "What is this bill about", mkel("p", "m-plain", plainSummary(b, meta)));
 
+    // Share this bill — a real link (copy-link / middle-click work) whose left-click
+    // copies the deep link. Placed prominently above the Status timeline.
+    { const shareA = mkel("a", "m-share", "Share this bill 🔗");
+      shareA.href = billShareUrl(b);
+      shareA.addEventListener("click", (e) => {
+        e.preventDefault();
+        shareBill(b, (msg) => { const o = "Share this bill 🔗"; shareA.textContent = msg; setTimeout(() => { shareA.textContent = o; }, 1400); });
+      });
+      const row = mkel("div", "m-links m-sharerow"); row.append(shareA); body.append(row); }
+
     { const wrap = mkel("div", "m-stage");
       wrap.append(stageTimeline(b, meta),
         mkel("p", "m-stage-cap", "Progress is inferred from the recorded actions below."));
@@ -2423,18 +2435,7 @@
       if (human) officialUrl = human;
     }
     const links = mkel("div", "m-links");
-    // Share this bill: a real link (so copy-link / middle-click work) whose
-    // left-click copies the deep link to the clipboard.
-    const shareA = mkel("a", "m-share", "Share this bill 🔗");
-    shareA.href = billShareUrl(b);
-    shareA.addEventListener("click", (e) => {
-      e.preventDefault();
-      shareBill(b, (msg) => {
-        const o = "Share this bill 🔗"; shareA.textContent = msg;
-        setTimeout(() => { shareA.textContent = o; }, 1400);
-      });
-    });
-    links.append(shareA);
+    // ("Share this bill" now sits above the Status section, not here.)
     if (officialUrl) links.append(mlink("Official source ↗", officialUrl));
     links.append(mlink("govbot record ↗", govbotRecordUrl(b)));
     links.append(mlink("Open States ↗",

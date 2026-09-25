@@ -458,8 +458,8 @@ feeds stay one item per race. All feed dates (both pipelines) are published in *
 The page has an "On this page" table of contents; every RSS control reads "Follow this
 race (RSS)" in red; each major section carries a thick colored top border; the Legislation
 Dashboard's Bill column is plain text (the official-source link lives in the details card). Each
-bill row also has a **"Share"** button beside "Details" (and a "Share this bill" link in the
-details card's Sources) that copies the **exact-bill deep link** `legislation.html#bill=<state~session~id>`
+bill row also has a **"Share"** button beside "Details" (and a **"Share this bill"** pill in the bill
+modal, placed **above the Status section** — `.m-sharerow`, not in Sources) that copies the **exact-bill deep link** `legislation.html#bill=<state~session~id>`
 (`billShareUrl` → `billKey`); opening it lands straight on that bill's modal (`applyDeepLink`'s
 `#bill=` branch → `openDetails`). `#q=<billid>` deep links still work (id lowercased, punctuation
 stripped, e.g. `#q=sb813`): they pre-filter the search — which matches ids ignoring
