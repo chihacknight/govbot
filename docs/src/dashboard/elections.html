@@ -483,7 +483,11 @@
   /* ===== Find your ballot — Illinois county map + place picker ===== */
   .bfinder { margin: 6px 0 24px; }
   .bf-title { margin: 0 0 4px; font-size: 27px; }
-  .bf-sub { margin: 0 0 16px; color: var(--text-secondary); font-size: 14px; max-width: 70ch; }
+  .bf-sub { margin: 0 0 12px; color: var(--text-secondary); font-size: 14px; max-width: 70ch; }
+  /* Coverage note: what's tracked today vs. coming soon. */
+  .bf-coverage { display: flex; align-items: flex-start; gap: 9px; margin: 0 0 16px; padding: 10px 14px; font-size: 13px; line-height: 1.5; color: var(--text-secondary); background: var(--surface-1); border: 1px solid var(--border); border-left: 3px solid var(--gb-gold); border-radius: 10px; max-width: 82ch; }
+  .bf-coverage b { color: var(--text-primary); }
+  .bf-cov-dot { width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--gb-green); box-shadow: 0 0 8px var(--gb-green); flex: none; }
   .bf-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 20px; align-items: center; }
   .bf-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
   .bf-maphead { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; }
@@ -671,14 +675,15 @@
   <section class="bfinder" id="bfinder" aria-label="Find your ballot" hidden>
     <h2 class="bf-title">Find your ballot</h2>
     <p class="bf-sub">Pick where you live — click a county, or choose Chicago and your ward. We’ll show every race you can vote in.</p>
+    <p class="bf-coverage"><span class="bf-cov-dot" aria-hidden="true"></span><span><b>Live now:</b> local races for <b>Chicago &amp; Cook County</b>, plus every Illinois <b>statewide &amp; federal</b> race. Local races for the rest of Illinois are <b>coming soon</b>.</span></p>
     <div class="bf-grid">
       <div class="bf-card">
         <div class="bf-maphead"><span>Illinois</span><span class="bf-hint">click a county</span></div>
         <div class="bf-viewport" id="bf-viewport" role="group" aria-label="Map of Illinois counties"></div>
         <div class="bf-legend">
+          <span><span class="bf-sw" style="background:#9C7B2E"></span>Cook County — local races live</span>
+          <span><span class="bf-sw" style="background:#141A26;border:1.5px solid #C79A3C"></span>Rest of Illinois — statewide &amp; federal (local soon)</span>
           <span><span class="bf-sw" style="background:#E7B34B"></span>Selected</span>
-          <span><span class="bf-sw" style="background:#9C7B2E"></span>Chicago (Cook)</span>
-          <span><span class="bf-sw" style="background:#141A26;border:1.5px solid #C79A3C"></span>102 counties</span>
         </div>
       </div>
       <div class="bf-card bf-pickcard">
@@ -1181,6 +1186,8 @@
     if (place === "chicago") {
       markBfCounty("Cook"); state._bfCounty = "Cook";
       $("bf-status").innerHTML = "<b>Chicago.</b> Pick your ward to narrow the City Council race — everything else on your ballot shows too.";
+    } else if (place === "illinois") {
+      $("bf-status").innerHTML = "<b>Outside Chicago:</b> local county races are <b>coming soon</b> — for now your ballot shows every Illinois statewide &amp; federal race.";
     }
     syncBfChips();
     $("bf-ward").classList.toggle("is-shown", place === "chicago");
