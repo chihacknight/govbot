@@ -221,8 +221,11 @@ works while zoomed in**; switching to **list view** hides the map column entirel
 `#ee-mapcol[hidden]`; a `.ee-mapcol[hidden]{display:none}` rule is required — the author `display:flex`
 would otherwise beat `[hidden]` and leave the map visible in list view). The
 **list view** is a
-flag-forward grid of jurisdiction cards (committed `flags/<code>.png`, `us.png` for federal), sorted
-by count, click → same filter. A single **"N bills Govbot is tracking"** scorecard sits in the head.
+flag-forward grid of jurisdiction cards (committed `flags/<code>.png`, `us.png` for federal), click →
+same filter. A **Sort dropdown** (`#ee-sort`, `eeSort`, top-right of the list panel) reorders the cards:
+**A–Z (Federal first)** — the default, USA pinned first then everything alphabetical — plus Z–A, Most
+bills, Fewest bills (`eeBuildList` re-runs on change). A single **"N bills Govbot is tracking"**
+scorecard sits in the head.
 The whole entry uses the shared `govbot.css` tokens so it adapts light/dark (the map viewport stays a
 fixed dark surface in both themes so the heat encoding reads); fail-soft — if the paths file doesn't
 load the entry stays hidden and the rest of the page is unaffected. Below it, the classic

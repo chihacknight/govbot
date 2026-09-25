@@ -611,6 +611,18 @@
   .ee-d-actions { margin-top: 14px; padding-top: 8px; }
   .ee-d-open { width: 100%; height: 44px; border-radius: 12px; border: none; background: #E7B34B; color: #0D111A; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
   :root[data-theme="light"] .ee-d-open { background: #A9791F; color: #fff; }
+  /* List-view toolbar: sort dropdown. */
+  .ee-listbar { display: flex; align-items: center; justify-content: flex-end; gap: 9px; margin: 0 0 14px; }
+  .ee-sort-lbl { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gb-gold); font-weight: 600; }
+  .ee-sort {
+    font: inherit; font-size: 13.5px; color: var(--gb-text); cursor: pointer;
+    background: var(--gb-surface); border: 1px solid var(--gb-border); border-radius: 10px;
+    padding: 8px 30px 8px 12px; -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23D6A84F' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 9px center; background-size: 15px;
+  }
+  .ee-sort:hover { border-color: var(--gb-border-strong); }
+  .ee-sort:focus-visible { outline: 2px solid var(--gb-gold-hi); outline-offset: 1px; border-color: var(--gb-gold-hi); }
   .ee-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
   .ee-card { display: flex; align-items: center; gap: 14px; background: var(--gb-surface); border: 1px solid var(--gb-border); border-radius: 14px; padding: 14px 16px; cursor: pointer; font: inherit; text-align: left; color: var(--gb-text); }
   .ee-card:hover { border-color: var(--gb-border-strong); transform: translateY(-2px); transition: transform .12s ease; }
@@ -802,6 +814,15 @@
         </aside>
       </div>
       <div class="ee-listpanel" id="ee-listpanel" hidden>
+        <div class="ee-listbar">
+          <label class="ee-sort-lbl" for="ee-sort">Sort</label>
+          <select id="ee-sort" class="ee-sort" aria-label="Sort jurisdictions">
+            <option value="az">A–Z (Federal first)</option>
+            <option value="za">Z–A</option>
+            <option value="count-desc">Most bills</option>
+            <option value="count-asc">Fewest bills</option>
+          </select>
+        </div>
         <div class="ee-cards" id="ee-cards"></div>
       </div>
     </div>
@@ -2028,6 +2049,7 @@
   const EE_DOT = { "-1": "#8A93A6", "0": "#8A93A6", "1": "#D6A84F", "2": "#E0A83C", "3": "#F0C969" };
   const EE_TERR = [["gu", "Guam"], ["pr", "Puerto Rico"], ["vi", "U.S. Virgin Islands"], ["mp", "N. Mariana Islands"]];
   let eeGeo = null, eeSel = null, eeScale = 1, eeX = 0, eeY = 0, eeLevel = {}, eeCounts = {}, eeTracked = null, eeWired = false, eeDidDrag = false, eeLoaded = false;
+  let eeSort = "az";   // list-view sort: az (default, Federal first) | za | count-desc | count-asc
 
   function eeNameFor(code) {
     if (code === "usa") return "United States (Federal)";
@@ -2129,7 +2151,12 @@
     eeGeo.states.forEach((g) => { const c = g.id.toLowerCase(); if (eeTracked.has(c)) items.push({ code: c, name: g.name, kind: "State" }); });
     EE_TERR.forEach((t) => items.push({ code: t[0], name: t[1], kind: "Territory" }));
     items.push({ code: "usa", name: "United States (Federal)", kind: "Federal" });
-    items.sort((a, b) => (eeCounts[b.code] || 0) - (eeCounts[a.code] || 0) || a.name.localeCompare(b.name));
+    const cnt = (x) => eeCounts[x.code] || 0;
+    if (eeSort === "count-desc")      items.sort((a, b) => cnt(b) - cnt(a) || a.name.localeCompare(b.name));
+    else if (eeSort === "count-asc")  items.sort((a, b) => cnt(a) - cnt(b) || a.name.localeCompare(b.name));
+    else if (eeSort === "za")         items.sort((a, b) => b.name.localeCompare(a.name));
+    else /* az: Federal (USA) pinned first, then everything A–Z by name */
+      items.sort((a, b) => (a.code === "usa" ? -1 : b.code === "usa" ? 1 : a.name.localeCompare(b.name)));
     items.forEach((it) => {
       const card = mkel("button", "ee-card"); card.type = "button";
       const flag = mkel("img", "ee-card-flag"); flag.src = eeFlagSrc(it.code); flag.alt = ""; flag.loading = "lazy";
@@ -2234,6 +2261,8 @@
     const mapBtn = $("ee-map-btn"), listBtn = $("ee-list-btn");
     if (mapBtn) mapBtn.addEventListener("click", () => eeSetView(true));
     if (listBtn) listBtn.addEventListener("click", () => eeSetView(false));
+    const sortSel = $("ee-sort");
+    if (sortSel) { sortSel.value = eeSort; sortSel.addEventListener("change", (e) => { eeSort = e.target.value; eeBuildList(); }); }
     // Close the results popup: X button, click on the dimmed backdrop, or Escape
     // (but let an open bill modal take Escape first, since it sits above the popup).
     const rx = $("results-x");
