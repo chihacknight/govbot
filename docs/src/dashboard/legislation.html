@@ -335,6 +335,38 @@
     transform: translateY(12px) scale(0.98); opacity: 0; transition: transform 0.2s ease, opacity 0.2s ease;
   }
   .modal-overlay.open .modal-card { transform: translateY(0) scale(1); opacity: 1; }
+
+  /* Results popup: the "Open all N bills" table as a card that pops up over the
+     current screen (which stays visible, dimmed, behind it). */
+  .results-overlay {
+    position: fixed; inset: 0; z-index: 90; display: flex; justify-content: center;
+    align-items: flex-start; padding: 5vh 16px; overflow-y: auto;
+    background: rgba(4,7,14,0.62); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  }
+  .results-overlay[hidden] { display: none; }  /* author display:flex would otherwise beat [hidden] */
+  body.results-open { overflow: hidden; }
+  .results-modal {
+    position: relative; width: 100%; max-width: 1000px; margin: auto;
+    max-height: calc(100vh - 10vh); overflow: auto;
+    box-shadow: 0 26px 70px rgba(0,0,0,0.5);
+    animation: results-pop 0.30s cubic-bezier(0.2, 0.8, 0.25, 1);
+  }
+  .results-modal .results-head { padding-right: 44px; }  /* clear the X */
+  @keyframes results-pop {
+    0%   { opacity: 0; transform: scale(0.92) translateY(14px); }
+    60%  { transform: scale(1.01) translateY(0); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) { .results-modal { animation: none; } }
+  .results-x {
+    position: absolute; top: 14px; right: 14px; z-index: 2;
+    width: 34px; height: 34px; border-radius: 999px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--gb-border); background: var(--gb-elevated); color: var(--gb-text);
+    transition: background 0.14s ease, border-color 0.14s ease;
+  }
+  .results-x:hover { background: var(--gb-hover); border-color: var(--gb-border-strong); }
+  .results-x:focus-visible { outline: 2px solid var(--gb-gold-hi); outline-offset: 2px; }
   .modal-head {
     display: flex; align-items: flex-start; gap: 12px; justify-content: space-between;
     padding: 18px 20px 12px; border-bottom: 1px solid var(--gridline);
@@ -506,6 +538,7 @@
   .ee-total { font-size: 14px; color: var(--gb-text); font-weight: 500; }
   .ee-total-num { font-family: var(--gb-font-display); font-size: 26px; font-weight: 600; color: var(--gb-gold); margin-right: 3px; font-variant-numeric: tabular-nums; }
   .ee-mapcol { display: flex; gap: 22px; align-items: stretch; }
+  .ee-mapcol[hidden] { display: none; }  /* author display:flex would otherwise beat [hidden]; without this, List view still showed the map */
   .ee-mappanel { flex: 1; min-width: 0; background: var(--gb-surface); border: 1px solid var(--gb-border); border-radius: 16px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
   .ee-maphead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
   .ee-maphead h2 { margin: 0; font-family: var(--gb-font-display); font-size: 18px; font-weight: 600; color: var(--gb-text); }
@@ -764,8 +797,10 @@
   </section>
 
   <!-- The single search + filter control: narrows the charts and the bills
-       table below (sits between Recent activity and the analytics). -->
-  <section class="explore-search" aria-label="Search and filter bills">
+       table below (sits between Recent activity and the analytics).
+       Hidden for now (per request) — the map "Open all bills" flow drives the
+       results table; the elements stay in the DOM so the JS keeps working. -->
+  <section class="explore-search" aria-label="Search and filter bills" hidden>
     <div class="search-wrap big">
       <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
         <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle>
@@ -804,30 +839,6 @@
       <button class="clear-btn" id="f-clear" disabled>Clear filters</button>
     </div>
   </section>
-
-  <div class="card card--accent card--bills" id="results-card" hidden style="margin-top:12px">
-    <div class="results-head">
-      <a href="#" class="results-back" id="results-back" hidden>
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
-        Back to map
-      </a>
-      <h2 id="table-title">Bills</h2>
-      <p class="sub">Click a column header to sort</p>
-    </div>
-    <div class="table-scroll">
-      <table>
-        <thead><tr id="thead-row"></tr></thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-    <div class="gb-state" id="empty" hidden>
-      <svg class="gb-state-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M8.5 11h5"/></svg>
-      <h3>No bills match</h3>
-      <p>Nothing matches your current search and filters. Try a broader search, or clear the filters to see every bill.</p>
-      <div class="gb-state-actions"><button type="button" class="clear-btn" data-clear-filters>Clear filters</button></div>
-    </div>
-    <button class="clear-btn show-more" id="show-more" hidden></button>
-  </div>
 
 </div>
 
@@ -872,6 +883,32 @@
 
 <div class="tooltip" id="tooltip"></div>
 <div class="modal-overlay" id="bill-modal" hidden role="dialog" aria-modal="true" aria-labelledby="bill-modal-title"></div>
+
+<!-- Results popup: "Open all N bills" pops this card up over the current screen. -->
+<div class="results-overlay" id="results-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="table-title">
+  <div class="card card--accent card--bills results-modal" id="results-card">
+    <button type="button" class="results-x" id="results-x" aria-label="Close bills list">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="results-head">
+      <h2 id="table-title">Bills</h2>
+      <p class="sub">Click a column header to sort</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr id="thead-row"></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="gb-state" id="empty" hidden>
+      <svg class="gb-state-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M8.5 11h5"/></svg>
+      <h3>No bills match</h3>
+      <p>Nothing matches your current search and filters. Try a broader search, or clear the filters to see every bill.</p>
+      <div class="gb-state-actions"><button type="button" class="clear-btn" data-clear-filters>Clear filters</button></div>
+    </div>
+    <button class="clear-btn show-more" id="show-more" hidden></button>
+  </div>
+</div>
 
 <script>
 "use strict";
@@ -1126,17 +1163,12 @@
   // header). Any active filter/search flips to results; clearing returns to browse.
   function setMode() {
     const active = anyFilterActive();
-    const map = $("explore-entry"), recent = $("recent"), card = $("results-card");
-    // Only toggle the map's visibility once it has actually loaded (fail-soft:
-    // if the paths file never loaded the entry stays hidden, don't reveal it).
-    if (map && eeLoaded) map.hidden = active;
-    // Hide Recent in results mode; in browse mode show it only if it has cards
-    // (renderRecent hides an empty strip).
-    if (recent) recent.hidden = active || !($("recent-list") && $("recent-list").children.length);
-    if (card) card.hidden = !active;
-    const back = $("results-back");
-    // "Back to map" only makes sense when a single jurisdiction is in view.
-    if (back) back.hidden = !(state.filters.states.size === 1);
+    const overlay = $("results-overlay"), recent = $("recent");
+    // The map entry and Recent activity stay on screen as the (dimmed) backdrop;
+    // the filtered bills pop up over them in a card. Recent still hides when empty.
+    if (recent) recent.hidden = !($("recent-list") && $("recent-list").children.length);
+    if (overlay) overlay.hidden = !active;
+    document.body.classList.toggle("results-open", active);
   }
 
   // Recent activity can be collapsed at any time via the Show/Hide pill, which is
@@ -2090,15 +2122,12 @@
 
   function eeApplyFilter(code) {
     state.filters.states.clear(); state.filters.states.add(code);
-    syncMultiSelects(); render();   // render() -> setMode() reveals the results table, hides the map
-    const t = $("results-card"); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+    syncMultiSelects(); render();   // render() -> setMode() pops up the results card over the map
   }
-  // Show the map/list entry again and clear the jurisdiction filter (Back to map).
+  // Close the results popup and clear the jurisdiction filter (X / backdrop / Escape).
   function eeBackToMap() {
     state.filters.states.clear();
-    eeSetView(true);
-    syncMultiSelects(); render();
-    const t = $("explore-entry"); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+    syncMultiSelects(); render();   // setMode() hides the overlay; the map is already behind it
   }
   function eeSetView(map) {
     const mapBtn = $("ee-map-btn"), listBtn = $("ee-list-btn");
@@ -2151,8 +2180,17 @@
     const mapBtn = $("ee-map-btn"), listBtn = $("ee-list-btn");
     if (mapBtn) mapBtn.addEventListener("click", () => eeSetView(true));
     if (listBtn) listBtn.addEventListener("click", () => eeSetView(false));
-    const back = $("results-back");
-    if (back) back.addEventListener("click", (e) => { e.preventDefault(); eeBackToMap(); });
+    // Close the results popup: X button, click on the dimmed backdrop, or Escape
+    // (but let an open bill modal take Escape first, since it sits above the popup).
+    const rx = $("results-x");
+    if (rx) rx.addEventListener("click", () => eeBackToMap());
+    const overlay = $("results-overlay");
+    if (overlay) overlay.addEventListener("click", (e) => { if (e.target === overlay) eeBackToMap(); });
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      const bm = $("bill-modal"); if (bm && !bm.hidden) return;
+      const ov = $("results-overlay"); if (ov && !ov.hidden) eeBackToMap();
+    });
   }
 
   const RECENT_MAX = 12, RECENT_PER_STATE = 2;
