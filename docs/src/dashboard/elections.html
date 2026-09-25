@@ -1217,12 +1217,16 @@
     const tagColor = state.ilTagColor || {};
     bills.slice(0, IL_RECENT_MAX).forEach((b) => {
       // Same card shape as the legislation "Recent activity" strip: state badge ·
-      // bill id · when · title · latest action · topic chips.
-      const a = document.createElement("a"); a.className = "ilr-card"; a.href = "legislation.html#bill=" + ilBillKey(b);
+      // bill id · when · title · latest action · topic chips. The full bill lives
+      // on the legislation dashboard, so open it in a NEW TAB (↗) — clicking must
+      // not replace the elections page the reader is on.
+      const a = document.createElement("a"); a.className = "ilr-card";
+      a.href = "legislation.html#bill=" + ilBillKey(b);
+      a.target = "_blank"; a.rel = "noopener";
       const top = document.createElement("div"); top.className = "ilrc-top";
       const badge = document.createElement("span"); badge.className = "ilrc-badge"; badge.textContent = "Illinois";
       const id = document.createElement("span"); id.className = "ilrc-id"; id.textContent = b.id || "";
-      const when = document.createElement("span"); when.className = "ilrc-when"; when.textContent = ilRelDate(b.latest_action);
+      const when = document.createElement("span"); when.className = "ilrc-when"; when.textContent = ilRelDate(b.latest_action) + " ↗";
       top.append(badge, id, when);
       const ttl = document.createElement("div"); ttl.className = "ilrc-title"; ttl.textContent = b.title || b.id || "(untitled)";
       a.append(top, ttl);

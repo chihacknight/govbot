@@ -241,7 +241,10 @@
     cursor: pointer; user-select: none; white-space: nowrap;
     position: sticky; top: 0; background: var(--surface-1);
   }
-  th .arrow { color: var(--text-muted); font-size: 10px; }
+  th .arrow { font-size: 10px; margin-left: 2px; }
+  th .arrow.is-idle { color: var(--text-muted); opacity: 0.5; }
+  th .arrow.is-active { color: var(--series-1); opacity: 1; }
+  th:hover .arrow.is-idle { opacity: 0.85; }
   /* Zebra striping keys off the rendered row position (:nth-child), not the
      underlying data index, so the alternating bands stay consistent after any
      filter narrows the visible rows. Placed before :hover so hover still wins. */
@@ -335,6 +338,64 @@
     transform: translateY(12px) scale(0.98); opacity: 0; transition: transform 0.2s ease, opacity 0.2s ease;
   }
   .modal-overlay.open .modal-card { transform: translateY(0) scale(1); opacity: 1; }
+
+  /* Book-open flourish: opening a bill plays a little book whose pages flip, then
+     the details card swings open like a cover. Purely decorative; skipped under
+     prefers-reduced-motion (the card just fades in as before). */
+  .modal-card.is-booking { opacity: 0 !important; }   /* hidden while the book plays */
+  .modal-card.book-open-in {
+    animation: card-book-open 0.52s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+    transform-origin: left center;
+  }
+  @keyframes card-book-open {
+    0%   { transform: perspective(1500px) rotateY(-74deg); opacity: 0; }
+    100% { transform: perspective(1500px) rotateY(0deg); opacity: 1; }
+  }
+  .book-fx {
+    position: fixed; inset: 0; display: grid; place-items: center; z-index: 105; pointer-events: none;
+    background: rgba(6, 9, 14, 0.74); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+    animation: book-fx-fade 0.82s ease both;
+  }
+  .book-fx .book {
+    --bw: 92px; --bh: 126px; width: calc(var(--bw) * 2); height: var(--bh);
+    position: relative; perspective: 1100px; animation: book-scale 0.42s cubic-bezier(0.2,0.8,0.25,1) both;
+    filter: drop-shadow(0 18px 34px rgba(0,0,0,0.5));
+  }
+  .book-fx .cover, .book-fx .page {
+    position: absolute; top: 0; width: var(--bw); height: var(--bh);
+    border-radius: 3px 7px 7px 3px; backface-visibility: hidden;
+  }
+  .book-fx .cover.left {
+    left: 0; transform-origin: right center; border-radius: 7px 3px 3px 7px;
+    background: linear-gradient(160deg, #F0C969, #C8912F);
+    box-shadow: inset -6px 0 10px rgba(0,0,0,0.18);
+  }
+  .book-fx .cover.right {
+    left: var(--bw); background: linear-gradient(200deg, #E7B34B, #A9791F);
+    box-shadow: inset 4px 0 10px rgba(0,0,0,0.12);
+  }
+  .book-fx .page {
+    left: var(--bw); transform-origin: left center; background: #F7F0DE;
+    border: 1px solid rgba(0,0,0,0.10); box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+    animation: book-page-flip 0.86s ease-in-out both;
+  }
+  .book-fx .page.p1 { animation-delay: 0.04s; }
+  .book-fx .page.p2 { animation-delay: 0.19s; }
+  .book-fx .page.p3 { animation-delay: 0.34s; }
+  @keyframes book-page-flip {
+    0%        { transform: rotateY(0deg); }
+    55%, 100% { transform: rotateY(-168deg); }
+  }
+  @keyframes book-scale {
+    0%   { transform: scale(0.88); }
+    100% { transform: scale(1); }
+  }
+  @keyframes book-fx-fade {
+    0%   { opacity: 0; }
+    14%  { opacity: 1; }
+    80%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
 
   /* Results popup: the "Open all N bills" table as a card that pops up over the
      current screen (which stays visible, dimmed, behind it). */
@@ -935,7 +996,6 @@
     </button>
     <div class="results-head">
       <h2 id="table-title">Bills</h2>
-      <p class="sub">Click a column header to sort</p>
     </div>
     <div class="results-search">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
@@ -1489,10 +1549,16 @@
       th.className = "col-" + c.key;
       th.textContent = c.label + " ";
       if (c.sortable !== false) {
+        // Every sortable column carries a sort icon: a muted up/down glyph when
+        // idle (so the column reads as sortable at a glance) and a bright single
+        // caret in the active direction on the sorted column.
+        const active = state.sort.key === c.key;
         const arrow = document.createElement("span");
-        arrow.className = "arrow";
-        arrow.textContent = state.sort.key === c.key ? (state.sort.dir > 0 ? "▲" : "▼") : "";
+        arrow.className = "arrow" + (active ? " is-active" : " is-idle");
+        arrow.textContent = active ? (state.sort.dir > 0 ? "▲" : "▼") : "⇅";
         th.append(arrow);
+        th.setAttribute("aria-sort", active ? (state.sort.dir > 0 ? "ascending" : "descending") : "none");
+        th.title = "Sort by " + c.label;
         th.addEventListener("click", () => {
           state.sort.dir = state.sort.key === c.key ? -state.sort.dir : (c.key === "latest_action" ? -1 : 1);
           state.sort.key = c.key;
@@ -2348,6 +2414,31 @@
   // (the entry already exists) or when history is unavailable.
   let modalPushed = false;
 
+  // Book-open flourish: a little book whose pages flip, then the details card
+  // swings open like a cover. Decorative only — skipped under reduced-motion, and
+  // guarded by modalKey so a superseding open doesn't disturb the new card.
+  function playBookOpen(card, myKey) {
+    let reduce = false;
+    try { reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { /* assume motion ok */ }
+    if (reduce) return;   // no flourish; the card just fades in
+    card.classList.add("is-booking");
+    const fx = mkel("div", "book-fx");
+    const book = mkel("div", "book");
+    book.append(mkel("div", "cover left"), mkel("div", "cover right"),
+                mkel("div", "page p1"), mkel("div", "page p2"), mkel("div", "page p3"));
+    fx.append(book);
+    // Appended to <body> with a z-index above both the bill modal and the results
+    // overlay so the flourish always reads on top of whatever it was opened from.
+    document.body.appendChild(fx);
+    setTimeout(() => {
+      fx.remove();                       // always clean up the veil
+      if (myKey !== modalKey) return;    // a newer open superseded this card
+      card.classList.remove("is-booking");
+      card.classList.add("book-open-in");
+      setTimeout(() => { if (myKey === modalKey) card.classList.remove("book-open-in"); }, 560);
+    }, 780);
+  }
+
   function openDetails(b) {
     const overlay = $("bill-modal");
     const myKey = ++modalKey;
@@ -2381,6 +2472,7 @@
     requestAnimationFrame(() => overlay.classList.add("open"));
     overlay.onclick = (e) => { if (e.target === overlay) closeDetails(); };
     document.addEventListener("keydown", escClose);
+    playBookOpen(card, myKey);
 
     // Reflect the open bill in a shareable URL (#bill=<state~session~id>) so the
     // link can be copied/bookmarked and the browser Back button closes the modal.

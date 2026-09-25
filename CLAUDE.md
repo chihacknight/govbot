@@ -260,7 +260,11 @@ dimmed + `backdrop-filter` blur, `z-index:90`, `.results-overlay[hidden]{display
 filter/search is active, and adds `body.results-open` to lock scroll; the map entry + Recent activity
 stay on screen as the dimmed backdrop. The popped `#results-card` (`.results-modal`) animates in with
 `@keyframes results-pop`, carries an **X close button** (`#results-x`, top-right) and a
-jurisdiction-named title (`resultsTitle` → "Wyoming bills (N)"). The card carries a sticky
+jurisdiction-named title (`resultsTitle` → "Wyoming bills (N)"). **Every sortable column header
+carries a persistent sort arrow** — a muted up/down glyph (`.arrow.is-idle`, "⇅") when idle so the
+column reads as sortable, and a bright single caret (`.arrow.is-active`, gold ▲/▼) plus `aria-sort`
+on the actively-sorted column (the old "Click a column header to sort" subtitle was removed as
+redundant). The card carries a sticky
 **in-card search box** (`#results-search`) directly under its title that filters within the popped-up
 catalog (e.g. just that one state's bills — the same `state.filters.search`, so the count in the title
 tracks it live); it and the hidden hero box `#f-search` mirror each other via `reflectSearch()` (both
@@ -278,7 +282,12 @@ beats the UA `[hidden]{display:none}`, so the shared `govbot.css` now carries a
 state components everywhere — without it the legislation empty state showed under a full table, the
 **elections** page kept a *forever* "Loading Illinois & Chicago races…" spinner (its
 `$("loading").hidden = true` never took) and a stray "No races match" box, and the hearings empty
-state was a bare dashed box. The bill modal now
+state was a bare dashed box. **Opening a bill plays a book-open flourish** (`playBookOpen`): a small
+gold book whose pages flip over a dark veil (`.book-fx`, appended to `<body>` at a z-index above both
+the bill modal and the results overlay so it always reads on top), then the details card swings open
+like a cover (`.book-open-in` → `@keyframes card-book-open`, a `rotateY` reveal). It's decorative —
+skipped entirely under `prefers-reduced-motion` (the card just fades in) and guarded by `modalKey` so
+a superseding open never disturbs the new card. The bill modal
 leads with an inferred **status timeline** (Introduced → Committee → Passed House → Senate →
 Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component; its
 **current** node — the bill's latest recorded stage — pulses via `@keyframes gb-node-pulse` (a
@@ -347,7 +356,9 @@ strip** (`.ilr-card` mirroring `.recent-card`): an "Illinois" state badge · bil
 (`ilRelDate`, "yesterday"/"N days ago") · title · latest action · the bill's **topic chips**
 (`.ilrc-tags`, colored dots from `state.ilTagColor`, which maps each topic to the same fixed
 `--series-N` color the legislation site uses so a topic reads the same color on both pages). Each card
-deep-links to `legislation.html#bill=<state~session~id>` and the section stays hidden when no IL bills
+deep-links to `legislation.html#bill=<state~session~id>` **in a new tab** (`target="_blank"`, a `↗` on
+the date) — the full bill lives on the legislation dashboard, so opening it must not replace the
+elections page the reader is on. The section stays hidden when no IL bills
 load.
 `hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
 "Hearings & Public Comment", tagline "Government isn't just something you watch — you can
