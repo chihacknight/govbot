@@ -360,13 +360,18 @@ wheel-zoom about the cursor, drag-to-pan with clamping, a `cmDidDrag` flag so a 
 each region is a `.cm-reg` filled from a vivid `CM_PALETTE`; the selected region has a **large, high-contrast pulse** (`@keyframes cm-pulse` grows the gold outline 2.5→6.5px and the glow to 26px) as a low-vision aid. The
 `.cm-mapwrap` carries a **definite height** (560px; 440px under 820px) so the `svg{height:100%}` isn't
 the WebKit black-square bug. Clicking a region fills a **detail card** (`.cm-detail`, styled like
-legislation's `.ee-detail`): a **ward** shows "Ward N", the neighborhoods it covers, its Alderperson
-race (via `cmWardRace`, `r.district === "Ward "+N`) + a "plus citywide / CPS / police / statewide &
-federal" summary, and a **"See Ward N's full ballot →"** button (`cmOpenWardBallot` reuses the finder's
+legislation's `.ee-detail`): a **ward** shows "Ward N", the neighborhoods it covers, then the **actual races on that ballot as
+expandable rectangle bars** (`cmRaceItem`): the ward's Alderperson race (`cmWardRace`, `r.district ===
+"Ward "+N`) plus every race that's the same for all Chicago voters (`cmCommonRaces` — citywide offices,
+CPS Board President, the Illinois statewide `il_exec` offices and the U.S. Senate seat). Clicking a bar
+expands it in place to the full details (`cmRaceDetails` — each candidate with party, petition status,
+money and an official-source link), a `cmDistrictNote` flags the address-specific races (CPS
+subdistrict, police district council, IL Senate/House, U.S. House) that can't be pinned from the ward
+alone, and a **"See Ward N's full ballot →"** button (`cmOpenWardBallot` reuses the finder's
 `state.view`/`state.filters.ward`/`applyView` plumbing to reveal the Chicago + statewide/federal
 sections, pinned to that ward, then scrolls down); a **neighborhood** shows its name (`cmNiceName`
-title-cases, fixes O'Hare/Lakeview/McKinley Park), how many wards it spans, and **tappable ward chips**
-(→ switch to ward view, select + `cmFocusRegion` zooms to it). Below Explore Chicago sits a
+title-cases, fixes O'Hare/Lakeview/McKinley Park), how many wards it spans, the same expandable common-race bars, and **tappable ward chips** (→ switch to ward view, select +
+`cmFocusRegion` zooms to it, since the alderperson varies by ward). Below Explore Chicago sits a
 **2026 federal-midterm callout**
 (`#midterm-banner`, "The 2026 midterms decide control of Congress") — shown only when the federal
 races are present; clicking it (`revealFederal`) adds the `us_senate` + `us_house` groups to the

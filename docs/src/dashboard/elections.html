@@ -640,7 +640,7 @@
   .cm-zoomctl button:hover { border-color: var(--gb-gold); }
   .cm-zpct { position: absolute; bottom: 12px; left: 12px; font-size: 11px; font-weight: 600; color: var(--text-secondary); background: color-mix(in srgb, #0A0E16 78%, transparent); border: 1px solid #2A3346; border-radius: 6px; padding: 3px 8px; }
   .cm-hint { position: absolute; bottom: 12px; right: 12px; font-size: 11px; color: var(--text-muted); background: color-mix(in srgb, #0A0E16 78%, transparent); border: 1px solid #2A3346; border-radius: 6px; padding: 3px 8px; pointer-events: none; }
-  .cm-detail { display: flex; flex-direction: column; background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 18px 18px 20px; }
+  .cm-detail { display: flex; flex-direction: column; background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 18px 18px 20px; overflow-y: auto; }
   .cm-d-over { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gb-gold); font-weight: 600; }
   .cm-d-name { margin: 4px 0 2px; font-size: 24px; font-family: var(--gb-font-display); }
   .cm-d-meta { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
@@ -651,10 +651,28 @@
   .cm-chip.plain { cursor: default; }
   .cm-chip.plain:hover { border-color: var(--border); }
   .cm-races { display: flex; flex-direction: column; gap: 8px; }
-  .cm-race { display: flex; gap: 10px; align-items: baseline; background: var(--gb-elevated); border: 1px solid var(--border); border-left: 3px solid var(--gc, var(--series-5)); border-radius: 10px; padding: 9px 12px; }
-  .cm-race-o { font-size: 13.5px; font-weight: 600; flex-grow: 1; }
-  .cm-race-n { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
-  .cm-more { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-top: 4px; }
+  /* Each race is a rectangle bar that expands to full details when clicked. */
+  .cm-raceitem { background: var(--gb-elevated); border: 1px solid var(--border); border-left: 3px solid var(--gc, var(--series-5)); border-radius: 10px; overflow: hidden; }
+  .cm-race { display: flex; gap: 10px; align-items: baseline; width: 100%; text-align: left; font: inherit; cursor: pointer; background: none; border: none; padding: 10px 12px; color: var(--text-primary); }
+  .cm-race:hover { background: var(--hover-wash); }
+  .cm-race:focus-visible { outline: 2px solid var(--gb-gold-hi); outline-offset: -2px; }
+  .cm-race-o { font-size: 13.5px; font-weight: 600; flex-grow: 1; line-height: 1.35; }
+  .cm-race-n { font-size: 12px; color: var(--text-secondary); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+  .cm-race-car { display: inline-block; font-size: 10px; transition: transform .15s ease; }
+  .cm-raceitem.is-open .cm-race-car { transform: rotate(90deg); }
+  .cm-race-det { padding: 4px 12px 12px; border-top: 1px solid var(--border); }
+  .cm-race-why { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin: 9px 0 4px; }
+  .cm-cand { display: flex; flex-wrap: wrap; gap: 5px 10px; align-items: baseline; padding: 7px 0; border-top: 1px dashed var(--border); }
+  .cm-cand:first-of-type { border-top: none; }
+  .cm-cand-nm { font-size: 13.5px; font-weight: 600; }
+  .cm-cand-party { font-size: 11px; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 999px; padding: 0 7px; }
+  .cm-cand-st { font-size: 11px; color: var(--gb-green); font-weight: 600; }
+  .cm-cand-money { font-size: 11.5px; color: var(--gb-gold); }
+  .cm-cand-none { font-size: 12.5px; color: var(--text-secondary); padding: 9px 0 4px; }
+  .cm-race-src { display: inline-block; margin-top: 9px; font-size: 12.5px; font-weight: 600; color: var(--series-1); text-decoration: none; }
+  .cm-race-src:hover { text-decoration: underline; }
+  .cm-more { font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; margin-top: 12px; padding: 10px 12px; background: var(--gb-elevated); border: 1px dashed var(--border); border-radius: 10px; }
+  .cm-more b { color: var(--text-primary); }
   .cm-open { margin-top: 16px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; color: #0A0A0A; background: var(--gb-gold-hi); border: none; border-radius: 12px; padding: 12px 18px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
   .cm-open:hover { background: var(--gb-gold); }
   .cm-empty { color: var(--text-secondary); font-size: 14px; line-height: 1.55; margin: auto 0; }
@@ -1548,15 +1566,15 @@
           (rec.areas.length > 5 ? " +" + (rec.areas.length - 5) + " more" : "");
         box.append(meta);
       }
-      // The alderperson race for this ward + a summary of the rest of the ballot.
-      box.append(mkLbl("On this ballot"));
+      // The actual races on this ballot as expandable bars (alderperson for this
+      // ward + everything that's the same for every Chicago voter).
+      box.append(mkLbl("On this ballot — tap a race for details"));
       const races = document.createElement("div"); races.className = "cm-races";
       const ald = cmWardRace(ward);
-      if (ald) races.append(cmRaceRow(ald));
+      if (ald) races.append(cmRaceItem(ald));
+      cmCommonRaces().forEach((r) => races.append(cmRaceItem(r)));
       box.append(races);
-      const more = document.createElement("p"); more.className = "cm-more";
-      more.textContent = "Plus Chicago citywide offices, the CPS Board, your police district council, and every Illinois statewide & federal race.";
-      box.append(more);
+      box.append(cmDistrictNote());
       const btn = document.createElement("button"); btn.type = "button"; btn.className = "cm-open";
       btn.textContent = "See Ward " + ward + "’s full ballot →";
       btn.addEventListener("click", () => cmOpenWardBallot(ward));
@@ -1581,9 +1599,13 @@
         chips.append(c);
       });
       box.append(chips);
-      const more = document.createElement("p"); more.className = "cm-more";
-      more.textContent = "Everyone here also votes Chicago citywide offices, the CPS Board, a police district council, and every Illinois statewide & federal race.";
-      box.append(more);
+      // The races that are the same for everyone in this neighborhood (the
+      // alderperson varies by ward, so it's shown via the chips above, not here).
+      box.append(mkLbl("On this ballot — tap a race for details"));
+      const races = document.createElement("div"); races.className = "cm-races";
+      cmCommonRaces().forEach((r) => races.append(cmRaceItem(r)));
+      box.append(races);
+      box.append(cmDistrictNote());
       if (rec.wards.length) {
         const btn = document.createElement("button"); btn.type = "button"; btn.className = "cm-open";
         btn.textContent = "See Ward " + rec.wards[0] + "’s ballot →";
@@ -1593,16 +1615,78 @@
     }
   }
 
-  function cmRaceRow(r) {
-    const row = document.createElement("div"); row.className = "cm-race";
+  // Races every Chicago voter shares, regardless of ward: citywide offices, the
+  // CPS Board President (the subdistricts are geography-specific), the Illinois
+  // statewide executive offices, and the U.S. Senate seat — in ballot order.
+  function cmCommonRaces() {
+    const races = state.data.races || [];
+    const pick = (g, f) => races.filter((r) => r.office_group === g && (!f || f(r)));
+    return [].concat(
+      pick("citywide"),
+      pick("cps_board", (r) => !r.district),   // President only; subdistricts vary by address
+      pick("il_exec"),
+      pick("us_senate"));
+  }
+
+  function cmDistrictNote() {
+    const p = document.createElement("p"); p.className = "cm-more";
+    p.innerHTML = "<b>➕ Your district races</b> — CPS subdistrict, police district council, Illinois Senate &amp; House, and U.S. House — depend on your exact address. Open the full ballot below to see them.";
+    return p;
+  }
+
+  // A race as a rectangle bar that expands to full details (candidates, party,
+  // status, money, source) when clicked.
+  function cmRaceItem(r) {
+    const wrap = document.createElement("div"); wrap.className = "cm-raceitem";
     const meta = GROUP_META[r.office_group] || {};
-    if (meta.color) row.style.setProperty("--gc", "var(" + meta.color + ")");
+    if (meta.color) wrap.style.setProperty("--gc", "var(" + meta.color + ")");
+    const btn = document.createElement("button"); btn.type = "button"; btn.className = "cm-race";
     const o = document.createElement("div"); o.className = "cm-race-o";
     o.textContent = r.office + (r.district ? " · " + r.district : "");
     const n = document.createElement("div"); n.className = "cm-race-n";
     const nc = (r.candidates || []).length;
-    n.textContent = nc ? nc + " candidate" + (nc === 1 ? "" : "s") : "No candidates yet";
-    row.append(o, n); return row;
+    n.append(document.createTextNode(nc ? nc + " candidate" + (nc === 1 ? "" : "s") : "No candidates yet"));
+    const car = document.createElement("span"); car.className = "cm-race-car"; car.textContent = "▸";
+    n.append(car);
+    btn.append(o, n);
+    const det = document.createElement("div"); det.className = "cm-race-det"; det.hidden = true;
+    let built = false;
+    btn.setAttribute("aria-expanded", "false");
+    btn.addEventListener("click", () => {
+      if (!built) { det.append(cmRaceDetails(r)); built = true; }
+      const open = det.hidden; det.hidden = !open;
+      wrap.classList.toggle("is-open", open);
+      btn.setAttribute("aria-expanded", String(open));
+    });
+    wrap.append(btn, det);
+    return wrap;
+  }
+
+  function cmRaceDetails(r) {
+    const box = document.createElement("div");
+    if (r.why_note) { const w = document.createElement("div"); w.className = "cm-race-why"; w.textContent = r.why_note; box.append(w); }
+    const cands = r.candidates || [];
+    if (cands.length) {
+      cands.forEach((c) => {
+        const row = document.createElement("div"); row.className = "cm-cand";
+        const nm = document.createElement("span"); nm.className = "cm-cand-nm"; nm.textContent = c.name; row.append(nm);
+        if (r.partisan && c.party) { const pt = document.createElement("span"); pt.className = "cm-cand-party"; pt.textContent = c.party; row.append(pt); }
+        const st = c.petition_status; if (st) { const s = document.createElement("span"); s.className = "cm-cand-st"; s.textContent = STATUS_LABEL[st] || st; row.append(s); }
+        if (c.money && c.money.funds_raised != null) { const m = document.createElement("span"); m.className = "cm-cand-money"; m.textContent = "💵 " + fmtMoney(c.money.funds_raised); row.append(m); }
+        box.append(row);
+      });
+    } else {
+      const none = document.createElement("div"); none.className = "cm-cand-none";
+      none.textContent = "No candidates confirmed yet — this race fills in as official filings post.";
+      box.append(none);
+    }
+    const src = r.official_list_url || r.url || r.source;
+    if (src) {
+      const a = document.createElement("a"); a.className = "cm-race-src";
+      a.href = src; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Official source ↗";
+      box.append(a);
+    }
+    return box;
   }
 
   // Reuse the finder's ballot plumbing: reveal the Chicago + statewide/federal
