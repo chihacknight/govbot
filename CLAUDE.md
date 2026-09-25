@@ -357,7 +357,7 @@ ranked overlapping wards and vice-versa (validated: Loop→42, Lincoln Park→43
 Hyde Park→5/4, O'Hare→41). Pure stdlib (no geo deps), `--self-test` for the geometry helpers; fail-soft
 (a portal outage leaves the committed asset in place). The map has **zoom + pan** (± / reset buttons,
 wheel-zoom about the cursor, drag-to-pan with clamping, a `cmDidDrag` flag so a drag isn't a click) and
-each region is a `.cm-reg` filled from a vivid `CM_PALETTE` with gold selection + pulse. The
+each region is a `.cm-reg` filled from a vivid `CM_PALETTE`; the selected region has a **large, high-contrast pulse** (`@keyframes cm-pulse` grows the gold outline 2.5→6.5px and the glow to 26px) as a low-vision aid. The
 `.cm-mapwrap` carries a **definite height** (560px; 440px under 820px) so the `svg{height:100%}` isn't
 the WebKit black-square bug. Clicking a region fills a **detail card** (`.cm-detail`, styled like
 legislation's `.ee-detail`): a **ward** shows "Ward N", the neighborhoods it covers, its Alderperson
@@ -381,7 +381,7 @@ ballots ahead" intro paragraph were all removed, leaving a clean stack: Hero →
 (map + place picker, vertically centered) → midterm callout → the two **"What's on your ballot?"**
 date cards → the revealed races → the sources cabinet (now collapsed). The **election calendar**
 (`#calendar`) is now **always shown** (ungated — visible whenever `#cal-grid` has cards) with the
-**current/next timeline milestone pulsing** (`.tl-item.next .tl-dot` → `@keyframes tl-pulse`). A
+**current/next timeline milestone pulsing** (`.tl-item.next .tl-dot` → `@keyframes tl-pulse`, a **big** scale-1.32 + wide-ring pulse for low-vision readers). A
 **"Recent Illinois legislative activity"** section (`#il-recent`, `renderIlRecent`) lists every IL
 bill Govbot tracks — fetched fail-soft from the legislation `data.json` (filtered to `state==="il"`,
 newest recorded action first, capped at 25), with a **search box** (`#ilr-search`, matches
