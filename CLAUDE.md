@@ -355,10 +355,16 @@ id/title/sponsor/topic). It renders as **the same card format as the legislation
 strip** (`.ilr-card` mirroring `.recent-card`): an "Illinois" state badge · bill id · relative date
 (`ilRelDate`, "yesterday"/"N days ago") · title · latest action · the bill's **topic chips**
 (`.ilrc-tags`, colored dots from `state.ilTagColor`, which maps each topic to the same fixed
-`--series-N` color the legislation site uses so a topic reads the same color on both pages). Each card
-deep-links to `legislation.html#bill=<state~session~id>` **in a new tab** (`target="_blank"`, a `↗` on
-the date) — the full bill lives on the legislation dashboard, so opening it must not replace the
-elections page the reader is on. The section stays hidden when no IL bills
+`--series-N` color the legislation site uses so a topic reads the same color on both pages). **Clicking
+a card opens a lightweight bill detail card IN PLACE** (`openIlBill` → `#il-bill-modal`) rather than
+leaving the elections page: built from the `data.json` fields (Illinois/id/chamber/session chips,
+title, latest action + date, sponsors, topic chips, an "Official source ↗" link, and a gold "Open
+full bill in Explore Legislation ↗" button that deep-links to the full record). It opens with the
+**same book-open flourish** as the legislation bill modal (`playIlBook` → `.ilb-book-fx` + a
+`.ilb-card.book-open-in` `rotateY` reveal, skipped under `prefers-reduced-motion`); closes on X /
+backdrop / Escape. The card's `<a>` keeps a real `href="legislation.html#bill=…"` with
+`target="_blank"`, so a plain left-click opens the in-page card while **⌘/Ctrl/middle-click still opens
+the full bill on the legislation dashboard in a new tab**. The section stays hidden when no IL bills
 load.
 `hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
 "Hearings & Public Comment", tagline "Government isn't just something you watch — you can
