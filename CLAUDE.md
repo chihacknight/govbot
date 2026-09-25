@@ -217,7 +217,9 @@ jurisdiction name, its **bill count**, and its **recent legislative activity** (
 code, newest→oldest, click → bill modal) — and "Open all N bills" (or a list-card click) applies
 `state.filters.states` and switches the page into **results mode** (see below). The map's pan is
 capture-free (an `eeDidDrag` threshold flag distinguishes a drag from a click) so **selecting a state
-works while zoomed in**; switching to **list view** hides the map column entirely (`eeSetView`). The
+works while zoomed in**; switching to **list view** hides the map column entirely (`eeSetView` toggles
+`#ee-mapcol[hidden]`; a `.ee-mapcol[hidden]{display:none}` rule is required — the author `display:flex`
+would otherwise beat `[hidden]` and leave the map visible in list view). The
 **list view** is a
 flag-forward grid of jurisdiction cards (committed `flags/<code>.png`, `us.png` for federal), sorted
 by count, click → same filter. A single **"N bills Govbot is tracking"** scorecard sits in the head.
@@ -242,15 +244,21 @@ into this one) plus **Topic** as the primary browse filter with Session/Chamber/
 filters" `<details>` (`#filters`). **There is no State dropdown** — jurisdiction is picked from the
 map / list entry above; it drives `state.filters.states`, which stays the underlying filter (Clear
 filters resets it, `syncMultiSelects` guards for the removed `#f-states`). The redundant
-`.explore-hint` copy under the search box was removed (the placeholder already conveys it). The
+`.explore-hint` copy under the search box was removed (the placeholder already conveys it). **This
+whole `.explore-search` block is currently `hidden`** (per request) — the map's "Open all bills" flow
+drives the results — but its elements stay in the DOM so the search/filter JS keeps working. The
 **"Overview & charts"** analytics block (tiles + jurisdiction/topic/month charts) was **removed**.
-The page now runs in **two modes** (`setMode()`, called from `render()`): **browse** (map + Recent
-activity shown, the results table hidden) and **results** (any filter/search active → map + Recent
-hidden, the `#results-card` bills table shown, scrolled to). The results table carries a
-`.results-head` with a **"← Back to map"** link (`eeBackToMap`, shown only when a single jurisdiction
-is in view — clears the filter and returns to browse) and a title that names the jurisdiction
-(`resultsTitle` → "Wyoming bills (N)"). Its Title + latest-action cell text is `--text-primary`
-(full-contrast, not dimmed). The "No bills match" empty state (`#empty`) now shows
+Clicking **"Open all N bills"** (or a list-card) **pops the filtered bills up as a card** over the
+current screen rather than switching the page inline: `setMode()` (called from `render()`) toggles a
+body-level **`#results-overlay`** (a `.results-overlay` mirroring the bill modal — `position:fixed`,
+dimmed + `backdrop-filter` blur, `z-index:90`, `.results-overlay[hidden]{display:none}`) whenever a
+filter/search is active, and adds `body.results-open` to lock scroll; the map entry + Recent activity
+stay on screen as the dimmed backdrop. The popped `#results-card` (`.results-modal`) animates in with
+`@keyframes results-pop`, carries an **X close button** (`#results-x`, top-right) and a
+jurisdiction-named title (`resultsTitle` → "Wyoming bills (N)"). Closing it — the X, a click on the
+backdrop, or **Escape** (deferred to the bill modal when that is open above it) — calls `eeBackToMap`,
+which clears `state.filters.states` so `setMode` hides the overlay. Its Title + latest-action cell
+text is `--text-primary` (full-contrast, not dimmed). The "No bills match" empty state (`#empty`) now shows
 **only when a filter/search is active and nothing matches** — `renderTable` hides it unless
 `anyFilterActive()`. Both `.gb-state` and `.gb-loading` set `display:flex`, which (author CSS)
 beats the UA `[hidden]{display:none}`, so the shared `govbot.css` now carries a
