@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="assets/govbot.css">
+<title>Govbot — Search</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22t%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23161E2C%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23090D15%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23F0C969%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23CE9E45%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22b%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFE9AE%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23EBC160%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2261%22%20height%3D%2261%22%20rx%3D%2215%22%20fill%3D%22url(%23t)%22%2F%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2261%22%20height%3D%2261%22%20rx%3D%2215%22%20fill%3D%22none%22%20stroke%3D%22%232B3446%22%20stroke-width%3D%221%22%2F%3E%3Crect%20x%3D%2218%22%20y%3D%2248%22%20width%3D%2228%22%20height%3D%224.6%22%20rx%3D%222.3%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%2214.5%22%20y%3D%2253.4%22%20width%3D%2235%22%20height%3D%223.2%22%20rx%3D%221.6%22%20fill%3D%22%23B98A34%22%2F%3E%3Cg%20transform%3D%22translate(31%2024)%20rotate(70)%22%3E%3Cpath%20d%3D%22M0%20-3.4%20L20%20-2.6%20Q26%20-2.2%2026.5%200%20Q26%202.2%2020%202.6%20L0%203.4%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Ccircle%20cx%3D%2227%22%20cy%3D%220%22%20r%3D%223%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%22-4.2%22%20width%3D%223%22%20height%3D%228.4%22%20rx%3D%221.2%22%20fill%3D%22%23C79A45%22%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(31%2024)%20rotate(-14)%22%3E%3Cpath%20d%3D%22M-5%20-7%20L-15%20-10.5%20A3.2%2010.5%200%200%200%20-15%2010.5%20L-5%207%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Cpath%20d%3D%22M5%20-7%20L15%20-10.5%20A3.2%2010.5%200%200%201%2015%2010.5%20L5%207%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%22-5.5%22%20y%3D%22-9%22%20width%3D%2211%22%20height%3D%2218%22%20rx%3D%222%22%20fill%3D%22url(%23b)%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--text-primary);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  a { color: var(--series-1); }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 24px 20px 64px; }
+
+  /* hero + search box */
+  .s-hero { margin: 6px 0 22px; }
+  .s-hero h1 { font-size: 27px; font-weight: 650; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .s-hero p { margin: 0 0 16px; color: var(--text-secondary); font-size: 14.5px; max-width: 68ch; }
+  .s-form { position: relative; display: flex; align-items: center; max-width: 640px; }
+  .s-form svg { position: absolute; left: 15px; width: 19px; height: 19px; color: var(--text-muted); pointer-events: none; }
+  #q-input { width: 100%; font: inherit; font-size: 16px; padding: 13px 16px 13px 44px;
+    border: 1px solid var(--border); border-radius: 12px; background: var(--surface-1);
+    color: var(--text-primary); }
+  #q-input:focus { outline: 2px solid var(--series-1); outline-offset: 1px; border-color: transparent; }
+  #s-summary { margin-top: 12px; font-size: 13px; color: var(--text-secondary); min-height: 18px; }
+  #s-summary b { color: var(--text-primary); }
+
+  /* category jump chips */
+  .s-jump { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+  .s-jump a { text-decoration: none; font-size: 12.5px; font-weight: 600; padding: 4px 11px;
+    border: 1px solid var(--border); border-radius: 999px; color: var(--text-secondary); background: var(--surface-1); }
+  .s-jump a:hover { color: var(--text-primary); border-color: var(--baseline); }
+  .s-jump .jc { color: var(--text-muted); font-weight: 700; }
+
+  /* result sections */
+  .s-cat { margin: 26px 0 0; scroll-margin-top: 74px; }
+  .s-cat-head { display: flex; align-items: baseline; gap: 9px; margin: 0 0 10px;
+    padding-bottom: 7px; border-bottom: 1px solid var(--border); }
+  .s-cat-head h2 { font-size: 16px; font-weight: 650; margin: 0; }
+  .s-cat-head .cnt { font-size: 12.5px; color: var(--text-muted); font-weight: 600; }
+  .s-cat-head .ico { width: 17px; height: 17px; flex: none; color: var(--gc, var(--series-1)); }
+  .s-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+
+  .s-card { display: flex; align-items: flex-start; gap: 10px; text-decoration: none;
+    padding: 10px 12px; border: 1px solid var(--border); border-left: 3px solid var(--gc, var(--series-1));
+    border-radius: 9px; background: var(--surface-1); color: var(--text-primary); }
+  .s-card:hover { border-color: var(--baseline); background: var(--hover-wash); }
+  .s-card .sc-body { min-width: 0; flex: 1; }
+  .s-card .sc-title { font-weight: 600; font-size: 13.5px; line-height: 1.3; }
+  .s-card .sc-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; overflow-wrap: anywhere; }
+  .s-badge { flex: none; font-size: 9.5px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; }
+  .s-badge.official { color: var(--series-2); border-color: color-mix(in srgb, var(--series-2) 55%, transparent); }
+  .s-badge.potential { color: var(--series-3); border-color: color-mix(in srgb, var(--series-3) 55%, transparent); }
+  .s-party { font-size: 11px; font-weight: 700; margin-left: 4px; }
+  .s-party.dem { color: var(--series-1); }
+  .s-party.rep { color: var(--series-6); }
+  .s-party.oth { color: var(--text-muted); }
+  .s-more { margin-top: 9px; font-size: 12.5px; color: var(--text-muted); }
+
+  /* prompt / empty / loading states reuse the shared .gb-state look */
+  .s-state { text-align: center; padding: 40px 16px; color: var(--text-secondary); }
+  .s-state h3 { margin: 8px 0 4px; color: var(--text-primary); font-size: 17px; }
+  .s-state p { margin: 0; font-size: 13.5px; }
+  .s-state .ico { width: 34px; height: 34px; color: var(--text-muted); }
+  .s-hidden { display: none; }
+</style>
+<script>
+  (function () { try { var t = localStorage.getItem("govbot-theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {} })();
+</script>
+</head>
+<body>
+<header class="gb-header">
+  <a class="gb-brand" href="index.html" aria-label="Govbot home">
+    <img class="gb-brand-mark" src="assets/govbot-mark.png" width="34" height="34" alt="" aria-hidden="true">
+    <span class="gb-brand-name">Govbot</span>
+  </a>
+  <nav class="gb-nav" aria-label="Primary">
+    <div class="gb-nav-item" data-gb-dropdown>
+      <button class="gb-nav-trigger" type="button" aria-expanded="false" aria-haspopup="true">Explore
+        <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="gb-mega" role="menu" aria-label="Explore">
+        <a href="legislation.html" role="menuitem" style="--accent:var(--gb-blue-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
+          <span><span class="mega-t">Legislation</span><span class="mega-d">Bills, topics, states, sponsors &amp; status</span></span></a>
+        <a href="hearings.html" role="menuitem" style="--accent:var(--gb-gold-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg>
+          <span><span class="mega-t">Hearings &amp; Public Comment</span><span class="mega-d">Upcoming hearings and how to weigh in</span></span></a>
+        <a href="elections.html" role="menuitem" style="--accent:var(--gb-green)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/></svg>
+          <span><span class="mega-t">Illinois Elections</span><span class="mega-d">What&#39;s on your ballot, race by race</span></span></a>
+        <a href="architecture.html" role="menuitem" style="--accent:var(--gb-purple-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg>
+          <span><span class="mega-t">How Govbot Works</span><span class="mega-d">The pipeline, in plain English</span></span></a>
+      </div>
+    </div>
+    <div class="gb-nav-item" data-gb-dropdown>
+      <button class="gb-nav-trigger" type="button" aria-expanded="false" aria-haspopup="true">Follow
+        <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="gb-mega" role="menu" aria-label="Follow">
+        <a href="elections.xml" role="menuitem" style="--accent:var(--gb-green)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
+          <span><span class="mega-t">Elections feed</span><span class="mega-d">Whole-ballot &amp; per-race RSS</span></span></a>
+        <a href="hearings.xml" role="menuitem" style="--accent:var(--gb-gold-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
+          <span><span class="mega-t">Hearings feed</span><span class="mega-d">Whole-calendar, per-bill &amp; per-state RSS</span></span></a>
+        <a href="#follow" role="menuitem" style="--accent:var(--gb-blue-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h6M9 16h4"/></svg>
+          <span><span class="mega-t">Bills &amp; topics</span><span class="mega-d">Filter, then follow from the dashboard</span></span></a>
+      </div>
+    </div>
+    <div class="gb-nav-item" data-gb-dropdown>
+      <button class="gb-nav-trigger" type="button" aria-expanded="false" aria-haspopup="true">Data
+        <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="gb-mega" role="menu" aria-label="Data">
+        <a href="https://github.com/chihacknight/govbot/blob/main/catalog.json" role="menuitem" style="--accent:var(--gb-blue-hi)" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+          <span><span class="mega-t">Data catalog ↗</span><span class="mega-d">Every jurisdiction repo &amp; path pattern</span></span></a>
+        <a href="architecture.html" role="menuitem" style="--accent:var(--gb-purple-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+          <span><span class="mega-t">Sources &amp; methodology</span><span class="mega-d">How the data is gathered</span></span></a>
+        <a href="https://github.com/chihacknight/govbot" role="menuitem" style="--accent:var(--gb-text-2)" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l-4 4 4 4M16 5l4 4-4 4"/><path d="M13 4l-2 16"/></svg>
+          <span><span class="mega-t">Open source / GitHub ↗</span><span class="mega-d">Read and run every pipeline</span></span></a>
+      </div>
+    </div>
+    <a class="gb-nav-plain" href="architecture.html">How Govbot Works</a>
+    <a class="gb-nav-plain" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub Repo ↗</a>
+  </nav>
+  <div class="gb-header-utils">
+    <form class="gb-search" role="search" data-gb-search>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="color:var(--gb-text-2)"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <label class="gb-sr" for="home-search">Search bills, candidates, hearings, topics</label>
+      <input id="home-search" type="search" placeholder="Search bills, candidates, hearings…">
+    </form>
+    <button class="gb-icon-btn" data-gb-theme-toggle type="button" aria-label="Toggle theme">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F0C969" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg>
+    </button>
+    <button class="gb-icon-btn gb-menu-btn" data-gb-menu type="button" aria-label="Open menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- mobile drawer -->
+<div class="gb-drawer" data-gb-drawer>
+  <form class="gb-search" role="search" data-gb-search>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="color:var(--gb-text-2)"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <label class="gb-sr" for="drawer-search">Search Govbot</label>
+    <input id="drawer-search" type="search" placeholder="Search bills, candidates, hearings…">
+  </form>
+  <a href="legislation.html">Legislation</a>
+  <a href="hearings.html">Hearings &amp; Public Comment</a>
+  <a href="elections.html">Illinois Elections</a>
+  <a href="architecture.html">How Govbot Works</a>
+  <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub Repo ↗</a>
+</div>
+
+<div class="wrap">
+  <section class="s-hero">
+    <h1>Search Govbot</h1>
+    <p>One box for everything Govbot tracks — bills and their sponsors, election candidates and races, and upcoming hearings across every jurisdiction.</p>
+    <form class="s-form" role="search" id="s-form" autocomplete="off">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <label class="gb-sr" for="q-input">Search bills, sponsors, candidates, races, hearings</label>
+      <input id="q-input" type="search" placeholder="Search bills, sponsors, candidates, races, hearings…" aria-controls="s-results">
+    </form>
+    <div id="s-summary" aria-live="polite"></div>
+    <div class="s-jump" id="s-jump" hidden></div>
+  </section>
+
+  <div id="s-results"></div>
+</div>
+
+<footer class="gb-footer">
+  <div class="gb-footer-grid">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <img src="assets/govbot-mark.png" width="26" height="26" alt="" aria-hidden="true" style="border-radius:7px;display:block;flex:none">
+        <span class="gb-brand-name">Govbot</span>
+      </div>
+      <p style="margin:0;font-size:14px;line-height:1.6;color:var(--gb-text-2);max-width:320px;">Government is always moving. Govbot helps you see it.</p>
+      <div style="font-size:12.5px;color:var(--gb-text-muted);margin-top:10px;">Open-source · Citizen-powered · Built with Chi Hack Night</div>
+      <div class="gb-social">
+        <a href="https://bsky.app/profile/govboteducation.bsky.social" target="_blank" rel="noopener" aria-label="Govbot on Bluesky"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 3.768c0 .69.378 5.65.624 6.479.815 2.736 3.713 3.66 6.383 3.364.136-.02.275-.039.415-.056-.138.022-.276.04-.415.056-3.912.58-7.387 2.005-2.83 7.078 5.013 5.19 6.87-1.113 7.823-4.308.953 3.195 2.81 9.498 7.823 4.308 4.556-5.073 1.082-6.498-2.83-7.078a8.741 8.741 0 0 1-.415-.056c.14.017.279.036.415.056 2.67.297 5.568-.628 6.383-3.364.246-.828.624-5.789.624-6.478 0-.69-.139-1.861-.902-2.206-.659-.298-1.664-.62-4.3 1.24C16.046 4.748 13.087 8.687 12 10.8Z"/></svg></a>
+        <a href="https://www.threads.com/@legislationtracker.govbot?hl=en" target="_blank" rel="noopener" aria-label="Govbot on Threads"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.472 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.781 3.631 2.695 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.75-.192 1.352-.622 2.446-1.284 3.272-.886 1.102-2.14 1.704-3.73 1.79-1.202.065-2.361-.218-3.259-.801-1.063-.689-1.685-1.74-1.752-2.964-.065-1.19.408-2.285 1.33-3.082.88-.76 2.119-1.207 3.583-1.291a13.853 13.853 0 0 1 3.02.142c-.126-.742-.375-1.332-.75-1.757-.513-.586-1.308-.883-2.359-.89h-.029c-.844 0-1.992.232-2.721 1.32L7.734 7.847c.98-1.454 2.568-2.256 4.478-2.256h.044c3.194.02 5.097 1.975 5.287 5.388.108.046.216.094.32.145 1.49.7 2.58 1.761 3.154 3.07.797 1.82.87 4.79-1.548 7.158-1.85 1.81-4.094 2.628-7.277 2.65Zm1.615-11.997c-.348 0-.699.01-1.05.033-1.847.104-2.997.949-2.93 2.15.07 1.26 1.446 1.848 2.796 1.774 1.23-.067 2.834-.541 3.104-3.71-.633-.144-1.264-.24-1.92-.247Z"/></svg></a>
+        <a href="https://x.com/govbot27" target="_blank" rel="noopener" aria-label="Govbot on X"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/></svg></a>
+        <a href="https://www.instagram.com/legislationtracker.govbot/?hl=en" target="_blank" rel="noopener" aria-label="Govbot on Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5.2"/><circle cx="12" cy="12" r="4"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg></a>
+      </div>
+    </div>
+    <div>
+      <h4>Explore</h4>
+      <a href="legislation.html">Legislation</a>
+      <a href="hearings.html">Hearings</a>
+      <a href="elections.html">Elections</a>
+      <a href="architecture.html">How Govbot Works</a>
+    </div>
+    <div>
+      <h4>Transparency</h4>
+      <a href="architecture.html">Architecture</a>
+      <a href="../index.html" target="_blank" rel="noopener">Govbot docs ↗</a>
+      <a href="elections.xml">RSS feeds</a>
+    </div>
+    <div>
+      <h4>Community</h4>
+      <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub ↗</a>
+      <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">Contribute ↗</a>
+      <a href="https://chihacknight.org/" target="_blank" rel="noopener">Chi Hack Night ↗</a>
+    </div>
+  </div>
+  <div class="gb-footer-bottom">© 2026 Govbot · A nonpartisan, open civic-data project.</div>
+</footer>
+
+<button class="gb-to-top" data-gb-to-top type="button" aria-label="Back to top">
+  <span aria-hidden="true">↑</span> Back to Top
+</button>
+
+<script>
+/* Govbot global search — one box across every dataset the site publishes:
+   bills + their sponsors (data.json), election candidates + races
+   (elections.json), the legislator roster (people.json), and hearings
+   (hearings.json). Everything is fetched fail-soft and searched in-browser;
+   each result deep-links to the page that owns it. */
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var state = { bills: [], races: [], hearings: [], people: {}, names: {}, ready: false };
+
+  var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  function low(s) { return (s == null ? "" : String(s)).toLowerCase(); }
+  function toks(q) { return low(q).split(/\s+/).filter(Boolean); }
+  function hay(parts) { return low(parts.filter(function (x) { return x != null && x !== ""; }).join(" \u0001 ")); }
+  function matchAll(h, t) { for (var i = 0; i < t.length; i++) if (h.indexOf(t[i]) === -1) return false; return true; }
+  function prettyDate(d) {
+    if (!d) return "";
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d));
+    if (!m) return String(d);
+    return MONTHS[(+m[2]) - 1] + " " + (+m[3]) + ", " + m[1];
+  }
+  function stateName(code) { return state.names[low(code)] || (code ? String(code).toUpperCase() : ""); }
+  function billKey(b) {
+    return encodeURIComponent(b.state || "") + "~" + encodeURIComponent(b.session || "") + "~" + encodeURIComponent(b.id || "");
+  }
+  function partyClass(p) { p = low(p); if (/democrat/.test(p)) return "dem"; if (/republican/.test(p)) return "rep"; return "oth"; }
+
+  function buildNames(d, e, h) {
+    var m = {};
+    function addAny(v) {
+      if (!v) return;
+      if (Object.prototype.toString.call(v) === "[object Array]") {
+        v.forEach(function (x) { if (x && x.code && x.name) m[low(x.code)] = x.name; });
+      } else if (typeof v === "object") {
+        Object.keys(v).forEach(function (k) {
+          var val = v[k];
+          if (val && val.name) m[low(k)] = val.name;
+          else if (typeof val === "string") m[low(k)] = val;
+        });
+      }
+    }
+    addAny(d && d.states); addAny(e && e.jurisdictions); addAny(h && h.jurisdictions);
+    if (!m.us) m.us = "USA (Federal)";
+    if (!m.usa) m.usa = "USA (Federal)";
+    return m;
+  }
+
+  /* ---- category searchers: each returns [{title, sub, badge, badgeClass, party, href}] ---- */
+  function searchBills(t) {
+    var out = [];
+    state.bills.forEach(function (b) {
+      var h = hay([b.id, b.title, (b.sponsors || []).join(" "), (b.tags || []).join(" "), stateName(b.state)]);
+      if (matchAll(h, t)) out.push({
+        title: b.title || b.id,
+        sub: (b.sponsors || []).slice(0, 3).join(", ") + ((b.tags && b.tags.length) ? "  ·  " + b.tags.slice(0, 3).join(", ") : ""),
+        badge: (b.state ? String(b.state).toUpperCase() + " · " : "") + b.id,
+        href: "legislation.html#bill=" + billKey(b)
+      });
+    });
+    return out;
+  }
+  function searchLegislators(t) {
+    var out = [], seen = {};
+    Object.keys(state.people).forEach(function (code) {
+      var roster = state.people[code]; if (!roster || typeof roster !== "object") return;
+      Object.keys(roster).forEach(function (sur) {
+        (roster[sur] || []).forEach(function (e) {
+          var full = e[1], party = e[2], area = e[3];
+          if (!full) return;
+          var h = hay([full, party, area, stateName(code)]);
+          if (!matchAll(h, t)) return;
+          var key = code + "|" + low(full); if (seen[key]) return; seen[key] = 1;
+          out.push({
+            title: full,
+            sub: [party, area, stateName(code)].filter(Boolean).join("  ·  "),
+            badge: "Legislator", party: party,
+            href: "legislation.html#q=" + encodeURIComponent(full)
+          });
+        });
+      });
+    });
+    return out;
+  }
+  function searchCandidates(t) {
+    var out = [];
+    state.races.forEach(function (r) {
+      var office = r.office + (r.district ? " · " + r.district : "");
+      (r.candidates || []).forEach(function (c) {
+        if (matchAll(hay([c.name, r.office, r.district, c.party]), t)) out.push({
+          title: c.name, sub: office, badge: "On ballot", badgeClass: "official", party: c.party,
+          href: "elections.html#race=" + encodeURIComponent(r.id)
+        });
+      });
+      (r.potential_candidates || []).forEach(function (c) {
+        if (matchAll(hay([c.name, r.office, r.district]), t)) out.push({
+          title: c.name, sub: office + "  ·  reported, unofficial", badge: "Potential", badgeClass: "potential",
+          href: "elections.html#race=" + encodeURIComponent(r.id)
+        });
+      });
+    });
+    return out;
+  }
+  function searchRaces(t) {
+    var out = [];
+    state.races.forEach(function (r) {
+      if (!matchAll(hay([r.office, r.district, stateName(r.jurisdiction), r.office_group]), t)) return;
+      var nc = (r.candidates || []).length;
+      out.push({
+        title: r.office + (r.district ? " · " + r.district : ""),
+        sub: [r.ballot_date ? prettyDate(r.ballot_date) + " ballot" : "", nc + " candidate" + (nc === 1 ? "" : "s")].filter(Boolean).join("  ·  "),
+        badge: "Race",
+        href: "elections.html#race=" + encodeURIComponent(r.id)
+      });
+    });
+    return out;
+  }
+  function searchHearings(t) {
+    var out = [];
+    state.hearings.forEach(function (h) {
+      var billstr = (h.bills || []).map(function (b) { return b.id + " " + b.title; }).join(" ");
+      if (!matchAll(hay([h.title, h.committee, stateName(h.jurisdiction), billstr, h.location]), t)) return;
+      out.push({
+        title: h.title || h.committee || "Hearing",
+        sub: [h.committee, h.scheduled_display, stateName(h.jurisdiction)].filter(Boolean).join("  ·  "),
+        badge: (h.status === "open" ? "Comment open" : "Hearing"),
+        badgeClass: (h.status === "open" ? "official" : ""),
+        href: "hearings.html#hg-" + encodeURIComponent(h.jurisdiction)
+      });
+    });
+    return out;
+  }
+
+  var CATS = [
+    { key: "bills", label: "Bills", color: "--series-1", run: searchBills,
+      ico: '<path d="M6 3h9l4 4v14H6z"/><path d="M9 8h6M9 12h6M9 16h4"/>' },
+    { key: "legislators", label: "Legislators & sponsors", color: "--series-5", run: searchLegislators,
+      ico: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>' },
+    { key: "candidates", label: "Election candidates", color: "--series-2", run: searchCandidates,
+      ico: '<path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 16l-4.9 2.6.9-5.5-4-3.9 5.5-.8z"/>' },
+    { key: "races", label: "Races & offices", color: "--series-3", run: searchRaces,
+      ico: '<path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/>' },
+    { key: "hearings", label: "Hearings", color: "--series-6", run: searchHearings,
+      ico: '<path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/>' }
+  ];
+  var SHOW_CAP = 60;
+
+  function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function icoSvg(cls, paths) {
+    return '<svg class="' + cls + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + "</svg>";
+  }
+
+  function resultCard(r, color) {
+    var a = el("a", "s-card"); a.href = r.href; a.style.setProperty("--gc", "var(" + color + ")");
+    var body = el("div", "sc-body");
+    var title = el("div", "sc-title"); title.textContent = r.title;
+    if (r.party) { var pt = el("span", "s-party " + partyClass(r.party)); pt.textContent = " " + r.party; title.appendChild(pt); }
+    body.appendChild(title);
+    if (r.sub) body.appendChild(el("div", "sc-sub", r.sub));
+    a.appendChild(body);
+    if (r.badge) { var bg = el("span", "s-badge" + (r.badgeClass ? " " + r.badgeClass : "")); bg.textContent = r.badge; a.appendChild(bg); }
+    return a;
+  }
+
+  function render(q) {
+    var results = $("s-results");
+    var summary = $("s-summary");
+    var jump = $("s-jump");
+    results.textContent = ""; jump.textContent = ""; jump.hidden = true;
+
+    if (!state.ready) { summary.textContent = "Loading Govbot data…"; return; }
+    q = (q || "").trim();
+    if (!q) {
+      summary.textContent = "";
+      results.appendChild(stateBlock("search",
+        "Search across all of Govbot", "Try a bill number, a legislator or candidate name, a topic, or an office — e.g. “housing”, “HB 1643”, “Lisa”, “Governor”."));
+      return;
+    }
+    var t = toks(q), total = 0, jumpFrag = document.createDocumentFragment();
+    CATS.forEach(function (cat) {
+      var found = cat.run(t);
+      total += found.length;
+      if (!found.length) return;
+
+      var sec = el("section", "s-cat"); sec.id = "cat-" + cat.key; sec.style.setProperty("--gc", "var(" + cat.color + ")");
+      var head = el("div", "s-cat-head");
+      head.innerHTML = icoSvg("ico", cat.ico);
+      var h2 = el("h2", null, cat.label); head.appendChild(h2);
+      head.appendChild(el("span", "cnt", String(found.length)));
+      sec.appendChild(head);
+
+      var list = el("div", "s-list");
+      found.slice(0, SHOW_CAP).forEach(function (r) { list.appendChild(resultCard(r, cat.color)); });
+      sec.appendChild(list);
+      if (found.length > SHOW_CAP) sec.appendChild(el("div", "s-more", "Showing the first " + SHOW_CAP + " of " + found.length + " — refine your search to narrow this."));
+      results.appendChild(sec);
+
+      var chip = el("a", null); chip.href = "#cat-" + cat.key;
+      chip.appendChild(document.createTextNode(cat.label + " "));
+      chip.appendChild(el("span", "jc", String(found.length)));
+      jumpFrag.appendChild(chip);
+    });
+
+    if (!total) {
+      summary.textContent = "";
+      results.appendChild(stateBlock("empty", "No matches for “" + q + "”",
+        "Nothing across bills, legislators, candidates, races, or hearings matched. Check spelling, or try a shorter or different term."));
+      return;
+    }
+    summary.innerHTML = "<b>" + total + "</b> result" + (total === 1 ? "" : "s") + " for “" + escapeHtml(q) + "”";
+    jump.appendChild(jumpFrag); jump.hidden = false;
+  }
+
+  function stateBlock(kind, title, body) {
+    var d = el("div", "s-state");
+    var paths = kind === "empty"
+      ? '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M8 11h6"/>'
+      : '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>';
+    d.innerHTML = icoSvg("ico", paths);
+    d.appendChild(el("h3", null, title));
+    d.appendChild(el("p", null, body));
+    return d;
+  }
+  function escapeHtml(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]; }); }
+
+  /* ---- query wiring: hash (#q= / ?q=) <-> input, live + debounced ---- */
+  function readQuery() {
+    var h = location.hash || "";
+    var m = /[#&]q=([^&]*)/.exec(h) || /[?&]q=([^&]*)/.exec(location.search || "");
+    if (!m) return "";
+    try { return decodeURIComponent(m[1].replace(/\+/g, " ")); } catch (e) { return m[1]; }
+  }
+  var input = $("q-input"), timer, lastRendered = null;
+  function runFromInput() {
+    var q = input.value;
+    render(q);
+    lastRendered = q;
+    var target = q.trim() ? "#q=" + encodeURIComponent(q.trim()) : "#";
+    if (location.hash !== target) history.replaceState(null, "", target);
+  }
+  input.addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(runFromInput, 130); });
+  $("s-form").addEventListener("submit", function (e) { e.preventDefault(); clearTimeout(timer); runFromInput(); input.blur(); });
+  window.addEventListener("hashchange", function () {
+    var q = readQuery();
+    if (q === lastRendered) return;      // our own replaceState, ignore
+    input.value = q; render(q); lastRendered = q;
+  });
+
+  /* ---- load every dataset, fail-soft ---- */
+  render("");   // initial prompt / loading
+  var initial = readQuery();
+  if (initial) { input.value = initial; $("s-summary").textContent = "Loading Govbot data…"; }
+
+  function getJSON(url) { return fetch(url).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
+  Promise.all([getJSON("data.json"), getJSON("elections.json"), getJSON("hearings.json"), getJSON("people.json")])
+    .then(function (res) {
+      var d = res[0], e = res[1], h = res[2], p = res[3];
+      state.bills = (d && d.bills) || [];
+      state.races = (e && e.races) || [];
+      state.hearings = (h && h.hearings) || [];
+      state.people = p || {};
+      state.names = buildNames(d, e, h);
+      state.ready = true;
+      render(input.value || initial || "");
+      lastRendered = input.value || initial || "";
+    });
+})();
+</script>
+<script src="assets/govbot-shell.js"></script>
+</body>
+</html>

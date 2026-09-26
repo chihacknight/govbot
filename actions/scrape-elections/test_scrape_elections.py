@@ -925,6 +925,45 @@ class WikipediaNominees(unittest.TestCase):
         self.assertTrue(all(not r["candidates"] for r in doc["races"]))
 
 
+class Incumbents(unittest.TestCase):
+    # Sample Ward Offices rows, in the dataset's own "Last, First" name order.
+    ROWS = [
+        {"ward": "1", "alderman": "La Spata, Daniel"},
+        {"ward": "4", "alderman": "King, Lamont J."},
+        {"ward": "50", "alderman": "Silverstein, Debra L."},
+        {"ward": "", "alderman": "Nobody"},          # dropped: no ward
+        {"ward": "9", "alderman": ""},               # dropped: no name
+    ]
+
+    def test_parse_ward_offices_flips_name_order(self):
+        wards = main.parse_ward_offices(self.ROWS)
+        self.assertEqual(wards["1"], "Daniel La Spata")   # multi-word surname preserved
+        self.assertEqual(wards["4"], "Lamont J. King")
+        self.assertEqual(wards["50"], "Debra L. Silverstein")
+        self.assertNotIn("", wards)
+        self.assertNotIn("9", wards)
+
+    def test_enrich_attaches_to_council_races_only(self):
+        doc = {"races": [
+            {"id": "chicago-alderperson-ward-1", "office_group": "council", "district": "Ward 1"},
+            {"id": "chicago-alderperson-ward-99", "office_group": "council", "district": "Ward 99"},  # no roster row
+            {"id": "us-senate-il", "office_group": "us_senate", "district": None},                    # not council
+        ]}
+        n = main.enrich_incumbents(doc, fetcher=lambda: main.parse_ward_offices(self.ROWS))
+        self.assertEqual(n, 1)
+        inc = doc["races"][0]["incumbent"]
+        self.assertEqual(inc["name"], "Daniel La Spata")
+        self.assertEqual(inc["party"], "")                # City Council is nonpartisan
+        self.assertTrue(inc["source"].startswith("https://data.cityofchicago.org"))
+        self.assertNotIn("incumbent", doc["races"][1])    # unresolved ward untouched
+        self.assertNotIn("incumbent", doc["races"][2])    # non-council untouched
+
+    def test_enrich_fail_soft_on_empty_roster(self):
+        doc = {"races": [{"id": "x", "office_group": "council", "district": "Ward 1"}]}
+        self.assertEqual(main.enrich_incumbents(doc, fetcher=lambda: {}), 0)
+        self.assertNotIn("incumbent", doc["races"][0])
+
+
 class Snapshot(unittest.TestCase):
     def test_matches_expected(self):
         if not EXPECTED.exists():

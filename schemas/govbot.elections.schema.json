@@ -110,6 +110,17 @@
           "description": "How the current officeholder came to the seat, when relevant to 'why this race exists' (e.g. CPS seats that were appointed vs. already elected).",
           "enum": ["elected", "appointed", "vacant", "new_seat", null]
         },
+        "incumbent": {
+          "type": ["object", "null"],
+          "description": "The current officeholder for this seat, when it can be resolved from an authoritative roster (e.g. Chicago aldermen from the City Data Portal Ward Offices dataset). Surfaced by the frontend on a race with no confirmed candidates yet. Absent when no roster covers the seat.",
+          "additionalProperties": false,
+          "required": ["name"],
+          "properties": {
+            "name": { "type": "string", "description": "Current officeholder's full name." },
+            "party": { "type": "string", "description": "Party, spelled out; empty for nonpartisan offices (e.g. Chicago City Council)." },
+            "source": { "type": "string", "description": "URL of the authoritative roster the name came from." }
+          }
+        },
         "why_note": {
           "type": ["string", "null"],
           "description": "Short plain-English note on why this race exists or what's notable — especially CPS 2026 (the hybrid board ending, appointed vs. voter-elected seats) and first-ever elected offices."
