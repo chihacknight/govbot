@@ -200,6 +200,7 @@
   .badge.partisan { color: var(--series-6); border-color: color-mix(in srgb, var(--series-6) 55%, transparent); }
   .badge.seats { color: var(--series-5); border-color: color-mix(in srgb, var(--series-5) 55%, transparent); }
   .badge.first { color: #fff; background: var(--series-2); border-color: var(--series-2); }
+  .badge.count { color: var(--text-primary); border-color: var(--baseline); font-weight: 700; }
   /* per-race locator map (inline SVG from maps.json) */
   .race-map { display: flex; align-items: center; gap: 10px; background: var(--hover-wash); border-radius: 8px; padding: 8px 10px; }
   .race-map svg { height: 116px; width: auto; flex: none; display: block; }
@@ -258,6 +259,19 @@
 
   .no-cands { font-size: 12.5px; color: var(--text-muted); padding: 4px 2px; }
   .no-cands a { font-weight: 600; }
+  /* Current incumbent shown when a race has no confirmed candidates yet. */
+  .cur-incumbent { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 6px; padding: 6px 10px; border-radius: 999px;
+    background: color-mix(in srgb, var(--series-1) 8%, var(--surface-1));
+    border: 1px solid color-mix(in srgb, var(--series-1) 35%, var(--border)); }
+  .ci-tag { font-size: 9px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
+    color: #fff; background: var(--series-1); border-radius: 999px; padding: 2px 7px; }
+  .ci-name { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+  .ci-party { font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px;
+    background: color-mix(in srgb, currentColor 12%, transparent); }
+  .ci-party.dem { color: var(--series-1); }
+  .ci-party.rep { color: var(--series-6); }
+  .ci-party.oth { color: var(--text-muted); }
 
   /* potential candidates — UNOFFICIAL, surfaced from news coverage. Dashed +
      amber so it never reads as the official (solid) candidate list above. */
@@ -266,10 +280,7 @@
   .potential > summary::-webkit-details-marker { display: none; }
   .potential > summary::before { content: "▸"; font-size: 10px; color: var(--text-muted); transition: transform .15s ease; }
   .potential[open] > summary::before { transform: rotate(90deg); }
-  .potential .pc-tag { font-size: 9px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--series-3); color: var(--series-3); }
-  .potential .pc-count { color: var(--text-muted); font-weight: 600; }
-  .pc-note { font-size: 11px; color: var(--text-muted); line-height: 1.45; padding: 0 10px 8px; }
-  .pc-list { display: flex; flex-direction: column; gap: 6px; padding: 0 10px 10px; }
+  .pc-list { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px 10px; }
   .pc { padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); }
   .pc-name { font-weight: 650; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .pc-sig { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; padding: 1px 6px; border-radius: 999px; }
@@ -376,13 +387,9 @@
   .tl-label { font-size: 12.5px; color: var(--text-secondary); }
   .tl-note { font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
   .tl-approx { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--series-3); border: 1px solid var(--series-3); border-radius: 999px; padding: 0 5px; margin-left: 5px; }
-  .tl-next-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; }
-  .tl-next-chip .lbl { color: var(--text-muted); }
-  .tl-next-chip b { color: var(--text-primary); }
   .cal-legend { margin-top: 10px; font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
   /* per-race expandable timeline */
-  .race-next { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
   details.tl-details { border-top: 1px solid var(--gridline); padding-top: 7px; }
   details.tl-details > summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--series-2); list-style: none; display: inline-flex; align-items: center; gap: 5px; }
   details.tl-details > summary::-webkit-details-marker { display: none; }
@@ -1186,6 +1193,29 @@
     fetch("maps.json")
       .then((r) => (r.ok ? r.json() : null))
       .then((m) => { state.maps = m; if (m) render(); })
+      .catch(() => {});
+
+    // Current incumbents for empty Illinois General Assembly races: the sitting
+    // member of each Senate/House district from the shared people roster, whose
+    // "area" (e.g. "Senate District 2") matches the race's district string exactly.
+    // Only IL Senate/House resolve this way — the roster has no Chicago aldermen,
+    // county, or federal members — so other empty races simply show no incumbent.
+    // Fully fail-soft; re-renders when it arrives.
+    state.ilIncumbents = {};
+    fetch("people.json")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((p) => {
+        const il = (p && p.il) || {};
+        const idx = {};
+        for (const sur of Object.keys(il)) {
+          for (const e of (il[sur] || [])) {
+            const area = e[3];               // "Senate District N" / "House District N"
+            if (area && !idx[area]) idx[area] = { name: e[1], party: e[2] };
+          }
+        }
+        state.ilIncumbents = idx;
+        render();
+      })
       .catch(() => {});
 
     // as-of badge
@@ -2125,7 +2155,10 @@
     top.append(idbox);
     card.append(top);
 
+    const nCands = (r.candidates || []).length;
     const badges = document.createElement("div"); badges.className = "race-badges";
+    // Total confirmed candidates for this race, front and centre.
+    badges.append(mkBadge("👥 " + nCands + " candidate" + (nCands === 1 ? "" : "s"), "count"));
     if (r.incumbent_status === "new_seat")
       badges.append(mkBadge("★ First elected", "first"));
     if (r.ballot_date)
@@ -2160,6 +2193,22 @@
       a.textContent = "see the official list ↗";
       none.append(a);
       card.append(none);
+      // The seat isn't empty — show who currently holds it, clearly tagged, where
+      // the roster can resolve it (IL Senate/House districts). Fail-soft otherwise.
+      const inc = (state.ilIncumbents || {})[r.district];
+      if (inc && inc.name) {
+        const box = document.createElement("div"); box.className = "cur-incumbent";
+        const tg = document.createElement("span"); tg.className = "ci-tag"; tg.textContent = "Current incumbent";
+        const nm = document.createElement("span"); nm.className = "ci-name"; nm.textContent = inc.name;
+        box.append(tg, nm);
+        if (inc.party) {
+          const pty = document.createElement("span");
+          pty.className = "ci-party " + partyClass(inc.party);
+          pty.textContent = inc.party;
+          box.append(pty);
+        }
+        card.append(box);
+      }
     }
 
     // Unofficial, news-sourced potential candidates — kept visually and logically
@@ -2167,21 +2216,11 @@
     const pcs = r.potential_candidates || [];
     if (pcs.length) card.append(renderPotential(pcs, r));
 
-    // Election timeline: a one-line "next milestone" plus an expandable full timeline.
+    // Election timeline: the full timeline, shown expanded (no "next" teaser chip).
+    // Still a <details open> so a reader can collapse a long one if they want.
     if (r.timeline && r.timeline.length) {
-      const nm = nextMilestone(r.timeline);
-      if (nm) {
-        const nx = document.createElement("div"); nx.className = "race-next";
-        const chip = document.createElement("span"); chip.className = "tl-next-chip";
-        const lbl = document.createElement("span"); lbl.className = "lbl"; lbl.textContent = "⏭ Next: ";
-        const b = document.createElement("b"); b.textContent = nm.label;
-        chip.append(lbl, b, document.createTextNode(" · " + (nm.date ? prettyDate(nm.date) : "TBA")));
-        if (nm.date && nm.confirmed === false) { const a = document.createElement("span"); a.className = "tl-approx"; a.textContent = "≈"; chip.append(a); }
-        nx.append(chip);
-        card.append(nx);
-      }
-      const det = document.createElement("details"); det.className = "tl-details";
-      const sum = document.createElement("summary"); sum.textContent = "Full timeline";
+      const det = document.createElement("details"); det.className = "tl-details"; det.open = true;
+      const sum = document.createElement("summary"); sum.textContent = "Timeline";
       det.append(sum);
       det.append(renderTimeline(r.timeline, meta.color));
       card.append(det);
@@ -2363,20 +2402,11 @@
   function renderPotential(pcs, r) {
     const det = document.createElement("details"); det.className = "potential";
     const sum = document.createElement("summary");
+    // Kept to a short, clear label so these aren't misread as official filings; each
+    // name below carries its own status ("Announced" …) and source links, so the old
+    // "unofficial · from news / N names / …" subtitle + disclaimer paragraph are gone.
     sum.append(document.createTextNode("💭 Potential candidates"));
-    const tag = document.createElement("span"); tag.className = "pc-tag";
-    tag.textContent = "Unofficial · from news"; sum.append(tag);
-    const cnt = document.createElement("span"); cnt.className = "pc-count";
-    cnt.textContent = pcs.length + (pcs.length === 1 ? " name" : " names");
-    sum.append(cnt);
     det.append(sum);
-
-    const note = document.createElement("div"); note.className = "pc-note";
-    note.textContent = "Names reported in the press as running, exploring, "
-      + "rumored, or currently holding the seat (an appointed incumbent) — not "
-      + "official filings and not on any ballot list. Check each source and the "
-      + "official list before relying on these.";
-    det.append(note);
 
     const list = document.createElement("div"); list.className = "pc-list";
     pcs.forEach((p) => {
@@ -2453,6 +2483,14 @@
   function mkBadge(text, cls) {
     const b = document.createElement("span"); b.className = "badge" + (cls ? " " + cls : "");
     b.textContent = text; return b;
+  }
+
+  // Party → colour class (Democratic blue / Republican red / else neutral).
+  function partyClass(party) {
+    const p = (party || "").toLowerCase();
+    if (/democrat/.test(p)) return "dem";
+    if (/republican/.test(p)) return "rep";
+    return "oth";
   }
 
   /* ---------- RSS popover ---------- */
@@ -2627,12 +2665,6 @@
       else if (!m.date) cls = "future";
       return cls;
     });
-  }
-
-  function nextMilestone(timeline) {
-    const now = state.nowDate;
-    for (const m of timeline) if (m.date && m.date >= now) return m;
-    return null;
   }
 
   function renderTimeline(timeline, accentVar) {
