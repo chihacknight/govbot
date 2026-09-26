@@ -139,6 +139,55 @@ def run():
             raise RuntimeError("404")
         assert fsp.wiki_thumbnail("al", "Jane Roe", get_json=boom) is None
 
+        # --- Wikipedia SEARCH fallback: exact title misses, search finds the
+        #     disambiguated page, and the same confidence gate still applies -----
+        def gj_search(url, timeout=15):
+            if "/search/page" in url:                       # the search step
+                return {"pages": [{"key": "Jane_Roe_(politician)"}]}
+            if "politician" in url:                         # the found page's summary
+                return {"type": "standard", "title": "Jane Roe (politician)",
+                        "extract": "Jane Roe is a member of the Alabama House of Representatives.",
+                        "thumbnail": {"source": "https://wiki.example/jane-dab.jpg"}}
+            raise RuntimeError("404")                        # exact "Jane_Roe" page 404s
+        assert fsp.wiki_thumbnail("al", "Jane Roe", get_json=gj_search) \
+            == "https://wiki.example/jane-dab.jpg", "search fallback finds the disambiguated page"
+
+        # a search hit about a *different* person (surname absent) is rejected
+        def gj_wrongperson(url, timeout=15):
+            if "/search/page" in url:
+                return {"pages": [{"key": "John_Doe"}]}
+            if "John_Doe" in url:
+                return {"type": "standard", "title": "John Doe",
+                        "extract": "John Doe is a member of the Alabama House of Representatives.",
+                        "thumbnail": {"source": "https://wiki.example/john.jpg"}}
+            raise RuntimeError("404")
+        assert fsp.wiki_thumbnail("al", "Jane Roe", get_json=gj_wrongperson) is None, \
+            "a search hit whose surname doesn't match must be refused"
+
+        # search=False disables the fallback (exact-title only)
+        assert fsp.wiki_thumbnail("al", "Jane Roe", get_json=gj_search, search=False) is None, \
+            "search=False -> exact title only"
+
+        # --- hardened image validation --------------------------------------
+        assert fsp.is_image_bytes(b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x02\x03"), "jpeg magic"
+        assert fsp.is_image_bytes(b"\x89PNG\r\n\x1a\n\x00\x00\x00\x00"), "png magic"
+        assert fsp.is_image_bytes(b"RIFF\x00\x00\x00\x00WEBPVP8 "), "webp magic"
+        assert not fsp.is_image_bytes(b"<!DOCTYPE html><html>blocked</html>"), "html is not an image"
+        assert not fsp.is_image_bytes(b""), "empty is not an image"
+
+        # resolve_photo rejects a source that returns HTML (an image host that
+        # 200s a block/login page) and falls through to the next source.
+        def html_then_image(url):
+            return (b"<html>Access Denied</html>" if "osfail" in url
+                    else b"\x89PNG\r\n\x1a\n" + b"\x00" * 40)
+        d, src = fsp.resolve_photo(
+            "az", "Fally Back", "https://osfail.example/back.jpg",
+            fetch=html_then_image,
+            wiki=lambda s, f: "https://wiki.example/back.png",
+            max_bytes=3_000_000)
+        assert src == "https://wiki.example/back.png" and fsp.is_image_bytes(d), \
+            "HTML from the OS image is rejected; the real image wins"
+
         # --- fail-soft: empty index writes an empty manifest ---------------
         got2, _ = fsp.vendor(bills, {}, root / "out2", root / "m2.json",
                              fetch=fake_fetch, wiki=fake_wiki)
