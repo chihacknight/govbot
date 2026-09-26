@@ -282,9 +282,12 @@ beats the UA `[hidden]{display:none}`, so the shared `govbot.css` now carries a
 state components everywhere — without it the legislation empty state showed under a full table, the
 **elections** page kept a *forever* "Loading Illinois & Chicago races…" spinner (its
 `$("loading").hidden = true` never took) and a stray "No races match" box, and the hearings empty
-state was a bare dashed box. **Opening a bill plays a book-open flourish** (`playBookOpen`): a small
-gold book whose pages flip over a dark veil (`.book-fx`, appended to `<body>` at a z-index above both
-the bill modal and the results overlay so it always reads on top), then the details card swings open
+state was a bare dashed box. **Opening a bill plays a book-open flourish** (`playBookOpen`): the branded book illustration
+(`assets/book-open.png` — the Govbot open-book art, its warm background keyed to transparency with a
+radial edge-fade so the book + sparkles float) with cream **pages flipping** over its spread
+(`.book-fx .page`, hinged at the spine), all over a dark veil (`.book-fx`, appended to `<body>` at a
+z-index above both the bill modal and the results overlay so it always reads on top), then the details
+card swings open
 like a cover (`.book-open-in` → `@keyframes card-book-open`, a `rotateY` reveal). It's decorative —
 skipped entirely under `prefers-reduced-motion` (the card just fades in) and guarded by `modalKey` so
 a superseding open never disturbs the new card. The bill modal

@@ -356,35 +356,32 @@
     background: rgba(6, 9, 14, 0.74); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
     animation: book-fx-fade 0.82s ease both;
   }
+  /* The book is the branded illustration asset; pages flip over its open spread. */
   .book-fx .book {
-    --bw: 92px; --bh: 126px; width: calc(var(--bw) * 2); height: var(--bh);
-    position: relative; perspective: 1100px; animation: book-scale 0.42s cubic-bezier(0.2,0.8,0.25,1) both;
-    filter: drop-shadow(0 18px 34px rgba(0,0,0,0.5));
+    --bw: 330px; position: relative; width: var(--bw); perspective: 1200px;
+    animation: book-scale 0.42s cubic-bezier(0.2,0.8,0.25,1) both;
+    filter: drop-shadow(0 18px 40px rgba(0,0,0,0.55));
   }
-  .book-fx .cover, .book-fx .page {
-    position: absolute; top: 0; width: var(--bw); height: var(--bh);
-    border-radius: 3px 7px 7px 3px; backface-visibility: hidden;
-  }
-  .book-fx .cover.left {
-    left: 0; transform-origin: right center; border-radius: 7px 3px 3px 7px;
-    background: linear-gradient(160deg, #F0C969, #C8912F);
-    box-shadow: inset -6px 0 10px rgba(0,0,0,0.18);
-  }
-  .book-fx .cover.right {
-    left: var(--bw); background: linear-gradient(200deg, #E7B34B, #A9791F);
-    box-shadow: inset 4px 0 10px rgba(0,0,0,0.12);
-  }
+  .book-fx .book-img { display: block; width: 100%; height: auto; }
+  /* Cream pages hinged at the spine, sweeping right→left across the open book. */
   .book-fx .page {
-    left: var(--bw); transform-origin: left center; background: #F7F0DE;
-    border: 1px solid rgba(0,0,0,0.10); box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+    position: absolute; left: 50%; top: 40.5%; width: 30%; height: 22%;
+    transform-origin: left center; backface-visibility: hidden;
+    border-radius: 2px 7px 9px 2px;
+    background: linear-gradient(118deg, #FCF7EA, #E9DEC2);
+    border: 1px solid rgba(0,0,0,0.14); box-shadow: 0 3px 8px rgba(0,0,0,0.3);
     animation: book-page-flip 0.86s ease-in-out both;
   }
-  .book-fx .page.p1 { animation-delay: 0.04s; }
-  .book-fx .page.p2 { animation-delay: 0.19s; }
-  .book-fx .page.p3 { animation-delay: 0.34s; }
+  .book-fx .page::before {
+    content: ""; position: absolute; inset: 20% 14%;
+    background: repeating-linear-gradient(transparent 0 3px, rgba(40,30,10,0.16) 3px 4px);
+  }
+  .book-fx .page.p1 { animation-delay: 0.06s; }
+  .book-fx .page.p2 { animation-delay: 0.22s; }
+  .book-fx .page.p3 { animation-delay: 0.38s; }
   @keyframes book-page-flip {
-    0%        { transform: rotateY(0deg); }
-    55%, 100% { transform: rotateY(-168deg); }
+    0%        { transform: rotateY(2deg); }
+    55%, 100% { transform: rotateY(-174deg); }
   }
   @keyframes book-scale {
     0%   { transform: scale(0.88); }
@@ -2424,8 +2421,8 @@
     card.classList.add("is-booking");
     const fx = mkel("div", "book-fx");
     const book = mkel("div", "book");
-    book.append(mkel("div", "cover left"), mkel("div", "cover right"),
-                mkel("div", "page p1"), mkel("div", "page p2"), mkel("div", "page p3"));
+    const img = mkel("img", "book-img"); img.src = "assets/book-open.png"; img.alt = ""; img.setAttribute("aria-hidden", "true");
+    book.append(img, mkel("div", "page p1"), mkel("div", "page p2"), mkel("div", "page p3"));
     fx.append(book);
     // Appended to <body> with a z-index above both the bill modal and the results
     // overlay so the flourish always reads on top of whatever it was opened from.
