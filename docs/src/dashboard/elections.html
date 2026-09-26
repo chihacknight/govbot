@@ -559,7 +559,18 @@
   .midterm-banner { width: 100%; text-align: left; font: inherit; cursor: pointer; display: flex; align-items: center; gap: 16px; margin: 0 0 22px; padding: 15px 20px; border: 1px solid var(--border); border-left: 4px solid var(--gb-blue); border-radius: 14px; background: var(--surface-1); color: var(--text-primary); }
   .midterm-banner:hover { border-color: var(--baseline); transform: translateY(-1px); transition: transform .12s ease; }
   .midterm-banner:focus-visible { outline: 2px solid var(--gb-blue); outline-offset: 2px; }
-  .mb-flag { font-size: 26px; line-height: 1; flex: none; }
+  /* Waving USA flag (inline SVG) in place of the flat emoji. The cloth waves via
+     the same transform ripple as the hero Illinois flag; still under reduced-motion. */
+  .mb-flag { width: 44px; flex: none; align-self: center; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.35)); }
+  .mb-flag svg { display: block; width: 100%; height: auto; overflow: visible; border-radius: 1.5px; }
+  .mb-flag .us-wave { transform-box: fill-box; transform-origin: left center; animation: uswave 3s ease-in-out infinite; }
+  @keyframes uswave {
+    0%, 100% { transform: rotate(0deg) skewX(0deg) scaleX(1); }
+    25% { transform: rotate(-1.4deg) skewX(6deg) scaleX(1.03); }
+    55% { transform: rotate(0.8deg) skewX(-4deg) scaleX(0.99); }
+    78% { transform: rotate(-0.9deg) skewX(3deg) scaleX(1.01); }
+  }
+  @media (prefers-reduced-motion: reduce) { .mb-flag .us-wave { animation: none; } }
   .mb-copy { flex-grow: 1; font-size: 14px; line-height: 1.5; }
   .mb-copy b { font-family: var(--gb-font-display); font-weight: 600; font-size: 16px; }
   .mb-cta { flex: none; font-size: 13.5px; font-weight: 700; color: var(--gb-gold-hi); white-space: nowrap; }
@@ -607,12 +618,20 @@
 
   /* ===== Explore Chicago: zoomable ward + neighborhood map ===== */
   .chimap { margin: 8px 0 26px; }
-  .cm-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+  /* Title, sentence, then the layer toggle stacked right beneath it — grouped with
+     the "pick where you live" prompt and sitting close above the map. */
+  .cm-head { margin-bottom: 10px; }
   .cm-title { margin: 0 0 3px; font-size: 27px; }
-  .cm-sub { margin: 0; color: var(--text-secondary); font-size: 14px; max-width: 62ch; }
+  .cm-sub { margin: 0 0 10px; color: var(--text-secondary); font-size: 14px; max-width: 62ch; }
   .cm-toggle { display: inline-flex; background: var(--surface-1); border: 1px solid var(--border); border-radius: 999px; padding: 3px; }
   .cm-seg { font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; color: var(--text-secondary); background: none; border: none; border-radius: 999px; padding: 8px 16px; }
-  .cm-seg.is-on { background: var(--gb-gold-hi); color: #0A0A0A; }
+  /* The current selection pulses so it's obvious which layer is showing. */
+  .cm-seg.is-on { background: var(--gb-gold-hi); color: #0A0A0A; animation: cm-seg-pulse 1.8s ease-in-out infinite; }
+  @keyframes cm-seg-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(240,201,105,0.55); }
+    50%      { box-shadow: 0 0 0 6px rgba(240,201,105,0); }
+  }
+  @media (prefers-reduced-motion: reduce) { .cm-seg.is-on { animation: none; } }
   .cm-seg:focus-visible { outline: 2px solid var(--gb-gold-hi); outline-offset: 2px; }
   .cm-body { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 18px; align-items: start; }
   /* Stage holds the small Illinois locator + callout lines to the left of the big map. */
@@ -823,10 +842,8 @@
   <!-- Find your ballot: zoomable, colorful Chicago ward + neighborhood map -->
   <section class="chimap" id="chimap" aria-label="Find your ballot" hidden>
     <div class="cm-head">
-      <div>
-        <h2 class="cm-title">Find your ballot</h2>
-        <p class="cm-sub">Pick where you live and we’ll show every race you can vote in.</p>
-      </div>
+      <h2 class="cm-title">Find your ballot</h2>
+      <p class="cm-sub">Pick where you live and we’ll show every race you can vote in.</p>
       <div class="cm-toggle" role="group" aria-label="Map layer">
         <button type="button" id="cm-ward-btn" class="cm-seg is-on" aria-pressed="true">50 Wards</button>
         <button type="button" id="cm-area-btn" class="cm-seg" aria-pressed="false">77 Neighborhoods</button>
@@ -856,14 +873,31 @@
 
   <!-- 2026 federal midterm callout: jumps to the U.S. Senate & House races already on the ballot -->
   <button type="button" class="midterm-banner" id="midterm-banner" hidden>
-    <span class="mb-flag" aria-hidden="true">🇺🇸</span>
+    <span class="mb-flag" aria-hidden="true">
+      <svg viewBox="0 0 38 20" aria-hidden="true"><g class="us-wave">
+        <rect width="38" height="20" fill="#F7F7F7"/>
+        <g fill="#B22234">
+          <rect y="0" width="38" height="1.538"/><rect y="3.077" width="38" height="1.538"/>
+          <rect y="6.154" width="38" height="1.538"/><rect y="9.231" width="38" height="1.538"/>
+          <rect y="12.308" width="38" height="1.538"/><rect y="15.385" width="38" height="1.538"/>
+          <rect y="18.462" width="38" height="1.538"/>
+        </g>
+        <rect width="15.2" height="10.769" fill="#3C3B6E"/>
+        <g fill="#FFFFFF">
+          <circle cx="2.0" cy="1.7" r="0.5"/><circle cx="4.9" cy="1.7" r="0.5"/><circle cx="7.8" cy="1.7" r="0.5"/><circle cx="10.7" cy="1.7" r="0.5"/><circle cx="13.6" cy="1.7" r="0.5"/>
+          <circle cx="2.0" cy="4.15" r="0.5"/><circle cx="4.9" cy="4.15" r="0.5"/><circle cx="7.8" cy="4.15" r="0.5"/><circle cx="10.7" cy="4.15" r="0.5"/><circle cx="13.6" cy="4.15" r="0.5"/>
+          <circle cx="2.0" cy="6.6" r="0.5"/><circle cx="4.9" cy="6.6" r="0.5"/><circle cx="7.8" cy="6.6" r="0.5"/><circle cx="10.7" cy="6.6" r="0.5"/><circle cx="13.6" cy="6.6" r="0.5"/>
+          <circle cx="2.0" cy="9.05" r="0.5"/><circle cx="4.9" cy="9.05" r="0.5"/><circle cx="7.8" cy="9.05" r="0.5"/><circle cx="10.7" cy="9.05" r="0.5"/><circle cx="13.6" cy="9.05" r="0.5"/>
+        </g>
+      </g></svg>
+    </span>
     <span class="mb-copy"><b>The 2026 midterms decide control of Congress.</b> On Nov 3, Illinois votes for a U.S. Senate seat and all 17 U.S. House districts — part of the national midterm that sets the balance of power in Washington.</span>
     <span class="mb-cta">See the federal races →</span>
   </button>
 
   <!-- Ballot-first entry: pick a ballot to see every office on it -->
   <section class="ballot-picker" id="ballot-picker" aria-label="What is on your ballot">
-    <h2 class="bp-title">What’s on your ballot?</h2>
+    <h2 class="bp-title">Important Dates</h2>
     <div class="ballot-cards" id="ballot-cards"></div>
   </section>
 
