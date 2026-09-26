@@ -338,10 +338,15 @@ beats the UA `[hidden]{display:none}`, so the shared `govbot.css` now carries a
 state components everywhere — without it the legislation empty state showed under a full table, the
 **elections** page kept a *forever* "Loading Illinois & Chicago races…" spinner (its
 `$("loading").hidden = true` never took) and a stray "No races match" box, and the hearings empty
-state was a bare dashed box. **Opening a bill plays a book-open flourish** (`playBookOpen`): the branded book illustration
-(`assets/book-open.png` — the Govbot open-book art, its warm background keyed to transparency with a
-radial edge-fade so the book + sparkles float) with **five cream pages** flipping over its spread in a
-slow, staggered riffle (`.book-fx .page` p1–p5, hinged at the spine; the veil holds ~2.4s so the whole
+state was a bare dashed box. **Opening a bill plays a book-open flourish** (`playBookOpen`): an open book
+drawn **entirely in CSS** (no raster — so no stray grey box, and the wordmark never clips) — a navy
+gold-trimmed cover, two splayed cream page-faces around a spine valley, **colourful fore-edges down BOTH
+sides** (`.side-l`/`.side-r`, the seven-colour blocks tilted with `rotateY(±30deg)`), **big colourful
+sparkles** rising off the spread (`.spark`, `@keyframes book-twinkle`), and the full gold **"Govbot"**
+wordmark below (`.book-wordmark`), with a soft warm halo (`.halo`) standing in for the old grey
+backdrop — with **five cream pages** flipping over its spread in a
+slow, staggered riffle (`.book-fx .pages > .page` p1–p5, hinged at the spine, a one-shot
+`@keyframes book-page-flip` −14°→−166°; the veil holds ~2.4s so the whole
 riffle plays before the card reveals), all over a dark veil (`.book-fx`, appended to `<body>` at a
 z-index above both the bill modal and the results overlay so it always reads on top), then the details
 card swings open
