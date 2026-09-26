@@ -162,13 +162,15 @@ bill's card** via `legislation.html#bill=<state~session~id>` (a plain `#q=<id>` 
 state's same-numbered bill; the unique key opens just the one — `billKey` here matches `billKey` +
 the `#bill=` branch of `applyDeepLink` in legislation.html, which calls `openDetails` on the
 matching bill). Each row carries the bill's topic tags (`.ar-topic` chips) plus its sponsors as
-**real-headshot avatar chips** (`.ar-av` with an `<img>`, name + party letter, first 3 then
-"+N more"). **The homepage avatars are always real photos — never an initials monogram.** A sponsor
-is pictured only when a headshot was vendored for them; a sponsor without a photo is simply not
-given an avatar (still counted in "+N more"), and a runtime image error drops the whole `.ar-spon`
-chip rather than showing an empty circle. The card just shows the newest bill per state (no
-photographed-bill preference); a state whose sponsors have no photo shows its bill + tags with no
-avatars — never initials. Party + full name are resolved from `people.json` with the same matcher
+**sponsor avatar chips** (`.ar-av`, name + party letter, first 3 then
+"+N more"). Every sponsor that resolves to a real legislator (or that has a vendored photo) is
+pictured: a **vendored headshot** when we have one, otherwise a **party-tinted initials monogram**
+(`initialsOf` = first + last initial, in the party-colored circle). The headshot `<img>` overlays
+the initials, so a runtime image error just drops the `<img>` and reveals the initials underneath
+(the sponsor chip stays). An unresolved non-person string (e.g. a committee) with no photo is skipped
+(still counted in "+N more", which counts resolved sponsors beyond the 3 shown). The card just shows
+the newest bill per state (no photographed-bill preference); a state whose sponsors have no photo
+shows their initials monograms + name + party. Party + full name are resolved from `people.json` with the same matcher
 legislation.html uses (`matchLeg`, surname-only / "Surname, F" / "First Last", never guessing an
 ambiguous surname). **Photos are vendored at deploy, never committed** by
 `scripts/fetch_sponsor_photos.py` (deploy-docs.yml, "Vendor sponsor photos for on-screen bills",
@@ -180,13 +182,13 @@ state for state bills, instead requires a distinctly-federal congressional role 
 `docs/src/dashboard/assets/legislators/` + a manifest `legislator_images.json`
 (`{"<state>:<full name lower>": "assets/legislators/<file>"}` — the frontend's lookup key). Both the
 image dir and the manifest are **`.gitignore`d build artifacts** — fetched during the Pages build,
-published by mdbook with the site, so no photo dump lands in git. It tries **two public sources in
-order, falling back if the first fails**: (1) the Open States CC0 `image:` URL (a **hardened**
+published by mdbook with the site, so no photo dump lands in git. It tries **three public sources in
+order, falling back if the last found none**: (1) the Open States CC0 `image:` URL (a **hardened**
 retrying downloader — `default_fetch` sends a same-origin `Referer` + an image `Accept` so the
 hotlink-averse legislature/CMS hosts that serve most of these URLs return the photo instead of a 403,
 and rejects a non-image body via `is_image_bytes` magic-number sniffing, so an HTML block/login page
 returned with a 200 is discarded and the next source is tried rather than a broken "photo" written),
-then (2) a **Wikipedia/Wikimedia** page thumbnail, accepted only when the page summary confidently
+then (2) a **Wikipedia** article page thumbnail, accepted only when the page summary confidently
 ties the person to that state's legislature (`wiki_thumbnail` → `_wiki_thumb_if_confident`: a
 legislative-role word *and* the state name must appear, the person's **surname** must appear, and it
 must not be a disambiguation page — federal uses a distinctly-congressional role phrase instead of a
@@ -194,12 +196,21 @@ state — otherwise no photo, so a namesake's face is never attached). The Wikip
 guarded lookups: the exact `Full_Name` page, then — since many legislators live at a disambiguated
 title like "Jane Roe (politician)" the exact lookup misses — Wikipedia's own **search API**
 (`rest.php/v1/search/page` for the name + state + a legislature/congress hint; a real API, not
-screen-scraping), guarding each of the top hits with the same confidence gate. That search step is
-the "find the sponsor the way you'd google them (name + state)" fallback the user asked for, made
-TOS-safe by using Wikipedia search rather than scraping a search engine. Reuses the
+screen-scraping), guarding each of the top hits with the same confidence gate. Then (3) a **Wikimedia
+Commons image search** (`commons_thumbnail`: the Commons `list=search` API over the File namespace,
+`commons.wikimedia.org/w/api.php`, iiurlwidth thumbnail) — a real keyless image-search API, **not** a
+scrape of a search engine's results page — which reaches the many state legislators who have a
+Commons portrait but **no Wikipedia article**. A Commons hit is kept only when the file's **own
+metadata** (title + description + categories) carries **both name tokens (given + surname)** *and* a
+state/legislature signal (the state name or a legislative role word; federal: a congressional role
+phrase), and only for raster files (`_RASTER_MIMES` — an SVG signature or a PDF is skipped) — the same
+"never attach the wrong face" gate. Together, the Wikipedia + Commons searches are the TOS-safe form of
+"search the web for the sponsor's photo": every source is a documented public API, never a scraped
+search-engine result page (which would break constantly and violate ToS, the same rule the elections
+pipeline follows in using Google News' public RSS rather than scraping). Reuses the
 `/tmp/openstates-people` checkout from the roster step; fully fail-soft (no checkout / every source
 fails → that sponsor just isn't pictured).
-Offline-tested with injected fetch + wiki functions: `python3 scripts/test_fetch_sponsor_photos.py`. The **"Next hearings open to comment"** card renders each date as a little
+Offline-tested with injected fetch/wiki/commons functions: `python3 scripts/test_fetch_sponsor_photos.py`. The **"Next hearings open to comment"** card renders each date as a little
 **calendar figure** (`.mini-date`: a gold month band with two binding rings, a big day numeral, and
 the weekday + year, e.g. "Sun · 2026") and labels each hearing's jurisdiction with its **full
 name, never an abbreviation** (a shared code→name `JURIS` map + `jurisName()` helper, `us` →
@@ -300,8 +311,9 @@ state components everywhere — without it the legislation empty state showed un
 `$("loading").hidden = true` never took) and a stray "No races match" box, and the hearings empty
 state was a bare dashed box. **Opening a bill plays a book-open flourish** (`playBookOpen`): the branded book illustration
 (`assets/book-open.png` — the Govbot open-book art, its warm background keyed to transparency with a
-radial edge-fade so the book + sparkles float) with cream **pages flipping** over its spread
-(`.book-fx .page`, hinged at the spine), all over a dark veil (`.book-fx`, appended to `<body>` at a
+radial edge-fade so the book + sparkles float) with **five cream pages** flipping over its spread in a
+slow, staggered riffle (`.book-fx .page` p1–p5, hinged at the spine; the veil holds ~2.4s so the whole
+riffle plays before the card reveals), all over a dark veil (`.book-fx`, appended to `<body>` at a
 z-index above both the bill modal and the results overlay so it always reads on top), then the details
 card swings open
 like a cover (`.book-open-in` → `@keyframes card-book-open`, a `rotateY` reveal). It's decorative —
@@ -566,7 +578,12 @@ unknown). Offline-tested in `scripts/test_build_people_roster.py`. It also attac
 `data.json` tagged `elections & voting` or `education` (the elected CPS board, ward/runoff
 rules, campaign finance), cross-referenced with `hearings.json` for upcoming ILGA hearings,
 shown on the page as context *beside* the races (never mixed into candidate lists) plus a
-`springfield.xml` feed. `deploy-docs.yml` runs this after `data.json`+`hearings.json` are
+`springfield.xml` feed. Each Springfield bill card (`renderSpringfieldBill`) is **clickable** — the
+whole card opens that bill's **full details** (its modal on the legislation dashboard, via
+`legislation.html#bill=il~<session>~<id>`) in a **new tab** so it doesn't replace the elections page
+(same convention as the Recent-IL-activity cards; the inline "View on Legislation Dashboard" / "Bill
+page ↗" links were removed, and the witness-slip link `stopPropagation`s so it doesn't also open the
+bill). `deploy-docs.yml` runs this after `data.json`+`hearings.json` are
 built so it reads the fresh copies. Fail-soft: with sources down the seed's structure still
 ships (empty rosters/springfield), and the deploy keeps the committed sample unless the
 fresh run produced candidates or Springfield bills. Parsers are offline-snapshot-tested:

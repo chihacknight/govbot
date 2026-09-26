@@ -310,7 +310,10 @@
   .sf-rss { margin-left: auto; }
   .sf-search-wrap { width: auto; min-width: 190px; max-width: 260px; }
   .sf-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
-  .sf-bill { border: 1px solid var(--border); border-left: 3px solid var(--series-5); border-radius: 10px; padding: 11px 13px; background: var(--surface-1); display: flex; flex-direction: column; gap: 6px; }
+  .sf-bill { border: 1px solid var(--border); border-left: 3px solid var(--series-5); border-radius: 10px; padding: 11px 13px; background: var(--surface-1); display: flex; flex-direction: column; gap: 6px; cursor: pointer; }
+  .sf-bill:hover { border-color: var(--series-5); transform: translateY(-1px); transition: transform .12s ease; }
+  .sf-bill:focus-visible { outline: 2px solid var(--series-5); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .sf-bill:hover { transform: none; } }
   .sf-bill-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
   .sf-bill-id { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .sf-bill-title { font-size: 13px; color: var(--text-primary); line-height: 1.35; }
@@ -799,7 +802,7 @@
         <p class="el-tagline">Know who’s on your ballot before you vote.</p>
         <p class="el-next" id="el-next"></p>
         <div class="el-cta-row">
-          <span class="el-cov"><span class="el-cov-dot" aria-hidden="true"></span><span><strong>Live now:</strong> local races for Chicago &amp; Cook County, plus every Illinois statewide &amp; federal race. Local races for the rest of Illinois are coming soon.</span></span>
+          <span class="el-cov"><span class="el-cov-dot" aria-hidden="true"></span><span><strong>Live now:</strong> local races for Chicago &amp; Cook County, plus every Illinois statewide &amp; federal race.<br>Local races for the rest of Illinois are coming soon.</span></span>
           <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
         </div>
       </div>
@@ -839,7 +842,7 @@
         </div>
       </div>
       <aside class="cm-detail" id="cm-detail" aria-live="polite">
-        <p class="cm-empty">Click a <b>ward</b> or <b>neighborhood</b> on the map to see the races on that ballot — and which ward each neighborhood sits in.</p>
+        <p class="cm-empty">Click a <b>ward</b> or <b>neighborhood</b> on the map to see the races on that ballot.</p>
       </aside>
     </div>
   </section>
@@ -854,7 +857,6 @@
   <!-- Ballot-first entry: pick a ballot to see every office on it -->
   <section class="ballot-picker" id="ballot-picker" aria-label="What is on your ballot">
     <h2 class="bp-title">What’s on your ballot?</h2>
-    <p class="bp-sub">Two big ballots are coming up. Pick one to see every office, its candidates, and how to weigh in — or scroll on for the full breakdown.</p>
     <div class="ballot-cards" id="ballot-cards"></div>
   </section>
 
@@ -1072,6 +1074,19 @@
     const g = $("groups");
     if (g) g.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
   }
+  // Curated per-ballot scorecard copy (name + the race categories on it). The
+  // race count shown alongside is computed live from the data, not hard-coded.
+  const BALLOT_COPY = {
+    "2026-11-03": {
+      label: "Illinois General Election",
+      cats: "CPS Board of Education, U.S. Senate, U.S. House, Governor & Statewide Offices, Illinois Senate, Illinois House",
+    },
+    "2027-02-23": {
+      label: "Chicago Municipal Election",
+      cats: "Chicago citywide, Alderperson · City Council, Police District Councils",
+    },
+  };
+
   function renderElectionHero(dates) {
     const hf = $("hero-flag");
     if (hf) {
@@ -1108,15 +1123,19 @@
     host.textContent = "";
     dates.forEach((d) => {
       const rs = races.filter((r) => r.ballot_date === d);
-      const withC = rs.filter((r) => r.candidates && r.candidates.length).length;
+      // Curated headline copy per ballot: the election's name + the race
+      // categories on it. The count stays live (rs.length) so it never drifts.
+      const copy = BALLOT_COPY[d];
       const card = document.createElement("button");
       card.type = "button"; card.className = "ballot-card";
-      const lab = document.createElement("div"); lab.className = "bc-label"; lab.textContent = ballotStageLabel(rs);
+      const lab = document.createElement("div"); lab.className = "bc-label";
+      lab.textContent = copy ? copy.label : ballotStageLabel(rs);
       const dt = document.createElement("div"); dt.className = "bc-date"; dt.textContent = prettyDate(d);
       const cnt = document.createElement("div"); cnt.className = "bc-count";
-      cnt.textContent = rs.length + " office" + (rs.length === 1 ? "" : "s") + " · " + withC + " with candidates listed";
-      const go = document.createElement("div"); go.className = "bc-go"; go.textContent = "See this ballot →";
-      card.append(lab, dt, cnt, go);
+      cnt.textContent = copy
+        ? (rs.length + " races — " + copy.cats)
+        : (rs.length + " office" + (rs.length === 1 ? "" : "s") + " listed");
+      card.append(lab, dt, cnt);
       card.addEventListener("click", () => {
         state.filters.ballot = d;
         const sel = $("f-ballot"); if (sel) sel.value = d;
@@ -1522,7 +1541,7 @@
     box.textContent = "";
     if (cmSel == null) {
       const p = document.createElement("p"); p.className = "cm-empty";
-      p.innerHTML = "Click a <b>ward</b> or <b>neighborhood</b> on the map to see the races on that ballot — and which ward each neighborhood sits in.";
+      p.innerHTML = "Click a <b>ward</b> or <b>neighborhood</b> on the map to see the races on that ballot.";
       box.append(p); return;
     }
     const mkLbl = (t) => { const e = document.createElement("div"); e.className = "cm-d-lbl"; e.textContent = t; return e; };
@@ -2566,20 +2585,23 @@
       const a = document.createElement("a");
       a.href = b.hearing.witness_slip_url || b.hearing.details_url || "hearings.html";
       a.target = "_blank"; a.rel = "noopener"; a.textContent = "File a witness slip ↗";
+      a.addEventListener("click", (e) => e.stopPropagation());  // don't also open the bill
       h.append(a);
       card.append(h);
     }
-    const links = document.createElement("div"); links.className = "sf-links";
-    const dash = document.createElement("a");
-    dash.href = "legislation.html#q=" + encodeURIComponent(b.id || "");
-    dash.textContent = "View on Legislation Dashboard";
-    links.append(dash);
-    if (b.url) {
-      const off = document.createElement("a");
-      off.href = b.url; off.target = "_blank"; off.rel = "noopener"; off.textContent = "Bill page ↗";
-      links.append(off);
-    }
-    card.append(links);
+    // The whole card opens the bill's full details (its modal on the legislation
+    // dashboard) in a NEW TAB, so it doesn't replace the elections page — same
+    // convention as the "Recent Illinois legislative activity" cards. Springfield
+    // bills are always Illinois, so the deep-link state is "il".
+    const href = "legislation.html#bill=" + ilBillKey({ state: "il", session: b.session, id: b.id });
+    card.setAttribute("role", "link");
+    card.tabIndex = 0;
+    card.title = "Open the full bill details";
+    const openBill = () => window.open(href, "_blank", "noopener");
+    card.addEventListener("click", openBill);
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openBill(); }
+    });
     return card;
   }
 

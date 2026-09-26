@@ -530,6 +530,13 @@
     if (!party) return { letter: "", cls: "is-unk" };
     return { letter: party.charAt(0).toUpperCase(), cls: "is-oth" };
   }
+  // Initials for the monogram fallback: first + last initial (or a single letter).
+  function initialsOf(full) {
+    var parts = String(full || "").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "?";
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  }
   Promise.all([
     fetch("data.json").then(function (r) { return r.json(); }).catch(function () { return null; }),
     fetch("people.json").then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
@@ -542,12 +549,10 @@
     var dated = bills.filter(function (b) { return b.latest_action; })
       .sort(function (a, b) { return String(b.latest_action).localeCompare(String(a.latest_action)); });
     var pool = dated.length ? dated : bills;
-    // The vendored photo path for one sponsor of a bill, or "" — resolves the
-    // sponsor to a full name, then looks it up in the deploy-built manifest.
-    function photoFor(b, name) {
-      var m = matchLeg(b.state, name, people);
-      var full = m ? m[1] : name;
-      return photos[(b.state || "").toLowerCase() + ":" + String(full).trim().toLowerCase()] || "";
+    // The vendored photo path for a sponsor already resolved to a full name, or ""
+    // (looked up in the deploy-built manifest, keyed "<state>:<full name lower>").
+    function photoPath(state, full) {
+      return photos[(state || "").toLowerCase() + ":" + String(full).trim().toLowerCase()] || "";
     }
     // One bill per state (newest-first), up to 4 — no state monopolizes the strip.
     var seen = {}, rows = [];
@@ -580,26 +585,29 @@
       }).join("");
       var tagsHtml = tags ? '<div class="ar-tags">' + tags + '</div>' : "";
       var sp = b.sponsors || [];
-      // Only sponsors we have a real photo for get an avatar — the homepage
-      // never shows an initials monogram. A sponsor without a headshot is simply
-      // not pictured (still counted in "+N more").
+      // Picture every sponsor we can resolve to a real legislator (or that has a
+      // vendored photo): a headshot when we have one, otherwise a party-tinted
+      // initials monogram. Each carries the sponsor's full name + party. An
+      // unresolved non-person string (e.g. a committee) with no photo is skipped.
       var pics = [];
       sp.forEach(function (name) {
-        var photo = photoFor(b, name);
-        if (!photo) return;
         var m = matchLeg(b.state, name, people);
         var full = m ? m[1] : name;
+        var photo = photoPath(b.state, full);
+        if (!m && !photo) return;   // not a resolvable person and no photo → skip
         var pm = partyMeta(m ? (m[2] || "") : "");
         pics.push({ full: full, pm: pm, photo: photo });
       });
       var shown = pics.slice(0, MAX_SPON);
       var spItems = shown.map(function (p) {
-        var av = '<span class="ar-av ' + p.pm.cls + '">' +
-          '<img class="ar-av-img" src="' + escAttr(p.photo) + '" alt="" loading="lazy"></span>';
+        // Initials sit in the party-tinted circle; a headshot (when vendored)
+        // overlays them, and a runtime load error just reveals the initials again.
+        var img = p.photo ? '<img class="ar-av-img" src="' + escAttr(p.photo) + '" alt="" loading="lazy">' : "";
+        var av = '<span class="ar-av ' + p.pm.cls + '">' + esc(initialsOf(p.full)) + img + '</span>';
         var pl = p.pm.letter ? ' <span class="ar-party ' + p.pm.cls + '">' + esc(p.pm.letter) + '</span>' : "";
         return '<span class="ar-spon">' + av + '<span class="ar-spon-name">' + esc(p.full) + pl + '</span></span>';
       }).join("");
-      var moreN = sp.length - shown.length;
+      var moreN = pics.length - shown.length;
       var moreHtml = moreN > 0 ? '<span class="ar-more">+' + moreN + ' more</span>' : "";
       var sponHtml = spItems ? '<div class="ar-sponsors">' + spItems + moreHtml + '</div>' : "";
       var titleHtml = title ? '<span class="ar-title">' + esc(title) + '</span>' : "";
@@ -611,11 +619,11 @@
         descHtml + tagsHtml + sponHtml + '</a>';
     }).join("");
     document.getElementById("activity-list").innerHTML = html;
-    // If a headshot fails to load at runtime, drop the whole sponsor chip so the
-    // homepage never falls back to an empty circle or initials.
+    // If a headshot fails to load at runtime, drop just the <img> so the
+    // party-tinted initials monogram underneath shows through (keep the sponsor).
     var imgs = document.querySelectorAll("#activity-list .ar-av-img");
     for (var j = 0; j < imgs.length; j++) {
-      imgs[j].onerror = function () { var c = this.closest(".ar-spon"); if (c) c.remove(); };
+      imgs[j].onerror = function () { this.remove(); };
     }
   }).catch(function () {});
 

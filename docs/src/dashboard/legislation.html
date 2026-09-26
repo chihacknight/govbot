@@ -354,7 +354,7 @@
   .book-fx {
     position: fixed; inset: 0; display: grid; place-items: center; z-index: 105; pointer-events: none;
     background: rgba(6, 9, 14, 0.74); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
-    animation: book-fx-fade 0.82s ease both;
+    animation: book-fx-fade 2.5s ease both;
   }
   /* The book is the branded illustration asset; pages flip over its open spread. */
   .book-fx .book {
@@ -370,18 +370,21 @@
     border-radius: 2px 7px 9px 2px;
     background: linear-gradient(118deg, #FCF7EA, #E9DEC2);
     border: 1px solid rgba(0,0,0,0.14); box-shadow: 0 3px 8px rgba(0,0,0,0.3);
-    animation: book-page-flip 0.86s ease-in-out both;
+    animation: book-page-flip 1s ease-in-out both;
   }
   .book-fx .page::before {
     content: ""; position: absolute; inset: 20% 14%;
     background: repeating-linear-gradient(transparent 0 3px, rgba(40,30,10,0.16) 3px 4px);
   }
-  .book-fx .page.p1 { animation-delay: 0.06s; }
-  .book-fx .page.p2 { animation-delay: 0.22s; }
-  .book-fx .page.p3 { animation-delay: 0.38s; }
+  /* Five pages flip in a slow, staggered riffle so the "opening the book" reads. */
+  .book-fx .page.p1 { animation-delay: 0.12s; }
+  .book-fx .page.p2 { animation-delay: 0.42s; }
+  .book-fx .page.p3 { animation-delay: 0.72s; }
+  .book-fx .page.p4 { animation-delay: 1.02s; }
+  .book-fx .page.p5 { animation-delay: 1.32s; }
   @keyframes book-page-flip {
-    0%        { transform: rotateY(2deg); }
-    55%, 100% { transform: rotateY(-174deg); }
+    0%        { transform: rotateY(3deg); }
+    62%, 100% { transform: rotateY(-176deg); }
   }
   @keyframes book-scale {
     0%   { transform: scale(0.88); }
@@ -389,8 +392,8 @@
   }
   @keyframes book-fx-fade {
     0%   { opacity: 0; }
-    14%  { opacity: 1; }
-    80%  { opacity: 1; }
+    6%   { opacity: 1; }
+    90%  { opacity: 1; }
     100% { opacity: 0; }
   }
 
@@ -2423,18 +2426,21 @@
     const fx = mkel("div", "book-fx");
     const book = mkel("div", "book");
     const img = mkel("img", "book-img"); img.src = "assets/book-open.png"; img.alt = ""; img.setAttribute("aria-hidden", "true");
-    book.append(img, mkel("div", "page p1"), mkel("div", "page p2"), mkel("div", "page p3"));
+    book.append(img, mkel("div", "page p1"), mkel("div", "page p2"), mkel("div", "page p3"),
+                mkel("div", "page p4"), mkel("div", "page p5"));
     fx.append(book);
     // Appended to <body> with a z-index above both the bill modal and the results
     // overlay so the flourish always reads on top of whatever it was opened from.
     document.body.appendChild(fx);
+    // Hold long enough for the full staggered page-riffle to play (last page
+    // finishes ~2.3s in) before the veil clears and the card swings open.
     setTimeout(() => {
       fx.remove();                       // always clean up the veil
       if (myKey !== modalKey) return;    // a newer open superseded this card
       card.classList.remove("is-booking");
       card.classList.add("book-open-in");
       setTimeout(() => { if (myKey === modalKey) card.classList.remove("book-open-in"); }, 560);
-    }, 780);
+    }, 2400);
   }
 
   function openDetails(b) {

@@ -84,8 +84,13 @@ def run():
                 return "https://wiki.example/back-thumb.png"
             return None
 
+        # Commons + Wikidata are stubbed off in the vendor-level tests (kept
+        # offline); they have their own dedicated tests below.
+        no_commons = lambda s, f: None  # noqa: E731 - a generic "source found nothing"
+
         got, wanted = fsp.vendor(bills, index, root / "out", root / "m.json",
-                                 fetch=fake_fetch, wiki=fake_wiki, per_state=1, max_bills=6)
+                                 fetch=fake_fetch, wiki=fake_wiki, commons=no_commons,
+                                 wikidata=no_commons, per_state=1, max_bills=6)
         data = json.loads((root / "m.json").read_text())
         # Greg + Alyse via Open States images; Fally Back via the Wikipedia
         # fallback (his OS image failed). Noimage has neither -> not pictured.
@@ -100,7 +105,7 @@ def run():
         bills_fed = [{"state": "usa", "latest_action": "2026-02-11",
                       "sponsors": ["Carol D. Miller"]}]
         fsp.vendor(bills_fed, index, root / "outf", root / "mf.json",
-                   fetch=fake_fetch, wiki=fake_wiki)
+                   fetch=fake_fetch, wiki=fake_wiki, commons=no_commons, wikidata=no_commons)
         dataf = json.loads((root / "mf.json").read_text())
         assert dataf == {"usa:carol d. miller": "assets/legislators/usa-carol-d-miller.jpg"}, \
             f"federal manifest must key by RAW sponsor name: {dataf}"
@@ -188,15 +193,176 @@ def run():
         assert src == "https://wiki.example/back.png" and fsp.is_image_bytes(d), \
             "HTML from the OS image is rejected; the real image wins"
 
+        # --- Wikimedia Commons search source --------------------------------
+        def commons_page(desc, cats, title="File:Jane Roe.jpg",
+                         thumb="https://upload.example/jane_thumb.jpg", mime="image/jpeg"):
+            return {"query": {"pages": {"7": {
+                "index": 1, "title": title,
+                "imageinfo": [{"thumburl": thumb, "url": thumb, "mime": mime,
+                               "extmetadata": {
+                                   "ImageDescription": {"value": desc},
+                                   "Categories": {"value": cats},
+                               }}]}}}}
+
+        # a confident hit: both names + the state + a legislative category
+        ok_c = commons_page(
+            "Jane Roe, member of the <b>Alabama</b> House of Representatives",
+            "Members of the Alabama House of Representatives")
+        assert fsp.commons_thumbnail("al", "Jane Roe", get_json=lambda u, t=15: ok_c) \
+            == "https://upload.example/jane_thumb.jpg", "commons: confident hit kept"
+
+        # surname present but the given name is not -> refuse (maybe a different Roe)
+        wrong_person_c = commons_page(
+            "A. Roe at the Alabama House of Representatives",
+            "Members of the Alabama House of Representatives",
+            title="File:A Roe portrait.jpg")
+        assert fsp.commons_thumbnail("al", "Jane Roe", get_json=lambda u, t=15: wrong_person_c) \
+            is None, "commons: both name tokens required"
+
+        # right person but no state/legislature signal -> refuse
+        no_signal_c = commons_page("Jane Roe at a wedding", "Weddings in 2021")
+        assert fsp.commons_thumbnail("al", "Jane Roe", get_json=lambda u, t=15: no_signal_c) \
+            is None, "commons: a legislature/state signal is required"
+
+        # an SVG (non-raster) file is skipped even if the metadata matches
+        svg_c = commons_page(
+            "Jane Roe, Alabama House of Representatives",
+            "Members of the Alabama House of Representatives",
+            title="File:Jane Roe signature.svg", mime="image/svg+xml")
+        assert fsp.commons_thumbnail("al", "Jane Roe", get_json=lambda u, t=15: svg_c) \
+            is None, "commons: non-raster files are skipped"
+
+        # federal: a congressional phrase in the metadata, no state needed
+        fed_c = commons_page(
+            "Carol Miller, United States Representative for West Virginia",
+            "Members of the United States House of Representatives from West Virginia",
+            title="File:Carol Miller official photo.jpg")
+        assert fsp.commons_thumbnail("usa", "Carol Miller", get_json=lambda u, t=15: fed_c) \
+            == "https://upload.example/jane_thumb.jpg", "commons: federal role accepted"
+
+        # a search that raises -> None, no crash
+        def commons_boom(u, t=15):
+            raise RuntimeError("503")
+        assert fsp.commons_thumbnail("al", "Jane Roe", get_json=commons_boom) is None
+
+        # a single-token name is too risky to gate -> None (never queried loosely)
+        assert fsp.commons_thumbnail("al", "Roe", get_json=lambda u, t=15: ok_c) is None, \
+            "commons: a lone token is refused"
+
+        # --- Wikidata source ------------------------------------------------
+        def wd(search, entities):
+            """A get_json that answers wbsearchentities then wbgetentities."""
+            def _f(url, timeout=15):
+                if "wbsearchentities" in url:
+                    return search
+                if "wbgetentities" in url:
+                    return entities
+                raise RuntimeError("unexpected url")
+            return _f
+
+        search_ok = {"search": [{"id": "Q100"}]}
+
+        def entity(desc, claims, label="Jane Roe", aliases=None):
+            return {"entities": {"Q100": {
+                "labels": {"en": {"value": label}},
+                "descriptions": {"en": {"value": desc}},
+                "aliases": {"en": [{"value": a} for a in (aliases or [])]},
+                "claims": claims,
+            }}}
+
+        def p18(filename="Jane Roe.jpg"):
+            return {"P18": [{"mainsnak": {"datavalue": {"value": filename}}}]}
+
+        def p106(qid):
+            return {"mainsnak": {"datavalue": {"value": {"id": qid}}}}
+
+        # confident: name + P18 + politician occupation + the state in the desc
+        ent_ok = entity("American politician from Alabama",
+                        {**p18(), "P106": [p106("Q82955")]})
+        assert fsp.wikidata_thumbnail("al", "Jane Roe", get_json=wd(search_ok, ent_ok)) \
+            == "https://commons.wikimedia.org/wiki/Special:FilePath/Jane_Roe.jpg?width=400", \
+            "wikidata: confident item -> FilePath URL"
+
+        # a legislative role word in the description satisfies 'politician' too
+        ent_role = entity("Member of the Alabama House of Representatives", p18())
+        assert fsp.wikidata_thumbnail("al", "Jane Roe", get_json=wd(search_ok, ent_role)) \
+            is not None, "wikidata: a legislative role word counts as politician"
+
+        # politician but NO place tie (desc lacks the state) -> refuse (namesake risk)
+        ent_nostate = entity("American politician", {**p18(), "P106": [p106("Q82955")]})
+        assert fsp.wikidata_thumbnail("al", "Jane Roe", get_json=wd(search_ok, ent_nostate)) \
+            is None, "wikidata: a place tie (state name) is required for state bills"
+
+        # has the state + name but is NOT a politician -> refuse
+        ent_notpol = entity("American chef from Alabama", p18())
+        assert fsp.wikidata_thumbnail("al", "Jane Roe", get_json=wd(search_ok, ent_notpol)) \
+            is None, "wikidata: a politician signal is required"
+
+        # right person by name but the item has no P18 image -> refuse
+        ent_noimg = entity("American politician from Alabama", {"P106": [p106("Q82955")]})
+        assert fsp.wikidata_thumbnail("al", "Jane Roe", get_json=wd(search_ok, ent_noimg)) \
+            is None, "wikidata: no P18 -> no photo"
+
+        # wrong person (surname matches, given name doesn't) -> refuse
+        ent_wrong = entity("American politician from Alabama",
+                           {**p18(), "P106": [p106("Q82955")]}, label="Bob Roe")
+        assert fsp.wikidata_thumbnail("al", "Jane Roe", get_json=wd(search_ok, ent_wrong)) \
+            is None, "wikidata: both name tokens must match the item"
+
+        # federal: a congressional role word ties it, no state needed
+        ent_fed = entity("United States representative from West Virginia",
+                         {**p18("Carol Miller.jpg"), "P106": [p106("Q82955")]},
+                         label="Carol Miller")
+        assert fsp.wikidata_thumbnail("usa", "Carol Miller", get_json=wd(search_ok, ent_fed)) \
+            == "https://commons.wikimedia.org/wiki/Special:FilePath/Carol_Miller.jpg?width=400", \
+            "wikidata: federal ties on a congressional role"
+
+        # no search hits, and a raising search -> None, no crash
+        assert fsp.wikidata_thumbnail("al", "Jane Roe", get_json=wd({"search": []}, {})) is None
+        def wd_boom(url, timeout=15):
+            raise RuntimeError("500")
+        assert fsp.wikidata_thumbnail("al", "Jane Roe", get_json=wd_boom) is None
+
+        # --- four-source fallback ordering in resolve_photo -----------------
+        # OS + Wikipedia + Commons all yield nothing; Wikidata supplies the photo.
+        def only_wd_ok(url):
+            if "wikidata.example" in url:
+                return b"\x89PNG\r\n\x1a\n" + b"\x00" * 40
+            raise RuntimeError("boom")
+        d4, src4 = fsp.resolve_photo(
+            "al", "Jane Roe", "https://osfail.example/x.jpg",
+            fetch=only_wd_ok, wiki=lambda s, f: None,
+            commons=lambda s, f: None,
+            wikidata=lambda s, f: "https://wikidata.example/jane.png",
+            max_bytes=3_000_000)
+        assert src4 == "https://wikidata.example/jane.png" and fsp.is_image_bytes(d4), \
+            "resolve_photo falls through OS + wiki + commons to the Wikidata hit"
+
+        # --- three-source fallback ordering in resolve_photo ----------------
+        # OS image fails, Wikipedia has nothing, Commons supplies the photo.
+        def only_wiki_fails(url):
+            if "commons.example" in url:
+                return b"\x89PNG\r\n\x1a\n" + b"\x00" * 40
+            raise RuntimeError("boom")
+        d3, src3 = fsp.resolve_photo(
+            "al", "Jane Roe", "https://osfail.example/x.jpg",
+            fetch=only_wiki_fails, wiki=lambda s, f: None,
+            commons=lambda s, f: "https://commons.example/jane.png",
+            max_bytes=3_000_000)
+        assert src3 == "https://commons.example/jane.png" and fsp.is_image_bytes(d3), \
+            "resolve_photo falls through OS + wiki to the Commons hit"
+
         # --- fail-soft: empty index writes an empty manifest ---------------
         got2, _ = fsp.vendor(bills, {}, root / "out2", root / "m2.json",
-                             fetch=fake_fetch, wiki=fake_wiki)
+                             fetch=fake_fetch, wiki=fake_wiki, commons=no_commons,
+                             wikidata=no_commons)
         assert got2 == 0 and json.loads((root / "m2.json").read_text()) == {}, "empty index -> {}"
 
         # --- fail-soft: a sponsor with no working source is simply skipped --
         bills3 = [{"state": "al", "latest_action": "2026-03-01", "sponsors": ["Butler, T"]}]
         got3, wanted3 = fsp.vendor(bills3, index, root / "out3", root / "m3.json",
-                                   fetch=fake_fetch, wiki=fake_wiki)  # tom OS fails, no wiki
+                                   fetch=fake_fetch, wiki=fake_wiki, commons=no_commons,
+                                   wikidata=no_commons)  # tom OS fails, no other source
         assert wanted3 == 1 and got3 == 0, "a sponsor with no source must not be manifested"
         assert json.loads((root / "m3.json").read_text()) == {}, "no entry when every source fails"
 
