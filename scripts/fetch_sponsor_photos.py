@@ -15,8 +15,10 @@ public, so this fetches them at deploy time.
      us from ever attaching the wrong face to a real official — when unsure we
      take no photo (the homepage then just doesn't picture that sponsor).
 
-**Deliberately bounded.** We only fetch for the sponsors of the newest bill per
-state that the homepage shows (a small cap), not the whole roster. The images
+**Deliberately bounded.** We only fetch for the sponsors of the newest few bills
+per state that the homepage might show (a small cap — the homepage prefers, per
+state, the newest bill whose sponsors we have photos for), not the whole roster.
+The images
 and manifest are *build artifacts*: `.gitignore`d, produced during the Pages
 deploy, and published with the site — never committed, so the repo carries no
 photo dump.
@@ -86,7 +88,7 @@ _ROLE_WORDS = (
 # (newest recorded action first, one bill per state), so we only fetch photos
 # for the sponsors the card can actually show, never the whole set.
 # ----------------------------------------------------------------------------
-def onscreen_bills(bills, per_state=1, max_bills=6):
+def onscreen_bills(bills, per_state=4, max_bills=32):
     dated = [b for b in bills if b.get("latest_action")]
     pool = sorted(dated or bills,
                   key=lambda b: str(b.get("latest_action") or ""), reverse=True)
@@ -243,7 +245,7 @@ def resolve_photo(state, full, os_image, fetch, wiki, max_bytes):
 
 
 def vendor(bills, index, out_dir, manifest_path, fetch=default_fetch,
-           wiki=wiki_thumbnail, per_state=1, max_bills=6, max_bytes=3_000_000):
+           wiki=wiki_thumbnail, per_state=4, max_bills=32, max_bytes=3_000_000):
     """Download photos for the on-screen sponsors and write the manifest.
 
     Returns (downloaded, wanted). ``fetch`` and ``wiki`` are injectable so tests
@@ -288,8 +290,8 @@ def main(argv=None):
                     help="checkout of github.com/openstates/people (for image URLs)")
     ap.add_argument("--out-dir", required=True, help="where to write the images")
     ap.add_argument("--manifest", required=True, help="where to write the JSON manifest")
-    ap.add_argument("--per-state", type=int, default=1)
-    ap.add_argument("--max-bills", type=int, default=6)
+    ap.add_argument("--per-state", type=int, default=4)
+    ap.add_argument("--max-bills", type=int, default=32)
     args = ap.parse_args(argv)
 
     try:
