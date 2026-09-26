@@ -313,7 +313,12 @@ button was removed)) and a "What's on your ballot?" selector
 (`#ballot-cards`, one card per distinct `ballot_date` with its stage label + office/candidate
 counts) that drives the existing `#f-ballot` filter, reveals the sections, and scrolls to
 `#groups` (`renderElectionHero`). The rich race engine (groups, five drawers, calendar,
-Springfield, picker) is unchanged. Above the ballot-picker sits a **"Find your ballot"** map-first
+Springfield, picker) is unchanged. **The standalone Illinois county finder (`#bfinder`,
+`renderBallotFinder`) was removed** — the Explore Chicago map below (retitled "Find your ballot")
+is the single ballot entry now, so the redundant second IL map + county/ward picker are gone. The
+`renderBallotFinder`/`resolveBallot` functions and the `#bf-*` guards remain defined but uncalled
+(and `cmOpenWardBallot` still guards `#bf-ward-sel`/`#bf-chips`), so nothing throws. What that finder
+used to be (kept here for context): a **"Find your ballot"** map-first
 entry (`#bfinder`, `renderBallotFinder`): a geographic **Illinois county choropleth** — all 102
 county paths + the state outline from the committed `assets/il-counties.json` (generated from US
 Census county geometry, equirectangular north-up with a cos(lat) correction; fetched fail-soft, so
@@ -339,9 +344,12 @@ inline `.bf-coverage` note, the map legend, and the corner "click a county" hint
 the finder clean.) It drives the same `state.view` Set + `applyView()` the picker
 uses (so the sections reveal and the page scrolls to `#groups`), and `#f-clear` also drops the ward
 and the finder's selection. The lookup is **map + picker only** (no address/ZIP geocoding) so it is
-fully offline and deterministic. Below the finder sits an **"Explore Chicago"** section (`#chimap`,
-`renderChicagoMap`): a **colorful, zoomable geographic choropleth of Chicago** with a **Wards (50) /
-Neighborhoods (77) toggle** (`cm-seg`). A small **Illinois locator inset** (`.cm-locator`,
+fully offline and deterministic. The page's ballot entry is the **"Find your ballot"** section
+(`#chimap`, `renderChicagoMap`, titled "Find your ballot" / "Pick where you live and we'll show
+every race you can vote in."): a **colorful, zoomable geographic choropleth of Chicago** with a
+**Wards (50) / Neighborhoods (77) toggle** (`cm-seg`). The detail card (`.cm-detail`) is a **fixed
+height matching the map (560px; auto/stacked under 820px) and scrolls internally** so a long ballot
+list doesn't unbalance the row (`.cm-body` is `align-items: start`). A small **Illinois locator inset** (`.cm-locator`,
 `cmBuildLocator` — the `state_d` outline + Cook County from `il-counties.json`, a gold Chicago dot at
 Cook's centroid) sits to the left with **two dashed callout lines** (`.cm-connect`, `cmDrawConnector`)
 fanning from the Chicago dot to the big map's corners — the classic magnifier/"you-are-here" device;
