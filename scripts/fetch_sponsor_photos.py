@@ -5,7 +5,7 @@ The homepage's "Recent legislative activity" card lists the newest bill per
 state and renders each sponsor as a small round photo. Legislator headshots are
 public, so this fetches them at deploy time.
 
-**Three public sources, tried in order (each a fallback if the last found none):**
+**Four public sources, tried in order (each a fallback if the last found none):**
   1. **Open States** ``image:`` URL — the canonical headshot, sourced from the
      official legislature site (the same CC0 people repo the name roster uses).
   2. **Wikipedia** — the article page thumbnail, accepted **only when Wikipedia
@@ -18,6 +18,11 @@ public, so this fetches them at deploy time.
      but no Wikipedia *article*. A hit is kept **only when the file's own metadata
      (title, description, categories) carries the person's name *and* a
      state/legislature signal** — the same "never attach the wrong face" gate.
+  4. **Wikidata** — the structured-data layer: an item's ``P18`` image (resolved via
+     Commons ``Special:FilePath``), for people who have a Wikidata item but no
+     article/searchable file. Kept **only when** both name tokens appear, the item
+     reads as a politician (occupation *politician*, or a legislative role word),
+     and it ties to the right place (state name / a congressional role) — same gate.
 
 This is the TOS-safe form of "search the web for the photo": every source is a
 documented public API, never a scrape of a search engine's result page. When no
@@ -430,12 +435,113 @@ def commons_thumbnail(state, full, get_json=_default_get_json, timeout=15):
     return None
 
 
-def resolve_photo(state, full, os_image, fetch, wiki, max_bytes, commons=None):
+_POLITICIAN_QIDS = ("Q82955",)  # Wikidata "politician" occupation (P106)
+
+
+def _wikidata_claim_str(claims, prop):
+    """The first string value of a Wikidata claim (e.g. P18's Commons filename)."""
+    for c in (claims.get(prop) or []) if isinstance(claims, dict) else []:
+        try:
+            v = c["mainsnak"]["datavalue"]["value"]
+        except (KeyError, TypeError):
+            continue
+        if isinstance(v, str) and v.strip():
+            return v.strip()
+    return None
+
+
+def _wikidata_claim_has_qid(claims, prop, qids):
+    """True if a Wikidata claim (e.g. P106 occupation) references one of ``qids``."""
+    for c in (claims.get(prop) or []) if isinstance(claims, dict) else []:
+        try:
+            if c["mainsnak"]["datavalue"]["value"]["id"] in qids:
+                return True
+        except (KeyError, TypeError):
+            continue
+    return False
+
+
+def wikidata_thumbnail(state, full, get_json=_default_get_json, timeout=15):
+    """A portrait for ``full`` via **Wikidata** — the structured-data layer behind
+    Wikipedia/Commons. Many legislators have a Wikidata *item* carrying an image
+    (property ``P18``) even with no Wikipedia article and no directly-searchable
+    Commons file, so this catches people the other sources miss.
+
+    Two keyless API calls: ``wbsearchentities`` for the name, then ``wbgetentities``
+    for the top items' labels/aliases/descriptions/claims. An item is kept **only
+    when** both name tokens (given + surname) appear in its label/aliases, it has a
+    ``P18`` image, it reads as a politician (an occupation of *politician*, or a
+    legislative role word in its description), **and** it ties to the right place —
+    federal: a congressional role word; state: the state name in the item's text.
+    The ``P18`` filename is resolved to an image URL via Commons ``Special:FilePath``.
+    Otherwise None, so a same-named item for a different person is never attached."""
+    parts = str(full).strip().split()
+    if len(parts) < 2:
+        return None
+    given, surname = parts[0].lower(), parts[-1].lower()
+    state_name = _STATE_NAMES.get((state or "").lower(), "")
+    search_url = "https://www.wikidata.org/w/api.php?" + urllib.parse.urlencode({
+        "action": "wbsearchentities", "search": str(full).strip(), "language": "en",
+        "uselang": "en", "format": "json", "type": "item", "limit": "8"})
+    try:
+        res = get_json(search_url, timeout)
+    except Exception as exc:  # noqa: BLE001 - search unavailable -> no fallback photo
+        print(f"warning: wikidata search failed for {full}: {exc}", file=sys.stderr)
+        return None
+    hits = res.get("search") if isinstance(res, dict) else None
+    ids = [h.get("id") for h in (hits or []) if isinstance(h, dict) and h.get("id")][:6]
+    if not ids:
+        return None
+    ent_url = "https://www.wikidata.org/w/api.php?" + urllib.parse.urlencode({
+        "action": "wbgetentities", "ids": "|".join(ids), "format": "json",
+        "props": "labels|descriptions|aliases|claims", "languages": "en"})
+    try:
+        ent = get_json(ent_url, timeout)
+    except Exception as exc:  # noqa: BLE001 - entity fetch failed -> no fallback photo
+        print(f"warning: wikidata entities failed for {full}: {exc}", file=sys.stderr)
+        return None
+    entities = ent.get("entities") if isinstance(ent, dict) else None
+    if not isinstance(entities, dict):
+        return None
+    for qid in ids:  # preserve the search ranking
+        e = entities.get(qid)
+        if not isinstance(e, dict):
+            continue
+        label = (((e.get("labels") or {}).get("en") or {}).get("value")) or ""
+        desc = (((e.get("descriptions") or {}).get("en") or {}).get("value")) or ""
+        aliases = " ".join(a.get("value", "") for a in ((e.get("aliases") or {}).get("en") or [])
+                           if isinstance(a, dict))
+        name_blob = (label + " " + aliases).lower()
+        if surname not in name_blob or given not in name_blob:
+            continue  # not confidently this person
+        claims = e.get("claims") or {}
+        image = _wikidata_claim_str(claims, "P18")
+        if not image:
+            continue
+        is_politician = any(w in desc.lower() for w in _ROLE_WORDS) \
+            or _wikidata_claim_has_qid(claims, "P106", _POLITICIAN_QIDS)
+        if not is_politician:
+            continue
+        text_blob = (label + " " + aliases + " " + desc).lower()
+        if is_federal(state):
+            ok = any(w in text_blob for w in _FED_WORDS) or "congress" in text_blob
+        else:
+            ok = bool(state_name) and state_name.lower() in text_blob
+        if not ok:
+            continue  # no place tie -> don't risk a same-named politician elsewhere
+        return ("https://commons.wikimedia.org/wiki/Special:FilePath/"
+                + urllib.parse.quote(image.replace(" ", "_")) + "?width=400")
+    return None
+
+
+def resolve_photo(state, full, os_image, fetch, wiki, max_bytes,
+                  commons=None, wikidata=None):
     """Try each public source in turn and return (bytes, source_url) or
     (None, None): (1) the Open States image, (2) a confidently-matched Wikipedia
-    thumbnail, then (3) a confidently-matched Wikimedia Commons search hit. A
-    failure of one method falls through to the next. ``commons`` is optional (and
-    injectable) so callers/tests that don't want the Commons step can omit it."""
+    thumbnail, (3) a confidently-matched Wikimedia Commons search hit, then (4) a
+    confidently-matched Wikidata ``P18`` image. A failure of one method falls
+    through to the next. ``commons`` and ``wikidata`` are optional (and injectable)
+    so callers/tests that don't want those steps can omit them."""
     candidates = []
     if os_image:
         candidates.append(os_image)
@@ -446,6 +552,10 @@ def resolve_photo(state, full, os_image, fetch, wiki, max_bytes, commons=None):
         curl = commons(state, full)
         if curl:
             candidates.append(curl)
+    if wikidata is not None:
+        wurl = wikidata(state, full)
+        if wurl:
+            candidates.append(wurl)
     for url in candidates:
         try:
             data = fetch(url)
@@ -460,18 +570,18 @@ def resolve_photo(state, full, os_image, fetch, wiki, max_bytes, commons=None):
 
 
 def vendor(bills, index, out_dir, manifest_path, fetch=default_fetch,
-           wiki=wiki_thumbnail, commons=commons_thumbnail,
+           wiki=wiki_thumbnail, commons=commons_thumbnail, wikidata=wikidata_thumbnail,
            per_state=1, max_bills=6, max_bytes=3_000_000):
     """Download photos for the on-screen sponsors and write the manifest.
 
-    Returns (downloaded, wanted). ``fetch``, ``wiki`` and ``commons`` are
-    injectable so tests stay offline.
+    Returns (downloaded, wanted). ``fetch``, ``wiki``, ``commons`` and ``wikidata``
+    are injectable so tests stay offline.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Every resolved sponsor is a candidate — even one with no Open States image,
-    # since the Wikipedia / Commons fallbacks may still have a photo for them.
+    # since the Wikipedia / Commons / Wikidata fallbacks may still have a photo.
     wanted = {}
     for b in onscreen_bills(bills, per_state, max_bills):
         st = b.get("state") or ""
@@ -489,7 +599,8 @@ def vendor(bills, index, out_dir, manifest_path, fetch=default_fetch,
 
     manifest, got = {}, 0
     for key, (st, full, os_image) in sorted(wanted.items()):
-        data, src = resolve_photo(st, full, os_image, fetch, wiki, max_bytes, commons=commons)
+        data, src = resolve_photo(st, full, os_image, fetch, wiki, max_bytes,
+                                  commons=commons, wikidata=wikidata)
         if not data:
             continue
         fname = f"{st.lower()}-{_slug(full)}{_ext_for(src)}"
