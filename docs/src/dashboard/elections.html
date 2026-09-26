@@ -559,18 +559,7 @@
   .midterm-banner { width: 100%; text-align: left; font: inherit; cursor: pointer; display: flex; align-items: center; gap: 16px; margin: 0 0 22px; padding: 15px 20px; border: 1px solid var(--border); border-left: 4px solid var(--gb-blue); border-radius: 14px; background: var(--surface-1); color: var(--text-primary); }
   .midterm-banner:hover { border-color: var(--baseline); transform: translateY(-1px); transition: transform .12s ease; }
   .midterm-banner:focus-visible { outline: 2px solid var(--gb-blue); outline-offset: 2px; }
-  /* Waving USA flag (inline SVG) in place of the flat emoji. The cloth waves via
-     the same transform ripple as the hero Illinois flag; still under reduced-motion. */
-  .mb-flag { width: 44px; flex: none; align-self: center; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.35)); }
-  .mb-flag svg { display: block; width: 100%; height: auto; overflow: visible; border-radius: 1.5px; }
-  .mb-flag .us-wave { transform-box: fill-box; transform-origin: left center; animation: uswave 3s ease-in-out infinite; }
-  @keyframes uswave {
-    0%, 100% { transform: rotate(0deg) skewX(0deg) scaleX(1); }
-    25% { transform: rotate(-1.4deg) skewX(6deg) scaleX(1.03); }
-    55% { transform: rotate(0.8deg) skewX(-4deg) scaleX(0.99); }
-    78% { transform: rotate(-0.9deg) skewX(3deg) scaleX(1.01); }
-  }
-  @media (prefers-reduced-motion: reduce) { .mb-flag .us-wave { animation: none; } }
+  .mb-flag { font-size: 26px; line-height: 1; flex: none; }
   .mb-copy { flex-grow: 1; font-size: 14px; line-height: 1.5; }
   .mb-copy b { font-family: var(--gb-font-display); font-weight: 600; font-size: 16px; }
   .mb-cta { flex: none; font-size: 13.5px; font-weight: 700; color: var(--gb-gold-hi); white-space: nowrap; }
@@ -873,24 +862,7 @@
 
   <!-- 2026 federal midterm callout: jumps to the U.S. Senate & House races already on the ballot -->
   <button type="button" class="midterm-banner" id="midterm-banner" hidden>
-    <span class="mb-flag" aria-hidden="true">
-      <svg viewBox="0 0 38 20" aria-hidden="true"><g class="us-wave">
-        <rect width="38" height="20" fill="#F7F7F7"/>
-        <g fill="#B22234">
-          <rect y="0" width="38" height="1.538"/><rect y="3.077" width="38" height="1.538"/>
-          <rect y="6.154" width="38" height="1.538"/><rect y="9.231" width="38" height="1.538"/>
-          <rect y="12.308" width="38" height="1.538"/><rect y="15.385" width="38" height="1.538"/>
-          <rect y="18.462" width="38" height="1.538"/>
-        </g>
-        <rect width="15.2" height="10.769" fill="#3C3B6E"/>
-        <g fill="#FFFFFF">
-          <circle cx="2.0" cy="1.7" r="0.5"/><circle cx="4.9" cy="1.7" r="0.5"/><circle cx="7.8" cy="1.7" r="0.5"/><circle cx="10.7" cy="1.7" r="0.5"/><circle cx="13.6" cy="1.7" r="0.5"/>
-          <circle cx="2.0" cy="4.15" r="0.5"/><circle cx="4.9" cy="4.15" r="0.5"/><circle cx="7.8" cy="4.15" r="0.5"/><circle cx="10.7" cy="4.15" r="0.5"/><circle cx="13.6" cy="4.15" r="0.5"/>
-          <circle cx="2.0" cy="6.6" r="0.5"/><circle cx="4.9" cy="6.6" r="0.5"/><circle cx="7.8" cy="6.6" r="0.5"/><circle cx="10.7" cy="6.6" r="0.5"/><circle cx="13.6" cy="6.6" r="0.5"/>
-          <circle cx="2.0" cy="9.05" r="0.5"/><circle cx="4.9" cy="9.05" r="0.5"/><circle cx="7.8" cy="9.05" r="0.5"/><circle cx="10.7" cy="9.05" r="0.5"/><circle cx="13.6" cy="9.05" r="0.5"/>
-        </g>
-      </g></svg>
-    </span>
+    <span class="mb-flag" aria-hidden="true">🇺🇸</span>
     <span class="mb-copy"><b>The 2026 midterms decide control of Congress.</b> On Nov 3, Illinois votes for a U.S. Senate seat and all 17 U.S. House districts — part of the national midterm that sets the balance of power in Washington.</span>
     <span class="mb-cta">See the federal races →</span>
   </button>
