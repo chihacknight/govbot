@@ -15,9 +15,9 @@ public, so this fetches them at deploy time.
      us from ever attaching the wrong face to a real official — when unsure we
      take no photo (the homepage then just doesn't picture that sponsor).
 
-**Deliberately bounded.** We only fetch for the sponsors of the newest few bills
-per state that the homepage might show (a small cap — the homepage prefers, per
-state, the newest bill whose sponsors we have photos for), not the whole roster.
+**Deliberately bounded.** We only fetch for the sponsors of the newest bill per
+state that the homepage shows (a small cap), not the whole roster — including the
+newest **federal** ("usa") bill, whose Congress members carry reliable CC0 photos.
 The images
 and manifest are *build artifacts*: `.gitignore`d, produced during the Pages
 deploy, and published with the site — never committed, so the repo carries no
@@ -82,13 +82,22 @@ _ROLE_WORDS = (
     "assemblyman", "assemblywoman", "delegate", "lawmaker",
 )
 
+# Distinctly-federal role phrases — used to confirm a Wikipedia page is about a
+# member of the U.S. Congress (federal bills carry no state to cross-check).
+_FED_WORDS = (
+    "united states representative", "u.s. representative", "us representative",
+    "united states senator", "u.s. senator", "us senator",
+    "member of congress", "congressman", "congresswoman", "congressperson",
+    "united states congress",
+)
+
 
 # ----------------------------------------------------------------------------
 # Which bills are "on screen": mirror the homepage's Recent-activity selection
 # (newest recorded action first, one bill per state), so we only fetch photos
 # for the sponsors the card can actually show, never the whole set.
 # ----------------------------------------------------------------------------
-def onscreen_bills(bills, per_state=4, max_bills=32):
+def onscreen_bills(bills, per_state=1, max_bills=6):
     dated = [b for b in bills if b.get("latest_action")]
     pool = sorted(dated or bills,
                   key=lambda b: str(b.get("latest_action") or ""), reverse=True)
@@ -110,9 +119,10 @@ def onscreen_bills(bills, per_state=4, max_bills=32):
 def build_index(people_dir):
     data_dir = Path(people_dir) / "data"
     index = {}
-    # Federal (data/us) sponsors already arrive with full names and aren't shown
-    # in the per-state card; skip to stay lean, matching build_people_roster.
-    for state_dir in sorted(p for p in data_dir.glob("*") if p.is_dir() and p.name != "us"):
+    # Includes federal (`data/us`) too — those Congress bills DO appear on the
+    # homepage (as "USA") and their members carry reliable CC0 headshots. The
+    # people repo dir is "us"; `data.json` labels federal bills "usa", so we alias.
+    for state_dir in sorted(p for p in data_dir.glob("*") if p.is_dir()):
         leg = state_dir / "legislature"
         if not leg.is_dir():
             continue
@@ -134,7 +144,13 @@ def build_index(people_dir):
             fam.setdefault(family.lower(), []).append((given, full, image))
         if fam:
             index[state_dir.name] = fam
+            if state_dir.name == "us":
+                index["usa"] = fam   # data.json's federal state code
     return index
+
+
+def is_federal(state):
+    return (state or "").lower() in ("us", "usa")
 
 
 # Resolve a sponsor to exactly one legislator, or None — the same rules as
@@ -215,12 +231,18 @@ def wiki_thumbnail(state, full, get_json=_default_get_json, timeout=15):
     if not isinstance(data, dict) or data.get("type") == "disambiguation":
         return None
     blob = ((data.get("description") or "") + " " + (data.get("extract") or "")).lower()
+    thumb = ((data.get("thumbnail") or {}).get("source")) or None
+    # Federal: there's no state to cross-check, so require a distinctly-federal
+    # congressional role phrase instead (Congress members are notable, so a
+    # full-name page match is reliable).
+    if is_federal(state):
+        return thumb if any(w in blob for w in _FED_WORDS) else None
     state_name = _STATE_NAMES.get((state or "").lower(), "")
     is_legislator = any(w in blob for w in _ROLE_WORDS)
     right_place = bool(state_name) and state_name.lower() in blob
     if not (is_legislator and right_place):
         return None
-    return ((data.get("thumbnail") or {}).get("source")) or None
+    return thumb
 
 
 def resolve_photo(state, full, os_image, fetch, wiki, max_bytes):
@@ -245,7 +267,7 @@ def resolve_photo(state, full, os_image, fetch, wiki, max_bytes):
 
 
 def vendor(bills, index, out_dir, manifest_path, fetch=default_fetch,
-           wiki=wiki_thumbnail, per_state=4, max_bills=32, max_bytes=3_000_000):
+           wiki=wiki_thumbnail, per_state=1, max_bills=6, max_bytes=3_000_000):
     """Download photos for the on-screen sponsors and write the manifest.
 
     Returns (downloaded, wanted). ``fetch`` and ``wiki`` are injectable so tests
@@ -264,7 +286,12 @@ def vendor(bills, index, out_dir, manifest_path, fetch=default_fetch,
             if not m:
                 continue  # unresolved (e.g. a committee) — no photo, not pictured
             _given, full, image = m
-            wanted.setdefault(img_key(st, full), (st, full, image or ""))
+            # The manifest key must equal what the frontend's photoFor() looks up:
+            # state bills resolve the sponsor to the people.json roster full name,
+            # but federal ("usa") has no people.json roster, so the frontend keys by
+            # the RAW sponsor name — mirror that so the lookup hits.
+            key_name = name if is_federal(st) else full
+            wanted.setdefault(img_key(st, key_name), (st, full, image or ""))
 
     manifest, got = {}, 0
     for key, (st, full, os_image) in sorted(wanted.items()):
@@ -290,8 +317,8 @@ def main(argv=None):
                     help="checkout of github.com/openstates/people (for image URLs)")
     ap.add_argument("--out-dir", required=True, help="where to write the images")
     ap.add_argument("--manifest", required=True, help="where to write the JSON manifest")
-    ap.add_argument("--per-state", type=int, default=4)
-    ap.add_argument("--max-bills", type=int, default=32)
+    ap.add_argument("--per-state", type=int, default=1)
+    ap.add_argument("--max-bills", type=int, default=6)
     args = ap.parse_args(argv)
 
     try:

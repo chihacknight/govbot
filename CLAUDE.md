@@ -166,18 +166,18 @@ matching bill). Each row carries the bill's topic tags (`.ar-topic` chips) plus 
 "+N more"). **The homepage avatars are always real photos — never an initials monogram.** A sponsor
 is pictured only when a headshot was vendored for them; a sponsor without a photo is simply not
 given an avatar (still counted in "+N more"), and a runtime image error drops the whole `.ar-spon`
-chip rather than showing an empty circle. The card shows, per state, the **newest bill whose sponsors we actually have
-photos for** (`billHasPhoto` scans that state's recent bills, capped, and falls back to the newest bill),
-so a card shows real sponsor headshots whenever any recent bill for that state has one; a state whose
-recent bills have no photographed sponsor at all (federal `usa` — no `us` roster; small territories; or
-legislators with no fetchable public image) shows its bill + tags with no avatars — never initials. To
-give that preference a pool to choose from, `fetch_sponsor_photos.py` vendors photos for the **newest
-few bills per state** (`per_state=4`, `max_bills=32`), not just the single newest bill. Party + full name are resolved from `people.json` with the same matcher
+chip rather than showing an empty circle. The card just shows the newest bill per state (no
+photographed-bill preference); a state whose sponsors have no photo shows its bill + tags with no
+avatars — never initials. Party + full name are resolved from `people.json` with the same matcher
 legislation.html uses (`matchLeg`, surname-only / "Surname, F" / "First Last", never guessing an
 ambiguous surname). **Photos are vendored at deploy, never committed** by
 `scripts/fetch_sponsor_photos.py` (deploy-docs.yml, "Vendor sponsor photos for on-screen bills",
-after `data.json` is built) — only for the sponsors of the on-screen bills (newest few per state,
-`per_state=4`/`max_bills=32`, small cap) — into `docs/src/dashboard/assets/legislators/` + a manifest `legislator_images.json`
+after `data.json` is built) — only for the sponsors of the on-screen bills (newest 1/state, small
+cap), **including federal**: the `data/us` Congress roster is aliased to `usa` (data.json's federal
+state code) and those entries are keyed in the manifest by the **raw sponsor name** (the frontend has
+no `us` people-roster, so its `photoFor` looks them up by raw name); the Wikipedia guard, which needs a
+state for state bills, instead requires a distinctly-federal congressional role phrase for `usa`. Into
+`docs/src/dashboard/assets/legislators/` + a manifest `legislator_images.json`
 (`{"<state>:<full name lower>": "assets/legislators/<file>"}` — the frontend's lookup key). Both the
 image dir and the manifest are **`.gitignore`d build artifacts** — fetched during the Pages build,
 published by mdbook with the site, so no photo dump lands in git. It tries **two public sources in

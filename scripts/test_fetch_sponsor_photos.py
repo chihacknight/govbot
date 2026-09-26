@@ -40,6 +40,9 @@ def _write_people(root):
            "https://img.example/alyse.webp")
     person("az", "fally-back", "Fally", "Back", "Fally Back",
            "https://osfail.example/back.jpg")  # this host "fails" in the fake fetch
+    # A federal (Congress) member — dir is "us", data.json labels bills "usa".
+    person("us", "carol-miller", "Carol", "Miller", "Carol D. Miller",
+           "https://img.example/carol.jpg")
 
 
 def run():
@@ -91,6 +94,28 @@ def run():
         assert data["az:fally back"] == "assets/legislators/az-fally-back.png", "wiki fallback ext"
         assert (root / "out" / "az-fally-back.png").exists(), "wiki fallback file written"
         assert got == 3, f"expected 3 downloaded, got {got}"
+
+        # --- federal ("usa") sponsors: us dir aliased to usa, keyed by RAW name
+        assert "usa" in index and "us" in index, "federal roster aliased to usa"
+        bills_fed = [{"state": "usa", "latest_action": "2026-02-11",
+                      "sponsors": ["Carol D. Miller"]}]
+        fsp.vendor(bills_fed, index, root / "outf", root / "mf.json",
+                   fetch=fake_fetch, wiki=fake_wiki)
+        dataf = json.loads((root / "mf.json").read_text())
+        assert dataf == {"usa:carol d. miller": "assets/legislators/usa-carol-d-miller.jpg"}, \
+            f"federal manifest must key by RAW sponsor name: {dataf}"
+
+        # --- federal Wikipedia guard: a congressional role, no state needed ---
+        def gj(summary):
+            return lambda url, timeout=15: summary
+        fed_ok = {"type": "standard", "description": "American politician",
+                  "extract": "Carol Miller is a U.S. Representative from West Virginia.",
+                  "thumbnail": {"source": "https://wiki.example/carol.jpg"}}
+        assert fsp.wiki_thumbnail("usa", "Carol D. Miller", get_json=gj(fed_ok)) \
+            == "https://wiki.example/carol.jpg", "federal accepts a congressional role"
+        fed_no = dict(fed_ok, extract="Carol Miller is a chef.")
+        assert fsp.wiki_thumbnail("usa", "Carol D. Miller", get_json=gj(fed_no)) is None, \
+            "federal without a congressional role -> refuse"
 
         # --- Wikipedia guard: accept only a confident legislator match ------
         def gj(summary):

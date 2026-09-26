@@ -549,25 +549,12 @@
       var full = m ? m[1] : name;
       return photos[(b.state || "").toLowerCase() + ":" + String(full).trim().toLowerCase()] || "";
     }
-    // Does this bill have at least one sponsor we can actually picture?
-    function billHasPhoto(b) {
-      return (b.sponsors || []).some(function (name) { return !!photoFor(b, name); });
-    }
     // One bill per state (newest-first), up to 4 — no state monopolizes the strip.
-    // For each state, PREFER the newest bill whose sponsors we have real photos for,
-    // so the card always shows sponsor headshots; fall back to the newest bill.
     var seen = {}, rows = [];
     for (var i = 0; i < pool.length && rows.length < 4; i++) {
       var stk = pool[i].state || "";
       if (seen[stk]) continue;
-      seen[stk] = 1;
-      var chosen = pool[i], scanned = 0, lim = Math.min(pool.length, i + 4000);
-      for (var j = i; j < lim && scanned < 25; j++) {
-        if ((pool[j].state || "") !== stk) continue;
-        scanned++;
-        if (billHasPhoto(pool[j])) { chosen = pool[j]; break; }
-      }
-      rows.push(chosen);
+      seen[stk] = 1; rows.push(pool[i]);
     }
     if (!rows.length) return;
     var MAX_SPON = 3;
