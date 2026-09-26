@@ -618,7 +618,10 @@
   .cm-loc-state { fill: color-mix(in srgb, var(--gb-gold) 20%, #0A0E16); stroke: var(--gb-gold); stroke-width: 2; stroke-linejoin: round; }
   .cm-loc-cook { fill: var(--gb-gold-hi); stroke: var(--gb-gold-hi); stroke-width: 1; }
   .cm-loc-dot { fill: var(--gb-gold-hi); stroke: #0A0E16; stroke-width: 2; }
-  .cm-loc-cap { position: absolute; left: 0; right: 0; bottom: -16px; text-align: center; font-size: 10px; font-weight: 700; letter-spacing: .04em; color: var(--gb-gold); }
+  /* The locator label sits ON TOP of the Illinois state graphic (above it), and
+     reads "Greater Chicagoland Area". Slightly wider than the 92px inset so the
+     two-word label centers cleanly without awkward wrapping. */
+  .cm-loc-cap { position: absolute; left: -16px; right: -16px; top: -30px; bottom: auto; text-align: center; font-size: 9.5px; line-height: 1.15; font-weight: 700; letter-spacing: .02em; color: var(--gb-gold); text-shadow: 0 1px 3px rgba(0,0,0,.6); }
   .cm-connect { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; overflow: visible; }
   .cm-connect line { stroke: var(--gb-gold); stroke-width: 1.4; stroke-dasharray: 5 4; opacity: .7; }
   .cm-connect circle { fill: var(--gb-gold-hi); }
@@ -1425,7 +1428,7 @@
           svg.append(dot);
         }
         host.append(svg);
-        const cap = document.createElement("div"); cap.className = "cm-loc-cap"; cap.textContent = "CHICAGO";
+        const cap = document.createElement("div"); cap.className = "cm-loc-cap"; cap.textContent = "Greater Chicagoland Area";
         host.append(cap);
         requestAnimationFrame(() => {
           if (cook && dot) {
@@ -1628,13 +1631,19 @@
 
   // A race as a rectangle bar that expands to full details (candidates, party,
   // status, money, source) when clicked.
+  // Non-Chicago races on a Chicago voter's ballot — the Illinois statewide/General
+  // Assembly and the federal seats. In the "On this ballot" list these are
+  // prefaced "State - " so a reader can tell them apart from their city races.
+  const CM_STATE_GROUPS = { il_exec: 1, il_senate: 1, il_house: 1, us_senate: 1, us_house: 1 };
+
   function cmRaceItem(r) {
     const wrap = document.createElement("div"); wrap.className = "cm-raceitem";
     const meta = GROUP_META[r.office_group] || {};
     if (meta.color) wrap.style.setProperty("--gc", "var(" + meta.color + ")");
     const btn = document.createElement("button"); btn.type = "button"; btn.className = "cm-race";
     const o = document.createElement("div"); o.className = "cm-race-o";
-    o.textContent = r.office + (r.district ? " · " + r.district : "");
+    const prefix = CM_STATE_GROUPS[r.office_group] ? "State - " : "";
+    o.textContent = prefix + r.office + (r.district ? " · " + r.district : "");
     const n = document.createElement("div"); n.className = "cm-race-n";
     const nc = (r.candidates || []).length;
     n.append(document.createTextNode(nc ? nc + " candidate" + (nc === 1 ? "" : "s") : "No candidates yet"));
@@ -1645,40 +1654,16 @@
     let built = false;
     btn.setAttribute("aria-expanded", "false");
     btn.addEventListener("click", () => {
-      if (!built) { det.append(cmRaceDetails(r)); built = true; }
+      // Expand to the SAME full race card the main sections render — map, badges,
+      // every candidate (party, petition status, money, website, SBE), potential
+      // candidates, the election timeline, and the official-source + RSS footer.
+      if (!built) { det.append(renderRace(r, GROUP_META[r.office_group] || {})); built = true; }
       const open = det.hidden; det.hidden = !open;
       wrap.classList.toggle("is-open", open);
       btn.setAttribute("aria-expanded", String(open));
     });
     wrap.append(btn, det);
     return wrap;
-  }
-
-  function cmRaceDetails(r) {
-    const box = document.createElement("div");
-    if (r.why_note) { const w = document.createElement("div"); w.className = "cm-race-why"; w.textContent = r.why_note; box.append(w); }
-    const cands = r.candidates || [];
-    if (cands.length) {
-      cands.forEach((c) => {
-        const row = document.createElement("div"); row.className = "cm-cand";
-        const nm = document.createElement("span"); nm.className = "cm-cand-nm"; nm.textContent = c.name; row.append(nm);
-        if (r.partisan && c.party) { const pt = document.createElement("span"); pt.className = "cm-cand-party"; pt.textContent = c.party; row.append(pt); }
-        const st = c.petition_status; if (st) { const s = document.createElement("span"); s.className = "cm-cand-st"; s.textContent = STATUS_LABEL[st] || st; row.append(s); }
-        if (c.money && c.money.funds_raised != null) { const m = document.createElement("span"); m.className = "cm-cand-money"; m.textContent = "💵 " + fmtMoney(c.money.funds_raised); row.append(m); }
-        box.append(row);
-      });
-    } else {
-      const none = document.createElement("div"); none.className = "cm-cand-none";
-      none.textContent = "No candidates confirmed yet — this race fills in as official filings post.";
-      box.append(none);
-    }
-    const src = r.official_list_url || r.url || r.source;
-    if (src) {
-      const a = document.createElement("a"); a.className = "cm-race-src";
-      a.href = src; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Official source ↗";
-      box.append(a);
-    }
-    return box;
   }
 
   // Reuse the finder's ballot plumbing: reveal the Chicago + statewide/federal
