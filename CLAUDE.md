@@ -180,13 +180,13 @@ state for state bills, instead requires a distinctly-federal congressional role 
 `docs/src/dashboard/assets/legislators/` + a manifest `legislator_images.json`
 (`{"<state>:<full name lower>": "assets/legislators/<file>"}` — the frontend's lookup key). Both the
 image dir and the manifest are **`.gitignore`d build artifacts** — fetched during the Pages build,
-published by mdbook with the site, so no photo dump lands in git. It tries **two public sources in
-order, falling back if the first fails**: (1) the Open States CC0 `image:` URL (a **hardened**
+published by mdbook with the site, so no photo dump lands in git. It tries **three public sources in
+order, falling back if the last found none**: (1) the Open States CC0 `image:` URL (a **hardened**
 retrying downloader — `default_fetch` sends a same-origin `Referer` + an image `Accept` so the
 hotlink-averse legislature/CMS hosts that serve most of these URLs return the photo instead of a 403,
 and rejects a non-image body via `is_image_bytes` magic-number sniffing, so an HTML block/login page
 returned with a 200 is discarded and the next source is tried rather than a broken "photo" written),
-then (2) a **Wikipedia/Wikimedia** page thumbnail, accepted only when the page summary confidently
+then (2) a **Wikipedia** article page thumbnail, accepted only when the page summary confidently
 ties the person to that state's legislature (`wiki_thumbnail` → `_wiki_thumb_if_confident`: a
 legislative-role word *and* the state name must appear, the person's **surname** must appear, and it
 must not be a disambiguation page — federal uses a distinctly-congressional role phrase instead of a
@@ -194,12 +194,21 @@ state — otherwise no photo, so a namesake's face is never attached). The Wikip
 guarded lookups: the exact `Full_Name` page, then — since many legislators live at a disambiguated
 title like "Jane Roe (politician)" the exact lookup misses — Wikipedia's own **search API**
 (`rest.php/v1/search/page` for the name + state + a legislature/congress hint; a real API, not
-screen-scraping), guarding each of the top hits with the same confidence gate. That search step is
-the "find the sponsor the way you'd google them (name + state)" fallback the user asked for, made
-TOS-safe by using Wikipedia search rather than scraping a search engine. Reuses the
+screen-scraping), guarding each of the top hits with the same confidence gate. Then (3) a **Wikimedia
+Commons image search** (`commons_thumbnail`: the Commons `list=search` API over the File namespace,
+`commons.wikimedia.org/w/api.php`, iiurlwidth thumbnail) — a real keyless image-search API, **not** a
+scrape of a search engine's results page — which reaches the many state legislators who have a
+Commons portrait but **no Wikipedia article**. A Commons hit is kept only when the file's **own
+metadata** (title + description + categories) carries **both name tokens (given + surname)** *and* a
+state/legislature signal (the state name or a legislative role word; federal: a congressional role
+phrase), and only for raster files (`_RASTER_MIMES` — an SVG signature or a PDF is skipped) — the same
+"never attach the wrong face" gate. Together, the Wikipedia + Commons searches are the TOS-safe form of
+"search the web for the sponsor's photo": every source is a documented public API, never a scraped
+search-engine result page (which would break constantly and violate ToS, the same rule the elections
+pipeline follows in using Google News' public RSS rather than scraping). Reuses the
 `/tmp/openstates-people` checkout from the roster step; fully fail-soft (no checkout / every source
 fails → that sponsor just isn't pictured).
-Offline-tested with injected fetch + wiki functions: `python3 scripts/test_fetch_sponsor_photos.py`. The **"Next hearings open to comment"** card renders each date as a little
+Offline-tested with injected fetch/wiki/commons functions: `python3 scripts/test_fetch_sponsor_photos.py`. The **"Next hearings open to comment"** card renders each date as a little
 **calendar figure** (`.mini-date`: a gold month band with two binding rings, a big day numeral, and
 the weekday + year, e.g. "Sun · 2026") and labels each hearing's jurisdiction with its **full
 name, never an abbreviation** (a shared code→name `JURIS` map + `jurisName()` helper, `us` →

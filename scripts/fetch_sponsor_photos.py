@@ -5,15 +5,24 @@ The homepage's "Recent legislative activity" card lists the newest bill per
 state and renders each sponsor as a small round photo. Legislator headshots are
 public, so this fetches them at deploy time.
 
-**Two public sources, tried in order (a fallback if the first fails):**
+**Three public sources, tried in order (each a fallback if the last found none):**
   1. **Open States** ``image:`` URL — the canonical headshot, sourced from the
      official legislature site (the same CC0 people repo the name roster uses).
-  2. **Wikipedia / Wikimedia Commons** — the page thumbnail, accepted **only
-     when Wikipedia confidently describes that person as a legislator from that
-     state** (the summary must mention both a legislative role *and* the state
-     name; a disambiguation page or a weak match is refused). This guard keeps
-     us from ever attaching the wrong face to a real official — when unsure we
-     take no photo (the homepage then just doesn't picture that sponsor).
+  2. **Wikipedia** — the article page thumbnail, accepted **only when Wikipedia
+     confidently describes that person as a legislator from that state** (the
+     summary must mention both a legislative role *and* the state name; a
+     disambiguation page or a weak match is refused). Two guarded lookups: the
+     exact ``Full_Name`` page, then Wikipedia's search API for the name + state.
+  3. **Wikimedia Commons search** — a real keyless image-search API (``list=search``
+     over the File namespace), for the many legislators who have a Commons portrait
+     but no Wikipedia *article*. A hit is kept **only when the file's own metadata
+     (title, description, categories) carries the person's name *and* a
+     state/legislature signal** — the same "never attach the wrong face" gate.
+
+This is the TOS-safe form of "search the web for the photo": every source is a
+documented public API, never a scrape of a search engine's result page. When no
+source clears its confidence gate we take **no photo** (the homepage then just
+doesn't picture that sponsor — it never falls back to initials).
 
 **Deliberately bounded.** We only fetch for the sponsors of the newest bill per
 state that the homepage shows (a small cap), not the whole roster — including the
@@ -44,6 +53,7 @@ Usage:
 """
 
 import argparse
+import html
 import json
 import re
 import sys
@@ -335,16 +345,107 @@ def wiki_thumbnail(state, full, get_json=_default_get_json, timeout=15, search=T
     return None
 
 
-def resolve_photo(state, full, os_image, fetch, wiki, max_bytes):
+_TAG_RE = re.compile(r"<[^>]+>")
+_IMG_EXT_RE = re.compile(r"\.(jpe?g|png|webp|gif)$", re.I)
+_RASTER_MIMES = ("image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif")
+
+
+def _strip_html(s):
+    """Plain text from a Commons extmetadata value (HTML-unescaped, tags removed)."""
+    return _TAG_RE.sub(" ", html.unescape(str(s or ""))).strip()
+
+
+def _commons_search_url(query):
+    params = {
+        "action": "query", "format": "json", "generator": "search",
+        "gsrsearch": query, "gsrnamespace": "6", "gsrlimit": "8",
+        "prop": "imageinfo", "iiprop": "url|extmetadata|mime", "iiurlwidth": "400",
+    }
+    return "https://commons.wikimedia.org/w/api.php?" + urllib.parse.urlencode(params)
+
+
+def commons_thumbnail(state, full, get_json=_default_get_json, timeout=15):
+    """A Wikimedia Commons image thumbnail for ``full``, found via the Commons
+    **search API** (``list=search`` over the File namespace — a real keyless image
+    search, not a scrape of a search engine's result page). This reaches the many
+    state legislators who have a Commons portrait but no Wikipedia *article*, which
+    ``wiki_thumbnail`` can't see.
+
+    A candidate file is kept **only when its own metadata confidently ties it to
+    this person and their legislature**: both name tokens (given + surname) appear
+    in the file's title/description/categories, *and* — federal: a congressional
+    role phrase; state: the state name or a legislative role word. Otherwise None,
+    so a same-named file for a different subject is never attached. ``get_json`` is
+    injectable for tests."""
+    parts = str(full).strip().split()
+    if len(parts) < 2:
+        return None  # need a given + surname to gate on; a lone token is too risky
+    given, surname = parts[0].lower(), parts[-1].lower()
+    state_name = _STATE_NAMES.get((state or "").lower(), "")
+    hint = "congress" if is_federal(state) else "legislature"
+    query = " ".join(x for x in (str(full).strip(), state_name, hint) if x)
+    try:
+        res = get_json(_commons_search_url(query), timeout)
+    except Exception as exc:  # noqa: BLE001 - search unavailable -> no fallback photo
+        print(f"warning: commons search failed for {full}: {exc}", file=sys.stderr)
+        return None
+    pages = ((res.get("query") or {}).get("pages")) if isinstance(res, dict) else None
+    if not isinstance(pages, dict):
+        return None
+    # Preserve the search ranking (the API keys pages by id, but carries 'index').
+    ordered = sorted(
+        (p for p in pages.values() if isinstance(p, dict)),
+        key=lambda p: p.get("index", 1_000_000))
+    for pg in ordered:
+        title = str(pg.get("title") or "")
+        ii = pg.get("imageinfo")
+        info = ii[0] if isinstance(ii, list) and ii and isinstance(ii[0], dict) else None
+        if not info:
+            continue
+        mime = str(info.get("mime") or "").lower()
+        if mime:
+            if mime not in _RASTER_MIMES:
+                continue  # not a raster photo (an SVG signature, a PDF, a video)
+        elif not _IMG_EXT_RE.search(title):
+            continue
+        ex = info.get("extmetadata") if isinstance(info.get("extmetadata"), dict) else {}
+
+        def _meta(key):
+            v = ex.get(key)
+            return _strip_html(v.get("value")) if isinstance(v, dict) else ""
+        blob = " ".join([title, _meta("ImageDescription"),
+                         _meta("Categories"), _meta("ObjectName")]).lower()
+        if surname not in blob or given not in blob:
+            continue  # not confidently this person
+        if is_federal(state):
+            ok = any(w in blob for w in _FED_WORDS)
+        else:
+            ok = (bool(state_name) and state_name.lower() in blob) \
+                or any(w in blob for w in _ROLE_WORDS)
+        if not ok:
+            continue  # no legislature/state signal -> don't risk the wrong face
+        thumb = info.get("thumburl") or info.get("url")
+        if thumb:
+            return thumb
+    return None
+
+
+def resolve_photo(state, full, os_image, fetch, wiki, max_bytes, commons=None):
     """Try each public source in turn and return (bytes, source_url) or
-    (None, None): (1) the Open States image, then (2) a confidently-matched
-    Wikipedia thumbnail. A failure of one method falls through to the next."""
+    (None, None): (1) the Open States image, (2) a confidently-matched Wikipedia
+    thumbnail, then (3) a confidently-matched Wikimedia Commons search hit. A
+    failure of one method falls through to the next. ``commons`` is optional (and
+    injectable) so callers/tests that don't want the Commons step can omit it."""
     candidates = []
     if os_image:
         candidates.append(os_image)
     turl = wiki(state, full)
     if turl:
         candidates.append(turl)
+    if commons is not None:
+        curl = commons(state, full)
+        if curl:
+            candidates.append(curl)
     for url in candidates:
         try:
             data = fetch(url)
@@ -359,17 +460,18 @@ def resolve_photo(state, full, os_image, fetch, wiki, max_bytes):
 
 
 def vendor(bills, index, out_dir, manifest_path, fetch=default_fetch,
-           wiki=wiki_thumbnail, per_state=1, max_bills=6, max_bytes=3_000_000):
+           wiki=wiki_thumbnail, commons=commons_thumbnail,
+           per_state=1, max_bills=6, max_bytes=3_000_000):
     """Download photos for the on-screen sponsors and write the manifest.
 
-    Returns (downloaded, wanted). ``fetch`` and ``wiki`` are injectable so tests
-    stay offline.
+    Returns (downloaded, wanted). ``fetch``, ``wiki`` and ``commons`` are
+    injectable so tests stay offline.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Every resolved sponsor is a candidate — even one with no Open States image,
-    # since the Wikipedia fallback may still have a photo for them.
+    # since the Wikipedia / Commons fallbacks may still have a photo for them.
     wanted = {}
     for b in onscreen_bills(bills, per_state, max_bills):
         st = b.get("state") or ""
@@ -387,7 +489,7 @@ def vendor(bills, index, out_dir, manifest_path, fetch=default_fetch,
 
     manifest, got = {}, 0
     for key, (st, full, os_image) in sorted(wanted.items()):
-        data, src = resolve_photo(st, full, os_image, fetch, wiki, max_bytes)
+        data, src = resolve_photo(st, full, os_image, fetch, wiki, max_bytes, commons=commons)
         if not data:
             continue
         fname = f"{st.lower()}-{_slug(full)}{_ext_for(src)}"
