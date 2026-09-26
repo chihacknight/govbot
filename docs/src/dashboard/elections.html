@@ -2247,8 +2247,10 @@
       none.append(a);
       card.append(none);
       // The seat isn't empty — show who currently holds it, clearly tagged, where
-      // the roster can resolve it (IL Senate/House districts). Fail-soft otherwise.
-      const inc = (state.ilIncumbents || {})[r.district];
+      // we can resolve it: the pipeline attaches `incumbent` to aldermanic races
+      // (Chicago Ward Offices), and IL Senate/House resolve from the people roster.
+      // Fail-soft otherwise (council/CPS/police/federal without a source show none).
+      const inc = (r.incumbent && r.incumbent.name) ? r.incumbent : (state.ilIncumbents || {})[r.district];
       if (inc && inc.name) {
         const box = document.createElement("div"); box.className = "cur-incumbent";
         const tg = document.createElement("span"); tg.className = "ci-tag"; tg.textContent = "Current incumbent";

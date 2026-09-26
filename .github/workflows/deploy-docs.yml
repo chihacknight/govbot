@@ -288,6 +288,19 @@ jobs:
             --enrich-candidates-wiki docs/src/dashboard/elections.json \
             || echo "::warning::Wikipedia nominee enrichment reported errors"
 
+      # Current incumbents for races with no confirmed candidates yet: the sitting
+      # alderperson of each of Chicago's 50 wards, from the City Data Portal "Ward
+      # Offices" dataset (the same portal the maps action uses). Fully fail-soft: a
+      # portal outage attaches nothing. (IL General Assembly / federal incumbents are
+      # resolved on the frontend from the people roster; CPS / police district
+      # councils have no published roster.)
+      - name: Populate current incumbents (Chicago aldermen)
+        run: |
+          set -uo pipefail
+          python3 actions/scrape-elections/main.py \
+            --enrich-incumbents docs/src/dashboard/elections.json \
+            || echo "::warning::incumbent enrichment reported errors"
+
       # Official candidates from the Chicago Board of Elections' Candidate List PDF.
       # The BOE publishes the authoritative roster only as a PDF, so we extract it
       # with `pdftotext` (poppler-utils, a system tool like the DuckDB dependency)

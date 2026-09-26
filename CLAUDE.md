@@ -776,10 +776,25 @@ links. `deploy-docs.yml` runs it right after the base elections build
 each card leads with a **"👥 N candidates"** badge (the confirmed-candidate count), shows its
 **full election timeline expanded** by default (a `<details open>` labelled "Timeline"; the old
 "⏭ Next: …" teaser chip was removed), and for a race with **no confirmed candidates** shows the
-**current incumbent** with a "CURRENT INCUMBENT" tag where the seat resolves from the shared people
-roster — the elections page fetches `people.json` fail-soft and indexes `il` by area, so IL
-Senate/House districts (`"Senate District N"` / `"House District N"`) match a legislator exactly;
-council/CPS/police/federal seats have no roster and simply show no incumbent.
+**current incumbent** with a "CURRENT INCUMBENT" tag, resolved from whichever source covers the seat:
+- **Chicago aldermen (`council`)** — from the race's own `incumbent` field, populated at deploy by
+  the pipeline (see below). Chicago City Council is nonpartisan, so no party pill.
+- **IL Senate/House** — from the shared people roster: the elections page fetches `people.json`
+  fail-soft and indexes `il` by area, so `"Senate District N"` / `"House District N"` match a
+  legislator exactly (with party).
+
+The frontend prefers `race.incumbent` (data) over the roster lookup. CPS board / police district
+councils have no published roster, and federal races already carry candidates, so those show no
+separate incumbent box.
+
+**Incumbents enrichment** (`main.py --enrich-incumbents docs/src/dashboard/elections.json`): the only
+Chicago office with a clean, current, authoritative roster is the City Council, so this pass attaches
+`incumbent {name, party:"", source}` to each `council` race from the **City Data Portal "Ward
+Offices" dataset** (`htai-wnw4`, the same portal the maps action uses) — `parse_ward_offices` maps
+each ward to its sitting alderperson, flipping the dataset's `"Last, First"` to natural order. Added
+to the elections schema as an optional per-race `incumbent`. `deploy-docs.yml` runs it right after the
+Wikipedia-nominee step, fully fail-soft (a portal outage attaches nothing; committed sample carries
+none). Offline-tested with an injected roster in `test_scrape_elections.py`.
 
 ## govbot Development
 

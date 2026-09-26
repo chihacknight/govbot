@@ -971,6 +971,82 @@ def enrich_money(doc, money_dir, now):
 
 
 # --------------------------------------------------------------------------- #
+# Incumbents — who currently holds the seat (shown on a race with no candidates)
+# --------------------------------------------------------------------------- #
+# For an empty race a reader still wants to know who holds the seat now. The
+# only Chicago office with a clean, authoritative, current roster is the City
+# Council: the City Data Portal "Ward Offices" dataset lists the sitting
+# alderperson for each of the 50 wards. (CPS board / police district councils
+# have no comparable published roster, and IL General Assembly / federal
+# incumbents are resolved on the frontend from the OpenStates people roster,
+# so this pass only fills the aldermanic seats.) Fully fail-soft: a portal
+# outage attaches nothing and leaves the committed sample untouched.
+WARD_OFFICES_URL = "https://data.cityofchicago.org/resource/htai-wnw4.json?$limit=100"
+WARD_OFFICES_SOURCE = "https://data.cityofchicago.org/d/htai-wnw4"
+
+
+def _lastfirst_to_full(name):
+    """Ward Offices stores names "Last, First" ("La Spata, Daniel"); flip to a
+    natural "First Last" ("Daniel La Spata"). A name with no comma is returned
+    as-is (already natural order)."""
+    name = (name or "").strip()
+    if "," in name:
+        last, first = name.split(",", 1)
+        return (first.strip() + " " + last.strip()).strip()
+    return name
+
+
+def parse_ward_offices(rows):
+    """{ward-number-string: current alderperson full name} from Ward Offices rows.
+    Pure and offline-testable."""
+    out = {}
+    for r in rows or []:
+        ward = str(r.get("ward", "")).strip()
+        alder = _lastfirst_to_full(r.get("alderman") or "")
+        if ward and alder:
+            out[ward] = alder
+    return out
+
+
+def fetch_ward_offices():
+    """Current alderperson by ward from the City Data Portal, or {} on any failure."""
+    txt = fetch_text(WARD_OFFICES_URL)
+    if not txt:
+        return {}
+    try:
+        rows = json.loads(txt)
+    except (ValueError, TypeError):
+        return {}
+    return parse_ward_offices(rows)
+
+
+_WARD_DISTRICT_RE = re.compile(r"Ward\s+(\d+)", re.IGNORECASE)
+
+
+def enrich_incumbents(doc, fetcher=fetch_ward_offices):
+    """Attach `incumbent` {name, party, source} to each City Council race whose
+    ward resolves in the Ward Offices roster, in place. Chicago City Council is
+    nonpartisan, so party is "". Returns the number of races enriched. Fail-soft:
+    an empty roster attaches nothing. Fetcher is injectable for offline tests."""
+    wards = fetcher() or {}
+    if not wards:
+        return 0
+    n = 0
+    for r in doc.get("races", []):
+        if r.get("office_group") != "council":
+            continue
+        m = _WARD_DISTRICT_RE.match(str(r.get("district") or "").strip())
+        if not m:
+            continue
+        name = wards.get(m.group(1))
+        if not name:
+            continue
+        r["incumbent"] = {"name": name, "party": "", "source": WARD_OFFICES_SOURCE}
+        n += 1
+    return n
+
+
+# --------------------------------------------------------------------------- #
 # Results — post-Election-Night vote tallies (Chicago BOE / Cook County Clerk)
 # --------------------------------------------------------------------------- #
 # Scaffold: results don't exist until an election happens, so this stays inert
@@ -2538,6 +2614,11 @@ def main():
                     help="Directory of Illinois SBE bulk files (Candidates.txt, "
                          "CmteCandidateLinks.txt, Committees.txt, D2Totals.txt) for "
                          "--enrich-money")
+    ap.add_argument("--enrich-incumbents", default=None,
+                    help="Attach the current officeholder to each empty-of-candidates "
+                         "aldermanic race in an existing elections.json (rewritten in "
+                         "place) from the Chicago Data Portal Ward Offices dataset, then "
+                         "exit. Fail-soft")
     ap.add_argument("--enrich-results", default=None,
                     help="Attach post-Election-Night vote results to an existing "
                          "elections.json (rewritten in place) from --results-file, "
@@ -2592,6 +2673,15 @@ def main():
         n = enrich_money(doc, args.money_dir or "", now)
         Path(args.enrich_money).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
         print(f"enriched {n} candidate(s) with SBE campaign money", file=sys.stderr)
+        return 0
+
+    if args.enrich_incumbents:
+        doc = load_json(args.enrich_incumbents)
+        if doc is None:
+            return 0
+        n = enrich_incumbents(doc)
+        Path(args.enrich_incumbents).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
+        print(f"attached current incumbent to {n} aldermanic race(s)", file=sys.stderr)
         return 0
 
     if args.enrich_results:
