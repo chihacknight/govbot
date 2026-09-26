@@ -799,7 +799,7 @@
         <p class="el-tagline">Know who’s on your ballot before you vote.</p>
         <p class="el-next" id="el-next"></p>
         <div class="el-cta-row">
-          <span class="el-cov"><span class="el-cov-dot" aria-hidden="true"></span><span><strong>Live now:</strong> local races for Chicago &amp; Cook County, plus every Illinois statewide &amp; federal race. Local races for the rest of Illinois are coming soon.</span></span>
+          <span class="el-cov"><span class="el-cov-dot" aria-hidden="true"></span><span><strong>Live now:</strong> local races for Chicago &amp; Cook County, plus every Illinois statewide &amp; federal race.<br>Local races for the rest of Illinois are coming soon.</span></span>
           <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
         </div>
       </div>
@@ -839,7 +839,7 @@
         </div>
       </div>
       <aside class="cm-detail" id="cm-detail" aria-live="polite">
-        <p class="cm-empty">Click a <b>ward</b> or <b>neighborhood</b> on the map to see the races on that ballot — and which ward each neighborhood sits in.</p>
+        <p class="cm-empty">Click a <b>ward</b> or <b>neighborhood</b> on the map to see the races on that ballot.</p>
       </aside>
     </div>
   </section>
@@ -854,7 +854,6 @@
   <!-- Ballot-first entry: pick a ballot to see every office on it -->
   <section class="ballot-picker" id="ballot-picker" aria-label="What is on your ballot">
     <h2 class="bp-title">What’s on your ballot?</h2>
-    <p class="bp-sub">Two big ballots are coming up. Pick one to see every office, its candidates, and how to weigh in — or scroll on for the full breakdown.</p>
     <div class="ballot-cards" id="ballot-cards"></div>
   </section>
 
@@ -1072,6 +1071,19 @@
     const g = $("groups");
     if (g) g.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
   }
+  // Curated per-ballot scorecard copy (name + the race categories on it). The
+  // race count shown alongside is computed live from the data, not hard-coded.
+  const BALLOT_COPY = {
+    "2026-11-03": {
+      label: "Illinois General Election",
+      cats: "CPS Board of Education, U.S. Senate, U.S. House, Governor & Statewide Offices, Illinois Senate, Illinois House",
+    },
+    "2027-02-23": {
+      label: "Chicago Municipal Election",
+      cats: "Chicago citywide, Alderperson · City Council, Police District Councils",
+    },
+  };
+
   function renderElectionHero(dates) {
     const hf = $("hero-flag");
     if (hf) {
@@ -1108,15 +1120,19 @@
     host.textContent = "";
     dates.forEach((d) => {
       const rs = races.filter((r) => r.ballot_date === d);
-      const withC = rs.filter((r) => r.candidates && r.candidates.length).length;
+      // Curated headline copy per ballot: the election's name + the race
+      // categories on it. The count stays live (rs.length) so it never drifts.
+      const copy = BALLOT_COPY[d];
       const card = document.createElement("button");
       card.type = "button"; card.className = "ballot-card";
-      const lab = document.createElement("div"); lab.className = "bc-label"; lab.textContent = ballotStageLabel(rs);
+      const lab = document.createElement("div"); lab.className = "bc-label";
+      lab.textContent = copy ? copy.label : ballotStageLabel(rs);
       const dt = document.createElement("div"); dt.className = "bc-date"; dt.textContent = prettyDate(d);
       const cnt = document.createElement("div"); cnt.className = "bc-count";
-      cnt.textContent = rs.length + " office" + (rs.length === 1 ? "" : "s") + " · " + withC + " with candidates listed";
-      const go = document.createElement("div"); go.className = "bc-go"; go.textContent = "See this ballot →";
-      card.append(lab, dt, cnt, go);
+      cnt.textContent = copy
+        ? (rs.length + " races — " + copy.cats)
+        : (rs.length + " office" + (rs.length === 1 ? "" : "s") + " listed");
+      card.append(lab, dt, cnt);
       card.addEventListener("click", () => {
         state.filters.ballot = d;
         const sel = $("f-ballot"); if (sel) sel.value = d;
@@ -1522,7 +1538,7 @@
     box.textContent = "";
     if (cmSel == null) {
       const p = document.createElement("p"); p.className = "cm-empty";
-      p.innerHTML = "Click a <b>ward</b> or <b>neighborhood</b> on the map to see the races on that ballot — and which ward each neighborhood sits in.";
+      p.innerHTML = "Click a <b>ward</b> or <b>neighborhood</b> on the map to see the races on that ballot.";
       box.append(p); return;
     }
     const mkLbl = (t) => { const e = document.createElement("div"); e.className = "cm-d-lbl"; e.textContent = t; return e; };
