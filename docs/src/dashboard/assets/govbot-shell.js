@@ -102,14 +102,15 @@
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeDropdowns(null); });
   }
 
-  /* ---- global search (routes to legislation search for now) --------- */
+  /* ---- global search (cross-site: bills, sponsors, candidates, races,
+     hearings) — routes to the dedicated search page ------------------- */
   document.querySelectorAll("[data-gb-search]").forEach(function (form) {
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       var input = form.querySelector("input");
       var q = input && input.value ? input.value.trim() : "";
       if (!q) return;
-      window.location.href = "legislation.html#q=" + encodeURIComponent(q);
+      window.location.href = "search.html#q=" + encodeURIComponent(q);
     });
   });
 })();

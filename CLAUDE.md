@@ -495,20 +495,41 @@ Validate + normalize → AI topic tagging → Open data → Your dashboards) and
 trustworthy" card strip (`.gw-trust`: twice-daily refresh, source lineage, fail-soft, open RSS,
 open source, known limits), with the existing detailed per-pipeline diagrams kept below as the
 "full picture" (progressive disclosure). Stale product labels were updated to the new names.
-All five pages share a single **browser-tab favicon**: an inline SVG data-URI of a **gold gavel**
+All six pages (including `search.html`) share a single **browser-tab favicon**: an inline SVG data-URI of a **gold gavel**
 (flared drum head with a gold center band, a turned handle, and a sound block) on the dark rounded
 civic tile, crisp at 16px — replacing the earlier robot-face and per-page torch/pinwheel icons.
 
-The Pages site has a **Homepage plus three dashboards plus a How-Govbot-Works page**:
+The Pages site has a **Homepage plus three dashboards plus a How-Govbot-Works page plus a global
+search page**:
 `docs/src/dashboard/index.html` (the **Homepage**),
 `docs/src/dashboard/legislation.html` (**Explore Legislation** — the legislation dashboard,
 formerly `index.html`; deep links are `legislation.html#q=<billid>`),
 `docs/src/dashboard/hearings.html` (**Hearings & Public Comment**),
-`docs/src/dashboard/elections.html` (**Illinois Elections**), and
+`docs/src/dashboard/elections.html` (**Illinois Elections**),
 `docs/src/dashboard/architecture.html` (**How Govbot Works** — a static, no-data explainer of all
-three backend pipelines). **Every page now wears the same shell as the Homepage** — the old
+three backend pipelines), and
+`docs/src/dashboard/search.html` (**Search** — the site-wide search page).
+
+**Global search is cross-site.** The shared header/drawer `.gb-search` boxes (wired in
+`govbot-shell.js`) route to `search.html#q=<query>` (not `legislation.html` any more). `search.html`
+shares the standard shell and, on load or `#q=`/`?q=` change, fetches `data.json`, `elections.json`,
+`hearings.json` and `people.json` (all fail-soft) and searches them in-browser, rendering **five
+categorized result groups** — **Bills** (id/title/sponsors/tags → `legislation.html#bill=<key>`),
+**Legislators & sponsors** (the whole `people.json` roster, name/party/area, party-coloured →
+`legislation.html#q=<name>`, which filters bills by that sponsor), **Election candidates** (official
++ potential, each tagged → the race, see below), **Races & offices** (office/district/ballot →
+the race), and **Hearings** (title/committee/bill → `hearings.html#hg-<code>`). Each group shows a
+count, caps the list at 60 with a "refine" note, and there are jump chips + a live result total.
+The page is `search.html` is authored by assembling the shared shell (favicon, header, drawer,
+footer) with the page's own hero + `#s-results`; input is debounced and mirrored into the hash.
+Candidate/race results deep-link as **`elections.html#race=<id>`** (or `#office=<group>`): the
+elections page tags each race card with `data-race-id`, and `applyElectionsDeepLink()` reveals every
+section, then `alignDeepRace()` (called at the end of every `render()`, so late maps/incumbent
+fetches don't lose the place) scrolls to and briefly flashes (`.race-flash`) that race.
+
+**Every page now wears the same shell as the Homepage** — the old
 per-page tab bar + brandbar (logo + 3-button light/auto/dark theme pill) have been **retired**.
-All five pages share, byte-for-byte, the global-nav header (`.gb-header`: the `assets/govbot-mark.png`
+All six pages (the five flagships plus the utility `search.html`) share, byte-for-byte, the global-nav header (`.gb-header`: the `assets/govbot-mark.png`
 robot logo linking to the Homepage, the Explore / Follow / Data mega-menus + How Govbot Works /
 **GitHub Repo** plain links (the "GitHub Repo ↗" link → the repo, in a new tab; formerly labelled
 "About"), the global `.gb-search`, and a single `[data-gb-theme-toggle]` icon button), the
@@ -744,10 +765,21 @@ takes the fetched bodies as an argument so it stays pure and offline-testable, a
 are injectable. A curated, news-sourced `potential_candidates` entry may also be **seeded** in
 `elections_seed.json` (preserved by `assemble()`, merged forward by `--enrich-potential`) as a
 durable backstop for a name the automated pass can't reliably catch. The
-frontend renders it as a collapsed, dashed-amber "💭 Potential candidates · Unofficial · from
-news" block under each race. `deploy-docs.yml` runs it right after the base elections build
+frontend renders it as a collapsed, dashed-amber block under each race, headed just "💭 Potential
+candidates" — the old "Unofficial · from news / N names" subtitle and the disclaimer paragraph were
+removed as clutter, since every name already carries its own status chip ("Announced" …) and source
+links. `deploy-docs.yml` runs it right after the base elections build
 (independent of official candidates), twice daily. Parsers are offline-tested in
 `test_scrape_elections.py`.
+
+**Race-card detail** (`renderRace`, shared by the main sections and the "On this ballot" map panel):
+each card leads with a **"👥 N candidates"** badge (the confirmed-candidate count), shows its
+**full election timeline expanded** by default (a `<details open>` labelled "Timeline"; the old
+"⏭ Next: …" teaser chip was removed), and for a race with **no confirmed candidates** shows the
+**current incumbent** with a "CURRENT INCUMBENT" tag where the seat resolves from the shared people
+roster — the elections page fetches `people.json` fail-soft and indexes `il` by area, so IL
+Senate/House districts (`"Senate District N"` / `"House District N"`) match a legislator exactly;
+council/CPS/police/federal seats have no roster and simply show no incumbent.
 
 ## govbot Development
 
