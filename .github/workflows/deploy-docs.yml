@@ -160,6 +160,36 @@ jobs:
           ls -lh docs/src/dashboard/legislator_images.json 2>/dev/null || true
           ls -1 docs/src/dashboard/assets/legislators/ 2>/dev/null | wc -l || true
 
+      # Illinois bill synopses ("What this bill is about"). IL is the one state
+      # whose dashboard bills read badly — the stored title is the ILGA short-code
+      # ("$DFPR-TECH") and govbot carries no abstract — so we extract each bill's
+      # official "SYNOPSIS AS INTRODUCED" from its full-text PDF (poppler) into
+      # il_summaries.json. A bill's introduced synopsis never changes, so the file
+      # is CACHED between runs and each run only summarizes a capped number of new
+      # bills: the ~12.8k IL backlog backfills over successive deploys and steady
+      # state costs only the day's new bills. The run-id key + restore-keys prefix
+      # carries the growing cache forward. Fully fail-soft (no poppler / unreachable
+      # PDF -> that bill just stays unsummarized).
+      - name: Cache Illinois bill synopses
+        uses: actions/cache@v4
+        with:
+          path: docs/src/dashboard/il_summaries.json
+          key: il-summaries-${{ github.run_id }}
+          restore-keys: |
+            il-summaries-
+      - name: Build Illinois bill synopses
+        run: |
+          set -uo pipefail
+          sudo apt-get update && sudo apt-get install -y poppler-utils \
+            || echo "::warning::poppler-utils install failed; IL synopses skipped this run"
+          python3 scripts/build_il_summaries.py \
+            --data docs/src/dashboard/data.json \
+            --cache docs/src/dashboard/il_summaries.json \
+            --out docs/src/dashboard/il_summaries.json \
+            --cap 1500 \
+            || echo "::warning::IL synopsis build reported errors; bills stay unsummarized"
+          ls -lh docs/src/dashboard/il_summaries.json 2>/dev/null || true
+
       # Live committee hearings + witness-slip windows (IL: ilga.gov, WA:
       # leg.wa.gov, MA: malegislature.gov, AK: akleg.gov). This is a rolling near-future window, separate from the
       # daily bill snapshot, so it has its own file. The scraper is fail-soft

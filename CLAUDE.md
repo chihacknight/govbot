@@ -210,7 +210,36 @@ search-engine result page (which would break constantly and violate ToS, the sam
 pipeline follows in using Google News' public RSS rather than scraping). Reuses the
 `/tmp/openstates-people` checkout from the roster step; fully fail-soft (no checkout / every source
 fails → that sponsor just isn't pictured).
-Offline-tested with injected fetch/wiki/commons functions: `python3 scripts/test_fetch_sponsor_photos.py`. The **"Next hearings open to comment"** card renders each date as a little
+Offline-tested with injected fetch/wiki/commons functions: `python3 scripts/test_fetch_sponsor_photos.py`.
+
+**Illinois bill synopses ("What this bill is about").** Illinois is the one jurisdiction whose
+dashboard bills read badly: the stored `title` is the ILGA cryptic short-code ("$DFPR-TECH",
+"URBAN PROBLEMS-TECH") and govbot's metadata carries **no abstract** (unlike CA/FL/CO/MD/… which
+already ship a readable title), so the plain-language synopsis is missing. `scripts/build_il_summaries.py`
+fills the gap: for each IL bill it reads the bill's **full-text PDF** (the `versions[].links[]` PDF in
+that bill's `metadata.json`), extracts it with `pdftotext` (poppler, the same tool the elections BOE
+step uses), and pulls out the official **"SYNOPSIS AS INTRODUCED"** — dropping the leading run of bare
+statute citations ("New Act", "30 ILCS 105/5.10 new") and keeping the prose (`extract_synopsis`, a pure
+offline-tested function; the synopsis-extraction idea is adapted from the same author's
+`frankies2727/CHN-SocialMedia-Govbot-Main` `bill_text.py`). Output is
+`docs/src/dashboard/il_summaries.json` = `{"il~<session>~<id>": "<synopsis>"}`, the same `billKey`
+the frontend builds. **Bounded + incremental:** a bill's "as introduced" synopsis never changes, so a
+summarized bill is cached and never re-fetched; each run summarizes at most `--cap` (1500) new bills, so
+the ~12.8k IL backlog backfills over successive twice-daily deploys and steady state costs only the
+day's new bills. The cache is carried between runs by `actions/cache` (deploy-docs.yml, "Cache/Build
+Illinois bill synopses", after `data.json` is built); the file is a **`.gitignore`d build artifact**
+(never committed). **Fail-soft with transient-vs-permanent caching:** a bill with no PDF link or with
+extractable text but no synopsis is cached as `""` (a confirmed no-synopsis, not retried), but a
+*transient* failure (metadata/PDF unreachable, or `pdftotext` unavailable → empty extraction) is left
+**uncached** so it retries next run — an outage never poisons the backlog. The frontend keeps the
+official short-code as the `title` and shows the synopsis as the plain-language summary: the legislation
+bill modal's "What is this bill about" (`plainSummary` prefers `il_summaries.json[billKey]` over the
+metadata abstract), and a synopsis line on the elections page's "Recent Illinois legislative activity"
+(`.ilrc-syn`) and Springfield (`.sf-syn`) cards. All fetched fail-soft (absent before the first backfill
+→ the pages fall back). Offline-tested against real extracted IL bill text in
+`scripts/__snapshots__/il_fulltext/`: `python3 scripts/test_build_il_summaries.py`.
+
+The **"Next hearings open to comment"** card renders each date as a little
 **calendar figure** (`.mini-date`: a gold month band with two binding rings, a big day numeral, and
 the weekday + year, e.g. "Sun · 2026") and labels each hearing's jurisdiction with its **full
 name, never an abbreviation** (a shared code→name `JURIS` map + `jurisName()` helper, `us` →
@@ -309,10 +338,15 @@ beats the UA `[hidden]{display:none}`, so the shared `govbot.css` now carries a
 state components everywhere — without it the legislation empty state showed under a full table, the
 **elections** page kept a *forever* "Loading Illinois & Chicago races…" spinner (its
 `$("loading").hidden = true` never took) and a stray "No races match" box, and the hearings empty
-state was a bare dashed box. **Opening a bill plays a book-open flourish** (`playBookOpen`): the branded book illustration
-(`assets/book-open.png` — the Govbot open-book art, its warm background keyed to transparency with a
-radial edge-fade so the book + sparkles float) with **five cream pages** flipping over its spread in a
-slow, staggered riffle (`.book-fx .page` p1–p5, hinged at the spine; the veil holds ~2.4s so the whole
+state was a bare dashed box. **Opening a bill plays a book-open flourish** (`playBookOpen`): an open book
+drawn **entirely in CSS** (no raster — so no stray grey box, and the wordmark never clips) — a navy
+gold-trimmed cover, two splayed cream page-faces around a spine valley, **colourful fore-edges down BOTH
+sides** (`.side-l`/`.side-r`, the seven-colour blocks tilted with `rotateY(±30deg)`), **big colourful
+sparkles** rising off the spread (`.spark`, `@keyframes book-twinkle`), and the full gold **"Govbot"**
+wordmark below (`.book-wordmark`), with a soft warm halo (`.halo`) standing in for the old grey
+backdrop — with **five cream pages** flipping over its spread in a
+slow, staggered riffle (`.book-fx .pages > .page` p1–p5, hinged at the spine, a one-shot
+`@keyframes book-page-flip` −14°→−166°; the veil holds ~2.4s so the whole
 riffle plays before the card reveals), all over a dark veil (`.book-fx`, appended to `<body>` at a
 z-index above both the bill modal and the results overlay so it always reads on top), then the details
 card swings open
@@ -568,12 +602,18 @@ modal, placed **above the Status section** — `.m-sharerow`, not in Sources) th
 (`billShareUrl` → `billKey`); opening it lands straight on that bill's modal (`applyDeepLink`'s
 `#bill=` branch → `openDetails`). `#q=<billid>` deep links still work (id lowercased, punctuation
 stripped, e.g. `#q=sb813`): they pre-filter the search — which matches ids ignoring
-spaces/punctuation — and a `hashchange` listener re-applies the `#q=` filter live. The details card lists each **sponsor/co-sponsor with their current party (a
-tinted D/R/other tag) and seat** (chamber + district, e.g. "Senate District 39"), resolved from the
-`people.json` roster: `scripts/build_people_roster.py` now emits `[given, full, party, area]` per
-legislator (from the Open States people repo — the current party role and current legislative seat;
+spaces/punctuation — and a `hashchange` listener re-applies the `#q=` filter live. The details card lists each **sponsor/co-sponsor with their current party — the party spelled
+out in full and color-coded (`partyTag`: Democratic blue, Republican red, others neutral; a faint tint
+of the party color fills the pill) — and seat** (chamber + district, e.g. "Senate District 39"),
+resolved from the `people.json` roster: `scripts/build_people_roster.py` emits `[given, full, party, area]`
+per legislator (from the Open States people repo — the current party role and current legislative seat;
 name fields keep their positions so resolution is unchanged, party/area degrade to "" when
-unknown). Offline-tested in `scripts/test_build_people_roster.py`. It also attaches a top-level
+unknown). Offline-tested in `scripts/test_build_people_roster.py`. The frontend matcher (`matchLegislator`)
+resolves a sponsor to that roster entry robustly: it strips a trailing generational **suffix**
+("Marcus C. Evans, Jr.", "Joseph P. Addabbo Jr.", "Emil Jones, III") so the surname isn't read as the
+suffix, and falls back to a **two-word surname** key ("Ochoa Bogh", "Avila Farias") when the last word
+alone doesn't resolve — both were dropping the party on a lot of sponsors across states — while still
+refusing to guess an ambiguous bare surname (several "Smith"s → no party rather than a wrong one). It also attaches a top-level
 `springfield` list — the **"rules of the game"**: IL bills from the legislation
 `data.json` tagged `elections & voting` or `education` (the elected CPS board, ward/runoff
 rules, campaign finance), cross-referenced with `hearings.json` for upcoming ILGA hearings,

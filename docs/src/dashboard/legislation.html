@@ -356,25 +356,73 @@
     background: rgba(6, 9, 14, 0.74); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
     animation: book-fx-fade 2.5s ease both;
   }
-  /* The book is the branded illustration asset; pages flip over its open spread. */
-  .book-fx .book {
-    --bw: 330px; position: relative; width: var(--bw); perspective: 1200px;
-    animation: book-scale 0.42s cubic-bezier(0.2,0.8,0.25,1) both;
-    filter: drop-shadow(0 18px 40px rgba(0,0,0,0.55));
+  /* The book is drawn entirely in CSS (no raster, so no stray grey box): a navy
+     cover, two splayed cream page-faces, colourful fore-edges down BOTH sides,
+     big sparkles, a flipping page-riffle, and the full gold "Govbot" wordmark. */
+  .book-fx .book-stage { display: flex; flex-direction: column; align-items: center; gap: 26px; }
+  .book-fx .book-cap {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #9fb0c8;
   }
-  .book-fx .book-img { display: block; width: 100%; height: auto; }
-  /* Cream pages hinged at the spine, sweeping right→left across the open book. */
+  .book-fx .book {
+    position: relative; width: 372px; height: 236px; perspective: 1700px;
+    animation: book-scale 0.42s cubic-bezier(0.2,0.8,0.25,1) both;
+  }
+  .book-fx .book * { box-sizing: border-box; }
+  /* soft warm halo behind the book — replaces the old hard grey rectangle */
+  .book-fx .halo {
+    position: absolute; left: 50%; top: 54%; width: 640px; height: 480px;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(closest-side, rgba(233,185,73,0.26), rgba(233,185,73,0.08) 58%, transparent 74%);
+    filter: blur(4px); pointer-events: none;
+  }
+  /* navy cover peeking under the pages, thin gold trim */
+  .book-fx .b-cover {
+    position: absolute; left: -14px; right: -14px; top: 14px; bottom: -14px;
+    border-radius: 12px 12px 16px 16px;
+    background: linear-gradient(160deg, #1b2c4d, #0d1728);
+    border: 1.5px solid #E9B949;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  /* the two open page faces, splayed into a shallow V around the centre spine */
+  .book-fx .leaf {
+    position: absolute; top: 8px; width: 178px; height: 212px;
+    background: linear-gradient(105deg, #FCF8EC, #EFE3C4);
+    box-shadow: 0 14px 26px rgba(0,0,0,0.4); backface-visibility: hidden;
+  }
+  .book-fx .leaf::before {
+    content: ""; position: absolute; inset: 20px 16px;
+    background: repeating-linear-gradient(transparent 0 9px, rgba(60,45,15,0.12) 9px 10px);
+  }
+  .book-fx .leaf-l { left: 8px; transform-origin: right center; transform: rotateY(14deg); border-radius: 8px 3px 3px 10px; }
+  .book-fx .leaf-r { right: 8px; transform-origin: left center; transform: rotateY(-14deg); border-radius: 3px 8px 10px 3px; }
+  /* the valley shadow down the spine */
+  .book-fx .b-spine {
+    position: absolute; left: 50%; top: 8px; width: 26px; height: 212px; transform: translateX(-50%);
+    background: linear-gradient(90deg, transparent, rgba(40,28,8,0.28) 45%, rgba(40,28,8,0.28) 55%, transparent);
+    z-index: 5; pointer-events: none;
+  }
+  /* colourful page-block edges down BOTH sides of the book (the fore-edges) */
+  .book-fx .side {
+    position: absolute; top: 12px; width: 18px; height: 206px;
+    display: flex; flex-direction: column; z-index: 3; overflow: hidden;
+    box-shadow: 0 14px 26px rgba(0,0,0,0.4);
+  }
+  .book-fx .side b { flex: 1; display: block; }
+  .book-fx .side-l { left: -4px; transform-origin: right center; transform: perspective(700px) rotateY(30deg); border-radius: 7px 2px 2px 9px; }
+  .book-fx .side-r { right: -4px; transform-origin: left center; transform: perspective(700px) rotateY(-30deg); border-radius: 2px 7px 9px 2px; }
+  /* the flipping pages — hinged at the spine, sweeping right→left in a one-shot riffle */
+  .book-fx .pages { position: absolute; left: 50%; top: 12px; width: 176px; height: 204px; transform-style: preserve-3d; z-index: 6; }
   .book-fx .page {
-    position: absolute; left: 50%; top: 40.5%; width: 30%; height: 22%;
-    transform-origin: left center; backface-visibility: hidden;
-    border-radius: 2px 7px 9px 2px;
-    background: linear-gradient(118deg, #FCF7EA, #E9DEC2);
-    border: 1px solid rgba(0,0,0,0.14); box-shadow: 0 3px 8px rgba(0,0,0,0.3);
-    animation: book-page-flip 1s ease-in-out both;
+    position: absolute; inset: 0; transform-origin: left center; backface-visibility: hidden;
+    border-radius: 3px 9px 11px 3px;
+    background: linear-gradient(108deg, #FFFDF6, #ECDFBE);
+    border: 1px solid rgba(120,90,30,0.22); box-shadow: 0 3px 12px rgba(0,0,0,0.32);
+    animation: book-page-flip 1s cubic-bezier(0.42,0,0.2,1) both;
   }
   .book-fx .page::before {
-    content: ""; position: absolute; inset: 20% 14%;
-    background: repeating-linear-gradient(transparent 0 3px, rgba(40,30,10,0.16) 3px 4px);
+    content: ""; position: absolute; inset: 16px 14px;
+    background: repeating-linear-gradient(transparent 0 8px, rgba(60,45,15,0.13) 8px 9px);
   }
   /* Five pages flip in a slow, staggered riffle so the "opening the book" reads. */
   .book-fx .page.p1 { animation-delay: 0.12s; }
@@ -383,8 +431,26 @@
   .book-fx .page.p4 { animation-delay: 1.02s; }
   .book-fx .page.p5 { animation-delay: 1.32s; }
   @keyframes book-page-flip {
-    0%        { transform: rotateY(3deg); }
-    62%, 100% { transform: rotateY(-176deg); }
+    0%        { transform: rotateY(-14deg); }
+    60%, 100% { transform: rotateY(-166deg); }
+  }
+  /* big colourful sparkles rising from the spread */
+  .book-fx .spark {
+    position: absolute;
+    clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+    animation: book-twinkle 2.8s ease-in-out infinite;
+  }
+  @keyframes book-twinkle {
+    0%, 100% { opacity: 0.25; transform: scale(0.55) rotate(0deg); }
+    50%      { opacity: 1; transform: scale(1) rotate(18deg); }
+  }
+  /* the Govbot wordmark, fully visible in gold, below the book */
+  .book-fx .book-wordmark {
+    font-family: "Baloo 2", system-ui, sans-serif; font-weight: 800;
+    font-size: 52px; line-height: 1; letter-spacing: 0.5px;
+    background: linear-gradient(#F8E29B, #E3A72E 60%, #C7871C);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 3px 10px rgba(233,185,73,0.35));
   }
   @keyframes book-scale {
     0%   { transform: scale(0.88); }
@@ -478,10 +544,12 @@
   .m-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
   .m-list li { font-size: 13px; color: var(--text-secondary); }
   .m-list li b { color: var(--text-primary); font-weight: 600; }
-  /* Party tag beside a sponsor name — small, tinted, data-driven (D blue,
-     R red, everything else neutral). Kept subtle so it reads as metadata. */
+  /* Party tag beside a sponsor name — the party spelled out in full and color-coded
+     (Democratic blue, Republican red, everything else neutral). A faint tint of the
+     party color fills the pill so the coding reads at a glance. */
   .m-party { display: inline-block; font-size: 11px; font-weight: 700; line-height: 1.5;
-    padding: 0 6px; border-radius: 999px; border: 1px solid currentColor; vertical-align: middle; }
+    padding: 0 7px; border-radius: 999px; border: 1px solid currentColor;
+    background: color-mix(in srgb, currentColor 12%, transparent); vertical-align: middle; }
   /* Three classes so the tint wins over the modal's `.modal-card .m-chip` color. */
   .m-chip.m-party.is-dem { color: #1d4ed8; }
   .m-chip.m-party.is-rep { color: #b91c1c; }
@@ -2006,6 +2074,9 @@
     } catch (e) { return a === b; }
   }
   function plainSummary(b, meta) {
+    // Prefer the deploy-extracted Illinois synopsis (IL has no metadata abstract).
+    const il = ilSummaries && ilSummaries[billKey(b)];
+    if (il && il.trim()) return il.trim();
     const abs = meta && meta.abstracts && meta.abstracts[0] && meta.abstracts[0].abstract;
     if (abs && abs.trim()) return abs.trim();
     // No official abstract. The title is already the modal heading, so don't
@@ -2013,6 +2084,17 @@
     // their own "Latest actions" section, not here.
     return "No official summary is available for this bill.";
   }
+
+  // Illinois bill synopses ("What this bill is about"), extracted from the
+  // official ILGA full text at deploy (scripts/build_il_summaries.py) and keyed by
+  // billKey() — IL's stored title is a cryptic short-code and govbot carries no
+  // abstract, so this is the plain-language summary for IL bills. Fetched fail-soft
+  // (absent in local dev / before the first backfill → the modal falls back).
+  let ilSummaries = null;
+  fetch("il_summaries.json")
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null)
+    .then((d) => { ilSummaries = d || {}; });
 
   // Cross-reference the committee-hearings feed so the modal can show whether a
   // bill is on an upcoming calendar (ties the two dashboards together).
@@ -2044,9 +2126,13 @@
   // surname with no distinguishing initial returns null.
   function matchLegislator(state, name) {
     if (!name || !peopleIndex) return null;
-    const raw = String(name).trim();
     const roster = peopleIndex[state];
     if (!roster) return null;
+    // Strip a trailing generational suffix ("Jr."/"Sr."/"II"/"III"/"IV"/"V"),
+    // whether comma-separated ("Marcus C. Evans, Jr.") or trailing ("Addabbo Jr."),
+    // so the surname isn't misread as the suffix (which lost the party on a lot of
+    // sponsors across states).
+    const raw = String(name).trim().replace(/,?\s*(?:jr|sr|ii|iii|iv|v)\.?\s*$/i, "").trim();
     let family = raw, first = "";
     const comma = raw.indexOf(",");
     if (comma !== -1) {
@@ -2057,13 +2143,22 @@
       first = parts[0];
       family = parts[parts.length - 1];
     }
-    const cands = roster[family.toLowerCase()];
-    if (!cands || !cands.length) return null;
-    if (cands.length === 1) return cands[0];
-    if (first) {
-      const fi = first.charAt(0).toLowerCase();
-      const hits = cands.filter((c) => (c[0] || "").trim().toLowerCase().charAt(0) === fi);
-      if (hits.length === 1) return hits[0];
+    // Try the last word as the surname key, then — for two-word surnames the
+    // roster keys whole ("Ochoa Bogh", "Avila Farias") — the last two words.
+    const keys = [family.toLowerCase()];
+    if (comma === -1 && /\s/.test(raw)) {
+      const parts = raw.split(/\s+/);
+      if (parts.length >= 2) keys.push((parts[parts.length - 2] + " " + parts[parts.length - 1]).toLowerCase());
+    }
+    for (const key of keys) {
+      const cands = roster[key];
+      if (!cands || !cands.length) continue;
+      if (cands.length === 1) return cands[0];
+      if (first) {
+        const fi = first.charAt(0).toLowerCase();
+        const hits = cands.filter((c) => (c[0] || "").trim().toLowerCase().charAt(0) === fi);
+        if (hits.length === 1) return hits[0];
+      }
     }
     return null;  // several legislators share the surname — don't guess
   }
@@ -2089,14 +2184,15 @@
     const party = m[2] || "", area = m[3] || "";
     return (party || area) ? { party, area } : null;
   }
-  // A compact party tag (letter for the big two, short word otherwise) plus a
-  // CSS class so it can be tinted. Kept neutral and data-driven — no editorializing.
+  // A party tag with the party spelled out in full, plus a CSS class so it can be
+  // color-coded (D blue, R red, other neutral). Kept neutral and data-driven — no
+  // editorializing.
   function partyTag(party) {
     const p = (party || "").toLowerCase();
-    if (p.indexOf("democrat") === 0) return { label: "D", cls: "is-dem", full: party };
-    if (p.indexOf("republican") === 0) return { label: "R", cls: "is-rep", full: party };
+    if (p.indexOf("democrat") === 0) return { label: "Democratic", cls: "is-dem", full: party };
+    if (p.indexOf("republican") === 0) return { label: "Republican", cls: "is-rep", full: party };
     if (!party) return null;
-    return { label: party, cls: "is-other", full: party };
+    return { label: party, cls: "is-other", full: party };  // Independent, Green, … shown verbatim
   }
 
   let modalKey = 0;
@@ -2424,11 +2520,41 @@
     if (reduce) return;   // no flourish; the card just fades in
     card.classList.add("is-booking");
     const fx = mkel("div", "book-fx");
+    fx.setAttribute("aria-hidden", "true");
+    const stage = mkel("div", "book-stage");
+    stage.append(mkel("div", "book-cap", "A bill opens"));
+
     const book = mkel("div", "book");
-    const img = mkel("img", "book-img"); img.src = "assets/book-open.png"; img.alt = ""; img.setAttribute("aria-hidden", "true");
-    book.append(img, mkel("div", "page p1"), mkel("div", "page p2"), mkel("div", "page p3"),
-                mkel("div", "page p4"), mkel("div", "page p5"));
-    fx.append(book);
+    book.append(mkel("div", "halo"));
+    // big colourful sparkles rising off the spread (position + colour inline)
+    const sparks = [
+      "left:-30px;top:0;width:34px;height:34px;background:#F6D877;",
+      "left:46px;top:-34px;width:22px;height:22px;background:#6FA0F0;animation-delay:.5s;",
+      "left:150px;top:-46px;width:28px;height:28px;background:#F080C0;animation-delay:1s;",
+      "right:40px;top:-38px;width:24px;height:24px;background:#46C7B8;animation-delay:.8s;",
+      "right:-34px;top:6px;width:32px;height:32px;background:#A78BF0;animation-delay:1.4s;",
+      "right:-14px;top:96px;width:20px;height:20px;background:#F08A5D;animation-delay:1.8s;",
+      "left:-18px;top:108px;width:22px;height:22px;background:#6FD08A;animation-delay:1.2s;",
+      "left:96px;top:-26px;width:16px;height:16px;background:#FBEFC6;animation-delay:.3s;",
+    ];
+    for (const s of sparks) { const sp = mkel("span", "spark"); sp.style.cssText = s; book.append(sp); }
+    book.append(mkel("div", "b-cover"));
+    // colourful fore-edges down both sides (mirrored order)
+    const edgeColors = ["#4C7BE0", "#37B2A8", "#4FB86A", "#E9B949", "#E8734D", "#8A6FE0", "#E86FB0"];
+    const sideL = mkel("div", "side side-l"), sideR = mkel("div", "side side-r");
+    for (const c of edgeColors) { const b = mkel("b"); b.style.background = c; sideL.append(b); }
+    for (const c of edgeColors.slice().reverse()) { const b = mkel("b"); b.style.background = c; sideR.append(b); }
+    book.append(sideL, sideR);
+    book.append(mkel("div", "leaf leaf-l"), mkel("div", "leaf leaf-r"));
+    const pages = mkel("div", "pages");
+    pages.append(mkel("div", "page p1"), mkel("div", "page p2"), mkel("div", "page p3"),
+                 mkel("div", "page p4"), mkel("div", "page p5"));
+    book.append(pages);
+    book.append(mkel("div", "b-spine"));
+
+    stage.append(book);
+    stage.append(mkel("div", "book-wordmark", "Govbot"));
+    fx.append(stage);
     // Appended to <body> with a z-index above both the bill modal and the results
     // overlay so the flourish always reads on top of whatever it was opened from.
     document.body.appendChild(fx);

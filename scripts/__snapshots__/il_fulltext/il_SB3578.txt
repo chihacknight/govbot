@@ -1,0 +1,135 @@
+*LRB10416287HLH29672b*
+
+104TH GENERAL ASSEMBLY
+State of Illinois
+and 2026
+Introduced 2/5/2026, by Sen. Sue Rezin
+
+SYNOPSIS AS INTRODUCED:
+New Act
+Creates the Data Center Construction by Foreign Adversaries Act.
+Provides that no foreign company may construct or cause to be constructed a
+data center in the State unless the Illinois Commerce Commission, the
+Illinois Power Agency, and the Department of Commerce and Economic
+Opportunity conduct a joint study of the energy consumption of the
+prospective data center and certify to the Governor and the General
+Assembly that the energy used by the new data center is a new
+self-generated load and does not affect the load supply of PJM or MISO.
+Provides that the term "foreign company" means an entity that (i) is at
+least 51% owned by a foreign adversary or (ii) is headquartered in a
+country with a government that is a foreign adversary.
+
+LRB104 16287 HLH 29672 b
+
+A BILL FOR
+
+LRB104 16287 HLH 29672 b
+
+AN ACT concerning data centers.
+
+Be it enacted by the People of the State of Illinois,
+
+represented in the General Assembly:
+
+Section 1. Short title. This Act may be cited as the Data
+Center Construction by Foreign Adversaries Act.
+
+Section 5. Data center construction by foreign adversaries
+prohibited.
+
+(a) As used in this Section:
+
+"Company"
+
+means
+
+a
+
+sole
+
+proprietorship,
+
+organization,
+
+association, corporation, partnership, joint venture, limited
+
+partnership, limited liability partnership, limited liability
+
+company, or other entity or business association, including
+
+all wholly owned subsidiaries, majority-owned subsidiaries,
+
+parent companies, or affiliates of those entities or business
+
+associations.
+
+"Data
+
+center"
+
+has
+
+the
+
+meaning
+
+given
+
+to
+
+that
+
+term
+
+in
+
+Section 605-1025 of the Department of Commerce and Economic
+
+Opportunity Law of the Civil Administrative Code of Illinois.
+
+"Foreign company" means a company that:
+(1) is at least 51% owned by a foreign adversary, as
+defined in 15 CFR 791.2; or
+(2) is headquartered in a country with a government
+that is a foreign adversary, as defined in 15 CFR 791.2.
+
+LRB104 16287 HLH 29672 b
+
+"MISO" means the regional transmission organization known
+as the Midcontinent Independent System Operator, Inc.
+"PJM" means the regional transmission organization known
+as PJM Interconnection, LLC.
+
+(b) Notwithstanding any other provision of law, on and
+
+after the effective date of this Act, no foreign company may
+
+construct or cause to be constructed a data center in the State
+
+unless the Illinois Commerce Commission, the Illinois Power
+
+Agency,
+
+Opportunity conduct a joint study of the energy consumption of
+
+the prospective data center and certify to the Governor and
+
+the General Assembly that the energy estimated to be used by
+
+the data center is a self-generated load and does not affect
+
+the load supply of PJM or MISO.
+
+and
+
+the
+
+Department
+
+of
+
+Commerce
+
+and
+
+Economic
