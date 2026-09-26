@@ -162,13 +162,15 @@ bill's card** via `legislation.html#bill=<state~session~id>` (a plain `#q=<id>` 
 state's same-numbered bill; the unique key opens just the one — `billKey` here matches `billKey` +
 the `#bill=` branch of `applyDeepLink` in legislation.html, which calls `openDetails` on the
 matching bill). Each row carries the bill's topic tags (`.ar-topic` chips) plus its sponsors as
-**real-headshot avatar chips** (`.ar-av` with an `<img>`, name + party letter, first 3 then
-"+N more"). **The homepage avatars are always real photos — never an initials monogram.** A sponsor
-is pictured only when a headshot was vendored for them; a sponsor without a photo is simply not
-given an avatar (still counted in "+N more"), and a runtime image error drops the whole `.ar-spon`
-chip rather than showing an empty circle. The card just shows the newest bill per state (no
-photographed-bill preference); a state whose sponsors have no photo shows its bill + tags with no
-avatars — never initials. Party + full name are resolved from `people.json` with the same matcher
+**sponsor avatar chips** (`.ar-av`, name + party letter, first 3 then
+"+N more"). Every sponsor that resolves to a real legislator (or that has a vendored photo) is
+pictured: a **vendored headshot** when we have one, otherwise a **party-tinted initials monogram**
+(`initialsOf` = first + last initial, in the party-colored circle). The headshot `<img>` overlays
+the initials, so a runtime image error just drops the `<img>` and reveals the initials underneath
+(the sponsor chip stays). An unresolved non-person string (e.g. a committee) with no photo is skipped
+(still counted in "+N more", which counts resolved sponsors beyond the 3 shown). The card just shows
+the newest bill per state (no photographed-bill preference); a state whose sponsors have no photo
+shows their initials monograms + name + party. Party + full name are resolved from `people.json` with the same matcher
 legislation.html uses (`matchLeg`, surname-only / "Surname, F" / "First Last", never guessing an
 ambiguous surname). **Photos are vendored at deploy, never committed** by
 `scripts/fetch_sponsor_photos.py` (deploy-docs.yml, "Vendor sponsor photos for on-screen bills",
@@ -309,8 +311,9 @@ state components everywhere — without it the legislation empty state showed un
 `$("loading").hidden = true` never took) and a stray "No races match" box, and the hearings empty
 state was a bare dashed box. **Opening a bill plays a book-open flourish** (`playBookOpen`): the branded book illustration
 (`assets/book-open.png` — the Govbot open-book art, its warm background keyed to transparency with a
-radial edge-fade so the book + sparkles float) with cream **pages flipping** over its spread
-(`.book-fx .page`, hinged at the spine), all over a dark veil (`.book-fx`, appended to `<body>` at a
+radial edge-fade so the book + sparkles float) with **five cream pages** flipping over its spread in a
+slow, staggered riffle (`.book-fx .page` p1–p5, hinged at the spine; the veil holds ~2.4s so the whole
+riffle plays before the card reveals), all over a dark veil (`.book-fx`, appended to `<body>` at a
 z-index above both the bill modal and the results overlay so it always reads on top), then the details
 card swings open
 like a cover (`.book-open-in` → `@keyframes card-book-open`, a `rotateY` reveal). It's decorative —
@@ -575,7 +578,12 @@ unknown). Offline-tested in `scripts/test_build_people_roster.py`. It also attac
 `data.json` tagged `elections & voting` or `education` (the elected CPS board, ward/runoff
 rules, campaign finance), cross-referenced with `hearings.json` for upcoming ILGA hearings,
 shown on the page as context *beside* the races (never mixed into candidate lists) plus a
-`springfield.xml` feed. `deploy-docs.yml` runs this after `data.json`+`hearings.json` are
+`springfield.xml` feed. Each Springfield bill card (`renderSpringfieldBill`) is **clickable** — the
+whole card opens that bill's **full details** (its modal on the legislation dashboard, via
+`legislation.html#bill=il~<session>~<id>`) in a **new tab** so it doesn't replace the elections page
+(same convention as the Recent-IL-activity cards; the inline "View on Legislation Dashboard" / "Bill
+page ↗" links were removed, and the witness-slip link `stopPropagation`s so it doesn't also open the
+bill). `deploy-docs.yml` runs this after `data.json`+`hearings.json` are
 built so it reads the fresh copies. Fail-soft: with sources down the seed's structure still
 ships (empty rosters/springfield), and the deploy keeps the committed sample unless the
 fresh run produced candidates or Springfield bills. Parsers are offline-snapshot-tested:
