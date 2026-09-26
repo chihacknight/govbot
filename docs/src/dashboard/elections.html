@@ -317,6 +317,7 @@
   .sf-bill-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
   .sf-bill-id { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .sf-bill-title { font-size: 13px; color: var(--text-primary); line-height: 1.35; }
+  .sf-syn { font-size: 12.5px; color: var(--text-secondary); line-height: 1.4; }
   .sf-tags { display: inline-flex; flex-wrap: wrap; gap: 4px; }
   .sf-tag { font-size: 10.5px; font-weight: 600; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; }
   .sf-tag.voting { color: var(--series-1); border-color: color-mix(in srgb, var(--series-1) 55%, transparent); }
@@ -591,6 +592,9 @@
   .ilrc-when { margin-left: auto; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
   .ilrc-title { font-family: var(--gb-font-display); font-size: 16px; line-height: 1.25; color: var(--text-primary);
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  /* Plain-language "what this bill is about" (extracted ILGA synopsis). */
+  .ilrc-syn { font-size: 13px; color: var(--text-primary); line-height: 1.4; margin: 1px 0;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   .ilrc-act { font-size: 12.5px; color: var(--text-secondary);
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .ilrc-tags { display: flex; flex-wrap: wrap; gap: 2px 0; margin-top: 1px; }
@@ -1152,6 +1156,12 @@
     state.data = data;
     state.nowDate = (data.generated_at || "").slice(0, 10) || new Date().toISOString().slice(0, 10);
     $("loading").hidden = true;
+    // Illinois bill synopses ("What this bill is about"), extracted from official
+    // ILGA full text at deploy and keyed by billKey. Fetched fail-soft; when it
+    // arrives, re-render the two IL bill lists so their synopsis lines fill in.
+    state.ilSummaries = null;
+    fetch("il_summaries.json").then((r) => (r.ok ? r.json() : null)).catch(() => null)
+      .then((d) => { state.ilSummaries = d || {}; renderIlList(($("ilr-search") || {}).value ? $("ilr-search").value.trim().toLowerCase() : ""); renderSpringfield(); });
     renderCalendar(data.races);
     initSpringfield(data.springfield || []);  // populates; visibility is the picker's job
     setupFlourishes();                          // waving corner flag + flag cursor
@@ -1356,6 +1366,9 @@
       top.append(badge, id, when);
       const ttl = document.createElement("div"); ttl.className = "ilrc-title"; ttl.textContent = b.title || b.id || "(untitled)";
       a.append(top, ttl);
+      // The plain-language "what this bill is about", when the deploy extracted it.
+      const syn = state.ilSummaries && state.ilSummaries[ilBillKey(b)];
+      if (syn && syn.trim()) { const s = document.createElement("div"); s.className = "ilrc-syn"; s.textContent = syn.trim(); a.append(s); }
       if (b.latest_action_desc) { const act = document.createElement("div"); act.className = "ilrc-act"; act.textContent = b.latest_action_desc; a.append(act); }
       const tags = b.tags || [];
       if (tags.length) {
@@ -2557,6 +2570,9 @@
     card.append(top);
     const title = document.createElement("div"); title.className = "sf-bill-title"; title.textContent = b.title || "";
     card.append(title);
+    // The plain-language "what this bill is about", when the deploy extracted it.
+    const syn = state.ilSummaries && state.ilSummaries[ilBillKey({ state: "il", session: b.session, id: b.id })];
+    if (syn && syn.trim()) { const s = document.createElement("div"); s.className = "sf-syn"; s.textContent = syn.trim(); card.append(s); }
     if (b.latest_action || b.latest_action_desc) {
       const act = document.createElement("div"); act.className = "sf-action";
       const bold = document.createElement("b"); bold.textContent = b.latest_action ? prettyDate(b.latest_action) : "Latest";

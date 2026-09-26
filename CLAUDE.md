@@ -210,7 +210,36 @@ search-engine result page (which would break constantly and violate ToS, the sam
 pipeline follows in using Google News' public RSS rather than scraping). Reuses the
 `/tmp/openstates-people` checkout from the roster step; fully fail-soft (no checkout / every source
 fails → that sponsor just isn't pictured).
-Offline-tested with injected fetch/wiki/commons functions: `python3 scripts/test_fetch_sponsor_photos.py`. The **"Next hearings open to comment"** card renders each date as a little
+Offline-tested with injected fetch/wiki/commons functions: `python3 scripts/test_fetch_sponsor_photos.py`.
+
+**Illinois bill synopses ("What this bill is about").** Illinois is the one jurisdiction whose
+dashboard bills read badly: the stored `title` is the ILGA cryptic short-code ("$DFPR-TECH",
+"URBAN PROBLEMS-TECH") and govbot's metadata carries **no abstract** (unlike CA/FL/CO/MD/… which
+already ship a readable title), so the plain-language synopsis is missing. `scripts/build_il_summaries.py`
+fills the gap: for each IL bill it reads the bill's **full-text PDF** (the `versions[].links[]` PDF in
+that bill's `metadata.json`), extracts it with `pdftotext` (poppler, the same tool the elections BOE
+step uses), and pulls out the official **"SYNOPSIS AS INTRODUCED"** — dropping the leading run of bare
+statute citations ("New Act", "30 ILCS 105/5.10 new") and keeping the prose (`extract_synopsis`, a pure
+offline-tested function; the synopsis-extraction idea is adapted from the same author's
+`frankies2727/CHN-SocialMedia-Govbot-Main` `bill_text.py`). Output is
+`docs/src/dashboard/il_summaries.json` = `{"il~<session>~<id>": "<synopsis>"}`, the same `billKey`
+the frontend builds. **Bounded + incremental:** a bill's "as introduced" synopsis never changes, so a
+summarized bill is cached and never re-fetched; each run summarizes at most `--cap` (1500) new bills, so
+the ~12.8k IL backlog backfills over successive twice-daily deploys and steady state costs only the
+day's new bills. The cache is carried between runs by `actions/cache` (deploy-docs.yml, "Cache/Build
+Illinois bill synopses", after `data.json` is built); the file is a **`.gitignore`d build artifact**
+(never committed). **Fail-soft with transient-vs-permanent caching:** a bill with no PDF link or with
+extractable text but no synopsis is cached as `""` (a confirmed no-synopsis, not retried), but a
+*transient* failure (metadata/PDF unreachable, or `pdftotext` unavailable → empty extraction) is left
+**uncached** so it retries next run — an outage never poisons the backlog. The frontend keeps the
+official short-code as the `title` and shows the synopsis as the plain-language summary: the legislation
+bill modal's "What is this bill about" (`plainSummary` prefers `il_summaries.json[billKey]` over the
+metadata abstract), and a synopsis line on the elections page's "Recent Illinois legislative activity"
+(`.ilrc-syn`) and Springfield (`.sf-syn`) cards. All fetched fail-soft (absent before the first backfill
+→ the pages fall back). Offline-tested against real extracted IL bill text in
+`scripts/__snapshots__/il_fulltext/`: `python3 scripts/test_build_il_summaries.py`.
+
+The **"Next hearings open to comment"** card renders each date as a little
 **calendar figure** (`.mini-date`: a gold month band with two binding rings, a big day numeral, and
 the weekday + year, e.g. "Sun · 2026") and labels each hearing's jurisdiction with its **full
 name, never an abbreviation** (a shared code→name `JURIS` map + `jurisName()` helper, `us` →

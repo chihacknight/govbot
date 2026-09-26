@@ -133,3 +133,8 @@ reviews/
 # site, never committed — so no photo dump lands in git history.
 docs/src/dashboard/assets/legislators/
 docs/src/dashboard/legislator_images.json
+
+# Illinois bill synopses ("What this bill is about"): a build artifact extracted
+# from official ILGA full text during the Pages deploy (scripts/build_il_summaries.py),
+# carried between runs by actions/cache and published with the site — not committed.
+docs/src/dashboard/il_summaries.json

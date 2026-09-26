@@ -2006,6 +2006,9 @@
     } catch (e) { return a === b; }
   }
   function plainSummary(b, meta) {
+    // Prefer the deploy-extracted Illinois synopsis (IL has no metadata abstract).
+    const il = ilSummaries && ilSummaries[billKey(b)];
+    if (il && il.trim()) return il.trim();
     const abs = meta && meta.abstracts && meta.abstracts[0] && meta.abstracts[0].abstract;
     if (abs && abs.trim()) return abs.trim();
     // No official abstract. The title is already the modal heading, so don't
@@ -2013,6 +2016,17 @@
     // their own "Latest actions" section, not here.
     return "No official summary is available for this bill.";
   }
+
+  // Illinois bill synopses ("What this bill is about"), extracted from the
+  // official ILGA full text at deploy (scripts/build_il_summaries.py) and keyed by
+  // billKey() — IL's stored title is a cryptic short-code and govbot carries no
+  // abstract, so this is the plain-language summary for IL bills. Fetched fail-soft
+  // (absent in local dev / before the first backfill → the modal falls back).
+  let ilSummaries = null;
+  fetch("il_summaries.json")
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null)
+    .then((d) => { ilSummaries = d || {}; });
 
   // Cross-reference the committee-hearings feed so the modal can show whether a
   // bill is on an upcoming calendar (ties the two dashboards together).
