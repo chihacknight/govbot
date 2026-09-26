@@ -597,12 +597,18 @@ modal, placed **above the Status section** — `.m-sharerow`, not in Sources) th
 (`billShareUrl` → `billKey`); opening it lands straight on that bill's modal (`applyDeepLink`'s
 `#bill=` branch → `openDetails`). `#q=<billid>` deep links still work (id lowercased, punctuation
 stripped, e.g. `#q=sb813`): they pre-filter the search — which matches ids ignoring
-spaces/punctuation — and a `hashchange` listener re-applies the `#q=` filter live. The details card lists each **sponsor/co-sponsor with their current party (a
-tinted D/R/other tag) and seat** (chamber + district, e.g. "Senate District 39"), resolved from the
-`people.json` roster: `scripts/build_people_roster.py` now emits `[given, full, party, area]` per
-legislator (from the Open States people repo — the current party role and current legislative seat;
+spaces/punctuation — and a `hashchange` listener re-applies the `#q=` filter live. The details card lists each **sponsor/co-sponsor with their current party — the party spelled
+out in full and color-coded (`partyTag`: Democratic blue, Republican red, others neutral; a faint tint
+of the party color fills the pill) — and seat** (chamber + district, e.g. "Senate District 39"),
+resolved from the `people.json` roster: `scripts/build_people_roster.py` emits `[given, full, party, area]`
+per legislator (from the Open States people repo — the current party role and current legislative seat;
 name fields keep their positions so resolution is unchanged, party/area degrade to "" when
-unknown). Offline-tested in `scripts/test_build_people_roster.py`. It also attaches a top-level
+unknown). Offline-tested in `scripts/test_build_people_roster.py`. The frontend matcher (`matchLegislator`)
+resolves a sponsor to that roster entry robustly: it strips a trailing generational **suffix**
+("Marcus C. Evans, Jr.", "Joseph P. Addabbo Jr.", "Emil Jones, III") so the surname isn't read as the
+suffix, and falls back to a **two-word surname** key ("Ochoa Bogh", "Avila Farias") when the last word
+alone doesn't resolve — both were dropping the party on a lot of sponsors across states — while still
+refusing to guess an ambiguous bare surname (several "Smith"s → no party rather than a wrong one). It also attaches a top-level
 `springfield` list — the **"rules of the game"**: IL bills from the legislation
 `data.json` tagged `elections & voting` or `education` (the elected CPS board, ward/runoff
 rules, campaign finance), cross-referenced with `hearings.json` for upcoming ILGA hearings,

@@ -478,10 +478,12 @@
   .m-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
   .m-list li { font-size: 13px; color: var(--text-secondary); }
   .m-list li b { color: var(--text-primary); font-weight: 600; }
-  /* Party tag beside a sponsor name — small, tinted, data-driven (D blue,
-     R red, everything else neutral). Kept subtle so it reads as metadata. */
+  /* Party tag beside a sponsor name — the party spelled out in full and color-coded
+     (Democratic blue, Republican red, everything else neutral). A faint tint of the
+     party color fills the pill so the coding reads at a glance. */
   .m-party { display: inline-block; font-size: 11px; font-weight: 700; line-height: 1.5;
-    padding: 0 6px; border-radius: 999px; border: 1px solid currentColor; vertical-align: middle; }
+    padding: 0 7px; border-radius: 999px; border: 1px solid currentColor;
+    background: color-mix(in srgb, currentColor 12%, transparent); vertical-align: middle; }
   /* Three classes so the tint wins over the modal's `.modal-card .m-chip` color. */
   .m-chip.m-party.is-dem { color: #1d4ed8; }
   .m-chip.m-party.is-rep { color: #b91c1c; }
@@ -2058,9 +2060,13 @@
   // surname with no distinguishing initial returns null.
   function matchLegislator(state, name) {
     if (!name || !peopleIndex) return null;
-    const raw = String(name).trim();
     const roster = peopleIndex[state];
     if (!roster) return null;
+    // Strip a trailing generational suffix ("Jr."/"Sr."/"II"/"III"/"IV"/"V"),
+    // whether comma-separated ("Marcus C. Evans, Jr.") or trailing ("Addabbo Jr."),
+    // so the surname isn't misread as the suffix (which lost the party on a lot of
+    // sponsors across states).
+    const raw = String(name).trim().replace(/,?\s*(?:jr|sr|ii|iii|iv|v)\.?\s*$/i, "").trim();
     let family = raw, first = "";
     const comma = raw.indexOf(",");
     if (comma !== -1) {
@@ -2071,13 +2077,22 @@
       first = parts[0];
       family = parts[parts.length - 1];
     }
-    const cands = roster[family.toLowerCase()];
-    if (!cands || !cands.length) return null;
-    if (cands.length === 1) return cands[0];
-    if (first) {
-      const fi = first.charAt(0).toLowerCase();
-      const hits = cands.filter((c) => (c[0] || "").trim().toLowerCase().charAt(0) === fi);
-      if (hits.length === 1) return hits[0];
+    // Try the last word as the surname key, then — for two-word surnames the
+    // roster keys whole ("Ochoa Bogh", "Avila Farias") — the last two words.
+    const keys = [family.toLowerCase()];
+    if (comma === -1 && /\s/.test(raw)) {
+      const parts = raw.split(/\s+/);
+      if (parts.length >= 2) keys.push((parts[parts.length - 2] + " " + parts[parts.length - 1]).toLowerCase());
+    }
+    for (const key of keys) {
+      const cands = roster[key];
+      if (!cands || !cands.length) continue;
+      if (cands.length === 1) return cands[0];
+      if (first) {
+        const fi = first.charAt(0).toLowerCase();
+        const hits = cands.filter((c) => (c[0] || "").trim().toLowerCase().charAt(0) === fi);
+        if (hits.length === 1) return hits[0];
+      }
     }
     return null;  // several legislators share the surname — don't guess
   }
@@ -2103,14 +2118,15 @@
     const party = m[2] || "", area = m[3] || "";
     return (party || area) ? { party, area } : null;
   }
-  // A compact party tag (letter for the big two, short word otherwise) plus a
-  // CSS class so it can be tinted. Kept neutral and data-driven — no editorializing.
+  // A party tag with the party spelled out in full, plus a CSS class so it can be
+  // color-coded (D blue, R red, other neutral). Kept neutral and data-driven — no
+  // editorializing.
   function partyTag(party) {
     const p = (party || "").toLowerCase();
-    if (p.indexOf("democrat") === 0) return { label: "D", cls: "is-dem", full: party };
-    if (p.indexOf("republican") === 0) return { label: "R", cls: "is-rep", full: party };
+    if (p.indexOf("democrat") === 0) return { label: "Democratic", cls: "is-dem", full: party };
+    if (p.indexOf("republican") === 0) return { label: "Republican", cls: "is-rep", full: party };
     if (!party) return null;
-    return { label: party, cls: "is-other", full: party };
+    return { label: party, cls: "is-other", full: party };  // Independent, Green, … shown verbatim
   }
 
   let modalKey = 0;
