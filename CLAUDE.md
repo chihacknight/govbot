@@ -173,16 +173,32 @@ legislation.html uses (`matchLeg`, surname-only / "Surname, F" / "First Last", n
 ambiguous surname). **Photos are vendored at deploy, never committed** by
 `scripts/fetch_sponsor_photos.py` (deploy-docs.yml, "Vendor sponsor photos for on-screen bills",
 after `data.json` is built) — only for the sponsors of the on-screen bills (newest 1/state, small
-cap) — into `docs/src/dashboard/assets/legislators/` + a manifest `legislator_images.json`
+cap), **including federal**: the `data/us` Congress roster is aliased to `usa` (data.json's federal
+state code) and those entries are keyed in the manifest by the **raw sponsor name** (the frontend has
+no `us` people-roster, so its `photoFor` looks them up by raw name); the Wikipedia guard, which needs a
+state for state bills, instead requires a distinctly-federal congressional role phrase for `usa`. Into
+`docs/src/dashboard/assets/legislators/` + a manifest `legislator_images.json`
 (`{"<state>:<full name lower>": "assets/legislators/<file>"}` — the frontend's lookup key). Both the
 image dir and the manifest are **`.gitignore`d build artifacts** — fetched during the Pages build,
 published by mdbook with the site, so no photo dump lands in git. It tries **two public sources in
-order, falling back if the first fails**: (1) the Open States CC0 `image:` URL (a retrying
-downloader), then (2) a **Wikipedia/Wikimedia** page thumbnail, accepted only when the page summary
-confidently ties the person to that state's legislature (`wiki_thumbnail`: a legislative-role word
-*and* the state name must appear, and it must not be a disambiguation page — otherwise no photo, so
-a namesake's face is never attached). Reuses the `/tmp/openstates-people` checkout from the roster
-step; fully fail-soft (no checkout / both sources fail → that sponsor just isn't pictured).
+order, falling back if the first fails**: (1) the Open States CC0 `image:` URL (a **hardened**
+retrying downloader — `default_fetch` sends a same-origin `Referer` + an image `Accept` so the
+hotlink-averse legislature/CMS hosts that serve most of these URLs return the photo instead of a 403,
+and rejects a non-image body via `is_image_bytes` magic-number sniffing, so an HTML block/login page
+returned with a 200 is discarded and the next source is tried rather than a broken "photo" written),
+then (2) a **Wikipedia/Wikimedia** page thumbnail, accepted only when the page summary confidently
+ties the person to that state's legislature (`wiki_thumbnail` → `_wiki_thumb_if_confident`: a
+legislative-role word *and* the state name must appear, the person's **surname** must appear, and it
+must not be a disambiguation page — federal uses a distinctly-congressional role phrase instead of a
+state — otherwise no photo, so a namesake's face is never attached). The Wikipedia step does **two**
+guarded lookups: the exact `Full_Name` page, then — since many legislators live at a disambiguated
+title like "Jane Roe (politician)" the exact lookup misses — Wikipedia's own **search API**
+(`rest.php/v1/search/page` for the name + state + a legislature/congress hint; a real API, not
+screen-scraping), guarding each of the top hits with the same confidence gate. That search step is
+the "find the sponsor the way you'd google them (name + state)" fallback the user asked for, made
+TOS-safe by using Wikipedia search rather than scraping a search engine. Reuses the
+`/tmp/openstates-people` checkout from the roster step; fully fail-soft (no checkout / every source
+fails → that sponsor just isn't pictured).
 Offline-tested with injected fetch + wiki functions: `python3 scripts/test_fetch_sponsor_photos.py`. The **"Next hearings open to comment"** card renders each date as a little
 **calendar figure** (`.mini-date`: a gold month band with two binding rings, a big day numeral, and
 the weekday + year, e.g. "Sun · 2026") and labels each hearing's jurisdiction with its **full
@@ -282,9 +298,12 @@ beats the UA `[hidden]{display:none}`, so the shared `govbot.css` now carries a
 state components everywhere — without it the legislation empty state showed under a full table, the
 **elections** page kept a *forever* "Loading Illinois & Chicago races…" spinner (its
 `$("loading").hidden = true` never took) and a stray "No races match" box, and the hearings empty
-state was a bare dashed box. **Opening a bill plays a book-open flourish** (`playBookOpen`): a small
-gold book whose pages flip over a dark veil (`.book-fx`, appended to `<body>` at a z-index above both
-the bill modal and the results overlay so it always reads on top), then the details card swings open
+state was a bare dashed box. **Opening a bill plays a book-open flourish** (`playBookOpen`): the branded book illustration
+(`assets/book-open.png` — the Govbot open-book art, its warm background keyed to transparency with a
+radial edge-fade so the book + sparkles float) with cream **pages flipping** over its spread
+(`.book-fx .page`, hinged at the spine), all over a dark veil (`.book-fx`, appended to `<body>` at a
+z-index above both the bill modal and the results overlay so it always reads on top), then the details
+card swings open
 like a cover (`.book-open-in` → `@keyframes card-book-open`, a `rotateY` reveal). It's decorative —
 skipped entirely under `prefers-reduced-motion` (the card just fades in) and guarded by `modalKey` so
 a superseding open never disturbs the new card. The bill modal
@@ -313,7 +332,12 @@ button was removed)) and a "What's on your ballot?" selector
 (`#ballot-cards`, one card per distinct `ballot_date` with its stage label + office/candidate
 counts) that drives the existing `#f-ballot` filter, reveals the sections, and scrolls to
 `#groups` (`renderElectionHero`). The rich race engine (groups, five drawers, calendar,
-Springfield, picker) is unchanged. Above the ballot-picker sits a **"Find your ballot"** map-first
+Springfield, picker) is unchanged. **The standalone Illinois county finder (`#bfinder`,
+`renderBallotFinder`) was removed** — the Explore Chicago map below (retitled "Find your ballot")
+is the single ballot entry now, so the redundant second IL map + county/ward picker are gone. The
+`renderBallotFinder`/`resolveBallot` functions and the `#bf-*` guards remain defined but uncalled
+(and `cmOpenWardBallot` still guards `#bf-ward-sel`/`#bf-chips`), so nothing throws. What that finder
+used to be (kept here for context): a **"Find your ballot"** map-first
 entry (`#bfinder`, `renderBallotFinder`): a geographic **Illinois county choropleth** — all 102
 county paths + the state outline from the committed `assets/il-counties.json` (generated from US
 Census county geometry, equirectangular north-up with a cos(lat) correction; fetched fail-soft, so
@@ -339,9 +363,12 @@ inline `.bf-coverage` note, the map legend, and the corner "click a county" hint
 the finder clean.) It drives the same `state.view` Set + `applyView()` the picker
 uses (so the sections reveal and the page scrolls to `#groups`), and `#f-clear` also drops the ward
 and the finder's selection. The lookup is **map + picker only** (no address/ZIP geocoding) so it is
-fully offline and deterministic. Below the finder sits an **"Explore Chicago"** section (`#chimap`,
-`renderChicagoMap`): a **colorful, zoomable geographic choropleth of Chicago** with a **Wards (50) /
-Neighborhoods (77) toggle** (`cm-seg`). A small **Illinois locator inset** (`.cm-locator`,
+fully offline and deterministic. The page's ballot entry is the **"Find your ballot"** section
+(`#chimap`, `renderChicagoMap`, titled "Find your ballot" / "Pick where you live and we'll show
+every race you can vote in."): a **colorful, zoomable geographic choropleth of Chicago** with a
+**Wards (50) / Neighborhoods (77) toggle** (`cm-seg`). The detail card (`.cm-detail`) is a **fixed
+height matching the map (560px; auto/stacked under 820px) and scrolls internally** so a long ballot
+list doesn't unbalance the row (`.cm-body` is `align-items: start`). A small **Illinois locator inset** (`.cm-locator`,
 `cmBuildLocator` — the `state_d` outline + Cook County from `il-counties.json`, a gold Chicago dot at
 Cook's centroid) sits to the left with **two dashed callout lines** (`.cm-connect`, `cmDrawConnector`)
 fanning from the Chicago dot to the big map's corners — the classic magnifier/"you-are-here" device;

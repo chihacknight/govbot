@@ -16,7 +16,9 @@ public, so this fetches them at deploy time.
      take no photo (the homepage then just doesn't picture that sponsor).
 
 **Deliberately bounded.** We only fetch for the sponsors of the newest bill per
-state that the homepage shows (a small cap), not the whole roster. The images
+state that the homepage shows (a small cap), not the whole roster — including the
+newest **federal** ("usa") bill, whose Congress members carry reliable CC0 photos.
+The images
 and manifest are *build artifacts*: `.gitignore`d, produced during the Pages
 deploy, and published with the site — never committed, so the repo carries no
 photo dump.
@@ -80,6 +82,15 @@ _ROLE_WORDS = (
     "assemblyman", "assemblywoman", "delegate", "lawmaker",
 )
 
+# Distinctly-federal role phrases — used to confirm a Wikipedia page is about a
+# member of the U.S. Congress (federal bills carry no state to cross-check).
+_FED_WORDS = (
+    "united states representative", "u.s. representative", "us representative",
+    "united states senator", "u.s. senator", "us senator",
+    "member of congress", "congressman", "congresswoman", "congressperson",
+    "united states congress",
+)
+
 
 # ----------------------------------------------------------------------------
 # Which bills are "on screen": mirror the homepage's Recent-activity selection
@@ -108,9 +119,10 @@ def onscreen_bills(bills, per_state=1, max_bills=6):
 def build_index(people_dir):
     data_dir = Path(people_dir) / "data"
     index = {}
-    # Federal (data/us) sponsors already arrive with full names and aren't shown
-    # in the per-state card; skip to stay lean, matching build_people_roster.
-    for state_dir in sorted(p for p in data_dir.glob("*") if p.is_dir() and p.name != "us"):
+    # Includes federal (`data/us`) too — those Congress bills DO appear on the
+    # homepage (as "USA") and their members carry reliable CC0 headshots. The
+    # people repo dir is "us"; `data.json` labels federal bills "usa", so we alias.
+    for state_dir in sorted(p for p in data_dir.glob("*") if p.is_dir()):
         leg = state_dir / "legislature"
         if not leg.is_dir():
             continue
@@ -132,7 +144,13 @@ def build_index(people_dir):
             fam.setdefault(family.lower(), []).append((given, full, image))
         if fam:
             index[state_dir.name] = fam
+            if state_dir.name == "us":
+                index["usa"] = fam   # data.json's federal state code
     return index
+
+
+def is_federal(state):
+    return (state or "").lower() in ("us", "usa")
 
 
 # Resolve a sponsor to exactly one legislator, or None — the same rules as
@@ -178,15 +196,52 @@ def _ext_for(url):
     return "." + (m.group(1).lower() if m else "jpg").replace("jpeg", "jpg")
 
 
+def is_image_bytes(data):
+    """True if ``data`` starts with a known raster-image magic number (JPEG, PNG,
+    GIF, WebP, BMP). Legislature/CMS image URLs often 200 with an HTML error or
+    login page instead of the photo; that HTML must be rejected so we fall through
+    to the next source rather than writing a broken 'photo'."""
+    if not data or len(data) < 12:
+        return False
+    if data[:3] == b"\xff\xd8\xff":                       # JPEG
+        return True
+    if data[:8] == b"\x89PNG\r\n\x1a\n":                  # PNG
+        return True
+    if data[:6] in (b"GIF87a", b"GIF89a"):               # GIF
+        return True
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":    # WebP
+        return True
+    if data[:2] == b"BM":                                # BMP
+        return True
+    return False
+
+
 def default_fetch(url, timeout=15, retries=2):
-    """GET raw bytes, following redirects, with a couple of retries — an image
-    host that blinks (a transient reset/timeout) shouldn't lose the photo."""
+    """GET raw image bytes, following redirects, with a couple of retries — an
+    image host that blinks (a transient reset/timeout) shouldn't lose the photo.
+
+    Hardened for the hotlink-averse legislature/CMS hosts that serve most Open
+    States ``image:`` URLs: send a same-origin ``Referer`` and an image ``Accept``
+    (many hosts 403 a bare programmatic GET but serve one that looks like an
+    <img> load), and reject a non-image body (an HTML block/login page returned
+    with a 200) so the caller falls through to the next source."""
+    parts = urllib.parse.urlsplit(url)
+    referer = "{}://{}/".format(parts.scheme, parts.netloc) if parts.netloc else None
+    headers = {
+        "User-Agent": _UA,
+        "Accept": "image/avif,image/webp,image/png,image/jpeg,image/*,*/*;q=0.8",
+    }
+    if referer:
+        headers["Referer"] = referer
     last = None
     for _ in range(retries + 1):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": _UA})
+            req = urllib.request.Request(url, headers=headers)
             with urllib.request.urlopen(req, timeout=timeout) as r:  # noqa: S310 - https image URLs
-                return r.read()
+                data = r.read()
+            if not is_image_bytes(data):
+                raise ValueError("response was not an image (likely an HTML error/block page)")
+            return data
         except Exception as exc:  # noqa: BLE001 - retried, then reported by the caller
             last = exc
     raise last if last else RuntimeError("fetch failed")
@@ -198,27 +253,86 @@ def _default_get_json(url, timeout=15):
         return json.loads(r.read().decode("utf-8"))
 
 
-def wiki_thumbnail(state, full, get_json=_default_get_json, timeout=15):
-    """A Wikimedia thumbnail URL for ``full`` — but only when Wikipedia's page
-    summary confidently describes them as a legislator from ``state`` (its text
-    mentions both a legislative role *and* the state name, and it isn't a
-    disambiguation page). Otherwise None: we would rather show no photo than risk
-    attaching the wrong person's face. ``get_json`` is injectable for tests."""
-    title = urllib.parse.quote(str(full).strip().replace(" ", "_"))
+def _wiki_summary(get_json, title, timeout):
+    """Fetch one page summary dict (or None on any failure)."""
+    slug = urllib.parse.quote(str(title).strip().replace(" ", "_"))
     try:
-        data = get_json("https://en.wikipedia.org/api/rest_v1/page/summary/" + title, timeout)
-    except Exception as exc:  # noqa: BLE001 - no page / network error -> no fallback photo
-        print(f"warning: wiki lookup failed for {full}: {exc}", file=sys.stderr)
+        data = get_json("https://en.wikipedia.org/api/rest_v1/page/summary/" + slug, timeout)
+    except Exception as exc:  # noqa: BLE001 - no page / network error -> no summary
+        print(f"warning: wiki lookup failed for {title}: {exc}", file=sys.stderr)
         return None
+    return data if isinstance(data, dict) else None
+
+
+def _wiki_thumb_if_confident(state, full, data):
+    """A thumbnail URL from a summary dict, but only when it confidently describes
+    ``full`` as a legislator from ``state``: not a disambiguation page, the
+    person's surname appears (so a search hit for a different subject is rejected),
+    and — federal: a congressional role phrase; state: a legislative role *and*
+    the state name. Otherwise None."""
     if not isinstance(data, dict) or data.get("type") == "disambiguation":
         return None
+    thumb = ((data.get("thumbnail") or {}).get("source")) or None
+    if not thumb:
+        return None
+    title = (data.get("title") or "").lower()
     blob = ((data.get("description") or "") + " " + (data.get("extract") or "")).lower()
+    # The page must actually be about this person: their surname has to appear in
+    # the title or the summary text (guards a search result about someone else).
+    parts = str(full).strip().split()
+    surname = parts[-1].lower() if parts else ""
+    if surname and surname not in title and surname not in blob:
+        return None
+    # Federal: there's no state to cross-check, so require a distinctly-federal
+    # congressional role phrase instead (Congress members are notable, so a
+    # full-name page match is reliable).
+    if is_federal(state):
+        return thumb if any(w in blob for w in _FED_WORDS) else None
     state_name = _STATE_NAMES.get((state or "").lower(), "")
     is_legislator = any(w in blob for w in _ROLE_WORDS)
     right_place = bool(state_name) and state_name.lower() in blob
-    if not (is_legislator and right_place):
+    return thumb if (is_legislator and right_place) else None
+
+
+def wiki_thumbnail(state, full, get_json=_default_get_json, timeout=15, search=True):
+    """A Wikimedia thumbnail URL for ``full`` — but only when Wikipedia's page
+    summary confidently describes them as a legislator from ``state`` (see
+    ``_wiki_thumb_if_confident``). Otherwise None: we would rather show no photo
+    than risk attaching the wrong person's face.
+
+    Two lookups, each guarded the same way: (1) the exact ``Full_Name`` page, then
+    (2) — since many legislators' pages are disambiguated titles like
+    "Jane Roe (politician)" that the exact lookup misses — Wikipedia's own search
+    API (``rest.php/v1/search/page``, not screen-scraping) for the name plus the
+    state and a legislature/congress hint, guarding each of the top hits. This is
+    the "search by name + state" step: it finds the right page the way a person
+    googling the sponsor would, then applies the same confidence gate so a
+    namesake is still rejected. ``get_json`` is injectable for tests."""
+    data = _wiki_summary(get_json, full, timeout)
+    thumb = _wiki_thumb_if_confident(state, full, data) if data else None
+    if thumb or not search:
+        return thumb
+
+    hint = "congress" if is_federal(state) else "state legislature"
+    state_name = _STATE_NAMES.get((state or "").lower(), "")
+    query = " ".join(x for x in (str(full).strip(), state_name, hint) if x)
+    url = ("https://en.wikipedia.org/w/rest.php/v1/search/page?limit=5&q="
+           + urllib.parse.quote(query))
+    try:
+        res = get_json(url, timeout)
+    except Exception as exc:  # noqa: BLE001 - search unavailable -> no fallback photo
+        print(f"warning: wiki search failed for {full}: {exc}", file=sys.stderr)
         return None
-    return ((data.get("thumbnail") or {}).get("source")) or None
+    pages = res.get("pages") if isinstance(res, dict) else None
+    for pg in (pages or [])[:5]:
+        title = (pg.get("key") or pg.get("title")) if isinstance(pg, dict) else None
+        if not title:
+            continue
+        cand = _wiki_summary(get_json, title, timeout)
+        thumb = _wiki_thumb_if_confident(state, full, cand) if cand else None
+        if thumb:
+            return thumb
+    return None
 
 
 def resolve_photo(state, full, os_image, fetch, wiki, max_bytes):
@@ -237,8 +351,10 @@ def resolve_photo(state, full, os_image, fetch, wiki, max_bytes):
         except Exception as exc:  # noqa: BLE001 - try the next source
             print(f"warning: fetch failed for {full} <{url}>: {exc}", file=sys.stderr)
             continue
-        if data and len(data) <= max_bytes:
+        if data and is_image_bytes(data) and len(data) <= max_bytes:
             return data, url
+        if data and not is_image_bytes(data):
+            print(f"warning: {full} <{url}> was not an image; skipping", file=sys.stderr)
     return None, None
 
 
@@ -262,7 +378,12 @@ def vendor(bills, index, out_dir, manifest_path, fetch=default_fetch,
             if not m:
                 continue  # unresolved (e.g. a committee) — no photo, not pictured
             _given, full, image = m
-            wanted.setdefault(img_key(st, full), (st, full, image or ""))
+            # The manifest key must equal what the frontend's photoFor() looks up:
+            # state bills resolve the sponsor to the people.json roster full name,
+            # but federal ("usa") has no people.json roster, so the frontend keys by
+            # the RAW sponsor name — mirror that so the lookup hits.
+            key_name = name if is_federal(st) else full
+            wanted.setdefault(img_key(st, key_name), (st, full, image or ""))
 
     manifest, got = {}, 0
     for key, (st, full, os_image) in sorted(wanted.items()):
