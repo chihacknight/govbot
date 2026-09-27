@@ -169,8 +169,11 @@
     color: var(--gb-text-2); z-index: 2; pointer-events: none; }
   @media (prefers-reduced-motion: reduce) { .stream-bot-img { animation: none; } }
   @media (max-width: 560px) { .stream-bot-name { font-size: 13px; margin-top: 5px; } }
-  @media (max-width: 620px) { .stream-figure { height: 340px; } }
-  @media (max-width: 560px) { .stream-cap { display: none; } }
+  /* On phones the figure keeps its full desktop-style framing — chaos on the left,
+     the sorted topic lanes on the right, and BOTH captions — just taller so the
+     composition isn't cropped. */
+  @media (max-width: 620px) { .stream-figure { height: 440px; } }
+  @media (max-width: 560px) { .stream-cap { font-size: 9px; letter-spacing: .06em; padding: 0 12px; } }
 
   @media (max-width: 980px) {
     .home-hero h1 { font-size: 48px; }
@@ -308,7 +311,6 @@
 <section class="band">
   <div class="section-head">
     <h2>What do you want to know?</h2>
-    <div class="aside">One clear next step — pick where to start.</div>
   </div>
   <div class="know-grid">
     <a class="gb-card gb-card-link know-card" href="legislation.html" style="--accent: var(--gb-blue-hi)">
@@ -720,22 +722,26 @@
     canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     var mobile = W < 560;
-    var bw, bx;
+    var bw, bx, laneTop, laneBottom;
     if (mobile) {
-      // Rebalance: small chaos zone on the left, hub tucked left, wide lanes so
-      // the full topic labels still fit at narrow widths.
-      hub.x = W * 0.27; hub.y = H * 0.46;
-      botR = Math.max(38, Math.min(H * 0.15, 44));
-      bw = Math.min(W * 0.54, 210); bx = W - bw - 6; labelFont = 10;
+      // Keep the desktop framing on phones — chaos on the left, hub near the
+      // middle-left, sorted lanes on the right — just with wider lanes and a
+      // smaller label so the full topic names still fit at narrow widths. The
+      // lanes stop higher up so the bottom captions have room (nothing cropped).
+      hub.x = W * 0.33; hub.y = H * 0.42;
+      botR = Math.max(40, Math.min(H * 0.14, 52));
+      bw = Math.min(W * 0.52, 210); bx = W - bw - 8; labelFont = 10;
+      laneTop = H * 0.10; laneBottom = H * 0.74;
     } else {
       hub.x = W * 0.5; hub.y = H * 0.5;
       botR = Math.max(46, Math.min(H * 0.22, 64));
       bw = Math.min(W * 0.28, 196); bx = W - bw - Math.min(W * 0.04, 22); labelFont = 12;
+      laneTop = H * 0.13; laneBottom = H * 0.87;
     }
     // Keep the DOM robot centred on the canvas hub (which can move on mobile).
     if (botEl) { botEl.style.left = hub.x + "px"; botEl.style.top = hub.y + "px"; }
     var n = TOPICS.length;
-    var top = H * 0.13, bottom = H * 0.87, gap = (bottom - top) / (n - 1);
+    var top = laneTop, bottom = laneBottom, gap = (bottom - top) / (n - 1);
     buckets = TOPICS.map(function (t, i) {
       return { label: t.label, color: t.c, x: bx, y: top + gap * i,
                w: bw, h: Math.min(gap * 0.7, 30), glow: 0 };
@@ -909,9 +915,10 @@
   }
 
   var raf = 0, last = 0, running = false;
+  var SPEED = 0.7;   // <1 slows the whole flow (scraps, packets, pulses) uniformly
   function frame(ts) {
     if (!running) return;
-    var dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts;
+    var dt = Math.min(0.05, (ts - last) / 1000 || 0) * SPEED; last = ts;
     step(dt); render();
     raf = requestAnimationFrame(frame);
   }

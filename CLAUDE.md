@@ -254,9 +254,15 @@ of flow so the robot stays dead-centre on the hub), which emits clean colour-cod
 into orderly labeled **topic lanes** on the right (AI + data centers, education, housing, healthcare,
 labor, transportation, …and more). Palette read live from the CSS tokens (re-read on theme flip),
 `prefers-reduced-motion` renders a single static composed frame, an IntersectionObserver + the tab's
-visibility gate the rAF loop, and a mobile branch tucks the hub left so the full topic labels still
-fit. `assets/govbot-bot.png` is the robot mark with its baked beige background flood-filled to
-transparent (borders → inward, stopping at the robot's outline).
+visibility gate the rAF loop, and a `SPEED` factor (0.7) scales `dt` so the whole flow runs a bit
+slower. The **mobile** branch keeps the same desktop framing — chaos on the left, hub near the
+middle-left (not tucked hard against the edge), the sorted topic lanes with their full labels on the
+right, and **both bottom captions** ("Raw government activity" / "Understandable topics") kept visible
+— on a **taller** figure (440px under 620px) with the lanes stopping higher (laneTop/laneBottom) so
+the captions have room and nothing is cropped. `assets/govbot-bot.png` is the robot mark with its
+baked beige background flood-filled to transparent (borders → inward, stopping at the robot's outline).
+The "What do you want to know?" section header carries no sub-copy (the "One clear next step…" aside
+was removed).
 Pages migrate to the shared system one at a time; the old per-page "New Design" skins + toggle
 are retired as each page is migrated. `legislation.html` opens with an **"Explore by place" entry**
 (`#explore-entry`, `renderExplore()`): a **Map view / List view** toggle over the whole country. The
@@ -459,22 +465,15 @@ ballots ahead" intro paragraph were all removed, leaving a clean stack: Hero →
 (map + place picker, vertically centered) → midterm callout → the two **"What's on your ballot?"**
 date cards → the revealed races → the sources cabinet (now collapsed). The **election calendar**
 (`#calendar`) is now **always shown** (ungated — visible whenever `#cal-grid` has cards) with the
-**current/next timeline milestone pulsing** (`.tl-item.next .tl-dot` → `@keyframes tl-pulse`, a **big** scale-1.32 + wide-ring pulse for low-vision readers). A
-**"Recent Illinois legislative activity"** section (`#il-recent`, `renderIlRecent`) lists the IL
-bills Govbot tracks — fetched fail-soft from the legislation `data.json` (filtered to `state==="il"`,
-newest recorded action first, showing the **newest 8** (`IL_RECENT_MAX`) with a big
-**"Explore entire catalog of IL bills ↗"** button (`#ilr-explore`) below them that opens the whole IL
-catalog in a **new tab** via `legislation.html#state=il` (a new `#state=<code>` deep link in
-legislation's `applyDeepLink` → `eeApplyFilter`, which pops up that jurisdiction's results catalog),
-plus a **search box** (`#ilr-search`, matches
-id/title/sponsor/topic). It renders as **the same card format as the legislation "Recent activity"
-strip** (`.ilr-card` mirroring `.recent-card`): an "Illinois" state badge · bill id · relative date
-(`ilRelDate`, "yesterday"/"N days ago") · title · latest action · the bill's **topic chips**
-(`.ilrc-tags`, colored dots from `state.ilTagColor`, which maps each topic to the same fixed
-`--series-N` color the legislation site uses so a topic reads the same color on both pages). Each card
-deep-links to `legislation.html#bill=<state~session~id>` **in a new tab** (`target="_blank"`, a `↗` on
-the date) — the full bill lives on the legislation dashboard, so opening it must not replace the
-elections page the reader is on. The section stays hidden when no IL bills load.
+**current/next timeline milestone pulsing** (`.tl-item.next .tl-dot` → `@keyframes tl-pulse`, a **big** scale-1.32 + wide-ring pulse for low-vision readers).
+The standalone **"Recent Illinois legislative activity"** section was **removed and merged into the
+Springfield "rules of the game" section** (see below): the general recent-activity feed now rides that
+section's **"Other"** tab. `loadIlRecent()` still fetches the legislation `data.json` fail-soft
+(`state==="il"`, newest recorded action first) to populate `state.ilBills` + the shared
+`state.ilTagColor`, but instead of its own section it feeds the "Other" tab and re-renders Springfield.
+The **"Explore entire catalog of IL bills ↗"** button (`#ilr-explore`, `legislation.html#state=il` in a
+new tab, via the `#state=<code>` deep link → `eeApplyFilter`) was relocated to the bottom of the
+Springfield section.
 `hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
 "Hearings & Public Comment", tagline "Government isn't just something you watch — you can
 participate."), and a
@@ -643,10 +642,19 @@ refusing to guess an ambiguous bare surname (several "Smith"s → no party rathe
 `data.json` tagged `elections & voting` or `education` (the elected CPS board, ward/runoff
 rules, campaign finance), cross-referenced with `hearings.json` for upcoming ILGA hearings,
 shown on the page as context *beside* the races (never mixed into candidate lists) plus a
-`springfield.xml` feed. Each Springfield bill card (`renderSpringfieldBill`) is **clickable** — the
+`springfield.xml` feed. The section is **always shown** when there's any Illinois content
+(`revealSpringfield`, ungated like the calendar) and carries **three filter tabs — Elections & voting
+/ Education / Other** (the old "All" tab was removed; default is Elections & voting). Elections & voting
+and Education come from the curated `springfield` list (`springfieldBills()` filters by tag); **Other**
+is the general recent IL activity merged in from the retired standalone section — `state.ilBills` (all
+tracked IL bills) minus anything already tagged elections/education, newest recorded action first, capped
+at `IL_RECENT_MAX` (8). The one `#sf-search` box (its own full-width row so its placeholder isn't
+clipped) filters within the active tab (id/title/sponsor/action/tags). Each Springfield bill card
+(`renderSpringfieldBill`) leads with an **"IL" badge before the bill id** and a trailing **"↗"** marking
+that it opens in a new tab, and is **clickable** — the
 whole card opens that bill's **full details** (its modal on the legislation dashboard, via
 `legislation.html#bill=il~<session>~<id>`) in a **new tab** so it doesn't replace the elections page
-(same convention as the Recent-IL-activity cards; the inline "View on Legislation Dashboard" / "Bill
+(the inline "View on Legislation Dashboard" / "Bill
 page ↗" links were removed, and the witness-slip link `stopPropagation`s so it doesn't also open the
 bill). `deploy-docs.yml` runs this after `data.json`+`hearings.json` are
 built so it reads the fresh copies. Fail-soft: with sources down the seed's structure still
