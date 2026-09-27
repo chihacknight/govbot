@@ -237,6 +237,7 @@
       "additionalProperties": false,
       "properties": {
         "name": { "type": "string", "description": "The person's name exactly as it appeared in coverage. Never normalized against a voter file — this is a coverage signal, not a ballot name." },
+        "party": { "type": ["string", "null"], "description": "Party, only when the source text stated it explicitly next to the name ('Democrat Jane Doe', 'Jane Doe (D)'). Never inferred; null when the coverage didn't say. May also be curated in elections_seed.json for a durably-known name." },
         "status": {
           "type": ["string", "null"],
           "description": "How the coverage characterized the candidacy: 'announced' (declared/entered/filed to run), 'incumbent' (appointed/confirmed to the seat mid-term — the sitting officeholder and a presumptive candidate), 'exploring' (considering/weighing/rumored), or 'reported' (named as a candidate without a clear signal verb).",

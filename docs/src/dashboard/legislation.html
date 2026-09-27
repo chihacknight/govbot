@@ -1280,6 +1280,16 @@
       const b = ((state.data && state.data.bills) || []).find((x) => billKey(x) === key);
       if (b) { openDetails(b); return false; }   // opened the exact bill; no filtering
     }
+    // #state=<code> (e.g. the elections page's "Explore entire catalog of IL bills")
+    // opens that jurisdiction's whole catalog — the same as clicking it on the map.
+    const stateDeep = location.hash.match(/[#&]state=([a-z]{2,3})/i);
+    if (stateDeep) {
+      const code = stateDeep[1].toLowerCase();
+      if (((state.data && state.data.bills) || []).some((b) => b.state === code)) {
+        eeApplyFilter(code);   // opens the results popup for that state; it re-renders
+        return false;
+      }
+    }
     const deep = (location.hash.match(/[#&]q=([^&]+)/) || location.search.match(/[?&]q=([^&]+)/));
     if (!deep) return false;
     try {

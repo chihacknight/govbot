@@ -1702,6 +1702,31 @@ def fetch_news_items(query):
     return parse_news_rss(fetch_text(news_url(query)))
 
 
+_PARTY_LONG = {"democrat": "Democratic", "democratic": "Democratic",
+               "republican": "Republican", "independent": "Independent"}
+_PARTY_ABBR = {"d": "Democratic", "r": "Republican", "i": "Independent"}
+
+
+def extract_party_near(text, name):
+    """The party a source stated *right beside* ``name`` — "Democrat Jane Doe",
+    "Jane Doe (D-Chicago)", "Jane Doe, a Republican" — or None. The label must
+    touch the name; a party word elsewhere in the text is never used (we don't
+    infer party, only read it where the coverage attached it). Pure/offline."""
+    if not text or not name:
+        return None
+    nm = re.escape(name.strip())
+    m = re.search(r"\b(Democrat|Democratic|Republican|Independent)\s+" + nm + r"\b", text, re.I)
+    if m:
+        return _PARTY_LONG[m.group(1).lower()]
+    m = re.search(nm + r"\s*\(\s*([DRI])\b[^)]*\)", text)   # "(D)" / "(R-Chicago)" / "(I)"
+    if m:
+        return _PARTY_ABBR[m.group(1).lower()]
+    m = re.search(nm + r"\s*,?\s+(?:an?|the)\s+(Democrat|Democratic|Republican|Independent)\b", text, re.I)
+    if m:
+        return _PARTY_LONG[m.group(1).lower()]
+    return None
+
+
 def build_potential(race, items, now, existing=None, bodies=None):
     """Assemble a race's potential_candidates[] from news `items` (already the
     relevant pool), merged with any `existing` list so names/sources accumulate
@@ -1724,7 +1749,7 @@ def build_potential(race, items, now, existing=None, bodies=None):
     def _seed(name):
         key = name.lower()
         if key not in people:
-            people[key] = {"name": name, "status": None, "sources": [],
+            people[key] = {"name": name, "status": None, "party": None, "sources": [],
                            "_urls": set(), "_dates": set()}
         return people[key]
 
@@ -1733,6 +1758,8 @@ def build_potential(race, items, now, existing=None, bodies=None):
     for p in (existing or []):
         rec = _seed(p.get("name") or "")
         rec["status"] = p.get("status")
+        if p.get("party"):
+            rec["party"] = p["party"]     # keep a curated/prior-run party
         for s in p.get("sources", []):
             url = s.get("url")
             if url and url not in rec["_urls"]:
@@ -1767,6 +1794,9 @@ def build_potential(race, items, now, existing=None, bodies=None):
             rec = _seed(name)
             if rank[status] > rank[rec["status"]]:
                 rec["status"] = status
+            if not rec["party"]:      # party only when the source stated it beside the name
+                rec["party"] = (extract_party_near(it.get("title", ""), name)
+                                or (extract_party_near(body, name) if body else None))
             _add_source(rec, it)
 
     # Pass 2: for a name already established (here or from a prior run), any other
@@ -1790,14 +1820,17 @@ def build_potential(race, items, now, existing=None, bodies=None):
             continue
         dates = sorted(rec["_dates"])
         rec["sources"].sort(key=lambda s: (s.get("date") or ""), reverse=True)
-        out.append({
+        entry = {
             "name": rec["name"],
             "status": rec["status"],
             "mentions": len(rec["sources"]),
             "first_seen": dates[0] if dates else None,
             "last_seen": dates[-1] if dates else None,
             "sources": rec["sources"][:POTENTIAL_MAX_SOURCES],
-        })
+        }
+        if rec.get("party"):
+            entry["party"] = rec["party"]
+        out.append(entry)
     # Most-cited first, then firmest signal, then name — stable and useful.
     rank2 = {"announced": 4, "incumbent": 3, "exploring": 2, "reported": 1, None: 0}
     out.sort(key=lambda p: (-p["mentions"], -rank2[p["status"]], p["name"].lower()))

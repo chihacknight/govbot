@@ -660,6 +660,33 @@ class PotentialCandidates(unittest.TestCase):
             "Jordan A. Rivers",
             [p["name"] for p in main.build_potential(race2, self.mayor_items, self.now)])
 
+    def test_extract_party_near_only_when_adjacent(self):
+        # Party read only when it touches the name; never inferred from elsewhere.
+        self.assertEqual(main.extract_party_near("Democrat Jordan A. Rivers announces run", "Jordan A. Rivers"), "Democratic")
+        self.assertEqual(main.extract_party_near("Jordan A. Rivers (D-Chicago) files", "Jordan A. Rivers"), "Democratic")
+        self.assertEqual(main.extract_party_near("Jordan A. Rivers, a Republican, joins race", "Jordan A. Rivers"), "Republican")
+        self.assertEqual(main.extract_party_near("Independent Alex Placeholder mulls a bid", "Alex Placeholder"), "Independent")
+        # A party word not next to the name is NOT attached.
+        self.assertIsNone(main.extract_party_near("The Democratic field grows as Jordan A. Rivers announces", "Jordan A. Rivers"))
+        self.assertIsNone(main.extract_party_near("Jordan A. Rivers announces run for mayor", "Jordan A. Rivers"))
+
+    def test_build_attaches_and_preserves_party(self):
+        # Party stated in a headline is attached to that potential candidate.
+        items = [{"title": "Democrat Casey Q. Example announces run for Chicago mayor in 2027",
+                  "link": "https://ex.example/a", "publisher": "Ex", "date": "2026-09-03"}]
+        pcs = main.build_potential(self.mayor, items, self.now)
+        casey = next(p for p in pcs if p["name"] == "Casey Q. Example")
+        self.assertEqual(casey["party"], "Democratic")
+        # A curated/prior-run party is preserved even when this run's headline omits it.
+        existing = [{"name": "Jordan A. Rivers", "party": "Democratic", "status": "reported",
+                     "sources": [{"title": "old", "url": "https://old.example/y", "date": "2026-08-01"}]}]
+        pcs2 = main.build_potential(self.mayor, self.mayor_items, self.now, existing=existing)
+        jordan = next(p for p in pcs2 if p["name"] == "Jordan A. Rivers")
+        self.assertEqual(jordan["party"], "Democratic")
+        # A name with no party stated carries no party key (kept clean, not null-spammed).
+        other = next(p for p in pcs2 if p["name"] != "Jordan A. Rivers")
+        self.assertNotIn("party", other)
+
     def test_district_gating(self):
         ward1 = {"id": "chicago-alderperson-ward-01", "office": "Alderperson",
                  "office_group": "council", "is_citywide": False, "district": "Ward 1"}
