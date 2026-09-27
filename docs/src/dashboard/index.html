@@ -142,9 +142,6 @@
   .mini-date .cal-sub { font-size: 9.5px; color: var(--gb-text-2); padding: 1px 0 5px; letter-spacing: .02em; }
   .election-card { background: linear-gradient(160deg, rgba(63,179,127,0.10), var(--gb-surface) 62%); }
 
-  .follow-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .follow-item { display: flex; align-items: center; gap: 12px; }
-
   /* ---- "From chaos to clarity" closing stream animation ---- */
   .stream-figure { position: relative; margin: 0; border-radius: 16px; overflow: hidden;
     border: 1px solid var(--gb-border); height: 400px;
@@ -172,8 +169,11 @@
     color: var(--gb-text-2); z-index: 2; pointer-events: none; }
   @media (prefers-reduced-motion: reduce) { .stream-bot-img { animation: none; } }
   @media (max-width: 560px) { .stream-bot-name { font-size: 13px; margin-top: 5px; } }
-  @media (max-width: 620px) { .stream-figure { height: 340px; } }
-  @media (max-width: 560px) { .stream-cap { display: none; } }
+  /* On phones the figure keeps its full desktop-style framing — chaos on the left,
+     the sorted topic lanes on the right, and BOTH captions — just taller so the
+     composition isn't cropped. */
+  @media (max-width: 620px) { .stream-figure { height: 440px; } }
+  @media (max-width: 560px) { .stream-cap { font-size: 9px; letter-spacing: .06em; padding: 0 12px; } }
 
   @media (max-width: 980px) {
     .home-hero h1 { font-size: 48px; }
@@ -181,7 +181,6 @@
     .home-hero-copy { flex-basis: 100%; }
     .know-grid { grid-template-columns: repeat(2, 1fr); }
     .now-grid { grid-template-columns: 1fr; }
-    .follow-strip { grid-template-columns: 1fr; }
   }
   @media (max-width: 620px) {
     .home-hero-inner { padding: 44px 20px 40px; min-height: 0; }
@@ -234,7 +233,7 @@
         <a href="hearings.xml" role="menuitem" style="--accent:var(--gb-gold-hi)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
           <span><span class="mega-t">Hearings feed</span><span class="mega-d">Whole-calendar, per-bill &amp; per-state RSS</span></span></a>
-        <a href="#follow" role="menuitem" style="--accent:var(--gb-blue-hi)">
+        <a href="legislation.html" role="menuitem" style="--accent:var(--gb-blue-hi)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h6M9 16h4"/></svg>
           <span><span class="mega-t">Bills &amp; topics</span><span class="mega-d">Filter, then follow from the dashboard</span></span></a>
       </div>
@@ -262,7 +261,7 @@
     <form class="gb-search" role="search" data-gb-search>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="color:var(--gb-text-2)"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
       <label class="gb-sr" for="home-search">Search bills, candidates, hearings, topics</label>
-      <input id="home-search" type="search" placeholder="Search bills, candidates, hearings…">
+      <input id="home-search" type="search" placeholder="Search bills, candidates…">
     </form>
     <button class="gb-icon-btn" data-gb-theme-toggle type="button" aria-label="Toggle theme">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F0C969" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg>
@@ -278,7 +277,7 @@
   <form class="gb-search" role="search" data-gb-search>
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="color:var(--gb-text-2)"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
     <label class="gb-sr" for="drawer-search">Search Govbot</label>
-    <input id="drawer-search" type="search" placeholder="Search bills, candidates, hearings…">
+    <input id="drawer-search" type="search" placeholder="Search bills, candidates…">
   </form>
   <a href="legislation.html">Legislation</a>
   <a href="hearings.html">Hearings &amp; Public Comment</a>
@@ -312,7 +311,6 @@
 <section class="band">
   <div class="section-head">
     <h2>What do you want to know?</h2>
-    <div class="aside">One clear next step — pick where to start.</div>
   </div>
   <div class="know-grid">
     <a class="gb-card gb-card-link know-card" href="legislation.html" style="--accent: var(--gb-blue-hi)">
@@ -336,7 +334,7 @@
       <p>Explore Illinois elections, races and ballot information.</p>
       <span class="k-go">Explore races →</span>
     </a>
-    <a class="gb-card gb-card-link know-card" href="#follow" style="--accent: var(--gb-purple-hi)">
+    <a class="gb-card gb-card-link know-card" href="legislation.html" style="--accent: var(--gb-purple-hi)">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gb-purple-hi)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1.6" fill="var(--gb-purple-hi)" stroke="none"/></svg>
       <div class="k-kicker">Follow</div>
       <div class="k-q">Want to keep up?</div>
@@ -380,25 +378,6 @@
     </div>
   </div>
   <p style="margin:18px 2px 0;font-size:13px;color:var(--gb-text-muted);">Figures reflect the most recent twice-daily refresh from official government sources. Govbot organizes and labels the data; it does not editorialize.</p>
-</section>
-
-<!-- ==================== FOLLOW ==================== -->
-<section class="band" id="follow">
-  <div class="section-head"><h2>Don't keep checking. Follow it.</h2></div>
-  <div class="follow-strip">
-    <a class="gb-card gb-card-link follow-item" href="elections.xml">
-      <span class="gb-badge gb-badge-official" style="border-radius:8px;">RSS</span>
-      <span><b style="display:block;">Illinois elections</b><span style="font-size:13px;color:var(--gb-text-2);">Whole-ballot feed + per-race feeds</span></span>
-    </a>
-    <a class="gb-card gb-card-link follow-item" href="hearings.xml">
-      <span class="gb-badge gb-badge-reported" style="border-radius:8px;">RSS</span>
-      <span><b style="display:block;">Hearings calendar</b><span style="font-size:13px;color:var(--gb-text-2);">Every hearing + per-bill &amp; per-state</span></span>
-    </a>
-    <a class="gb-card gb-card-link follow-item" href="legislation.html">
-      <span class="gb-badge gb-badge-context" style="border-radius:8px;">Bills</span>
-      <span><b style="display:block;">Bills &amp; topics</b><span style="font-size:13px;color:var(--gb-text-2);">Filter, then follow from the dashboard</span></span>
-    </a>
-  </div>
 </section>
 
 <!-- ==================== FROM CHAOS TO CLARITY (stream animation) ==================== -->
@@ -743,22 +722,26 @@
     canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     var mobile = W < 560;
-    var bw, bx;
+    var bw, bx, laneTop, laneBottom;
     if (mobile) {
-      // Rebalance: small chaos zone on the left, hub tucked left, wide lanes so
-      // the full topic labels still fit at narrow widths.
-      hub.x = W * 0.27; hub.y = H * 0.46;
-      botR = Math.max(38, Math.min(H * 0.15, 44));
-      bw = Math.min(W * 0.54, 210); bx = W - bw - 6; labelFont = 10;
+      // Keep the desktop framing on phones — chaos on the left, hub near the
+      // middle-left, sorted lanes on the right — just with wider lanes and a
+      // smaller label so the full topic names still fit at narrow widths. The
+      // lanes stop higher up so the bottom captions have room (nothing cropped).
+      hub.x = W * 0.33; hub.y = H * 0.42;
+      botR = Math.max(40, Math.min(H * 0.14, 52));
+      bw = Math.min(W * 0.52, 210); bx = W - bw - 8; labelFont = 10;
+      laneTop = H * 0.10; laneBottom = H * 0.74;
     } else {
       hub.x = W * 0.5; hub.y = H * 0.5;
       botR = Math.max(46, Math.min(H * 0.22, 64));
       bw = Math.min(W * 0.28, 196); bx = W - bw - Math.min(W * 0.04, 22); labelFont = 12;
+      laneTop = H * 0.13; laneBottom = H * 0.87;
     }
     // Keep the DOM robot centred on the canvas hub (which can move on mobile).
     if (botEl) { botEl.style.left = hub.x + "px"; botEl.style.top = hub.y + "px"; }
     var n = TOPICS.length;
-    var top = H * 0.13, bottom = H * 0.87, gap = (bottom - top) / (n - 1);
+    var top = laneTop, bottom = laneBottom, gap = (bottom - top) / (n - 1);
     buckets = TOPICS.map(function (t, i) {
       return { label: t.label, color: t.c, x: bx, y: top + gap * i,
                w: bw, h: Math.min(gap * 0.7, 30), glow: 0 };
@@ -932,9 +915,10 @@
   }
 
   var raf = 0, last = 0, running = false;
+  var SPEED = 0.7;   // <1 slows the whole flow (scraps, packets, pulses) uniformly
   function frame(ts) {
     if (!running) return;
-    var dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts;
+    var dt = Math.min(0.05, (ts - last) / 1000 || 0) * SPEED; last = ts;
     step(dt); render();
     raf = requestAnimationFrame(frame);
   }
