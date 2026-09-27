@@ -656,8 +656,15 @@ Portal, projects + Douglas-Peucker-simplifies them at build time, and writes a c
 `docs/src/dashboard/maps.json` (`{view, context, districts}` keyed by race id). The elections
 page draws each race's ward/police polygon as an inline-SVG locator inside a light city
 outline (citywide offices tint all of Chicago); CPS subdistricts have no published polygon
-so their map is omitted. Fail-soft: a portal outage leaves the committed `maps.json` in
-place. Geometry helpers are offline-tested: `python3 actions/scrape-maps/main.py --self-test`.
+so their map is omitted. **These locator SVGs are built lazily**: because the base city outline
+(~50 ward paths) is redrawn inside every ward map, eagerly rendering all revealed races' maps
+was the dominant DOM/paint cost on mobile — so `renderRaceMap` returns a sized placeholder
+(`.race-map-ph`) that a shared `IntersectionObserver` (`_mapObserver`, 400px margin) swaps for
+the real `buildRaceMap` SVG only when the card scrolls near the viewport (renderGroups unobserves
+discarded placeholders; no-IO browsers build eagerly). Relatedly, the several data files that land
+at load (maps/people/il_summaries) re-render through a **rAF-coalesced `scheduleRender()`** so a
+burst of arrivals is one rebuild, not several. Fail-soft: a portal outage leaves the committed
+`maps.json` in place. Geometry helpers are offline-tested: `python3 actions/scrape-maps/main.py --self-test`.
 
 **Official candidates** are populated from the Chicago Board of Elections' authoritative
 **Candidate List PDF** (linked from `chicagoelections.gov/getting-ballot/candidates`; the BOE

@@ -210,6 +210,8 @@
   .badge.count { color: var(--text-primary); border-color: var(--baseline); font-weight: 700; }
   /* per-race locator map (inline SVG from maps.json) */
   .race-map { display: flex; align-items: center; gap: 10px; background: var(--hover-wash); border-radius: 8px; padding: 8px 10px; }
+  /* Placeholder reserves the map's height until the card scrolls in and the SVG is built. */
+  .race-map-ph { min-height: 132px; }
   .race-map svg { height: 116px; width: auto; flex: none; display: block; }
   .race-map .map-ctx { fill: color-mix(in srgb, var(--text-muted) 14%, transparent); stroke: var(--border); stroke-width: 1; }
   .race-map .map-hi { fill: color-mix(in srgb, var(--gc) 42%, transparent); stroke: var(--gc); stroke-width: 2.5; stroke-linejoin: round; }
@@ -1199,7 +1201,7 @@
     // District locator maps (fail-soft; re-render when they arrive).
     fetch("maps.json")
       .then((r) => (r.ok ? r.json() : null))
-      .then((m) => { state.maps = m; if (m) render(); })
+      .then((m) => { state.maps = m; if (m) scheduleRender(); })
       .catch(() => {});
 
     // Current incumbents for empty Illinois General Assembly races: the sitting
@@ -1221,7 +1223,7 @@
           }
         }
         state.ilIncumbents = idx;
-        render();
+        scheduleRender();
       })
       .catch(() => {});
 
@@ -2041,6 +2043,18 @@
   }
 
   /* ---------- render ---------- */
+  // Coalesce render() calls into one per frame. Several data files (maps, people,
+  // il_summaries) land in quick succession at load; without this each one triggers
+  // its own full rebuild of every revealed race (each ~heavy), which is the main
+  // cause of jank on mobile. Callers that only change data (not user intent) use
+  // this; the few that need the DOM synchronously (deep-link scroll) call render().
+  let _renderQueued = false;
+  function scheduleRender() {
+    if (_renderQueued) return;
+    _renderQueued = true;
+    requestAnimationFrame(() => { _renderQueued = false; render(); });
+  }
+
   function render() {
     // Only races in the office groups the reader has chosen — so the tiles and
     // the sections both reflect what's actually on screen.
@@ -2100,6 +2114,9 @@
 
   function renderGroups(races) {
     const wrap = $("groups");
+    // Stop observing the map placeholders we're about to discard, so the shared
+    // IntersectionObserver doesn't retain detached nodes across re-renders.
+    if (_mapObserver) wrap.querySelectorAll(".race-map-ph").forEach((el) => _mapObserver.unobserve(el));
     wrap.textContent = "";
 
     const byGroup = {};
@@ -2301,6 +2318,21 @@
   // filled in the group accent. Citywide races tint the whole city; races with
   // no published geometry (CPS subdistricts) return null.
   const SVGNS = "http://www.w3.org/2000/svg";
+  // Build each race's locator SVG only when the card scrolls near the viewport.
+  // The base city outline is ~50 paths and is redrawn inside every ward map, so
+  // eagerly rendering all revealed races' maps is the dominant DOM/paint cost on
+  // mobile. A cheap placeholder holds the space; the observer swaps in the real map.
+  const _mapObserver = ("IntersectionObserver" in window)
+    ? new IntersectionObserver((entries, obs) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          obs.unobserve(e.target);
+          const build = e.target._buildMap;
+          if (build) { const real = build(); if (real) e.target.replaceWith(real); }
+        });
+      }, { rootMargin: "400px 0px" })
+    : null;
+
   function renderRaceMap(r, meta) {
     const maps = state.maps;
     if (!maps || !maps.view || !maps.context) return null;
@@ -2311,6 +2343,19 @@
     const entry = maps.districts && maps.districts[r.id];
     if (!entry && !r.is_citywide) return null;
 
+    const build = () => buildRaceMap(r, meta, entry);
+    if (!_mapObserver) return build();          // no IntersectionObserver → build eagerly
+    const ph = document.createElement("div");
+    ph.className = "race-map race-map-ph";
+    ph.style.setProperty("--gc", "var(" + meta.color + ")");
+    ph._buildMap = build;
+    _mapObserver.observe(ph);
+    return ph;
+  }
+
+  function buildRaceMap(r, meta, entry) {
+    const maps = state.maps;
+    if (!maps || !maps.view || !maps.context) return null;
     const wrap = document.createElement("div"); wrap.className = "race-map";
     wrap.style.setProperty("--gc", "var(" + meta.color + ")");
     const svg = document.createElementNS(SVGNS, "svg");
