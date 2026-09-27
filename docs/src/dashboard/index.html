@@ -142,9 +142,6 @@
   .mini-date .cal-sub { font-size: 9.5px; color: var(--gb-text-2); padding: 1px 0 5px; letter-spacing: .02em; }
   .election-card { background: linear-gradient(160deg, rgba(63,179,127,0.10), var(--gb-surface) 62%); }
 
-  .follow-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .follow-item { display: flex; align-items: center; gap: 12px; }
-
   /* ---- "From chaos to clarity" closing stream animation ---- */
   .stream-figure { position: relative; margin: 0; border-radius: 16px; overflow: hidden;
     border: 1px solid var(--gb-border); height: 400px;
@@ -181,7 +178,6 @@
     .home-hero-copy { flex-basis: 100%; }
     .know-grid { grid-template-columns: repeat(2, 1fr); }
     .now-grid { grid-template-columns: 1fr; }
-    .follow-strip { grid-template-columns: 1fr; }
   }
   @media (max-width: 620px) {
     .home-hero-inner { padding: 44px 20px 40px; min-height: 0; }
@@ -234,7 +230,7 @@
         <a href="hearings.xml" role="menuitem" style="--accent:var(--gb-gold-hi)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
           <span><span class="mega-t">Hearings feed</span><span class="mega-d">Whole-calendar, per-bill &amp; per-state RSS</span></span></a>
-        <a href="#follow" role="menuitem" style="--accent:var(--gb-blue-hi)">
+        <a href="legislation.html" role="menuitem" style="--accent:var(--gb-blue-hi)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h6M9 16h4"/></svg>
           <span><span class="mega-t">Bills &amp; topics</span><span class="mega-d">Filter, then follow from the dashboard</span></span></a>
       </div>
@@ -336,7 +332,7 @@
       <p>Explore Illinois elections, races and ballot information.</p>
       <span class="k-go">Explore races →</span>
     </a>
-    <a class="gb-card gb-card-link know-card" href="#follow" style="--accent: var(--gb-purple-hi)">
+    <a class="gb-card gb-card-link know-card" href="legislation.html" style="--accent: var(--gb-purple-hi)">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gb-purple-hi)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1.6" fill="var(--gb-purple-hi)" stroke="none"/></svg>
       <div class="k-kicker">Follow</div>
       <div class="k-q">Want to keep up?</div>
@@ -380,25 +376,6 @@
     </div>
   </div>
   <p style="margin:18px 2px 0;font-size:13px;color:var(--gb-text-muted);">Figures reflect the most recent twice-daily refresh from official government sources. Govbot organizes and labels the data; it does not editorialize.</p>
-</section>
-
-<!-- ==================== FOLLOW ==================== -->
-<section class="band" id="follow">
-  <div class="section-head"><h2>Don't keep checking. Follow it.</h2></div>
-  <div class="follow-strip">
-    <a class="gb-card gb-card-link follow-item" href="elections.xml">
-      <span class="gb-badge gb-badge-official" style="border-radius:8px;">RSS</span>
-      <span><b style="display:block;">Illinois elections</b><span style="font-size:13px;color:var(--gb-text-2);">Whole-ballot feed + per-race feeds</span></span>
-    </a>
-    <a class="gb-card gb-card-link follow-item" href="hearings.xml">
-      <span class="gb-badge gb-badge-reported" style="border-radius:8px;">RSS</span>
-      <span><b style="display:block;">Hearings calendar</b><span style="font-size:13px;color:var(--gb-text-2);">Every hearing + per-bill &amp; per-state</span></span>
-    </a>
-    <a class="gb-card gb-card-link follow-item" href="legislation.html">
-      <span class="gb-badge gb-badge-context" style="border-radius:8px;">Bills</span>
-      <span><b style="display:block;">Bills &amp; topics</b><span style="font-size:13px;color:var(--gb-text-2);">Filter, then follow from the dashboard</span></span>
-    </a>
-  </div>
 </section>
 
 <!-- ==================== FROM CHAOS TO CLARITY (stream animation) ==================== -->

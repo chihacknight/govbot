@@ -794,13 +794,15 @@ blue / Republican red / else neutral, `partyClass`). The same pill is used for o
 (`renderCand`), the current-incumbent box, and potential candidates (when the source stated a party).
 
 **No dupes with the side panel.** The Chicago-map "On this ballot" side panel already shows a
-voter's citywide + statewide (`il_exec`) + U.S. Senate + CPS-**president** ballot in full, so those
-are **omitted from the bottom race sections** (`inSidePanel(r)` filters them out of `render()`'s
-race list). The address-specific district races — aldermen wards, `il_senate`/`il_house`, `us_house`,
-CPS subdistricts, police district councils — are NOT fully in the per-ward side panel, so they still
-browse below. A global-search `#race=<id>` deep link to a side-panel-only race (which is no longer in
-`#groups`) falls back to scrolling to the "Find your ballot" map (`#chimap`) once, so the reader can
-pick their ward and see it there.
+voter's citywide + statewide (`il_exec`) + U.S. Senate + CPS-**president** ballot in full — **plus
+their Alderperson** (the map resolves the `council` race per ward via `cmWardRace`) — so all of those
+are **omitted from the bottom race sections** (`inSidePanel(r)` filters them out of `render()`'s race
+list; `council` is included). The remaining address-specific district races — `il_senate`/`il_house`,
+`us_house`, CPS subdistricts, police district councils — can't be pinned from a ward alone, so they
+still browse below (the map's `cmDistrictNote` "open the full ballot below" note points at them). A
+global-search `#race=<id>` deep link to a side-panel-only race (which is no longer in `#groups`) falls
+back to scrolling to the "Find your ballot" map (`#chimap`) once, so the reader can pick their ward and
+see it there.
 
 **Race-card detail** (`renderRace`, shared by the main sections and the "On this ballot" map panel):
 each card leads with a **"👥 N candidates"** badge (the confirmed-candidate count), shows its
