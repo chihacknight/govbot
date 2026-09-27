@@ -301,6 +301,18 @@ jobs:
             --enrich-incumbents docs/src/dashboard/elections.json \
             || echo "::warning::incumbent enrichment reported errors"
 
+      # Party for the nonpartisan Chicago races, from Wikidata's structured P102
+      # ("member of political party") — the aldermen via the office-enumerated
+      # roster (no name-match risk), citywide candidates via a strict per-name gate.
+      # Never guesses; fully fail-soft (Wikidata down / no confident match → nothing,
+      # so a bad day never writes a wrong party).
+      - name: Fill party from Wikidata (nonpartisan Chicago races)
+        run: |
+          set -uo pipefail
+          python3 actions/scrape-elections/main.py \
+            --enrich-party docs/src/dashboard/elections.json \
+            || echo "::warning::Wikidata party enrichment reported errors"
+
       # Official candidates from the Chicago Board of Elections' Candidate List PDF.
       # The BOE publishes the authoritative roster only as a PDF, so we extract it
       # with `pdftotext` (poppler-utils, a system tool like the DuckDB dependency)

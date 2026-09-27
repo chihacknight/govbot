@@ -826,6 +826,27 @@ to the elections schema as an optional per-race `incumbent`. `deploy-docs.yml` r
 Wikipedia-nominee step, fully fail-soft (a portal outage attaches nothing; committed sample carries
 none). Offline-tested with an injected roster in `test_scrape_elections.py`.
 
+**Party enrichment from Wikidata** (`main.py --enrich-party docs/src/dashboard/elections.json`): the
+Chicago municipal offices are legally **nonpartisan**, so no official/City dataset carries a party.
+Wikidata is the one documented, structured public source (its `P102` "member of political party" —
+the same kind of keyless public API the photo pipeline uses, never a scrape). This step fills a blank
+`party` two safe ways and **never guesses**: (1) **aldermen** — a SPARQL enumeration of the *current
+holders of the "Chicago Alderman" office* (`Q47500326`), joined to our known ward roster by name
+(`parse_wikidata_alderman_parties` → `{name_key: party}`; enumerating by office means no name-match
+risk); (2) **citywide candidates** (`_PARTY_PER_NAME_GROUPS`) — a strict per-name gate
+(`wikidata_party_for_name`) that keeps a party only when a **single** Wikidata entity confidently
+matches: a human (`P31=Q5`) whose label carries the surname AND whose English description carries a
+place/office signal (`chicago`/`alderman`/`city council`/`illinois`) — so the "Pat Dowell → Illinois
+House namesake" and "John Smith → three different people" traps resolve to nothing. Partisan races
+already carry official party and are skipped; CPS-subdistrict / police-council candidates are obscure
+and effectively never in Wikidata, so they aren't looked up (no wasted calls). `_norm_party` maps a
+Wikidata label to the site's short form ("Democratic Party"/"Democratic Socialist…" → "Democratic",
+etc.). Coverage is only as good as Wikidata (today a handful of aldermen), so it fills in over time.
+`_wikidata_json` retries 429/503 with backoff and stays polite; the whole pass is fully fail-soft (the
+Wikidata query service being down — as during its 2026 WDQS outage — attaches nothing, never a wrong
+party) and runs right after the incumbents step in `deploy-docs.yml`. Offline-tested with injected
+search/entity/SPARQL fetchers in `test_scrape_elections.py`.
+
 ## govbot Development
 
 ```bash
