@@ -203,8 +203,6 @@
   .race-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
   .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; }
   .badge.ballot { color: var(--series-1); border-color: color-mix(in srgb, var(--series-1) 55%, transparent); }
-  .badge.nonpartisan { color: var(--text-muted); }
-  .badge.partisan { color: var(--series-6); border-color: color-mix(in srgb, var(--series-6) 55%, transparent); }
   .badge.seats { color: var(--series-5); border-color: color-mix(in srgb, var(--series-5) 55%, transparent); }
   .badge.first { color: #fff; background: var(--series-2); border-color: var(--series-2); }
   .badge.count { color: var(--text-primary); border-color: var(--baseline); font-weight: 700; }
@@ -276,11 +274,14 @@
   .ci-tag { font-size: 9px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
     color: #fff; background: var(--series-1); border-radius: 999px; padding: 2px 7px; }
   .ci-name { font-size: 13px; font-weight: 700; color: var(--text-primary); }
-  .ci-party { font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px;
-    background: color-mix(in srgb, currentColor 12%, transparent); }
-  .ci-party.dem { color: var(--series-1); }
-  .ci-party.rep { color: var(--series-6); }
-  .ci-party.oth { color: var(--text-muted); }
+  /* Color-coded party pill (the party name itself), used on candidates, incumbents
+     and potential candidates — Democratic blue / Republican red / else neutral. */
+  .party-pill { display: inline-block; font-size: 11px; font-weight: 700; margin-left: 6px;
+    padding: 1px 8px; border-radius: 999px; vertical-align: middle;
+    background: color-mix(in srgb, currentColor 13%, transparent); }
+  .party-pill.dem { color: var(--series-1); }
+  .party-pill.rep { color: var(--series-6); }
+  .party-pill.oth { color: var(--text-muted); }
 
   /* potential candidates — UNOFFICIAL, surfaced from news coverage. Dashed +
      amber so it never reads as the official (solid) candidate list above. */
@@ -620,6 +621,14 @@
   .ilrc-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
   @media (prefers-reduced-motion: reduce) { .ilr-card:hover { transform: none; } }
   .ilr-empty { color: var(--text-secondary); font-size: 14px; padding: 12px 6px; }
+  /* Big "explore the whole catalog" button under the 8 shown bills (new tab). */
+  .ilr-explore { display: flex; align-items: center; justify-content: center; gap: 10px;
+    margin-top: 16px; padding: 15px 22px; border-radius: 12px; text-decoration: none;
+    font-size: 15.5px; font-weight: 700; color: #0A0A0A; background: var(--gb-gold-hi);
+    border: 1px solid var(--gb-gold-hi); box-shadow: 0 2px 10px color-mix(in srgb, var(--gb-gold-hi) 30%, transparent); }
+  .ilr-explore:hover { filter: brightness(1.05); transform: translateY(-1px); transition: transform .12s ease, filter .12s ease; }
+  .ilr-explore span { font-size: 17px; }
+  @media (prefers-reduced-motion: reduce) { .ilr-explore:hover { transform: none; } }
 
   /* ===== Explore Chicago: zoomable ward + neighborhood map ===== */
   .chimap { margin: 8px 0 26px; }
@@ -972,6 +981,9 @@
     </div>
     <div class="ilr-list" id="ilr-list"></div>
     <p class="ilr-empty" id="ilr-empty" hidden>No Illinois bills match your search.</p>
+    <a class="ilr-explore" id="ilr-explore" href="legislation.html#state=il" target="_blank" rel="noopener">
+      Explore entire catalog of IL bills <span aria-hidden="true">↗</span>
+    </a>
   </section>
 
   <details class="cabinet" id="cabinet">
@@ -1298,6 +1310,7 @@
     try { state.deepRace = mr ? decodeURIComponent(mr[1]) : null; } catch (e) { state.deepRace = mr ? mr[1] : null; }
     try { state.deepGroup = mg ? decodeURIComponent(mg[1]) : null; } catch (e) { state.deepGroup = mg ? mg[1] : null; }
     state._deepFlashUntil = 0;
+    state._deepMapScrolled = false;
     revealAllSections();
     render();                       // renderGroups → alignDeepRace() scrolls + flashes
     // Stop re-aligning once the page has settled, so later manual scrolling sticks.
@@ -1365,7 +1378,7 @@
   }
 
   /* ---------- Recent Illinois legislative activity (all IL bills we track) ---------- */
-  const IL_RECENT_MAX = 25;
+  const IL_RECENT_MAX = 8;
   // Same fixed 8-color series the legislation dashboard cycles its topic tags
   // through, so a topic reads the same color on both sites.
   const IL_SERIES = ["--series-1","--series-2","--series-3","--series-4",
@@ -2055,10 +2068,23 @@
     requestAnimationFrame(() => { _renderQueued = false; render(); });
   }
 
+  // Races the "Find your ballot" side panel already shows in full — a voter's
+  // citywide + statewide + U.S. Senate + CPS-president ballot — are omitted from
+  // the bottom race sections so nothing is duplicated. The address-specific
+  // district races (aldermen wards, IL House/Senate, U.S. House, CPS subdistricts,
+  // police district councils) are NOT fully covered by the per-ward side panel, so
+  // they still browse below.
+  function inSidePanel(r) {
+    const g = r.office_group;
+    if (g === "citywide" || g === "il_exec" || g === "us_senate") return true;
+    if (g === "cps_board" && !r.district) return true;   // CPS president only
+    return false;
+  }
+
   function render() {
-    // Only races in the office groups the reader has chosen — so the tiles and
-    // the sections both reflect what's actually on screen.
-    const races = filteredRaces().filter((r) => state.view.has("grp:" + r.office_group));
+    // Only races in the office groups the reader has chosen, minus the ones the
+    // side panel already shows (see inSidePanel) — so the bottom has no dupes.
+    const races = filteredRaces().filter((r) => state.view.has("grp:" + r.office_group) && !inSidePanel(r));
     $("f-clear").disabled = !anyFilter();
     renderTiles(races);
     renderGroups(races);
@@ -2076,7 +2102,19 @@
     } else if (state.deepGroup) {
       el = document.getElementById("grp-" + state.deepGroup);
     }
-    if (!el) return;
+    if (!el) {
+      // A race the side panel owns (citywide/statewide/U.S. Senate/CPS president)
+      // isn't in the bottom sections — send the reader to the "Find your ballot"
+      // map once so they can pick their ward and see it there.
+      if (state.deepRace && !state._deepMapScrolled) {
+        const map = document.getElementById("chimap");
+        if (map && !map.hidden) {
+          state._deepMapScrolled = true;
+          map.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
+        }
+      }
+      return;
+    }
     el.scrollIntoView({ behavior: "auto", block: "start" });
     // Flash the target for a fixed window from first arrival. Late re-renders swap
     // the DOM node, so re-apply to whatever node is current until the window ends.
@@ -2233,7 +2271,6 @@
       badges.append(mkBadge("★ First elected", "first"));
     if (r.ballot_date)
       badges.append(mkBadge("🗳️ " + prettyDate(r.ballot_date), "ballot"));
-    badges.append(mkBadge(r.partisan ? "Partisan" : "Non-partisan", r.partisan ? "partisan" : "nonpartisan"));
     if (r.seats && r.seats > 1) badges.append(mkBadge(r.seats + " seats", "seats"));
     card.append(badges);
 
@@ -2273,12 +2310,7 @@
         const tg = document.createElement("span"); tg.className = "ci-tag"; tg.textContent = "Current incumbent";
         const nm = document.createElement("span"); nm.className = "ci-name"; nm.textContent = inc.name;
         box.append(tg, nm);
-        if (inc.party) {
-          const pty = document.createElement("span");
-          pty.className = "ci-party " + partyClass(inc.party);
-          pty.textContent = inc.party;
-          box.append(pty);
-        }
+        if (inc.party) box.append(partyPill(inc.party));
         card.append(box);
       }
     }
@@ -2441,6 +2473,7 @@
     } else {
       name.textContent = c.name;
     }
+    if (c.party) name.append(partyPill(c.party));   // color-coded party, no "Party:" label
     if (c.incumbent) {
       const inc = document.createElement("span"); inc.className = "incumbent";
       inc.textContent = "  · Incumbent" + (c.incumbency ? " (" + c.incumbency + ")" : "");
@@ -2456,7 +2489,6 @@
       chip.textContent = STATUS_LABEL[st] || st;
       meta.append(chip);
     }
-    if (r.partisan && c.party) meta.append(mkMini("Party", c.party));
     if (c.filing_date) meta.append(mkMini("Filed", prettyDate(c.filing_date)));
     if (c.website) {
       const a = document.createElement("a"); a.className = "cand-links";
@@ -2513,6 +2545,7 @@
       const row = document.createElement("div"); row.className = "pc";
       const nm = document.createElement("div"); nm.className = "pc-name";
       nm.append(document.createTextNode(p.name));
+      if (p.party) nm.append(partyPill(p.party));   // party when the source stated it
       if (p.status) {
         const sig = document.createElement("span");
         sig.className = "pc-sig " + p.status;
@@ -2591,6 +2624,13 @@
     if (/democrat/.test(p)) return "dem";
     if (/republican/.test(p)) return "rep";
     return "oth";
+  }
+  // A color-coded party pill (the party name itself, no "Party:" label).
+  function partyPill(party) {
+    const s = document.createElement("span");
+    s.className = "party-pill " + partyClass(party);
+    s.textContent = party;
+    return s;
   }
 
   /* ---------- RSS popover ---------- */

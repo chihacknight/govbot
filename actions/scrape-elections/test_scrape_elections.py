@@ -660,6 +660,33 @@ class PotentialCandidates(unittest.TestCase):
             "Jordan A. Rivers",
             [p["name"] for p in main.build_potential(race2, self.mayor_items, self.now)])
 
+    def test_extract_party_near_only_when_adjacent(self):
+        # Party read only when it touches the name; never inferred from elsewhere.
+        self.assertEqual(main.extract_party_near("Democrat Jordan A. Rivers announces run", "Jordan A. Rivers"), "Democratic")
+        self.assertEqual(main.extract_party_near("Jordan A. Rivers (D-Chicago) files", "Jordan A. Rivers"), "Democratic")
+        self.assertEqual(main.extract_party_near("Jordan A. Rivers, a Republican, joins race", "Jordan A. Rivers"), "Republican")
+        self.assertEqual(main.extract_party_near("Independent Alex Placeholder mulls a bid", "Alex Placeholder"), "Independent")
+        # A party word not next to the name is NOT attached.
+        self.assertIsNone(main.extract_party_near("The Democratic field grows as Jordan A. Rivers announces", "Jordan A. Rivers"))
+        self.assertIsNone(main.extract_party_near("Jordan A. Rivers announces run for mayor", "Jordan A. Rivers"))
+
+    def test_build_attaches_and_preserves_party(self):
+        # Party stated in a headline is attached to that potential candidate.
+        items = [{"title": "Democrat Casey Q. Example announces run for Chicago mayor in 2027",
+                  "link": "https://ex.example/a", "publisher": "Ex", "date": "2026-09-03"}]
+        pcs = main.build_potential(self.mayor, items, self.now)
+        casey = next(p for p in pcs if p["name"] == "Casey Q. Example")
+        self.assertEqual(casey["party"], "Democratic")
+        # A curated/prior-run party is preserved even when this run's headline omits it.
+        existing = [{"name": "Jordan A. Rivers", "party": "Democratic", "status": "reported",
+                     "sources": [{"title": "old", "url": "https://old.example/y", "date": "2026-08-01"}]}]
+        pcs2 = main.build_potential(self.mayor, self.mayor_items, self.now, existing=existing)
+        jordan = next(p for p in pcs2 if p["name"] == "Jordan A. Rivers")
+        self.assertEqual(jordan["party"], "Democratic")
+        # A name with no party stated carries no party key (kept clean, not null-spammed).
+        other = next(p for p in pcs2 if p["name"] != "Jordan A. Rivers")
+        self.assertNotIn("party", other)
+
     def test_district_gating(self):
         ward1 = {"id": "chicago-alderperson-ward-01", "office": "Alderperson",
                  "office_group": "council", "is_citywide": False, "district": "Ward 1"}
@@ -923,6 +950,90 @@ class WikipediaNominees(unittest.TestCase):
         n = main.enrich_candidates_wiki(doc, fetcher=lambda t: None, sleep=0)
         self.assertEqual(n, 0)
         self.assertTrue(all(not r["candidates"] for r in doc["races"]))
+
+
+class WikidataParty(unittest.TestCase):
+    def test_norm_party(self):
+        self.assertEqual(main._norm_party("Democratic Party"), "Democratic")
+        self.assertEqual(main._norm_party("Democratic Socialists of America"), "Democratic")
+        self.assertEqual(main._norm_party("Republican Party"), "Republican")
+        self.assertEqual(main._norm_party("independent politician"), "Independent")
+        self.assertIsNone(main._norm_party(""))
+
+    def test_parse_alderman_sparql(self):
+        data = {"results": {"bindings": [
+            {"personLabel": {"value": "Carlos Ramirez-Rosa"}, "partyLabel": {"value": "Democratic Party"}},
+            {"personLabel": {"value": "Jessie Fuentes"}, "partyLabel": {"value": "Democratic Party"}},
+            {"personLabel": {"value": "No Party Person"}},                       # no party -> dropped
+        ]}}
+        m = main.parse_wikidata_alderman_parties(data)
+        self.assertEqual(m.get("carlosramirezrosa"), "Democratic")
+        self.assertEqual(m.get("jessiefuentes"), "Democratic")
+        self.assertNotIn("nopartyperson", m)
+
+    def _fakes(self, entities):
+        # entities: {qid: {label, desc, human, party_qid}}
+        def search(name):
+            return list(entities.keys())
+        def get(ids):
+            out = {}
+            for qid in ids:
+                e = entities.get(qid)
+                if e is None:
+                    # party-label resolution fetch
+                    if qid == "Q29552": out[qid] = {"labels": {"en": {"value": "Democratic Party"}}}
+                    continue
+                claims = {}
+                if e.get("human", True): claims["P31"] = [{"mainsnak": {"datavalue": {"value": {"id": "Q5"}}}}]
+                if e.get("party"): claims["P102"] = [{"mainsnak": {"datavalue": {"value": {"id": e["party"]}}}}]
+                out[qid] = {"labels": {"en": {"value": e["label"]}},
+                            "descriptions": {"en": {"value": e.get("desc", "")}}, "claims": claims}
+            return out
+        return search, get
+
+    def test_name_lookup_confident_match(self):
+        search, get = self._fakes({"Q1": {"label": "Jane Q. Rivers", "desc": "Chicago alderman", "party": "Q29552"}})
+        self.assertEqual(main.wikidata_party_for_name("Jane Q. Rivers", ["chicago", "alderman"],
+                                                      search=search, entities=get), "Democratic")
+
+    def test_name_lookup_rejects_ambiguous_and_unsignaled(self):
+        # Two humans with the surname + signal + party -> ambiguous -> None.
+        search, get = self._fakes({
+            "Q1": {"label": "John Smith", "desc": "Chicago alderman", "party": "Q29552"},
+            "Q2": {"label": "John Smith", "desc": "Illinois politician", "party": "Q29468"},
+        })
+        self.assertIsNone(main.wikidata_party_for_name("John Smith", ["chicago", "illinois"], search=search, entities=get))
+        # Surname present but NO place/office signal -> not attached (the namesake trap).
+        search2, get2 = self._fakes({"Q1": {"label": "Pat Dowell", "desc": "American politician", "party": "Q29552"}})
+        self.assertIsNone(main.wikidata_party_for_name("Pat Dowell", ["chicago", "alderman"], search=search2, entities=get2))
+        # Wrong surname in the label -> skipped.
+        search3, get3 = self._fakes({"Q1": {"label": "Someone Else", "desc": "Chicago alderman", "party": "Q29552"}})
+        self.assertIsNone(main.wikidata_party_for_name("Jane Rivers", ["chicago"], search=search3, entities=get3))
+
+    def test_enrich_party_uses_office_map_and_skips_partisan(self):
+        doc = {"races": [
+            {"office_group": "council", "partisan": False, "district": "Ward 35",
+             "incumbent": {"name": "Carlos Ramirez-Rosa", "party": ""}, "candidates": [], "potential_candidates": []},
+            {"office_group": "us_senate", "partisan": True,
+             "candidates": [{"name": "Somebody", "party": ""}], "potential_candidates": []},
+        ]}
+        n = main.enrich_party(doc,
+                              alderman_parties={"carlosramirezrosa": "Democratic"},
+                              name_party=lambda name, sig: None)   # per-name lookup finds nothing
+        self.assertEqual(n, 1)
+        self.assertEqual(doc["races"][0]["incumbent"]["party"], "Democratic")   # office map
+        self.assertEqual(doc["races"][1]["candidates"][0]["party"], "")          # partisan race untouched
+
+    def test_enrich_party_per_name_fills_nonpartisan_candidate(self):
+        doc = {"races": [
+            {"office_group": "citywide", "partisan": False,
+             "candidates": [{"name": "Jane Q. Rivers", "party": ""}], "potential_candidates": [{"name": "Rob Z. Example"}]},
+        ]}
+        looked = {"Jane Q. Rivers": "Democratic", "Rob Z. Example": "Republican"}
+        n = main.enrich_party(doc, alderman_parties={}, name_party=lambda name, sig: looked.get(name))
+        self.assertEqual(n, 2)
+        self.assertEqual(doc["races"][0]["candidates"][0]["party"], "Democratic")
+        self.assertEqual(doc["races"][0]["potential_candidates"][0]["party"], "Republican")
 
 
 class Incumbents(unittest.TestCase):

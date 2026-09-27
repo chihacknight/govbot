@@ -51,6 +51,9 @@ import argparse
 import json
 import re
 import sys
+import time
+import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 from html.parser import HTMLParser
@@ -1047,6 +1050,244 @@ def enrich_incumbents(doc, fetcher=fetch_ward_offices):
 
 
 # --------------------------------------------------------------------------- #
+# Party — from Wikidata's structured "member of political party" (P102)
+# --------------------------------------------------------------------------- #
+# Chicago's municipal offices are legally *nonpartisan*, so no official/City
+# dataset carries a party. Wikidata is the one documented, structured public
+# source (the same kind of keyless public API the photo pipeline uses — never a
+# scrape). We use it two safe ways, and never guess:
+#   1. Aldermen — enumerate the *current holders of the Chicago Alderman office*
+#      (position Q47500326) via SPARQL and read each one's P102 party. Because we
+#      enumerate by office, joining to our known ward roster by name carries no
+#      name-match risk. Coverage is only as good as Wikidata (today a handful).
+#   2. Other candidates — a strict per-name lookup that keeps a party only when a
+#      *single* Wikidata entity confidently matches: a human whose label contains
+#      the surname AND whose description carries a place/office signal. Ambiguous
+#      or unmatched → nothing (the "Pat Dowell → Illinois House namesake" trap).
+# Partisan races already carry party from official data and are left untouched.
+WIKIDATA_API = "https://www.wikidata.org/w/api.php"
+WIKIDATA_SPARQL = "https://query.wikidata.org/sparql"
+WIKIDATA_ALDERMAN_QID = "Q47500326"   # position: "Chicago Alderman"
+WIKIDATA_UA = "govbot/1.0 (https://github.com/chihacknight/govbot; chn.govbot@gmail.com)"
+# Common US party entities → their English label, so the usual cases need no extra fetch.
+_KNOWN_PARTY_LABEL = {"Q29552": "Democratic Party", "Q29468": "Republican Party"}
+
+
+def _norm_party(label):
+    """A Wikidata party label → the site's short form, or None. A Democratic
+    Socialist runs on the Democratic line in these races, so it reads Democratic."""
+    p = (label or "").lower()
+    if not p:
+        return None
+    if "democrat" in p or "democratic socialist" in p:
+        return "Democratic"
+    if "republican" in p:
+        return "Republican"
+    if "independent" in p:
+        return "Independent"
+    if "green party" in p:
+        return "Green"
+    if "libertarian" in p:
+        return "Libertarian"
+    if "working families" in p:
+        return "Working Families"
+    return label or None
+
+
+def _claim_id(c):
+    try:
+        return c["mainsnak"]["datavalue"]["value"]["id"]
+    except (KeyError, TypeError):
+        return None
+
+
+def _surname_of(name):
+    raw = re.sub(r",?\s*(?:jr|sr|ii|iii|iv|v)\.?\s*$", "", (name or "").strip(), flags=re.I).strip()
+    parts = raw.split()
+    return parts[-1].lower() if parts else ""
+
+
+def _wikidata_json(url, timeout=FETCH_TIMEOUT, retries=3):
+    """GET a Wikidata/WDQS JSON endpoint, retrying on 429/503 with backoff and
+    staying polite between calls. None on any failure (all non-fatal)."""
+    req = urllib.request.Request(url, headers={"user-agent": WIKIDATA_UA, "accept": "application/json"})
+    for attempt in range(retries):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:  # noqa: S310 - Wikidata public API
+                data = json.loads(r.read().decode("utf-8", "replace")) if r.status == 200 else None
+            time.sleep(0.4)   # be gentle: ~2-3 req/s well under Wikidata's limits
+            return data
+        except urllib.error.HTTPError as err:
+            if err.code in (429, 503) and attempt < retries - 1:
+                time.sleep(2 * (attempt + 1))
+                continue
+            print(f"warning: wikidata fetch failed: {err}", file=sys.stderr)
+            return None
+        except Exception as err:  # network / TLS / decode — all non-fatal
+            print(f"warning: wikidata fetch failed: {err}", file=sys.stderr)
+            return None
+    return None
+
+
+_ALDERMAN_SPARQL = (
+    "SELECT ?personLabel ?partyLabel WHERE { "
+    "?person p:P39 ?st. ?st ps:P39 wd:" + WIKIDATA_ALDERMAN_QID + ". "
+    "FILTER NOT EXISTS { ?st pq:P582 ?e. } "
+    "OPTIONAL { ?person wdt:P102 ?party. } "
+    'SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } }')
+
+
+def _default_sparql(query):
+    return _wikidata_json(WIKIDATA_SPARQL + "?format=json&query=" + urllib.parse.quote(query))
+
+
+def parse_wikidata_alderman_parties(data):
+    """{name_key -> normalized party} for the current Chicago aldermen who list a
+    party on Wikidata. Pure/offline-testable (takes the SPARQL JSON)."""
+    out = {}
+    if not isinstance(data, dict):
+        return out
+    for row in data.get("results", {}).get("bindings", []):
+        name = (row.get("personLabel") or {}).get("value", "")
+        party = _norm_party((row.get("partyLabel") or {}).get("value", ""))
+        key = _name_key(name)
+        if key and party and key not in out:
+            out[key] = party
+    return out
+
+
+def fetch_wikidata_alderman_parties(sparql=_default_sparql):
+    return parse_wikidata_alderman_parties(sparql(_ALDERMAN_SPARQL))
+
+
+def _default_wd_search(name):
+    url = (WIKIDATA_API + "?action=wbsearchentities&language=en&format=json&type=item&limit=6&search="
+           + urllib.parse.quote(name))
+    d = _wikidata_json(url)
+    return [h.get("id") for h in (d.get("search", []) if isinstance(d, dict) else []) if h.get("id")]
+
+
+def _default_wd_entities(ids):
+    if not ids:
+        return {}
+    url = (WIKIDATA_API + "?action=wbgetentities&props=claims%7Cdescriptions%7Clabels&languages=en&format=json&ids="
+           + urllib.parse.quote("|".join(ids)))
+    d = _wikidata_json(url)
+    return d.get("entities", {}) if isinstance(d, dict) else {}
+
+
+def wikidata_party_for_name(name, signals, search=_default_wd_search, entities=_default_wd_entities):
+    """Party from Wikidata for ``name`` — only when a **single** entity confidently
+    matches: a human (P31=Q5) whose label contains the surname AND whose English
+    description carries one of ``signals`` (place/office keywords). Ambiguous (more
+    than one such entity) or unmatched → None; never guessed. Pure given injected
+    fetchers, so it is offline-testable."""
+    surname = _surname_of(name)
+    if not surname:
+        return None
+    ids = (search(name) or [])[:6]
+    if not ids:
+        return None
+    ents = entities(ids)
+    party_ids = []
+    for qid in ids:
+        ent = ents.get(qid)
+        if not isinstance(ent, dict):
+            continue
+        cl = ent.get("claims", {})
+        if "Q5" not in [_claim_id(c) for c in cl.get("P31", [])]:
+            continue                                     # must be a human
+        label = ((ent.get("labels", {}).get("en") or {}).get("value", "")).lower()
+        if surname not in label:
+            continue                                     # label must carry the surname
+        desc = ((ent.get("descriptions", {}).get("en") or {}).get("value", "")).lower()
+        if not any(s in desc for s in signals):
+            continue                                     # description must tie to the place/office
+        pid = next((_claim_id(c) for c in cl.get("P102", []) if _claim_id(c)), None)
+        if pid:
+            party_ids.append(pid)
+    if len(party_ids) != 1:                              # confident only when unambiguous
+        return None
+    pid = party_ids[0]
+    label = _KNOWN_PARTY_LABEL.get(pid)
+    if not label:
+        pent = entities([pid]).get(pid, {})
+        label = (pent.get("labels", {}).get("en") or {}).get("value", "")
+    return _norm_party(label)
+
+
+# Place/office keywords a Chicago-race candidate's Wikidata description should carry.
+_CHICAGO_PARTY_SIGNALS = ["chicago", "alderman", "alderperson", "city council", "illinois"]
+# Nonpartisan office groups worth a per-name Wikidata lookup: citywide seats
+# (mayor/clerk/treasurer) whose candidates can be notable enough to have an entry.
+# Council resolves through the office map; CPS-subdistrict / police-council
+# candidates are obscure and effectively never in Wikidata, so we don't spend calls
+# looking them up (they'd just be rejected by the gate).
+_PARTY_PER_NAME_GROUPS = {"citywide"}
+
+
+def enrich_party(doc, alderman_parties=None, name_party=None, cap=60):
+    """Fill `party` from Wikidata where it's confidently known and currently blank —
+    on a race's incumbent, official candidates, and potential candidates. Aldermen
+    use the office-enumerated map (name-joined, no match risk); other nonpartisan
+    Chicago names use the strict per-name gate. Partisan races already carry party
+    and are skipped. At most ``cap`` per-name lookups per run (rate-limit polite).
+    Fail-soft; returns the number of party fields filled."""
+    if alderman_parties is None:
+        alderman_parties = fetch_wikidata_alderman_parties()
+    if name_party is None:
+        name_party = wikidata_party_for_name
+    seen = {}   # name_key -> resolved party (or None), cached within the run
+    used = [0]
+
+    def resolve(name, group):
+        key = _name_key(name)
+        if not key:
+            return None
+        if group == "council":
+            # Aldermen resolve ONLY through the office-enumerated map (authoritative,
+            # no name-match risk). A per-name lookup for the ~50 wards would be 50
+            # wasted calls that the strict gate rejects anyway (most alderman entries
+            # read only "American politician", carrying no place signal).
+            return alderman_parties.get(key)
+        if group not in _PARTY_PER_NAME_GROUPS:
+            return None                                  # skip obscure groups (CPS / police)
+        if key in seen:
+            return seen[key]
+        if used[0] >= cap:
+            return None
+        used[0] += 1
+        p = name_party(name, _CHICAGO_PARTY_SIGNALS)
+        seen[key] = p
+        return p
+
+    n = 0
+    for r in doc.get("races", []):
+        group = r.get("office_group")
+        inc = r.get("incumbent")
+        if inc and inc.get("name") and not inc.get("party"):
+            p = resolve(inc["name"], group)
+            if p:
+                inc["party"] = p
+                n += 1
+        if r.get("partisan"):
+            continue                                     # official party already present
+        for c in r.get("candidates", []):
+            if not c.get("party"):
+                p = resolve(c.get("name", ""), group)
+                if p:
+                    c["party"] = p
+                    n += 1
+        for pc in r.get("potential_candidates", []):
+            if not pc.get("party"):
+                p = resolve(pc.get("name", ""), group)
+                if p:
+                    pc["party"] = p
+                    n += 1
+    return n
+
+
+# --------------------------------------------------------------------------- #
 # Results — post-Election-Night vote tallies (Chicago BOE / Cook County Clerk)
 # --------------------------------------------------------------------------- #
 # Scaffold: results don't exist until an election happens, so this stays inert
@@ -1702,6 +1943,31 @@ def fetch_news_items(query):
     return parse_news_rss(fetch_text(news_url(query)))
 
 
+_PARTY_LONG = {"democrat": "Democratic", "democratic": "Democratic",
+               "republican": "Republican", "independent": "Independent"}
+_PARTY_ABBR = {"d": "Democratic", "r": "Republican", "i": "Independent"}
+
+
+def extract_party_near(text, name):
+    """The party a source stated *right beside* ``name`` — "Democrat Jane Doe",
+    "Jane Doe (D-Chicago)", "Jane Doe, a Republican" — or None. The label must
+    touch the name; a party word elsewhere in the text is never used (we don't
+    infer party, only read it where the coverage attached it). Pure/offline."""
+    if not text or not name:
+        return None
+    nm = re.escape(name.strip())
+    m = re.search(r"\b(Democrat|Democratic|Republican|Independent)\s+" + nm + r"\b", text, re.I)
+    if m:
+        return _PARTY_LONG[m.group(1).lower()]
+    m = re.search(nm + r"\s*\(\s*([DRI])\b[^)]*\)", text)   # "(D)" / "(R-Chicago)" / "(I)"
+    if m:
+        return _PARTY_ABBR[m.group(1).lower()]
+    m = re.search(nm + r"\s*,?\s+(?:an?|the)\s+(Democrat|Democratic|Republican|Independent)\b", text, re.I)
+    if m:
+        return _PARTY_LONG[m.group(1).lower()]
+    return None
+
+
 def build_potential(race, items, now, existing=None, bodies=None):
     """Assemble a race's potential_candidates[] from news `items` (already the
     relevant pool), merged with any `existing` list so names/sources accumulate
@@ -1724,7 +1990,7 @@ def build_potential(race, items, now, existing=None, bodies=None):
     def _seed(name):
         key = name.lower()
         if key not in people:
-            people[key] = {"name": name, "status": None, "sources": [],
+            people[key] = {"name": name, "status": None, "party": None, "sources": [],
                            "_urls": set(), "_dates": set()}
         return people[key]
 
@@ -1733,6 +1999,8 @@ def build_potential(race, items, now, existing=None, bodies=None):
     for p in (existing or []):
         rec = _seed(p.get("name") or "")
         rec["status"] = p.get("status")
+        if p.get("party"):
+            rec["party"] = p["party"]     # keep a curated/prior-run party
         for s in p.get("sources", []):
             url = s.get("url")
             if url and url not in rec["_urls"]:
@@ -1767,6 +2035,9 @@ def build_potential(race, items, now, existing=None, bodies=None):
             rec = _seed(name)
             if rank[status] > rank[rec["status"]]:
                 rec["status"] = status
+            if not rec["party"]:      # party only when the source stated it beside the name
+                rec["party"] = (extract_party_near(it.get("title", ""), name)
+                                or (extract_party_near(body, name) if body else None))
             _add_source(rec, it)
 
     # Pass 2: for a name already established (here or from a prior run), any other
@@ -1790,14 +2061,17 @@ def build_potential(race, items, now, existing=None, bodies=None):
             continue
         dates = sorted(rec["_dates"])
         rec["sources"].sort(key=lambda s: (s.get("date") or ""), reverse=True)
-        out.append({
+        entry = {
             "name": rec["name"],
             "status": rec["status"],
             "mentions": len(rec["sources"]),
             "first_seen": dates[0] if dates else None,
             "last_seen": dates[-1] if dates else None,
             "sources": rec["sources"][:POTENTIAL_MAX_SOURCES],
-        })
+        }
+        if rec.get("party"):
+            entry["party"] = rec["party"]
+        out.append(entry)
     # Most-cited first, then firmest signal, then name — stable and useful.
     rank2 = {"announced": 4, "incumbent": 3, "exploring": 2, "reported": 1, None: 0}
     out.sort(key=lambda p: (-p["mentions"], -rank2[p["status"]], p["name"].lower()))
@@ -2619,6 +2893,12 @@ def main():
                          "aldermanic race in an existing elections.json (rewritten in "
                          "place) from the Chicago Data Portal Ward Offices dataset, then "
                          "exit. Fail-soft")
+    ap.add_argument("--enrich-party", default=None,
+                    help="Fill `party` from Wikidata (structured P102) where it's "
+                         "confidently known and blank — incumbents, candidates and "
+                         "potential candidates in the nonpartisan Chicago races — in an "
+                         "existing elections.json (rewritten in place), then exit. "
+                         "Never guesses; fail-soft")
     ap.add_argument("--enrich-results", default=None,
                     help="Attach post-Election-Night vote results to an existing "
                          "elections.json (rewritten in place) from --results-file, "
@@ -2682,6 +2962,15 @@ def main():
         n = enrich_incumbents(doc)
         Path(args.enrich_incumbents).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
         print(f"attached current incumbent to {n} aldermanic race(s)", file=sys.stderr)
+        return 0
+
+    if args.enrich_party:
+        doc = load_json(args.enrich_party)
+        if doc is None:
+            return 0
+        n = enrich_party(doc)
+        Path(args.enrich_party).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
+        print(f"filled party from Wikidata on {n} name(s)", file=sys.stderr)
         return 0
 
     if args.enrich_results:

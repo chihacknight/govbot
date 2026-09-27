@@ -460,9 +460,13 @@ ballots ahead" intro paragraph were all removed, leaving a clean stack: Hero →
 date cards → the revealed races → the sources cabinet (now collapsed). The **election calendar**
 (`#calendar`) is now **always shown** (ungated — visible whenever `#cal-grid` has cards) with the
 **current/next timeline milestone pulsing** (`.tl-item.next .tl-dot` → `@keyframes tl-pulse`, a **big** scale-1.32 + wide-ring pulse for low-vision readers). A
-**"Recent Illinois legislative activity"** section (`#il-recent`, `renderIlRecent`) lists every IL
-bill Govbot tracks — fetched fail-soft from the legislation `data.json` (filtered to `state==="il"`,
-newest recorded action first, capped at 25), with a **search box** (`#ilr-search`, matches
+**"Recent Illinois legislative activity"** section (`#il-recent`, `renderIlRecent`) lists the IL
+bills Govbot tracks — fetched fail-soft from the legislation `data.json` (filtered to `state==="il"`,
+newest recorded action first, showing the **newest 8** (`IL_RECENT_MAX`) with a big
+**"Explore entire catalog of IL bills ↗"** button (`#ilr-explore`) below them that opens the whole IL
+catalog in a **new tab** via `legislation.html#state=il` (a new `#state=<code>` deep link in
+legislation's `applyDeepLink` → `eeApplyFilter`, which pops up that jurisdiction's results catalog),
+plus a **search box** (`#ilr-search`, matches
 id/title/sponsor/topic). It renders as **the same card format as the legislation "Recent activity"
 strip** (`.ilr-card` mirroring `.recent-card`): an "Illinois" state badge · bill id · relative date
 (`ilRelDate`, "yesterday"/"N days ago") · title · latest action · the bill's **topic chips**
@@ -775,9 +779,28 @@ durable backstop for a name the automated pass can't reliably catch. The
 frontend renders it as a collapsed, dashed-amber block under each race, headed just "💭 Potential
 candidates" — the old "Unofficial · from news / N names" subtitle and the disclaimer paragraph were
 removed as clutter, since every name already carries its own status chip ("Announced" …) and source
-links. `deploy-docs.yml` runs it right after the base elections build
+links. A potential candidate also carries an optional **`party`**, shown as the same color-coded
+`partyPill` the official candidates use — but **only when the source text stated it right next to the
+name** ("Democrat Jane Doe", "Jane Doe (D-Chicago)", "Jane Doe, a Republican"): `extract_party_near`
+reads a party label that *touches* the name and never infers one from a party word elsewhere; a
+curated `party` seeded in `elections_seed.json` (or carried from a prior run) is preserved. `deploy-docs.yml` runs it right after the base elections build
 (independent of official candidates), twice daily. Parsers are offline-tested in
 `test_scrape_elections.py`.
+
+**Party display.** The **"Partisan / Non-partisan" race badge was removed** (the Chicago municipal
+races are only nominally nonpartisan). Every candidate's party now shows as a **color-coded
+`partyPill`** — the party name itself, no "Party:" label — placed **next to the name** (Democratic
+blue / Republican red / else neutral, `partyClass`). The same pill is used for official candidates
+(`renderCand`), the current-incumbent box, and potential candidates (when the source stated a party).
+
+**No dupes with the side panel.** The Chicago-map "On this ballot" side panel already shows a
+voter's citywide + statewide (`il_exec`) + U.S. Senate + CPS-**president** ballot in full, so those
+are **omitted from the bottom race sections** (`inSidePanel(r)` filters them out of `render()`'s
+race list). The address-specific district races — aldermen wards, `il_senate`/`il_house`, `us_house`,
+CPS subdistricts, police district councils — are NOT fully in the per-ward side panel, so they still
+browse below. A global-search `#race=<id>` deep link to a side-panel-only race (which is no longer in
+`#groups`) falls back to scrolling to the "Find your ballot" map (`#chimap`) once, so the reader can
+pick their ward and see it there.
 
 **Race-card detail** (`renderRace`, shared by the main sections and the "On this ballot" map panel):
 each card leads with a **"👥 N candidates"** badge (the confirmed-candidate count), shows its
@@ -802,6 +825,27 @@ each ward to its sitting alderperson, flipping the dataset's `"Last, First"` to 
 to the elections schema as an optional per-race `incumbent`. `deploy-docs.yml` runs it right after the
 Wikipedia-nominee step, fully fail-soft (a portal outage attaches nothing; committed sample carries
 none). Offline-tested with an injected roster in `test_scrape_elections.py`.
+
+**Party enrichment from Wikidata** (`main.py --enrich-party docs/src/dashboard/elections.json`): the
+Chicago municipal offices are legally **nonpartisan**, so no official/City dataset carries a party.
+Wikidata is the one documented, structured public source (its `P102` "member of political party" —
+the same kind of keyless public API the photo pipeline uses, never a scrape). This step fills a blank
+`party` two safe ways and **never guesses**: (1) **aldermen** — a SPARQL enumeration of the *current
+holders of the "Chicago Alderman" office* (`Q47500326`), joined to our known ward roster by name
+(`parse_wikidata_alderman_parties` → `{name_key: party}`; enumerating by office means no name-match
+risk); (2) **citywide candidates** (`_PARTY_PER_NAME_GROUPS`) — a strict per-name gate
+(`wikidata_party_for_name`) that keeps a party only when a **single** Wikidata entity confidently
+matches: a human (`P31=Q5`) whose label carries the surname AND whose English description carries a
+place/office signal (`chicago`/`alderman`/`city council`/`illinois`) — so the "Pat Dowell → Illinois
+House namesake" and "John Smith → three different people" traps resolve to nothing. Partisan races
+already carry official party and are skipped; CPS-subdistrict / police-council candidates are obscure
+and effectively never in Wikidata, so they aren't looked up (no wasted calls). `_norm_party` maps a
+Wikidata label to the site's short form ("Democratic Party"/"Democratic Socialist…" → "Democratic",
+etc.). Coverage is only as good as Wikidata (today a handful of aldermen), so it fills in over time.
+`_wikidata_json` retries 429/503 with backoff and stays polite; the whole pass is fully fail-soft (the
+Wikidata query service being down — as during its 2026 WDQS outage — attaches nothing, never a wrong
+party) and runs right after the incumbents step in `deploy-docs.yml`. Offline-tested with injected
+search/entity/SPARQL fetchers in `test_scrape_elections.py`.
 
 ## govbot Development
 
