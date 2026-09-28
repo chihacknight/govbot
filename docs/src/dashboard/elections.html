@@ -252,6 +252,11 @@
   /* Placeholder reserves the map's height until the card scrolls in and the SVG is built. */
   .race-map-ph { min-height: 132px; }
   .race-map svg { height: 116px; width: auto; flex: none; display: block; }
+  /* Statewide (IL Senate/House, U.S. House) locators draw the whole-state
+     silhouette, which is tall & narrow — give it more height so the highlighted
+     district reads. */
+  .race-map--il svg { height: 158px; }
+  .race-map--il.race-map-ph { min-height: 174px; }
   .race-map .map-ctx { fill: color-mix(in srgb, var(--text-muted) 14%, transparent); stroke: var(--border); stroke-width: 1; }
   .race-map .map-hi { fill: color-mix(in srgb, var(--gc) 42%, transparent); stroke: var(--gc); stroke-width: 2.5; stroke-linejoin: round; }
   .race-map .map-dist { animation: rm-pulse 1.8s ease-in-out infinite; }
@@ -259,9 +264,12 @@
      frame and stacks up across the popup's many maps. */
   @keyframes rm-pulse { 0%, 100% { stroke-width: 2.5; } 50% { stroke-width: 4.2; } }
   @media (prefers-reduced-motion: reduce) { .race-map .map-dist { animation: none; } }
-  .race-map .map-cap { font-size: 11.5px; color: var(--text-secondary); line-height: 1.4; }
+  .race-map .map-cap { font-size: 11.5px; color: var(--text-secondary); line-height: 1.4; min-width: 0; }
   .race-map .map-cap b { color: var(--text-primary); font-weight: 650; }
-  .race-map .map-src { color: var(--text-muted); font-size: 10.5px; }
+  /* Neighborhoods the district touches (Chicago community areas). */
+  .race-map .map-hoods { margin-top: 3px; font-size: 10.8px; color: var(--text-secondary); line-height: 1.45; }
+  .race-map .map-hoods .mh-label { color: var(--text-muted); }
+  .race-map .map-hoods .mh-more { color: var(--text-muted); }
 
   .why {
     font-size: 12.5px; line-height: 1.45; color: var(--text-secondary);
@@ -937,6 +945,26 @@
     <p class="cal-legend"><span class="tl-approx">≈ expected</span> dates follow the statutory election calendar — confirm the exact day with the official source; fixed dates (like Election Day) are shown without the tag.</p>
   </section>
 
+  <div class="filters" id="filters" hidden>
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
+      <input type="search" id="f-search" placeholder="Search races &amp; candidates…" aria-label="Search races and candidates">
+    </div>
+  </div>
+
+  <div id="races" aria-hidden="true"></div>
+  <div class="gb-loading" id="loading">
+    <div class="gb-spinner" aria-hidden="true"></div>
+    <p>Loading Illinois &amp; Chicago races…</p>
+  </div>
+  <div class="groups" id="groups"></div>
+  <div class="gb-state" id="empty" hidden>
+    <svg class="gb-state-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M8.5 11h5"/></svg>
+    <h3>No races match</h3>
+    <p>Nothing matches your current search or ballot filter. Clear the filters to see every office on the ballot.</p>
+    <div class="gb-state-actions"><button type="button" class="clear-btn" data-clear-filters>Clear filters</button></div>
+  </div>
+
   <section class="springfield" id="springfield" hidden>
     <div class="sf-head">
       <h2>🏛️ The rules of the game — from Springfield</h2>
@@ -959,26 +987,6 @@
       Explore entire catalog of IL bills <span aria-hidden="true">↗</span>
     </a>
   </section>
-
-  <div class="filters" id="filters" hidden>
-    <div class="search-wrap">
-      <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
-      <input type="search" id="f-search" placeholder="Search races &amp; candidates…" aria-label="Search races and candidates">
-    </div>
-  </div>
-
-  <div id="races" aria-hidden="true"></div>
-  <div class="gb-loading" id="loading">
-    <div class="gb-spinner" aria-hidden="true"></div>
-    <p>Loading Illinois &amp; Chicago races…</p>
-  </div>
-  <div class="groups" id="groups"></div>
-  <div class="gb-state" id="empty" hidden>
-    <svg class="gb-state-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M8.5 11h5"/></svg>
-    <h3>No races match</h3>
-    <p>Nothing matches your current search or ballot filter. Clear the filters to see every office on the ballot.</p>
-    <div class="gb-state-actions"><button type="button" class="clear-btn" data-clear-filters>Clear filters</button></div>
-  </div>
 
   <details class="cabinet" id="cabinet" open>
     <summary>📂 Where the data comes from</summary>
@@ -2369,17 +2377,18 @@
   function renderRaceMap(r, meta) {
     const maps = state.maps;
     if (!maps || !maps.view || !maps.context) return null;
-    // The locator is a map of Chicago — only Chicago/CPS races get one. A
-    // statewide (Governor, U.S. Senate) or General Assembly race has no Chicago
-    // geography, so it shows no map (like a CPS subdistrict with no polygon).
-    if (r.jurisdiction !== "chicago" && r.jurisdiction !== "cps") return null;
+    // A race gets a locator when maps.json has geometry for it (a Chicago ward /
+    // police district, or a statewide IL Senate/House/U.S. House silhouette), or
+    // when it's a citywide office (the whole city highlighted). CPS subdistricts
+    // have no published polygon, so they show no map — degrades gracefully.
     const entry = maps.districts && maps.districts[r.id];
     if (!entry && !r.is_citywide) return null;
+    const isIl = !!(entry && entry.space === "illinois");
 
     const build = () => buildRaceMap(r, meta, entry);
     if (!_mapObserver) return build();          // no IntersectionObserver → build eagerly
     const ph = document.createElement("div");
-    ph.className = "race-map race-map-ph";
+    ph.className = "race-map race-map-ph" + (isIl ? " race-map--il" : "");
     ph.style.setProperty("--gc", "var(" + meta.color + ")");
     ph._buildMap = build;
     _mapObserver.observe(ph);
@@ -2389,17 +2398,27 @@
   function buildRaceMap(r, meta, entry) {
     const maps = state.maps;
     if (!maps || !maps.view || !maps.context) return null;
-    const wrap = document.createElement("div"); wrap.className = "race-map";
+    // Pick the coordinate space: the Chicago city map, or the Illinois statewide
+    // silhouette for General Assembly / congressional districts.
+    const space = (entry && entry.space) || "chicago";
+    const isIl = space === "illinois";
+    const view = isIl ? maps.il_view : maps.view;
+    const context = isIl ? maps.il_context : maps.context;
+    if (!view || !context) return null;
+
+    const wrap = document.createElement("div"); wrap.className = "race-map" + (isIl ? " race-map--il" : "");
     wrap.style.setProperty("--gc", "var(" + meta.color + ")");
     const svg = document.createElementNS(SVGNS, "svg");
-    svg.setAttribute("viewBox", "0 0 " + maps.view.w + " " + maps.view.h);
+    svg.setAttribute("viewBox", "0 0 " + view.w + " " + view.h);
     svg.setAttribute("role", "img");
     svg.setAttribute("aria-label",
-      (r.is_citywide ? "Citywide" : (entry && entry.label) || "District") + " locator map of Chicago");
+      (r.is_citywide ? "Citywide" : (entry && entry.label) || "District")
+      + " locator map of " + (isIl ? "Illinois" : "Chicago"));
     const mk = (d, cls) => { const p = document.createElementNS(SVGNS, "path"); p.setAttribute("d", d); p.setAttribute("class", cls); return p; };
-    // base city
-    maps.context.forEach((d) => svg.append(mk(d, r.is_citywide ? "map-hi" : "map-ctx")));
-    // highlighted district on top
+    // base outline (whole city, or the state silhouette); a citywide office
+    // highlights the whole city instead of a single district.
+    context.forEach((d) => svg.append(mk(d, (r.is_citywide && !isIl) ? "map-hi" : "map-ctx")));
+    // highlighted district on top, pulsing
     if (entry) entry.paths.forEach((d) => svg.append(mk(d, "map-hi map-dist")));
     wrap.append(svg);
 
@@ -2407,10 +2426,24 @@
     const b = document.createElement("b");
     b.textContent = r.is_citywide ? "Citywide" : (entry && entry.label) || (r.district || "");
     cap.append(b);
-    cap.append(document.createElement("br"));
-    const src = document.createElement("span"); src.className = "map-src";
-    src.textContent = r.is_citywide ? "All of Chicago" : "Boundary: City of Chicago";
-    cap.append(src);
+    // Neighborhoods (Chicago community areas) the district touches.
+    const hoods = (entry && entry.neighborhoods) || [];
+    if (hoods.length) {
+      const mh = document.createElement("div"); mh.className = "map-hoods";
+      const lab = document.createElement("span"); lab.className = "mh-label";
+      lab.textContent = "Neighborhoods: ";
+      mh.append(lab, document.createTextNode(hoods.slice(0, 4).join(", ")));
+      if (hoods.length > 4) {
+        const more = document.createElement("span"); more.className = "mh-more";
+        more.textContent = " +" + (hoods.length - 4) + " more";
+        mh.append(more);
+      }
+      cap.append(mh);
+    } else if (r.is_citywide) {
+      const mh = document.createElement("div"); mh.className = "map-hoods";
+      mh.textContent = "All of Chicago";
+      cap.append(mh);
+    }
     wrap.append(cap);
     return wrap;
   }

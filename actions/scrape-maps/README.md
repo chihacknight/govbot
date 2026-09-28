@@ -1,33 +1,60 @@
-# scrape-maps — Chicago district locator maps
+# scrape-maps — district locator maps
 
 Builds `docs/src/dashboard/maps.json`, the compact geometry the **Elections
-Happening in IL** page draws as an inline-SVG locator next to each race (the
-ward or police district highlighted inside a light map of the whole city;
-citywide offices tint all of Chicago).
+Happening in IL** page draws as an inline-SVG locator next to each race — the
+district highlighted (and gently pulsing) inside a light basemap, plus the
+**Chicago neighborhoods that district touches**. There are two coordinate spaces
+in one file:
 
-## Sources (public domain — City of Chicago Data Portal)
+* **`chicago`** — a city map (all wards as a light context) for the Chicago-scale
+  races: alderperson wards and police-district councils; citywide offices tint
+  all of Chicago.
+* **`illinois`** — a statewide silhouette (the IL state outline as context) for
+  the General Assembly and congressional races, whose districts span the whole
+  state; each district is highlighted on the silhouette so a reader can see where
+  in Illinois it sits.
 
-| Layer | Dataset | Key property | Maps to |
-|---|---|---|---|
-| Wards (2023–) | `p293-wvbd` | `ward` | `chicago-alderperson-ward-NN` |
-| Police Districts | `24zt-jpfn` | `dist_num` | `chicago-police-district-council-NNN` |
+## Sources (public, keyless APIs)
 
-CPS board **subdistrict** (1A–10B) polygons aren't published as a single portal
-layer, so those races carry no polygon yet and the page omits the map for them.
+| Layer | Source | Key property | Maps to | Space |
+|---|---|---|---|---|
+| Wards (2023–) | Chicago portal `p293-wvbd` | `ward` | `chicago-alderperson-ward-NN` | chicago |
+| Police Districts | Chicago portal `24zt-jpfn` | `dist_num` | `chicago-police-district-council-NNN` | chicago |
+| Community areas (77) | Chicago portal `igwz-8jzy` | `community` | *(neighborhood overlap)* | — |
+| IL Senate (2026) | Census TIGERweb Legislative layer 1 (SLDU) | `SLDU` | `il-senate-NN` | illinois |
+| IL House (2026) | Census TIGERweb Legislative layer 2 (SLDL) | `SLDL` | `il-house-NNN` | illinois |
+| U.S. House (120th) | Census TIGERweb Legislative layer 0 (CD120) | `CD120` | `us-house-il-NN` | illinois |
+| IL state outline | Census TIGERweb State_County layer 0 | `STATE=17` | *(illinois context)* | illinois |
+
+CPS board **subdistrict** (1A–10B) polygons aren't published as a usable layer by
+any authority (unlike, e.g., Texas or Denver), so those races carry no polygon —
+the page omits the map for them. Geometry is never invented.
 
 ## How it works
 
-The ward layer defines the projection and the light **context** base (all 50
-wards). Every ward and police district is keyed to its elections-seed race id.
-Geometry is:
+Each space's basemap defines the projection and light **context** base. Every
+seed race id is keyed to its district geometry, which is:
 
 1. **projected** once, at build time, to a shared integer viewbox
-   (equirectangular, longitude compressed by cos(latitude) so the city isn't
+   (equirectangular, longitude compressed by cos(latitude) so it isn't
    stretched) — the browser just draws SVG paths, no mapping library;
-2. **simplified** with Ramer–Douglas–Peucker and rounded to integers, so the
-   whole file is tens of KB, not megabytes;
-3. written as `maps.json`: `{ view:{w,h}, context:[path…], districts:{ <race_id>:
-   {kind,label,paths:[…]} } }`.
+2. **simplified** with Ramer–Douglas–Peucker (TIGERweb also trims vertices
+   server-side via `maxAllowableOffset`) and rounded to integers, so the whole
+   file stays ~150 KB, not megabytes;
+3. tagged with the **neighborhoods** it touches — computed by sampling a grid
+   inside the district (clipped to Chicago) and classifying each interior point
+   by community area; a statewide district that never reaches Chicago carries an
+   empty list.
+
+Output shape:
+
+```
+{
+  view:{w,h}, context:[path…],            // chicago space
+  il_view:{w,h}, il_context:[path…],      // illinois space
+  districts:{ <race_id>: { kind, label, space, paths:[…], neighborhoods:[…] } }
+}
+```
 
 Fail-soft: any fetch/parse error yields no basemap and **leaves the committed
 `maps.json` in place** (the deploy never blanks the maps).
@@ -39,5 +66,6 @@ python3 actions/scrape-maps/main.py --output docs/src/dashboard/maps.json
 python3 actions/scrape-maps/main.py --self-test    # offline geometry tests (no network)
 ```
 
-The pure geometry helpers (`rdp`, `ring_area`, `make_projector`, `to_path`,
-`build`) are unit-tested offline via `--self-test`.
+The pure helpers (`rdp`, `ring_area`, `make_projector`, `to_path`,
+`point_in_rings`, `district_neighborhoods`, the id mappers, `build`) are
+unit-tested offline via `--self-test`.

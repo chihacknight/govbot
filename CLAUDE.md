@@ -686,21 +686,33 @@ ships (empty rosters/springfield), and the deploy keeps the committed sample unl
 fresh run produced candidates or Springfield bills. Parsers are offline-snapshot-tested:
 `python3 actions/scrape-elections/test_scrape_elections.py`.
 
-Per-race **locator maps** come from a separate action, `actions/scrape-maps/`: it fetches
-ward (`p293-wvbd`) + police-district (`24zt-jpfn`) boundaries from the City of Chicago Data
-Portal, projects + Douglas-Peucker-simplifies them at build time, and writes a compact
-`docs/src/dashboard/maps.json` (`{view, context, districts}` keyed by race id). The elections
-page draws each race's ward/police polygon as an inline-SVG locator inside a light city
-outline (citywide offices tint all of Chicago); CPS subdistricts have no published polygon
-so their map is omitted. **These locator SVGs are built lazily**: because the base city outline
-(~50 ward paths) is redrawn inside every ward map, eagerly rendering all revealed races' maps
-was the dominant DOM/paint cost on mobile — so `renderRaceMap` returns a sized placeholder
-(`.race-map-ph`) that a shared `IntersectionObserver` (`_mapObserver`, 400px margin) swaps for
-the real `buildRaceMap` SVG only when the card scrolls near the viewport (renderGroups unobserves
-discarded placeholders; no-IO browsers build eagerly). Relatedly, the several data files that land
-at load (maps/people/il_summaries) re-render through a **rAF-coalesced `scheduleRender()`** so a
-burst of arrivals is one rebuild, not several. Fail-soft: a portal outage leaves the committed
-`maps.json` in place. Geometry helpers are offline-tested: `python3 actions/scrape-maps/main.py --self-test`.
+Per-race **locator maps** come from a separate action, `actions/scrape-maps/`. It builds
+`docs/src/dashboard/maps.json` in **two coordinate spaces**: a **`chicago`** space (ward
+`p293-wvbd` + police-district `24zt-jpfn` boundaries from the City of Chicago Portal, keyed to the
+ward / police-council races) and an **`illinois`** space (a statewide silhouette from Census
+TIGERweb — the IL state outline, plus the **IL Senate/House 2026** (`SLDU`/`SLDL`, Legislative
+layers 1/2) and **U.S. House 120th** (`CD120`, layer 0) districts, keyed to the `il-senate-NN` /
+`il-house-NNN` / `us-house-il-NN` races). Each district is also tagged with the **Chicago
+neighborhoods it touches** — Census community areas (`igwz-8jzy`) matched by grid-sampling the
+district's Chicago overlap (`district_neighborhoods`), so a statewide/downstate district carries an
+empty list. Output: `{view, context, il_view, il_context, districts:{<id>:{kind,label,space,paths,
+neighborhoods}}}`. Everything is projected + Douglas-Peucker-simplified at build time (TIGERweb also
+trims server-side via `maxAllowableOffset`) so the file stays ~150 KB and the browser just draws SVG
+paths. **CPS board subdistricts (1A–10B) have no published boundary layer at any authority (unlike
+TX/Denver), so those races carry no polygon — geometry is never invented.** The frontend
+`renderRaceMap`/`buildRaceMap` pick the space from `entry.space`, draw the highlighted **pulsing**
+district (`.map-dist`), list the neighborhoods (`.map-hoods`, first 4 + "+N more"; the old "Boundary:
+City of Chicago" caption was removed), and give the tall IL silhouette a taller SVG (`.race-map--il`).
+**These locator SVGs are built lazily**: because the base outline (city wards, or the IL silhouette)
+is redrawn inside every map, eagerly rendering all revealed races' maps was the dominant DOM/paint
+cost on mobile — so `renderRaceMap` returns a sized placeholder (`.race-map-ph`) that a shared
+`IntersectionObserver` (`_mapObserver`, 400px margin) swaps for the real `buildRaceMap` SVG only when
+the card scrolls near the viewport (renderGroups unobserves discarded placeholders; no-IO browsers
+build eagerly). Relatedly, the several data files that land at load (maps/people/il_summaries)
+re-render through a **rAF-coalesced `scheduleRender()`** so a burst of arrivals is one rebuild, not
+several. Fail-soft: a portal/TIGERweb outage leaves the committed `maps.json` in place. Pure helpers
+(projection, `point_in_rings`, `district_neighborhoods`, the id mappers) are offline-tested:
+`python3 actions/scrape-maps/main.py --self-test`.
 
 **Official candidates** are populated from the Chicago Board of Elections' authoritative
 **Candidate List PDF** (linked from `chicagoelections.gov/getting-ballot/candidates`; the BOE
@@ -862,8 +874,12 @@ re-asserts `[hidden]` (same pitfall as `.gb-state`).
 **Race-card detail** (`renderRace(r, meta, opts)`, shared by the office popup and the "On this ballot"
 map panel — it renders **flat**: office/district, badges, map, candidates/incumbent, potential candidates,
 and — unless `opts.hideTimeline` (the office popup) — the timeline, then sources. Each locator **map
-highlights the race's real Chicago district** (`buildRaceMap`, from the committed `maps.json` geometry)
-with a **pulsing** highlight (`.map-dist` → `@keyframes rm-pulse`, off under `prefers-reduced-motion`).
+highlights the race's real district** (`buildRaceMap`, from the committed `maps.json` geometry) — a
+Chicago ward/police district on the city map, or an IL Senate/House/U.S. House district on the
+statewide silhouette — with a **pulsing** highlight (`.map-dist` → `@keyframes rm-pulse`, off under
+`prefers-reduced-motion`) and the **Chicago neighborhoods** it touches beneath it (see the scrape-maps
+paragraph above); so every office card's races (police councils, IL Senate/House, U.S. House) now
+carry a map, except CPS subdistricts, whose boundaries no authority publishes.
 Each card leads with a **"👥 N candidates"** badge (the confirmed-candidate count),
 and for a race with **no confirmed candidates** shows the
 **current incumbent** with a "CURRENT INCUMBENT" tag, resolved from whichever source covers the seat:
