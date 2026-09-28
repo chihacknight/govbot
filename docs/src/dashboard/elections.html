@@ -1619,10 +1619,6 @@
       cmCommonRaces().forEach((r) => races.append(cmRaceItem(r)));
       box.append(races);
       box.append(cmDistrictNote());
-      const btn = document.createElement("button"); btn.type = "button"; btn.className = "cm-open";
-      btn.textContent = "See Ward " + ward + "’s full ballot →";
-      btn.addEventListener("click", () => cmOpenWardBallot(ward));
-      box.append(btn);
     } else {
       const name = cmSel;
       const rec = cmData.areas.find((a) => a.name === name) || { wards: [] };
@@ -1650,12 +1646,6 @@
       cmCommonRaces().forEach((r) => races.append(cmRaceItem(r)));
       box.append(races);
       box.append(cmDistrictNote());
-      if (rec.wards.length) {
-        const btn = document.createElement("button"); btn.type = "button"; btn.className = "cm-open";
-        btn.textContent = "See Ward " + rec.wards[0] + "’s ballot →";
-        btn.addEventListener("click", () => cmOpenWardBallot(rec.wards[0]));
-        box.append(btn);
-      }
     }
   }
 
@@ -1674,7 +1664,7 @@
 
   function cmDistrictNote() {
     const p = document.createElement("p"); p.className = "cm-more";
-    p.innerHTML = "<b>➕ Your district races</b> — CPS subdistrict, police district council, Illinois Senate &amp; House, and U.S. House — depend on your exact address. Open the full ballot below to see them.";
+    p.innerHTML = "<b>⚠️ Address-specific races</b> — CPS subdistrict, police district council, Illinois Senate &amp; House, and U.S. House. Open the other ballots below to see them.";
     return p;
   }
 

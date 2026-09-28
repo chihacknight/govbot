@@ -444,11 +444,11 @@ expandable rectangle bars** (`cmRaceItem`): the ward's Alderperson race (`cmWard
 "Ward "+N`) plus every race that's the same for all Chicago voters (`cmCommonRaces` — citywide offices,
 CPS Board President, the Illinois statewide `il_exec` offices and the U.S. Senate seat). Clicking a bar
 expands it in place to the full details (`cmRaceDetails` — each candidate with party, petition status,
-money and an official-source link), a `cmDistrictNote` flags the address-specific races (CPS
-subdistrict, police district council, IL Senate/House, U.S. House) that can't be pinned from the ward
-alone, and a **"See Ward N's full ballot →"** button (`cmOpenWardBallot` reuses the finder's
-`state.view`/`state.filters.ward`/`applyView` plumbing to reveal the Chicago + statewide/federal
-sections, pinned to that ward, then scrolls down); a **neighborhood** shows its name (`cmNiceName`
+money and an official-source link), and a single boxed `cmDistrictNote` (`.cm-more`) warns
+**"⚠️ Address-specific races — CPS subdistrict, police district council, Illinois Senate & House, and
+U.S. House. Open the other ballots below to see them."** (the earlier "See Ward N's full ballot →"
+button was removed; `cmOpenWardBallot` remains defined but uncalled, so nothing throws); a
+**neighborhood** shows its name (`cmNiceName`
 title-cases, fixes O'Hare/Lakeview/McKinley Park), how many wards it spans, the same expandable common-race bars, and **tappable ward chips** (→ switch to ward view, select +
 `cmFocusRegion` zooms to it, since the alderperson varies by ward). Below Explore Chicago sits a
 **2026 federal-midterm callout**
