@@ -221,8 +221,10 @@
   .office-card:hover .oc-arrow { transform: translateX(3px); }
 
   /* office-group popup (all races in one office) */
+  /* A full-viewport backdrop-filter: blur re-rasterizes on every scroll frame and
+     janks the popup on desktop (mobile's smaller area hides it) — use a solid dim. */
   .group-overlay { position: fixed; inset: 0; z-index: 95; display: flex; align-items: center; justify-content: center;
-    padding: 32px 16px; background: rgba(6,9,13,.72); backdrop-filter: blur(3px); }
+    padding: 32px 16px; background: rgba(6,9,13,.84); }
   .group-overlay[hidden] { display: none; }
   body.gm-open { overflow: hidden; }
   .group-modal { width: min(920px, 100%); max-height: calc(100vh - 64px); display: flex; flex-direction: column;
@@ -239,6 +241,8 @@
   .gm-x:hover { background: var(--hover-wash); color: var(--text-primary); }
   .gm-searchrow { padding: 12px 22px 0; }
   .gm-body { flex: 1; overflow-y: auto; padding: 16px 22px; display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 12px; align-content: start; }
+  /* Off-screen race cards (each with a Chicago SVG map) are skipped while scrolling. */
+  .gm-body .race { content-visibility: auto; contain-intrinsic-size: 0 460px; }
   .gm-empty { grid-column: 1 / -1; color: var(--text-muted); font-size: 13px; padding: 8px 2px; }
   .gm-foot { display: flex; align-items: center; gap: 14px; padding: 14px 22px; border-top: 1px solid var(--gridline); }
   .gm-close { font: inherit; font-size: 13px; font-weight: 600; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 9px; padding: 9px 18px; background: transparent; cursor: pointer; }
@@ -257,7 +261,9 @@
   .race-map .map-ctx { fill: color-mix(in srgb, var(--text-muted) 14%, transparent); stroke: var(--border); stroke-width: 1; }
   .race-map .map-hi { fill: color-mix(in srgb, var(--gc) 42%, transparent); stroke: var(--gc); stroke-width: 2.5; stroke-linejoin: round; }
   .race-map .map-dist { animation: rm-pulse 1.8s ease-in-out infinite; }
-  @keyframes rm-pulse { 0%, 100% { stroke-width: 2.5; filter: drop-shadow(0 0 0 transparent); } 50% { stroke-width: 3.6; filter: drop-shadow(0 0 6px var(--gc)); } }
+  /* stroke-width only — an animated drop-shadow filter re-rasters the path each
+     frame and stacks up across the popup's many maps. */
+  @keyframes rm-pulse { 0%, 100% { stroke-width: 2.5; } 50% { stroke-width: 4.2; } }
   @media (prefers-reduced-motion: reduce) { .race-map .map-dist { animation: none; } }
   .race-map .map-cap { font-size: 11.5px; color: var(--text-secondary); line-height: 1.4; }
   .race-map .map-cap b { color: var(--text-primary); font-weight: 650; }
@@ -693,10 +699,12 @@
   .cm-lbl.ward { font-size: 12px; }
   .cm-lbl.area { font-size: 8.5px; }
   .cm-zoomctl { position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; gap: 6px; }
-  .cm-zoomctl button { width: 34px; height: 34px; font-size: 18px; font-weight: 700; line-height: 1; cursor: pointer; color: var(--text-primary); background: color-mix(in srgb, #0A0E16 78%, transparent); border: 1px solid #2A3346; border-radius: 8px; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
-  .cm-zoomctl button:hover { border-color: var(--gb-gold); }
-  .cm-zpct { position: absolute; bottom: 12px; left: 12px; font-size: 11px; font-weight: 600; color: var(--text-secondary); background: color-mix(in srgb, #0A0E16 78%, transparent); border: 1px solid #2A3346; border-radius: 6px; padding: 3px 8px; }
-  .cm-hint { position: absolute; bottom: 12px; right: 12px; font-size: 11px; color: var(--text-muted); background: color-mix(in srgb, #0A0E16 78%, transparent); border: 1px solid #2A3346; border-radius: 6px; padding: 3px 8px; pointer-events: none; }
+  /* Controls sit on the always-dark map viewport, so they carry fixed light
+     colors — theme tokens would go dark-on-dark and vanish in light mode. */
+  .cm-zoomctl button { width: 34px; height: 34px; font-size: 18px; font-weight: 700; line-height: 1; cursor: pointer; color: #EEF2F8; background: color-mix(in srgb, #0A0E16 82%, transparent); border: 1px solid #3A465C; border-radius: 8px; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+  .cm-zoomctl button:hover { border-color: var(--gb-gold); color: #fff; }
+  .cm-zpct { position: absolute; bottom: 12px; left: 12px; font-size: 11px; font-weight: 600; color: #CBD5E3; background: color-mix(in srgb, #0A0E16 82%, transparent); border: 1px solid #3A465C; border-radius: 6px; padding: 3px 8px; }
+  .cm-hint { position: absolute; bottom: 12px; right: 12px; font-size: 11px; color: #9AA7B8; background: color-mix(in srgb, #0A0E16 82%, transparent); border: 1px solid #3A465C; border-radius: 6px; padding: 3px 8px; pointer-events: none; }
   /* Fixed height matching the map so a long ballot list doesn't unbalance the
      row — the list scrolls inside the card instead. */
   .cm-detail { display: flex; flex-direction: column; background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 18px 18px 20px; height: 560px; overflow-y: auto; scrollbar-width: thin; }
@@ -2244,7 +2252,7 @@
 
     const body = document.createElement("div"); body.className = "gm-body"; body.id = "gm-body";
     races_g.forEach((r) => {
-      const rc = renderRace(r, meta, { hideTimeline: true });   // office card already shows the timeline
+      const rc = renderRace(r, meta, { hideTimeline: true, hideWhy: true });   // office card already shows the timeline + blurb
       rc.dataset.hay = [r.office, r.district || "",
         (r.candidates || []).map((c) => c.name).join(" "),
         (r.potential_candidates || []).map((c) => c.name).join(" ")].join(" ").toLowerCase();
@@ -2375,7 +2383,7 @@
     card.append(headEl(), badgesEl());
     const map = renderRaceMap(r, meta); if (map) card.append(map);
     const results = renderResults(r); if (results) card.append(results);
-    const why = whyEl(); if (why) card.append(why);
+    if (!opts.hideWhy) { const why = whyEl(); if (why) card.append(why); }
     card.append(candsEl());
     const pcs = r.potential_candidates || []; if (pcs.length) card.append(renderPotential(pcs, r));
     if (!opts.hideTimeline) { const tl = timelineDetails(); if (tl) card.append(tl); }

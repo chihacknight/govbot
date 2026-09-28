@@ -435,7 +435,9 @@ community area and ward found by point-in-polygon, co-occurrence tallied), so ev
 ranked overlapping wards and vice-versa (validated: Loop→42, Lincoln Park→43/32/2, Lakeview→44/32/47/46,
 Hyde Park→5/4, O'Hare→41). Pure stdlib (no geo deps), `--self-test` for the geometry helpers; fail-soft
 (a portal outage leaves the committed asset in place). The map has **zoom + pan** (± / reset buttons,
-wheel-zoom about the cursor, drag-to-pan with clamping, a `cmDidDrag` flag so a drag isn't a click) and
+wheel-zoom about the cursor, drag-to-pan with clamping, a `cmDidDrag` flag so a drag isn't a click; the
+zoom buttons / `.cm-zpct` / `.cm-hint` carry **fixed light colors**, not theme tokens, since they sit on
+the always-dark map viewport and would otherwise go dark-on-dark and vanish in light mode) and
 each region is a `.cm-reg` filled from a vivid `CM_PALETTE`; the selected region has a **large, high-contrast pulse** (`@keyframes cm-pulse` grows the gold outline 2.5→6.5px and the glow to 26px) as a low-vision aid. The
 `.cm-mapwrap` carries a **definite height** (560px; 440px under 820px) so the `svg{height:100%}` isn't
 the WebKit black-square bug. Clicking a region fills a **detail card** (`.cm-detail`, styled like
@@ -823,9 +825,14 @@ cycle, so the first race's `timeline` is used), plus a "View all races →" affo
 (a real `<button id="grp-<g>">`) **opens a popup** (`openGroupModal` → a body-level `.group-overlay`
 `role="dialog"` built once by `ensureGroupOverlay`, `body.gm-open` locks scroll, Escape / ✕ / backdrop
 close, focus returns to the opener) listing **every race in that office** as a flat card
-(`renderRace(r, meta, {hideTimeline:true})` — the office card already carries the timeline). Offices with
+(`renderRace(r, meta, {hideTimeline:true, hideWhy:true})` — the office card already carries the timeline
+and blurb, so the per-race timeline and `why_note` are suppressed). Offices with
 many races get an in-popup filter (`#gm-search`, gated by `SECTION_SEARCH_MIN`). `renderGroups` keeps an
 open popup in sync with the current filters (`fillGroupModal`) or closes it if its office drops out.
+**Popup scroll perf:** the overlay uses a solid dim (no `backdrop-filter: blur`, which re-rasters every
+scroll frame and janked desktop), the race cards get `content-visibility:auto` (off-screen cards with
+their Chicago SVG maps are skipped), and the highlighted-district pulse animates `stroke-width` only (an
+animated `drop-shadow` filter re-rastered each map every frame).
 Deep links open the popup: `alignDeepRace` maps `#office=<group>` / `#race=<id>` to the office, opens its
 popup once (`state._deepModalOpened`), then scrolls + flashes the specific race inside `#gm-body`; a
 side-panel race (citywide/statewide/U.S. Senate/CPS-president/alderman) still falls back to the "Find your
