@@ -444,11 +444,11 @@ expandable rectangle bars** (`cmRaceItem`): the ward's Alderperson race (`cmWard
 "Ward "+N`) plus every race that's the same for all Chicago voters (`cmCommonRaces` — citywide offices,
 CPS Board President, the Illinois statewide `il_exec` offices and the U.S. Senate seat). Clicking a bar
 expands it in place to the full details (`cmRaceDetails` — each candidate with party, petition status,
-money and an official-source link), a `cmDistrictNote` flags the address-specific races (CPS
-subdistrict, police district council, IL Senate/House, U.S. House) that can't be pinned from the ward
-alone, and a **"See Ward N's full ballot →"** button (`cmOpenWardBallot` reuses the finder's
-`state.view`/`state.filters.ward`/`applyView` plumbing to reveal the Chicago + statewide/federal
-sections, pinned to that ward, then scrolls down); a **neighborhood** shows its name (`cmNiceName`
+money and an official-source link), and a single boxed `cmDistrictNote` (`.cm-more`) warns
+**"⚠️ Address-specific races — CPS subdistrict, police district council, Illinois Senate & House, and
+U.S. House. Open the other ballots below to see them."** (the earlier "See Ward N's full ballot →"
+button was removed; `cmOpenWardBallot` remains defined but uncalled, so nothing throws); a
+**neighborhood** shows its name (`cmNiceName`
 title-cases, fixes O'Hare/Lakeview/McKinley Park), how many wards it spans, the same expandable common-race bars, and **tappable ward chips** (→ switch to ward view, select +
 `cmFocusRegion` zooms to it, since the alderperson varies by ward). Below Explore Chicago sits a
 **2026 federal-midterm callout**
@@ -569,7 +569,7 @@ and the per-page 3-button light/auto/dark theme pills have been **retired** — 
 design is the single default. On elections and hearings, the long list
 sections scroll inside capped-height boxes (`.group .races`, `.sf-list`, `.hgroup-rows`,
 `.participation-grid`) so the homepage isn't enormous; the elections "Where the data comes
-from" cabinet is **collapsed by default** (progressive disclosure). The hearings
+from" cabinet is **expanded by default** (`<details open>`). The hearings
 page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov, leg.wa.gov,
 malegislature.gov, and akleg.gov directly (not OpenStates), plus **USA (Federal)** open comment periods from the
 Regulations.gov API (needs `REGULATIONS_GOV_API_KEY`; falls back to the committed
@@ -647,11 +647,13 @@ shown on the page as context *beside* the races (never mixed into candidate list
 / Education / Other** (the old "All" tab was removed; default is Elections & voting). Elections & voting
 and Education come from the curated `springfield` list (`springfieldBills()` filters by tag); **Other**
 is the general recent IL activity merged in from the retired standalone section — `state.ilBills` (all
-tracked IL bills) minus anything already tagged elections/education, newest recorded action first, capped
-at `IL_RECENT_MAX` (8). The one `#sf-search` box (its own full-width row so its placeholder isn't
-clipped) filters within the active tab (id/title/sponsor/action/tags). Each Springfield bill card
-(`renderSpringfieldBill`) leads with an **"IL" badge before the bill id** and a trailing **"↗"** marking
-that it opens in a new tab, and is **clickable** — the
+tracked IL bills) minus anything already tagged elections/education, newest recorded action first. **Every
+tab is capped at `SF_MAX_PER_TAB` (9)** to stay scannable. The one `#sf-search` box (its own full-width
+row so its placeholder isn't clipped) filters within the active tab (id/title/sponsor/action/tags). Each
+Springfield bill card (`renderSpringfieldBill`) leads with an **"IL" badge before the bill id**, its
+**topic tags as colored-dot chips** (`sfTagColor` → the shared `ilTagColor`, so a topic reads the same
+color as on the legislation site — Other bills carry general topics like housing/healthcare), and a
+trailing **"↗"** marking that it opens in a new tab, and is **clickable** — the
 whole card opens that bill's **full details** (its modal on the legislation dashboard, via
 `legislation.html#bill=il~<session>~<id>`) in a **new tab** so it doesn't replace the elections page
 (the inline "View on Legislation Dashboard" / "Bill
@@ -812,10 +814,31 @@ global-search `#race=<id>` deep link to a side-panel-only race (which is no long
 back to scrolling to the "Find your ballot" map (`#chimap`) once, so the reader can pick their ward and
 see it there.
 
-**Race-card detail** (`renderRace`, shared by the main sections and the "On this ballot" map panel):
-each card leads with a **"👥 N candidates"** badge (the confirmed-candidate count), shows its
-**full election timeline expanded** by default (a `<details open>` labelled "Timeline"; the old
-"⏭ Next: …" teaser chip was removed), and for a race with **no confirmed candidates** shows the
+**Browse by office → race popup.** The bottom of the page is a **grid of office cards** (`.office-cards`,
+`renderGroups` → `officeCard`): one card per office group in view (CPS Board of Education, Police District
+Councils, IL Senate, IL House, U.S. House). Each card shows the office icon/name, its **race + candidate
+counts**, a short **blurb** (`GROUP_BLURB[g]`) and the office's **full election timeline** (the shared
+`renderTimeline` `.tl` component with the pulsing current node — every race in a group shares its ballot
+cycle, so the first race's `timeline` is used), plus a "View all races →" affordance. Clicking a card
+(a real `<button id="grp-<g>">`) **opens a popup** (`openGroupModal` → a body-level `.group-overlay`
+`role="dialog"` built once by `ensureGroupOverlay`, `body.gm-open` locks scroll, Escape / ✕ / backdrop
+close, focus returns to the opener) listing **every race in that office** as a flat card
+(`renderRace(r, meta, {hideTimeline:true})` — the office card already carries the timeline). Offices with
+many races get an in-popup filter (`#gm-search`, gated by `SECTION_SEARCH_MIN`). `renderGroups` keeps an
+open popup in sync with the current filters (`fillGroupModal`) or closes it if its office drops out.
+Deep links open the popup: `alignDeepRace` maps `#office=<group>` / `#race=<id>` to the office, opens its
+popup once (`state._deepModalOpened`), then scrolls + flashes the specific race inside `#gm-body`; a
+side-panel race (citywide/statewide/U.S. Senate/CPS-president/alderman) still falls back to the "Find your
+ballot" map. `.group-overlay` sets `display:flex`, so a `.group-overlay[hidden]{display:none}` rule
+re-asserts `[hidden]` (same pitfall as `.gb-state`).
+
+**Race-card detail** (`renderRace(r, meta, opts)`, shared by the office popup and the "On this ballot"
+map panel — it renders **flat**: office/district, badges, map, candidates/incumbent, potential candidates,
+and — unless `opts.hideTimeline` (the office popup) — the timeline, then sources. Each locator **map
+highlights the race's real Chicago district** (`buildRaceMap`, from the committed `maps.json` geometry)
+with a **pulsing** highlight (`.map-dist` → `@keyframes rm-pulse`, off under `prefers-reduced-motion`).
+Each card leads with a **"👥 N candidates"** badge (the confirmed-candidate count),
+and for a race with **no confirmed candidates** shows the
 **current incumbent** with a "CURRENT INCUMBENT" tag, resolved from whichever source covers the seat:
 - **Chicago aldermen (`council`)** — from the race's own `incumbent` field, populated at deploy by
   the pipeline (see below). Chicago City Council is nonpartisan, so no party pill.
