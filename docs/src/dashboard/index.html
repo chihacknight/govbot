@@ -387,7 +387,7 @@
   </div>
   <figure class="stream-figure">
     <canvas id="stream-canvas" role="img"
-      aria-label="Animation: a chaotic stream of raw government records — bills, hearings, votes, ballots, filings — flows in from the left into the Govbot robot, which sorts them into calm, labeled topic lanes on the right: AI and data centers, education, housing, healthcare, labor, transportation, and more."></canvas>
+      aria-label="Animation: a chaotic stream of raw government records — bills, hearings, votes, ballots, filings — flows in from the left into the Govbot robot, which sorts them into calm, labeled topic lanes on the right: AI and data centers, education, housing, labor rights, transportation, and more."></canvas>
     <div class="stream-bot" aria-hidden="true">
       <img class="stream-bot-img" src="assets/govbot-bot.png" alt="" width="124" height="124">
       <span class="stream-bot-name">Govbot</span>
@@ -702,8 +702,7 @@
     { label: "AI + DATA CENTERS", c: function () { return pal.blue; } },
     { label: "EDUCATION",         c: function () { return pal.purple; } },
     { label: "HOUSING",           c: function () { return pal.gold; } },
-    { label: "HEALTHCARE",        c: function () { return pal.green; } },
-    { label: "LABOR",             c: function () { return pal.red; } },
+    { label: "LABOR RIGHTS",      c: function () { return pal.red; } },
     { label: "TRANSPORTATION",    c: function () { return "#22B8CF"; } }
   ];
   // The chaotic raw records that stream in from the left.
@@ -711,7 +710,7 @@
     "Ballot", "Vote 34–21", "Committee", "Filing", "Agenda", "Resolution", "Motion",
     "Docket", "Gov. signs", "Veto", "Open data", "Minutes", "Redistrict", "Subpoena"];
 
-  var W = 0, H = 0, dpr = 1, hub = { x: 0, y: 0 }, botR = 60, buckets = [], labelFont = 12;
+  var W = 0, H = 0, dpr = 1, hub = { x: 0, y: 0 }, botR = 60, buckets = [], labelFont = 12, isMobile = false;
   var botEl = document.querySelector(".stream-bot");
   function layout() {
     var rect = canvas.getBoundingClientRect();
@@ -722,16 +721,17 @@
     canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     var mobile = W < 560;
+    isMobile = mobile;
     var bw, bx, laneTop, laneBottom;
     if (mobile) {
       // Keep the desktop framing on phones — chaos on the left, hub near the
-      // middle-left, sorted lanes on the right — just with wider lanes and a
-      // smaller label so the full topic names still fit at narrow widths. The
-      // lanes stop higher up so the bottom captions have room (nothing cropped).
-      hub.x = W * 0.33; hub.y = H * 0.42;
-      botR = Math.max(40, Math.min(H * 0.14, 52));
-      bw = Math.min(W * 0.52, 210); bx = W - bw - 8; labelFont = 10;
-      laneTop = H * 0.10; laneBottom = H * 0.74;
+      // middle-left, sorted lanes on the right — but zoomed OUT: a smaller robot
+      // and lanes, the hub tucked further left, and a tighter lane band so the
+      // whole scene has breathing room instead of feeling cramped.
+      hub.x = W * 0.30; hub.y = H * 0.44;
+      botR = Math.max(32, Math.min(H * 0.11, 42));
+      bw = Math.min(W * 0.48, 188); bx = W - bw - 10; labelFont = 9.5;
+      laneTop = H * 0.14; laneBottom = H * 0.70;
     } else {
       hub.x = W * 0.5; hub.y = H * 0.5;
       botR = Math.max(46, Math.min(H * 0.22, 64));
@@ -811,7 +811,8 @@
     // spawn raw records
     spawnAcc += dt;
     var interval = 0.085;
-    while (spawnAcc >= interval) { spawnAcc -= interval; if (incoming.length < 46) spawnIncoming(); }
+    var maxIncoming = isMobile ? 24 : 46;   // fewer scraps on phones so the small chaos zone isn't cluttered
+    while (spawnAcc >= interval) { spawnAcc -= interval; if (incoming.length < maxIncoming) spawnIncoming(); }
 
     var ingestX = hub.x - botR - 26;
     for (var i = incoming.length - 1; i >= 0; i--) {
@@ -864,7 +865,7 @@
 
     // Incoming raw scraps — muted "documents" with a tiny label.
     ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    ctx.font = "10px 'IBM Plex Sans', system-ui, sans-serif";
+    ctx.font = (isMobile ? "9px" : "10px") + " 'IBM Plex Sans', system-ui, sans-serif";
     for (var i = 0; i < incoming.length; i++) {
       var p = incoming[i];
       var y = (p.yDraw == null ? p.y : p.yDraw);
