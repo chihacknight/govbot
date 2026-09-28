@@ -814,19 +814,31 @@ global-search `#race=<id>` deep link to a side-panel-only race (which is no long
 back to scrolling to the "Find your ballot" map (`#chimap`) once, so the reader can pick their ward and
 see it there.
 
-**Race-card detail** (`renderRace(r, meta, collapsible)`, shared by the bottom office sections and the
-"On this ballot" map panel). In the **bottom office sections it renders as a scannable accordion**
-(`collapsible` true → a `<details class="race race-acc">`): the always-visible **summary** carries the
-office/district, a compact badge row, the one-line **description** (`why_note`) and the **full timeline**
-at a glance, and clicking (a "See candidates & details ▾" affordance) opens the **body** (map, results,
-candidates, current incumbent, potential candidates, sources). `.race-body` sets `display:flex`, which
-would beat the UA "closed `<details>` hides its body" rule, so a `details.race-acc:not([open]) .race-body
-{ display:none }` rule re-asserts it (same pitfall as `.gb-state` vs `[hidden]`); `alignDeepRace` opens
-the accordion for a deep-linked race. In the **map panel it renders flat** (`collapsible` omitted — it's
-already inside an expandable bar, so nothing double-nests), everything visible with the timeline in its
-own `<details open>`. Each card leads with a **"👥 N candidates"** badge (the confirmed-candidate count),
-shows its **full election timeline** (the old "⏭ Next: …" teaser chip was removed), and for a race with
-**no confirmed candidates** shows the
+**Browse by office → race popup.** The bottom of the page is a **grid of office cards** (`.office-cards`,
+`renderGroups` → `officeCard`): one card per office group in view (CPS Board of Education, Police District
+Councils, IL Senate, IL House, U.S. House). Each card shows the office icon/name, its **race + candidate
+counts**, a short **blurb** (`GROUP_BLURB[g]`) and the office's **full election timeline** (the shared
+`renderTimeline` `.tl` component with the pulsing current node — every race in a group shares its ballot
+cycle, so the first race's `timeline` is used), plus a "View all races →" affordance. Clicking a card
+(a real `<button id="grp-<g>">`) **opens a popup** (`openGroupModal` → a body-level `.group-overlay`
+`role="dialog"` built once by `ensureGroupOverlay`, `body.gm-open` locks scroll, Escape / ✕ / backdrop
+close, focus returns to the opener) listing **every race in that office** as a flat card
+(`renderRace(r, meta, {hideTimeline:true})` — the office card already carries the timeline). Offices with
+many races get an in-popup filter (`#gm-search`, gated by `SECTION_SEARCH_MIN`). `renderGroups` keeps an
+open popup in sync with the current filters (`fillGroupModal`) or closes it if its office drops out.
+Deep links open the popup: `alignDeepRace` maps `#office=<group>` / `#race=<id>` to the office, opens its
+popup once (`state._deepModalOpened`), then scrolls + flashes the specific race inside `#gm-body`; a
+side-panel race (citywide/statewide/U.S. Senate/CPS-president/alderman) still falls back to the "Find your
+ballot" map. `.group-overlay` sets `display:flex`, so a `.group-overlay[hidden]{display:none}` rule
+re-asserts `[hidden]` (same pitfall as `.gb-state`).
+
+**Race-card detail** (`renderRace(r, meta, opts)`, shared by the office popup and the "On this ballot"
+map panel — it renders **flat**: office/district, badges, map, candidates/incumbent, potential candidates,
+and — unless `opts.hideTimeline` (the office popup) — the timeline, then sources. Each locator **map
+highlights the race's real Chicago district** (`buildRaceMap`, from the committed `maps.json` geometry)
+with a **pulsing** highlight (`.map-dist` → `@keyframes rm-pulse`, off under `prefers-reduced-motion`).
+Each card leads with a **"👥 N candidates"** badge (the confirmed-candidate count),
+and for a race with **no confirmed candidates** shows the
 **current incumbent** with a "CURRENT INCUMBENT" tag, resolved from whichever source covers the seat:
 - **Chicago aldermen (`council`)** — from the race's own `incumbent` field, populated at deploy by
   the pipeline (see below). Chicago City Council is nonpartisan, so no party pill.
