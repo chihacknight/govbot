@@ -125,8 +125,9 @@
     height: 32px; padding: 0 10px; border: 1px solid var(--border); border-radius: 6px;
     background: var(--surface-1); color: var(--text-primary); font: inherit;
   }
-  .filters input[type="search"] { width: 230px; }
+  .filters input[type="search"] { width: 100%; }
   .search-wrap { position: relative; display: inline-flex; align-items: center; }
+  .filters .search-wrap { flex: 1 1 100%; min-width: 0; max-width: 480px; }
   .search-wrap .search-icon { position: absolute; left: 9px; color: var(--text-muted); pointer-events: none; }
   .filters .search-wrap input[type="search"] { padding-left: 30px; }
   .filters select:hover { background: var(--hover-wash); }
@@ -139,13 +140,6 @@
   .clear-btn { height: 32px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-1); color: var(--text-secondary); font: inherit; cursor: pointer; }
   .clear-btn[disabled] { opacity: 0.45; cursor: default; }
   .clear-btn:hover:not([disabled]) { background: var(--hover-wash); }
-
-  /* ---------- stat tiles ---------- */
-  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
-  .tiles[hidden] { display: none; }
-  .tile { background: var(--surface-1); border: 1px solid var(--border); border-left: 4px solid var(--c, var(--series-2)); border-radius: 10px; padding: 14px 16px; }
-  .tile .label { color: var(--text-secondary); font-size: 13px; margin-bottom: 4px; }
-  .tile .value { font-size: 26px; font-weight: 650; color: var(--c, var(--text-primary)); font-variant-numeric: tabular-nums; }
 
   /* ---------- office-group sections ---------- */
   .groups { display: flex; flex-direction: column; gap: 16px; }
@@ -969,17 +963,9 @@
   <div class="filters" id="filters" hidden>
     <div class="search-wrap">
       <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
-      <input type="search" id="f-search" placeholder="Search office, district, or candidate…" aria-label="Search races and candidates">
+      <input type="search" id="f-search" placeholder="Search races &amp; candidates…" aria-label="Search races and candidates">
     </div>
-    <select id="f-ballot" aria-label="Ballot date"></select>
-    <button type="button" class="toggle-pill" id="f-hascands" aria-pressed="false">Only races with candidates</button>
-    <button type="button" class="clear-btn" id="f-clear" disabled>Clear</button>
-    <span style="margin-left:auto"><button type="button" class="rss-link" id="rss-all" aria-haspopup="dialog" aria-expanded="false" title="Subscribe to every race in a feed reader">
-      <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"/></svg>
-      Follow this race (RSS)</button></span>
   </div>
-
-  <div class="tiles" id="tiles" hidden></div>
 
   <div id="races" aria-hidden="true"></div>
   <div class="gb-loading" id="loading">
@@ -1268,7 +1254,8 @@
 
     // ballot-date filter options
     const dates = [...new Set(data.races.map((r) => r.ballot_date).filter(Boolean))].sort();
-    buildSelect($("f-ballot"), "Any ballot date",
+    const ballotSel = $("f-ballot");   // removed from the UI; kept null-safe (ballot is driven by the hero cards)
+    if (ballotSel) buildSelect(ballotSel, "Any ballot date",
       dates.map((d) => [d, prettyDate(d)]),
       (v) => { state.filters.ballot = v; render(); });
 
@@ -1279,27 +1266,12 @@
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => { state.filters.search = e.target.value.trim().toLowerCase(); render(); }, 130);
     });
-    $("f-hascands").addEventListener("click", () => {
-      state.filters.hasCands = !state.filters.hasCands;
-      $("f-hascands").setAttribute("aria-pressed", String(state.filters.hasCands));
-      render();
-    });
-    $("f-clear").addEventListener("click", () => {
-      state.filters = { search: "", group: "", ballot: "", hasCands: false, ward: "" };
-      $("f-search").value = ""; $("f-ballot").value = "";
-      $("f-hascands").setAttribute("aria-pressed", "false");
-      const bw = $("bf-status"); // clearing filters also drops the ward the finder set
-      if (bw && state._bfPlace) { state._bfPlace = null; syncBfChips(); }
-      render();
-    });
+    // The ballot / has-candidates / clear controls were removed from the UI (only
+    // the search box remains). Filter state is still driven by the hero ballot
+    // cards and the calendar; the empty-state "Clear filters" button clears it.
     document.querySelectorAll("[data-clear-filters]").forEach((b) =>
-      b.addEventListener("click", () => $("f-clear").click()));
+      b.addEventListener("click", clearFilters));
 
-    $("rss-all").addEventListener("click", (e) => openRss(e.currentTarget, {
-      title: "Subscribe to every race",
-      sub: "Every Chicago & Illinois race in one feed, refreshed twice daily.",
-      url: FEED_BASE + "elections.xml",
-    }));
     document.addEventListener("click", (e) => {
       const pop = $("rss-pop");
       if (!pop.hidden && !pop.contains(e.target) && !e.target.closest("[data-rss]") && e.target.id !== "rss-all")
@@ -1363,6 +1335,15 @@
   function anyFilter() {
     const f = state.filters;
     return !!(f.search || f.group || f.ballot || f.hasCands || f.ward);
+  }
+  // Reset every race filter (search is the only visible control; ballot/ward come
+  // from the hero cards + map). Wired to the empty-state "Clear filters" button.
+  function clearFilters() {
+    state.filters = { search: "", group: "", ballot: "", hasCands: false, ward: "" };
+    const fs = $("f-search"); if (fs) fs.value = "";
+    const fb = $("f-ballot"); if (fb) fb.value = "";
+    if (state._bfPlace) { state._bfPlace = null; syncBfChips(); }
+    render();
   }
 
   /* ---------- Illinois-flag flourishes ---------- */
@@ -1994,7 +1975,6 @@
 
     const anyGroup = state.visibleGroups.size > 0;
     $("filters").hidden = !anyGroup;
-    $("tiles").hidden = !anyGroup;
     $("picker-empty").hidden = true;   // retired prompt — never shown
 
     try { localStorage.setItem(VIEW_LS_KEY, JSON.stringify([...v])); } catch (e) {}
@@ -2046,8 +2026,6 @@
     // Only races in the office groups the reader has chosen, minus the ones the
     // side panel already shows (see inSidePanel) — so the bottom has no dupes.
     const races = filteredRaces().filter((r) => state.view.has("grp:" + r.office_group) && !inSidePanel(r));
-    $("f-clear").disabled = !anyFilter();
-    renderTiles(races);
     renderGroups(races);
     alignDeepRace();   // keep a search deep-link aligned across late re-renders
   }
@@ -2088,28 +2066,6 @@
       clearTimeout(state._deepFlashTimer);
       state._deepFlashTimer = setTimeout(() => el.classList.remove("race-flash"), state._deepFlashUntil - now);
     }
-  }
-
-  function renderTiles(races) {
-    const tiles = $("tiles");
-    tiles.textContent = "";
-    const withCands = races.filter((r) => r.candidates && r.candidates.length);
-    const candTotal = races.reduce((n, r) => n + (r.candidates ? r.candidates.length : 0), 0);
-    const nextBallot = [...new Set(races.map((r) => r.ballot_date).filter(Boolean))].sort()[0];
-    [
-      ["Races shown", fmt(races.length), "--series-2"],
-      ["Races with candidates", fmt(withCands.length), "--series-1"],
-      ["Candidates listed", fmt(candTotal), "--series-5"],
-      ["Next ballot", nextBallot ? prettyDate(nextBallot) : "—", "--series-3"],
-    ].forEach(([label, value, color]) => {
-      const t = document.createElement("div");
-      t.className = "tile";
-      t.style.setProperty("--c", "var(" + color + ")");
-      const l = document.createElement("div"); l.className = "label"; l.textContent = label;
-      const v = document.createElement("div"); v.className = "value"; v.textContent = value;
-      t.append(l, v);
-      tiles.append(t);
-    });
   }
 
   // The bottom of the page is a "browse by office" grid: one card per office

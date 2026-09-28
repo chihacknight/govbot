@@ -498,6 +498,12 @@
   .results-search input[type="search"]:focus-visible {
     outline: 2px solid var(--series-1); outline-offset: 1px; border-color: var(--series-1);
   }
+  /* The topic/session/chamber/date filter row inside the results popup: aligned
+     to the search box's gutter, with a hairline separating it from the table. */
+  .results-modal .filters {
+    margin: 0; padding: 0 20px 12px;
+    border-bottom: 1px solid var(--border);
+  }
   @keyframes results-pop {
     0%   { opacity: 0; transform: scale(0.92) translateY(14px); }
     60%  { transform: scale(1.01) translateY(0); }
@@ -981,36 +987,6 @@
       </svg>
       <input type="search" id="f-search" placeholder="Search bills, sponsors, topics…" aria-label="Search bills">
     </div>
-    <div class="filters" id="filters">
-      <!-- Jurisdiction is picked from the map / list entry above; no State dropdown here. -->
-      <div class="browse-field">
-        <span class="browse-label">Topic</span>
-        <div class="msel" id="f-tags"></div>
-      </div>
-      <details class="more-filters">
-        <summary>More filters</summary>
-        <div class="more-grid">
-          <label class="mf-field"><span>Session</span><select id="f-session" aria-label="Session"></select></label>
-          <label class="mf-field"><span>Chamber</span><select id="f-chamber" aria-label="Chamber"></select></label>
-          <label class="mf-field"><span>Last action</span>
-            <select id="f-daterange" aria-label="Last action date range">
-              <option value="">Any date</option>
-              <option value="7d">Last 7 days</option>
-              <option value="30d">Last 30 days</option>
-              <option value="90d">Last 3 months</option>
-              <option value="365d">Last 12 months</option>
-              <option value="custom">Custom range…</option>
-            </select>
-          </label>
-          <span class="daterange-custom" id="f-daterange-custom" hidden>
-            <input type="date" id="f-date-from" aria-label="Last action from date">
-            <span class="daterange-sep">to</span>
-            <input type="date" id="f-date-to" aria-label="Last action to date">
-          </span>
-        </div>
-      </details>
-      <button class="clear-btn" id="f-clear" disabled>Clear filters</button>
-    </div>
   </section>
 
 </div>
@@ -1069,6 +1045,38 @@
     <div class="results-search">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
       <input type="search" id="results-search" placeholder="Search these bills — title, number, sponsor, topic…" aria-label="Search bills in this list">
+    </div>
+    <!-- Filters for this state's catalog: topic, session, chamber, last-action date.
+         Drive the same state.filters as the (hidden) page-level controls. -->
+    <div class="filters" id="filters">
+      <!-- Jurisdiction is fixed to the open state; no State dropdown here. -->
+      <div class="browse-field">
+        <span class="browse-label">Topic</span>
+        <div class="msel" id="f-tags"></div>
+      </div>
+      <details class="more-filters">
+        <summary>More filters</summary>
+        <div class="more-grid">
+          <label class="mf-field"><span>Session</span><select id="f-session" aria-label="Session"></select></label>
+          <label class="mf-field"><span>Chamber</span><select id="f-chamber" aria-label="Chamber"></select></label>
+          <label class="mf-field"><span>Last action</span>
+            <select id="f-daterange" aria-label="Last action date range">
+              <option value="">Any date</option>
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="90d">Last 3 months</option>
+              <option value="365d">Last 12 months</option>
+              <option value="custom">Custom range…</option>
+            </select>
+          </label>
+          <span class="daterange-custom" id="f-daterange-custom" hidden>
+            <input type="date" id="f-date-from" aria-label="Last action from date">
+            <span class="daterange-sep">to</span>
+            <input type="date" id="f-date-to" aria-label="Last action to date">
+          </span>
+        </div>
+      </details>
+      <button class="clear-btn" id="f-clear" disabled>Clear filters</button>
     </div>
     <div class="table-scroll">
       <table>
@@ -1184,29 +1192,13 @@
         if (!state.filters.search) return;   // background only interactive while searching
         toggleRecent();
       }); }
-    $("f-clear").addEventListener("click", () => {
-      state.filters.search = "";
-      $("f-search").value = ""; reflectSearch();
-      state.filters.states.clear(); state.filters.tags.clear();
-      state.filters.session = ""; $("f-session").value = "";
-      state.filters.chamber = ""; $("f-chamber").value = "";
-      resetDateRange();
-      syncMultiSelects(); render();
-    });
-    // The empty-state "Clear filters" button reuses the same reset — except the
-    // one inside the results catalog, where an active in-card search over a single
-    // state should clear just the search and keep that state's catalog open
-    // (rather than closing back to the map).
+    // Clear filters. Inside an open state catalog this clears the catalog's own
+    // filters (topic/session/chamber/date/search) but keeps that state selected so
+    // the popup stays open; elsewhere it's a full reset that also drops the state.
+    $("f-clear").addEventListener("click", () => clearBillFilters(inOpenCatalog()));
+    // The empty-state "Clear filters" button reuses the same logic.
     document.querySelectorAll("[data-clear-filters]").forEach((b) =>
-      b.addEventListener("click", () => {
-        const ov = $("results-overlay");
-        const inCatalog = ov && !ov.hidden && b.closest("#results-overlay");
-        if (inCatalog && state.filters.search && state.filters.states.size) {
-          state.filters.search = ""; reflectSearch(); render();
-        } else {
-          $("f-clear").click();
-        }
-      }));
+      b.addEventListener("click", () => clearBillFilters(inOpenCatalog())));
     document.addEventListener("click", (e) => {
       document.querySelectorAll(".msel.open").forEach((m) => {
         if (!m.contains(e.target)) m.classList.remove("open");
@@ -1359,13 +1351,40 @@
     return !!(f.search || f.states.size || f.tags.size || f.session || f.chamber
               || f.dateFrom || f.dateTo);
   }
+  // The filters clearable from inside a state's catalog popup (everything except
+  // the jurisdiction, which keeps the catalog open).
+  function catalogFiltersActive() {
+    const f = state.filters;
+    return !!(f.search || f.tags.size || f.session || f.chamber || f.dateFrom || f.dateTo);
+  }
+  // Reset the bill filters. keepState leaves state.filters.states intact so a
+  // state's catalog popup stays open (clearing topic/session/chamber/date/search);
+  // otherwise the jurisdiction is cleared too and the popup closes back to the map.
+  function clearBillFilters(keepState) {
+    state.filters.search = "";
+    const fse = $("f-search"); if (fse) fse.value = "";
+    reflectSearch();
+    state.filters.tags.clear();
+    state.filters.session = ""; const fs = $("f-session"); if (fs) fs.value = "";
+    state.filters.chamber = ""; const fc = $("f-chamber"); if (fc) fc.value = "";
+    resetDateRange();
+    if (!keepState) state.filters.states.clear();
+    syncMultiSelects(); render();
+  }
+  // True when a state's catalog popup is open — clears keep that state.
+  function inOpenCatalog() {
+    const ov = $("results-overlay");
+    return !!(ov && !ov.hidden && state.filters.states.size);
+  }
 
   /* ---------- render ---------- */
 
   function render() {
     const bills = filteredBills();
     state.limit = PAGE_SIZE;
-    $("f-clear").disabled = !anyFilterActive();
+    // In an open state catalog only the catalog's own filters are clearable (the
+    // jurisdiction stays), so enable Clear on those; otherwise on any active filter.
+    $("f-clear").disabled = inOpenCatalog() ? !catalogFiltersActive() : !anyFilterActive();
     renderTable(bills);
     syncRecentCollapse();
     setMode();
@@ -2375,7 +2394,12 @@
 
   function eeApplyFilter(code) {
     state.filters.states.clear(); state.filters.states.add(code);
-    state.filters.search = ""; reflectSearch();   // open each state's catalog fresh
+    // Open each state's catalog fresh: drop any leftover topic/session/chamber/date/search.
+    state.filters.search = ""; reflectSearch();
+    state.filters.tags.clear();
+    state.filters.session = ""; const fs = $("f-session"); if (fs) fs.value = "";
+    state.filters.chamber = ""; const fc = $("f-chamber"); if (fc) fc.value = "";
+    resetDateRange();
     syncMultiSelects(); render();   // render() -> setMode() pops up the results card over the map
   }
   // Close the results popup and clear the jurisdiction filter (X / backdrop / Escape).
