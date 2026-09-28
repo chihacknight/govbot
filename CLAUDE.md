@@ -307,13 +307,16 @@ the **whole section header** (`.recent-toggleable .section-head-lite`) is also a
 pill `stopPropagation`s so it isn't double-toggled). Below Recent activity, above the analytics, sits **one** search-and-filter block
 (`.explore-search`): a single search box (`#f-search`, "Search bills, sponsors, topics…", the
 page's only bill search — the old top hero search and the per-table search box were consolidated
-into this one) plus **Topic** as the primary browse filter with Session/Chamber/date behind a "More
-filters" `<details>` (`#filters`). **There is no State dropdown** — jurisdiction is picked from the
-map / list entry above; it drives `state.filters.states`, which stays the underlying filter (Clear
-filters resets it, `syncMultiSelects` guards for the removed `#f-states`). The redundant
+into this one). The **`#filters` block** (Topic multiselect `#f-tags` + Session/Chamber/date behind a
+"More filters" `<details>` + Clear) **was moved out of `.explore-search` and into the results popup**
+so a reader can filter one state's catalog in place (see the results-popup paragraph below). **There
+is no State dropdown** — jurisdiction is picked from the map / list entry above; it drives
+`state.filters.states`, which stays the underlying filter (`syncMultiSelects` guards for the removed
+`#f-states`). The redundant
 `.explore-hint` copy under the search box was removed (the placeholder already conveys it). **This
-whole `.explore-search` block is currently `hidden`** (per request) — the map's "Open all bills" flow
-drives the results — but its elements stay in the DOM so the search/filter JS keeps working. The
+`.explore-search` block is currently `hidden`** (per request; it now holds only `#f-search`) — the
+map's "Open all bills" flow drives the results — but its elements stay in the DOM so the search JS
+keeps working. The
 **"Overview & charts"** analytics block (tiles + jurisdiction/topic/month charts) was **removed**.
 Clicking **"Open all N bills"** (or a list-card) **pops the filtered bills up as a card** over the
 current screen rather than switching the page inline: `setMode()` (called from `render()`) toggles a
@@ -331,9 +334,19 @@ redundant). The card carries a sticky
 catalog (e.g. just that one state's bills — the same `state.filters.search`, so the count in the title
 tracks it live); it and the hidden hero box `#f-search` mirror each other via `reflectSearch()` (both
 share one debounced input handler, each skipping the box being typed in so the cursor doesn't jump).
-Opening a state (`eeApplyFilter`) starts its catalog fresh (clears the search); when nothing matches,
-the results empty-state "Clear filters" clears **only** the search and keeps that state's catalog open
-(rather than closing back to the map). Closing it — the X, a click on the
+**Below the in-card search the catalog carries its own filter row** (the `#filters` block — Topic
+multiselect `#f-tags`, plus Session / Chamber / Last-action-date behind a "More filters" `<details>`,
+and a "Clear filters" `#f-clear` button; styled `.results-modal .filters` with a hairline under it).
+It was moved out of the hidden `.explore-search` block into the results popup so a reader can narrow
+one state's bills by topic/session/chamber/date; it drives the same `state.filters` as before and the
+title count tracks it live. **Clear is jurisdiction-aware** (`clearBillFilters(keepState)` +
+`inOpenCatalog()`): inside an open state catalog, Clear (the `#f-clear` button and the empty-state
+"Clear filters") resets the catalog's own filters — topic/session/chamber/date **and** search — but
+**keeps** `state.filters.states` so the popup stays open on that state (only clearing the state closes
+back to the map); outside a catalog it's a full reset. `#f-clear`'s enabled state follows the context
+(`catalogFiltersActive()` in a catalog, `anyFilterActive()` otherwise).
+Opening a state (`eeApplyFilter`) starts its catalog fresh (clears topic/session/chamber/date/search);
+Closing it — the X, a click on the
 backdrop, or **Escape** (deferred to the bill modal when that is open above it) — calls `eeBackToMap`,
 which clears `state.filters.states` (and the in-card search) so `setMode` hides the overlay. Its Title + latest-action cell
 text is `--text-primary` (full-contrast, not dimmed). The "No bills match" empty state (`#empty`) now shows
@@ -382,9 +395,16 @@ gone. Copy: "Illinois Elections" / "Know who's on
 your ballot before you vote." / a dynamic "Next election" line (the earlier "Explore races" CTA
 button was removed)) and a "What's on your ballot?" selector
 (`#ballot-cards`, one card per distinct `ballot_date` with its stage label + office/candidate
-counts) that drives the existing `#f-ballot` filter, reveals the sections, and scrolls to
+counts) that drives the existing `state.filters.ballot`, reveals the sections, and scrolls to
 `#groups` (`renderElectionHero`). The rich race engine (groups, five drawers, calendar,
-Springfield, picker) is unchanged. **The standalone Illinois county finder (`#bfinder`,
+Springfield, picker) is unchanged. The office-card area's **stat scorecards (`#tiles` /
+`renderTiles`) and the ballot-date / "Only races with candidates" / Clear / "Follow every race"
+controls were removed** — the `#filters` bar now holds **only the search box** (`#f-search`,
+placeholder "Search races & candidates…", widened to fill its row so the placeholder isn't
+clipped). The ballot-date filter is still driven by the hero ballot cards + calendar (its removed
+`#f-ballot`/`#f-hascands`/`#f-clear`/`#rss-all` refs are null-guarded; `#rss-pop`/`openRss` stay for
+the per-race and Springfield feeds), and the empty-state "Clear filters" button calls a null-safe
+`clearFilters()`. **The standalone Illinois county finder (`#bfinder`,
 `renderBallotFinder`) was removed** — the Explore Chicago map below (retitled "Find your ballot")
 is the single ballot entry now, so the redundant second IL map + county/ward picker are gone. The
 `renderBallotFinder`/`resolveBallot` functions and the `#bf-*` guards remain defined but uncalled
@@ -435,7 +455,9 @@ community area and ward found by point-in-polygon, co-occurrence tallied), so ev
 ranked overlapping wards and vice-versa (validated: Loop→42, Lincoln Park→43/32/2, Lakeview→44/32/47/46,
 Hyde Park→5/4, O'Hare→41). Pure stdlib (no geo deps), `--self-test` for the geometry helpers; fail-soft
 (a portal outage leaves the committed asset in place). The map has **zoom + pan** (± / reset buttons,
-wheel-zoom about the cursor, drag-to-pan with clamping, a `cmDidDrag` flag so a drag isn't a click) and
+wheel-zoom about the cursor, drag-to-pan with clamping, a `cmDidDrag` flag so a drag isn't a click; the
+zoom buttons / `.cm-zpct` / `.cm-hint` carry **fixed light colors**, not theme tokens, since they sit on
+the always-dark map viewport and would otherwise go dark-on-dark and vanish in light mode) and
 each region is a `.cm-reg` filled from a vivid `CM_PALETTE`; the selected region has a **large, high-contrast pulse** (`@keyframes cm-pulse` grows the gold outline 2.5→6.5px and the glow to 26px) as a low-vision aid. The
 `.cm-mapwrap` carries a **definite height** (560px; 440px under 820px) so the `svg{height:100%}` isn't
 the WebKit black-square bug. Clicking a region fills a **detail card** (`.cm-detail`, styled like
@@ -823,9 +845,14 @@ cycle, so the first race's `timeline` is used), plus a "View all races →" affo
 (a real `<button id="grp-<g>">`) **opens a popup** (`openGroupModal` → a body-level `.group-overlay`
 `role="dialog"` built once by `ensureGroupOverlay`, `body.gm-open` locks scroll, Escape / ✕ / backdrop
 close, focus returns to the opener) listing **every race in that office** as a flat card
-(`renderRace(r, meta, {hideTimeline:true})` — the office card already carries the timeline). Offices with
+(`renderRace(r, meta, {hideTimeline:true, hideWhy:true})` — the office card already carries the timeline
+and blurb, so the per-race timeline and `why_note` are suppressed). Offices with
 many races get an in-popup filter (`#gm-search`, gated by `SECTION_SEARCH_MIN`). `renderGroups` keeps an
 open popup in sync with the current filters (`fillGroupModal`) or closes it if its office drops out.
+**Popup scroll perf:** the overlay uses a solid dim (no `backdrop-filter: blur`, which re-rasters every
+scroll frame and janked desktop), the race cards get `content-visibility:auto` (off-screen cards with
+their Chicago SVG maps are skipped), and the highlighted-district pulse animates `stroke-width` only (an
+animated `drop-shadow` filter re-rastered each map every frame).
 Deep links open the popup: `alignDeepRace` maps `#office=<group>` / `#race=<id>` to the office, opens its
 popup once (`state._deepModalOpened`), then scrolls + flashes the specific race inside `#gm-body`; a
 side-panel race (citywide/statewide/U.S. Senate/CPS-president/alderman) still falls back to the "Find your
