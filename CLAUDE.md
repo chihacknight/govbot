@@ -569,7 +569,7 @@ and the per-page 3-button light/auto/dark theme pills have been **retired** — 
 design is the single default. On elections and hearings, the long list
 sections scroll inside capped-height boxes (`.group .races`, `.sf-list`, `.hgroup-rows`,
 `.participation-grid`) so the homepage isn't enormous; the elections "Where the data comes
-from" cabinet is **collapsed by default** (progressive disclosure). The hearings
+from" cabinet is **expanded by default** (`<details open>`). The hearings
 page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov, leg.wa.gov,
 malegislature.gov, and akleg.gov directly (not OpenStates), plus **USA (Federal)** open comment periods from the
 Regulations.gov API (needs `REGULATIONS_GOV_API_KEY`; falls back to the committed
@@ -647,11 +647,13 @@ shown on the page as context *beside* the races (never mixed into candidate list
 / Education / Other** (the old "All" tab was removed; default is Elections & voting). Elections & voting
 and Education come from the curated `springfield` list (`springfieldBills()` filters by tag); **Other**
 is the general recent IL activity merged in from the retired standalone section — `state.ilBills` (all
-tracked IL bills) minus anything already tagged elections/education, newest recorded action first, capped
-at `IL_RECENT_MAX` (8). The one `#sf-search` box (its own full-width row so its placeholder isn't
-clipped) filters within the active tab (id/title/sponsor/action/tags). Each Springfield bill card
-(`renderSpringfieldBill`) leads with an **"IL" badge before the bill id** and a trailing **"↗"** marking
-that it opens in a new tab, and is **clickable** — the
+tracked IL bills) minus anything already tagged elections/education, newest recorded action first. **Every
+tab is capped at `SF_MAX_PER_TAB` (9)** to stay scannable. The one `#sf-search` box (its own full-width
+row so its placeholder isn't clipped) filters within the active tab (id/title/sponsor/action/tags). Each
+Springfield bill card (`renderSpringfieldBill`) leads with an **"IL" badge before the bill id**, its
+**topic tags as colored-dot chips** (`sfTagColor` → the shared `ilTagColor`, so a topic reads the same
+color as on the legislation site — Other bills carry general topics like housing/healthcare), and a
+trailing **"↗"** marking that it opens in a new tab, and is **clickable** — the
 whole card opens that bill's **full details** (its modal on the legislation dashboard, via
 `legislation.html#bill=il~<session>~<id>`) in a **new tab** so it doesn't replace the elections page
 (the inline "View on Legislation Dashboard" / "Bill
@@ -812,10 +814,19 @@ global-search `#race=<id>` deep link to a side-panel-only race (which is no long
 back to scrolling to the "Find your ballot" map (`#chimap`) once, so the reader can pick their ward and
 see it there.
 
-**Race-card detail** (`renderRace`, shared by the main sections and the "On this ballot" map panel):
-each card leads with a **"👥 N candidates"** badge (the confirmed-candidate count), shows its
-**full election timeline expanded** by default (a `<details open>` labelled "Timeline"; the old
-"⏭ Next: …" teaser chip was removed), and for a race with **no confirmed candidates** shows the
+**Race-card detail** (`renderRace(r, meta, collapsible)`, shared by the bottom office sections and the
+"On this ballot" map panel). In the **bottom office sections it renders as a scannable accordion**
+(`collapsible` true → a `<details class="race race-acc">`): the always-visible **summary** carries the
+office/district, a compact badge row, the one-line **description** (`why_note`) and the **full timeline**
+at a glance, and clicking (a "See candidates & details ▾" affordance) opens the **body** (map, results,
+candidates, current incumbent, potential candidates, sources). `.race-body` sets `display:flex`, which
+would beat the UA "closed `<details>` hides its body" rule, so a `details.race-acc:not([open]) .race-body
+{ display:none }` rule re-asserts it (same pitfall as `.gb-state` vs `[hidden]`); `alignDeepRace` opens
+the accordion for a deep-linked race. In the **map panel it renders flat** (`collapsible` omitted — it's
+already inside an expandable bar, so nothing double-nests), everything visible with the timeline in its
+own `<details open>`. Each card leads with a **"👥 N candidates"** badge (the confirmed-candidate count),
+shows its **full election timeline** (the old "⏭ Next: …" teaser chip was removed), and for a race with
+**no confirmed candidates** shows the
 **current incumbent** with a "CURRENT INCUMBENT" tag, resolved from whichever source covers the seat:
 - **Chicago aldermen (`council`)** — from the race's own `incumbent` field, populated at deploy by
   the pipeline (see below). Chicago City Council is nonpartisan, so no party pill.

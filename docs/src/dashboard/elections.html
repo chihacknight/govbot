@@ -201,6 +201,22 @@
   .race-office { font-weight: 650; font-size: 14.5px; }
   .race-district { color: var(--text-secondary); font-size: 13px; }
   .race-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
+  /* Collapsible race accordion (bottom office sections): the summary shows office,
+     a compact badge row, a one-line description and the full timeline at a glance;
+     the body (map, candidates, incumbent, sources) opens on click. */
+  details.race-acc > summary.race-sum { display: flex; flex-direction: column; gap: 8px; list-style: none; cursor: pointer; }
+  details.race-acc > summary.race-sum::-webkit-details-marker { display: none; }
+  details.race-acc:hover { border-color: var(--gc, var(--series-2)); }
+  .race-body { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--gridline); }
+  /* author display:flex would otherwise beat the UA "closed <details> hides its
+     body" rule, so re-assert it (same pitfall as .gb-state vs [hidden]). */
+  details.race-acc:not([open]) .race-body { display: none; }
+  .tl-plain-lbl { font-size: 12px; font-weight: 600; color: var(--gc, var(--series-2)); }
+  .tl-plain .tl { margin-top: 8px; padding-left: 2px; }
+  .race-more { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; font-size: 12.5px; font-weight: 650; color: var(--gc, var(--series-2)); }
+  .race-more-ico { font-size: 11px; transition: transform .15s ease; }
+  details.race-acc[open] .race-more-ico { transform: rotate(180deg); }
+  details.race-acc[open] .race-more { color: var(--text-muted); }
   .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; }
   .badge.ballot { color: var(--series-1); border-color: color-mix(in srgb, var(--series-1) 55%, transparent); }
   .badge.seats { color: var(--series-5); border-color: color-mix(in srgb, var(--series-5) 55%, transparent); }
@@ -344,9 +360,8 @@
   .sf-bill-title { font-size: 13px; color: var(--text-primary); line-height: 1.35; }
   .sf-syn { font-size: 12.5px; color: var(--text-secondary); line-height: 1.4; }
   .sf-tags { display: inline-flex; flex-wrap: wrap; gap: 4px; }
-  .sf-tag { font-size: 10.5px; font-weight: 600; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; }
-  .sf-tag.voting { color: var(--series-1); border-color: color-mix(in srgb, var(--series-1) 55%, transparent); }
-  .sf-tag.education { color: var(--series-3); border-color: color-mix(in srgb, var(--series-3) 55%, transparent); }
+  .sf-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 600; padding: 1px 8px 1px 6px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; }
+  .sf-tagdot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
   .sf-action { font-size: 11.5px; color: var(--text-muted); }
   .sf-action b { color: var(--text-secondary); font-weight: 600; }
   .sf-hearing { font-size: 11.5px; color: var(--series-3); background: color-mix(in srgb, var(--series-3) 10%, transparent); border-radius: 7px; padding: 5px 8px; line-height: 1.4; }
@@ -941,7 +956,7 @@
     <div class="gb-state-actions"><button type="button" class="clear-btn" data-clear-filters>Clear filters</button></div>
   </div>
 
-  <details class="cabinet" id="cabinet">
+  <details class="cabinet" id="cabinet" open>
     <summary>📂 Where the data comes from</summary>
     <p class="cab-intro">This site isn't the official clerk — it's a <b>cabinet</b> that puts the sources in one place so a Chicagoan can ask "who's running in my CPS subdistrict and my ward, and when do I vote?" A fully assembled race draws on up to five drawers: <b>map · candidates · money · results · context</b>. Here's what each source owns and what's live today.</p>
     <div class="cab-grid">
@@ -1333,7 +1348,7 @@
   }
 
   /* ---------- Recent Illinois legislative activity (all IL bills we track) ---------- */
-  const IL_RECENT_MAX = 8;
+  const SF_MAX_PER_TAB = 9;   // cap each Springfield tab (Elections & voting / Education / Other)
   // Same fixed 8-color series the legislation dashboard cycles its topic tags
   // through, so a topic reads the same color on both sites.
   const IL_SERIES = ["--series-1","--series-2","--series-3","--series-4",
@@ -2020,6 +2035,7 @@
       }
       return;
     }
+    if (el.tagName === "DETAILS") el.open = true;   // open the accordion so the deep-linked race is visible
     el.scrollIntoView({ behavior: "auto", block: "start" });
     // Flash the target for a fixed window from first arrival. Late re-renders swap
     // the DOM node, so re-apply to whatever node is current until the window ends.
@@ -2115,7 +2131,7 @@
       const grid = document.createElement("div");
       grid.className = "races";
       races_g.forEach((r) => {
-        const card = renderRace(r, meta);
+        const card = renderRace(r, meta, true);   // collapsible accordion in the bottom sections
         // Haystack for the in-section filter (office, district, official +
         // potential candidate names) — same fields the top-level search uses.
         card.dataset.hay = [r.office, r.district || "",
@@ -2154,100 +2170,139 @@
     if (none) none.hidden = shown > 0;
   }
 
-  function renderRace(r, meta) {
-    const card = document.createElement("div");
-    card.className = "race";
-    if (r.id) card.dataset.raceId = r.id;   // deep-link target (search.html → this race)
-    card.style.setProperty("--gc", "var(" + meta.color + ")");
-
-    const top = document.createElement("div"); top.className = "race-top";
-    const idbox = document.createElement("div");
-    const office = document.createElement("div"); office.className = "race-office"; office.textContent = r.office;
-    idbox.append(office);
-    if (r.district) { const d = document.createElement("div"); d.className = "race-district"; d.textContent = r.district; idbox.append(d); }
-    top.append(idbox);
-    card.append(top);
-
-    const nCands = (r.candidates || []).length;
-    const badges = document.createElement("div"); badges.className = "race-badges";
-    // Total confirmed candidates for this race, front and centre.
-    badges.append(mkBadge("👥 " + nCands + " candidate" + (nCands === 1 ? "" : "s"), "count"));
-    if (r.incumbent_status === "new_seat")
-      badges.append(mkBadge("★ First elected", "first"));
-    if (r.ballot_date)
-      badges.append(mkBadge("🗳️ " + prettyDate(r.ballot_date), "ballot"));
-    if (r.seats && r.seats > 1) badges.append(mkBadge(r.seats + " seats", "seats"));
-    card.append(badges);
-
-    const map = renderRaceMap(r, meta);
-    if (map) card.append(map);
-
-    const results = renderResults(r);
-    if (results) card.append(results);
-
-    if (r.why_note) {
-      const why = document.createElement("div"); why.className = "why";
-      why.textContent = r.why_note;
-      card.append(why);
-    }
-
-    const cands = r.candidates || [];
-    if (cands.length) {
-      const list = document.createElement("div"); list.className = "cands";
-      cands.forEach((c) => list.append(renderCand(c, r)));
-      card.append(list);
-    } else {
-      const none = document.createElement("div"); none.className = "no-cands";
-      none.append(document.createTextNode("No candidates confirmed yet — "));
-      const a = document.createElement("a");
-      a.href = r.official_list_url || (r.source ? "#" : "#");
-      a.target = "_blank"; a.rel = "noopener";
-      a.textContent = "see the official list ↗";
-      none.append(a);
-      card.append(none);
-      // The seat isn't empty — show who currently holds it, clearly tagged, where
-      // we can resolve it: the pipeline attaches `incumbent` to aldermanic races
-      // (Chicago Ward Offices), and IL Senate/House resolve from the people roster.
-      // Fail-soft otherwise (council/CPS/police/federal without a source show none).
-      const inc = (r.incumbent && r.incumbent.name) ? r.incumbent : (state.ilIncumbents || {})[r.district];
-      if (inc && inc.name) {
-        const box = document.createElement("div"); box.className = "cur-incumbent";
-        const tg = document.createElement("span"); tg.className = "ci-tag"; tg.textContent = "Current incumbent";
-        const nm = document.createElement("span"); nm.className = "ci-name"; nm.textContent = inc.name;
-        box.append(tg, nm);
-        if (inc.party) box.append(partyPill(inc.party));
-        card.append(box);
+  // A race card. In the bottom office sections (`collapsible`), it renders as a
+  // scannable accordion: the summary carries the office, a compact badge, a
+  // one-line description and the full timeline at a glance, and clicking it opens
+  // the full details (map, candidates, incumbent, potential candidates, sources).
+  // In the "Find your ballot" map panel it renders flat (already inside an
+  // expandable bar), so nothing is double-nested.
+  function renderRace(r, meta, collapsible) {
+    // ---- reusable piece builders ----
+    const headEl = () => {
+      const top = document.createElement("div"); top.className = "race-top";
+      const idbox = document.createElement("div");
+      const office = document.createElement("div"); office.className = "race-office"; office.textContent = r.office;
+      idbox.append(office);
+      if (r.district) { const d = document.createElement("div"); d.className = "race-district"; d.textContent = r.district; idbox.append(d); }
+      top.append(idbox);
+      return top;
+    };
+    const badgesEl = () => {
+      const nCands = (r.candidates || []).length;
+      const badges = document.createElement("div"); badges.className = "race-badges";
+      badges.append(mkBadge("👥 " + nCands + " candidate" + (nCands === 1 ? "" : "s"), "count"));
+      if (r.incumbent_status === "new_seat") badges.append(mkBadge("★ First elected", "first"));
+      if (r.ballot_date) badges.append(mkBadge("🗳️ " + prettyDate(r.ballot_date), "ballot"));
+      if (r.seats && r.seats > 1) badges.append(mkBadge(r.seats + " seats", "seats"));
+      return badges;
+    };
+    const whyEl = () => {
+      if (!r.why_note) return null;
+      const why = document.createElement("div"); why.className = "why"; why.textContent = r.why_note;
+      return why;
+    };
+    // Candidates list, or (when none) the "no candidates yet" line + current incumbent.
+    const candsEl = () => {
+      const frag = document.createDocumentFragment();
+      const cands = r.candidates || [];
+      if (cands.length) {
+        const list = document.createElement("div"); list.className = "cands";
+        cands.forEach((c) => list.append(renderCand(c, r)));
+        frag.append(list);
+      } else {
+        const none = document.createElement("div"); none.className = "no-cands";
+        none.append(document.createTextNode("No candidates confirmed yet — "));
+        const a = document.createElement("a");
+        a.href = r.official_list_url || "#";
+        a.target = "_blank"; a.rel = "noopener";
+        a.textContent = "see the official list ↗";
+        none.append(a);
+        frag.append(none);
+        // The seat isn't empty — show who currently holds it, clearly tagged, where
+        // we can resolve it: the pipeline attaches `incumbent` to aldermanic races
+        // (Chicago Ward Offices), and IL Senate/House resolve from the people roster.
+        // Fail-soft otherwise (council/CPS/police/federal without a source show none).
+        const inc = (r.incumbent && r.incumbent.name) ? r.incumbent : (state.ilIncumbents || {})[r.district];
+        if (inc && inc.name) {
+          const box = document.createElement("div"); box.className = "cur-incumbent";
+          const tg = document.createElement("span"); tg.className = "ci-tag"; tg.textContent = "Current incumbent";
+          const nm = document.createElement("span"); nm.className = "ci-name"; nm.textContent = inc.name;
+          box.append(tg, nm);
+          if (inc.party) box.append(partyPill(inc.party));
+          frag.append(box);
+        }
       }
-    }
-
-    // Unofficial, news-sourced potential candidates — kept visually and logically
-    // separate from the official list above.
-    const pcs = r.potential_candidates || [];
-    if (pcs.length) card.append(renderPotential(pcs, r));
-
-    // Election timeline: the full timeline, shown expanded (no "next" teaser chip).
-    // Still a <details open> so a reader can collapse a long one if they want.
-    if (r.timeline && r.timeline.length) {
+      return frag;
+    };
+    const footEl = () => {
+      const foot = document.createElement("div"); foot.className = "race-foot";
+      if (r.official_list_url) {
+        const src = document.createElement("a"); src.className = "src-link";
+        src.href = r.official_list_url; src.target = "_blank"; src.rel = "noopener";
+        src.textContent = (r.source || "Official source") + " ↗";
+        foot.append(src);
+      }
+      foot.append(mkRss("Follow this race (RSS)", {
+        title: raceHeadline(r) + " — subscribe",
+        sub: "One race; the feed updates as candidates are confirmed.",
+        url: FEED_BASE + "elections/race-" + r.id + ".xml",
+      }, "race-rss"));
+      return foot;
+    };
+    // Timeline: a plain labelled block (for the always-visible summary), or the
+    // collapsible <details open> (for the flat map-panel card).
+    const timelinePlain = () => {
+      if (!(r.timeline && r.timeline.length)) return null;
+      const box = document.createElement("div"); box.className = "tl-plain";
+      const lbl = document.createElement("div"); lbl.className = "tl-plain-lbl"; lbl.textContent = "Timeline";
+      box.append(lbl, renderTimeline(r.timeline, meta.color));
+      return box;
+    };
+    const timelineDetails = () => {
+      if (!(r.timeline && r.timeline.length)) return null;
       const det = document.createElement("details"); det.className = "tl-details"; det.open = true;
       const sum = document.createElement("summary"); sum.textContent = "Timeline";
+      det.append(sum, renderTimeline(r.timeline, meta.color));
+      return det;
+    };
+
+    if (collapsible) {
+      const det = document.createElement("details"); det.className = "race race-acc";
+      if (r.id) det.dataset.raceId = r.id;   // deep-link target (search.html → this race)
+      det.style.setProperty("--gc", "var(" + meta.color + ")");
+      const sum = document.createElement("summary"); sum.className = "race-sum";
+      sum.append(headEl(), badgesEl());
+      const why = whyEl(); if (why) sum.append(why);
+      const tl = timelinePlain(); if (tl) sum.append(tl);
+      const more = document.createElement("div"); more.className = "race-more";
+      more.append(document.createTextNode("See candidates & details "));
+      const ico = document.createElement("span"); ico.className = "race-more-ico"; ico.setAttribute("aria-hidden", "true"); ico.textContent = "▾";
+      more.append(ico);
+      sum.append(more);
       det.append(sum);
-      det.append(renderTimeline(r.timeline, meta.color));
-      card.append(det);
+      const body = document.createElement("div"); body.className = "race-body";
+      const map = renderRaceMap(r, meta); if (map) body.append(map);
+      const results = renderResults(r); if (results) body.append(results);
+      body.append(candsEl());
+      const pcs = r.potential_candidates || []; if (pcs.length) body.append(renderPotential(pcs, r));
+      body.append(footEl());
+      det.append(body);
+      return det;
     }
 
-    const foot = document.createElement("div"); foot.className = "race-foot";
-    if (r.official_list_url) {
-      const src = document.createElement("a"); src.className = "src-link";
-      src.href = r.official_list_url; src.target = "_blank"; src.rel = "noopener";
-      src.textContent = (r.source || "Official source") + " ↗";
-      foot.append(src);
-    }
-    foot.append(mkRss("Follow this race (RSS)", {
-      title: raceHeadline(r) + " — subscribe",
-      sub: "One race; the feed updates as candidates are confirmed.",
-      url: FEED_BASE + "elections/race-" + r.id + ".xml",
-    }, "race-rss"));
-    card.append(foot);
+    // Flat card (map panel) — everything visible, timeline expanded inline.
+    const card = document.createElement("div");
+    card.className = "race";
+    if (r.id) card.dataset.raceId = r.id;
+    card.style.setProperty("--gc", "var(" + meta.color + ")");
+    card.append(headEl(), badgesEl());
+    const map = renderRaceMap(r, meta); if (map) card.append(map);
+    const results = renderResults(r); if (results) card.append(results);
+    const why = whyEl(); if (why) card.append(why);
+    card.append(candsEl());
+    const pcs = r.potential_candidates || []; if (pcs.length) card.append(renderPotential(pcs, r));
+    const tl = timelineDetails(); if (tl) card.append(tl);
+    card.append(footEl());
     return card;
   }
 
@@ -2661,7 +2716,7 @@
         return hay.includes(q);
       });
     }
-    if (sfState.filter === "other") bills = bills.slice(0, IL_RECENT_MAX);  // keep the general feed recent
+    bills = bills.slice(0, SF_MAX_PER_TAB);  // cap every tab (keeps each category scannable)
     if (!bills.length) {
       const e = document.createElement("p"); e.className = "sf-action";
       e.textContent = q
@@ -2673,18 +2728,28 @@
     bills.forEach((b) => list.append(renderSpringfieldBill(b)));
   }
 
+  // Topic → the same fixed series color the legislation site uses (via ilTagColor
+  // once data.json loads), falling back to a sensible hue for the two curated tags.
+  function sfTagColor(t) {
+    if (state.ilTagColor && state.ilTagColor[t]) return "var(" + state.ilTagColor[t] + ")";
+    if (t.indexOf("education") !== -1) return "var(--series-3)";
+    if (t.indexOf("election") !== -1 || t.indexOf("voting") !== -1) return "var(--series-1)";
+    return "var(--text-muted)";
+  }
+
   function renderSpringfieldBill(b) {
     const card = document.createElement("div"); card.className = "sf-bill";
     const top = document.createElement("div"); top.className = "sf-bill-top";
     const il = document.createElement("span"); il.className = "sf-bill-il"; il.textContent = "IL";
     const id = document.createElement("span"); id.className = "sf-bill-id"; id.textContent = b.id;
     top.append(il, id);
+    // Topic tags as colored-dot chips (Other bills carry general topics like
+    // housing/healthcare, not just elections/education).
     (b.tags || []).forEach((t) => {
-      const tag = document.createElement("span");
-      const cls = t.indexOf("education") !== -1 ? " education"
-        : (t.indexOf("election") !== -1 || t.indexOf("voting") !== -1 ? " voting" : "");
-      tag.className = "sf-tag" + cls;
-      tag.textContent = t;
+      const tag = document.createElement("span"); tag.className = "sf-tag";
+      const dot = document.createElement("span"); dot.className = "sf-tagdot";
+      dot.style.background = sfTagColor(t);
+      tag.append(dot, document.createTextNode(t));
       top.append(tag);
     });
     // The whole card opens the full bill in a new tab — flag that with a ↗.
