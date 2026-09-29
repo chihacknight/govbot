@@ -66,6 +66,14 @@ WARDS_ID = "p293-wvbd"
 POLICE_ID = "24zt-jpfn"
 COMMAREA_ID = "igwz-8jzy"
 
+# CPS board electoral subdistricts (1A–10B). No authority publishes these as a
+# GIS layer, but Chalkbeat digitized the official 2026 map for its election
+# explorer and serves the 20 subdistrict polygons as public GeoJSON (properties
+# `sub` = "1a".."10b"). This is the one non-government source, used only because
+# it's the sole published geometry for these districts.
+CPS_GEOJSON_URL = ("https://projects.chalkbeat.org/2026/chicago-school-board-election-map/"
+                   "assets/districts-20-centroids.geojson")
+
 # Census TIGERweb ArcGIS REST (keyless GeoJSON query). maxAllowableOffset trims
 # vertices server-side (degrees) before our own RDP so payloads stay small.
 TIGER_LEG = "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Legislative/MapServer/{lyr}/query"
@@ -110,6 +118,10 @@ def _fetch(url):
 
 def fetch_geojson(dataset_id):
     return _fetch(PORTAL.format(dataset_id))
+
+
+def fetch_url_json(url):
+    return _fetch(url)
 
 
 def fetch_tiger(base, layer, where, simplify):
@@ -378,6 +390,13 @@ def _cong_race_id(props):
         return None
 
 
+def _cps_race_id(props):
+    sub = (props.get("sub") or "").strip().lower()   # "1a".."10b"
+    if not sub:
+        return None
+    return f"cps-board-member-{sub}"
+
+
 # --------------------------------------------------------------------------- #
 # build
 # --------------------------------------------------------------------------- #
@@ -404,7 +423,7 @@ def _statewide_features(geo, id_fn, label_fn, kind):
 
 
 def build(wards_geo, police_geo, commarea_geo, senate_geo, house_geo, cong_geo,
-          state_geo, now):
+          state_geo, cps_geo, now):
     """Assemble maps.json. Chicago space comes from the ward layer; the Illinois
     space from the state outline. Every kept district is keyed to its race id
     with its space, paths and the Chicago neighborhoods it touches."""
@@ -445,6 +464,17 @@ def build(wards_geo, police_geo, commarea_geo, senate_geo, house_geo, cong_geo,
                               "label": f"Police District {num:03d}", "paths": paths,
                               "neighborhoods": hoods(geom_rings(f.get("geometry")))}
 
+    for f in (cps_geo or {}).get("features", []):
+        rid = _cps_race_id(f.get("properties", {}))
+        if not rid or (valid and rid not in valid):
+            continue
+        paths = feature_paths(f.get("geometry"), cproj)
+        if paths:
+            sub = (f["properties"].get("sub") or "").upper()
+            districts[rid] = {"kind": "cps_subdistrict", "space": "chicago",
+                              "label": f"Subdistrict {sub}", "paths": paths,
+                              "neighborhoods": hoods(geom_rings(f.get("geometry")))}
+
     # ---- Illinois space (state silhouette context + statewide districts) ----
     il_view = None
     il_context = []
@@ -475,7 +505,7 @@ def build(wards_geo, police_geo, commarea_geo, senate_geo, house_geo, cong_geo,
         "generated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "source": ("City of Chicago Data Portal (wards p293-wvbd, police 24zt-jpfn, "
                    "community areas igwz-8jzy) + US Census TIGERweb "
-                   "(IL SLDU/SLDL/CD, state outline)"),
+                   "(IL SLDU/SLDL/CD, state outline) + Chalkbeat 2026 CPS board map"),
         "view": {"w": round(cw), "h": round(ch)},
         "context": context,
         "districts": districts,
@@ -530,6 +560,7 @@ def self_test():
             self.assertEqual(_cong_race_id({"CD120": "09"}), "us-house-il-09")
             self.assertEqual(_ward_race_id({"ward": "3"}), "chicago-alderperson-ward-03")
             self.assertEqual(_police_race_id({"dist_num": "14"}), "chicago-police-district-council-014")
+            self.assertEqual(_cps_race_id({"sub": "10B"}), "cps-board-member-10b")
 
         def test_nice_name(self):
             self.assertEqual(_nice_name("NEAR WEST SIDE"), "Near West Side")
@@ -558,10 +589,13 @@ def self_test():
                                                       [-87.5, 42.5], [-91.5, 42.5], [-91.5, 37.0]]]}
             state = {"features": [{"properties": {"STATE": "17"}, "geometry": il}]}
             senate = {"features": [{"properties": {"SLDU": "020", "BASENAME": "20"}, "geometry": SQUARE}]}
-            doc = build(wards, police, commarea, senate, None, None, state,
+            cps = {"features": [{"properties": {"sub": "1a", "district": 1}, "geometry": SQUARE}]}
+            doc = build(wards, police, commarea, senate, None, None, state, cps,
                         datetime(2026, 9, 7, tzinfo=timezone.utc))
             self.assertIn("chicago-alderperson-ward-01", doc["districts"])
             self.assertIn("chicago-police-district-council-014", doc["districts"])
+            self.assertIn("cps-board-member-1a", doc["districts"])
+            self.assertEqual(doc["districts"]["cps-board-member-1a"]["label"], "Subdistrict 1A")
             self.assertIn("il-senate-20", doc["districts"])
             self.assertEqual(doc["districts"]["il-senate-20"]["space"], "illinois")
             self.assertIn("il_context", doc)
@@ -595,8 +629,9 @@ def main():
     house = fetch_tiger(TIGER_LEG, SLDL_LAYER, f"STATE='{IL_FIPS}'", SIMPLIFY_EPS_IL_DEG)
     cong = fetch_tiger(TIGER_LEG, CD_LAYER, f"STATE='{IL_FIPS}'", SIMPLIFY_EPS_IL_DEG)
     state = fetch_tiger(TIGER_SC, STATE_LAYER, f"STATE='{IL_FIPS}'", STATE_SIMPLIFY_DEG)
+    cps = fetch_url_json(CPS_GEOJSON_URL)
 
-    doc = build(wards, police, commarea, senate, house, cong, state, now)
+    doc = build(wards, police, commarea, senate, house, cong, state, cps, now)
     if not doc:
         print("::warning::no basemap fetched; not writing maps.json", file=sys.stderr)
         return 0

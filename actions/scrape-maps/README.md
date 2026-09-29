@@ -7,8 +7,8 @@ district highlighted (and gently pulsing) inside a light basemap, plus the
 in one file:
 
 * **`chicago`** — a city map (all wards as a light context) for the Chicago-scale
-  races: alderperson wards and police-district councils; citywide offices tint
-  all of Chicago.
+  races: alderperson wards, police-district councils and CPS board subdistricts;
+  citywide offices tint all of Chicago.
 * **`illinois`** — a statewide silhouette (the IL state outline as context) for
   the General Assembly and congressional races, whose districts span the whole
   state; each district is highlighted on the silhouette so a reader can see where
@@ -25,10 +25,14 @@ in one file:
 | IL House (2026) | Census TIGERweb Legislative layer 2 (SLDL) | `SLDL` | `il-house-NNN` | illinois |
 | U.S. House (120th) | Census TIGERweb Legislative layer 0 (CD120) | `CD120` | `us-house-il-NN` | illinois |
 | IL state outline | Census TIGERweb State_County layer 0 | `STATE=17` | *(illinois context)* | illinois |
+| CPS board subdistricts (1A–10B) | Chalkbeat 2026 CPS board map (`districts-20-centroids.geojson`) | `sub` | `cps-board-member-Nx` | chicago |
 
-CPS board **subdistrict** (1A–10B) polygons aren't published as a usable layer by
-any authority (unlike, e.g., Texas or Denver), so those races carry no polygon —
-the page omits the map for them. Geometry is never invented.
+No government authority publishes the CPS board **subdistrict** (1A–10B) polygons
+as a GIS layer, so the one non-government source is **Chalkbeat**, which digitized
+the official 2026 map for its election explorer and serves the 20 subdistrict
+polygons as public GeoJSON. It's used only because it's the sole published
+geometry for these districts; geometry is still never invented (a fetch failure
+just leaves those races map-less).
 
 ## How it works
 

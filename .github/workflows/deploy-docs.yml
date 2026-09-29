@@ -228,12 +228,13 @@ jobs:
           ls -lh docs/src/dashboard/hearings.json docs/src/dashboard/hearings.xml
           ls -1 docs/src/dashboard/hearings/ 2>/dev/null | head -5 || true
 
-      # District locator maps: Chicago ward + police-district boundaries (City of
-      # Chicago Portal) and statewide IL Senate/House + U.S. House districts + the
-      # IL outline (Census TIGERweb), plus the Chicago neighborhoods each district
-      # touches (community areas), projected/simplified into a compact maps.json the
-      # Elections page draws next to each race. Fail-soft — an outage leaves the
-      # committed maps.json in place (the script only writes when it fetched a basemap).
+      # District locator maps: Chicago ward + police-district boundaries + CPS board
+      # subdistricts (City of Chicago Portal + Chalkbeat's 2026 board map) and
+      # statewide IL Senate/House + U.S. House districts + the IL outline (Census
+      # TIGERweb), plus the Chicago neighborhoods each district touches (community
+      # areas), projected/simplified into a compact maps.json the Elections page draws
+      # next to each race. Fail-soft — an outage leaves the committed maps.json in
+      # place (the script only writes when it fetched a basemap).
       - name: Build district maps
         run: |
           set -uo pipefail

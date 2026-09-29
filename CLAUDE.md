@@ -619,8 +619,9 @@ Treasurer), the 39 Illinois Senate seats up this cycle, and all 118 Illinois Hou
 Those ride five office groups — `us_senate`, `us_house`, `il_exec`, `il_senate`, `il_house`
 (added to the schema enum, the frontend `GROUP_META`/`GROUP_ORDER`, and `OFFICE_GROUP_LABEL`)
 — and render as their own sections like the Chicago groups. They're `partisan` general-election
-races (`ballot_stage: "general"`, ballot date 2026-11-03); the locator map is Chicago-only, so
-statewide/federal races show none (gated on `jurisdiction` in the frontend), and the
+races (`ballot_stage: "general"`, ballot date 2026-11-03); each statewide/federal district now has a
+locator on an Illinois-outline silhouette (see the scrape-maps paragraph — `buildRaceMap` picks the
+space from `maps.json`), and the
 news-sourced *potential-candidate* pass is Chicago-only too (`POTENTIAL_GROUPS`) since these
 offices already have official post-primary nominees. The ballot *structure*
 (offices, districts, ballot dates, and a "why this race exists" note) is a committed seed,
@@ -692,14 +693,17 @@ Per-race **locator maps** come from a separate action, `actions/scrape-maps/`. I
 ward / police-council races) and an **`illinois`** space (a statewide silhouette from Census
 TIGERweb — the IL state outline, plus the **IL Senate/House 2026** (`SLDU`/`SLDL`, Legislative
 layers 1/2) and **U.S. House 120th** (`CD120`, layer 0) districts, keyed to the `il-senate-NN` /
-`il-house-NNN` / `us-house-il-NN` races). Each district is also tagged with the **Chicago
+`il-house-NNN` / `us-house-il-NN` races; the Chicago space also carries the **CPS board subdistricts
+1A–10B**, keyed to `cps-board-member-Nx`). Each district is also tagged with the **Chicago
 neighborhoods it touches** — Census community areas (`igwz-8jzy`) matched by grid-sampling the
 district's Chicago overlap (`district_neighborhoods`), so a statewide/downstate district carries an
 empty list. Output: `{view, context, il_view, il_context, districts:{<id>:{kind,label,space,paths,
 neighborhoods}}}`. Everything is projected + Douglas-Peucker-simplified at build time (TIGERweb also
-trims server-side via `maxAllowableOffset`) so the file stays ~150 KB and the browser just draws SVG
-paths. **CPS board subdistricts (1A–10B) have no published boundary layer at any authority (unlike
-TX/Denver), so those races carry no polygon — geometry is never invented.** The frontend
+trims server-side via `maxAllowableOffset`) so the file stays ~160 KB and the browser just draws SVG
+paths. **No government authority publishes the CPS subdistrict boundaries, so those 20 polygons come
+from Chalkbeat's public 2026 CPS-board-map GeoJSON (`districts-20-centroids.geojson`, `sub` property)
+— the one non-government source, used because it's the sole published geometry; a fetch failure just
+leaves CPS races map-less (geometry is never invented).** The frontend
 `renderRaceMap`/`buildRaceMap` pick the space from `entry.space`, draw the highlighted **pulsing**
 district (`.map-dist`), list the neighborhoods (`.map-hoods`, first 4 + "+N more"; the old "Boundary:
 City of Chicago" caption was removed), and give the tall IL silhouette a taller SVG (`.race-map--il`).
@@ -878,8 +882,8 @@ highlights the race's real district** (`buildRaceMap`, from the committed `maps.
 Chicago ward/police district on the city map, or an IL Senate/House/U.S. House district on the
 statewide silhouette — with a **pulsing** highlight (`.map-dist` → `@keyframes rm-pulse`, off under
 `prefers-reduced-motion`) and the **Chicago neighborhoods** it touches beneath it (see the scrape-maps
-paragraph above); so every office card's races (police councils, IL Senate/House, U.S. House) now
-carry a map, except CPS subdistricts, whose boundaries no authority publishes.
+paragraph above); so every office card's races now carry a map — police councils, IL Senate/House,
+U.S. House and the CPS subdistricts (the last from Chalkbeat's published 2026 board map).
 Each card leads with a **"👥 N candidates"** badge (the confirmed-candidate count),
 and for a race with **no confirmed candidates** shows the
 **current incumbent** with a "CURRENT INCUMBENT" tag, resolved from whichever source covers the seat:
