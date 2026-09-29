@@ -1074,17 +1074,24 @@
     on_ballot: "On ballot", filed: "Filed", objected: "Objected",
     withdrawn: "Withdrawn", removed: "Removed", unknown: "Filed",
   };
-  // Short blurb per office group, shown on its browse-by-office card.
+  // Short blurb per office group, shown on its browse-by-office card. Each says
+  // what the body does and why the election exists.
   const GROUP_BLURB = {
-    cps_board: "President plus subdistricts completing Chicago's fully elected school board.",
-    police_district_council: "Three seats on each district council — they set local policing priorities and pick the citywide Community Commission.",
-    il_senate: "State Senate seats up this cycle. Senators serve staggered 2-4-4-year terms, so which seats are on the ballot varies by district.",
-    il_house: "Every Illinois House seat is on the ballot — representatives serve two-year terms, so the whole House runs each cycle.",
-    us_house: "All 17 Illinois congressional districts. U.S. representatives serve two-year terms, so every seat is up.",
-    us_senate: "Illinois's U.S. Senate seat.",
-    il_exec: "Governor and the statewide constitutional officers.",
-    citywide: "Chicago's citywide offices.",
-    council: "Chicago City Council — one alderperson per ward.",
+    cps_board: "The Chicago Board of Education runs the city's public schools — one of the nation's largest districts (~320,000 students): it sets the budget, approves contracts, opens and closes schools, and hires the CEO. The mayor appointed it for decades; a 2021 state law made it elected. In 2026 the board becomes fully elected for the first time — 20 members, each representing a subdistrict (these races), plus a president elected citywide (on your ballot above).",
+    police_district_council: "A 2021 police-accountability law created these. Each of Chicago's 22 police districts elects a 3-member council — that's 22 races, three seats each (66 people). They set local policing priorities, build police–community trust, and choose the citywide Community Commission that helps set CPD policy and pick the superintendent.",
+    il_senate: "The Illinois Senate is the upper chamber of the state legislature in Springfield — 59 senators who write state law and pass Illinois's budget. Senators serve staggered 2-4-4-year terms, so only the seats up this cycle (39) are on the ballot.",
+    il_house: "The Illinois House is the lower chamber of the state legislature in Springfield — 118 representatives who write state law and pass the budget alongside the Senate. They serve two-year terms, so every seat is up each cycle.",
+    us_house: "The U.S. House of Representatives is the lower chamber of Congress in Washington — it writes federal law and controls federal spending. Illinois has 17 seats, each representing about 750,000 people; representatives serve two-year terms, so every seat is up.",
+    us_senate: "The U.S. Senate is the upper chamber of Congress — two senators per state, six-year terms. This is the Illinois seat up in 2026.",
+    il_exec: "The Governor and statewide constitutional officers (Attorney General, Secretary of State, Comptroller, Treasurer) run Illinois's executive branch — elected statewide to four-year terms.",
+    citywide: "Chicago's citywide elected offices (Mayor, Clerk, Treasurer) — the city's executive leadership.",
+    council: "The Chicago City Council writes city ordinances and approves the budget — one alderperson elected per ward.",
+  };
+  // Office-card / popup title override, where the group's card shows only part of
+  // the office (the CPS card is the subdistrict members; the president is a
+  // separate citywide race shown in the ballot side panel).
+  const GROUP_CARD_LABEL = {
+    cps_board: "CPS Board — Subdistrict Members",
   };
 
   const state = {
@@ -2117,7 +2124,7 @@
     card.setAttribute("aria-label", "Open " + meta.label + " races");
 
     const ic = document.createElement("span"); ic.className = "oc-ico"; ic.textContent = meta.emoji; ic.setAttribute("aria-hidden", "true");
-    const name = document.createElement("div"); name.className = "oc-name"; name.textContent = meta.label;
+    const name = document.createElement("div"); name.className = "oc-name"; name.textContent = GROUP_CARD_LABEL[g] || meta.label;
     const filled = races_g.filter((r) => r.candidates && r.candidates.length).length;
     const cnt = document.createElement("div"); cnt.className = "oc-count";
     const strong = document.createElement("b"); strong.textContent = races_g.length + (races_g.length === 1 ? " race" : " races");
@@ -2191,7 +2198,7 @@
     const head = document.createElement("div"); head.className = "gm-head";
     const ic = document.createElement("span"); ic.className = "gm-ico"; ic.textContent = meta.emoji; ic.setAttribute("aria-hidden", "true");
     const htxt = document.createElement("div"); htxt.className = "gm-htxt";
-    const h = document.createElement("h2"); h.id = "gm-title"; h.className = "gm-title"; h.textContent = meta.label;
+    const h = document.createElement("h2"); h.id = "gm-title"; h.className = "gm-title"; h.textContent = GROUP_CARD_LABEL[g] || meta.label;
     const sub = document.createElement("div"); sub.className = "gm-sub";
     const filled = races_g.filter((r) => r.candidates && r.candidates.length).length;
     sub.textContent = races_g.length + (races_g.length === 1 ? " race" : " races") + (filled ? " · " + filled + " with candidates" : "");

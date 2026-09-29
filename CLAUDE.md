@@ -855,9 +855,17 @@ see it there.
 **Browse by office → race popup.** The bottom of the page is a **grid of office cards** (`.office-cards`,
 `renderGroups` → `officeCard`): one card per office group in view (CPS Board of Education, Police District
 Councils, IL Senate, IL House, U.S. House). Each card shows the office icon/name, its **race + candidate
-counts**, a short **blurb** (`GROUP_BLURB[g]`) and the office's **full election timeline** (the shared
+counts**, a short **blurb** (`GROUP_BLURB[g]` — each explains what the body does and **why the office
+exists**: e.g. the elected CPS board's role over the schools, "22 police districts × 3-seat councils =
+66 seats", the IL Senate/House as the Springfield chambers, the U.S. House as Congress's lower chamber)
+and the office's **full election timeline** (the shared
 `renderTimeline` `.tl` component with the pulsing current node — every race in a group shares its ballot
-cycle, so the first race's `timeline` is used), plus a "View all races →" affordance. Clicking a card
+cycle, so the first race's `timeline` is used), plus a "View all races →" affordance. The card/popup
+title comes from `GROUP_CARD_LABEL[g]` when set, else `GROUP_META[g].label`: the CPS card is titled
+**"CPS Board — Subdistrict Members"** because it holds only the 20 district seats — the board
+**president** is a separate citywide (at-large) race shown in the ballot side panel, not a subdistrict
+office — while the shared `GROUP_META` label stays "CPS Board of Education" for the side panel/search.
+Clicking a card
 (a real `<button id="grp-<g>">`) **opens a popup** (`openGroupModal` → a body-level `.group-overlay`
 `role="dialog"` built once by `ensureGroupOverlay`, `body.gm-open` locks scroll, Escape / ✕ / backdrop
 close, focus returns to the opener) listing **every race in that office** as a flat card
