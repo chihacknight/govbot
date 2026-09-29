@@ -614,6 +614,19 @@ and fills when that state opens (its filter box has a colored border + search ic
 `data.json` and the hearings feed on the twice-daily schedule. Hearings parsers are
 offline-snapshot-tested: `python3 actions/scrape-hearings/test_scrape_hearings.py`.
 
+**`deploy-docs.yml` fast path (frontend-only changes).** The full data pipeline (~40 min) runs on the
+twice-daily **schedule**, on **manual dispatch**, and on any **push to main that touches a file outside
+`docs/src/dashboard/**`** (`actions/**`, `scripts/**`, the workflow, …). A push to main touching **only**
+`docs/src/dashboard/**`, and **every pull request**, take a **fast path**: a `Determine build scope` step
+(`git diff` of the pushed range; PRs always skip) sets `refresh=false`, and the pipeline steps are all
+guarded `if: steps.gate.outputs.refresh == 'true'`, so they're skipped and mdbook builds + deploys with
+the committed data. Everything is committed with real data **except** `data.json` (a tiny sample) and the
+two `.gitignore`d artifacts (`il_summaries.json`, `legislator_images.json` + `assets/legislators/`), so a
+full build snapshots those four into a rolling `actions/cache` (`govbot-built-data-<run_id>`, restore-key
+`govbot-built-data-`) and the fast path **restores** them. Safety valve: on a push to main, if that cache
+is missing or holds only the sample `data.json` (< 100 KB), the run **falls back to a full refresh** —
+so a frontend deploy never publishes stale/sample bills. PRs never deploy, so they just build-check.
+
 The **Elections Happening in IL** page is a *third* pipeline: `actions/scrape-elections/` builds
 `docs/src/dashboard/elections.json` (schema `schemas/govbot.elections.schema.json`) — every
 office on upcoming Chicago/Illinois ballots (citywide, Alderperson wards 1–50, CPS board
