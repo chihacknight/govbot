@@ -712,7 +712,11 @@ leaves CPS races map-less (geometry is never invented).** The frontend
 `renderRaceMap`/`buildRaceMap` pick the space from `entry.space`, draw the highlighted **pulsing**
 district (`.map-dist`), list **all** the neighborhoods it touches (`.map-hoods`, no "+N more"
 truncation; the old "Boundary: City of Chicago" caption was removed), and give the tall IL silhouette
-a taller SVG (`.race-map--il`). On the statewide silhouette a single IL Senate/House/congressional
+a taller SVG (`.race-map--il`). The maps use one accessible **gold-base / green-highlight** scheme in
+both themes: the base silhouette (state or city wards, `.map-ctx`) is filled/edged in **gold**
+(`--gb-gold`) with a gold panel border, and the highlighted district (`.map-hi`/`.map-loc`) is
+**green** (`--series-4`) — independent of the per-office `--gc` colour — so the highlight always
+pops against the gold base in light and dark mode. On the statewide silhouette a single IL Senate/House/congressional
 district is only a few px, so its thin outline is invisible — `buildRaceMap` adds a **pulsing locator
 ring** (`.map-loc`, centred on the district via `pathsCenter`) and thickens the IL highlight stroke
 (`.race-map--il .map-hi`/`.map-loc` ~18u, `@keyframes rm-pulse-il`) so the highlighted area reads.

@@ -250,8 +250,11 @@
   .badge.seats { color: var(--series-5); border-color: color-mix(in srgb, var(--series-5) 55%, transparent); }
   .badge.first { color: #fff; background: var(--series-2); border-color: var(--series-2); }
   .badge.count { color: var(--text-primary); border-color: var(--baseline); font-weight: 700; }
-  /* per-race locator map (inline SVG from maps.json) */
-  .race-map { display: flex; align-items: center; gap: 10px; background: var(--hover-wash); border-radius: 8px; padding: 8px 10px; }
+  /* per-race locator map (inline SVG from maps.json) — a GOLD base map (state
+     silhouette / city wards) with a GREEN pulsing highlight on the district, so
+     it reads the same civic colours in both light and dark mode. */
+  .race-map { display: flex; align-items: center; gap: 10px; background: var(--hover-wash);
+    border: 1px solid color-mix(in srgb, var(--gb-gold) 45%, var(--border)); border-radius: 8px; padding: 8px 10px; }
   /* Placeholder reserves the map's height until the card scrolls in and the SVG is built. */
   .race-map-ph { min-height: 132px; }
   .race-map svg { height: 116px; width: auto; flex: none; display: block; }
@@ -260,18 +263,23 @@
      district reads. */
   .race-map--il svg { height: 158px; }
   .race-map--il.race-map-ph { min-height: 174px; }
-  .race-map .map-ctx { fill: color-mix(in srgb, var(--text-muted) 14%, transparent); stroke: var(--border); stroke-width: 1; }
-  .race-map .map-hi { fill: color-mix(in srgb, var(--gc) 42%, transparent); stroke: var(--gc); stroke-width: 2.5; stroke-linejoin: round; }
+  /* Gold base map (the silhouette reads via a gold fill + gold edge, since a thin
+     stroke is sub-pixel at this render scale). */
+  .race-map .map-ctx { fill: color-mix(in srgb, var(--gb-gold) 24%, transparent); stroke: var(--gb-gold); stroke-width: 2; stroke-linejoin: round; }
+  /* Green highlighted district, pulsing. */
+  .race-map .map-hi { fill: color-mix(in srgb, var(--series-4) 55%, transparent); stroke: var(--series-4); stroke-width: 2.5; stroke-linejoin: round; }
   .race-map .map-dist { animation: rm-pulse 1.8s ease-in-out infinite; }
   /* stroke-width only — an animated drop-shadow filter re-rasters the path each
      frame and stacks up across the popup's many maps. */
   @keyframes rm-pulse { 0%, 100% { stroke-width: 2.5; } 50% { stroke-width: 4.2; } }
   @media (prefers-reduced-motion: reduce) { .race-map .map-dist { animation: none; } }
   /* Statewide silhouette: the viewBox (~1000 wide) renders at ~100px, so a normal
-     2.5-unit stroke is sub-pixel and a single district is a few px — thicken the
-     highlight and add a big locator ring so the highlighted area actually reads. */
+     stroke is sub-pixel and a single district is a few px — thicken the gold edge
+     and the green highlight, and add a big green locator ring so the highlighted
+     area actually reads. */
+  .race-map--il .map-ctx { stroke-width: 5; }
   .race-map--il .map-hi { stroke-width: 18; }
-  .race-map--il .map-loc { fill: color-mix(in srgb, var(--gc) 18%, transparent); stroke: var(--gc); stroke-width: 18; }
+  .race-map--il .map-loc { fill: color-mix(in srgb, var(--series-4) 24%, transparent); stroke: var(--series-4); stroke-width: 18; }
   .race-map--il .map-dist { animation: rm-pulse-il 1.8s ease-in-out infinite; }
   @keyframes rm-pulse-il { 0%, 100% { stroke-width: 16; } 50% { stroke-width: 30; } }
   @media (prefers-reduced-motion: reduce) { .race-map--il .map-dist { animation: none; } }
