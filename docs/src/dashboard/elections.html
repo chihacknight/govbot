@@ -197,11 +197,14 @@
   .race-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
   /* Browse-by-office cards: one card per office group, opening a popup of its races. */
   .office-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; padding: 4px 0 6px; }
+  /* A full 4-sided border in the office's colour — a clearer, higher-contrast
+     accent than a single top line, so each office card is distinguishable by more
+     than a thin stripe (accessibility). */
   .office-card { text-align: left; font: inherit; color: var(--text-primary); cursor: pointer;
     display: flex; flex-direction: column; gap: 9px; background: var(--surface-1);
-    border: 1px solid var(--border); border-top: 3px solid var(--gc, var(--series-2));
-    border-radius: 14px; padding: 16px 18px 14px; transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease; }
-  .office-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--gc) 50%, var(--border)); box-shadow: 0 12px 30px rgba(0,0,0,.28); }
+    border: 2px solid var(--gc, var(--series-2));
+    border-radius: 14px; padding: 15px 17px 13px; transition: transform .12s ease, box-shadow .12s ease; }
+  .office-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px color-mix(in srgb, var(--gc) 30%, rgba(0,0,0,.3)); }
   .office-card:focus-visible { outline: 2px solid var(--gc, var(--series-2)); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) { .office-card:hover { transform: none; } }
   .oc-ico { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 22px; background: color-mix(in srgb, var(--gc) 15%, transparent); }
@@ -247,8 +250,11 @@
   .badge.seats { color: var(--series-5); border-color: color-mix(in srgb, var(--series-5) 55%, transparent); }
   .badge.first { color: #fff; background: var(--series-2); border-color: var(--series-2); }
   .badge.count { color: var(--text-primary); border-color: var(--baseline); font-weight: 700; }
-  /* per-race locator map (inline SVG from maps.json) */
-  .race-map { display: flex; align-items: center; gap: 10px; background: var(--hover-wash); border-radius: 8px; padding: 8px 10px; }
+  /* per-race locator map (inline SVG from maps.json) — a GOLD base map (state
+     silhouette / city wards) with a GREEN pulsing highlight on the district, so
+     it reads the same civic colours in both light and dark mode. */
+  .race-map { display: flex; align-items: center; gap: 10px; background: var(--hover-wash);
+    border: 1px solid color-mix(in srgb, var(--gb-gold) 45%, var(--border)); border-radius: 8px; padding: 8px 10px; }
   /* Placeholder reserves the map's height until the card scrolls in and the SVG is built. */
   .race-map-ph { min-height: 132px; }
   .race-map svg { height: 116px; width: auto; flex: none; display: block; }
@@ -257,13 +263,26 @@
      district reads. */
   .race-map--il svg { height: 158px; }
   .race-map--il.race-map-ph { min-height: 174px; }
-  .race-map .map-ctx { fill: color-mix(in srgb, var(--text-muted) 14%, transparent); stroke: var(--border); stroke-width: 1; }
-  .race-map .map-hi { fill: color-mix(in srgb, var(--gc) 42%, transparent); stroke: var(--gc); stroke-width: 2.5; stroke-linejoin: round; }
+  /* Gold base map (the silhouette reads via a gold fill + gold edge, since a thin
+     stroke is sub-pixel at this render scale). */
+  .race-map .map-ctx { fill: color-mix(in srgb, var(--gb-gold) 24%, transparent); stroke: var(--gb-gold); stroke-width: 2; stroke-linejoin: round; }
+  /* Green highlighted district, pulsing. */
+  .race-map .map-hi { fill: color-mix(in srgb, var(--series-4) 55%, transparent); stroke: var(--series-4); stroke-width: 2.5; stroke-linejoin: round; }
   .race-map .map-dist { animation: rm-pulse 1.8s ease-in-out infinite; }
   /* stroke-width only — an animated drop-shadow filter re-rasters the path each
      frame and stacks up across the popup's many maps. */
   @keyframes rm-pulse { 0%, 100% { stroke-width: 2.5; } 50% { stroke-width: 4.2; } }
   @media (prefers-reduced-motion: reduce) { .race-map .map-dist { animation: none; } }
+  /* Statewide silhouette: the viewBox (~1000 wide) renders at ~100px, so a normal
+     stroke is sub-pixel and a single district is a few px — thicken the gold edge
+     and the green highlight, and add a big green locator ring so the highlighted
+     area actually reads. */
+  .race-map--il .map-ctx { stroke-width: 5; }
+  .race-map--il .map-hi { stroke-width: 18; }
+  .race-map--il .map-loc { fill: color-mix(in srgb, var(--series-4) 24%, transparent); stroke: var(--series-4); stroke-width: 18; }
+  .race-map--il .map-dist { animation: rm-pulse-il 1.8s ease-in-out infinite; }
+  @keyframes rm-pulse-il { 0%, 100% { stroke-width: 16; } 50% { stroke-width: 30; } }
+  @media (prefers-reduced-motion: reduce) { .race-map--il .map-dist { animation: none; } }
   .race-map .map-cap { font-size: 11.5px; color: var(--text-secondary); line-height: 1.4; min-width: 0; }
   .race-map .map-cap b { color: var(--text-primary); font-weight: 650; }
   /* Neighborhoods the district touches (Chicago community areas). */
@@ -558,16 +577,14 @@
   .bp-title { margin: 0 0 4px; font-size: 27px; }
   .bp-sub { margin: 0 0 14px; color: var(--text-secondary); font-size: 14px; max-width: 70ch; }
   .ballot-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(258px, 1fr)); gap: 14px; }
-  .ballot-card { text-align: left; cursor: pointer; font: inherit; color: var(--text-primary);
+  /* Informational only — the "Important Dates" cards display the upcoming ballots;
+     they are not buttons and do not filter (no click / hover / focus affordance). */
+  .ballot-card { text-align: left; font: inherit; color: var(--text-primary);
     border: 1px solid var(--border); border-top: 3px solid var(--series-2); border-radius: 14px;
     background: var(--surface-1); padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
-  .ballot-card:hover { border-color: var(--baseline); transform: translateY(-2px); transition: transform .12s ease; }
-  .ballot-card:focus-visible { outline: 2px solid var(--series-2); outline-offset: 2px; }
   .bc-label { font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--series-2); font-weight: 600; }
   .bc-date { font-family: var(--gb-font-display); font-size: 24px; line-height: 1.1; }
   .bc-count { font-size: 13.5px; color: var(--text-secondary); }
-  .bc-go { font-size: 13.5px; font-weight: 600; color: var(--series-2); margin-top: 4px; }
-  @media (prefers-reduced-motion: reduce) { .ballot-card:hover { transform: none; } }
 
   /* ===== Find your ballot — Illinois county map + place picker ===== */
   .bfinder { margin: 6px 0 24px; }
@@ -755,6 +772,23 @@
     .cm-stage { padding-left: 0; }
     .cm-locator, .cm-connect { display: none; }
   }
+
+  /* ---------- full-contrast (un-dimmed) text, per request ----------
+     Placed last so it wins by source order over the earlier per-component rules.
+     The map hint, the election-calendar cards, the office-card descriptions, and
+     all the body copy in the Springfield ("rules of the game") and "Where the data
+     comes from" sections now read at full contrast (--text-primary). Coloured
+     accents (status pills, topic dots, links, timeline dots) are left as-is. */
+  .cm-empty,
+  .oc-blurb,
+  .calendar .cal-sub, .calendar .cal-for, .calendar .cal-legend,
+  .calendar .tl-label, .calendar .tl-note,
+  .calendar .tl-item.future .tl-date, .calendar .tl-item.future .tl-label,
+  .springfield .sf-sub, .springfield .sf-syn, .springfield .sf-tag,
+  .springfield .sf-action, .springfield .sf-action b, .springfield .sf-bill-ext,
+  .cabinet .cab-intro, .cabinet .cab-item p {
+    color: var(--text-primary);
+  }
 </style>
 <script>
   // Apply a saved theme choice before first paint. Shared localStorage key, so
@@ -916,8 +950,8 @@
     <span class="mb-cta">See the federal races →</span>
   </button>
 
-  <!-- Ballot-first entry: pick a ballot to see every office on it -->
-  <section class="ballot-picker" id="ballot-picker" aria-label="What is on your ballot">
+  <!-- Important Dates: informational cards for the upcoming ballots (not a filter) -->
+  <section class="ballot-picker" id="ballot-picker" aria-label="Important election dates">
     <h2 class="bp-title">Important Dates</h2>
     <div class="ballot-cards" id="ballot-cards"></div>
   </section>
@@ -1188,8 +1222,10 @@
       // Curated headline copy per ballot: the election's name + the race
       // categories on it. The count stays live (rs.length) so it never drifts.
       const copy = BALLOT_COPY[d];
-      const card = document.createElement("button");
-      card.type = "button"; card.className = "ballot-card";
+      // Informational only — not a button, no filtering (all races are shown by
+      // default via revealAllSections at load).
+      const card = document.createElement("div");
+      card.className = "ballot-card";
       const lab = document.createElement("div"); lab.className = "bc-label";
       lab.textContent = copy ? copy.label : ballotStageLabel(rs);
       const dt = document.createElement("div"); dt.className = "bc-date"; dt.textContent = prettyDate(d);
@@ -1198,11 +1234,6 @@
         ? (rs.length + " races — " + copy.cats)
         : (rs.length + " office" + (rs.length === 1 ? "" : "s") + " listed");
       card.append(lab, dt, cnt);
-      card.addEventListener("click", () => {
-        state.filters.ballot = d;
-        const sel = $("f-ballot"); if (sel) sel.value = d;
-        revealAllSections(); render(); scrollToRaces();
-      });
       host.append(card);
     });
   }
@@ -2144,7 +2175,7 @@
     }
 
     const more = document.createElement("div"); more.className = "oc-more";
-    more.append(document.createTextNode("View all races "));
+    more.append(document.createTextNode("View full details and candidates "));
     const ar = document.createElement("span"); ar.className = "oc-arrow"; ar.setAttribute("aria-hidden", "true"); ar.textContent = "→";
     more.append(ar);
     card.append(more);
@@ -2402,6 +2433,22 @@
     return ph;
   }
 
+  // Average point of a set of SVG path strings ("M x,y L x,y … Z") — a cheap
+  // centroid used to place the statewide locator ring on the highlighted district.
+  function pathsCenter(paths) {
+    let sx = 0, sy = 0, n = 0;
+    (paths || []).forEach((d) => {
+      d.replace(/[MLZ]/g, " ").trim().split(/\s+/).forEach((tok) => {
+        const c = tok.split(",");
+        if (c.length === 2) {
+          const x = parseFloat(c[0]), y = parseFloat(c[1]);
+          if (!isNaN(x) && !isNaN(y)) { sx += x; sy += y; n++; }
+        }
+      });
+    });
+    return n ? { x: Math.round(sx / n), y: Math.round(sy / n) } : null;
+  }
+
   function buildRaceMap(r, meta, entry) {
     const maps = state.maps;
     if (!maps || !maps.view || !maps.context) return null;
@@ -2426,7 +2473,21 @@
     // highlights the whole city instead of a single district.
     context.forEach((d) => svg.append(mk(d, (r.is_citywide && !isIl) ? "map-hi" : "map-ctx")));
     // highlighted district on top, pulsing
-    if (entry) entry.paths.forEach((d) => svg.append(mk(d, "map-hi map-dist")));
+    if (entry) {
+      entry.paths.forEach((d) => svg.append(mk(d, "map-hi map-dist")));
+      // A single IL Senate/House/congressional district is tiny on the whole-state
+      // silhouette (a few px), so its outline alone is easy to miss — draw a
+      // pulsing locator ring centred on it so the reader can find the highlight.
+      if (isIl) {
+        const c = pathsCenter(entry.paths);
+        if (c) {
+          const ring = document.createElementNS(SVGNS, "circle");
+          ring.setAttribute("cx", c.x); ring.setAttribute("cy", c.y); ring.setAttribute("r", "78");
+          ring.setAttribute("class", "map-loc map-dist");
+          svg.append(ring);
+        }
+      }
+    }
     wrap.append(svg);
 
     const cap = document.createElement("div"); cap.className = "map-cap";
@@ -2439,12 +2500,8 @@
       const mh = document.createElement("div"); mh.className = "map-hoods";
       const lab = document.createElement("span"); lab.className = "mh-label";
       lab.textContent = "Neighborhoods: ";
-      mh.append(lab, document.createTextNode(hoods.slice(0, 4).join(", ")));
-      if (hoods.length > 4) {
-        const more = document.createElement("span"); more.className = "mh-more";
-        more.textContent = " +" + (hoods.length - 4) + " more";
-        mh.append(more);
-      }
+      // Show every neighborhood the district touches (no "+N more" truncation).
+      mh.append(lab, document.createTextNode(hoods.join(", ")));
       cap.append(mh);
     } else if (r.is_citywide) {
       const mh = document.createElement("div"); mh.className = "map-hoods";
