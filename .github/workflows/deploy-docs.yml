@@ -29,6 +29,95 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ---------------------------------------------------------------------
+      # Fast path for frontend-only changes.
+      #
+      # The full data pipeline below (clone 47+ legislation repos, tag, vendor
+      # photos, IL synopses, hearings, maps, elections + all enrichments) takes
+      # 40+ minutes and refreshes government data. It does NOT need to run for a
+      # pure dashboard HTML/CSS/JS change, nor on a PR (PRs never deploy). So:
+      #
+      #   * scheduled / manual runs        -> always full refresh (keep data fresh)
+      #   * a push to main that touches ANY non-`docs/src/dashboard/**` file
+      #                                    -> full refresh
+      #   * a push to main touching only `docs/src/dashboard/**`, or any PR
+      #                                    -> skip the pipeline, reuse the last
+      #                                       full build's data from cache
+      #
+      # Everything except data.json + the two .gitignore'd artifacts
+      # (il_summaries.json, legislator_images.json + assets/legislators/) is
+      # committed with real data, so the only thing the fast path must restore is
+      # those. If the cache is missing (or holds only the tiny sample data.json),
+      # a push to main falls back to a full refresh so we never publish stale/
+      # sample data; a PR just builds with whatever is present (no deploy).
+      # ---------------------------------------------------------------------
+      - name: Determine build scope
+        id: scope
+        run: |
+          set -uo pipefail
+          E="${{ github.event_name }}"
+          if [ "$E" = "schedule" ] || [ "$E" = "workflow_dispatch" ]; then
+            echo "event=$E -> full data refresh"; echo "refresh=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [ "$E" = "pull_request" ]; then
+            echo "pull request -> skip data pipeline (build check only, no deploy)"
+            echo "refresh=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          BASE="${{ github.event.before }}"; HEAD="${{ github.sha }}"
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            echo "no base sha ($BASE) -> full refresh"; echo "refresh=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          git fetch --no-tags --depth=1 origin "$BASE" "$HEAD" >/dev/null 2>&1 || true
+          if ! git cat-file -e "${BASE}^{commit}" 2>/dev/null || ! git cat-file -e "${HEAD}^{commit}" 2>/dev/null; then
+            echo "could not resolve ${BASE}..${HEAD} -> full refresh"; echo "refresh=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          CHANGED="$(git diff --name-only "$BASE" "$HEAD")"
+          echo "changed files:"; printf '%s\n' "$CHANGED"
+          if [ -z "$CHANGED" ]; then echo "refresh=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if printf '%s\n' "$CHANGED" | grep -qvE '^docs/src/dashboard/'; then
+            echo "non-dashboard change -> full refresh"; echo "refresh=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "dashboard-only change -> skip data pipeline (reuse cached build data)"; echo "refresh=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # On the fast path, restore the last full build's data.json + gitignored
+      # artifacts (IL synopses, sponsor-photo manifest + images) so the deploy
+      # carries the same real data the scheduled build produced.
+      - name: Restore last full build's data
+        id: builtdata
+        if: steps.scope.outputs.refresh != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            docs/src/dashboard/data.json
+            docs/src/dashboard/il_summaries.json
+            docs/src/dashboard/legislator_images.json
+            docs/src/dashboard/assets/legislators
+          key: govbot-built-data-${{ github.run_id }}
+          restore-keys: |
+            govbot-built-data-
+
+      # Decide the effective scope. On a push to main we must never publish the
+      # tiny sample data.json, so if the cache missed (or restored only the
+      # sample) we fall back to a full refresh. PRs never deploy, so they build
+      # with whatever is present.
+      - name: Finalize build scope
+        id: gate
+        run: |
+          set -uo pipefail
+          R="${{ steps.scope.outputs.refresh }}"
+          if [ "$R" != "true" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
+            SZ="$(wc -c < docs/src/dashboard/data.json 2>/dev/null || echo 0)"
+            if [ -z "${{ steps.builtdata.outputs.cache-matched-key }}" ] || [ "$SZ" -lt 100000 ]; then
+              echo "no usable cached data.json (matched='${{ steps.builtdata.outputs.cache-matched-key }}', size=$SZ) -> forcing full refresh"
+              R="true"
+            else
+              echo "reusing cached build data (data.json=$SZ bytes); skipping the data pipeline"
+            fi
+          fi
+          echo "effective refresh=$R"
+          echo "refresh=$R" >> "$GITHUB_OUTPUT"
+
       - name: Install mdbook
         uses: peaceiris/actions-mdbook@v2
         with:
@@ -36,6 +125,7 @@ jobs:
 
       # Install the govbot CLI so we can run the embedding tagger (`govbot tag`).
       - name: Install govbot CLI
+        if: steps.gate.outputs.refresh == 'true'
         run: |
           curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh | bash
           echo "$HOME/.govbot/bin" >> "$GITHUB_PATH"
@@ -47,6 +137,7 @@ jobs:
       # place (the build script refuses to write an empty file), so the deploy
       # never breaks. A shallow, blobless, sparse clone keeps this to ~1s.
       - name: Refresh legislator name roster
+        if: steps.gate.outputs.refresh == 'true'
         run: |
           set -uo pipefail
           if git clone --depth 1 --filter=blob:none --sparse \
@@ -64,6 +155,7 @@ jobs:
       # The ~90MB all-MiniLM-L6-v2 ONNX model is downloaded once and reused
       # across runs. Stable key => downloaded on the first run, restored after.
       - name: Cache embedding model
+        if: steps.gate.outputs.refresh == 'true'
         uses: actions/cache@v4
         with:
           path: /tmp/govbot-model
@@ -74,6 +166,7 @@ jobs:
       # busts the cache (forces a full re-tag); the run-id suffix + restore-keys
       # prefix means each run saves a fresh snapshot and restores the latest one.
       - name: Cache incremental tag state
+        if: steps.gate.outputs.refresh == 'true'
         uses: actions/cache@v4
         with:
           path: /tmp/govbot-cache
@@ -90,6 +183,7 @@ jobs:
       # fallback (scripts/dashboard_tags.json) or, ultimately, the committed sample
       # data, so the docs deploy never breaks.
       - name: Build dashboard data from legislation repos
+        if: steps.gate.outputs.refresh == 'true'
         env:
           GOVBOT_DATA: /tmp/govbot-data
           MODEL_DIR: /tmp/govbot-model
@@ -145,6 +239,7 @@ jobs:
       # step. Fully fail-soft: a missing checkout or a failed image just leaves
       # those sponsors as monogram avatars; the deploy never breaks.
       - name: Vendor sponsor photos for on-screen bills
+        if: steps.gate.outputs.refresh == 'true'
         run: |
           set -uo pipefail
           if [ -d /tmp/openstates-people/data ]; then
@@ -171,6 +266,7 @@ jobs:
       # carries the growing cache forward. Fully fail-soft (no poppler / unreachable
       # PDF -> that bill just stays unsummarized).
       - name: Cache Illinois bill synopses
+        if: steps.gate.outputs.refresh == 'true'
         uses: actions/cache@v4
         with:
           path: docs/src/dashboard/il_summaries.json
@@ -178,6 +274,7 @@ jobs:
           restore-keys: |
             il-summaries-
       - name: Build Illinois bill synopses
+        if: steps.gate.outputs.refresh == 'true'
         run: |
           set -uo pipefail
           sudo apt-get update && sudo apt-get install -y poppler-utils \
@@ -197,6 +294,7 @@ jobs:
       # the committed sample when the fresh run actually produced hearings, so
       # a total outage keeps the last-good sample rather than blanking the panel.
       - name: Build committee hearings feed
+        if: steps.gate.outputs.refresh == 'true'
         env:
           # Optional: a Regulations.gov / api.data.gov key enables live federal
           # comment periods. Without it the build falls back to the committed
@@ -236,6 +334,7 @@ jobs:
       # next to each race. Fail-soft — an outage leaves the committed maps.json in
       # place (the script only writes when it fetched a basemap).
       - name: Build district maps
+        if: steps.gate.outputs.refresh == 'true'
         run: |
           set -uo pipefail
           python3 actions/scrape-maps/main.py --output docs/src/dashboard/maps.json \
@@ -252,6 +351,7 @@ jobs:
       # something (candidates placed OR Springfield bills), so a total outage
       # keeps the last-good curated sample rather than blanking everything.
       - name: Build Illinois & Chicago elections feed
+        if: steps.gate.outputs.refresh == 'true'
         run: |
           set -uo pipefail
           rm -rf /tmp/elections_feeds
@@ -284,6 +384,7 @@ jobs:
       # source. Runs before money (so committees can match) and before the feeds
       # are written. Fully fail-soft: an unreachable/edited page contributes nothing.
       - name: Populate 2026 general-election nominees (Wikipedia)
+        if: steps.gate.outputs.refresh == 'true'
         run: |
           set -uo pipefail
           python3 actions/scrape-elections/main.py \
@@ -297,6 +398,7 @@ jobs:
       # resolved on the frontend from the people roster; CPS / police district
       # councils have no published roster.)
       - name: Populate current incumbents (Chicago aldermen)
+        if: steps.gate.outputs.refresh == 'true'
         run: |
           set -uo pipefail
           python3 actions/scrape-elections/main.py \
@@ -309,6 +411,7 @@ jobs:
       # Never guesses; fully fail-soft (Wikidata down / no confident match → nothing,
       # so a bad day never writes a wrong party).
       - name: Fill party from Wikidata (nonpartisan Chicago races)
+        if: steps.gate.outputs.refresh == 'true'
         run: |
           set -uo pipefail
           python3 actions/scrape-elections/main.py \
@@ -323,6 +426,7 @@ jobs:
       # feeds are written. Fully fail-soft: no poppler / no PDF leaves candidates as
       # they were. As more offices appear on official lists, this populates them too.
       - name: Populate official candidates from the Chicago BOE candidate list (PDF)
+        if: steps.gate.outputs.refresh == 'true'
         run: |
           set -uo pipefail
           sudo apt-get update && sudo apt-get install -y poppler-utils \
@@ -343,6 +447,7 @@ jobs:
       # --rss / --rss-feeds-dir happen after this), independent of whether official
       # candidates exist yet, and fully fail-soft: sources down leaves the lists empty.
       - name: Enrich races with news-sourced potential candidates
+        if: steps.gate.outputs.refresh == 'true'
         run: |
           set -uo pipefail
           python3 actions/scrape-elections/main.py \
@@ -356,6 +461,7 @@ jobs:
       # are large (~70MB), so we only download + enrich when there's something to
       # enrich. Fully fail-soft: a download error just leaves money off.
       - name: Enrich candidates with SBE campaign money
+        if: steps.gate.outputs.refresh == 'true'
         run: |
           set -uo pipefail
           CANDS="$(python3 -c 'import json;d=json.load(open("docs/src/dashboard/elections.json"));print(sum(len(r["candidates"]) for r in d["races"]))' 2>/dev/null || echo 0)"
@@ -381,6 +487,7 @@ jobs:
       # Inert until that is set — there are no results before an election — and
       # fully fail-soft.
       - name: Attach election results
+        if: steps.gate.outputs.refresh == 'true'
         env:
           ELECTION_RESULTS_URL: ${{ vars.ELECTION_RESULTS_URL || secrets.ELECTION_RESULTS_URL }}
           ELECTION_RESULTS_PAGE: ${{ vars.ELECTION_RESULTS_PAGE }}
@@ -402,6 +509,7 @@ jobs:
       # regenerate so the per-race feeds carry the [UNOFFICIAL] potential-candidate
       # items and the per-candidate money figures. Fail-soft.
       - name: Rebuild elections RSS feeds from enriched data
+        if: steps.gate.outputs.refresh == 'true'
         run: |
           set -uo pipefail
           python3 actions/scrape-elections/main.py \
@@ -409,6 +517,19 @@ jobs:
             --rss docs/src/dashboard/elections.xml \
             --rss-feeds-dir docs/src/dashboard/elections \
             || echo "::warning::elections RSS rebuild reported errors"
+
+      # Snapshot the freshly-built data (bills + gitignored artifacts) so the next
+      # frontend-only push / PR can reuse it instead of re-running the pipeline.
+      - name: Save built data for fast frontend-only deploys
+        if: steps.gate.outputs.refresh == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            docs/src/dashboard/data.json
+            docs/src/dashboard/il_summaries.json
+            docs/src/dashboard/legislator_images.json
+            docs/src/dashboard/assets/legislators
+          key: govbot-built-data-${{ github.run_id }}
 
       - name: Build docs
         run: mdbook build docs
