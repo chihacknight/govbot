@@ -197,11 +197,14 @@
   .race-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
   /* Browse-by-office cards: one card per office group, opening a popup of its races. */
   .office-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; padding: 4px 0 6px; }
+  /* A full 4-sided border in the office's colour — a clearer, higher-contrast
+     accent than a single top line, so each office card is distinguishable by more
+     than a thin stripe (accessibility). */
   .office-card { text-align: left; font: inherit; color: var(--text-primary); cursor: pointer;
     display: flex; flex-direction: column; gap: 9px; background: var(--surface-1);
-    border: 1px solid var(--border); border-top: 3px solid var(--gc, var(--series-2));
-    border-radius: 14px; padding: 16px 18px 14px; transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease; }
-  .office-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--gc) 50%, var(--border)); box-shadow: 0 12px 30px rgba(0,0,0,.28); }
+    border: 2px solid var(--gc, var(--series-2));
+    border-radius: 14px; padding: 15px 17px 13px; transition: transform .12s ease, box-shadow .12s ease; }
+  .office-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px color-mix(in srgb, var(--gc) 30%, rgba(0,0,0,.3)); }
   .office-card:focus-visible { outline: 2px solid var(--gc, var(--series-2)); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) { .office-card:hover { transform: none; } }
   .oc-ico { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 22px; background: color-mix(in srgb, var(--gc) 15%, transparent); }
@@ -566,16 +569,14 @@
   .bp-title { margin: 0 0 4px; font-size: 27px; }
   .bp-sub { margin: 0 0 14px; color: var(--text-secondary); font-size: 14px; max-width: 70ch; }
   .ballot-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(258px, 1fr)); gap: 14px; }
-  .ballot-card { text-align: left; cursor: pointer; font: inherit; color: var(--text-primary);
+  /* Informational only — the "Important Dates" cards display the upcoming ballots;
+     they are not buttons and do not filter (no click / hover / focus affordance). */
+  .ballot-card { text-align: left; font: inherit; color: var(--text-primary);
     border: 1px solid var(--border); border-top: 3px solid var(--series-2); border-radius: 14px;
     background: var(--surface-1); padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
-  .ballot-card:hover { border-color: var(--baseline); transform: translateY(-2px); transition: transform .12s ease; }
-  .ballot-card:focus-visible { outline: 2px solid var(--series-2); outline-offset: 2px; }
   .bc-label { font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--series-2); font-weight: 600; }
   .bc-date { font-family: var(--gb-font-display); font-size: 24px; line-height: 1.1; }
   .bc-count { font-size: 13.5px; color: var(--text-secondary); }
-  .bc-go { font-size: 13.5px; font-weight: 600; color: var(--series-2); margin-top: 4px; }
-  @media (prefers-reduced-motion: reduce) { .ballot-card:hover { transform: none; } }
 
   /* ===== Find your ballot — Illinois county map + place picker ===== */
   .bfinder { margin: 6px 0 24px; }
@@ -941,8 +942,8 @@
     <span class="mb-cta">See the federal races →</span>
   </button>
 
-  <!-- Ballot-first entry: pick a ballot to see every office on it -->
-  <section class="ballot-picker" id="ballot-picker" aria-label="What is on your ballot">
+  <!-- Important Dates: informational cards for the upcoming ballots (not a filter) -->
+  <section class="ballot-picker" id="ballot-picker" aria-label="Important election dates">
     <h2 class="bp-title">Important Dates</h2>
     <div class="ballot-cards" id="ballot-cards"></div>
   </section>
@@ -1213,8 +1214,10 @@
       // Curated headline copy per ballot: the election's name + the race
       // categories on it. The count stays live (rs.length) so it never drifts.
       const copy = BALLOT_COPY[d];
-      const card = document.createElement("button");
-      card.type = "button"; card.className = "ballot-card";
+      // Informational only — not a button, no filtering (all races are shown by
+      // default via revealAllSections at load).
+      const card = document.createElement("div");
+      card.className = "ballot-card";
       const lab = document.createElement("div"); lab.className = "bc-label";
       lab.textContent = copy ? copy.label : ballotStageLabel(rs);
       const dt = document.createElement("div"); dt.className = "bc-date"; dt.textContent = prettyDate(d);
@@ -1223,11 +1226,6 @@
         ? (rs.length + " races — " + copy.cats)
         : (rs.length + " office" + (rs.length === 1 ? "" : "s") + " listed");
       card.append(lab, dt, cnt);
-      card.addEventListener("click", () => {
-        state.filters.ballot = d;
-        const sel = $("f-ballot"); if (sel) sel.value = d;
-        revealAllSections(); render(); scrollToRaces();
-      });
       host.append(card);
     });
   }
@@ -2169,7 +2167,7 @@
     }
 
     const more = document.createElement("div"); more.className = "oc-more";
-    more.append(document.createTextNode("View all races "));
+    more.append(document.createTextNode("View full details and candidates "));
     const ar = document.createElement("span"); ar.className = "oc-arrow"; ar.setAttribute("aria-hidden", "true"); ar.textContent = "→";
     more.append(ar);
     card.append(more);

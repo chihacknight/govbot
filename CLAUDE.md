@@ -396,10 +396,12 @@ separate **waving Illinois flag** SVG (`.cap-flag`/`.ilwave`, a CSS `@keyframes 
 earlier flag-on-a-pole SVG and its JS ripple; the old mouse-following "flag cursor" flourish is also
 gone. Copy: "Illinois Elections" / "Know who's on
 your ballot before you vote." / a dynamic "Next election" line (the earlier "Explore races" CTA
-button was removed)) and a "What's on your ballot?" selector
-(`#ballot-cards`, one card per distinct `ballot_date` with its stage label + office/candidate
-counts) that drives the existing `state.filters.ballot`, reveals the sections, and scrolls to
-`#groups` (`renderElectionHero`). The rich race engine (groups, five drawers, calendar,
+button was removed)) and an **"Important Dates"** panel
+(`#ballot-picker` / `#ballot-cards`, one card per distinct `ballot_date` with its stage label +
+office/candidate counts, `renderElectionHero`). These cards are **informational only** — plain
+`<div>`s, not buttons, with no click/hover/focus and **no ballot filtering** (all races are shown by
+default via `revealAllSections()` at load); the earlier "click a ballot to filter" behaviour was
+removed. The rich race engine (groups, five drawers, calendar,
 Springfield, picker) is unchanged. The office-card area's **stat scorecards (`#tiles` /
 `renderTiles`) and the ballot-date / "Only races with candidates" / Clear / "Follow every race"
 controls were removed** — the `#filters` bar now holds **only the search box** (`#f-search`,
@@ -867,7 +869,10 @@ exists**: e.g. the elected CPS board's role over the schools, "22 police distric
 66 seats", the IL Senate/House as the Springfield chambers, the U.S. House as Congress's lower chamber)
 and the office's **full election timeline** (the shared
 `renderTimeline` `.tl` component with the pulsing current node — every race in a group shares its ballot
-cycle, so the first race's `timeline` is used), plus a "View all races →" affordance.
+cycle, so the first race's `timeline` is used), plus a "View full details and candidates →" affordance.
+Each office card carries a **full 4-sided border in its office colour** (`.office-card` `border: 2px
+solid var(--gc)`, not just a top stripe) so it's distinguishable by more than a thin line
+(accessibility).
 A **legibility rule at the end of the stylesheet** (so it wins by source order) sets these to full
 contrast (`--text-primary`), not dimmed: the office-card descriptions (`.oc-blurb`), the Chicago-map
 "Click a ward…" hint (`.cm-empty`), the election-calendar card copy (`.calendar` `.cal-*`/`.tl-*`), and
