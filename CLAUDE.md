@@ -233,8 +233,16 @@ extractable text but no synopsis is cached as `""` (a confirmed no-synopsis, not
 *transient* failure (metadata/PDF unreachable, or `pdftotext` unavailable → empty extraction) is left
 **uncached** so it retries next run — an outage never poisons the backlog. The frontend keeps the
 official short-code as the `title` and shows the synopsis as the plain-language summary: the legislation
-bill modal's "What is this bill about" (`plainSummary` prefers `il_summaries.json[billKey]` over the
-metadata abstract), and a synopsis line on the elections page's "Recent Illinois legislative activity"
+bill modal's "What is this bill about" (`plainSummary`'s fallback chain: `il_summaries.json[billKey]`
+→ the metadata **abstract** → the longest descriptive **`other_titles`** entry (Open States frequently
+stores the plain "AN ACT relating to…" description there while `title` is a short name like Wyoming's
+"Fast Track Permits Act." — this was the biggest source of previously-empty summaries) → the bill's
+own **title** when it reads like a description (not an Illinois cryptic short-code, via
+`looksDescriptive`) → the record's **`subject`** tags → else a "see the official source" note. A
+shouty ALL-CAPS title is title-cased for readability by `prettyTitle`, but **only** when it carries no
+lowercase letters at all — so a title with case-sensitive statute citations like "§ 26603(d)(5)(B)" is
+left verbatim rather than risk corrupting subsection case), and a synopsis line on the elections page's
+"Recent Illinois legislative activity"
 (`.ilrc-syn`) and Springfield (`.sf-syn`) cards. All fetched fail-soft (absent before the first backfill
 → the pages fall back). Offline-tested against real extracted IL bill text in
 `scripts/__snapshots__/il_fulltext/`: `python3 scripts/test_build_il_summaries.py`.
@@ -516,7 +524,10 @@ are both upcoming and comment-open) and "N jurisdictions"), and a **jump-to-juri
 (`.hh-jump`, `#hh-jump`) — a "Jump to" label plus one pill chip per jurisdiction (its full name +
 a `.jn-count` count) linking to that section's `#hg-<code>` anchor (each `.hgroup` gets
 `id="hg-<code>"` in `renderHearings`, ordered federal-first like the groups; `.hgroup` has
-`scroll-margin-top` so the sticky header doesn't cover the target). The nav is hidden with fewer
+`scroll-margin-top` so the sticky header doesn't cover the target). **Each pill is a coloured chip**
+wearing its jurisdiction's section accent (`--jc`, set per pill in JS from the same `HG_ACCENTS`
+palette + group order the section borders use) — coloured text + matching border over a faint tint —
+so a reader recognises a state by colour and the pill matches the section it jumps to. The nav is hidden with fewer
 than two jurisdictions. Each hearing still makes participation obvious: a green **"Public comment open"**
 badge on the date column and the witness-slip/comment action elevated into a filled green
 `.file-link` pill. The `<title>` was also corrected (it had been a stray "Legislation Dashboard").

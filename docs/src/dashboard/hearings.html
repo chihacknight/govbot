@@ -516,11 +516,18 @@
   .hh-jump { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
   .hh-jump .hh-jump-lbl { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
     color: var(--text-muted); margin-right: 2px; }
+  /* Each pill wears its jurisdiction's section accent (--jc, set per pill in JS):
+     coloured text + a matching border over a faint tint of the same colour, so a
+     reader can recognise a state by colour and the pill matches the section it
+     jumps to. Reads in both themes (the tint is a low-alpha mix over the surface). */
   .hh-jump a { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13px;
-    font-weight: 600; text-decoration: none; color: var(--text-primary); background: var(--surface-1);
-    border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; }
-  .hh-jump a:hover { border-color: var(--baseline); background: var(--hover-wash); }
-  .hh-jump a .jn-count { color: var(--text-muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+    font-weight: 600; text-decoration: none; color: var(--jc, var(--text-primary));
+    background: color-mix(in srgb, var(--jc, var(--series-1)) 12%, var(--surface-1));
+    border: 1px solid color-mix(in srgb, var(--jc, var(--border)) 55%, var(--border));
+    border-radius: 999px; padding: 6px 12px; }
+  .hh-jump a:hover { border-color: var(--jc, var(--baseline));
+    background: color-mix(in srgb, var(--jc, var(--series-1)) 22%, var(--surface-1)); }
+  .hh-jump a .jn-count { color: inherit; opacity: .75; font-weight: 600; font-variant-numeric: tabular-nums; }
   .hgroup { scroll-margin-top: 84px; }
   .hh-docs { margin: 8px 0 0; font-size: 13px; }
   .hh-hero-art { flex: 0 0 auto; width: 340px; max-width: 46%; filter: drop-shadow(0 0 22px rgba(214,168,79,0.22)); }
@@ -883,10 +890,13 @@
     if (jump) {
       jump.textContent = "";
       jump.append(eln("span", "hh-jump-lbl", "Jump to"));
-      orderedCodes.forEach((code) => {
+      orderedCodes.forEach((code, gi) => {
         const juris = portals[code] || { name: code.toUpperCase() };
         const a = eln("a", null);
         a.href = "#hg-" + code;
+        // Same accent colour as that jurisdiction's section below (matching group
+        // order), so each pill reads as a coloured chip tied to its section.
+        a.style.setProperty("--jc", "var(" + HG_ACCENTS[gi % HG_ACCENTS.length] + ")");
         a.append(document.createTextNode(juris.name));
         a.append(eln("span", "jn-count", String(byJur[code].length)));
         jump.append(a);
