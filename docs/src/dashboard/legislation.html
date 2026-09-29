@@ -582,6 +582,13 @@
   .m-sharerow { margin: 4px 0 16px; }
   .m-muted { color: var(--text-muted); font-size: 13px; }
   .m-tags { display: inline-flex; flex-wrap: wrap; gap: 5px; }
+  /* Colour-coded topic tags in the bill modal — each tinted in its topic's series
+     colour (--tc set per chip), so a topic reads the same colour everywhere. */
+  .m-tags .m-topic {
+    border-color: color-mix(in srgb, var(--tc) 55%, var(--border));
+    background: color-mix(in srgb, var(--tc) 15%, transparent);
+    color: var(--text-primary); font-weight: 600;
+  }
   .m-loading { padding: 30px 0; text-align: center; color: var(--text-muted); }
   /* Details modal: all non-link text reads at full contrast (white in dark
      theme, near-black in light) — only anchors keep their link color. This wins
@@ -2695,6 +2702,20 @@
       });
       const row = mkel("div", "m-links m-sharerow"); row.append(shareA); body.append(row); }
 
+    // govbot topics — colour-coded tags, shown above the Status timeline.
+    if (b.tags && b.tags.length) {
+      const t = mkel("span", "m-tags");
+      b.tags.forEach((x) => {
+        const col = "var(" + (state.tagColor[x] || SERIES[0]) + ")";
+        const chip = mkel("span", "chip m-topic");
+        chip.style.setProperty("--tc", col);
+        const dot = mkel("span", "dot"); dot.style.background = col;
+        chip.append(dot, document.createTextNode(x));
+        t.append(chip);
+      });
+      addSection(body, "govbot topics", t);
+    }
+
     { const wrap = mkel("div", "m-stage");
       wrap.append(stageTimeline(b, meta),
         mkel("p", "m-stage-cap", "Progress is inferred from the recorded actions below."));
@@ -2728,12 +2749,6 @@
         const ul = mkel("ul", "m-list"); co.forEach((s) => ul.append(sponsorLi(s, null)));
         addSection(body, "Co-sponsors · " + co.length, ul);
       }
-    }
-
-    if (b.tags && b.tags.length) {
-      const t = mkel("span", "m-tags");
-      b.tags.forEach((x) => t.append(mkel("span", "chip", x)));
-      addSection(body, "govbot topics", t);
     }
 
     if (hearingsIndex) {
