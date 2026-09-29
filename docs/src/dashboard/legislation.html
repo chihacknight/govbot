@@ -2109,16 +2109,66 @@
       return norm(a) === norm(b);
     } catch (e) { return a === b; }
   }
+  // Minor words kept lowercase when title-casing an ALL-CAPS legislative title.
+  const TC_MINOR = { a:1, an:1, and:1, as:1, at:1, but:1, by:1, for:1, from:1, if:1,
+    in:1, into:1, nor:1, of:1, on:1, or:1, per:1, the:1, to:1, via:1, vs:1, with:1 };
+  // Title-case a shouty ALL-CAPS legislative title so it reads as prose ("AN ACT
+  // TO AMEND…" → "An Act to Amend…"). Only recase a title with NO lowercase
+  // letters at all — that guarantees there are no case-sensitive statute
+  // subsection letters (e.g. "(d)" vs "(B)") that recasing could corrupt; any
+  // title carrying lowercase (already-readable, or citation-cased) is left
+  // verbatim. Numbers and symbols (§§, "4131.1") are untouched.
+  function prettyTitle(s) {
+    s = String(s == null ? "" : s).trim();
+    if (!s) return s;
+    if (/[a-z]/.test(s) || !/[A-Z]/.test(s)) return s;   // has lowercase, or no caps → leave as-is
+    let n = 0;
+    return s.replace(/[A-Za-z]+/g, (w) => {
+      const isFirst = n === 0; n++;
+      const wl = w.toLowerCase();
+      if (!isFirst && TC_MINOR[wl]) return wl;
+      return wl.charAt(0).toUpperCase() + wl.slice(1);
+    });
+  }
+  // A title reads like a plain description — a real sentence, not a cryptic
+  // short-code (Illinois stores titles like "$DFPR-TECH") — when it has several
+  // words and real length.
+  function looksDescriptive(t) {
+    t = String(t || "").trim();
+    return t.length >= 24 && t.split(/\s+/).length >= 4;
+  }
+  // The most descriptive title in a bill's metadata: Open States frequently keeps
+  // the plain "AN ACT relating to…" description in other_titles while `title` is a
+  // short name (e.g. Wyoming's "Fast Track Permits Act."), so pick the longest
+  // descriptive other_title.
+  function bestOtherTitle(meta) {
+    const ots = ((meta && meta.other_titles) || [])
+      .map((o) => (o && o.title || "").trim())
+      .filter((t) => looksDescriptive(t));
+    ots.sort((a, b) => b.length - a.length);
+    return ots[0] || "";
+  }
   function plainSummary(b, meta) {
-    // Prefer the deploy-extracted Illinois synopsis (IL has no metadata abstract).
+    // 1) The deploy-extracted Illinois synopsis (IL's title is a cryptic short-code
+    //    and it carries no abstract).
     const il = ilSummaries && ilSummaries[billKey(b)];
     if (il && il.trim()) return il.trim();
+    // 2) The official abstract, when the record has one.
     const abs = meta && meta.abstracts && meta.abstracts[0] && meta.abstracts[0].abstract;
     if (abs && abs.trim()) return abs.trim();
-    // No official abstract. The title is already the modal heading, so don't
-    // echo it back — just say plainly that no summary exists. Actions belong in
-    // their own "Latest actions" section, not here.
-    return "No official summary is available for this bill.";
+    // 3) A descriptive long title from other_titles — the plain "AN ACT relating
+    //    to…" description many jurisdictions store there while `title` is a short
+    //    name. This was the biggest source of previously-missing summaries.
+    const heading = (b.title || "").trim();
+    const other = bestOtherTitle(meta);
+    if (other && other.toLowerCase() !== heading.toLowerCase()) return prettyTitle(other);
+    // 4) The bill's own title when it is itself a plain description (most states'
+    //    titles already are; Illinois short-codes are not).
+    if (looksDescriptive(heading)) return prettyTitle(heading);
+    // 5) The record's subject tags, if any.
+    const subs = ((meta && meta.subject) || []).filter(Boolean);
+    if (subs.length) return "Subject areas: " + subs.slice(0, 10).join(", ") + ".";
+    return "No plain-language summary has been published for this bill yet — open the official source below for the full text.";
   }
 
   // Illinois bill synopses ("What this bill is about"), extracted from the

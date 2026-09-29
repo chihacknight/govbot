@@ -81,7 +81,8 @@ TIGER_SC = "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_
 SLDU_LAYER = 1   # 2026 State Legislative Districts - Upper (IL Senate)
 SLDL_LAYER = 2   # 2026 State Legislative Districts - Lower (IL House)
 CD_LAYER = 0     # 120th Congressional Districts
-STATE_LAYER = 0  # States
+STATE_LAYER = 0  # States (State_County MapServer)
+COUNTY_LAYER = 1  # Counties (State_County MapServer) — the non-Chicago "hoods"
 IL_FIPS = "17"
 
 VIEW_W = 1000          # projected coordinate space width; height set by aspect
@@ -99,6 +100,13 @@ GRID_N = 64            # grid points per axis over a district's Chicago overlap
 HOOD_MIN_SHARE = 0.04  # keep a community area with >= this share of interior points
 HOOD_MIN_COUNT = 3     # ...and at least this many points (drops sliver clips)
 HOOD_CAP = 16          # cap the stored list (frontend shows first few + "N more")
+
+# County overlap sampling (the non-Chicago "hoods" — the IL counties a district
+# covers). Sampled over the district's own bbox, not clipped to Chicago.
+CGRID_N = 44           # grid points per axis over a district (counties are big)
+COUNTY_MIN_SHARE = 0.03  # keep a county with >= this share of interior points
+COUNTY_MIN_COUNT = 2     # ...and at least this many points (drops sliver clips)
+COUNTY_CAP = 20          # cap the stored list
 
 
 # --------------------------------------------------------------------------- #
@@ -348,6 +356,59 @@ def district_neighborhoods(district_rings, ca_index, chicago_bbox):
 
 
 # --------------------------------------------------------------------------- #
+# counties (the non-Chicago "hoods" a district covers)
+# --------------------------------------------------------------------------- #
+def build_county_index(county_geo):
+    """[(name, rings_lonlat, bbox), ...] for the IL counties (TIGERweb NAME =
+    'Cook County', 'DuPage County', …)."""
+    idx = []
+    for f in (county_geo or {}).get("features", []):
+        rings = geom_rings(f.get("geometry"))
+        if not rings:
+            continue
+        props = f.get("properties", {}) or {}
+        name = str(props.get("NAME") or props.get("BASENAME") or "").strip()
+        if not name:
+            continue
+        if props.get("BASENAME") and "county" not in name.lower():
+            name = f"{props['BASENAME']} County"
+        idx.append((name, rings, rings_bbox(rings)))
+    return idx
+
+
+def district_counties(district_rings, county_index):
+    """Illinois counties a district overlaps, most-covered first. Samples a grid
+    over the district's own bounding box and classifies each interior point by
+    county (a point falls in exactly one county). Unlike neighborhoods this is
+    NOT clipped to Chicago, so a downstate district still names its counties."""
+    if not district_rings or not county_index:
+        return []
+    minx, miny, maxx, maxy = rings_bbox(district_rings)
+    if minx >= maxx or miny >= maxy:
+        return []
+    counts = {}
+    total = 0
+    for gx in range(CGRID_N):
+        x = minx + (maxx - minx) * (gx + 0.5) / CGRID_N
+        for gy in range(CGRID_N):
+            y = miny + (maxy - miny) * (gy + 0.5) / CGRID_N
+            if not point_in_rings(x, y, district_rings):
+                continue
+            for name, rings, (bx0, by0, bx1, by1) in county_index:
+                if x < bx0 or x > bx1 or y < by0 or y > by1:
+                    continue
+                if point_in_rings(x, y, rings):
+                    counts[name] = counts.get(name, 0) + 1
+                    total += 1
+                    break
+    if not total:
+        return []
+    ranked = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
+    keep = [n for n, c in ranked if c >= COUNTY_MIN_COUNT and c / total >= COUNTY_MIN_SHARE]
+    return keep[:COUNTY_CAP]
+
+
+# --------------------------------------------------------------------------- #
 # race-id mappers (pure)
 # --------------------------------------------------------------------------- #
 def _ward_race_id(props):
@@ -423,10 +484,11 @@ def _statewide_features(geo, id_fn, label_fn, kind):
 
 
 def build(wards_geo, police_geo, commarea_geo, senate_geo, house_geo, cong_geo,
-          state_geo, cps_geo, now):
+          state_geo, cps_geo, now, county_geo=None):
     """Assemble maps.json. Chicago space comes from the ward layer; the Illinois
     space from the state outline. Every kept district is keyed to its race id
-    with its space, paths and the Chicago neighborhoods it touches."""
+    with its space, paths, the Chicago neighborhoods it touches, and the Illinois
+    counties it covers (the non-Chicago "hoods")."""
     wards = (wards_geo or {}).get("features", [])
     if not wards:
         return None  # no basemap -> nothing to draw; keep committed maps.json
@@ -434,9 +496,13 @@ def build(wards_geo, police_geo, commarea_geo, senate_geo, house_geo, cong_geo,
 
     ca_index = build_ca_index(commarea_geo)
     chicago_bbox = bbox_of((commarea_geo or {}).get("features", []) or wards)
+    county_index = build_county_index(county_geo)
 
     def hoods(rings):
         return district_neighborhoods(rings, ca_index, chicago_bbox)
+
+    def counties(rings):
+        return district_counties(rings, county_index)
 
     # ---- Chicago space (wards context + ward/police districts) ----
     cproj, cw, ch = make_projector(bbox_of(wards))
@@ -449,9 +515,11 @@ def build(wards_geo, police_geo, commarea_geo, senate_geo, house_geo, cong_geo,
         rid = _ward_race_id(f.get("properties", {}))
         if rid and (not valid or rid in valid) and paths:
             num = int(f["properties"].get("ward") or f["properties"].get("ward_id"))
+            wrings = geom_rings(f.get("geometry"))
             districts[rid] = {"kind": "ward", "space": "chicago",
                               "label": f"Ward {num}", "paths": paths,
-                              "neighborhoods": hoods(geom_rings(f.get("geometry")))}
+                              "neighborhoods": hoods(wrings),
+                              "counties": counties(wrings)}
 
     for f in (police_geo or {}).get("features", []):
         rid = _police_race_id(f.get("properties", {}))
@@ -460,9 +528,11 @@ def build(wards_geo, police_geo, commarea_geo, senate_geo, house_geo, cong_geo,
         paths = feature_paths(f.get("geometry"), cproj)
         if paths:
             num = int(f["properties"].get("dist_num"))
+            prings = geom_rings(f.get("geometry"))
             districts[rid] = {"kind": "police_district", "space": "chicago",
                               "label": f"Police District {num:03d}", "paths": paths,
-                              "neighborhoods": hoods(geom_rings(f.get("geometry")))}
+                              "neighborhoods": hoods(prings),
+                              "counties": counties(prings)}
 
     for f in (cps_geo or {}).get("features", []):
         rid = _cps_race_id(f.get("properties", {}))
@@ -471,9 +541,11 @@ def build(wards_geo, police_geo, commarea_geo, senate_geo, house_geo, cong_geo,
         paths = feature_paths(f.get("geometry"), cproj)
         if paths:
             sub = (f["properties"].get("sub") or "").upper()
+            crings = geom_rings(f.get("geometry"))
             districts[rid] = {"kind": "cps_subdistrict", "space": "chicago",
                               "label": f"Subdistrict {sub}", "paths": paths,
-                              "neighborhoods": hoods(geom_rings(f.get("geometry")))}
+                              "neighborhoods": hoods(crings),
+                              "counties": counties(crings)}
 
     # ---- Illinois space (state silhouette context + statewide districts) ----
     il_view = None
@@ -499,13 +571,14 @@ def build(wards_geo, police_geo, commarea_geo, senate_geo, house_geo, cong_geo,
                     continue
                 districts[rid] = {"kind": knd, "space": "illinois",
                                   "label": label, "paths": paths,
-                                  "neighborhoods": hoods(rings)}
+                                  "neighborhoods": hoods(rings),
+                                  "counties": counties(rings)}
 
     doc = {
         "generated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "source": ("City of Chicago Data Portal (wards p293-wvbd, police 24zt-jpfn, "
                    "community areas igwz-8jzy) + US Census TIGERweb "
-                   "(IL SLDU/SLDL/CD, state outline) + Chalkbeat 2026 CPS board map"),
+                   "(IL SLDU/SLDL/CD, state outline, counties) + Chalkbeat 2026 CPS board map"),
         "view": {"w": round(cw), "h": round(ch)},
         "context": context,
         "districts": districts,
@@ -580,10 +653,30 @@ def self_test():
             far = [[(-90.0, 40.0), (-89.9, 40.0), (-89.9, 40.1), (-90.0, 40.1), (-90.0, 40.0)]]
             self.assertEqual(district_neighborhoods(far, ca_index, chicago_bbox), [])
 
+        def test_counties_overlap(self):
+            # Two counties side by side; districts landing in each.
+            west = [[(-91.5, 40.0), (-89.5, 40.0), (-89.5, 41.0), (-91.5, 41.0), (-91.5, 40.0)]]
+            east = [[(-89.5, 40.0), (-87.5, 40.0), (-87.5, 41.0), (-89.5, 41.0), (-89.5, 40.0)]]
+            county_geo = {"features": [
+                {"properties": {"NAME": "West County", "BASENAME": "West"}, "geometry": {"type": "Polygon", "coordinates": [[list(p) for p in west[0]]]}},
+                {"properties": {"BASENAME": "East"}, "geometry": {"type": "Polygon", "coordinates": [[list(p) for p in east[0]]]}},
+            ]}
+            idx = build_county_index(county_geo)
+            # BASENAME-only county gets a "County" suffix.
+            self.assertIn("East County", [n for n, _, _ in idx])
+            dist_w = [[(-91.0, 40.2), (-90.0, 40.2), (-90.0, 40.8), (-91.0, 40.8), (-91.0, 40.2)]]
+            self.assertEqual(district_counties(dist_w, idx), ["West County"])
+            # a district straddling both names both, most-covered first
+            dist_both = [[(-90.0, 40.2), (-88.0, 40.2), (-88.0, 40.8), (-90.0, 40.8), (-90.0, 40.2)]]
+            self.assertEqual(set(district_counties(dist_both, idx)), {"West County", "East County"})
+
         def test_build_maps_from_synthetic(self):
             wards = {"features": [{"properties": {"ward": "1"}, "geometry": SQUARE}]}
             police = {"features": [{"properties": {"dist_num": "14"}, "geometry": SQUARE}]}
             commarea = {"features": [{"properties": {"community": "TEST AREA"}, "geometry": SQUARE}]}
+            # a county covering the ward/senate SQUARE area
+            county = {"features": [{"properties": {"NAME": "Cook County", "BASENAME": "Cook"},
+                                    "geometry": {"type": "Polygon", "coordinates": [[[-92.0, 36.5], [-87.0, 36.5], [-87.0, 43.0], [-92.0, 43.0], [-92.0, 36.5]]]}}]}
             # a synthetic IL outline + one senate district inside it
             il = {"type": "Polygon", "coordinates": [[[-91.5, 37.0], [-87.5, 37.0],
                                                       [-87.5, 42.5], [-91.5, 42.5], [-91.5, 37.0]]]}
@@ -591,7 +684,7 @@ def self_test():
             senate = {"features": [{"properties": {"SLDU": "020", "BASENAME": "20"}, "geometry": SQUARE}]}
             cps = {"features": [{"properties": {"sub": "1a", "district": 1}, "geometry": SQUARE}]}
             doc = build(wards, police, commarea, senate, None, None, state, cps,
-                        datetime(2026, 9, 7, tzinfo=timezone.utc))
+                        datetime(2026, 9, 7, tzinfo=timezone.utc), county_geo=county)
             self.assertIn("chicago-alderperson-ward-01", doc["districts"])
             self.assertIn("chicago-police-district-council-014", doc["districts"])
             self.assertIn("cps-board-member-1a", doc["districts"])
@@ -603,6 +696,9 @@ def self_test():
             self.assertTrue(doc["districts"]["chicago-alderperson-ward-01"]["paths"][0].startswith("M"))
             # ward overlaps the sole community area
             self.assertEqual(doc["districts"]["chicago-alderperson-ward-01"]["neighborhoods"], ["Test Area"])
+            # ward + senate district fall inside the sole county
+            self.assertEqual(doc["districts"]["chicago-alderperson-ward-01"]["counties"], ["Cook County"])
+            self.assertEqual(doc["districts"]["il-senate-20"]["counties"], ["Cook County"])
 
     suite = unittest.TestLoader().loadTestsFromTestCase(T)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
@@ -629,9 +725,10 @@ def main():
     house = fetch_tiger(TIGER_LEG, SLDL_LAYER, f"STATE='{IL_FIPS}'", SIMPLIFY_EPS_IL_DEG)
     cong = fetch_tiger(TIGER_LEG, CD_LAYER, f"STATE='{IL_FIPS}'", SIMPLIFY_EPS_IL_DEG)
     state = fetch_tiger(TIGER_SC, STATE_LAYER, f"STATE='{IL_FIPS}'", STATE_SIMPLIFY_DEG)
+    county = fetch_tiger(TIGER_SC, COUNTY_LAYER, f"STATE='{IL_FIPS}'", STATE_SIMPLIFY_DEG)
     cps = fetch_url_json(CPS_GEOJSON_URL)
 
-    doc = build(wards, police, commarea, senate, house, cong, state, cps, now)
+    doc = build(wards, police, commarea, senate, house, cong, state, cps, now, county_geo=county)
     if not doc:
         print("::warning::no basemap fetched; not writing maps.json", file=sys.stderr)
         return 0

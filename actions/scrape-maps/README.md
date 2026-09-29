@@ -3,8 +3,8 @@
 Builds `docs/src/dashboard/maps.json`, the compact geometry the **Elections
 Happening in IL** page draws as an inline-SVG locator next to each race — the
 district highlighted (and gently pulsing) inside a light basemap, plus the
-**Chicago neighborhoods that district touches**. There are two coordinate spaces
-in one file:
+**Chicago neighborhoods** and the **Illinois counties** that district touches
+(the non-Chicago "hoods"). There are two coordinate spaces in one file:
 
 * **`chicago`** — a city map (all wards as a light context) for the Chicago-scale
   races: alderperson wards, police-district councils and CPS board subdistricts;
@@ -25,6 +25,7 @@ in one file:
 | IL House (2026) | Census TIGERweb Legislative layer 2 (SLDL) | `SLDL` | `il-house-NNN` | illinois |
 | U.S. House (120th) | Census TIGERweb Legislative layer 0 (CD120) | `CD120` | `us-house-il-NN` | illinois |
 | IL state outline | Census TIGERweb State_County layer 0 | `STATE=17` | *(illinois context)* | illinois |
+| IL counties (102) | Census TIGERweb State_County layer 1 | `NAME` | *(county overlap)* | — |
 | CPS board subdistricts (1A–10B) | Chalkbeat 2026 CPS board map (`districts-20-centroids.geojson`) | `sub` | `cps-board-member-Nx` | chicago |
 
 No government authority publishes the CPS board **subdistrict** (1A–10B) polygons
@@ -48,7 +49,11 @@ seed race id is keyed to its district geometry, which is:
 3. tagged with the **neighborhoods** it touches — computed by sampling a grid
    inside the district (clipped to Chicago) and classifying each interior point
    by community area; a statewide district that never reaches Chicago carries an
-   empty list.
+   empty list;
+4. tagged with the **counties** it covers (the non-Chicago "hoods") — the same
+   grid-sampling over the district's own bbox (not clipped to Chicago), so a
+   downstate district still names its counties and a Chicago-area district
+   carries both lists.
 
 Output shape:
 
@@ -56,7 +61,7 @@ Output shape:
 {
   view:{w,h}, context:[path…],            // chicago space
   il_view:{w,h}, il_context:[path…],      // illinois space
-  districts:{ <race_id>: { kind, label, space, paths:[…], neighborhoods:[…] } }
+  districts:{ <race_id>: { kind, label, space, paths:[…], neighborhoods:[…], counties:[…] } }
 }
 ```
 
@@ -71,5 +76,5 @@ python3 actions/scrape-maps/main.py --self-test    # offline geometry tests (no 
 ```
 
 The pure helpers (`rdp`, `ring_area`, `make_projector`, `to_path`,
-`point_in_rings`, `district_neighborhoods`, the id mappers, `build`) are
-unit-tested offline via `--self-test`.
+`point_in_rings`, `district_neighborhoods`, `district_counties`, the id mappers,
+`build`) are unit-tested offline via `--self-test`.

@@ -233,8 +233,16 @@ extractable text but no synopsis is cached as `""` (a confirmed no-synopsis, not
 *transient* failure (metadata/PDF unreachable, or `pdftotext` unavailable → empty extraction) is left
 **uncached** so it retries next run — an outage never poisons the backlog. The frontend keeps the
 official short-code as the `title` and shows the synopsis as the plain-language summary: the legislation
-bill modal's "What is this bill about" (`plainSummary` prefers `il_summaries.json[billKey]` over the
-metadata abstract), and a synopsis line on the elections page's "Recent Illinois legislative activity"
+bill modal's "What is this bill about" (`plainSummary`'s fallback chain: `il_summaries.json[billKey]`
+→ the metadata **abstract** → the longest descriptive **`other_titles`** entry (Open States frequently
+stores the plain "AN ACT relating to…" description there while `title` is a short name like Wyoming's
+"Fast Track Permits Act." — this was the biggest source of previously-empty summaries) → the bill's
+own **title** when it reads like a description (not an Illinois cryptic short-code, via
+`looksDescriptive`) → the record's **`subject`** tags → else a "see the official source" note. A
+shouty ALL-CAPS title is title-cased for readability by `prettyTitle`, but **only** when it carries no
+lowercase letters at all — so a title with case-sensitive statute citations like "§ 26603(d)(5)(B)" is
+left verbatim rather than risk corrupting subsection case), and a synopsis line on the elections page's
+"Recent Illinois legislative activity"
 (`.ilrc-syn`) and Springfield (`.sf-syn`) cards. All fetched fail-soft (absent before the first backfill
 → the pages fall back). Offline-tested against real extracted IL bill text in
 `scripts/__snapshots__/il_fulltext/`: `python3 scripts/test_build_il_summaries.py`.
@@ -400,8 +408,10 @@ button was removed)) and an **"Important Dates"** panel
 (`#ballot-picker` / `#ballot-cards`, one card per distinct `ballot_date` with its stage label +
 office/candidate counts, `renderElectionHero`). These cards are **informational only** — plain
 `<div>`s, not buttons, with no click/hover/focus and **no ballot filtering** (all races are shown by
-default via `revealAllSections()` at load); the earlier "click a ballot to filter" behaviour was
-removed. The rich race engine (groups, five drawers, calendar,
+default — `init()` calls `revealAllSections()` unconditionally at the end of load, so the bottom
+"Browse by office" grid shows on **every** load including a first-time direct visit with no `#race=`
+deep link and no saved view, not only when a deep link or the map/finder reveals sections); the
+earlier "click a ballot to filter" behaviour was removed. The rich race engine (groups, five drawers, calendar,
 Springfield, picker) is unchanged. The office-card area's **stat scorecards (`#tiles` /
 `renderTiles`) and the ballot-date / "Only races with candidates" / Clear / "Follow every race"
 controls were removed** — the `#filters` bar now holds **only the search box** (`#f-search`,
@@ -514,7 +524,10 @@ are both upcoming and comment-open) and "N jurisdictions"), and a **jump-to-juri
 (`.hh-jump`, `#hh-jump`) — a "Jump to" label plus one pill chip per jurisdiction (its full name +
 a `.jn-count` count) linking to that section's `#hg-<code>` anchor (each `.hgroup` gets
 `id="hg-<code>"` in `renderHearings`, ordered federal-first like the groups; `.hgroup` has
-`scroll-margin-top` so the sticky header doesn't cover the target). The nav is hidden with fewer
+`scroll-margin-top` so the sticky header doesn't cover the target). **Each pill is a coloured chip**
+wearing its jurisdiction's section accent (`--jc`, set per pill in JS from the same `HG_ACCENTS`
+palette + group order the section borders use) — coloured text + matching border over a faint tint —
+so a reader recognises a state by colour and the pill matches the section it jumps to. The nav is hidden with fewer
 than two jurisdictions. Each hearing still makes participation obvious: a green **"Public comment open"**
 badge on the date column and the witness-slip/comment action elevated into a filled green
 `.file-link` pill. The `<title>` was also corrected (it had been a stray "Legislation Dashboard").
@@ -712,27 +725,35 @@ ward / police-council races) and an **`illinois`** space (a statewide silhouette
 TIGERweb — the IL state outline, plus the **IL Senate/House 2026** (`SLDU`/`SLDL`, Legislative
 layers 1/2) and **U.S. House 120th** (`CD120`, layer 0) districts, keyed to the `il-senate-NN` /
 `il-house-NNN` / `us-house-il-NN` races; the Chicago space also carries the **CPS board subdistricts
-1A–10B**, keyed to `cps-board-member-Nx`). Each district is also tagged with the **Chicago
-neighborhoods it touches** — Census community areas (`igwz-8jzy`) matched by grid-sampling the
-district's Chicago overlap (`district_neighborhoods`), so a statewide/downstate district carries an
-empty list. Output: `{view, context, il_view, il_context, districts:{<id>:{kind,label,space,paths,
-neighborhoods}}}`. Everything is projected + Douglas-Peucker-simplified at build time (TIGERweb also
-trims server-side via `maxAllowableOffset`) so the file stays ~160 KB and the browser just draws SVG
-paths. **No government authority publishes the CPS subdistrict boundaries, so those 20 polygons come
+1A–10B**, keyed to `cps-board-member-Nx`). Each district is tagged with the places it covers, in two
+lists: the **Chicago neighborhoods it touches** — Census community areas (`igwz-8jzy`) matched by
+grid-sampling the district's Chicago overlap (`district_neighborhoods`), so a statewide/downstate
+district carries an empty list — **and the Illinois counties it covers** (the non-Chicago "hoods"),
+from Census TIGERweb **Counties** (`State_County` layer 1, `NAME` = "Cook County", …) matched by
+grid-sampling the district's own bbox (`district_counties`/`build_county_index`, **not** clipped to
+Chicago, so a downstate district still names its counties). A Chicago-area district thus carries both
+lists (e.g. a Chicago U.S. House district names its neighborhoods **and** Cook/Will/…); a downstate
+one carries only counties. Output: `{view, context, il_view, il_context,
+districts:{<id>:{kind,label,space,paths,neighborhoods,counties}}}`. Everything is projected +
+Douglas-Peucker-simplified at build time (TIGERweb also trims server-side via `maxAllowableOffset`) so
+the file stays ~170 KB and the browser just draws SVG paths. **No government authority publishes the CPS subdistrict boundaries, so those 20 polygons come
 from Chalkbeat's public 2026 CPS-board-map GeoJSON (`districts-20-centroids.geojson`, `sub` property)
 — the one non-government source, used because it's the sole published geometry; a fetch failure just
 leaves CPS races map-less (geometry is never invented).** The frontend
 `renderRaceMap`/`buildRaceMap` pick the space from `entry.space`, draw the highlighted **pulsing**
-district (`.map-dist`), list **all** the neighborhoods it touches (`.map-hoods`, no "+N more"
+district (`.map-dist`), list **all** the places it touches on their own labelled lines — a **"Chicago
+neighborhoods:"** line (`.map-hoods`) and a **"Counties:"** line — each complete (no "+N more"
 truncation; the old "Boundary: City of Chicago" caption was removed), and give the tall IL silhouette
 a taller SVG (`.race-map--il`). The maps use one accessible **gold-base / green-highlight** scheme in
 both themes: the base silhouette (state or city wards, `.map-ctx`) is filled/edged in **gold**
-(`--gb-gold`) with a gold panel border, and the highlighted district (`.map-hi`/`.map-loc`) is
+(`--gb-gold`) with a gold panel border, and the highlighted district (`.map-hi`) is
 **green** (`--series-4`) — independent of the per-office `--gc` colour — so the highlight always
 pops against the gold base in light and dark mode. On the statewide silhouette a single IL Senate/House/congressional
-district is only a few px, so its thin outline is invisible — `buildRaceMap` adds a **pulsing locator
-ring** (`.map-loc`, centred on the district via `pathsCenter`) and thickens the IL highlight stroke
-(`.race-map--il .map-hi`/`.map-loc` ~18u, `@keyframes rm-pulse-il`) so the highlighted area reads.
+district is only a few px, so `buildRaceMap` thickens the IL highlight stroke (`.race-map--il .map-hi`
+~18u) and **pulses it 16→30u** (`@keyframes rm-pulse-il`) so even a small district reads. **No locator
+ring is drawn on any statewide map** — U.S. House, IL Senate and IL House all rely on that thick pulsing
+green highlight (the earlier `.map-loc` ring + `pathsCenter` centroid helper were removed per request;
+the thick pulse keeps a small district findable without a circle).
 **These locator SVGs are built lazily**: because the base outline (city wards, or the IL silhouette)
 is redrawn inside every map, eagerly rendering all revealed races' maps was the dominant DOM/paint
 cost on mobile — so `renderRaceMap` returns a sized placeholder (`.race-map-ph`) that a shared
@@ -741,8 +762,8 @@ the card scrolls near the viewport (renderGroups unobserves discarded placeholde
 build eagerly). Relatedly, the several data files that land at load (maps/people/il_summaries)
 re-render through a **rAF-coalesced `scheduleRender()`** so a burst of arrivals is one rebuild, not
 several. Fail-soft: a portal/TIGERweb outage leaves the committed `maps.json` in place. Pure helpers
-(projection, `point_in_rings`, `district_neighborhoods`, the id mappers) are offline-tested:
-`python3 actions/scrape-maps/main.py --self-test`.
+(projection, `point_in_rings`, `district_neighborhoods`, `district_counties`, the id mappers) are
+offline-tested: `python3 actions/scrape-maps/main.py --self-test`.
 
 **Official candidates** are populated from the Chicago Board of Elections' authoritative
 **Candidate List PDF** (linked from `chicagoelections.gov/getting-ballot/candidates`; the BOE
@@ -904,8 +925,17 @@ Clicking a card
 close, focus returns to the opener) listing **every race in that office** as a flat card
 (`renderRace(r, meta, {hideTimeline:true, hideWhy:true})` — the office card already carries the timeline
 and blurb, so the per-race timeline and `why_note` are suppressed). Offices with
-many races get an in-popup filter (`#gm-search`, gated by `SECTION_SEARCH_MIN`). `renderGroups` keeps an
+many races get an in-popup filter (`#gm-search`, gated by `SECTION_SEARCH_MIN`) that matches **almost
+anything about a race** (`raceHaystack`): office/district, every candidate & potential candidate (name
++ party + status), the current incumbent, the **Chicago neighborhoods and Illinois counties** the
+district covers (from `state.maps`), the "why this race" note and the ballot stage/date — so a reader
+can filter a big office by a candidate, a neighborhood or a county name. `renderGroups` keeps an
 open popup in sync with the current filters (`fillGroupModal`) or closes it if its office drops out.
+Inside the office popup **all body copy reads at full contrast** — a legibility rule promotes the
+office-card timeline (`.oc-tl`) and every popup race's dimmed text (`.gm-body` — timeline
+labels/notes/future dates, the map caption, the neighborhoods & counties, the "why" note, the
+candidate money/committee/mini lines) to `--text-primary`, leaving only meaning-colour (party/status
+pills, money value, links, the pulsing timeline dot) tinted.
 **Popup scroll perf:** the overlay uses a solid dim (no `backdrop-filter: blur`, which re-rasters every
 scroll frame and janked desktop), the race cards get `content-visibility:auto` (off-screen cards with
 their Chicago SVG maps are skipped), and the highlighted-district pulse animates `stroke-width` only (an
