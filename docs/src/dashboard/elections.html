@@ -789,6 +789,26 @@
   .cabinet .cab-intro, .cabinet .cab-item p {
     color: var(--text-primary);
   }
+
+  /* ---------- office cards + race popup: NO dimmed text (per request) ----------
+     Every bit of body copy in the office-card timeline (.oc-tl) and in each race
+     inside the office popup (.gm-body) reads at full contrast — the timeline
+     labels/notes/future dates, the map caption, the neighborhoods & counties, the
+     "why this race" note, and the candidate money/committee/mini lines. Only
+     colour-that-carries-meaning is left alone (party/status pills, the money value,
+     links, the pulsing timeline dot). Placed last so it wins by source order. */
+  .oc-tl .tl-label, .oc-tl .tl-note,
+  .oc-tl .tl-item.future .tl-date, .oc-tl .tl-item.future .tl-label,
+  .gm-body .tl-label, .gm-body .tl-note,
+  .gm-body .tl-item.future .tl-date, .gm-body .tl-item.future .tl-label,
+  .gm-body .map-cap, .gm-body .map-hoods,
+  .gm-body .map-hoods .mh-label, .gm-body .map-hoods .mh-more,
+  .gm-body .why, .gm-body .mini, .gm-body .mini b, .gm-body .no-cands,
+  .gm-body .cand-money .m-fig .m-lbl, .gm-body .cand-money .m-cmte,
+  .gm-body .cand-money .m-fig.spent .m-val,
+  .gm-body .res-num, .gm-body .results-head .r-meta {
+    color: var(--text-primary);
+  }
 </style>
 <script>
   // Apply a saved theme choice before first paint. Shared localStorage key, so
@@ -2255,9 +2275,7 @@
     const body = document.createElement("div"); body.className = "gm-body"; body.id = "gm-body";
     races_g.forEach((r) => {
       const rc = renderRace(r, meta, { hideTimeline: true, hideWhy: true });   // office card already shows the timeline + blurb
-      rc.dataset.hay = [r.office, r.district || "",
-        (r.candidates || []).map((c) => c.name).join(" "),
-        (r.potential_candidates || []).map((c) => c.name).join(" ")].join(" ").toLowerCase();
+      rc.dataset.hay = raceHaystack(r);
       body.append(rc);
     });
     const none = document.createElement("p"); none.className = "gm-empty"; none.id = "gm-empty"; none.hidden = true;
@@ -2278,6 +2296,25 @@
     modal.append(foot);
 
     gmApplyFilter();
+  }
+
+  // Everything searchable about one race, flattened to a lowercase string so the
+  // in-popup filter matches almost anything a reader might type — office, district,
+  // every candidate & potential candidate (name + party + status), the current
+  // incumbent, the Chicago neighborhoods and Illinois counties the district covers,
+  // the "why this race" note, and the ballot stage/date.
+  function raceHaystack(r) {
+    const parts = [r.office, r.district || "", r.ballot_stage || "", r.ballot_date || "", r.why_note || ""];
+    (r.candidates || []).forEach((c) => parts.push(c.name, c.party || "", c.status || ""));
+    (r.potential_candidates || []).forEach((c) => parts.push(c.name, c.party || "", c.status || ""));
+    if (r.incumbent) parts.push(r.incumbent.name || "", r.incumbent.party || "");
+    const entry = state.maps && state.maps.districts && state.maps.districts[r.id];
+    if (entry) {
+      parts.push(entry.label || "");
+      (entry.neighborhoods || []).forEach((h) => parts.push(h));
+      (entry.counties || []).forEach((c) => parts.push(c));
+    }
+    return parts.join(" ").toLowerCase();
   }
 
   function gmApplyFilter() {
@@ -2475,10 +2512,12 @@
     // highlighted district on top, pulsing
     if (entry) {
       entry.paths.forEach((d) => svg.append(mk(d, "map-hi map-dist")));
-      // A single IL Senate/House/congressional district is tiny on the whole-state
-      // silhouette (a few px), so its outline alone is easy to miss — draw a
-      // pulsing locator ring centred on it so the reader can find the highlight.
-      if (isIl) {
+      // A single IL Senate/House district is tiny on the whole-state silhouette
+      // (a few px), so its outline alone is easy to miss — draw a pulsing locator
+      // ring centred on it so the reader can find the highlight. U.S. House
+      // districts are large (17 across the state) and read fine from the green
+      // highlight alone, so they skip the ring (per request).
+      if (isIl && entry.kind !== "us_house") {
         const c = pathsCenter(entry.paths);
         if (c) {
           const ring = document.createElementNS(SVGNS, "circle");
@@ -2494,16 +2533,22 @@
     const b = document.createElement("b");
     b.textContent = r.is_citywide ? "Citywide" : (entry && entry.label) || (r.district || "");
     cap.append(b);
-    // Neighborhoods (Chicago community areas) the district touches.
+    // Places the district touches — Chicago neighborhoods (community areas) AND
+    // the Illinois counties it covers (the non-Chicago "hoods"), each on its own
+    // labelled line. A downstate district shows only counties; a Chicago-area
+    // district shows both; every list is complete (no "+N more" truncation).
     const hoods = (entry && entry.neighborhoods) || [];
-    if (hoods.length) {
+    const counties = (entry && entry.counties) || [];
+    const placeLine = (label, items) => {
       const mh = document.createElement("div"); mh.className = "map-hoods";
       const lab = document.createElement("span"); lab.className = "mh-label";
-      lab.textContent = "Neighborhoods: ";
-      // Show every neighborhood the district touches (no "+N more" truncation).
-      mh.append(lab, document.createTextNode(hoods.join(", ")));
+      lab.textContent = label + ": ";
+      mh.append(lab, document.createTextNode(items.join(", ")));
       cap.append(mh);
-    } else if (r.is_citywide) {
+    };
+    if (hoods.length) placeLine("Chicago neighborhoods", hoods);
+    if (counties.length) placeLine("Counties", counties);
+    if (!hoods.length && !counties.length && r.is_citywide) {
       const mh = document.createElement("div"); mh.className = "map-hoods";
       mh.textContent = "All of Chicago";
       cap.append(mh);
