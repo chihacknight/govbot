@@ -371,7 +371,10 @@ z-index above both the bill modal and the results overlay so it always reads on 
 card swings open
 like a cover (`.book-open-in` → `@keyframes card-book-open`, a `rotateY` reveal). It's decorative —
 skipped entirely under `prefers-reduced-motion` (the card just fades in) and guarded by `modalKey` so
-a superseding open never disturbs the new card. The bill modal
+a superseding open never disturbs the new card. The bill modal shows the **govbot topics** as
+**colour-coded tags** (`.m-topic` — each tinted in its topic's `state.tagColor` series colour with a
+matching dot, so a topic reads the same colour as in the table/recent strip) **above** the Status
+section (moved up from below the sponsors). Below the topics it
 leads with an inferred **status timeline** (Introduced → Committee → Passed House → Senate →
 Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component; its
 **current** node — the bill's latest recorded stage — pulses via `@keyframes gb-node-pulse` (a
