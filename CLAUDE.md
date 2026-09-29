@@ -400,8 +400,10 @@ button was removed)) and an **"Important Dates"** panel
 (`#ballot-picker` / `#ballot-cards`, one card per distinct `ballot_date` with its stage label +
 office/candidate counts, `renderElectionHero`). These cards are **informational only** — plain
 `<div>`s, not buttons, with no click/hover/focus and **no ballot filtering** (all races are shown by
-default via `revealAllSections()` at load); the earlier "click a ballot to filter" behaviour was
-removed. The rich race engine (groups, five drawers, calendar,
+default — `init()` calls `revealAllSections()` unconditionally at the end of load, so the bottom
+"Browse by office" grid shows on **every** load including a first-time direct visit with no `#race=`
+deep link and no saved view, not only when a deep link or the map/finder reveals sections); the
+earlier "click a ballot to filter" behaviour was removed. The rich race engine (groups, five drawers, calendar,
 Springfield, picker) is unchanged. The office-card area's **stat scorecards (`#tiles` /
 `renderTiles`) and the ballot-date / "Only races with candidates" / Clear / "Follow every race"
 controls were removed** — the `#filters` bar now holds **only the search box** (`#f-search`,
@@ -733,15 +735,14 @@ neighborhoods:"** line (`.map-hoods`) and a **"Counties:"** line — each comple
 truncation; the old "Boundary: City of Chicago" caption was removed), and give the tall IL silhouette
 a taller SVG (`.race-map--il`). The maps use one accessible **gold-base / green-highlight** scheme in
 both themes: the base silhouette (state or city wards, `.map-ctx`) is filled/edged in **gold**
-(`--gb-gold`) with a gold panel border, and the highlighted district (`.map-hi`/`.map-loc`) is
+(`--gb-gold`) with a gold panel border, and the highlighted district (`.map-hi`) is
 **green** (`--series-4`) — independent of the per-office `--gc` colour — so the highlight always
 pops against the gold base in light and dark mode. On the statewide silhouette a single IL Senate/House/congressional
-district is only a few px, so its thin outline is invisible — `buildRaceMap` adds a **pulsing locator
-ring** (`.map-loc`, centred on the district via `pathsCenter`) and thickens the IL highlight stroke
-(`.race-map--il .map-hi`/`.map-loc` ~18u, `@keyframes rm-pulse-il`) so the highlighted area reads.
-**U.S. House districts skip the ring** (`entry.kind === "us_house"`): with only 17 across the state
-they're large enough to read from the green highlight alone, so the pulsing circle is omitted there
-(kept for the tiny IL Senate/House districts).
+district is only a few px, so `buildRaceMap` thickens the IL highlight stroke (`.race-map--il .map-hi`
+~18u) and **pulses it 16→30u** (`@keyframes rm-pulse-il`) so even a small district reads. **No locator
+ring is drawn on any statewide map** — U.S. House, IL Senate and IL House all rely on that thick pulsing
+green highlight (the earlier `.map-loc` ring + `pathsCenter` centroid helper were removed per request;
+the thick pulse keeps a small district findable without a circle).
 **These locator SVGs are built lazily**: because the base outline (city wards, or the IL silhouette)
 is redrawn inside every map, eagerly rendering all revealed races' maps was the dominant DOM/paint
 cost on mobile — so `renderRaceMap` returns a sized placeholder (`.race-map-ph`) that a shared

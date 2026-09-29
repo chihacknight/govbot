@@ -275,11 +275,10 @@
   @media (prefers-reduced-motion: reduce) { .race-map .map-dist { animation: none; } }
   /* Statewide silhouette: the viewBox (~1000 wide) renders at ~100px, so a normal
      stroke is sub-pixel and a single district is a few px — thicken the gold edge
-     and the green highlight, and add a big green locator ring so the highlighted
-     area actually reads. */
+     and the green highlight (and pulse it 16→30u) so even a small district reads
+     without a locator ring. */
   .race-map--il .map-ctx { stroke-width: 5; }
   .race-map--il .map-hi { stroke-width: 18; }
-  .race-map--il .map-loc { fill: color-mix(in srgb, var(--series-4) 24%, transparent); stroke: var(--series-4); stroke-width: 18; }
   .race-map--il .map-dist { animation: rm-pulse-il 1.8s ease-in-out infinite; }
   @keyframes rm-pulse-il { 0%, 100% { stroke-width: 16; } 50% { stroke-width: 30; } }
   @media (prefers-reduced-motion: reduce) { .race-map--il .map-dist { animation: none; } }
@@ -1354,6 +1353,13 @@
       f.append(code, document.createTextNode("."));
     }
 
+    // Show every office section by default, on every load — so a first-time
+    // visitor who lands straight on this page (nav click / bookmark / typed URL,
+    // no #race= deep link and no saved view) still sees the "Browse by office"
+    // grid, not an empty page. Returning visitors and deep-linked ones already
+    // revealed via saved state / applyElectionsDeepLink; this just makes it
+    // unconditional.
+    revealAllSections();
     render();
     applyElectionsDeepLink();               // honor a #race=/#office= link from global search
   }
@@ -2470,22 +2476,6 @@
     return ph;
   }
 
-  // Average point of a set of SVG path strings ("M x,y L x,y … Z") — a cheap
-  // centroid used to place the statewide locator ring on the highlighted district.
-  function pathsCenter(paths) {
-    let sx = 0, sy = 0, n = 0;
-    (paths || []).forEach((d) => {
-      d.replace(/[MLZ]/g, " ").trim().split(/\s+/).forEach((tok) => {
-        const c = tok.split(",");
-        if (c.length === 2) {
-          const x = parseFloat(c[0]), y = parseFloat(c[1]);
-          if (!isNaN(x) && !isNaN(y)) { sx += x; sy += y; n++; }
-        }
-      });
-    });
-    return n ? { x: Math.round(sx / n), y: Math.round(sy / n) } : null;
-  }
-
   function buildRaceMap(r, meta, entry) {
     const maps = state.maps;
     if (!maps || !maps.view || !maps.context) return null;
@@ -2509,23 +2499,12 @@
     // base outline (whole city, or the state silhouette); a citywide office
     // highlights the whole city instead of a single district.
     context.forEach((d) => svg.append(mk(d, (r.is_citywide && !isIl) ? "map-hi" : "map-ctx")));
-    // highlighted district on top, pulsing
+    // highlighted district on top, pulsing. No locator ring on any statewide
+    // silhouette (per request) — U.S. House, IL Senate and IL House all rely on
+    // the thick green highlight, which the .race-map--il rules pulse from 16→30u
+    // so even a small district reads without the circle.
     if (entry) {
       entry.paths.forEach((d) => svg.append(mk(d, "map-hi map-dist")));
-      // A single IL Senate/House district is tiny on the whole-state silhouette
-      // (a few px), so its outline alone is easy to miss — draw a pulsing locator
-      // ring centred on it so the reader can find the highlight. U.S. House
-      // districts are large (17 across the state) and read fine from the green
-      // highlight alone, so they skip the ring (per request).
-      if (isIl && entry.kind !== "us_house") {
-        const c = pathsCenter(entry.paths);
-        if (c) {
-          const ring = document.createElementNS(SVGNS, "circle");
-          ring.setAttribute("cx", c.x); ring.setAttribute("cy", c.y); ring.setAttribute("r", "78");
-          ring.setAttribute("class", "map-loc map-dist");
-          svg.append(ring);
-        }
-      }
     }
     wrap.append(svg);
 
