@@ -264,6 +264,14 @@
      frame and stacks up across the popup's many maps. */
   @keyframes rm-pulse { 0%, 100% { stroke-width: 2.5; } 50% { stroke-width: 4.2; } }
   @media (prefers-reduced-motion: reduce) { .race-map .map-dist { animation: none; } }
+  /* Statewide silhouette: the viewBox (~1000 wide) renders at ~100px, so a normal
+     2.5-unit stroke is sub-pixel and a single district is a few px — thicken the
+     highlight and add a big locator ring so the highlighted area actually reads. */
+  .race-map--il .map-hi { stroke-width: 18; }
+  .race-map--il .map-loc { fill: color-mix(in srgb, var(--gc) 18%, transparent); stroke: var(--gc); stroke-width: 18; }
+  .race-map--il .map-dist { animation: rm-pulse-il 1.8s ease-in-out infinite; }
+  @keyframes rm-pulse-il { 0%, 100% { stroke-width: 16; } 50% { stroke-width: 30; } }
+  @media (prefers-reduced-motion: reduce) { .race-map--il .map-dist { animation: none; } }
   .race-map .map-cap { font-size: 11.5px; color: var(--text-secondary); line-height: 1.4; min-width: 0; }
   .race-map .map-cap b { color: var(--text-primary); font-weight: 650; }
   /* Neighborhoods the district touches (Chicago community areas). */
@@ -754,6 +762,23 @@
     /* No room for the side locator on phones. */
     .cm-stage { padding-left: 0; }
     .cm-locator, .cm-connect { display: none; }
+  }
+
+  /* ---------- full-contrast (un-dimmed) text, per request ----------
+     Placed last so it wins by source order over the earlier per-component rules.
+     The map hint, the election-calendar cards, the office-card descriptions, and
+     all the body copy in the Springfield ("rules of the game") and "Where the data
+     comes from" sections now read at full contrast (--text-primary). Coloured
+     accents (status pills, topic dots, links, timeline dots) are left as-is. */
+  .cm-empty,
+  .oc-blurb,
+  .calendar .cal-sub, .calendar .cal-for, .calendar .cal-legend,
+  .calendar .tl-label, .calendar .tl-note,
+  .calendar .tl-item.future .tl-date, .calendar .tl-item.future .tl-label,
+  .springfield .sf-sub, .springfield .sf-syn, .springfield .sf-tag,
+  .springfield .sf-action, .springfield .sf-action b, .springfield .sf-bill-ext,
+  .cabinet .cab-intro, .cabinet .cab-item p {
+    color: var(--text-primary);
   }
 </style>
 <script>
@@ -2402,6 +2427,22 @@
     return ph;
   }
 
+  // Average point of a set of SVG path strings ("M x,y L x,y … Z") — a cheap
+  // centroid used to place the statewide locator ring on the highlighted district.
+  function pathsCenter(paths) {
+    let sx = 0, sy = 0, n = 0;
+    (paths || []).forEach((d) => {
+      d.replace(/[MLZ]/g, " ").trim().split(/\s+/).forEach((tok) => {
+        const c = tok.split(",");
+        if (c.length === 2) {
+          const x = parseFloat(c[0]), y = parseFloat(c[1]);
+          if (!isNaN(x) && !isNaN(y)) { sx += x; sy += y; n++; }
+        }
+      });
+    });
+    return n ? { x: Math.round(sx / n), y: Math.round(sy / n) } : null;
+  }
+
   function buildRaceMap(r, meta, entry) {
     const maps = state.maps;
     if (!maps || !maps.view || !maps.context) return null;
@@ -2426,7 +2467,21 @@
     // highlights the whole city instead of a single district.
     context.forEach((d) => svg.append(mk(d, (r.is_citywide && !isIl) ? "map-hi" : "map-ctx")));
     // highlighted district on top, pulsing
-    if (entry) entry.paths.forEach((d) => svg.append(mk(d, "map-hi map-dist")));
+    if (entry) {
+      entry.paths.forEach((d) => svg.append(mk(d, "map-hi map-dist")));
+      // A single IL Senate/House/congressional district is tiny on the whole-state
+      // silhouette (a few px), so its outline alone is easy to miss — draw a
+      // pulsing locator ring centred on it so the reader can find the highlight.
+      if (isIl) {
+        const c = pathsCenter(entry.paths);
+        if (c) {
+          const ring = document.createElementNS(SVGNS, "circle");
+          ring.setAttribute("cx", c.x); ring.setAttribute("cy", c.y); ring.setAttribute("r", "78");
+          ring.setAttribute("class", "map-loc map-dist");
+          svg.append(ring);
+        }
+      }
+    }
     wrap.append(svg);
 
     const cap = document.createElement("div"); cap.className = "map-cap";
@@ -2439,12 +2494,8 @@
       const mh = document.createElement("div"); mh.className = "map-hoods";
       const lab = document.createElement("span"); lab.className = "mh-label";
       lab.textContent = "Neighborhoods: ";
-      mh.append(lab, document.createTextNode(hoods.slice(0, 4).join(", ")));
-      if (hoods.length > 4) {
-        const more = document.createElement("span"); more.className = "mh-more";
-        more.textContent = " +" + (hoods.length - 4) + " more";
-        mh.append(more);
-      }
+      // Show every neighborhood the district touches (no "+N more" truncation).
+      mh.append(lab, document.createTextNode(hoods.join(", ")));
       cap.append(mh);
     } else if (r.is_citywide) {
       const mh = document.createElement("div"); mh.className = "map-hoods";

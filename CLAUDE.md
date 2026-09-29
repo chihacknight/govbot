@@ -371,10 +371,10 @@ z-index above both the bill modal and the results overlay so it always reads on 
 card swings open
 like a cover (`.book-open-in` → `@keyframes card-book-open`, a `rotateY` reveal). It's decorative —
 skipped entirely under `prefers-reduced-motion` (the card just fades in) and guarded by `modalKey` so
-a superseding open never disturbs the new card. The bill modal shows the **govbot topics** as
-**colour-coded tags** (`.m-topic` — each tinted in its topic's `state.tagColor` series colour with a
-matching dot, so a topic reads the same colour as in the table/recent strip) **above** the Status
-section (moved up from below the sponsors). Below the topics it
+a superseding open never disturbs the new card. The bill modal shows the topics (section heading
+**"TOPIC(S)"**) as **colour-coded tags** (`.m-topic` — each tinted in its topic's `state.tagColor`
+series colour with a matching dot, so a topic reads the same colour as in the table/recent strip)
+**above** the Status section (moved up from below the sponsors). Below the topics it
 leads with an inferred **status timeline** (Introduced → Committee → Passed House → Senate →
 Governor, `billStageIndex`/`stageTimeline`, using the shared `.gb-timeline` component; its
 **current** node — the bill's latest recorded stage — pulses via `@keyframes gb-node-pulse` (a
@@ -708,8 +708,12 @@ from Chalkbeat's public 2026 CPS-board-map GeoJSON (`districts-20-centroids.geoj
 — the one non-government source, used because it's the sole published geometry; a fetch failure just
 leaves CPS races map-less (geometry is never invented).** The frontend
 `renderRaceMap`/`buildRaceMap` pick the space from `entry.space`, draw the highlighted **pulsing**
-district (`.map-dist`), list the neighborhoods (`.map-hoods`, first 4 + "+N more"; the old "Boundary:
-City of Chicago" caption was removed), and give the tall IL silhouette a taller SVG (`.race-map--il`).
+district (`.map-dist`), list **all** the neighborhoods it touches (`.map-hoods`, no "+N more"
+truncation; the old "Boundary: City of Chicago" caption was removed), and give the tall IL silhouette
+a taller SVG (`.race-map--il`). On the statewide silhouette a single IL Senate/House/congressional
+district is only a few px, so its thin outline is invisible — `buildRaceMap` adds a **pulsing locator
+ring** (`.map-loc`, centred on the district via `pathsCenter`) and thickens the IL highlight stroke
+(`.race-map--il .map-hi`/`.map-loc` ~18u, `@keyframes rm-pulse-il`) so the highlighted area reads.
 **These locator SVGs are built lazily**: because the base outline (city wards, or the IL silhouette)
 is redrawn inside every map, eagerly rendering all revealed races' maps was the dominant DOM/paint
 cost on mobile — so `renderRaceMap` returns a sized placeholder (`.race-map-ph`) that a shared
@@ -863,7 +867,11 @@ exists**: e.g. the elected CPS board's role over the schools, "22 police distric
 66 seats", the IL Senate/House as the Springfield chambers, the U.S. House as Congress's lower chamber)
 and the office's **full election timeline** (the shared
 `renderTimeline` `.tl` component with the pulsing current node — every race in a group shares its ballot
-cycle, so the first race's `timeline` is used), plus a "View all races →" affordance. The card/popup
+cycle, so the first race's `timeline` is used), plus a "View all races →" affordance.
+A **legibility rule at the end of the stylesheet** (so it wins by source order) sets these to full
+contrast (`--text-primary`), not dimmed: the office-card descriptions (`.oc-blurb`), the Chicago-map
+"Click a ward…" hint (`.cm-empty`), the election-calendar card copy (`.calendar` `.cal-*`/`.tl-*`), and
+all body text in the Springfield ("rules of the game") and "Where the data comes from" cabinet sections. The card/popup
 title comes from `GROUP_CARD_LABEL[g]` when set, else `GROUP_META[g].label`: the CPS card is titled
 **"CPS Board — Subdistrict Members"** because it holds only the 20 district seats — the board
 **president** is a separate citywide (at-large) race shown in the ballot side panel, not a subdistrict
