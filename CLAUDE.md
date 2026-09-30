@@ -938,8 +938,12 @@ popup (under the search, `.gm-sources` from a per-group `GROUP_SOURCES` map, ext
 the **CPS Board** popup links the official CPS Board member map, the **Police District Councils**
 popup links CPD's "Find Your District" address tool and the City Data Portal police-district boundary
 dataset, the **U.S. House** popup links the official House.gov "find your representative" district
-lookup, and the **IL Senate** and **IL House** popups link the ISBE District Locator (ArcGIS) — the
-in-popup map is approximate, so these are the authoritative address lookups. (For
+lookup, the **IL Senate** popup links the ISBE District Locator (ArcGIS), and the **IL House** popup
+links the ISBE "find your elected officials" address search — the in-popup map is approximate, so
+these are the authoritative address lookups. When an office has such a top source, the **per-race
+"Official source ↗" link is dropped from each race card** in that popup (`hideSourceLink` passed from
+`fillGroupModal`), leaving just the "Follow this race (RSS)" button — the source on top makes it
+redundant; the Chicago-map "On this ballot" side panel still shows the per-race source link. (For
 reference: there are **22** police district councils, one per active Chicago police district — the
 numbering runs 1–25 but skips the long-closed districts 13/21/23 — three seats each = 66 members; and
 the O'Hare-area districts genuinely straddle the county line, so CPS subdistrict 1A and police district

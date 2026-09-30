@@ -1191,9 +1191,9 @@
         note: "Illinois State Board of Elections — find your Illinois Senate & House districts by address. Only the 39 of 59 Senate seats up this cycle appear here; the rest are mid-term (next up 2028)." },
     ],
     il_house: [
-      { label: "ISBE District Locator",
-        url: "https://experience.arcgis.com/experience/b62f98ad44314d18ade2545833aa498a/",
-        note: "Illinois State Board of Elections — find your Illinois Senate & House districts by address." },
+      { label: "Find your elected officials",
+        url: "https://www.elections.il.gov/electionoperations/districtlocator/districtofficialsearchbyaddress.aspx",
+        note: "Illinois State Board of Elections — search by your residential address for your Illinois House district and its elected officials." },
     ],
   };
 
@@ -2347,8 +2347,12 @@
     }
 
     const body = document.createElement("div"); body.className = "gm-body"; body.id = "gm-body";
+    // When this office shows an authoritative address-lookup source at the top of
+    // the popup (GROUP_SOURCES), drop the per-race "Official source ↗" link next to
+    // each race's RSS button — it's redundant with the source already on top.
+    const hideSourceLink = !!GROUP_SOURCES[g];
     races_g.forEach((r) => {
-      const rc = renderRace(r, meta, { hideTimeline: true, hideWhy: true });   // office card already shows the timeline + blurb
+      const rc = renderRace(r, meta, { hideTimeline: true, hideWhy: true, hideSourceLink });   // office card already shows the timeline + blurb
       rc.dataset.hay = raceHaystack(r);
       body.append(rc);
     });
@@ -2467,7 +2471,7 @@
     };
     const footEl = () => {
       const foot = document.createElement("div"); foot.className = "race-foot";
-      if (r.official_list_url) {
+      if (r.official_list_url && !opts.hideSourceLink) {
         const src = document.createElement("a"); src.className = "src-link";
         src.href = r.official_list_url; src.target = "_blank"; src.rel = "noopener";
         src.textContent = (r.source || "Official source") + " ↗";
