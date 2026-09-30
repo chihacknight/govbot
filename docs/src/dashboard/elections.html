@@ -237,6 +237,18 @@
   .gm-x { width: 36px; height: 36px; flex: none; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 9px; background: transparent; color: var(--text-secondary); cursor: pointer; }
   .gm-x:hover { background: var(--hover-wash); color: var(--text-primary); }
   .gm-searchrow { padding: 12px 22px 0; }
+  /* Official address-lookup / boundary-data links at the top of an office popup. */
+  .gm-sources { padding: 12px 22px 0; display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+  .gm-sources-lbl { flex-basis: 100%; font-size: 11px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--text-muted); }
+  .gm-source { display: flex; flex-direction: column; gap: 2px; min-width: 220px; flex: 1 1 240px;
+    text-decoration: none; padding: 9px 12px; border-radius: 9px;
+    border: 1px solid color-mix(in srgb, var(--gc, var(--series-2)) 45%, var(--border));
+    background: color-mix(in srgb, var(--gc, var(--series-2)) 9%, var(--surface-1)); }
+  .gm-source:hover { border-color: var(--gc, var(--series-2));
+    background: color-mix(in srgb, var(--gc, var(--series-2)) 16%, var(--surface-1)); }
+  .gm-source-t { font-size: 13px; font-weight: 700; color: var(--gc, var(--series-2)); }
+  .gm-source-d { font-size: 11.5px; line-height: 1.35; color: var(--text-secondary); }
   .gm-body { flex: 1; overflow-y: auto; padding: 16px 22px; display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 12px; align-content: start; }
   /* Off-screen race cards (each with a Chicago SVG map) are skipped while scrolling. */
   .gm-body .race { content-visibility: auto; contain-intrinsic-size: 0 460px; }
@@ -1145,6 +1157,26 @@
   // separate citywide race shown in the ballot side panel).
   const GROUP_CARD_LABEL = {
     cps_board: "CPS Board — Subdistrict Members",
+  };
+
+  // Official "find your district/representative by address" + boundary-data links,
+  // shown at the top of an office popup (under the search) so a reader can pin
+  // their exact district — the map/list here is approximate, these are the
+  // authoritative address lookups. External, so each opens in a new tab with a ↗.
+  const GROUP_SOURCES = {
+    cps_board: [
+      { label: "Find your CPS Board member",
+        url: "https://www.cps.edu/about/chicago-board-of-education/member-map/",
+        note: "Official CPS Board member map — look up your school-board subdistrict by address." },
+    ],
+    police_district_council: [
+      { label: "Find your district",
+        url: "https://www.chicagopolice.org/police-districts/find-your-district/",
+        note: "Official CPD tool — search by address for your exact district and beat." },
+      { label: "Boundary data",
+        url: "https://data.cityofchicago.org/Public-Safety/Boundaries-Police-Districts-current-/fthy-xz3r",
+        note: "City of Chicago Data Portal — view or download the geographic boundaries for all police districts." },
+    ],
   };
 
   const state = {
@@ -2276,6 +2308,24 @@
       inp.value = state._gmSearch || "";
       inp.addEventListener("input", (e) => { state._gmSearch = e.target.value.trim().toLowerCase(); gmApplyFilter(); });
       swrap.append(inp); row.append(swrap); modal.append(row);
+    }
+
+    // Authoritative "find your district by address" + boundary-data links for
+    // this office, at the top of the popup (the map here is approximate).
+    const srcs = GROUP_SOURCES[g];
+    if (srcs && srcs.length) {
+      const sr = document.createElement("div"); sr.className = "gm-sources";
+      const lbl = document.createElement("span"); lbl.className = "gm-sources-lbl";
+      lbl.textContent = "Find your district by address";
+      sr.append(lbl);
+      srcs.forEach((s) => {
+        const a = document.createElement("a"); a.className = "gm-source";
+        a.href = s.url; a.target = "_blank"; a.rel = "noopener";
+        const t = document.createElement("span"); t.className = "gm-source-t"; t.textContent = s.label + " ↗";
+        const d = document.createElement("span"); d.className = "gm-source-d"; d.textContent = s.note;
+        a.append(t, d); sr.append(a);
+      });
+      modal.append(sr);
     }
 
     const body = document.createElement("div"); body.className = "gm-body"; body.id = "gm-body";

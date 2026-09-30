@@ -931,6 +931,15 @@ anything about a race** (`raceHaystack`): office/district, every candidate & pot
 district covers (from `state.maps`), the "why this race" note and the ballot stage/date — so a reader
 can filter a big office by a candidate, a neighborhood or a county name. `renderGroups` keeps an
 open popup in sync with the current filters (`fillGroupModal`) or closes it if its office drops out.
+Some offices also carry official **"find your district by address" source links** at the top of the
+popup (under the search, `.gm-sources` from a per-group `GROUP_SOURCES` map, external → new tab + ↗):
+the **CPS Board** popup links the official CPS Board member map, and the **Police District Councils**
+popup links CPD's "Find Your District" address tool and the City Data Portal police-district boundary
+dataset — the in-popup map is approximate, so these are the authoritative address lookups. (For
+reference: there are **22** police district councils, one per active Chicago police district — the
+numbering runs 1–25 but skips the long-closed districts 13/21/23 — three seats each = 66 members; and
+the O'Hare-area districts genuinely straddle the county line, so CPS subdistrict 1A and police district
+16 correctly list **Cook + DuPage** counties in `maps.json`.)
 Inside the office popup **all body copy reads at full contrast** — a legibility rule promotes the
 office-card timeline (`.oc-tl`) and every popup race's dimmed text (`.gm-body` — timeline
 labels/notes/future dates, the map caption, the neighborhoods & counties, the "why" note, the
