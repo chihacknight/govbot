@@ -38,11 +38,16 @@ jobs:
       # pure dashboard HTML/CSS/JS change, nor on a PR (PRs never deploy). So:
       #
       #   * scheduled / manual runs        -> always full refresh (keep data fresh)
-      #   * a push to main that touches ANY non-`docs/src/dashboard/**` file
+      #   * a push to main that touches any file that ISN'T a dashboard file
+      #     (`docs/src/dashboard/**`) or a Markdown doc (`*.md`, e.g. CLAUDE.md)
       #                                    -> full refresh
-      #   * a push to main touching only `docs/src/dashboard/**`, or any PR
+      #   * a push to main touching only dashboard files and/or Markdown docs,
+      #     or any PR
       #                                    -> skip the pipeline, reuse the last
       #                                       full build's data from cache
+      #     (Markdown docs are pure documentation — they don't feed the data
+      #      pipeline — so a docs-only change stays on the fast path; mdbook still
+      #      rebuilds and publishes with the committed data.)
       #
       # Everything except data.json + the two .gitignore'd artifacts
       # (il_summaries.json, legislator_images.json + assets/legislators/) is
@@ -74,10 +79,17 @@ jobs:
           CHANGED="$(git diff --name-only "$BASE" "$HEAD")"
           echo "changed files:"; printf '%s\n' "$CHANGED"
           if [ -z "$CHANGED" ]; then echo "refresh=true" >> "$GITHUB_OUTPUT"; exit 0; fi
-          if printf '%s\n' "$CHANGED" | grep -qvE '^docs/src/dashboard/'; then
-            echo "non-dashboard change -> full refresh"; echo "refresh=true" >> "$GITHUB_OUTPUT"
+          # Fast path if EVERY changed file is either a dashboard file
+          # (docs/src/dashboard/**) or a Markdown documentation file (*.md, e.g.
+          # CLAUDE.md, README.md) — neither feeds the data pipeline, so the ~40-min
+          # refresh can be skipped (mdbook still rebuilds with the committed data).
+          # Anything else (actions/**, scripts/**, schemas/**, the workflow, …) is
+          # a data/machinery change and forces a full refresh.
+          REST="$(printf '%s\n' "$CHANGED" | grep -vE '^docs/src/dashboard/' | grep -vE '\.md$' || true)"
+          if [ -n "$REST" ]; then
+            echo "non-dashboard, non-doc change -> full refresh"; echo "refresh=true" >> "$GITHUB_OUTPUT"
           else
-            echo "dashboard-only change -> skip data pipeline (reuse cached build data)"; echo "refresh=false" >> "$GITHUB_OUTPUT"
+            echo "dashboard/docs-only change -> skip data pipeline (reuse cached build data)"; echo "refresh=false" >> "$GITHUB_OUTPUT"
           fi
 
       # On the fast path, restore the last full build's data.json + gitignored
