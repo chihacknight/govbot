@@ -237,6 +237,18 @@
   .gm-x { width: 36px; height: 36px; flex: none; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 9px; background: transparent; color: var(--text-secondary); cursor: pointer; }
   .gm-x:hover { background: var(--hover-wash); color: var(--text-primary); }
   .gm-searchrow { padding: 12px 22px 0; }
+  /* Official address-lookup / boundary-data links at the top of an office popup. */
+  .gm-sources { padding: 12px 22px 0; display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+  .gm-sources-lbl { flex-basis: 100%; font-size: 11px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--text-muted); }
+  .gm-source { display: flex; flex-direction: column; gap: 2px; min-width: 220px; flex: 1 1 240px;
+    text-decoration: none; padding: 9px 12px; border-radius: 9px;
+    border: 1px solid color-mix(in srgb, var(--gc, var(--series-2)) 45%, var(--border));
+    background: color-mix(in srgb, var(--gc, var(--series-2)) 9%, var(--surface-1)); }
+  .gm-source:hover { border-color: var(--gc, var(--series-2));
+    background: color-mix(in srgb, var(--gc, var(--series-2)) 16%, var(--surface-1)); }
+  .gm-source-t { font-size: 13px; font-weight: 700; color: var(--gc, var(--series-2)); }
+  .gm-source-d { font-size: 11.5px; line-height: 1.35; color: var(--text-secondary); }
   .gm-body { flex: 1; overflow-y: auto; padding: 16px 22px; display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 12px; align-content: start; }
   /* Off-screen race cards (each with a Chicago SVG map) are skipped while scrolling. */
   .gm-body .race { content-visibility: auto; contain-intrinsic-size: 0 460px; }
@@ -284,9 +296,13 @@
   @media (prefers-reduced-motion: reduce) { .race-map--il .map-dist { animation: none; } }
   .race-map .map-cap { font-size: 11.5px; color: var(--text-secondary); line-height: 1.4; min-width: 0; }
   .race-map .map-cap b { color: var(--text-primary); font-weight: 650; }
-  /* Neighborhoods the district touches (Chicago community areas). */
-  .race-map .map-hoods { margin-top: 3px; font-size: 10.8px; color: var(--text-secondary); line-height: 1.45; }
-  .race-map .map-hoods .mh-label { color: var(--text-muted); }
+  /* Places the district touches, in titled categories ("Chicago neighborhoods",
+     "Counties"). Each category label is a highlighted gold title on its own line;
+     a little extra gap separates the two categories so they read as distinct groups. */
+  .race-map .map-hoods { margin-top: 6px; font-size: 10.8px; color: var(--text-secondary); line-height: 1.45; }
+  .race-map .map-hoods + .map-hoods { margin-top: 10px; }
+  .race-map .map-hoods .mh-label { display: block; margin-bottom: 2px; color: var(--gb-gold);
+    font-weight: 800; text-transform: uppercase; letter-spacing: .05em; font-size: 9.5px; }
   .race-map .map-hoods .mh-more { color: var(--text-muted); }
 
   .why {
@@ -801,7 +817,6 @@
   .gm-body .tl-label, .gm-body .tl-note,
   .gm-body .tl-item.future .tl-date, .gm-body .tl-item.future .tl-label,
   .gm-body .map-cap, .gm-body .map-hoods,
-  .gm-body .map-hoods .mh-label, .gm-body .map-hoods .mh-more,
   .gm-body .why, .gm-body .mini, .gm-body .mini b, .gm-body .no-cands,
   .gm-body .cand-money .m-fig .m-lbl, .gm-body .cand-money .m-cmte,
   .gm-body .cand-money .m-fig.spent .m-val,
@@ -1145,6 +1160,41 @@
   // separate citywide race shown in the ballot side panel).
   const GROUP_CARD_LABEL = {
     cps_board: "CPS Board — Subdistrict Members",
+  };
+
+  // Official "find your district/representative by address" + boundary-data links,
+  // shown at the top of an office popup (under the search) so a reader can pin
+  // their exact district — the map/list here is approximate, these are the
+  // authoritative address lookups. External, so each opens in a new tab with a ↗.
+  const GROUP_SOURCES = {
+    cps_board: [
+      { label: "Find your CPS Board member",
+        url: "https://www.cps.edu/about/chicago-board-of-education/member-map/",
+        note: "Official CPS Board member map — look up your school-board subdistrict by address." },
+    ],
+    police_district_council: [
+      { label: "Find your district",
+        url: "https://www.chicagopolice.org/police-districts/find-your-district/",
+        note: "Official CPD tool — search by address for your exact district and beat." },
+      { label: "Boundary data",
+        url: "https://data.cityofchicago.org/Public-Safety/Boundaries-Police-Districts-current-/fthy-xz3r",
+        note: "City of Chicago Data Portal — view or download the geographic boundaries for all police districts." },
+    ],
+    us_house: [
+      { label: "Find your representative",
+        url: "https://www.house.gov/representatives/find-your-representative",
+        note: "Official U.S. House District Lookup — verify your congressional district by entering your residential address." },
+    ],
+    il_senate: [
+      { label: "ISBE District Locator",
+        url: "https://experience.arcgis.com/experience/b62f98ad44314d18ade2545833aa498a/",
+        note: "Illinois State Board of Elections — find your Illinois Senate & House districts by address. Only the 39 of 59 Senate seats up this cycle appear here; the rest are mid-term (next up 2028)." },
+    ],
+    il_house: [
+      { label: "Find your elected officials",
+        url: "https://www.elections.il.gov/electionoperations/districtlocator/districtofficialsearchbyaddress.aspx",
+        note: "Illinois State Board of Elections — search by your residential address for your Illinois House district and its elected officials." },
+    ],
   };
 
   const state = {
@@ -2278,9 +2328,31 @@
       swrap.append(inp); row.append(swrap); modal.append(row);
     }
 
+    // Authoritative "find your district by address" + boundary-data links for
+    // this office, at the top of the popup (the map here is approximate).
+    const srcs = GROUP_SOURCES[g];
+    if (srcs && srcs.length) {
+      const sr = document.createElement("div"); sr.className = "gm-sources";
+      const lbl = document.createElement("span"); lbl.className = "gm-sources-lbl";
+      lbl.textContent = "Find your district by address";
+      sr.append(lbl);
+      srcs.forEach((s) => {
+        const a = document.createElement("a"); a.className = "gm-source";
+        a.href = s.url; a.target = "_blank"; a.rel = "noopener";
+        const t = document.createElement("span"); t.className = "gm-source-t"; t.textContent = s.label + " ↗";
+        const d = document.createElement("span"); d.className = "gm-source-d"; d.textContent = s.note;
+        a.append(t, d); sr.append(a);
+      });
+      modal.append(sr);
+    }
+
     const body = document.createElement("div"); body.className = "gm-body"; body.id = "gm-body";
+    // When this office shows an authoritative address-lookup source at the top of
+    // the popup (GROUP_SOURCES), drop the per-race "Official source ↗" link next to
+    // each race's RSS button — it's redundant with the source already on top.
+    const hideSourceLink = !!GROUP_SOURCES[g];
     races_g.forEach((r) => {
-      const rc = renderRace(r, meta, { hideTimeline: true, hideWhy: true });   // office card already shows the timeline + blurb
+      const rc = renderRace(r, meta, { hideTimeline: true, hideWhy: true, hideSourceLink });   // office card already shows the timeline + blurb
       rc.dataset.hay = raceHaystack(r);
       body.append(rc);
     });
@@ -2399,7 +2471,7 @@
     };
     const footEl = () => {
       const foot = document.createElement("div"); foot.className = "race-foot";
-      if (r.official_list_url) {
+      if (r.official_list_url && !opts.hideSourceLink) {
         const src = document.createElement("a"); src.className = "src-link";
         src.href = r.official_list_url; src.target = "_blank"; src.rel = "noopener";
         src.textContent = (r.source || "Official source") + " ↗";
@@ -2521,7 +2593,7 @@
     const placeLine = (label, items) => {
       const mh = document.createElement("div"); mh.className = "map-hoods";
       const lab = document.createElement("span"); lab.className = "mh-label";
-      lab.textContent = label + ": ";
+      lab.textContent = label;   // block title on its own line (no colon)
       mh.append(lab, document.createTextNode(items.join(", ")));
       cap.append(mh);
     };
