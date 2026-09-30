@@ -296,9 +296,13 @@
   @media (prefers-reduced-motion: reduce) { .race-map--il .map-dist { animation: none; } }
   .race-map .map-cap { font-size: 11.5px; color: var(--text-secondary); line-height: 1.4; min-width: 0; }
   .race-map .map-cap b { color: var(--text-primary); font-weight: 650; }
-  /* Neighborhoods the district touches (Chicago community areas). */
-  .race-map .map-hoods { margin-top: 3px; font-size: 10.8px; color: var(--text-secondary); line-height: 1.45; }
-  .race-map .map-hoods .mh-label { color: var(--text-muted); }
+  /* Places the district touches, in titled categories ("Chicago neighborhoods",
+     "Counties"). Each category label is a highlighted gold title on its own line;
+     a little extra gap separates the two categories so they read as distinct groups. */
+  .race-map .map-hoods { margin-top: 6px; font-size: 10.8px; color: var(--text-secondary); line-height: 1.45; }
+  .race-map .map-hoods + .map-hoods { margin-top: 10px; }
+  .race-map .map-hoods .mh-label { display: block; margin-bottom: 2px; color: var(--gb-gold);
+    font-weight: 800; text-transform: uppercase; letter-spacing: .05em; font-size: 9.5px; }
   .race-map .map-hoods .mh-more { color: var(--text-muted); }
 
   .why {
@@ -813,7 +817,6 @@
   .gm-body .tl-label, .gm-body .tl-note,
   .gm-body .tl-item.future .tl-date, .gm-body .tl-item.future .tl-label,
   .gm-body .map-cap, .gm-body .map-hoods,
-  .gm-body .map-hoods .mh-label, .gm-body .map-hoods .mh-more,
   .gm-body .why, .gm-body .mini, .gm-body .mini b, .gm-body .no-cands,
   .gm-body .cand-money .m-fig .m-lbl, .gm-body .cand-money .m-cmte,
   .gm-body .cand-money .m-fig.spent .m-val,
@@ -1176,6 +1179,21 @@
       { label: "Boundary data",
         url: "https://data.cityofchicago.org/Public-Safety/Boundaries-Police-Districts-current-/fthy-xz3r",
         note: "City of Chicago Data Portal — view or download the geographic boundaries for all police districts." },
+    ],
+    us_house: [
+      { label: "Find your representative",
+        url: "https://www.house.gov/representatives/find-your-representative",
+        note: "Official U.S. House District Lookup — verify your congressional district by entering your residential address." },
+    ],
+    il_senate: [
+      { label: "ISBE District Locator",
+        url: "https://experience.arcgis.com/experience/b62f98ad44314d18ade2545833aa498a/",
+        note: "Illinois State Board of Elections — find your Illinois Senate & House districts by address. Only the 39 of 59 Senate seats up this cycle appear here; the rest are mid-term (next up 2028)." },
+    ],
+    il_house: [
+      { label: "ISBE District Locator",
+        url: "https://experience.arcgis.com/experience/b62f98ad44314d18ade2545833aa498a/",
+        note: "Illinois State Board of Elections — find your Illinois Senate & House districts by address." },
     ],
   };
 
@@ -2571,7 +2589,7 @@
     const placeLine = (label, items) => {
       const mh = document.createElement("div"); mh.className = "map-hoods";
       const lab = document.createElement("span"); lab.className = "mh-label";
-      lab.textContent = label + ": ";
+      lab.textContent = label;   // block title on its own line (no colon)
       mh.append(lab, document.createTextNode(items.join(", ")));
       cap.append(mh);
     };

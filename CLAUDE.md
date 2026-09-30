@@ -741,9 +741,11 @@ from Chalkbeat's public 2026 CPS-board-map GeoJSON (`districts-20-centroids.geoj
 — the one non-government source, used because it's the sole published geometry; a fetch failure just
 leaves CPS races map-less (geometry is never invented).** The frontend
 `renderRaceMap`/`buildRaceMap` pick the space from `entry.space`, draw the highlighted **pulsing**
-district (`.map-dist`), list **all** the places it touches on their own labelled lines — a **"Chicago
-neighborhoods:"** line (`.map-hoods`) and a **"Counties:"** line — each complete (no "+N more"
-truncation; the old "Boundary: City of Chicago" caption was removed), and give the tall IL silhouette
+district (`.map-dist`), list **all** the places it touches under two **titled categories** — a
+**"Chicago neighborhoods"** group and a **"Counties"** group (`.map-hoods`), each with its category
+label (`.mh-label`) as a **highlighted gold, bold, uppercase title on its own line** above the list
+(the values stay full-contrast), and extra vertical gap between the two categories — each complete (no
+"+N more" truncation; the old "Boundary: City of Chicago" caption was removed), and give the tall IL silhouette
 a taller SVG (`.race-map--il`). The maps use one accessible **gold-base / green-highlight** scheme in
 both themes: the base silhouette (state or city wards, `.map-ctx`) is filled/edged in **gold**
 (`--gb-gold`) with a gold panel border, and the highlighted district (`.map-hi`) is
@@ -933,13 +935,19 @@ can filter a big office by a candidate, a neighborhood or a county name. `render
 open popup in sync with the current filters (`fillGroupModal`) or closes it if its office drops out.
 Some offices also carry official **"find your district by address" source links** at the top of the
 popup (under the search, `.gm-sources` from a per-group `GROUP_SOURCES` map, external → new tab + ↗):
-the **CPS Board** popup links the official CPS Board member map, and the **Police District Councils**
+the **CPS Board** popup links the official CPS Board member map, the **Police District Councils**
 popup links CPD's "Find Your District" address tool and the City Data Portal police-district boundary
-dataset — the in-popup map is approximate, so these are the authoritative address lookups. (For
+dataset, the **U.S. House** popup links the official House.gov "find your representative" district
+lookup, and the **IL Senate** and **IL House** popups link the ISBE District Locator (ArcGIS) — the
+in-popup map is approximate, so these are the authoritative address lookups. (For
 reference: there are **22** police district councils, one per active Chicago police district — the
 numbering runs 1–25 but skips the long-closed districts 13/21/23 — three seats each = 66 members; and
 the O'Hare-area districts genuinely straddle the county line, so CPS subdistrict 1A and police district
-16 correctly list **Cook + DuPage** counties in `maps.json`.)
+16 correctly list **Cook + DuPage** counties in `maps.json`. The **IL Senate shows 39 of 59
+districts** on purpose — under the staggered term schedule only 39 seats are up in 2026; the other 20
+(districts 1, 4, 7, 10, …, 58) are mid-term, next up 2028. This exact set of 39 was verified against
+the "2026 Illinois Senate election" Wikipedia district sections, and the IL Senate source-link note
+states it so a reader doesn't read the gaps as missing races.)
 Inside the office popup **all body copy reads at full contrast** — a legibility rule promotes the
 office-card timeline (`.oc-tl`) and every popup race's dimmed text (`.gm-body` — timeline
 labels/notes/future dates, the map caption, the neighborhoods & counties, the "why" note, the
