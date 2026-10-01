@@ -1,41 +1,45 @@
-![Govbot icon](https://manband.one/assets/govbot-logo-transparent.png)
+# About govbot
 
-# govbot
+**Every U.S. legislature, as data you can clone.** `govbot` is a terminal-native toolkit that turns government updates into git repositories you can analyze, query, and build on — no scraper to maintain, no data platform to pay for.
 
-**Every U.S. legislature, as data you can clone.** govbot turns government updates into git repositories you can analyze, query, and build on — no scraper to maintain, no data platform to pay for.
-
-- 📥 **Clone the legislation of 56 jurisdictions in under a minute** — every dataset is just a git repo.
+- 📥 **Clone the legislation of [56 jurisdictions](https://github.com/orgs/govbot-data/repositories) in under a minute** — every dataset is just a git repo.
 - 🔒 **Tag and summarize bills with private, local models** — optimized to run for free on GitHub Actions. No API keys, no per-token bill.
 - 🔎 **Analyze it your way** — stream it as JSON Lines through Unix pipes, or load it into DuckDB for SQL across every state at once.
+
+[▶ Project overview and demo (video)](https://youtu.be/IFnE1oeUIXo)
 
 ## By the numbers
 
 | | |
 |---|---|
 | **56** | jurisdictions covered — all 50 states + Federal + DC + 4 territories |
-| **14,474** | distinct federal (Congress) bills, and counting |
+| **19,186** | distinct federal bills in the 119th Congress (as of Sept 30, 2026), and counting |
 | **< 1 min** | to clone every dataset |
 | **$0** | cost to tag bills — models run locally on free CI |
 
-## What We Offer
+## What you can do with it
 
-The main Govbot dataset covers **56 jurisdictions** — all 50 states, the U.S. House & Senate (Federal), DC, and the territories of Puerto Rico, Guam, the U.S. Virgin Islands, and the Northern Mariana Islands — as `.json` files organized using the [Project Open Data](https://project-open-data.cio.gov/) catalog format.
+The dataset covers **56 jurisdictions** — all 50 states, the U.S. House & Senate (Federal), DC, and the territories of Puerto Rico, Guam, the U.S. Virgin Islands, and the Northern Mariana Islands — as `.json` files, one git repo per jurisdiction.
 
-The Govbot scrapers update regularly, appending new logs. New bills are then tagged and scored **on-device by a private sentence-transformer model (ONNX) with a keyword fallback** — small enough to run for free on GitHub Actions, so no bill text ever leaves your pipeline and there's no per-token cost. From there, the data can be analyzed with SQL via a [DuckDB](https://duckdb.org/) interface, browsed on our [live legislation dashboard](https://docs.windycivi.com), or plugged into applications like:
+The scrapers update regularly, appending new logs. New bills are tagged and scored **on-device by a private sentence-transformer model (ONNX) with a keyword fallback** — small enough to run for free on GitHub Actions, so no bill text leaves your pipeline and there's no per-token cost.
 
-- [**Transportation Legislation** Bluesky bot](https://bsky.app/profile/govbottransport.bsky.social) — transportation bills nationwide, posted as they move.
-- [**Data Center & AI Legislation** Bluesky bot](https://bsky.app/profile/govbotaidatacenter.bsky.social) — AI and data-center bills across every jurisdiction.
-- [**WindyCivi**](https://windycivi.com/), our example website, and an early BlueSky bot built in collaboration with U.S. Representative Hoan Huynh.
+Projects built on it:
+
+- [**Legislation dashboard**](dashboard/legislation.html) — every jurisdiction's bills by place, topic, sponsor and status.
+- [**Hearings & public comment**](dashboard/hearings.html) — upcoming hearings and how to weigh in.
+- [**Illinois elections**](dashboard/elections.html) — every race and candidate on your ballot.
+- [**Transportation Legislation** Bluesky bot](https://bsky.app/profile/govbottransport.bsky.social) — transportation bills across all jurisdictions, posted as they move.
+- [**Data Center & AI Legislation** Bluesky bot](https://bsky.app/profile/govbotaidatacenter.bsky.social) — AI and data-center bills nationwide.
 
 # Why govbot?
 
 > Why don't we pay attention to our representatives between elections?
 
-Legislative data is hard to parse, track, and organize. Activists, concerned citizens, and the curious may not have the time, resources, or expertise to build out duplicative tech stacks. Existing solutions may be limited by the willingness of organizations and companies to continue to run and host them - such as in the case of [Google's Civic Information API](https://developers.google.com/civic-information/), which was shut down earlier this year. What would a decentralized, open-source legislative data solution look like?
+Legislative data is hard to parse, track, and organize. Activists, concerned citizens, and the curious may not have the time, resources, or expertise to build out duplicative tech stacks. Existing solutions depend on the organizations and companies willing to keep running them — Google's [Civic Information API](https://developers.google.com/civic-information/) representatives lookup, for example, was shut down in 2025. What would a decentralized, open-source legislative data solution look like?
 
-The Govbot team's goal is to bridge this gap - building the framework for the building and use of federated, open-source, non-profit legislative data. Built as a [Chi Hack Night](https://chihacknight.org) [Breakout Group](https://github.com/chihacknight/breakout-groups/issues/219), the project includes an open-source, simplified, and expanded version of [OpenStates'](https://open.pluralpolicy.com/data/) data on state and federal legislation, as well as example applications.
+The Govbot team's goal is to bridge this gap — building the framework for federated, open-source, non-profit legislative data. Built as a [Chi Hack Night](https://chihacknight.org) [Breakout Group](https://github.com/chihacknight/breakout-groups/issues/219), the project includes an open-source, simplified, and expanded version of [Open States'](https://open.pluralpolicy.com/data/) data on state and federal legislation, plus the example applications above.
 
-# How Do I Use It?
+# Quick start
 
 ## 1. Install
 
@@ -43,29 +47,31 @@ The Govbot team's goal is to bridge this gap - building the framework for the bu
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"
 ```
 
-## 2. Run govbot
+## 2. Set up your project
 
 ```bash
 govbot
 ```
 
-That's it. If no `govbot.yml` exists, an interactive wizard walks you through setup:
+Running `govbot` with no config file launches an interactive setup wizard that:
 
-1. **Sources** - Choose all 56 jurisdictions or pick specific ones
-2. **Tags** - Start with an example tag, or get an AI prompt you can copy-paste to create your own
-3. **Publishing** - RSS feeds configured automatically
-
-The wizard creates `govbot.yml`, `.gitignore`, and a GitHub Actions workflow.
+1. Asks what data sources you want (all 56 jurisdictions or specific ones)
+2. Guides you through creating tags for topics you care about
+3. Creates `govbot.yml`, `.gitignore`, and a GitHub Actions workflow
 
 ## 3. Run the pipeline
 
-Once set up, running `govbot` again executes the full pipeline:
+```bash
+govbot
+```
+
+With a `govbot.yml` in your directory, running `govbot` executes the full pipeline:
 
 1. Clones/updates legislation repositories
 2. Tags bills based on your tag definitions
 3. Generates RSS feeds in the `docs/` directory
 
-## Other Commands
+## Other commands
 
 ```bash
 govbot clone all           # download all state legislation datasets
@@ -73,114 +79,122 @@ govbot clone il ca ny      # download specific states
 govbot logs                # stream legislative activity as JSON Lines
 govbot logs | govbot tag   # process and tag data
 govbot build               # generate RSS feeds
-govbot load                # load bill metadata into DuckDB database
+govbot load                # load bill metadata into DuckDB
 govbot delete all          # remove all downloaded data
 govbot update              # update govbot to latest version
 govbot --help              # see all commands and options
 ```
 
-Dataset Key:
-- 🆕: the locale's data received updates since your last cloning
-- ✅: the data you've cloned is up-to-date with the most current version
-- 🔄: the data is currently being updated
-- ❌: the data is not currently accessible
+## Querying with SQL (DuckDB)
 
-## Querying in SQL using DuckDB
+`govbot load` reads every cloned `metadata.json` into a DuckDB database (default `./govbot_data/govbot.duckdb` — data lives under `./govbot_data/` in the folder you run govbot from, or `$GOVBOT_DIR`). The [DuckDB CLI](https://duckdb.org/docs/installation/) must be installed. See [DUCKDB.md](https://github.com/chihacknight/govbot/blob/main/actions/govbot/DUCKDB.md) for the schema and example queries.
 
-You can query the data using SQL, via DuckDB, which creates a simiulated database from the .json log files. See [DUCKDB.md](./DUCKDB.md) for more details.
+```bash
+govbot load                                  # load all data into the default database
+govbot load --database my-bills.duckdb       # or choose a database file
+govbot load --memory-limit 32GB --threads 8  # for large datasets
+duckdb --ui govbot_data/govbot.duckdb        # open it in DuckDB's browser UI
+```
 
-### Running Queries in the Command Line
+Or query the JSON directly:
 
 ```sql
--- Load JSON extension
 INSTALL json;
 LOAD json;
 
--- Query all bill metadata
-SELECT * 
-FROM read_json_auto('~/govbot_data/repos/**/bills/*/metadata.json')
+SELECT *
+FROM read_json_auto('govbot_data/repos/**/bills/*/metadata.json')
 LIMIT 10;
 ```
 
-### Additional Commands, and Querying via the Web UI
+# The data catalogs
 
-Additional examples of commands, and setup for the web UI, can be found below: 
+Formatted legislation data for all 56 jurisdictions lives at [github.com/govbot-data](https://github.com/orgs/govbot-data/repositories) — one repo per jurisdiction (`govbot-data/{code}-legislation`). The root of each repo *is* the dataset:
 
-```bash
-# Load all data into a database (default: govbot.duckdb)
-govbot load
-
-# Or specify a custom database file
-govbot load --database my-bills.duckdb
-
-# With memory limit and thread settings
-govbot load --memory-limit 32GB --threads 8
-
-# Open in DuckDB UI (opens in your browser)
-duckdb --ui govbot.duckdb
+```
+{state}-legislation/
+├── country:us/
+│   └── state:{code}/                  # state:usa (federal), state:il, state:tx, etc.
+│       └── sessions/{session_id}/
+│           ├── bills/{bill_id}/
+│           │   ├── metadata.json      # Bill metadata + _processing timestamps
+│           │   ├── logs/              # Action/vote-event logs
+│           │   └── files/             # Bill text: original .pdf/.xml/.html + *_extracted.txt
+│           └── events/                # Committee hearings, etc.
+└── .windycivi/                        # Pipeline metadata (committed & reused)
 ```
 
-### Helper Scripts
+Federal and state jurisdictions share one path pattern (`state:usa` for federal). See [DATA_STRUCTURES.md](https://github.com/chihacknight/govbot/blob/main/actions/format/docs/DATA_STRUCTURES.md) for the full schema reference.
 
-```bash
-# Run example queries
-./duckdb-query.sh examples/duckdb-example.sql
-```
+## Read it from an AI assistant (no install)
 
-## Contributing & Testing
+Two files let any AI assistant (Claude, ChatGPT, etc.) read the data straight from GitHub — great from a phone:
 
-### Prerequisites
+- [`llms.txt`](https://github.com/chihacknight/govbot/blob/main/llms.txt) — a plain-language guide the AI reads first.
+- [`catalog.json`](https://github.com/chihacknight/govbot/blob/main/catalog.json) — a machine-readable directory of every jurisdiction repo plus the bill path pattern.
 
-Folks looking to contirbute should have knowledge of Rust:  `just`. `just setup` to start, and then `just govbot ...` to develop the cli.
+**Try it:** paste this into Claude or ChatGPT —
 
-The following should also be installed:
+> Read this guide, then follow it to answer my question:
+> https://raw.githubusercontent.com/chihacknight/govbot/main/llms.txt
+>
+> Question: What's the status of Wyoming HB0001 in the 2025 session, who sponsored it, and what's the official source link?
 
-1. **Rust & Cargo**: Install the [Rust Toolchain](https://rustup.rs/)
-2. **Just**: Install the task runner: `cargo install just`
+This works best for **specific** questions. For big cross-state number-crunching, use the CLI + DuckDB above.
 
-### Development Workflow
+# Contribute
 
-Use `just govbot ...` as your cli "dev" environment.
+The repo is a monorepo; everything under `actions/` is a self-contained module that runs as a plain script and as a GitHub Action. Each action:
 
-### Other Useful Commands
+- Runs as a basic script (Python, Bash, Rust or TypeScript) with args.
+- Has an `action.yml`.
+- Defines its types with JSON Schema (in `schemas/`), so other actions can validate against them.
+- Keeps real outputs in `__snapshots__/` as its tests (rendered by its `render_snapshots.sh`, validated in CI).
 
-- `just` - See all available tasks
-- `just test` - Run all tests
-- `just review` - Review snapshot test changes
-- `just mocks [LOCALES...]` - Update mock data for testing
+## The govbot CLI
 
-We build snapshots off `examples`. Add examples to make a test.
+Contributors need [Rust & Cargo](https://rustup.rs/) and the `just` task runner (`cargo install just`). Then, in `actions/govbot`:
+
+- `just setup` — install the toolchain and dependencies
+- `just govbot ...` — run the CLI in dev mode
+- `just test` — run all tests
+- `just review` — review snapshot test changes
+- `just mocks [LOCALES...]` — update mock data for testing
 
 ## Advanced
+
+Point govbot at your own data repos:
 
 ```bash
 GOVBOT_REPO_URL_TEMPLATE="https://gitsite.com/org/{locale}.git" govbot ...
 ```
 
-# Project History
+# Project history
 
-The Govbot project began in 2022, with a vision to create a destination for simplified, summarized updates on legislative action, with the ability to follow or filter for certain legislative topics. The result was the initial Windy Civi [app](https://apps.apple.com/us/app/windy-civi/id6737817607), and [website](https://windycivi.com), launched in beta in 2024. 
+Govbot began in 2022 with a simple goal: a place for simplified, summarized updates on legislative action that you could follow or filter by topic.
 
-While building the solution, the team began to consider the limitations of a centrally-managed data source and platform, versus one that could be decentralized, that was open-source, and that allowed for exploration and use of the data in ways beyond initial designs.
-
-Our vision now has pivoted to building that data set, as well as building sample applications and solutions to ensure that government accountability can be accessible to all.
+- **2022 — [Socratic Center](2022-Socratic-Center/index.html):** find who represents you. The project then joined Chi Hack Night as a breakout group.
+- **2023 — [Civi Social](2023-Civi-Social/index.html):** Chicago residents talk directly with their elected officials.
+- **2024 — [Windy Civi](2024-Windy-Civi/index.html):** the [app](https://apps.apple.com/us/app/windy-civi/id6737817607) and [website](https://windycivi.com), launched in beta — local, state and federal bills with AI summaries and topics.
+- **2025 — [Decentralize](2025-Decentralize/index.html):** building it showed the limits of a centrally managed platform. The vision pivoted to an open, decentralized dataset anyone can run — plus sample applications so government accountability is accessible to all.
+- **2026 — today:** 56 open datasets and the civic tools built on them.
 
 # FAQs
 
-## Can I See The Repo?
-Yes! Our main repo can be found [here](https://github.com/windy-civi/windy-civi). The repo that is being used to run and store the data - the 'toolkit' repo - can be found [here](https://github.com/chihacknight/govbot).
+## Can I see the code?
 
-## How Is The Data Structured?
-You an find the file format structure and .json schema in the readme.md located [here](https://github.com/chihacknight/govbot/blob/main/actions/format/docs/DATA_STRUCTURES.md).
+Yes. The toolkit, the pipelines and this site are at [chihacknight/govbot](https://github.com/chihacknight/govbot). The data lives in one repo per jurisdiction at [govbot-data](https://github.com/orgs/govbot-data/repositories).
 
-## How Do I Clone This Data?
-Each locale is scaped using a GitHub Actions tempate that is defined and explained in detail [here](https://github.com/chihacknight/govbot/blob/main/actions/format/docs/for-caller-repos/README_TEMPLATE.md). You can follow this template to create a new repository of locale data.
+## How is the data structured?
 
-To help manage multiple pipelines or locales, look at our [pipeline manager documentation](https://github.com/chihacknight/govbot/tree/main/actions/pipeline-manager)
+Each bill is a folder with its metadata, action logs and bill text — see [The data catalogs](#the-data-catalogs) above and [DATA_STRUCTURES.md](https://github.com/chihacknight/govbot/blob/main/actions/format/docs/DATA_STRUCTURES.md).
 
-## How Can I Stay Updated, Or Get In Touch?
-You can stay updated by following our work at [Chi Hack Night](chihacknight.org), as well as on the related Slack (see below). You can also follow our commits and updates on [Github](https://github.com/windy-civi) and this [Docs page](https://docs.windycivi.com),
+## How do I get the data?
 
-You can message us on the [Chi Hack Night Slack](https://chihacknight.slack.com/archives/C047500M5RS) - we have our own channel.
+Run `govbot clone il` (or `govbot clone all`), or browse and `git clone` any repo at [govbot-data](https://github.com/orgs/govbot-data/repositories).
 
-![Govbot icon](https://manband.one/assets/govbot-icon-transparent.png)
+To add a **new** jurisdiction, each one is scraped by a GitHub Actions template explained in the [caller-repo README template](https://github.com/chihacknight/govbot/blob/main/actions/format/docs/for-caller-repos/README_TEMPLATE.md); to run many pipelines, see the [pipeline manager](https://github.com/chihacknight/govbot/tree/main/actions/pipeline-manager).
+
+## How can I stay updated, or get in touch?
+
+Join our channel on the [Chi Hack Night Slack](https://chihacknight.slack.com/archives/C047500M5RS), follow along at [Chi Hack Night](https://chihacknight.org) and on [GitHub](https://github.com/chihacknight/govbot), or follow us on [Bluesky](https://bsky.app/profile/govboteducation.bsky.social), [X](https://x.com/govbot27) and [Instagram](https://www.instagram.com/legislationtracker.govbot/?hl=en).

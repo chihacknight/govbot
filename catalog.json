@@ -2,7 +2,7 @@
   "$comment": "Machine-readable directory of the govbot legislation data catalogs. See llms.txt for the plain-language guide an AI assistant should read first.",
   "name": "govbot legislation data catalogs",
   "description": "U.S. legislation for every state, D.C., the territories, and the federal Congress, published as ordinary public GitHub repositories. One repo per jurisdiction.",
-  "updated": "2026-09-12",
+  "updated": "2026-10-01",
   "canonical_org": "https://github.com/govbot-data",
   "repo_naming": "govbot-data/{code}-legislation  (e.g. Illinois -> govbot-data/il-legislation)",
   "raw_file_base": "https://raw.githubusercontent.com/govbot-data/{repo}/HEAD/{path}",
@@ -81,6 +81,14 @@
       "repo": "ct-legislation",
       "browse": "https://github.com/govbot-data/ct-legislation",
       "data_json": "https://raw.githubusercontent.com/govbot-data/ct-legislation/HEAD/data.json"
+    },
+    {
+      "code": "dc",
+      "name": "District of Columbia",
+      "type": "district",
+      "repo": "dc-legislation",
+      "browse": "https://github.com/govbot-data/dc-legislation",
+      "data_json": "https://raw.githubusercontent.com/govbot-data/dc-legislation/HEAD/data.json"
     },
     {
       "code": "de",

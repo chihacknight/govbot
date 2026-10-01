@@ -16,7 +16,7 @@
 | | |
 |---|---|
 | **56** | jurisdictions covered — all 50 states + Federal + DC + 4 territories |
-| **14,474** | distinct federal (Congress) bills, and counting |
+| **19,186** | distinct federal bills in the 119th Congress (as of Sept 30, 2026), and counting |
 | **< 1 min** | to clone every dataset |
 | **$0** | cost to tag bills — models run locally on free CI |
 

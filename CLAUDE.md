@@ -4,7 +4,7 @@ This file provides senior engineering-level guidance for Claude Code when workin
 
 ## Project Overview
 
-This is **govbot** - a monorepo for distributed data analysis of government updates. Git repos function as datasets, including legislation from 47+ states/jurisdictions. The `actions/` folder contains self-contained modules that can run as shell scripts or GitHub Actions.
+This is **govbot** - a monorepo for distributed data analysis of government updates. Git repos function as datasets, including legislation from 56 jurisdictions (50 states, federal, DC and 4 territories). The `actions/` folder contains self-contained modules that can run as shell scripts or GitHub Actions.
 
 **AI-readable catalog access**: `llms.txt` (repo root) is a plain-language guide that
 teaches any AI assistant to read the `govbot-data/{code}-legislation` catalogs directly
@@ -107,14 +107,14 @@ The `govbot load` command loads bill metadata into a DuckDB database for SQL ana
 - Shells out to `duckdb` binary (not a Rust library dependency)
 - Reads all `metadata.json` files from cloned repos
 - Creates `bills` table and `bills_summary` view
-- Database saved to `~/govbot_data/govbot.duckdb`
+- Database saved to `./govbot_data/govbot.duckdb` (under the directory you run govbot from, or `$GOVBOT_DIR`)
 
 **Usage**:
 ```bash
 govbot clone all                    # First, get the data
 govbot load                         # Load into DuckDB
 govbot load --memory-limit 32GB     # For large datasets
-duckdb --ui ~/govbot_data/govbot.duckdb # Open in browser UI
+duckdb --ui govbot_data/govbot.duckdb   # Open in browser UI
 ```
 
 See `actions/govbot/DUCKDB.md` for query examples and schema documentation.
@@ -145,8 +145,11 @@ The shared CSS also provides designed **state** components — `.gb-state` (empt
 — used for the loading/empty/error states on the legislation, elections and hearings pages
 (the empty state's "Clear filters" button reuses each page's `#f-clear`), and a **mega-menu**
 (`.gb-nav-item`/`.gb-mega`) on the Homepage nav (Explore / Follow / Data dropdowns, hover on
-desktop + click, Escape/outside-click to close; the mobile drawer stays a flat link list). `docs/src/dashboard/index.html` is now the
-**Homepage** landing page (a realistic golden wireframe Lady Liberty raster hero, `assets/liberty-hero.png`, its background keyed to true transparency — the low-alpha (~10–22) background pixels were zeroed so no faint grey box composites onto the light hero; behind her a soft dark halo `.liberty::before` (deeper in light mode) plus a radial edge-mask on the image keep the gold statue **prominent in light mode** and drop cleanly onto the dark hero; the robot mark `assets/govbot-mark.png` is the header logo; "What do you want to know?" cards,
+desktop + click, Escape/outside-click to close; the mobile drawer stays a flat link list). `docs/src/dashboard/index.html` **was** the
+**Homepage** — it is now a redirect to the site root, and the pieces described below (the Liberty hero,
+the live recent-activity / hearings / election cards with sponsor chips, and the firehose animation) were
+ported to the root landing (`docs/src/readme.md` + `docs/theme/landing.js`, see "The site root…" below).
+As originally built it was the landing page (a realistic golden wireframe Lady Liberty raster hero, `assets/liberty-hero.png`, its background keyed to true transparency — the low-alpha (~10–22) background pixels were zeroed so no faint grey box composites onto the light hero; behind her a soft dark halo `.liberty::before` (deeper in light mode) plus a radial edge-mask on the image keep the gold statue **prominent in light mode** and drop cleanly onto the dark hero; the robot mark `assets/govbot-mark.png` is the header logo; "What do you want to know?" cards,
 live "What's happening now" fetched fail-soft from `data.json`/`hearings.json`/`elections.json`).
 The homepage's **"Recent legislative activity"** card shows **one bill per state** (up to 4) as rich
 `.activity-row.rich` rows — each row's head line carries the **state + bill number** (`.tag`) and
@@ -544,18 +547,41 @@ civic tile, crisp at 16px — replacing the earlier robot-face and per-page torc
 
 **The site root is the civic landing (the main homepage), not a dashboard page.** The whole site —
 the mdbook text docs *and* the dashboards — now wears one civic shell. The root
-`https://chihacknight.github.io/govbot/` is rendered by **mdbook** from `docs/src/readme.md`, which
-was rewritten as the civic "open foundation + three flagship projects" landing (`.gb-landing`: hero →
-`dashboard/{legislation,hearings,elections}.html`, project cards, an "It's open. It's yours." clone
-band). The old README overview moved to `docs/src/about.md` (linked from the landing + footer as "How
-it works" / "Govbot docs ↗"). mdbook wears the civic skin via a custom theme in **`docs/theme/`**:
+`https://chihacknight.github.io/govbot/` is rendered by **mdbook** from `docs/src/readme.md`, the
+civic landing (`.gb-landing`, designed on the "Govbot Landing Revamp" Design canvas). Top to bottom:
+a hero with the big gold **Liberty** (`dashboard/assets/liberty-hero.png`, a radial halo behind her —
+gold glow in dark mode, a dark halo in light mode so she stays prominent); a **"By the numbers"** strip
+(56 jurisdictions · < 1 min to clone · $0 to tag · 2×/day refresh); **"Projects built on Govbot"**, a
+**carousel** (a CSS `scroll-snap` row so swipe/scroll work without JS; prev/next + named tab chips +
+"n / 6" counter driven by `landing.js`) of six slides — Legislation (live **recent activity**, one bill
+per state up to 4, with the **sponsor avatar chips**: vendored headshot over a party-tinted initials
+monogram, first 3 then "+N more", non-person sponsors skipped), Hearings (live calendar-figure rows),
+Illinois elections (next ballot date + countdown + what's on it + the ballot after, from
+`elections.json`), Follow along (real RSS feeds), Topic bots (the two Bluesky bots), and a dashed
+"Your project" slide; **"Build your own"** (install / run / clone steps with copy buttons + the
+"ask an AI" `llms.txt` prompt); **"Our story"** timeline (2022→2026, linking the History pages) +
+**Questions** FAQ; and the **"From the firehose to the point."** canvas animation as the finale. The
+behaviour lives in **`docs/theme/landing.js`** (`book.toml` `additional-js`; a no-op on every page
+without `.gb-landing`). Its live cards and the firehose canvas are **ported verbatim from the retired
+dashboard homepage** — only the fetch/link paths gained a `dashboard/` prefix (including the
+`legislator_images.json` photo paths) — and the old made-up placeholder rows were replaced by the shared
+`.gb-loading` / `.gb-state` (error + recovery link) components. It also **swallows ←/→ on the landing**
+(capture phase) because mdbook's `book.js` maps them to previous/next chapter; inside the carousel
+they move between slides (doc pages keep chapter navigation). The landing uses `<span class="gl-mono">`
+/ `.gl-code-t`, never `<code>`, because `book.js` runs highlight.js over every `<code>` element; and
+mdbook wraps every `<h1>`–`<h3>` (raw HTML too) in an `a.header` anchor, which the landing CSS
+neutralises. mdbook's `.content a:link` colour out-ranks plain class rules, so the landing pins its
+button/card/timeline link colours with `!important`. The full project reference (install, commands,
+DuckDB, data catalogs, contributing, history, FAQ) is `docs/src/about.md`, kept in sync with
+`README.md` (linked as "All commands & SQL" / "Govbot docs ↗"). mdbook wears the civic skin via a custom theme in **`docs/theme/`**:
 `index.hbs` injects the shared `.gb-header`/`.gb-drawer`/`.gb-footer` (all nav/asset hrefs prefixed
 `{{ path_to_root }}`, pointing into `dashboard/…`; brand → `{{ path_to_root }}` = the landing) and
 loads `dashboard/assets/govbot.css` + `govbot-shell.js`; `head.hbs` is the pre-paint
 `localStorage['govbot-theme']` snippet; `mdbook-civic.css` (via `book.toml` `additional-css`) maps
 mdbook's own CSS vars onto the civic tokens (`!important`, beating mdbook's `html.rust`/`html.coal`
 theme classes), offsets the sticky header, hides mdbook's 3-way theme picker (the civic
-`[data-gb-theme-toggle]` drives theme), and holds the `.gl-*` landing component styles +
+`[data-gb-theme-toggle]` drives theme), and holds the `.gl-*` landing styles (plus the ported
+`.activity-row`/`.ar-*`/`.mini-date`/`.stream-*` rules, scoped to the landing) +
 `body:has(.gb-landing)` full-bleed rules (sidebar/menu-bar hidden on the landing only). The landing
 HTML in `readme.md` keeps **each `<section>` as one unindented block with no internal blank lines** —
 CommonMark ends an HTML block at a blank line and would render the next indented lines as a code
@@ -601,7 +627,8 @@ All six pages (the five flagships plus the utility `search.html`) share, byte-fo
 robot logo linking to the Homepage, the Explore / Follow / Data mega-menus + How Govbot Works /
 **GitHub Repo** plain links (the "GitHub Repo ↗" link → the repo, in a new tab; formerly labelled
 "About"), the global `.gb-search`, and a single `[data-gb-theme-toggle]` icon button), the
-mobile `.gb-drawer` (hamburger → flat link list + search), the civic `.gb-footer` (the
+mobile `.gb-drawer` (hamburger → flat link list + search), the civic `.gb-footer` (a 30%-black
+mix of the page colour in dark mode, the plain `--gb-surface` in light mode so it isn't a grey slab; the
 `assets/govbot-mark.png` robot logo + brand blurb + a `.gb-social` row of gold-outline social chips —
 Bluesky / Threads / X / Instagram, styled in `govbot.css` off the `--gb-gold` tokens so they adapt
 per theme — plus Explore / Transparency / Community columns), and the floating `.gb-to-top` liquid-glass "Back to Top" pill —

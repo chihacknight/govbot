@@ -252,6 +252,9 @@ h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spaci
 
 /* ============================== FOOTER ================================= */
 .gb-footer { border-top: 1px solid var(--gb-border); background: color-mix(in srgb, var(--gb-bg) 70%, #000 30%); margin-top: 56px; }
+/* Light mode: the 30%-black mix reads as a heavy grey slab — use the plain surface. */
+:root[data-theme="light"] .gb-footer { background: var(--gb-surface); }
+@media (prefers-color-scheme: light) { :root:not([data-theme]) .gb-footer { background: var(--gb-surface); } }
 .gb-footer .gb-footer-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 32px; padding: 52px 24px 20px; max-width: 1200px; margin: 0 auto; }
 .gb-footer h4 { font-family: var(--gb-font-sans); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gb-text); font-weight: 600; margin: 0 0 12px; }
 .gb-footer a { display: block; font-size: 14px; color: var(--gb-text-2); padding: 5px 0; }
