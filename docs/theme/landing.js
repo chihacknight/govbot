@@ -8,6 +8,14 @@
   "use strict";
   var root = document.querySelector(".gb-landing");
   if (!root) return;
+  // mdbook wraps every heading in a self-link (a.header) — on the landing that only dumps a long
+  // "#see-what-your-…" hash into the URL. Unwrap them so headings are plain text (and not tab stops).
+  var selfLinks = root.querySelectorAll("a.header");
+  for (var h = 0; h < selfLinks.length; h++) {
+    var hl = selfLinks[h];
+    while (hl.firstChild) hl.parentNode.insertBefore(hl.firstChild, hl);
+    hl.parentNode.removeChild(hl);
+  }
   var BASE = "dashboard/";
   var MS_DAY = 86400000;
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -280,7 +288,30 @@
   var prevBtn = root.querySelector('[data-car="prev"]');
   var nextBtn = root.querySelector('[data-car="next"]');
   var countEl = document.getElementById("gl-count");
-  var cur = 0;
+  var chipRow = root.querySelector(".gl-chips");
+  var cur = 0, shown = -1;
+  // The row hugs the active slide (no empty band under a short one); neighbours are capped to it in CSS.
+  function fitHeight() {
+    if (!car || !slides[cur]) return;
+    var h = slides[cur].offsetHeight;
+    car.style.setProperty("--car-h", h + "px");
+    car.style.height = h + "px";
+    car.classList.add("is-sized");
+  }
+  // Fade whichever chip-row edge still hides chips.
+  function chipEdges() {
+    if (!chipRow) return;
+    var max = chipRow.scrollWidth - chipRow.clientWidth;
+    chipRow.classList.toggle("more-l", chipRow.scrollLeft > 2);
+    chipRow.classList.toggle("more-r", chipRow.scrollLeft < max - 2);
+  }
+  // Keep the active project's chip in view (centred) as the slides change.
+  function followChip() {
+    var chip = chips[cur];
+    if (!chipRow || !chip) return;
+    var left = chip.offsetLeft - (chipRow.clientWidth - chip.offsetWidth) / 2;
+    chipRow.scrollTo({ left: Math.max(0, left), behavior: reduceMotion ? "auto" : "smooth" });
+  }
   function nearest() {
     var best = 0, bestD = Infinity;
     for (var i = 0; i < slides.length; i++) {
@@ -298,6 +329,7 @@
     if (countEl) countEl.textContent = (cur + 1) + " / " + slides.length;
     if (prevBtn) prevBtn.disabled = cur === 0;
     if (nextBtn) nextBtn.disabled = cur === slides.length - 1;
+    if (cur !== shown) { shown = cur; fitHeight(); followChip(); }
   }
   function go(i) {
     i = Math.max(0, Math.min(slides.length - 1, i));
@@ -315,8 +347,15 @@
     }
     if (prevBtn) prevBtn.addEventListener("click", function () { go(cur - 1); });
     if (nextBtn) nextBtn.addEventListener("click", function () { go(cur + 1); });
-    window.addEventListener("resize", function () { sync(); });
+    window.addEventListener("resize", function () { sync(); fitHeight(); chipEdges(); });
+    if (chipRow) chipRow.addEventListener("scroll", chipEdges, { passive: true });
+    // Live cards fill in after load and change a slide's height — re-fit when the active one does.
+    if (window.ResizeObserver) {
+      var ro = new ResizeObserver(function () { fitHeight(); });
+      for (var r = 0; r < slides.length; r++) ro.observe(slides[r]);
+    }
     sync();
+    chipEdges();
   }
   // mdbook's book.js turns ←/→ into "previous/next chapter" — on the homepage
   // that would yank the reader to another page. Swallow them here (capture phase,
@@ -331,6 +370,97 @@
       go(cur + (e.key === "ArrowRight" ? 1 : -1));
     }
   }, true);
+
+  // ---- Liberty embers: little green sparks rising off the torch and drifting up
+  // past the crown, flickering like embers off a fireplace. Positions are in the
+  // statue image's own pixels (520×1000) so they track it at every size.
+  (function () {
+    var cv = root.querySelector(".gl-embers");
+    var img = root.querySelector(".gl-art-img");
+    if (!cv || !img || !cv.getContext) return;
+    var ctx = cv.getContext("2d");
+    var IW = 520, IH = 1000, N = 46;
+    var W = 0, H = 0, ox = 0, oy = 0, sc = 1, embers = [], raf = 0, last = 0;
+    function rnd(a, b) { return a + Math.random() * (b - a); }
+    function layout() {
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var cr = cv.getBoundingClientRect(), ir = img.getBoundingClientRect();
+      W = cr.width; H = cr.height;
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      sc = ir.height / IH; ox = ir.left - cr.left; oy = ir.top - cr.top;
+    }
+    // ~35% leap off the torch flame; the rest rise out of the field beside the crown.
+    function spawn(e, warm) {
+      var torch = Math.random() < 0.35;
+      e.x = torch ? rnd(122, 165) : rnd(190, 405);
+      e.y = torch ? rnd(40, 80) : rnd(150, 400);
+      e.vy = -rnd(16, 38);                     // image px / s, upward
+      e.vx = torch ? rnd(4, 16) : rnd(-4, 8);  // a light draught to the right
+      e.size = rnd(2.5, 7.5);
+      e.life = rnd(2.8, 6);
+      e.age = warm ? rnd(0, e.life) : 0;
+      e.ph = rnd(0, 6.28); e.fq = rnd(5, 13); e.sw = rnd(0.6, 1.8);
+      e.hi = Math.random() < 0.3;
+      return e;
+    }
+    function step(dt) {
+      for (var i = 0; i < embers.length; i++) {
+        var e = embers[i];
+        e.age += dt;
+        if (e.age >= e.life) { spawn(e, false); continue; }
+        e.x += (e.vx + Math.sin(e.age * e.sw * 2 + e.ph) * 9) * dt;
+        e.y += e.vy * dt;
+      }
+    }
+    function draw(t) {
+      ctx.clearRect(0, 0, W, H);
+      ctx.globalCompositeOperation = "lighter";
+      for (var i = 0; i < embers.length; i++) {
+        var e = embers[i], k = e.age / e.life;
+        var fade = Math.min(1, k / 0.15) * Math.min(1, (1 - k) / 0.4);
+        var flick = 0.6 + 0.4 * Math.sin(t * e.fq + e.ph);
+        var a = fade * flick;
+        if (a <= 0.01) continue;
+        var s = e.size * sc * (1 - k * 0.45), x = ox + e.x * sc, y = oy + e.y * sc;
+        ctx.fillStyle = "rgba(61,220,132," + (a * 0.22).toFixed(3) + ")";   // soft glow
+        ctx.fillRect(x - s * 1.4, y - s * 1.4, s * 2.8, s * 2.8);
+        ctx.fillStyle = e.hi ? "rgba(190,255,220," + a.toFixed(3) + ")" : "rgba(124,235,176," + (a * 0.9).toFixed(3) + ")";
+        ctx.fillRect(x - s / 2, y - s / 2, s, s);
+      }
+      ctx.globalCompositeOperation = "source-over";
+    }
+    function frame(ts) {
+      var dt = last ? Math.min(0.05, (ts - last) / 1000) : 0.016;
+      last = ts; step(dt); draw(ts / 1000);
+      raf = requestAnimationFrame(frame);
+    }
+    function start() { if (!raf) { last = 0; raf = requestAnimationFrame(frame); } }
+    function stop() { if (raf) cancelAnimationFrame(raf); raf = 0; }
+    function init() {
+      layout();
+      if (!W) return;
+      embers = [];
+      for (var i = 0; i < N; i++) embers.push(spawn({}, true));
+      draw(0);
+      if (reduceMotion) return;                 // a still scatter, like the original art
+      try {
+        new IntersectionObserver(function (es) {
+          if (es[0].isIntersecting && !document.hidden) start(); else stop();
+        }).observe(cv);
+      } catch (e) { start(); }
+      document.addEventListener("visibilitychange", function () {
+        if (document.hidden) stop();
+        else { var r = cv.getBoundingClientRect(); if (r.bottom > 0 && r.top < innerHeight) start(); }
+      });
+    }
+    var rt;
+    window.addEventListener("resize", function () {
+      clearTimeout(rt);
+      rt = setTimeout(function () { layout(); if (reduceMotion) draw(0); }, 150);
+    });
+    if (img.complete) init(); else img.addEventListener("load", init);
+  })();
 
   // ---- Copy buttons (install / clone / AI prompt) ----
   var copyBtns = root.querySelectorAll(".gl-copy");

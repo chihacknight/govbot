@@ -567,16 +567,16 @@ the mdbook text docs *and* the dashboards — now wears one civic shell. The roo
 `https://chihacknight.github.io/govbot/` is rendered by **mdbook** from `docs/src/readme.md`, the
 civic landing (`.gb-landing`, designed on the "Govbot Landing Revamp" Design canvas). Top to bottom:
 a hero with the big green **Liberty** (`dashboard/assets/liberty-hero.png`, a soft green glow behind her
-in dark mode, a deep-green rounded "night" panel in light mode so she stays prominent); a **"By the numbers"** strip
+in dark mode, a deep-green rounded "night" panel in light mode so she stays prominent; the square sparks once baked into the PNG were erased and replaced by live **rising embers** — a `.gl-embers` canvas in `landing.js`, positioned in the image's own 520×1000 pixel space, flickering up off the torch and past the crown, a still scatter under reduced motion; the "Open civic data · Nonpartisan" overline has a rule on **both** sides); a **"By the numbers"** strip
 (56 jurisdictions · < 1 min to clone · $0 to tag · 2×/day refresh); **"Projects built on Govbot"**, a
 **carousel** (a CSS `scroll-snap` row so swipe/scroll work without JS; prev/next + named tab chips +
-"n / 6" counter driven by `landing.js`) of six slides — Legislation (live **recent activity**, one bill
+"n / 6" counter driven by `landing.js`; the row's height **follows the active slide** (`fitHeight` → `--car-h`, re-fit by a ResizeObserver as live cards load) so a short slide leaves no empty band, peeking neighbours are capped to that height with a bottom fade, and the chip row auto-centres the active chip with edge fades) of six slides — Legislation (live **recent activity**, one bill
 per state up to 4, with the **sponsor avatar chips**: vendored headshot over a party-tinted initials
 monogram, first 3 then "+N more", non-person sponsors skipped), Hearings (live calendar-figure rows),
 Illinois elections (next ballot date + countdown + what's on it + the ballot after, from
 `elections.json`), Follow along (real RSS feeds), Topic bots (the two Bluesky bots), and a dashed
 "Your project" slide; **"Build your own"** (install / run / clone steps with copy buttons + the
-"ask an AI" `llms.txt` prompt); **"Our story"** timeline (2022→2026, linking the History pages) +
+"ask an AI" `llms.txt` prompt); **"Our story"** timeline (2022→2026, linking the History pages; the current 2026 point pulses big — a growing glow core plus an expanding ring; then a dashed line runs to a hollow **"Next · On the roadmap"** node: four linked cards distilled from the open GitHub issues — MCP/ChatGPT-Claude #25, easier installs #19, more of government #28, fresher data #111 — plus a "Pick a good first issue ↗" link; refresh them as issues close) +
 **Questions** FAQ; and the **"From the firehose to the point."** canvas animation as the finale. The
 behaviour lives in **`docs/theme/landing.js`** (`book.toml` `additional-js`; a no-op on every page
 without `.gb-landing`). Its live cards and the firehose canvas are **ported verbatim from the retired
@@ -698,11 +698,13 @@ offline-snapshot-tested: `python3 actions/scrape-hearings/test_scrape_hearings.p
 
 **`deploy-docs.yml` fast path (frontend- and docs-only changes).** The full data pipeline (~40 min) runs
 on the twice-daily **schedule**, on **manual dispatch**, and on any **push to main that touches a file
-that is neither a dashboard file (`docs/src/dashboard/**`) nor a Markdown doc (`*.md`, e.g. `CLAUDE.md`,
-`README.md`)** — i.e. `actions/**`, `scripts/**`, `schemas/**`, the workflow, seeds, … A push to main
-touching **only dashboard files and/or Markdown docs**, and **every pull request**, take a **fast path**:
-a `Determine build scope` step (`git diff` of the pushed range — it strips dashboard paths and `*.md`
-files, and full-refreshes only if anything else remains; PRs always skip) sets `refresh=false`, and the
+the data pipeline reads** — `actions/**`, `scripts/**`, `schemas/**`, **this workflow file**, seeds, … A
+push to main touching **only site files** — anything under **`docs/**`** (the landing, docs pages, the
+civic theme `docs/theme/**`, `book.toml`, images, the dashboards, and any future sub-site at
+`docs/src/<name>/` → `github.io/govbot/<name>/`), Markdown docs anywhere (`*.md`), the root `llms.txt` /
+`catalog.json`, `tamara-notes/**`, or `.github/**` other than `deploy-docs.yml` — and **every pull
+request**, take a **fast path**: a `Determine build scope` step (`git diff` of the pushed range — it strips
+those paths, and full-refreshes only if anything else remains; PRs always skip) sets `refresh=false`, and the
 pipeline steps are all guarded `if: steps.gate.outputs.refresh == 'true'`, so they're skipped and mdbook
 builds + deploys with the committed data. Markdown docs never feed the data pipeline, so a docs-only
 change (updating this file included) stays fast; mdbook still rebuilds so any published `.md` page

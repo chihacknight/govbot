@@ -3,12 +3,12 @@
 <section class="gl-hero">
 <div class="gl-wrap gl-hero-grid">
 <div class="gl-hero-copy">
-<div class="gl-overline"><span class="gl-rule"></span>Open civic data · Nonpartisan</div>
+<div class="gl-overline gl-overline-ruled"><span class="gl-rule"></span><span>Open civic data · Nonpartisan</span><span class="gl-rule"></span></div>
 <h1 class="gl-h1">See what your government is doing.<br><span class="gl-accent">Then use the data yourself.</span></h1>
 <p class="gl-lede">Every U.S. legislature, as data you can clone — plus hearings and elections, free to explore, follow and build on.</p>
 <div class="gl-btns"><a class="gl-btn gl-btn-primary" href="#projects">See the projects</a><a class="gl-btn gl-btn-ghost" href="#build">Get the data</a></div>
 </div>
-<div class="gl-art" aria-hidden="true"><div class="gl-halo"></div><img class="gl-art-img" src="dashboard/assets/liberty-hero.png" alt="" width="520" height="1000"></div>
+<div class="gl-art" aria-hidden="true"><div class="gl-halo"></div><img class="gl-art-img" src="dashboard/assets/liberty-hero.png" alt="" width="520" height="1000"><canvas class="gl-embers"></canvas></div>
 </div>
 </section>
 
@@ -139,6 +139,7 @@
 <li><a href="2024-Windy-Civi/index.html">2024 · Windy Civi</a><span>One app for local, state &amp; federal bills, with AI summaries.</span></li>
 <li><a href="2025-Decentralize/index.html">2025 · Decentralize</a><span>No new app, no private APIs: open data anyone can run.</span></li>
 <li class="is-now"><strong>2026 · Govbot today</strong><span>56 open datasets and the civic tools built on them.</span></li>
+<li class="is-next"><strong>Next · On the roadmap</strong><span>From our open GitHub issues — anyone can pick one up.</span><div class="gl-road"><a class="gl-road-item" href="https://github.com/chihacknight/govbot/issues/25" target="_blank" rel="noopener"><b>Ask Govbot from ChatGPT or Claude ↗</b><i>An MCP server, so AI assistants can query the data directly.</i></a><a class="gl-road-item" href="https://github.com/chihacknight/govbot/issues/19" target="_blank" rel="noopener"><b>Easier installs ↗</b><i>Homebrew, npm, Docker and Windows.</i></a><a class="gl-road-item" href="https://github.com/chihacknight/govbot/issues/28" target="_blank" rel="noopener"><b>More of government ↗</b><i>Executive actions, Chicago City Council and full bill text.</i></a><a class="gl-road-item" href="https://github.com/chihacknight/govbot/issues/111" target="_blank" rel="noopener"><b>Fresher, fuller data ↗</b><i>Catch up lagging states and split repos by session.</i></a></div><a class="gl-road-cta" href="https://github.com/chihacknight/govbot/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22" target="_blank" rel="noopener">Pick a good first issue ↗</a></li>
 </ol>
 </div>
 <div>

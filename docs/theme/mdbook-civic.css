@@ -103,7 +103,9 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 }
 /* neutralise mdbook's content typography inside the landing */
 .gb-landing h1, .gb-landing h2, .gb-landing h3 { margin: 0; border: 0; }
-.gb-landing a.header { color: inherit; text-decoration: none; }
+/* mdbook makes every heading a self-link (a.header → "#see-what-your-…" in the URL). The landing's
+   headings aren't meant to be links: no click, no pointer (landing.js also unwraps them). */
+.gb-landing a.header { color: inherit; text-decoration: none; pointer-events: none; cursor: inherit; }
 .gb-landing a:hover { text-decoration: none; }
 /* mdbook's `.content a:link` colours every link blue and out-ranks plain class
    rules — pin the landing's button/card/timeline text colours. */
@@ -121,6 +123,9 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-overline { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700;
   letter-spacing: .12em; text-transform: uppercase; color: var(--gb-gold-hi); }
 .gl-rule { width: 22px; height: 1px; background: var(--gb-gold); }
+/* hero overline: a long rule on each side of the text */
+.gl-overline-ruled { display: flex; white-space: nowrap; }
+.gl-overline-ruled .gl-rule { flex: 0 1 64px; min-width: 14px; }
 .gl-h1 { font-family: var(--gb-font-display); font-weight: 600; font-size: 62px; line-height: 1.04;
   letter-spacing: -0.02em; color: var(--gb-text); }
 .gl-accent { color: var(--gb-gold-hi); }
@@ -168,6 +173,8 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
   transform: translateX(-50%);
   -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
           mask-image: linear-gradient(to bottom, #000 78%, transparent 100%); }
+/* rising embers (landing.js) over the statue, like sparks off a fireplace */
+.gl-embers { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 
 /* by the numbers */
 .gl-proof { background: var(--gb-surface); border-top: 1px solid var(--gb-border); border-bottom: 1px solid var(--gb-border); }
@@ -186,19 +193,32 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
   justify-content: center; cursor: pointer; }
 .gl-navbtn:hover { border-color: var(--gb-gold); }
 .gl-navbtn:disabled { opacity: .35; cursor: default; border-color: var(--gb-border); }
-.gl-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-bottom: 20px; padding: 4px; }
+.gl-chips { position: relative; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-bottom: 20px; padding: 4px;
+  scroll-behavior: smooth; }
+/* soft fade on whichever edge still has chips scrolled out of view (landing.js toggles the classes) */
+.gl-chips.more-r { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 44px), transparent);
+                           mask-image: linear-gradient(to right, #000 calc(100% - 44px), transparent); }
+.gl-chips.more-l { -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 44px), transparent);
+                           mask-image: linear-gradient(to left, #000 calc(100% - 44px), transparent); }
+.gl-chips.more-l.more-r { -webkit-mask-image: linear-gradient(to right, transparent, #000 44px, #000 calc(100% - 44px), transparent);
+                                  mask-image: linear-gradient(to right, transparent, #000 44px, #000 calc(100% - 44px), transparent); }
 .gl-chips::-webkit-scrollbar { display: none; }
 .gl-chip { flex: none; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--gb-border-strong);
   background: transparent; color: var(--gb-text-2); font-size: 14.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .gl-chip:hover { border-color: var(--gb-gold); color: var(--gb-text); }
 .gl-chip[aria-pressed="true"] { background: var(--gb-gold); border-color: var(--gb-gold); color: var(--gb-on-primary); }
-.gl-car { position: relative; display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory;
-  scroll-behavior: smooth; scrollbar-width: none; padding-bottom: 4px; }
+.gl-car { position: relative; display: flex; align-items: flex-start; gap: 20px; overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; padding-bottom: 4px;
+  transition: height .35s ease; }
 .gl-car::-webkit-scrollbar { display: none; }
 .gl-slide { flex: 0 0 84%; scroll-snap-align: start; box-sizing: border-box; display: grid;
   grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 28px; padding: 28px; border-radius: 22px;
   background: var(--gb-surface); border: 1px solid var(--gb-border); opacity: .55; transition: opacity .3s ease; }
 .gl-slide.is-active { opacity: 1; }
+/* a peeking neighbour is capped to the active slide's height and fades out at the bottom */
+.gl-car.is-sized .gl-slide:not(.is-active) { max-height: var(--car-h); overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent);
+          mask-image: linear-gradient(to bottom, #000 70%, transparent); }
 .gl-slide-yours { background: transparent; border: 2px dashed var(--gb-border-strong); }
 .gl-slide-head { display: flex; flex-direction: column; gap: 12px; }
 .gl-slide-cta { align-self: flex-start; margin-top: auto; }
@@ -322,10 +342,34 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-timeline li { position: relative; display: flex; flex-direction: column; gap: 3px; padding: 0 0 20px 22px; border-left: 1px solid var(--gb-border-strong); }
 .gl-timeline li::before { content: ""; position: absolute; left: -6px; top: 5px; width: 11px; height: 11px; border-radius: 50%; background: var(--gb-border-strong); }
 .gl-timeline li:last-child { border-left-color: transparent; padding-bottom: 0; }
-.gl-timeline li.is-now::before { left: -7px; width: 13px; height: 13px; background: var(--gb-gold); box-shadow: 0 0 0 5px color-mix(in srgb, var(--gb-gold) 18%, transparent); }
+.gl-timeline li.is-now::before { left: -7px; width: 13px; height: 13px; background: var(--gb-gold); z-index: 1;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--gb-gold) 18%, transparent); animation: gl-now-core 1.6s ease-in-out infinite; }
+/* expanding shockwave ring behind the "now" dot */
+.gl-timeline li.is-now::after { content: ""; position: absolute; left: -7px; top: 5px; width: 13px; height: 13px; border-radius: 50%;
+  border: 2px solid var(--gb-gold-hi); box-sizing: border-box; animation: gl-now-ring 1.6s ease-out infinite; }
+@keyframes gl-now-core {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 0 4px color-mix(in srgb, var(--gb-gold) 25%, transparent), 0 0 10px 2px color-mix(in srgb, var(--gb-gold) 45%, transparent); }
+  50%      { transform: scale(1.55); box-shadow: 0 0 0 9px color-mix(in srgb, var(--gb-gold) 20%, transparent), 0 0 30px 10px color-mix(in srgb, var(--gb-gold) 70%, transparent); } }
+@keyframes gl-now-ring {
+  0%   { transform: scale(1);   opacity: .95; }
+  100% { transform: scale(4.6); opacity: 0; } }
 .gl-timeline a, .gl-timeline strong { font-size: 16px; font-weight: 600; color: var(--gb-text); text-decoration: none; }
 .gl-timeline a:hover { color: var(--gb-gold-hi); }
 .gl-timeline li.is-now strong { color: var(--gb-gold-hi); }
+/* "Next" — the roadmap from open GitHub issues: a dashed line out of "now" into a hollow node */
+.gl-timeline li.is-now { border-left-style: dashed; }
+.gl-timeline li.is-next::before { left: -7px; width: 13px; height: 13px; box-sizing: border-box;
+  background: var(--gb-bg, transparent); border: 2px solid var(--gb-gold); }
+.gl-road { display: grid; gap: 8px; margin-top: 10px; }
+.gb-landing .gl-timeline a.gl-road-item { display: flex; flex-direction: column; gap: 2px; padding: 11px 14px;
+  border-radius: 12px; border: 1px solid var(--gb-border); background: var(--gb-surface);
+  transition: border-color .15s, transform .15s; }
+.gb-landing .gl-timeline a.gl-road-item:hover { border-color: var(--gb-gold); transform: translateX(3px); }
+.gl-road-item b { font-size: 15px; font-weight: 600; }
+.gl-road-item i { font-style: normal; font-size: 14px; font-weight: 400; color: var(--gb-text-2); }
+.gb-landing .gl-timeline a.gl-road-cta { align-self: flex-start; margin-top: 10px; font-size: 14.5px; color: var(--gb-gold-hi) !important; }
+.gb-landing .gl-timeline a.gl-road-cta:hover { text-decoration: underline; }
+@media (prefers-reduced-motion: reduce) { .gb-landing .gl-timeline a.gl-road-item:hover { transform: none; } }
 .gl-timeline span { font-size: 14.5px; color: var(--gb-text-2); }
 .gl-faq { border-top: 1px solid var(--gb-border); }
 .gl-faq details { padding: 8px 0 14px; border-bottom: 1px solid var(--gb-border); }
@@ -357,8 +401,10 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
   font-size: 11px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; color: var(--gb-text-2); z-index: 2; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
   .gb-landing .stream-bot-img { animation: none; }
-  .gl-car { scroll-behavior: auto; }
+  .gl-car, .gl-chips { scroll-behavior: auto; }
+  .gl-car { transition: none; }
   .gl-slide { transition: none; }
+  .gl-timeline li.is-now::before, .gl-timeline li.is-now::after { animation: none; }
 }
 
 /* responsive */
@@ -379,8 +425,6 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
   .gl-proof-cell:nth-child(even) { border-left: 1px solid var(--gb-border) !important; }
   .gl-sec-head { flex-direction: column; align-items: flex-start; }
   .gl-slide { flex-basis: 100%; grid-template-columns: minmax(0, 1fr); padding: 20px; gap: 20px; }
-  /* slides share the tallest slide's height; keep content at the top instead of spreading rows apart */
-  .gl-slide { align-content: start; }
   .gl-slide-cta { margin-top: 6px; }
   .gl-h3 { font-size: 27px; }
   .gl-build, .gl-story { grid-template-columns: minmax(0, 1fr); }
