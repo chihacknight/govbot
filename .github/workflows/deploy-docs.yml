@@ -19,8 +19,11 @@ permissions:
   pages: write
   id-token: write
 
+# Real deploys share one "pages" queue. PR build-checks never deploy, so they get their
+# own per-PR group — otherwise a PR's check queued into "pages" replaces (cancels) a
+# pending main-branch deploy, as happened to the #182 deploy.
 concurrency:
-  group: pages
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.ref) || 'pages' }}
   cancel-in-progress: false
 
 jobs:
@@ -133,7 +136,10 @@ jobs:
       - name: Install mdbook
         uses: peaceiris/actions-mdbook@v2
         with:
-          mdbook-version: 'latest'
+          # Pinned: docs/theme/index.hbs is a customized copy of mdbook 0.4.43's own
+          # template, and mdbook 0.5 removed helpers it uses (e.g. `previous`), so
+          # "latest" fails to render. Bump only together with a re-based index.hbs.
+          mdbook-version: '0.4.43'
 
       # Install the govbot CLI so we can run the embedding tagger (`govbot tag`).
       - name: Install govbot CLI
@@ -439,6 +445,12 @@ jobs:
       # they were. As more offices appear on official lists, this populates them too.
       - name: Populate official candidates from the Chicago BOE candidate list (PDF)
         if: steps.gate.outputs.refresh == 'true'
+        # Normally takes seconds. Cap it so a hung download (apt mirror / BOE site)
+        # can't stall the whole deploy (it once hung for hours, blocking every queued
+        # deploy behind it); on a timeout the step is skipped and the deploy goes on
+        # with the candidates already in elections.json.
+        timeout-minutes: 20
+        continue-on-error: true
         run: |
           set -uo pipefail
           sudo apt-get update && sudo apt-get install -y poppler-utils \
