@@ -41,7 +41,7 @@
 <div id="activity-list"><div class="gb-loading"><div class="gb-spinner"></div><p>Loading recent bills…</p></div></div>
 </div>
 </article>
-<article class="gl-slide" style="--pc: var(--gb-gold-hi)" aria-roledescription="slide" aria-label="2 of 6: Hearings and public comment">
+<article class="gl-slide" style="--pc: var(--gb-primary-hi)" aria-roledescription="slide" aria-label="2 of 6: Hearings and public comment">
 <div class="gl-slide-head">
 <div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg></span>Hearings &amp; public comment</div>
 <h3 class="gl-h3">Can I have a say?</h3>
@@ -53,7 +53,7 @@
 <div id="hearings-list"><div class="gb-loading"><div class="gb-spinner"></div><p>Loading upcoming hearings…</p></div></div>
 </div>
 </article>
-<article class="gl-slide" style="--pc: var(--gb-green)" aria-roledescription="slide" aria-label="3 of 6: Illinois elections">
+<article class="gl-slide" style="--pc: var(--gb-amber-hi)" aria-roledescription="slide" aria-label="3 of 6: Illinois elections">
 <div class="gl-slide-head">
 <div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/><path d="M12 12v8"/></svg></span>Illinois elections</div>
 <h3 class="gl-h3">What's on my ballot?</h3>
@@ -61,7 +61,7 @@
 <a class="gl-btn gl-btn-primary gl-slide-cta" href="dashboard/elections.html">Find your ballot</a>
 </div>
 <div class="gl-slide-body gl-elect">
-<span class="gl-label" style="color: var(--gb-green)">Next Illinois election</span>
+<span class="gl-label" style="color: var(--gb-amber-hi)">Next Illinois election</span>
 <span class="gl-elect-date" id="election-date">November 3, 2026</span>
 <span class="gl-pill" id="election-days" hidden></span>
 <p class="gl-p" id="election-note">Governor &amp; statewide offices, U.S. Senate &amp; House, the General Assembly and the CPS board.</p>
@@ -92,7 +92,7 @@
 <a class="gl-bot" href="https://bsky.app/profile/govbotaidatacenter.bsky.social" target="_blank" rel="noopener"><span class="gl-bot-t">Data Center &amp; AI Legislation ↗</span><span class="gl-p">AI and data-center bills nationwide, on Bluesky.</span><span class="gl-feed-p">@govbotaidatacenter.bsky.social</span></a>
 </div>
 </article>
-<article class="gl-slide gl-slide-yours" style="--pc: var(--gb-gold-hi)" aria-roledescription="slide" aria-label="6 of 6: Your project">
+<article class="gl-slide gl-slide-yours" style="--pc: var(--gb-primary-hi)" aria-roledescription="slide" aria-label="6 of 6: Your project">
 <div class="gl-slide-head">
 <div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>Your project</div>
 <h3 class="gl-h3">Build the next one.</h3>

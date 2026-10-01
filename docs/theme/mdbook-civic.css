@@ -96,10 +96,10 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
    The .activity-row / .ar-* / .mini-date / .stream-* rules are carried over
    from the retired dashboard homepage so the ported landing.js renders as before.
    =========================================================================== */
-.gb-landing { --gl-teal: #5CC8DA; --gl-halo: rgba(214,168,79,.16); color: var(--gb-text); font-size: 16px; }
-:root[data-theme="light"] .gb-landing { --gl-teal: #0E6F80; --gl-halo: rgba(11,17,26,.62); }
+.gb-landing { --gl-teal: #5CC8DA; --gl-halo: rgba(61,220,132,.16); color: var(--gb-text); font-size: 16px; }
+:root[data-theme="light"] .gb-landing { --gl-teal: #0E6F80; --gl-halo: rgba(4,26,15,.94); }
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme]) .gb-landing { --gl-teal: #0E6F80; --gl-halo: rgba(11,17,26,.62); }
+  :root:not([data-theme]) .gb-landing { --gl-teal: #0E6F80; --gl-halo: rgba(4,26,15,.94); }
 }
 /* neutralise mdbook's content typography inside the landing */
 .gb-landing h1, .gb-landing h2, .gb-landing h3 { margin: 0; border: 0; }
@@ -107,7 +107,7 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gb-landing a:hover { text-decoration: none; }
 /* mdbook's `.content a:link` colours every link blue and out-ranks plain class
    rules — pin the landing's button/card/timeline text colours. */
-.gb-landing a.gl-btn-primary, .gb-landing a.gl-btn-primary:hover { color: #1a1205 !important; }
+.gb-landing a.gl-btn-primary, .gb-landing a.gl-btn-primary:hover { color: var(--gb-on-primary) !important; }
 .gb-landing a.gl-btn-ghost, .gb-landing a.gl-feed, .gb-landing a.gl-bot,
 .gb-landing a.activity-row, .gb-landing .gl-timeline a { color: var(--gb-text) !important; }
 .gb-landing .gl-timeline a:hover { color: var(--gb-gold-hi) !important; }
@@ -140,8 +140,8 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px;
   padding: 0 20px; border-radius: var(--gb-radius-pill, 999px); font-size: 15px; font-weight: 600;
   text-decoration: none; box-sizing: border-box; transition: background .15s, border-color .15s; }
-.gb-landing .gl-btn-primary { background: var(--gb-gold); border: 1px solid var(--gb-gold); color: #1a1205; }
-.gb-landing .gl-btn-primary:hover { background: var(--gb-gold-hi); border-color: var(--gb-gold-hi); color: #1a1205; }
+.gb-landing .gl-btn-primary { background: var(--gb-gold); border: 1px solid var(--gb-gold); color: var(--gb-on-primary); }
+.gb-landing .gl-btn-primary:hover { background: var(--gb-gold-hi); border-color: var(--gb-gold-hi); color: var(--gb-on-primary); }
 .gb-landing .gl-btn-ghost { background: transparent; border: 1px solid var(--gb-border-strong); color: var(--gb-text); }
 .gb-landing .gl-btn-ghost:hover { border-color: var(--gb-gold); background: var(--gb-hover); color: var(--gb-text); }
 .gb-landing :focus-visible { outline: 3px solid var(--gb-gold-hi); outline-offset: 3px; }
@@ -152,6 +152,16 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-hero-copy { display: flex; flex-direction: column; gap: 22px; }
 .gl-lede { font-size: 19px !important; color: var(--gb-text-2); max-width: 560px; }
 .gl-art { position: relative; height: 600px; overflow: hidden; }
+/* Light mode: the statue's pale line-art highlights wash out on a light page, so she stands in a
+   crisp deep-green "night" panel (same idea as the hearings hero, which stays dark in both themes). */
+:root[data-theme="light"] .gl-art { border-radius: 28px;
+  background: radial-gradient(70% 60% at 50% 42%, rgba(61,220,132,.22), transparent 70%), #06140D; }
+:root[data-theme="light"] .gl-halo { display: none; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .gl-art { border-radius: 28px;
+    background: radial-gradient(70% 60% at 50% 42%, rgba(61,220,132,.22), transparent 70%), #06140D; }
+  :root:not([data-theme]) .gl-halo { display: none; }
+}
 .gl-halo { position: absolute; left: 50%; top: 46%; width: 440px; height: 520px; transform: translate(-50%, -50%);
   border-radius: 50%; background: radial-gradient(closest-side, var(--gl-halo), transparent); }
 .gb-landing .gl-art-img { position: absolute; left: 50%; top: 0; height: 720px; width: auto; max-width: none;
@@ -181,7 +191,7 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-chip { flex: none; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--gb-border-strong);
   background: transparent; color: var(--gb-text-2); font-size: 14.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .gl-chip:hover { border-color: var(--gb-gold); color: var(--gb-text); }
-.gl-chip[aria-pressed="true"] { background: var(--gb-gold); border-color: var(--gb-gold); color: #1a1205; }
+.gl-chip[aria-pressed="true"] { background: var(--gb-gold); border-color: var(--gb-gold); color: var(--gb-on-primary); }
 .gl-car { position: relative; display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory;
   scroll-behavior: smooth; scrollbar-width: none; padding-bottom: 4px; }
 .gl-car::-webkit-scrollbar { display: none; }
@@ -203,8 +213,8 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-elect { gap: 12px; padding: 22px; border-radius: 16px; background: var(--gb-row-alt, var(--gb-surface-2)); border: 1px solid var(--gb-border); }
 .gl-elect-date { font-family: var(--gb-font-display); font-size: 44px; font-weight: 600; line-height: 1; color: var(--gb-text); }
 .gl-pill { align-self: flex-start; display: inline-flex; align-items: center; height: 32px; padding: 0 13px;
-  border-radius: 999px; font-size: 14.5px; font-weight: 700; color: var(--gb-green);
-  background: color-mix(in srgb, var(--gb-green) 15%, transparent); }
+  border-radius: 999px; font-size: 14.5px; font-weight: 700; color: var(--gb-amber-hi);
+  background: color-mix(in srgb, var(--gb-amber) 15%, transparent); }
 .gl-pill[hidden] { display: none; }
 .gl-elect-then { padding-top: 12px; border-top: 1px solid var(--gb-border); font-size: 14px; color: var(--gb-text-2); }
 .gl-elect-then[hidden] { display: none; }
@@ -252,7 +262,7 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
   color: #fff; letter-spacing: .02em; border: 1.5px solid rgba(255,255,255,0.16); }
 .ar-av.is-dem { background: var(--gb-blue); }
 .ar-av.is-rep { background: var(--gb-red); }
-.ar-av.is-oth { background: var(--gb-gold); color: #1a1205; }
+.ar-av.is-oth { background: var(--gb-gold); color: var(--gb-on-primary); }
 .ar-av.is-unk { background: var(--gb-surface-2); color: var(--gb-text-2); border-color: var(--gb-border); }
 /* A real headshot (vendored at deploy) covers the monogram; if it 404s the
    <img> is removed and the party-tinted monogram shows through. */
@@ -272,10 +282,10 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .hr-juris { font-size: 13.5px; color: var(--gb-text-2); }
 .mini-date { flex: none; width: 58px; text-align: center; border-radius: 10px; overflow: hidden;
   background: var(--gb-surface-2); border: 1px solid var(--gb-border); position: relative; box-shadow: 0 2px 7px rgba(0,0,0,0.12); }
-.mini-date .cal-band { position: relative; background: var(--gb-gold); color: #1a1205; font-size: 9.5px; font-weight: 700;
+.mini-date .cal-band { position: relative; background: var(--gb-gold); color: var(--gb-on-primary); font-size: 9.5px; font-weight: 700;
   letter-spacing: .1em; text-transform: uppercase; padding: 6px 0 3px; }
 .mini-date .cal-band::before, .mini-date .cal-band::after { content: ""; position: absolute; top: 2px; width: 3px; height: 5px;
-  border-radius: 2px; background: color-mix(in srgb, #1a1205 42%, transparent); }
+  border-radius: 2px; background: color-mix(in srgb, var(--gb-on-primary) 42%, transparent); }
 .mini-date .cal-band::before { left: 34%; }
 .mini-date .cal-band::after { right: 34%; }
 .mini-date .cal-day { font-family: var(--gb-font-display); font-size: 24px; line-height: 1.05; color: var(--gb-text); padding: 4px 0 0; }
@@ -297,8 +307,8 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 /* the text scrolls inside its own box, so a long command never slides under Copy */
 .gl-code .gl-code-t { display: block; font-size: 13.5px; line-height: 1.7; color: #E8EAF0; white-space: pre; overflow-x: auto; scrollbar-width: thin; }
 .gl-copy { position: absolute; top: 8px; right: 8px; height: 34px; min-width: 64px; padding: 0 13px; border-radius: 999px;
-  border: 1px solid #3A455C; background: #121826; color: #F0C969; font-size: 13px; font-weight: 600; cursor: pointer; }
-.gl-copy:hover { border-color: #D6A84F; }
+  border: 1px solid #3A455C; background: #121826; color: #7CEBB0; font-size: 13px; font-weight: 600; cursor: pointer; }
+.gl-copy:hover { border-color: #3DDC84; }
 .gl-build-side { display: flex; flex-direction: column; gap: 14px; }
 .gl-card { display: flex; flex-direction: column; gap: 12px; padding: 22px; border-radius: 18px; background: var(--gb-bg); border: 1px solid var(--gb-border); }
 .gl-prompt { position: relative; padding: 16px 16px 58px; border-radius: 12px; background: var(--gb-surface-2); border: 1px solid var(--gb-border); }

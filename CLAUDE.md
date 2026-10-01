@@ -135,7 +135,21 @@ names must stay in sync with the keyword fallback in `scripts/dashboard_tags.jso
 `scripts/filter_new_bills.py` + `scripts/tag_dashboard_repo.sh`.
 
 **Civic redesign (in progress).** The dashboard is being revamped into a dark-mode-first
-"civic institution" per the design brief in `tamara-notes/`. Shared design system lives in
+"civic institution" per the design brief in `tamara-notes/`. **Brand colour = a lively green ("Spring"),
+not gold** (chosen on the "Govbot Green" Design canvas): `govbot.css` defines `--gb-primary` (dark
+`#3DDC84` / light `#0B7D45`), `--gb-primary-hi` (`#7CEBB0` / `#075C33`), `--gb-on-primary` (text on a
+primary fill: `#04140B` dark / white light) and `--gb-glow-primary`, and **`--gb-gold`, `--gb-gold-hi` and
+`--gb-glow-gold` are now aliases of them** — so wherever this document says "gold" for a brand accent
+(buttons, overlines, pulses, the mini-date band, map bases, stat numerals…) it renders green. Role map:
+brand + Hearings = green; Legislation = blue; **Illinois Elections = amber** (`--gb-amber` /
+`--gb-amber-hi`, matching the gold Capitol hero, which stays gold; its menu accent, homepage slide and
+Chicago-map selection outline are amber); **race-map highlighted districts = blue** (`--gb-blue-hi`) on
+the green base; "live" / "comment open" status marks stay `--gb-green`. The Liberty
+(`liberty-hero.png`) and White House (`whitehouse-hero.png`) heroes were recoloured to green in place
+(a hue remap of their gold pixels, keeping value + alpha; the gold originals are in git history), the
+legislation US heat-map ramp is green, and the gavel favicon (now also on the mdbook docs pages) is green.
+On the light-mode homepage the statue stands in a deep-green "night" panel (`.gl-art`) because her pale
+line-art highlights wash out on a light page. Shared design system lives in
 `docs/src/dashboard/assets/govbot.css` (dark-first tokens + components; legacy token names like
 `--page`/`--series-N` are aliased to the civic palette so unmigrated inline page CSS reskins
 automatically) and `docs/src/dashboard/assets/govbot-shell.js` (theme toggle with dark default,
@@ -549,8 +563,8 @@ civic tile, crisp at 16px — replacing the earlier robot-face and per-page torc
 the mdbook text docs *and* the dashboards — now wears one civic shell. The root
 `https://chihacknight.github.io/govbot/` is rendered by **mdbook** from `docs/src/readme.md`, the
 civic landing (`.gb-landing`, designed on the "Govbot Landing Revamp" Design canvas). Top to bottom:
-a hero with the big gold **Liberty** (`dashboard/assets/liberty-hero.png`, a radial halo behind her —
-gold glow in dark mode, a dark halo in light mode so she stays prominent); a **"By the numbers"** strip
+a hero with the big green **Liberty** (`dashboard/assets/liberty-hero.png`, a soft green glow behind her
+in dark mode, a deep-green rounded "night" panel in light mode so she stays prominent); a **"By the numbers"** strip
 (56 jurisdictions · < 1 min to clone · $0 to tag · 2×/day refresh); **"Projects built on Govbot"**, a
 **carousel** (a CSS `scroll-snap` row so swipe/scroll work without JS; prev/next + named tab chips +
 "n / 6" counter driven by `landing.js`) of six slides — Legislation (live **recent activity**, one bill

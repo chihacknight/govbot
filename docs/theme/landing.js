@@ -369,7 +369,8 @@
       pal.surface2 = v("--gb-surface-2", "#10151F");
       pal.border = v("--gb-border", "#273042");
       pal.blue = v("--gb-blue", "#2F6BFF");
-      pal.gold = v("--gb-gold", "#D6A84F");
+      pal.gold = v("--gb-gold", "#3DDC84");
+      pal.amber = v("--gb-amber", "#E0A83C");
       pal.green = v("--gb-green", "#3FB37F");
       pal.red = v("--gb-red", "#E5484D");
       pal.purple = v("--gb-purple", "#8C78E6");
@@ -385,7 +386,7 @@
     var TOPICS = [
       { label: "AI + DATA CENTERS", c: function () { return pal.blue; } },
       { label: "EDUCATION",         c: function () { return pal.purple; } },
-      { label: "HOUSING",           c: function () { return pal.gold; } },
+      { label: "HOUSING",           c: function () { return pal.amber; } },
       { label: "LABOR RIGHTS",      c: function () { return pal.red; } },
       { label: "TRANSPORTATION",    c: function () { return "#22B8CF"; } }
     ];
