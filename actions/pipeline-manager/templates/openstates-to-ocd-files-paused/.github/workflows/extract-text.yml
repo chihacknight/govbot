@@ -1,0 +1,131 @@
+# Example caller workflow for text extraction
+# Copy this to your state data repo as .github/workflows/extract-text.yml
+
+name: Text Extraction from Bills
+
+on:
+  # Scheduled backup trigger removed -- ✏️{ locale.key }✏️ is currently out of
+  # session. Still reachable via workflow_run (if format ever runs again for
+  # this locale) and workflow_dispatch. See the active (non-paused) template
+  # for the full trigger explanation.
+  workflow_run:
+    workflows: ["Format Data for ✏️{ locale.key }✏️"]
+    types: [completed]
+  workflow_dispatch:
+
+# A run against a large state can take hours. Without this, a scheduled
+# trigger landing mid-run cancels the in-progress run outright ("runner
+# received a shutdown signal") instead of queuing behind it -- discovered
+# live when the daily cron fired on top of an overnight manual run.
+concurrency:
+  group: extract-text
+  cancel-in-progress: false
+
+jobs:
+  extract-text:
+    name: Text Extraction
+    # Only proceed on a workflow_run if format actually succeeded -- otherwise
+    # extraction would run against a format pass that didn't finish (same
+    # guard synthetic-test.yml uses for its own workflow_run trigger).
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    # Same runner-override mechanism the scrape template already uses (see
+    # openstates-scrape.yml) -- set locales.<code>.runner: self-hosted in
+    # config for states whose bill-text host blocks GitHub-hosted (Azure) IPs,
+    # e.g. MA (malegislature.gov), same reason its scrape step needs it.
+    # Defaults to ubuntu-latest when unset.
+    runs-on: ✏️{ locale.runner }✏️
+    timeout-minutes: 355 # ~5.9 hours (close to GitHub's 6-hour limit)
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout state repo
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Run text extraction action
+        id: extract
+        uses: chihacknight/govbot/actions/extract@✏️{ locale.toolkit_branch }✏️
+        with:
+          state: ✏️{ locale.key }✏️
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          force-update: "false"
+          # Org-level secret, not yet provisioned -- action skips notifying
+          # silently while this is unset/empty. See project notes.
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Display extraction summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f ".extraction_summary.txt" ]; then
+            cat .extraction_summary.txt
+          else
+            echo "⚠️  Summary file not found"
+          fi
+
+  # Auto-restart job if extraction was cancelled (timeout) or failed.
+  #
+  # The `always() &&` is load-bearing, not decoration: GitHub Actions
+  # implicitly ANDs a job's `if:` with success() unless the condition
+  # explicitly calls a status-check function (always/success/failure/
+  # cancelled). Without it, this job silently skipped every single time --
+  # confirmed across every real failure/cancellation this repo has hit so
+  # far (it never once ran) -- because the needed job having failed made
+  # the implicit success() false regardless of the explicit check below.
+  check-and-restart:
+    name: Check Status & Restart if Needed
+    needs: extract-text
+    runs-on: ubuntu-latest
+    if: always() && (needs.extract-text.result == 'cancelled' || needs.extract-text.result == 'failure')
+    permissions:
+      actions: write
+      contents: read
+
+    steps:
+      - name: Checkout to check completion status
+        uses: actions/checkout@v7
+
+      - name: Check if more work remains
+        id: check
+        shell: bash
+        run: |
+          # Count bills that still need text extraction
+          # Bills without _processing.text_extraction_latest_update need processing
+          TOTAL_BILLS=$(find country:us/state:*/sessions/*/bills/*/metadata.json 2>/dev/null | wc -l || echo "0")
+
+          if [ "$TOTAL_BILLS" -gt 0 ]; then
+            echo "📊 Found $TOTAL_BILLS bills total"
+            echo "needs_restart=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ No bills found or extraction complete"
+            echo "needs_restart=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate GitHub App token for workflow restart
+        id: app-token
+        if: steps.check.outputs.needs_restart == 'true'
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+
+      - name: Trigger workflow restart
+        if: steps.check.outputs.needs_restart == 'true'
+        env:
+          # GITHUB_TOKEN structurally cannot trigger new workflow runs (GitHub
+          # security restriction, to prevent runaway recursive workflow
+          # triggering). A long-lived PAT in a repo/org secret was the original
+          # fix here, but that needs admin:org access to provision and is one
+          # more long-lived credential to rotate/leak. Reuse the GitHub App
+          # token approach the scrape -> format cross-org dispatch already
+          # relies on instead (see openstates-scrape.yml) -- short-lived,
+          # scoped to just this repo, no second PAT to manage.
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          echo "⚠️ Previous run was cancelled/failed. Restarting to continue extraction..."
+          echo "   (Incremental processing will skip already-completed bills)"
+          gh workflow run extract-text.yml --repo ${{ github.repository }}

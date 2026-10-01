@@ -16,43 +16,47 @@ templates:
     folder-name: ✏️{ locale.key }✏️-legislation
     fully_override_dirs:
       - .github
+  openstates-to-ocd-files-paused:
+    folder-name: ✏️{ locale.key }✏️-legislation
+    fully_override_dirs:
+      - .github
 locales:
   al:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main # Defaults to main, but can make whatever.
     name: Alabama
     labels:
       - working
   ak:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Alaska
     labels:
       - working
   az:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Arizona
   ar:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Arkansas
     labels:
       - working
   ca:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: California
     labels:
       - working
   co:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Colorado
     labels:
       - working
   ct:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Connecticut
   dc:
@@ -60,85 +64,85 @@ locales:
     toolkit_branch: main
     name: District of Columbia
   de:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Delaware
     labels:
       - working
   fl:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Florida
     labels:
       - working
   ga:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Georgia
     labels:
       - working
   hi:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Hawaii
     labels:
       - working
   id:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Idaho
     labels:
       - working
   il:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Illinois
     labels:
       - working
   in:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Indiana
     labels:
       - working
   ia:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Iowa
     labels:
       - working
   ks:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Kansas
     labels:
       - working
   ky:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Kentucky
     labels:
       - working
   la:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Louisiana
     labels:
       - working
   me:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Maine
     labels:
       - working
   md:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Maryland
     labels:
       - working
   ma:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Massachusetts
     labels:
@@ -150,43 +154,43 @@ locales:
     labels:
       - working
   mn:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Minnesota
     labels:
       - working
   ms:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Mississippi
     labels:
       - working
   mo:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Missouri
     labels:
       - working
   mt:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Montana
     labels:
       - working
   ne:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Nebraska
     labels:
       - working
   nv:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Nevada
     labels:
       - working
   nh:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: New Hampshire
     labels:
@@ -198,25 +202,25 @@ locales:
     labels:
       - working
   nm:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: New Mexico
     labels:
       - working
   ny:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: New York
     labels:
       - working
   nc:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: North Carolina
     labels:
       - working
   nd:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: North Dakota
     labels:
@@ -228,13 +232,13 @@ locales:
     labels:
       - working
   ok:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Oklahoma
     labels:
       - working
   or:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Oregon
     labels:
@@ -246,69 +250,69 @@ locales:
     labels:
       - working
   ri:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Rhode Island
     labels:
       - working
   sc:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: South Carolina
     labels:
       - working
   sd:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: South Dakota
     labels:
       - working
   tn:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Tennessee
     labels:
       - working
   tx:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Texas
   ut:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Utah
     labels:
       - working
   vt:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Vermont
     labels:
       - working
   va:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Virginia
   wa:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Washington
     labels:
       - working
   wv:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: West Virginia
     labels:
       - working
   wi:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Wisconsin
     labels:
       - working
   wy:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Wyoming
     labels:

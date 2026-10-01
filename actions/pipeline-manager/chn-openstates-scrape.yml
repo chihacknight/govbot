@@ -19,27 +19,27 @@ templates:
     - .github
 locales:
   al:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Alabama
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 5 * * *"  # Central
   ak:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Alaska
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 8 * * *"  # Alaska
     runner: self-hosted
   az:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Arizona
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 6 * * *"  # Mountain
     runner: self-hosted
   ar:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Arkansas
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -48,19 +48,19 @@ locales:
     labels:
     - working
   ca:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: California
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 7 * * *"  # Pacific
   co:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Colorado
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 6 * * *"  # Mountain
   ct:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Connecticut
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -73,7 +73,7 @@ locales:
     scrape_timeout_minutes: "720"
     scrape_cron: "0 4 * * *"  # Eastern
   de:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Delaware
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -81,7 +81,7 @@ locales:
     labels:
     - working
   fl:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Florida
     toolkit_branch: main
     scrape_timeout_minutes: "2520"
@@ -104,7 +104,7 @@ locales:
     labels:
     - working
   ga:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Georgia
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -113,20 +113,20 @@ locales:
     labels:
     - working
   hi:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Hawaii
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 10 * * *"  # Hawaii (no DST)
     runner: self-hosted
   id:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Idaho
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 6 * * *"  # Mountain
   il:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Illinois
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -135,14 +135,14 @@ locales:
     labels:
     - working
   in:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Indiana
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 4 * * *"  # Eastern
     runner: self-hosted
   ia:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Iowa
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -150,7 +150,7 @@ locales:
     labels:
     - working
   ks:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Kansas
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -158,7 +158,7 @@ locales:
     labels:
     - working
   ky:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Kentucky
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -166,7 +166,7 @@ locales:
     labels:
     - working
   la:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Louisiana
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -174,19 +174,19 @@ locales:
     labels:
     - working
   me:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Maine
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 4 * * *"  # Eastern
   md:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Maryland
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 4 * * *"  # Eastern
   ma:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Massachusetts
     toolkit_branch: main
     scrape_timeout_minutes: "1440"
@@ -213,7 +213,7 @@ locales:
     scrape_cron: "0 4 * * *"  # Eastern
     runner: self-hosted
   mn:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Minnesota
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -222,13 +222,13 @@ locales:
     labels:
     - working
   ms:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Mississippi
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 5 * * *"  # Central
   mo:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Missouri
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -237,7 +237,7 @@ locales:
     labels:
     - working
   mt:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Montana
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -246,7 +246,7 @@ locales:
     labels:
     - working
   ne:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Nebraska
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -255,7 +255,7 @@ locales:
     labels:
     - working
   nv:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Nevada
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -264,7 +264,7 @@ locales:
     labels:
     - working
   nh:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: New Hampshire
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -280,7 +280,7 @@ locales:
     labels:
     - working
   nm:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: New Mexico
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -289,14 +289,14 @@ locales:
     labels:
     - working
   ny:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: New York
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 4 * * *"  # Eastern
     runner: self-hosted
   nc:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: North Carolina
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -305,7 +305,7 @@ locales:
     labels:
     - working
   nd:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: North Dakota
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -320,7 +320,7 @@ locales:
     scrape_cron: "0 4 * * *"  # Eastern
     runner: self-hosted
   ok:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Oklahoma
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -328,7 +328,7 @@ locales:
     labels:
     - working
   or:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Oregon
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -346,7 +346,7 @@ locales:
     labels:
     - working
   ri:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Rhode Island
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -354,7 +354,7 @@ locales:
     labels:
     - working
   sc:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: South Carolina
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -363,13 +363,13 @@ locales:
     labels:
     - working
   sd:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: South Dakota
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 5 * * *"  # Central
   tn:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Tennessee
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -378,7 +378,7 @@ locales:
     labels:
     - working
   tx:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Texas
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -386,7 +386,7 @@ locales:
     labels:
     - working
   ut:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Utah
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -394,7 +394,7 @@ locales:
     labels:
     - working
   vt:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Vermont
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -403,14 +403,14 @@ locales:
     labels:
     - working
   va:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Virginia
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 4 * * *"  # Eastern
     runner: self-hosted
   wa:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Washington
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -419,7 +419,7 @@ locales:
     labels:
     - working
   wv:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: West Virginia
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -428,7 +428,7 @@ locales:
     labels:
     - working
   wi:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Wisconsin
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -436,7 +436,7 @@ locales:
     labels:
     - working
   wy:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Wyoming
     toolkit_branch: main
     scrape_timeout_minutes: "720"

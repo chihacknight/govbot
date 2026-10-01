@@ -1,0 +1,46 @@
+name: Format Data for ✏️{ locale.key }✏️
+
+on:
+  # Scheduled backup trigger removed -- ✏️{ locale.key }✏️ is currently out of
+  # session, so there's no fresh scrape data expected to format daily. Still
+  # reachable via repository_dispatch (if scrape is ever manually re-dispatched
+  # for this locale) and workflow_dispatch. See the active (non-paused)
+  # template for the full trigger explanation.
+  repository_dispatch:
+    types: [scrape-complete]
+  workflow_dispatch:
+    inputs:
+      force-update:
+        type: boolean
+        description: "Force push even if upstream changed (use with caution)"
+        default: false
+
+# See the active (non-paused) template for the full explanation.
+concurrency:
+  group: format
+  cancel-in-progress: false
+
+env:
+  STATE_CODE: ✏️{ locale.key }✏️
+  SCRAPER_REPO: govbot-openstates-scrapers/✏️{ locale.key }✏️-legislation
+
+jobs:
+  format:
+    name: "📝 Format Data"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout files repo
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Run formatter action
+        uses: chihacknight/govbot/actions/format@✏️{ locale.toolkit_branch }✏️
+        with:
+          state: ${{ env.STATE_CODE }}
+          scraper-repo: ${{ env.SCRAPER_REPO }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          force-update: ${{ inputs.force-update }}
