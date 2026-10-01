@@ -82,17 +82,32 @@ jobs:
           CHANGED="$(git diff --name-only "$BASE" "$HEAD")"
           echo "changed files:"; printf '%s\n' "$CHANGED"
           if [ -z "$CHANGED" ]; then echo "refresh=true" >> "$GITHUB_OUTPUT"; exit 0; fi
-          # Fast path if EVERY changed file is either a dashboard file
-          # (docs/src/dashboard/**) or a Markdown documentation file (*.md, e.g.
-          # CLAUDE.md, README.md) — neither feeds the data pipeline, so the ~40-min
-          # refresh can be skipped (mdbook still rebuilds with the committed data).
-          # Anything else (actions/**, scripts/**, schemas/**, the workflow, …) is
-          # a data/machinery change and forces a full refresh.
-          REST="$(printf '%s\n' "$CHANGED" | grep -vE '^docs/src/dashboard/' | grep -vE '\.md$' || true)"
+          # Fast path if EVERY changed file is site-only — nothing the data pipeline reads:
+          #   docs/**                 the whole mdbook site: the landing + docs pages, the
+          #                           civic theme (docs/theme/**), book.toml, images, the
+          #                           dashboards (docs/src/dashboard/**) and any future
+          #                           sub-site under docs/src/<name>/ (github.io/govbot/<name>/)
+          #   *.md                    Markdown docs anywhere (CLAUDE.md, README.md, …)
+          #   llms.txt, catalog.json  root AI/catalog guides (not read by any pipeline)
+          #   tamara-notes/**         design notes
+          #   .github/** except this workflow (other workflows, templates)
+          # The ~40-min refresh is skipped and mdbook rebuilds with the last full build's
+          # data. Anything else (actions/**, scripts/**, schemas/**, this workflow, …) is a
+          # data/machinery change and forces a full refresh.
+          REST="$(printf '%s\n' "$CHANGED" \
+            | grep -vE '^docs/' \
+            | grep -vE '\.md$' \
+            | grep -vE '^(llms\.txt|catalog\.json)$' \
+            | grep -vE '^tamara-notes/' \
+            | grep -vE '^\.github/' \
+            || true)"
+          if printf '%s\n' "$CHANGED" | grep -qx '.github/workflows/deploy-docs.yml'; then
+            REST="$REST .github/workflows/deploy-docs.yml"
+          fi
           if [ -n "$REST" ]; then
-            echo "non-dashboard, non-doc change -> full refresh"; echo "refresh=true" >> "$GITHUB_OUTPUT"
+            echo "data/machinery change -> full refresh:"; printf '%s\n' "$REST"; echo "refresh=true" >> "$GITHUB_OUTPUT"
           else
-            echo "dashboard/docs-only change -> skip data pipeline (reuse cached build data)"; echo "refresh=false" >> "$GITHUB_OUTPUT"
+            echo "site-only change -> skip data pipeline (reuse cached build data)"; echo "refresh=false" >> "$GITHUB_OUTPUT"
           fi
 
       # On the fast path, restore the last full build's data.json + gitignored

@@ -698,11 +698,13 @@ offline-snapshot-tested: `python3 actions/scrape-hearings/test_scrape_hearings.p
 
 **`deploy-docs.yml` fast path (frontend- and docs-only changes).** The full data pipeline (~40 min) runs
 on the twice-daily **schedule**, on **manual dispatch**, and on any **push to main that touches a file
-that is neither a dashboard file (`docs/src/dashboard/**`) nor a Markdown doc (`*.md`, e.g. `CLAUDE.md`,
-`README.md`)** — i.e. `actions/**`, `scripts/**`, `schemas/**`, the workflow, seeds, … A push to main
-touching **only dashboard files and/or Markdown docs**, and **every pull request**, take a **fast path**:
-a `Determine build scope` step (`git diff` of the pushed range — it strips dashboard paths and `*.md`
-files, and full-refreshes only if anything else remains; PRs always skip) sets `refresh=false`, and the
+the data pipeline reads** — `actions/**`, `scripts/**`, `schemas/**`, **this workflow file**, seeds, … A
+push to main touching **only site files** — anything under **`docs/**`** (the landing, docs pages, the
+civic theme `docs/theme/**`, `book.toml`, images, the dashboards, and any future sub-site at
+`docs/src/<name>/` → `github.io/govbot/<name>/`), Markdown docs anywhere (`*.md`), the root `llms.txt` /
+`catalog.json`, `tamara-notes/**`, or `.github/**` other than `deploy-docs.yml` — and **every pull
+request**, take a **fast path**: a `Determine build scope` step (`git diff` of the pushed range — it strips
+those paths, and full-refreshes only if anything else remains; PRs always skip) sets `refresh=false`, and the
 pipeline steps are all guarded `if: steps.gate.outputs.refresh == 'true'`, so they're skipped and mdbook
 builds + deploys with the committed data. Markdown docs never feed the data pipeline, so a docs-only
 change (updating this file included) stays fast; mdbook still rebuilds so any published `.md` page
