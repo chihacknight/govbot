@@ -439,6 +439,12 @@ jobs:
       # they were. As more offices appear on official lists, this populates them too.
       - name: Populate official candidates from the Chicago BOE candidate list (PDF)
         if: steps.gate.outputs.refresh == 'true'
+        # Normally takes seconds. Cap it so a hung download (apt mirror / BOE site)
+        # can't stall the whole deploy (it once hung for hours, blocking every queued
+        # deploy behind it); on a timeout the step is skipped and the deploy goes on
+        # with the candidates already in elections.json.
+        timeout-minutes: 20
+        continue-on-error: true
         run: |
           set -uo pipefail
           sudo apt-get update && sudo apt-get install -y poppler-utils \
