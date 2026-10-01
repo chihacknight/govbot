@@ -1,8 +1,9 @@
 import json
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional, TypedDict, Union
 from .file_utils import format_timestamp, record_error_file
+from .processing_tracker import get_current_date
 
 
 class LatestTimestamps(TypedDict):
@@ -29,6 +30,20 @@ class LatestTimestamps(TypedDict):
     # ever looks wrong, this gives an independent "did we actually get real
     # activity around then" signal to check it against.
     action_log_files_created: dict[str, int]
+    # {category: {"YYYY-MM-DD": count}} -- how many times update_latest_timestamp()
+    # (below) rejected a category's own date as implausible and fell back to
+    # today's date instead. Covers all three timestamp categories (actions,
+    # events, vote_events), not just actions -- events/vote_events matter
+    # *more* here, since their watermark also gates whether a file gets
+    # processed at all (see is_newer_than_latest() + io_utils.py): a poisoned
+    # events/vote_events watermark wouldn't just look wrong, it would
+    # silently make every future real event/vote_event fail that gate and
+    # get dropped forever, never processed, no trace. Normally tiny (real
+    # source-data typos are rare -- found exactly 2 across ~2,000 real log
+    # files for MP this session, both in `actions`). If this ever spikes on
+    # the same day as a big action_log_files_created count, that's a
+    # systemic date-parsing bug, not isolated upstream typos.
+    implausible_date_fallbacks: dict[str, dict[str, int]]
 
 
 def get_latest_timestamp_path(output_folder: Path) -> Path:
@@ -43,12 +58,37 @@ def get_default_timestamps() -> LatestTimestamps:
         "events": datetime(1900, 1, 1),
         "actions": datetime(1900, 1, 1),
         "action_log_files_created": {},
+        "implausible_date_fallbacks": {},
     }
 
 
 # Keys in LatestTimestamps whose value is a plain dict (not a datetime) --
 # read/write need to treat these differently from the timestamp categories.
-_DICT_VALUED_KEYS = {"action_log_files_created"}
+_DICT_VALUED_KEYS = {"action_log_files_created", "implausible_date_fallbacks"}
+
+# How far into the future a category's own date can plausibly be before
+# it's treated as a source-data error rather than real data, for ratchet
+# purposes. Real example that motivated this: CNMI's own official site
+# (cnmileg.net) shows a literal clerical typo, "05/09/35" instead of
+# "05/09/25", for a real bill action -- confirmed directly against the
+# source, not a scraping bug. See
+# tamara-notes/processes/presentation-talking-points.md item 1 and
+# tamara-notes/processes/dream-list.md item 1.
+_MAX_FUTURE_SLACK = timedelta(days=2)
+
+
+def _is_plausible_date(dt: datetime) -> bool:
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    return dt <= now + _MAX_FUTURE_SLACK
+
+
+def _record_implausible_date_fallback(
+    category: str, latest_timestamps: LatestTimestamps
+) -> None:
+    today = get_current_date()
+    by_category = latest_timestamps["implausible_date_fallbacks"]
+    bucket = by_category.setdefault(category, {})
+    bucket[today] = bucket.get(today, 0) + 1
 
 
 def read_latest_timestamps(output_folder: Path) -> LatestTimestamps:
@@ -96,8 +136,33 @@ def update_latest_timestamp(
     existing_dt: Optional[datetime],
     latest_timestamps: LatestTimestamps,
 ) -> Optional[datetime]:
+    """Bump latest_timestamps[category] to current_dt if it's newer.
+
+    Guards against implausible (source-data-error) dates before they can
+    ever reach the watermark: since this ratchet never regresses, one bad
+    future date would otherwise poison it permanently. Matters most for
+    "events"/"vote_events" -- their watermark doesn't just get reported, it
+    actively gates whether future files get processed at all
+    (is_newer_than_latest(), called from io_utils.py before this function
+    ever runs) -- so an unguarded poison here would silently and
+    permanently drop real data, not just look wrong. An implausible date
+    falls back to today's own date instead of being skipped outright, so a
+    systemic failure (e.g. every date suddenly looking implausible) still
+    advances the watermark rather than freezing it with no trace -- see
+    _record_implausible_date_fallback for the visible counter that makes
+    that distinguishable from a normal, rare, isolated source typo.
+    """
     if not current_dt:
         return existing_dt
+
+    if not _is_plausible_date(current_dt):
+        print(
+            f"⚠️ Implausible {category} date {current_dt} (more than "
+            f"{_MAX_FUTURE_SLACK} in the future) -- falling back to today "
+            "rather than trusting it"
+        )
+        current_dt = datetime.now(timezone.utc).replace(tzinfo=None)
+        _record_implausible_date_fallback(category, latest_timestamps)
 
     if not existing_dt or current_dt > existing_dt:
         latest_timestamps[category] = current_dt

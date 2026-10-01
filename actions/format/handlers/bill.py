@@ -1,6 +1,5 @@
 from pathlib import Path
 import json
-from datetime import datetime, timedelta, timezone
 from typing import Any
 from utils.file_utils import (
     format_timestamp,
@@ -23,25 +22,6 @@ from utils.processing_tracker import (
 from utils.path_utils import build_bill_path
 
 
-# How far into the future an action's own "occurred" date can plausibly be
-# before it's treated as a source-data error rather than real data. An
-# action represents something that already happened (occurred_at, in the
-# written log -- see write_action_logs()), so it should never legitimately
-# land meaningfully in the future; a couple of days of slack covers
-# timezone differences between a source's local time and our UTC
-# processing, nothing more. Real example that motivated this: CNMI's own
-# official site (cnmileg.net) shows a literal clerical typo, "05/09/35"
-# instead of "05/09/25", for HB 24-17's Senate Final Reading -- confirmed
-# directly against the source, not a scraping bug. See
-# tamara-notes/processes/presentation-talking-points.md item 1.
-_MAX_FUTURE_SLACK = timedelta(days=2)
-
-
-def _is_plausible_action_date(current_dt: datetime) -> bool:
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
-    return current_dt <= now + _MAX_FUTURE_SLACK
-
-
 def _update_actions_watermark(
     actions: list[dict[str, Any]], latest_timestamps: LatestTimestamps
 ) -> None:
@@ -53,19 +33,16 @@ def _update_actions_watermark(
     "start_date" -- bill actions and top-level Event/VoteEvent records use
     different field names for the same concept.
 
-    Implausibly future-dated actions (source data-entry errors, not our
-    bug -- see _MAX_FUTURE_SLACK above) are skipped here only: the action
-    is still written to logs/ untouched by write_action_logs() before this
-    runs, preserving a faithful record of exactly what the government
-    published. This guard only stops that one bad value from poisoning the
-    watermark for years, since update_latest_timestamp() never regresses.
+    Implausible (source-data-error) dates are guarded centrally inside
+    update_latest_timestamp() itself, not here -- see that function's
+    docstring in timestamp_tracker.py. write_action_logs() already wrote
+    every action to logs/ untouched before this runs regardless, preserving
+    a faithful record of exactly what the government published.
     """
     for action in actions:
         timestamp = format_timestamp(action.get("date", ""))
         if timestamp and timestamp != "unknown":
             current_dt = to_dt_obj(timestamp)
-            if not current_dt or not _is_plausible_action_date(current_dt):
-                continue
             latest_timestamps["actions"] = update_latest_timestamp(
                 "actions", current_dt, latest_timestamps["actions"], latest_timestamps
             )
