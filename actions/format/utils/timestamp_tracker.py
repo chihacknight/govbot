@@ -10,6 +10,25 @@ class LatestTimestamps(TypedDict):
 
     vote_events: datetime
     events: datetime
+    # Most recent government-recorded date among genuinely new bill actions
+    # this run (handlers/bill.py, gated on find_new_actions() finding
+    # something new -- unlike events/vote_events, which are separate
+    # top-level OCD record types many states never populate at all, this
+    # covers ordinary bill activity and is the one most states will actually
+    # move. See tamara-notes/processes/dream-list.md item 2 for why this was
+    # added: vote_events/events alone made states with no published votes or
+    # calendar events (e.g. MA) look permanently stuck at the sentinel below,
+    # indistinguishable from a broken pipeline.
+    actions: datetime
+    # Deliberately independent cross-check for `actions`: a months-deep daily
+    # histogram {"YYYY-MM-DD": count}, keyed by the date *this run itself*
+    # executed (get_current_date(), processing_tracker.py) -- never by a
+    # bill's own action date, so a garbage upstream date (e.g. the real 2035
+    # value found for MP this session) can't corrupt it. Count = how many new
+    # action-log files were written that day, across all bills. If `actions`
+    # ever looks wrong, this gives an independent "did we actually get real
+    # activity around then" signal to check it against.
+    action_log_files_created: dict[str, int]
 
 
 def get_latest_timestamp_path(output_folder: Path) -> Path:
@@ -22,7 +41,14 @@ def get_default_timestamps() -> LatestTimestamps:
     return {
         "vote_events": datetime(1900, 1, 1),
         "events": datetime(1900, 1, 1),
+        "actions": datetime(1900, 1, 1),
+        "action_log_files_created": {},
     }
+
+
+# Keys in LatestTimestamps whose value is a plain dict (not a datetime) --
+# read/write need to treat these differently from the timestamp categories.
+_DICT_VALUED_KEYS = {"action_log_files_created"}
 
 
 def read_latest_timestamps(output_folder: Path) -> LatestTimestamps:
@@ -32,7 +58,19 @@ def read_latest_timestamps(output_folder: Path) -> LatestTimestamps:
         with open(timestamp_path, "r", encoding="utf-8") as f:
             raw = json.load(f)
             print(f"📂 Raw timestamp file contents: {json.dumps(raw, indent=2)}")
-            return {k: to_dt_obj(v) for k, v in raw.items() if v}
+            # Merge onto defaults, not just whatever's in the file -- a file
+            # committed before a given category existed won't have that key
+            # at all, and callers index latest_timestamps[...] unconditionally
+            # (see handlers/bill.py).
+            timestamps = get_default_timestamps()
+            for k, v in raw.items():
+                if not v:
+                    continue
+                if k in _DICT_VALUED_KEYS:
+                    timestamps[k] = v
+                else:
+                    timestamps[k] = to_dt_obj(v)
+            return timestamps
     except Exception:
         print("⚠️ No timestamp file found or invalid JSON. Using defaults.")
         return get_default_timestamps()
@@ -139,6 +177,8 @@ def write_latest_timestamp_file(
         for k, dt in latest_timestamps.items():
             if isinstance(dt, datetime):
                 output[k] = dt.strftime("%Y-%m-%dT%H:%M:%S")
+            elif k in _DICT_VALUED_KEYS and dt:
+                output[k] = dt
 
         if not output:
             print("⚠️ No timestamps to write.")

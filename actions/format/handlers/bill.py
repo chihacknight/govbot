@@ -2,11 +2,14 @@ from pathlib import Path
 import json
 from typing import Any
 from utils.file_utils import (
+    format_timestamp,
     validate_required_field,
     write_action_logs,
 )
 from utils.timestamp_tracker import (
     LatestTimestamps,
+    to_dt_obj,
+    update_latest_timestamp,
 )
 from utils.processing_tracker import (
     load_existing_metadata,
@@ -14,8 +17,48 @@ from utils.processing_tracker import (
     merge_actions,
     add_processing_timestamp,
     get_current_timestamp,
+    get_current_date,
 )
 from utils.path_utils import build_bill_path
+
+
+def _update_actions_watermark(
+    actions: list[dict[str, Any]], latest_timestamps: LatestTimestamps
+) -> None:
+    """Bump latest_timestamps["actions"] to the newest date among `actions`.
+
+    Mirrors handlers/event.py's pattern for its own "events" category, but
+    keyed on each action's own "date" field (the government's recorded date,
+    same field write_action_logs() uses for log filenames) rather than
+    "start_date" -- bill actions and top-level Event/VoteEvent records use
+    different field names for the same concept.
+    """
+    for action in actions:
+        timestamp = format_timestamp(action.get("date", ""))
+        if timestamp and timestamp != "unknown":
+            current_dt = to_dt_obj(timestamp)
+            latest_timestamps["actions"] = update_latest_timestamp(
+                "actions", current_dt, latest_timestamps["actions"], latest_timestamps
+            )
+
+
+def _record_action_log_files_created(
+    count: int, latest_timestamps: LatestTimestamps
+) -> None:
+    """Bump today's bucket in the action_log_files_created activity histogram.
+
+    Deliberately independent of _update_actions_watermark above: keyed by the
+    date this run of actions/format itself executed (get_current_date()), not
+    by anything in the bill data, so a garbage/malformed action date upstream
+    (e.g. the real 2035 value found for MP this session) can't corrupt it.
+    Additive, not overwrite -- a same-day re-run (manual re-dispatch same day
+    as the scheduled run) should add to the day's real total, not replace it.
+    """
+    if count <= 0:
+        return
+    today = get_current_date()
+    bucket = latest_timestamps["action_log_files_created"]
+    bucket[today] = bucket.get(today, 0) + count
 
 
 def handle_bill(
@@ -81,6 +124,9 @@ def handle_bill(
             for action in new_actions:
                 add_processing_timestamp(action, "log_file_created")
 
+            _update_actions_watermark(new_actions, latest_timestamps)
+            _record_action_log_files_created(len(new_actions), latest_timestamps)
+
         # Merge actions: preserve existing _processing fields, add new actions
         data["actions"] = merge_actions(existing_actions, actions)
 
@@ -92,8 +138,14 @@ def handle_bill(
         if "_processing" in existing_metadata:
             data["_processing"].update(existing_metadata["_processing"])
 
-        # Update logs timestamp
-        data["_processing"]["logs_latest_update"] = get_current_timestamp()
+        # Update logs timestamp -- gated on new_actions, not unconditional:
+        # this field is meant to mean "the last time this bill's logs/
+        # actually changed," and previously got bumped to the current run
+        # time on every single call regardless of whether anything new was
+        # found, which made it useless as a staleness signal (see
+        # tamara-notes/processes/dream-list.md item 2).
+        if new_actions:
+            data["_processing"]["logs_latest_update"] = get_current_timestamp()
     else:
         # New bill: process all actions
         if actions:
@@ -105,8 +157,17 @@ def handle_bill(
             for action in actions:
                 add_processing_timestamp(action, "log_file_created")
 
-        # Set initial bill-level _processing
-        data["_processing"] = {"logs_latest_update": get_current_timestamp()}
+            _update_actions_watermark(actions, latest_timestamps)
+            _record_action_log_files_created(len(actions), latest_timestamps)
+
+        # Set initial bill-level _processing. A brand-new bill with zero
+        # actions genuinely has no logs/ entry to date, so logs_latest_update
+        # is only set when there was something to log -- same gating as the
+        # existing-bill branch above, kept consistent rather than always
+        # stamping the current run time regardless of content.
+        data["_processing"] = (
+            {"logs_latest_update": get_current_timestamp()} if actions else {}
+        )
 
     # Save bill metadata with _processing fields
     metadata_file = save_path / "metadata.json"
