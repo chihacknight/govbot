@@ -576,7 +576,7 @@ monogram, first 3 then "+N more", non-person sponsors skipped), Hearings (live c
 Illinois elections (next ballot date + countdown + what's on it + the ballot after, from
 `elections.json`), Follow along (real RSS feeds), Topic bots (the two Bluesky bots), and a dashed
 "Your project" slide; **"Build your own"** (install / run / clone steps with copy buttons + the
-"ask an AI" `llms.txt` prompt); **"Our story"** timeline (2022→2026, linking the History pages; the current 2026 point pulses big — a growing glow core plus an expanding ring) +
+"ask an AI" `llms.txt` prompt); **"Our story"** timeline (2022→2026, linking the History pages; the current 2026 point pulses big — a growing glow core plus an expanding ring; then a dashed line runs to a hollow **"Next · On the roadmap"** node: four linked cards distilled from the open GitHub issues — MCP/ChatGPT-Claude #25, easier installs #19, more of government #28, fresher data #111 — plus a "Pick a good first issue ↗" link; refresh them as issues close) +
 **Questions** FAQ; and the **"From the firehose to the point."** canvas animation as the finale. The
 behaviour lives in **`docs/theme/landing.js`** (`book.toml` `additional-js`; a no-op on every page
 without `.gb-landing`). Its live cards and the firehose canvas are **ported verbatim from the retired

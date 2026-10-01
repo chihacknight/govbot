@@ -354,6 +354,20 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-timeline a, .gl-timeline strong { font-size: 16px; font-weight: 600; color: var(--gb-text); text-decoration: none; }
 .gl-timeline a:hover { color: var(--gb-gold-hi); }
 .gl-timeline li.is-now strong { color: var(--gb-gold-hi); }
+/* "Next" — the roadmap from open GitHub issues: a dashed line out of "now" into a hollow node */
+.gl-timeline li.is-now { border-left-style: dashed; }
+.gl-timeline li.is-next::before { left: -7px; width: 13px; height: 13px; box-sizing: border-box;
+  background: var(--gb-bg, transparent); border: 2px solid var(--gb-gold); }
+.gl-road { display: grid; gap: 8px; margin-top: 10px; }
+.gb-landing .gl-timeline a.gl-road-item { display: flex; flex-direction: column; gap: 2px; padding: 11px 14px;
+  border-radius: 12px; border: 1px solid var(--gb-border); background: var(--gb-surface);
+  transition: border-color .15s, transform .15s; }
+.gb-landing .gl-timeline a.gl-road-item:hover { border-color: var(--gb-gold); transform: translateX(3px); }
+.gl-road-item b { font-size: 15px; font-weight: 600; }
+.gl-road-item i { font-style: normal; font-size: 14px; font-weight: 400; color: var(--gb-text-2); }
+.gb-landing .gl-timeline a.gl-road-cta { align-self: flex-start; margin-top: 10px; font-size: 14.5px; color: var(--gb-gold-hi) !important; }
+.gb-landing .gl-timeline a.gl-road-cta:hover { text-decoration: underline; }
+@media (prefers-reduced-motion: reduce) { .gb-landing .gl-timeline a.gl-road-item:hover { transform: none; } }
 .gl-timeline span { font-size: 14.5px; color: var(--gb-text-2); }
 .gl-faq { border-top: 1px solid var(--gb-border); }
 .gl-faq details { padding: 8px 0 14px; border-bottom: 1px solid var(--gb-border); }
