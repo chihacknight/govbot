@@ -142,10 +142,13 @@ primary fill: `#04140B` dark / white light) and `--gb-glow-primary`, and **`--gb
 `--gb-glow-gold` are now aliases of them** — so wherever this document says "gold" for a brand accent
 (buttons, overlines, pulses, the mini-date band, map bases, stat numerals…) it renders green. Role map:
 brand + Hearings = green; Legislation = blue; **Illinois Elections = amber** (`--gb-amber` /
-`--gb-amber-hi`, matching the gold Capitol hero, which stays gold; its menu accent, homepage slide and
-Chicago-map selection outline are amber); **race-map highlighted districts = blue** (`--gb-blue-hi`) on
-the green base; "live" / "comment open" status marks stay `--gb-green`. The Liberty
-(`liberty-hero.png`) and White House (`whitehouse-hero.png`) heroes were recoloured to green in place
+`--gb-amber-hi`: its menu accent, homepage slide and Chicago-map selection outline); the per-race
+**locator mini-maps keep the classic look — a GOLD outline/base with the GREEN highlighted district** —
+via their own `--rm-gold` (the pre-rebrand gold, `#D6A84F` dark / `#A9791F` light, set on `.race-map`),
+since `--gb-gold` is now green; "live" / "comment open" status marks stay `--gb-green`. The Liberty
+(`liberty-hero.png`), White House (`whitehouse-hero.png`) and **Illinois Capitol**
+(`il-capitol-building.png`, deepened with a CSS `brightness`/`saturate` filter in light mode so the line
+art stays crisp; the waving flag overlay is unchanged) heroes were recoloured to green in place
 (a hue remap of their gold pixels, keeping value + alpha; the gold originals are in git history), the
 legislation US heat-map ramp is green, and the gavel favicon (now also on the mdbook docs pages) is green.
 On the light-mode homepage the statue stands in a deep-green "night" panel (`.gl-art`) because her pale
