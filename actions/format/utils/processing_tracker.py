@@ -150,6 +150,20 @@ def get_current_timestamp() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def get_current_date() -> str:
+    """
+    Get the current UTC date -- the day this run of actions/format itself
+    executed, deliberately unrelated to any bill's own action date. Used to
+    key the action_log_files_created activity histogram (see
+    timestamp_tracker.py) so a malformed/garbage date inside upstream bill
+    data can never corrupt it.
+
+    Returns:
+        Date string, e.g. '2026-09-30'
+    """
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
 def compare_action_counts(
     existing_metadata: Optional[dict], incoming_data: dict
 ) -> Tuple[bool, int, int]:
