@@ -3,12 +3,12 @@
 <section class="gl-hero">
 <div class="gl-wrap gl-hero-grid">
 <div class="gl-hero-copy">
-<div class="gl-overline"><span class="gl-rule"></span>Open civic data · Nonpartisan</div>
+<div class="gl-overline gl-overline-ruled"><span class="gl-rule"></span><span>Open civic data · Nonpartisan</span><span class="gl-rule"></span></div>
 <h1 class="gl-h1">See what your government is doing.<br><span class="gl-accent">Then use the data yourself.</span></h1>
 <p class="gl-lede">Every U.S. legislature, as data you can clone — plus hearings and elections, free to explore, follow and build on.</p>
 <div class="gl-btns"><a class="gl-btn gl-btn-primary" href="#projects">See the projects</a><a class="gl-btn gl-btn-ghost" href="#build">Get the data</a></div>
 </div>
-<div class="gl-art" aria-hidden="true"><div class="gl-halo"></div><img class="gl-art-img" src="dashboard/assets/liberty-hero.png" alt="" width="520" height="1000"></div>
+<div class="gl-art" aria-hidden="true"><div class="gl-halo"></div><img class="gl-art-img" src="dashboard/assets/liberty-hero.png" alt="" width="520" height="1000"><canvas class="gl-embers"></canvas></div>
 </div>
 </section>
 
