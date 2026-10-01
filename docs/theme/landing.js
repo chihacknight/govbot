@@ -8,6 +8,14 @@
   "use strict";
   var root = document.querySelector(".gb-landing");
   if (!root) return;
+  // mdbook wraps every heading in a self-link (a.header) — on the landing that only dumps a long
+  // "#see-what-your-…" hash into the URL. Unwrap them so headings are plain text (and not tab stops).
+  var selfLinks = root.querySelectorAll("a.header");
+  for (var h = 0; h < selfLinks.length; h++) {
+    var hl = selfLinks[h];
+    while (hl.firstChild) hl.parentNode.insertBefore(hl.firstChild, hl);
+    hl.parentNode.removeChild(hl);
+  }
   var BASE = "dashboard/";
   var MS_DAY = 86400000;
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;

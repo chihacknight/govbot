@@ -103,7 +103,9 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 }
 /* neutralise mdbook's content typography inside the landing */
 .gb-landing h1, .gb-landing h2, .gb-landing h3 { margin: 0; border: 0; }
-.gb-landing a.header { color: inherit; text-decoration: none; }
+/* mdbook makes every heading a self-link (a.header → "#see-what-your-…" in the URL). The landing's
+   headings aren't meant to be links: no click, no pointer (landing.js also unwraps them). */
+.gb-landing a.header { color: inherit; text-decoration: none; pointer-events: none; cursor: inherit; }
 .gb-landing a:hover { text-decoration: none; }
 /* mdbook's `.content a:link` colours every link blue and out-ranks plain class
    rules — pin the landing's button/card/timeline text colours. */
