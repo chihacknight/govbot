@@ -1,7 +1,7 @@
-name: Format Data for wy
+name: Format Data for ✏️{ locale.key }✏️
 
 on:
-  # Scheduled backup trigger removed -- wy is currently out of
+  # Scheduled backup trigger removed -- ✏️{ locale.key }✏️ is currently out of
   # session, so there's no fresh scrape data expected to format daily. Still
   # reachable via repository_dispatch (if scrape is ever manually re-dispatched
   # for this locale) and workflow_dispatch. See the active (non-paused)
@@ -21,8 +21,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  STATE_CODE: wy
-  SCRAPER_REPO: govbot-openstates-scrapers/wy-legislation
+  STATE_CODE: ✏️{ locale.key }✏️
+  SCRAPER_REPO: govbot-openstates-scrapers/✏️{ locale.key }✏️-legislation
 
 jobs:
   format:
@@ -38,7 +38,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run formatter action
-        uses: chihacknight/govbot/actions/format@main
+        uses: chihacknight/govbot/actions/format@✏️{ locale.toolkit_branch }✏️
         with:
           state: ${{ env.STATE_CODE }}
           scraper-repo: ${{ env.SCRAPER_REPO }}

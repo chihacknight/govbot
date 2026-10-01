@@ -4,12 +4,12 @@
 name: Text Extraction from Bills
 
 on:
-  # Scheduled backup trigger removed -- ak is currently out of
+  # Scheduled backup trigger removed -- ✏️{ locale.key }✏️ is currently out of
   # session. Still reachable via workflow_run (if format ever runs again for
   # this locale) and workflow_dispatch. See the active (non-paused) template
   # for the full trigger explanation.
   workflow_run:
-    workflows: ["Format Data for ak"]
+    workflows: ["Format Data for ✏️{ locale.key }✏️"]
     types: [completed]
   workflow_dispatch:
 
@@ -33,7 +33,7 @@ jobs:
     # config for states whose bill-text host blocks GitHub-hosted (Azure) IPs,
     # e.g. MA (malegislature.gov), same reason its scrape step needs it.
     # Defaults to ubuntu-latest when unset.
-    runs-on: ubuntu-latest
+    runs-on: ✏️{ locale.runner }✏️
     timeout-minutes: 355 # ~5.9 hours (close to GitHub's 6-hour limit)
     permissions:
       contents: write
@@ -46,9 +46,9 @@ jobs:
 
       - name: Run text extraction action
         id: extract
-        uses: chihacknight/govbot/actions/extract@main
+        uses: chihacknight/govbot/actions/extract@✏️{ locale.toolkit_branch }✏️
         with:
-          state: ak
+          state: ✏️{ locale.key }✏️
           github-token: ${{ secrets.GITHUB_TOKEN }}
           force-update: "false"
           # Org-level secret, not yet provisioned -- action skips notifying

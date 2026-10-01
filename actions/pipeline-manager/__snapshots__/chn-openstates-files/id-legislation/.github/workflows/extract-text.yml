@@ -4,11 +4,10 @@
 name: Text Extraction from Bills
 
 on:
-  # Backup only -- the real trigger is workflow_run below, firing right after
-  # this repo's own "Format Data" workflow completes. Same-repo, so no
-  # cross-org token needed (unlike scrape -> format, see openstates-scrape.yml).
-  schedule:
-    - cron: "0 8 * * *" # Daily at 8 AM UTC (~3 AM ET, ~12 AM PT)
+  # Scheduled backup trigger removed -- id is currently out of
+  # session. Still reachable via workflow_run (if format ever runs again for
+  # this locale) and workflow_dispatch. See the active (non-paused) template
+  # for the full trigger explanation.
   workflow_run:
     workflows: ["Format Data for id"]
     types: [completed]
@@ -59,23 +58,12 @@ jobs:
       - name: Display extraction summary
         if: always()
         shell: bash
-        # Read from the action's own outputs, not a file on disk -- a file
-        # sitting in the working tree can get silently clobbered by the
-        # Commit Changes step's own git pull/merge (confirmed live
-        # 2026-08-08 on ma-legislation: this exact file had gotten
-        # accidentally tracked in git from a past commit, so a pull
-        # overwrote the fresh numbers with a stale committed copy right
-        # before this step ran). Outputs are just $GITHUB_OUTPUT, no git
-        # involved, nothing to clobber.
         run: |
-          echo "📊 Text Extraction Summary for id"
-          echo "========================================"
-          echo ""
-          echo "Extracted now:     ${{ steps.extract.outputs.extracted-now }}"
-          echo "Total bills:       ${{ steps.extract.outputs.total-bills }}"
-          echo "Already processed: ${{ steps.extract.outputs.already-processed }}"
-          echo "Unavailable:       ${{ steps.extract.outputs.unavailable }}"
-          echo "Errors:            ${{ steps.extract.outputs.errors }}"
+          if [ -f ".extraction_summary.txt" ]; then
+            cat .extraction_summary.txt
+          else
+            echo "⚠️  Summary file not found"
+          fi
 
   # Auto-restart job if extraction was cancelled (timeout) or failed.
   #

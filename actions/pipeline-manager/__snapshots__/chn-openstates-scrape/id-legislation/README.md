@@ -1,3 +1,8 @@
-# 🏛️ Idaho Open States Scraper
+# 🏛️ Idaho Open States Scraper (Paused)
 
-Runs the official openstates docker container to scrape data for legislation and push on a nightly basis.
+Scheduled scraping is paused — Idaho is currently out of session.
+
+The workflow can still be triggered manually via workflow_dispatch when needed.
+
+Session status is checked daily by the govbot `check-sessions` workflow, which will
+automatically switch this repo back to the active scrape template when a new session begins.

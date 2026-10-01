@@ -1,6 +1,6 @@
-# 🏛️ Wyoming legislation file tree (Paused)
+# 🏛️ ✏️{ locale.name }✏️ legislation file tree (Paused)
 
-Scheduled formatting and text extraction are paused — Wyoming is currently out of
+Scheduled formatting and text extraction are paused — ✏️{ locale.name }✏️ is currently out of
 session.
 
 Both `format.yml` and `extract-text.yml` can still be triggered manually via
