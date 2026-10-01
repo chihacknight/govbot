@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="assets/govbot.css">
 <title>Govbot — How Govbot Works</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22t%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23161E2C%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23090D15%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23F0C969%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23CE9E45%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22b%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFE9AE%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23EBC160%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2261%22%20height%3D%2261%22%20rx%3D%2215%22%20fill%3D%22url(%23t)%22%2F%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2261%22%20height%3D%2261%22%20rx%3D%2215%22%20fill%3D%22none%22%20stroke%3D%22%232B3446%22%20stroke-width%3D%221%22%2F%3E%3Crect%20x%3D%2218%22%20y%3D%2248%22%20width%3D%2228%22%20height%3D%224.6%22%20rx%3D%222.3%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%2214.5%22%20y%3D%2253.4%22%20width%3D%2235%22%20height%3D%223.2%22%20rx%3D%221.6%22%20fill%3D%22%23B98A34%22%2F%3E%3Cg%20transform%3D%22translate(31%2024)%20rotate(70)%22%3E%3Cpath%20d%3D%22M0%20-3.4%20L20%20-2.6%20Q26%20-2.2%2026.5%200%20Q26%202.2%2020%202.6%20L0%203.4%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Ccircle%20cx%3D%2227%22%20cy%3D%220%22%20r%3D%223%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%22-4.2%22%20width%3D%223%22%20height%3D%228.4%22%20rx%3D%221.2%22%20fill%3D%22%23C79A45%22%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(31%2024)%20rotate(-14)%22%3E%3Cpath%20d%3D%22M-5%20-7%20L-15%20-10.5%20A3.2%2010.5%200%200%200%20-15%2010.5%20L-5%207%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Cpath%20d%3D%22M5%20-7%20L15%20-10.5%20A3.2%2010.5%200%200%201%2015%2010.5%20L5%207%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%22-5.5%22%20y%3D%22-9%22%20width%3D%2211%22%20height%3D%2218%22%20rx%3D%222%22%20fill%3D%22url(%23b)%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22t%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23161E2C%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23090D15%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%237CEBB0%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2331BE73%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22b%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23C8F7DD%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%235FE09F%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2261%22%20height%3D%2261%22%20rx%3D%2215%22%20fill%3D%22url(%23t)%22%2F%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2261%22%20height%3D%2261%22%20rx%3D%2215%22%20fill%3D%22none%22%20stroke%3D%22%232B3446%22%20stroke-width%3D%221%22%2F%3E%3Crect%20x%3D%2218%22%20y%3D%2248%22%20width%3D%2228%22%20height%3D%224.6%22%20rx%3D%222.3%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%2214.5%22%20y%3D%2253.4%22%20width%3D%2235%22%20height%3D%223.2%22%20rx%3D%221.6%22%20fill%3D%22%231E9E5C%22%2F%3E%3Cg%20transform%3D%22translate(31%2024)%20rotate(70)%22%3E%3Cpath%20d%3D%22M0%20-3.4%20L20%20-2.6%20Q26%20-2.2%2026.5%200%20Q26%202.2%2020%202.6%20L0%203.4%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Ccircle%20cx%3D%2227%22%20cy%3D%220%22%20r%3D%223%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%22-4.2%22%20width%3D%223%22%20height%3D%228.4%22%20rx%3D%221.2%22%20fill%3D%22%232BB56C%22%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(31%2024)%20rotate(-14)%22%3E%3Cpath%20d%3D%22M-5%20-7%20L-15%20-10.5%20A3.2%2010.5%200%200%200%20-15%2010.5%20L-5%207%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Cpath%20d%3D%22M5%20-7%20L15%20-10.5%20A3.2%2010.5%200%200%201%2015%2010.5%20L5%207%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%22-5.5%22%20y%3D%22-9%22%20width%3D%2211%22%20height%3D%2218%22%20rx%3D%222%22%20fill%3D%22url(%23b)%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <style>
   :root {
     /* Standard tokens come from assets/govbot.css (dark-first + light override).
@@ -377,7 +377,7 @@
 </head>
 <body>
 <header class="gb-header">
-  <a class="gb-brand" href="index.html" aria-label="Govbot home">
+  <a class="gb-brand" href="../" aria-label="Govbot home">
     <img class="gb-brand-mark" src="assets/govbot-mark.png" width="34" height="34" alt="" aria-hidden="true">
     <span class="gb-brand-name">Govbot</span>
   </a>
@@ -393,7 +393,7 @@
         <a href="hearings.html" role="menuitem" style="--accent:var(--gb-gold-hi)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg>
           <span><span class="mega-t">Hearings &amp; Public Comment</span><span class="mega-d">Upcoming hearings and how to weigh in</span></span></a>
-        <a href="elections.html" role="menuitem" style="--accent:var(--gb-green)">
+        <a href="elections.html" role="menuitem" style="--accent:var(--gb-amber-hi)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/></svg>
           <span><span class="mega-t">Illinois Elections</span><span class="mega-d">What&#39;s on your ballot, race by race</span></span></a>
         <a href="architecture.html" role="menuitem" aria-current="page" style="--accent:var(--gb-purple-hi)">
@@ -406,7 +406,7 @@
         <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
       </button>
       <div class="gb-mega" role="menu" aria-label="Follow">
-        <a href="elections.xml" role="menuitem" style="--accent:var(--gb-green)">
+        <a href="elections.xml" role="menuitem" style="--accent:var(--gb-amber-hi)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
           <span><span class="mega-t">Elections feed</span><span class="mega-d">Whole-ballot &amp; per-race RSS</span></span></a>
         <a href="hearings.xml" role="menuitem" style="--accent:var(--gb-gold-hi)">
@@ -443,7 +443,7 @@
       <input id="home-search" type="search" placeholder="Search bills, candidates…">
     </form>
     <button class="gb-icon-btn" data-gb-theme-toggle type="button" aria-label="Toggle theme">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F0C969" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" style="stroke: var(--gb-primary-hi)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg>
     </button>
     <button class="gb-icon-btn gb-menu-btn" data-gb-menu type="button" aria-label="Open menu">
       <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
@@ -960,7 +960,7 @@
     <div>
       <h4>Transparency</h4>
       <a href="architecture.html">Architecture</a>
-      <a href="../index.html" target="_blank" rel="noopener">Govbot docs ↗</a>
+      <a href="../about.html" target="_blank" rel="noopener">Govbot docs ↗</a>
       <a href="elections.xml">RSS feeds</a>
     </div>
     <div>

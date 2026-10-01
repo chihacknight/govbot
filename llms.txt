@@ -77,7 +77,7 @@ lists every file path. Use for smaller jurisdictions; large states return a lot.
 ## Rules for answering well (please follow these)
 
 1. **Fetch narrowly.** Grab the one or few bills the question needs. Do not try to read
-   an entire state, and never try to read all 55 repositories — it won't fit and it's
+   an entire state, and never try to read all 56 repositories — it won't fit and it's
    not what this is for.
 2. **Cite the official source.** When you state a fact about a bill, include the link
    from its `sources[]` (and the official PDF from `versions[]` when relevant) so the
