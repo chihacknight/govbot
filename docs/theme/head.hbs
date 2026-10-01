@@ -1,0 +1,9 @@
+<!-- Civic shell: honor the shared govbot-theme choice before any paint (no flash). -->
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem("govbot-theme");
+      if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+  })();
+</script>

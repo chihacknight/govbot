@@ -1,0 +1,159 @@
+/* ===========================================================================
+   Govbot civic theme for the mdbook docs site.
+   Loaded via additional-css (after mdbook's own CSS + govbot.css), so it wins.
+   Two jobs: (1) re-skin mdbook's chrome with the civic tokens from govbot.css,
+   (2) host the civic shell layout (sticky .gb-header/.gb-footer) + the full-bleed
+   homepage (.gb-landing). Colours come from govbot.css tokens, which already
+   switch on [data-theme]; we map mdbook's own vars onto them with !important to
+   beat mdbook's html.rust / html.coal theme classes.
+   =========================================================================== */
+
+:root {
+  --gb-header-h: 60px;
+
+  /* map mdbook vars -> civic tokens (civic tokens auto-switch light/dark) */
+  --bg: var(--gb-bg) !important;
+  --fg: var(--gb-text) !important;
+  --links: var(--gb-blue-hi) !important;
+  --inline-code-color: var(--gb-gold-hi) !important;
+  --icons: var(--gb-text-muted) !important;
+  --icons-hover: var(--gb-text) !important;
+  --scrollbar: var(--gb-border-strong) !important;
+
+  --sidebar-bg: var(--gb-surface) !important;
+  --sidebar-fg: var(--gb-text-2) !important;
+  --sidebar-active: var(--gb-gold-hi) !important;
+  --sidebar-spacer: var(--gb-border) !important;
+  --sidebar-non-existant: var(--gb-text-muted) !important;
+
+  --theme-popup-bg: var(--gb-elevated) !important;
+  --theme-popup-border: var(--gb-border) !important;
+  --theme-hover: var(--gb-hover) !important;
+
+  --quote-bg: var(--gb-surface-2) !important;
+  --quote-border: var(--gb-border-strong) !important;
+  --warning-border: var(--gb-amber) !important;
+
+  --table-border-color: var(--gb-border) !important;
+  --table-header-bg: var(--gb-surface-2) !important;
+  --table-alternate-bg: var(--gb-row-alt) !important;
+
+  --searchbar-border-color: var(--gb-border) !important;
+  --searchbar-bg: var(--gb-surface-2) !important;
+  --searchbar-fg: var(--gb-text) !important;
+  --searchbar-shadow-color: var(--gb-border-strong) !important;
+  --searchresults-border-color: var(--gb-border) !important;
+  --searchresults-header-fg: var(--gb-text-2) !important;
+  --searchresults-li-bg: var(--gb-surface) !important;
+  --search-mark-bg: color-mix(in srgb, var(--gb-gold) 45%, transparent) !important;
+}
+
+/* fonts + base typography */
+html, body { font-family: var(--gb-font-sans); background: var(--gb-bg); }
+.content main h1, .content main h2, .content main h3,
+.menu-title { font-family: var(--gb-font-display); letter-spacing: -0.01em; }
+.content main a { color: var(--gb-blue-hi); }
+.content main h1, .content main h2 { border: 0; }
+
+/* mdbook's own theme picker is replaced by the civic toggle in .gb-header */
+#theme-toggle, #theme-list { display: none !important; }
+
+/* ---------- the civic header/footer + layout offsets ---------- */
+.gb-header { position: sticky; top: 0; z-index: 1100; }
+
+/* mdbook's fixed sidebar + sticky menu-bar start BELOW our header */
+#sidebar { top: var(--gb-header-h) !important; height: calc(100vh - var(--gb-header-h)) !important; }
+#menu-bar.menu-bar.sticky { top: var(--gb-header-h) !important; }
+html { scroll-padding-top: calc(var(--gb-header-h) + var(--menu-bar-height, 50px)); }
+
+/* recolour the menu-bar itself (doc toolbar) */
+#menu-bar { background: var(--gb-surface) !important; border-bottom: 1px solid var(--gb-border); }
+#menu-bar .icon-button { color: var(--gb-text-2); }
+
+/* footer spans the content area; clear the fixed sidebar when it's showing */
+.gb-footer { clear: both; }
+@media (min-width: 1080px) {
+  html.sidebar-visible .gb-footer { padding-left: calc(var(--sidebar-width) + var(--page-padding, 15px)); }
+}
+
+/* ---------- homepage: full-bleed, no mdbook chrome (:has the landing) ---------- */
+body:has(.gb-landing) #sidebar,
+body:has(.gb-landing) #menu-bar,
+body:has(.gb-landing) .nav-wide-wrapper,
+body:has(.gb-landing) .nav-wrapper,
+body:has(.gb-landing) #sidebar-resize-handle { display: none !important; }
+body:has(.gb-landing) #page-wrapper { margin-left: 0 !important; left: 0 !important; transform: none !important; }
+body:has(.gb-landing) .gb-footer { padding-left: 0 !important; }
+body:has(.gb-landing) #content { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+body:has(.gb-landing) #content main { max-width: none !important; margin: 0 !important; padding: 0 !important; }
+body:has(.gb-landing) .page { margin-top: 0 !important; }
+
+/* ===========================================================================
+   Homepage components (.gb-landing) — civic hero, project cards, open band.
+   =========================================================================== */
+.gb-landing { color: var(--gb-text); }
+.gb-landing section { padding-inline: clamp(16px, 5vw, 64px); }
+.gb-landing .gl-overline { font-size: 12.5px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--gb-gold-hi); margin-bottom: 12px; }
+
+/* hero */
+.gl-hero { display: grid; grid-template-columns: 1.15fr .85fr; gap: 40px; align-items: center;
+  max-width: 1200px; margin: 0 auto; padding-block: clamp(36px, 7vw, 84px);
+  border-bottom: 1px solid var(--gb-border); }
+.gl-h1 { font-family: var(--gb-font-display); font-weight: 600; line-height: 1.07;
+  font-size: clamp(34px, 5.2vw, 60px); margin: 0 0 18px; letter-spacing: -0.02em; }
+.gl-h1 .gl-accent { color: var(--gb-gold-hi); }
+.gl-lede { font-size: clamp(15px, 1.6vw, 18px); line-height: 1.6; color: var(--gb-text-2);
+  max-width: 48ch; margin: 0 0 24px; }
+.gl-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
+.gl-trust { font-size: 12.5px; color: var(--gb-text-muted); letter-spacing: .02em; }
+.gl-hero-art img { display: block; width: 100%; height: auto; max-width: 480px; margin-inline: auto;
+  filter: drop-shadow(0 18px 50px var(--gb-glow-gold)); }
+
+/* buttons */
+.gl-btn { display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: 14.5px;
+  font-weight: 600; text-decoration: none; padding: 11px 18px; border-radius: var(--gb-radius-pill);
+  border: 1px solid var(--gb-border-strong); color: var(--gb-text); background: var(--gb-surface);
+  transition: border-color .15s, background .15s, transform .05s; }
+.gl-btn:hover { border-color: var(--gb-gold); background: var(--gb-hover); }
+.gl-btn:active { transform: translateY(1px); }
+.gl-btn-primary { background: var(--gb-gold); border-color: var(--gb-gold); color: #1a1205; }
+.gl-btn-primary:hover { background: var(--gb-gold-hi); border-color: var(--gb-gold-hi); }
+
+/* projects band */
+.gl-band { max-width: 1200px; margin: 0 auto; padding-block: clamp(40px, 6vw, 72px); }
+.gl-band-head h2 { font-family: var(--gb-font-display); font-weight: 600; font-size: clamp(24px, 3vw, 34px);
+  margin: 0 0 8px; letter-spacing: -0.01em; }
+.gl-band-head p { color: var(--gb-text-2); font-size: 15.5px; line-height: 1.55; max-width: 60ch; margin: 0 0 28px; }
+.gl-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.gl-card { display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: var(--gb-text);
+  background: var(--gb-surface); border: 1px solid var(--gb-border); border-top: 3px solid var(--gc, var(--gb-gold));
+  border-radius: var(--gb-radius-lg); padding: 22px 20px 20px;
+  transition: transform .12s ease, border-color .15s, background .15s; }
+.gl-card:hover { transform: translateY(-3px); border-color: var(--gc, var(--gb-gold)); background: var(--gb-surface-2); }
+.gl-card-ic { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  color: var(--gc, var(--gb-gold)); background: color-mix(in srgb, var(--gc, var(--gb-gold)) 14%, transparent); margin-bottom: 8px; }
+.gl-card-ic svg { width: 22px; height: 22px; }
+.gl-card-kick { font-size: 11.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--gc, var(--gb-gold)); }
+.gl-card-q { font-family: var(--gb-font-display); font-weight: 600; font-size: 20px; color: var(--gb-text); }
+.gl-card-b { font-size: 14px; line-height: 1.5; color: var(--gb-text-2); margin: 4px 0 10px; }
+.gl-card-go { margin-top: auto; font-size: 13.5px; font-weight: 600; color: var(--gc, var(--gb-gold)); }
+
+/* open / yours band */
+.gl-open { border-top: 1px solid var(--gb-border);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--gb-gold) 7%, var(--gb-bg)), var(--gb-bg)); }
+.gl-open-inner { max-width: 820px; margin: 0 auto; text-align: center; padding-block: clamp(44px, 7vw, 80px); }
+.gl-open-h { font-family: var(--gb-font-display); font-weight: 600; font-size: clamp(23px, 3vw, 33px);
+  margin: 6px 0 14px; letter-spacing: -0.01em; }
+.gl-open-p { font-size: 16px; line-height: 1.6; color: var(--gb-text-2); margin: 0 auto 24px; max-width: 60ch; }
+.gl-open-p strong { color: var(--gb-text); }
+.gl-open-btns { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 20px; }
+.gl-open-foot { font-size: 12.5px; color: var(--gb-text-muted); line-height: 1.6; margin: 0; }
+
+/* responsive */
+@media (max-width: 860px) {
+  .gl-hero { grid-template-columns: 1fr; gap: 20px; text-align: left; }
+  .gl-hero-art { order: -1; }
+  .gl-hero-art img { max-width: 320px; }
+  .gl-cards { grid-template-columns: 1fr; }
+}

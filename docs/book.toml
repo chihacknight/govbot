@@ -11,6 +11,7 @@ git-repository-url = "https://github.com/chihacknight/govbot/tree/main/docs"
 edit-url-template = "https://github.com/chihacknight/govbot/edit/main/docs/{path}"
 default-theme = "rust"
 preferred-dark-theme = "coal"
+additional-css = ["theme/mdbook-civic.css"]
 
 [output.html.search]
 limit-results = 20

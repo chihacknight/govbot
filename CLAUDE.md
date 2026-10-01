@@ -542,9 +542,34 @@ All six pages (including `search.html`) share a single **browser-tab favicon**: 
 (flared drum head with a gold center band, a turned handle, and a sound block) on the dark rounded
 civic tile, crisp at 16px — replacing the earlier robot-face and per-page torch/pinwheel icons.
 
-The Pages site has a **Homepage plus three dashboards plus a How-Govbot-Works page plus a global
-search page**:
-`docs/src/dashboard/index.html` (the **Homepage**),
+**The site root is the civic landing (the main homepage), not a dashboard page.** The whole site —
+the mdbook text docs *and* the dashboards — now wears one civic shell. The root
+`https://chihacknight.github.io/govbot/` is rendered by **mdbook** from `docs/src/readme.md`, which
+was rewritten as the civic "open foundation + three flagship projects" landing (`.gb-landing`: hero →
+`dashboard/{legislation,hearings,elections}.html`, project cards, an "It's open. It's yours." clone
+band). The old README overview moved to `docs/src/about.md` (linked from the landing + footer as "How
+it works" / "Govbot docs ↗"). mdbook wears the civic skin via a custom theme in **`docs/theme/`**:
+`index.hbs` injects the shared `.gb-header`/`.gb-drawer`/`.gb-footer` (all nav/asset hrefs prefixed
+`{{ path_to_root }}`, pointing into `dashboard/…`; brand → `{{ path_to_root }}` = the landing) and
+loads `dashboard/assets/govbot.css` + `govbot-shell.js`; `head.hbs` is the pre-paint
+`localStorage['govbot-theme']` snippet; `mdbook-civic.css` (via `book.toml` `additional-css`) maps
+mdbook's own CSS vars onto the civic tokens (`!important`, beating mdbook's `html.rust`/`html.coal`
+theme classes), offsets the sticky header, hides mdbook's 3-way theme picker (the civic
+`[data-gb-theme-toggle]` drives theme), and holds the `.gl-*` landing component styles +
+`body:has(.gb-landing)` full-bleed rules (sidebar/menu-bar hidden on the landing only). The landing
+HTML in `readme.md` keeps **each `<section>` as one unindented block with no internal blank lines** —
+CommonMark ends an HTML block at a blank line and would render the next indented lines as a code
+block. The **old dashboard homepage `docs/src/dashboard/index.html` is retired to a tiny redirect to
+`../`** (the root landing, preserving any hash), so there's one homepage; the five dashboard pages'
+brand/home link now points to `../` and their "Govbot docs ↗" footer/hero links to `../about.html`.
+Because this touched `docs/theme/**` + `docs/book.toml` (neither `dashboard/**` nor `*.md`), the
+migration merge ran one full ~40-min build; later landing/doc tweaks (only `*.md` or `dashboard/**`)
+stay on the fast path. The shell/search/nav details below still describe the dashboards.
+
+The Pages site has a **civic landing homepage (mdbook root) plus three dashboards plus a
+How-Govbot-Works page plus a global search page**:
+`docs/src/readme.md` → the site root (the **civic landing / Homepage**),
+`docs/src/dashboard/index.html` (**redirect** → `../`, the old dashboard homepage retired),
 `docs/src/dashboard/legislation.html` (**Explore Legislation** — the legislation dashboard,
 formerly `index.html`; deep links are `legislation.html#q=<billid>`),
 `docs/src/dashboard/hearings.html` (**Hearings & Public Comment**),
