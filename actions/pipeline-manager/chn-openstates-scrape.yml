@@ -444,7 +444,7 @@ locales:
     labels:
     - working
   pr:
-    template: openstates-scrape
+    template: openstates-scrape-paused
     name: Puerto Rico
     toolkit_branch: main
     scrape_timeout_minutes: "720"
