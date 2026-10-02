@@ -44,6 +44,26 @@ class LatestTimestamps(TypedDict):
     # the same day as a big action_log_files_created count, that's a
     # systemic date-parsing bug, not isolated upstream typos.
     implausible_date_fallbacks: dict[str, dict[str, int]]
+    # Months-deep daily histogram {"YYYY-MM-DD": count} of genuinely NEW bills
+    # seen for the first time ever (handlers/bill.py's "New bill" branch --
+    # existing_metadata is falsy), keyed by the date this run executed, same
+    # pattern as action_log_files_created. Deliberately a DIFFERENT question
+    # from that field: action_log_files_created answers "did the pipeline
+    # find anything new today" (a new action on an already-known bill counts),
+    # this answers "did we discover a brand-new bill today" specifically --
+    # the two can diverge (a state could have ongoing activity on existing
+    # bills while bill *discovery* has silently stalled, which is exactly
+    # the UT case found 2026-10-02: a scraper stuck at the same bill count
+    # for weeks while still reporting GitHub Actions "success"). Built
+    # specifically to feed a weekly flatline audit
+    # (tamara-notes/processes/audit_new_bill_flatline.py) that flags any
+    # in-session state with zero new bills for 7+ consecutive days.
+    # Deliberately NOT derived from action-log dates -- GU has 277 real bills
+    # and zero action logs ever (confirmed empirically), so a signal based on
+    # logs would be permanently blind for GU; hooking the actual "new bill"
+    # branch in handle_bill() works regardless of whether a bill has any
+    # actions at all.
+    new_bills_seen: dict[str, int]
 
 
 def get_latest_timestamp_path(output_folder: Path) -> Path:
@@ -59,12 +79,13 @@ def get_default_timestamps() -> LatestTimestamps:
         "actions": datetime(1900, 1, 1),
         "action_log_files_created": {},
         "implausible_date_fallbacks": {},
+        "new_bills_seen": {},
     }
 
 
 # Keys in LatestTimestamps whose value is a plain dict (not a datetime) --
 # read/write need to treat these differently from the timestamp categories.
-_DICT_VALUED_KEYS = {"action_log_files_created", "implausible_date_fallbacks"}
+_DICT_VALUED_KEYS = {"action_log_files_created", "implausible_date_fallbacks", "new_bills_seen"}
 
 # How far into the future a category's own date can plausibly be before
 # it's treated as a source-data error rather than real data, for ratchet
