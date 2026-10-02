@@ -566,6 +566,38 @@ EOF
 
 echo "📊 Scrape summary written to $SUMMARY_FILE"
 
+# Durable history of this run's error/warning/skip counts, committed alongside
+# _data/${STATE}/ in the same commit (action.yml adds .windycivi/ to the same
+# `git add` as _data/) -- unlike scrape-summary.json above (a GitHub Actions
+# artifact only, subject to the default ~90-day retention), this is a small,
+# permanent, git-tracked file. Built specifically because pulling historical
+# run logs for states like UT/DE/NH to check "was this scraper quietly
+# dropping data weeks ago" hit exactly that retention wall (2026-10-02) --
+# going forward, no state's warning history should be unrecoverable again.
+# Keyed by calendar date (UTC); a same-day re-dispatch overwrites that day's
+# entry rather than accumulating -- this is a per-run snapshot of counts, not
+# an additive activity counter like format's action_log_files_created.
+WARNING_HISTORY_FILE="${OUTPUT_DIR}/.windycivi/warning_history.json"
+mkdir -p "$(dirname "$WARNING_HISTORY_FILE")"
+TODAY_UTC="$(date -u +%Y-%m-%d)"
+EXISTING_HISTORY="{}"
+if [ -f "$WARNING_HISTORY_FILE" ]; then
+  EXISTING_HISTORY="$(cat "$WARNING_HISTORY_FILE")"
+fi
+echo "$EXISTING_HISTORY" | jq \
+  --arg today "$TODAY_UTC" \
+  --argjson warning_count "${WARNING_COUNT:-0}" \
+  --argjson error_count "${ERROR_COUNT:-0}" \
+  --argjson skipped_count "${SKIPPED_COUNT:-0}" \
+  --argjson sample_warnings "$(echo "$WARNING_ITEMS" | head -3 | jq -R -s 'split("\n") | map(select(. != ""))')" \
+  '.[$today] = {
+     warning_count: $warning_count,
+     error_count: $error_count,
+     skipped_count: $skipped_count,
+     sample_warnings: $sample_warnings
+   }' > "${WARNING_HISTORY_FILE}.tmp" && mv "${WARNING_HISTORY_FILE}.tmp" "$WARNING_HISTORY_FILE"
+echo "📈 Warning history updated: $WARNING_HISTORY_FILE"
+
 # Export to GITHUB_ENV so downstream steps can read these without re-parsing the JSON file
 if [ -n "${GITHUB_ENV:-}" ]; then
   echo "SCRAPE_FAILURE_TYPE=${FAILURE_TYPE}" >> "$GITHUB_ENV"
