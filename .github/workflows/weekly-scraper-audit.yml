@@ -1,0 +1,84 @@
+# Weekly bill-discovery health audit: reads the two durable signals built
+# 2026-10-02 (new_bills_seen in each govbot-data repo, warning_history in
+# each govbot-openstates-scrapers repo) live via raw.githubusercontent.com --
+# no local clone, no staleness risk (see
+# tamara-notes/scraper-status/56-state-audit-plan.md's "methodology
+# correction" section for why that matters). Flags any in-session state with
+# 7+ consecutive days of zero new distinct bills, posts/updates a single
+# tracking issue so results are browsable week over week, and commits the
+# flagged-vs-investigated state back so a known issue doesn't re-alarm every
+# run. Scope is deliberately bill-discovery only -- not text extraction, not
+# field completeness, not orphan tracking (separate tools, separate cadence).
+name: Weekly Scraper Audit
+
+on:
+  schedule:
+    - cron: "0 13 * * 0" # Sundays, 13:00 UTC
+  workflow_dispatch: # Manual run
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  audit:
+    name: "🔍 Weekly bill-discovery audit"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout govbot
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Run audit
+        run: |
+          python3 actions/pipeline-manager/scripts/weekly-scraper-audit.py \
+            --report-file "${RUNNER_TEMP}/weekly-audit-report.md"
+
+      - name: Find existing tracking issue
+        id: find_issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          issue_number=$(gh issue list \
+            --repo "${{ github.repository }}" \
+            --search "\"Weekly Scraper Audit\" in:title" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+          echo "issue_number=${issue_number}" >> "$GITHUB_OUTPUT"
+
+      - name: Post or update tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "${{ steps.find_issue.outputs.issue_number }}" ]; then
+            gh issue comment "${{ steps.find_issue.outputs.issue_number }}" \
+              --repo "${{ github.repository }}" \
+              --body-file "${RUNNER_TEMP}/weekly-audit-report.md"
+          else
+            gh issue create \
+              --repo "${{ github.repository }}" \
+              --title "Weekly Scraper Audit" \
+              --body-file "${RUNNER_TEMP}/weekly-audit-report.md"
+          fi
+
+      - name: Commit flagged-vs-investigated tracking state
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add actions/pipeline-manager/audit_tracking.json
+          if git diff --cached --quiet; then
+            echo "No tracking changes to commit."
+          else
+            git commit -m "🔍 Weekly scraper audit tracking update - $(date -u +'%Y-%m-%d')"
+            git push origin main
+          fi
