@@ -1,0 +1,95 @@
+<!-- The ONE site header + mobile drawer. Edit here, then run: python3 docs/theme/sync_shell.py
+     It is written into docs/theme/index.hbs (homepage + doc pages) and every docs/src/dashboard/*.html
+     page, replacing their existing header and drawer blocks. {ROOT} = path to the site root folder, {HOME} = the homepage,
+     {DASH} = path to the dashboard folder. The current page is marked aria-current by govbot-shell.js. -->
+<header class="gb-header">
+  <a class="gb-brand" href="{HOME}" aria-label="Govbot home">
+    <img class="gb-brand-mark" src="{DASH}assets/govbot-mark.png" width="34" height="34" alt="" aria-hidden="true">
+    <span class="gb-brand-name">Govbot</span>
+  </a>
+  <nav class="gb-nav" aria-label="Primary">
+    <div class="gb-nav-item" data-gb-dropdown>
+      <button class="gb-nav-trigger" type="button" aria-expanded="false" aria-haspopup="true">Projects
+        <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="gb-mega" role="menu" aria-label="Projects built on Govbot">
+        <a href="{DASH}legislation.html" role="menuitem" style="--accent:var(--gb-blue-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
+          <span><span class="mega-t">Legislation</span><span class="mega-d">Bills, topics, states, sponsors &amp; status</span></span></a>
+        <a href="{DASH}hearings.html" role="menuitem" style="--accent:var(--gb-gold-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg>
+          <span><span class="mega-t">Hearings &amp; Public Comment</span><span class="mega-d">Upcoming hearings and how to weigh in</span></span></a>
+        <a href="{DASH}elections.html" role="menuitem" style="--accent:var(--gb-amber-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/></svg>
+          <span><span class="mega-t">Illinois Elections</span><span class="mega-d">What&#39;s on your ballot, race by race</span></span></a>
+        <a href="{HOME}#projects" role="menuitem" style="--accent:var(--gb-text-2)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg>
+          <span><span class="mega-t">All projects</span><span class="mega-d">Topic bots, feeds &amp; build your own</span></span></a>
+      </div>
+    </div>
+    <div class="gb-nav-item" data-gb-dropdown>
+      <button class="gb-nav-trigger" type="button" aria-expanded="false" aria-haspopup="true">Follow
+        <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="gb-mega" role="menu" aria-label="Follow">
+        <a href="{DASH}elections.xml" role="menuitem" style="--accent:var(--gb-amber-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
+          <span><span class="mega-t">Elections feed</span><span class="mega-d">Whole-ballot &amp; per-race RSS</span></span></a>
+        <a href="{DASH}hearings.xml" role="menuitem" style="--accent:var(--gb-gold-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
+          <span><span class="mega-t">Hearings feed</span><span class="mega-d">Whole-calendar, per-bill &amp; per-state RSS</span></span></a>
+        <a href="{DASH}legislation.html" role="menuitem" style="--accent:var(--gb-blue-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h6M9 16h4"/></svg>
+          <span><span class="mega-t">Bills &amp; topics</span><span class="mega-d">Filter, then follow from the dashboard</span></span></a>
+      </div>
+    </div>
+    <div class="gb-nav-item" data-gb-dropdown>
+      <button class="gb-nav-trigger" type="button" aria-expanded="false" aria-haspopup="true">Data
+        <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="gb-mega" role="menu" aria-label="Data">
+        <a href="https://github.com/chihacknight/govbot/blob/main/catalog.json" role="menuitem" style="--accent:var(--gb-blue-hi)" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+          <span><span class="mega-t">Data catalog ↗</span><span class="mega-d">Every jurisdiction repo &amp; path pattern</span></span></a>
+        <a href="{ROOT}about.html" role="menuitem" style="--accent:var(--gb-gold-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V6a2 2 0 012-2h11a1 1 0 011 1v14H6a2 2 0 01-2-1.5z"/><path d="M8 7h8M8 11h8"/></svg>
+          <span><span class="mega-t">Clone the datasets</span><span class="mega-d">govbot clone &mdash; every dataset is a git repo</span></span></a>
+        <a href="https://github.com/chihacknight/govbot" role="menuitem" style="--accent:var(--gb-text-2)" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l-4 4 4 4M16 5l4 4-4 4"/><path d="M13 4l-2 16"/></svg>
+          <span><span class="mega-t">Open source / GitHub ↗</span><span class="mega-d">Read and run every pipeline</span></span></a>
+      </div>
+    </div>
+    <a class="gb-nav-plain" href="{DASH}architecture.html">How Govbot Works</a>
+    <a class="gb-nav-plain" href="{ROOT}about.html">About</a>
+    <a class="gb-nav-plain" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub Repo ↗</a>
+  </nav>
+  <div class="gb-header-utils">
+    <form class="gb-search" role="search" data-gb-search action="{DASH}search.html">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="color:var(--gb-text-2)"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <label class="gb-sr" for="home-search">Search bills, candidates, hearings, topics</label>
+      <input id="home-search" type="search" placeholder="Search bills, candidates…">
+    </form>
+    <a class="gb-icon-btn gb-search-btn" href="{DASH}search.html" aria-label="Search Govbot"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></a>
+    <button class="gb-icon-btn" data-gb-theme-toggle type="button" aria-label="Toggle theme">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" style="stroke: var(--gb-primary-hi)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg>
+    </button>
+    <button class="gb-icon-btn gb-menu-btn" data-gb-menu type="button" aria-label="Open menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+<div class="gb-drawer" data-gb-drawer>
+  <form class="gb-search" role="search" data-gb-search action="{DASH}search.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="color:var(--gb-text-2)"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <label class="gb-sr" for="drawer-search">Search Govbot</label>
+    <input id="drawer-search" type="search" placeholder="Search bills, candidates…">
+  </form>
+  <a href="{HOME}">Home</a>
+  <a href="{DASH}legislation.html">Legislation</a>
+  <a href="{DASH}hearings.html">Hearings &amp; Public Comment</a>
+  <a href="{DASH}elections.html">Illinois Elections</a>
+  <a href="{HOME}#projects">All projects</a>
+  <a href="{DASH}architecture.html">How Govbot Works</a>
+  <a href="{ROOT}about.html">About</a>
+  <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub Repo ↗</a>
+</div>

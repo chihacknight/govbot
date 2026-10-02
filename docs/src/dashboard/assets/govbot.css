@@ -195,6 +195,15 @@ h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spaci
 }
 .gb-icon-btn:hover { border-color: var(--gb-border-strong); }
 .gb-menu-btn { display: none; }
+/* Narrow desktops: the full header doesn't fit, so the search box collapses to an icon that opens
+   the search page (phones use the drawer, which has its own search box). */
+.gb-search-btn { display: none; }
+.gb-nav a, .gb-nav-trigger { white-space: nowrap; }
+@media (min-width: 861px) and (max-width: 1180px) {
+  .gb-header .gb-header-utils .gb-search { display: none; }
+  .gb-search-btn { display: inline-flex; color: var(--gb-text-2); }
+  .gb-nav { gap: 20px; }
+}
 .gb-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* mobile nav drawer */

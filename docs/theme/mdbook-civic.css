@@ -368,7 +368,13 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-road-item b { font-size: 15px; font-weight: 600; }
 .gl-road-item i { font-style: normal; font-size: 14px; font-weight: 400; color: var(--gb-text-2); }
 .gb-landing .gl-timeline a.gl-road-cta { align-self: flex-start; margin-top: 10px; font-size: 14.5px; color: var(--gb-gold-hi) !important; }
+.gb-landing .gl-timeline a.gl-road-cta { display: inline-flex; align-items: center; gap: 10px; }
 .gb-landing .gl-timeline a.gl-road-cta:hover { text-decoration: underline; }
+/* GitHub mark in the same green outline chip as the footer's social icons (.gb-social) */
+.gl-gh { width: 34px; height: 34px; flex: none; border-radius: 50%; display: inline-flex; align-items: center;
+  justify-content: center; border: 1px solid var(--gb-gold); color: var(--gb-gold-hi); transition: background .15s, border-color .15s; }
+.gl-gh svg { width: 17px; height: 17px; display: block; }
+.gb-landing .gl-timeline a.gl-road-cta:hover .gl-gh { border-color: var(--gb-gold-hi); background: color-mix(in srgb, var(--gb-gold) 12%, transparent); }
 @media (prefers-reduced-motion: reduce) { .gb-landing .gl-timeline a.gl-road-item:hover { transform: none; } }
 .gl-timeline span { font-size: 14.5px; color: var(--gb-text-2); }
 .gl-faq { border-top: 1px solid var(--gb-border); }

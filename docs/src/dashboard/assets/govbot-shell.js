@@ -110,7 +110,20 @@
       var input = form.querySelector("input");
       var q = input && input.value ? input.value.trim() : "";
       if (!q) return;
-      window.location.href = "search.html#q=" + encodeURIComponent(q);
+      // action="<path>/search.html" comes from the shared header, so it resolves from any page
+      window.location.href = (form.getAttribute("action") || "search.html") + "#q=" + encodeURIComponent(q);
     });
+  });
+
+  /* ---- mark the current page in the shared header + drawer ------------- */
+  // The header/drawer are one template on every page (docs/theme/header.html), so the active
+  // link is found at runtime: a same-site link whose path matches this page (hash links skipped).
+  var here = location.pathname.replace(/index\.html$/, "");
+  document.querySelectorAll(".gb-nav a[href], .gb-drawer a[href]").forEach(function (a) {
+    if (a.target === "_blank" || a.getAttribute("href").indexOf("#") !== -1 || a.getAttribute("role") === "menuitem") return;
+    var u = new URL(a.getAttribute("href"), location.href);
+    if (u.origin === location.origin && u.pathname.replace(/index\.html$/, "") === here) {
+      a.setAttribute("aria-current", "page");
+    }
   });
 })();
