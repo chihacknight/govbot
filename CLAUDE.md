@@ -644,7 +644,7 @@ All six pages (the five flagships plus the utility `search.html`) share, byte-fo
 robot logo linking to the Homepage, the Explore / Follow / Data mega-menus + How Govbot Works /
 **GitHub Repo** plain links (the "GitHub Repo ↗" link → the repo, in a new tab; formerly labelled
 "About"), the global `.gb-search`, and a single `[data-gb-theme-toggle]` icon button), the
-mobile `.gb-drawer` (hamburger → flat link list + search), the civic `.gb-footer` (a 30%-black
+mobile `.gb-drawer` (hamburger → flat link list + search), the civic `.gb-footer` — **one template for the whole site**: `docs/theme/footer.html` is the single source, written into `docs/theme/index.hbs` (homepage + doc pages) and every `docs/src/dashboard/*.html` page by `python3 docs/theme/sync_footer.py` (`--check` reports drift); edit the template, never a page copy. Its headings are `div.gb-footer-h[role=heading]`, not `<h4>`, because mdbook turns every `<h4>` into a self-link; all footer copy is full-contrast `--gb-text` with green headings (a 30%-black
 mix of the page colour in dark mode, the plain `--gb-surface` in light mode so it isn't a grey slab; the
 `assets/govbot-mark.png` robot logo + brand blurb + a `.gb-social` row of gold-outline social chips —
 Bluesky / Threads / X / Instagram, styled in `govbot.css` off the `--gb-gold` tokens so they adapt
