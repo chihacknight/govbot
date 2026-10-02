@@ -1,15 +1,19 @@
 [![Validate Snapshots](https://github.com/chihacknight/govbot/actions/workflows/validate-snapshots.yml/badge.svg)](https://github.com/chihacknight/govbot/actions/workflows/validate-snapshots.yml)
+[![Nightly E2E](https://github.com/chihacknight/govbot/actions/workflows/test-nightly.yml/badge.svg)](https://github.com/chihacknight/govbot/actions/workflows/test-nightly.yml)
+[![Nightly Release](https://github.com/chihacknight/govbot/actions/workflows/release-nightly.yml/badge.svg)](https://github.com/chihacknight/govbot/actions/workflows/release-nightly.yml)
 
-**Project overview and demo**  
+**Project overview and demo**
 [![Govbot presentation video](https://img.youtube.com/vi/IFnE1oeUIXo/maxresdefault.jpg)](https://youtu.be/IFnE1oeUIXo)
 
 # 🏛️ govbot
 
-**Every U.S. legislature, as data you can clone.** `govbot` is a terminal-native toolkit that turns government updates into git repositories you can analyze, query, and build on — no scraper to maintain, no data platform to pay for.
+**Every U.S. legislature, as data you can clone.** `govbot` tracks bills in all 50 states, Congress, DC, and the territories, and turns them into git repositories you can analyze, query, and build on — no scraper to maintain, no data platform to pay for.
+
+It is for **journalists** watching a beat, **researchers** comparing policy across states, **advocates** who need to know the moment a bill moves, and **civic hackers** building feeds, bots, and dashboards on open legislative data.
 
 - 📥 **Clone the legislation of [56 jurisdictions](https://github.com/orgs/govbot-data/repositories) in under a minute** — every dataset is just a git repo.
 - 🔒 **Tag and summarize bills with private, local models** — optimized to run for free on GitHub Actions. No API keys, no per-token bill.
-- 🔎 **Analyze it your way** — stream it as JSON Lines through Unix pipes, or load it into DuckDB for SQL across every state at once.
+- 🔎 **Analyze it your way** — stream it as JSON Lines through Unix pipes, load it into DuckDB for SQL across every state at once, or just ask an AI assistant to read a bill straight from GitHub (no install — see below).
 
 ### By the numbers
 
@@ -22,12 +26,25 @@
 
 ## Table of Contents
 
+- [Use Cases](#use-cases)
 - [Example Projects](#example-projects)
 - [Quick Start](#quick-start)
+- [What the Output Looks Like](#what-the-output-looks-like)
+- [How It Works](#how-it-works)
 - [Legislation Data Catalogs](#data-catalogs)
   - [Data Structure](#data-structure)
   - [Read it from an AI assistant (no install)](#read-it-from-an-ai-assistant-no-install)
 - [Contribute](#contribute)
+
+## Use Cases
+
+Concrete things people do with govbot today:
+
+- **Track housing bills across 5 states.** Define a `housing` tag once in `govbot.yml`; every run tags matching bills in every cloned jurisdiction and publishes one RSS feed.
+- **Get notified when education bills are introduced.** Run the pipeline on a schedule with the [Govbot GitHub Action](actions/govbot/action.yml) and subscribe to the feed in any RSS reader — no code.
+- **Ask about one specific bill from your phone.** Paste the [`llms.txt`](llms.txt) recipe into Claude or ChatGPT: *"What's the status of Wyoming HB0001, who sponsored it, and what's the official source link?"* — no install needed.
+- **Compare policy across all states in SQL.** `govbot clone all`, then `govbot load` into DuckDB and query every bill at once (sponsors, subjects, timelines).
+- **Publish a topic bot.** Point govbot at a topic and it publishes a live feed for it — see the [running Bluesky bots](#example-projects) below.
 
 ## Example Projects
 
@@ -79,6 +96,43 @@ govbot delete all          # remove all downloaded data
 govbot update              # update govbot to latest version
 govbot --help              # see all commands and options
 ```
+
+**No install?** You can still read any bill through an AI assistant — see [Read it from an AI assistant](#read-it-from-an-ai-assistant-no-install).
+
+## What the Output Looks Like
+
+`govbot logs` streams one JSON record per legislative event (abbreviated here — real records carry the full bill metadata):
+
+```json
+{"timestamp": "20250129T022703Z", "log": {"bill_id": "HB0001",
+  "action": {"date": "2025-01-29", "description": "Bill number assigned",
+  "classification": ["introduction"]}}}
+```
+
+Pipe it anywhere Unix text goes:
+
+```bash
+govbot logs --repos="il" --limit=10 | jq '{bill: .log.bill_id, action: .log.action.description}'
+```
+
+`govbot build` turns tagged bills into RSS feeds (one per tag) you can subscribe to or post from — that is what powers the Bluesky bots above.
+
+## How It Works
+
+```
+government sites (50 states + Congress + territories)
+  │  actions/scrape      fetch bills, votes, hearings
+  ▼  actions/format      normalize to one schema
+govbot-data/*-legislation — one public git repo per jurisdiction (the dataset)
+  │  govbot clone        git clone / pull into govbot_data/repos
+  │  govbot logs         stream legislative events as JSON Lines
+  │  govbot tag          match your tags (keywords or local models)
+  ▼  govbot build/load   RSS feeds · DuckDB database
+```
+
+Two ways to read the data: the **CLI path** above for pipelines and cross-state analysis, and the **lookup path** — [`llms.txt`](llms.txt) + [`catalog.json`](catalog.json) teach any AI assistant to fetch individual bills straight from GitHub, no install. For big number-crunching across states, use the CLI + DuckDB.
+
+Want to hack on the pipeline itself? See [Contribute](#contribute) — pipeline code lives in `actions/`, one self-contained module per stage.
 
 <a id="data-catalogs"></a>
 
@@ -141,16 +195,7 @@ use the CLI + DuckDB above.
 
 ## Contribute
 
-### Folder Structure
-
-This repo is a monorepo, with `actions` being self contained. `actions` as a name is because it's what Github expects.
-
-### Requirements For Each Action
-
-- Be a runnable as basic scripts in python, bash, rust, or typescript which can run as shell scripts with args.
-- Have an `action.yml` file to run as a runner, most likely in GitHub Actions.
-- Have a `schemas` folder that uses JSON schema to define types.
-  - This allow other actions to import your schema for validation.
-- Have `__snapshots__` that contain real file/folder outputs. This serves two purposes: (1) they show expected results and (2) they can be directly used as inputs for downstream snapshot tests.
-  - Each action manages its own snapshot rendering through a render_snapshots.sh script.
-  - Validation occurs via .github/validate-snapshots.yml for each specific module.
+User docs end here — contributor docs live in [`CONTRIBUTING.md`](CONTRIBUTING.md):
+how each `actions/` module is structured (`action.yml`, schemas, `__snapshots__`
+via `render-snapshots.sh`), CLI-first and offline-first conventions, mock data,
+and how to open a PR. `CLAUDE.md` holds the same guidance tuned for AI coding assistants.
