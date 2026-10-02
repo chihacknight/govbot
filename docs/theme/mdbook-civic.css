@@ -438,3 +438,45 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
   .stream-bot-name { font-size: 13px; margin-top: 5px; }
   .stream-cap { font-size: 9px; letter-spacing: .06em; padding: 0 12px; }
 }
+
+/* ---- Mobile hero: Liberty stands IN the hero, beside the headline (not stacked below it) ----
+   The copy takes the left ~62%; the statue fills the hero's full height on the right, bleeding
+   to the screen edge, with her torch + embers rising beside the headline. In light mode the
+   phone hero becomes the same deep-green "night" panel the statue uses on desktop, so her pale
+   line-art still glows (the hearings hero does the same: dark in both themes). */
+/* Tablets: keep the desktop side-by-side columns, just narrower. */
+@media (min-width: 621px) and (max-width: 860px) {
+  .gl-hero-grid { grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; }
+  .gl-art { height: 480px; }
+  .gb-landing .gl-art-img { height: 560px; }
+}
+@media (max-width: 620px) {
+  .gl-hero { position: relative; overflow: hidden; padding-top: 28px; padding-bottom: 36px; }
+  .gl-hero-grid { position: relative; display: block; }
+  .gl-hero-copy { position: relative; z-index: 2; max-width: 62%; gap: 16px; }
+  .gl-hero-copy .gl-h1 { font-size: 34px; }
+  .gl-hero-copy .gl-lede, .gl-hero-copy .gl-h1 { text-shadow: 0 1px 14px var(--gb-bg), 0 0 2px var(--gb-bg); }
+  .gl-hero-copy .gl-btns { flex-direction: column; align-items: flex-start; }
+  /* the overline runs the full hero width on its own line, above the statue's torch */
+  .gl-hero-copy .gl-overline-ruled { width: calc(100vw - 64px); font-size: 12px; letter-spacing: .1em; }
+  .gl-art { position: absolute; z-index: 1; top: 34px; bottom: -36px; right: -16px; width: 70%; height: auto;
+    border-radius: 0 !important; background: none !important;
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 26%);
+            mask-image: linear-gradient(to right, transparent 0, #000 26%); }
+  .gb-landing .gl-art-img { height: 100%; top: 0; left: auto; right: -14%; transform: none; }
+  .gl-halo { left: 62%; width: 280px; height: 420px; }
+}
+@media (max-width: 620px) {
+  :root[data-theme="light"] .gl-hero {
+    --gb-bg: #06140D; --gb-text: #F4F5F7; --gb-text-2: #C3CAD6; --gb-border-strong: #3A455C;
+    --gb-hover: rgba(255,255,255,0.05); --gb-primary: #3DDC84; --gb-primary-hi: #7CEBB0;
+    --gb-gold: #3DDC84; --gb-gold-hi: #7CEBB0; --gb-on-primary: #04140B;
+    border-radius: 24px; background: radial-gradient(80% 60% at 78% 30%, rgba(61,220,132,.20), transparent 70%), #06140D; }
+}
+@media (max-width: 620px) and (prefers-color-scheme: light) {
+  :root:not([data-theme]) .gl-hero {
+    --gb-bg: #06140D; --gb-text: #F4F5F7; --gb-text-2: #C3CAD6; --gb-border-strong: #3A455C;
+    --gb-hover: rgba(255,255,255,0.05); --gb-primary: #3DDC84; --gb-primary-hi: #7CEBB0;
+    --gb-gold: #3DDC84; --gb-gold-hi: #7CEBB0; --gb-on-primary: #04140B;
+    border-radius: 24px; background: radial-gradient(80% 60% at 78% 30%, rgba(61,220,132,.20), transparent 70%), #06140D; }
+}

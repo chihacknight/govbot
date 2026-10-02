@@ -274,10 +274,19 @@ h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spaci
 :root[data-theme="light"] .gb-footer { background: var(--gb-surface); }
 @media (prefers-color-scheme: light) { :root:not([data-theme]) .gb-footer { background: var(--gb-surface); } }
 .gb-footer .gb-footer-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 32px; padding: 52px 24px 20px; max-width: 1200px; margin: 0 auto; }
-.gb-footer h4 { font-family: var(--gb-font-sans); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gb-text); font-weight: 600; margin: 0 0 12px; }
-.gb-footer a { display: block; font-size: 14px; color: var(--gb-text-2); padding: 5px 0; }
-.gb-footer a:hover { color: var(--gb-text); }
-.gb-footer-bottom { max-width: 1200px; margin: 0 auto; padding: 18px 24px 40px; font-size: 12.5px; color: var(--gb-text-muted); border-top: 1px solid var(--gb-border); }
+/* Footer copy is full-contrast (not dimmed); section headings carry the brand green. The markup is
+   one shared template: docs/theme/footer.html → python3 docs/theme/sync_footer.py. */
+.gb-footer { font-family: var(--gb-font-sans); line-height: 1.5; }
+.gb-footer .gb-brand-name { font-size: 15px; color: var(--gb-text); }
+/* headings are divs (role=heading): mdbook turns every real <h4> into a self-link */
+.gb-footer h4, .gb-footer .gb-footer-h { font-family: var(--gb-font-sans); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gb-gold-hi); font-weight: 700; margin: 0 0 12px; }
+.gb-footer a { display: block; font-size: 14px; font-weight: 400; letter-spacing: normal; color: var(--gb-text); padding: 5px 0; }
+.gb-footer a:hover { color: var(--gb-gold-hi); }
+.gb-footer-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.gb-footer-brand img { border-radius: 7px; display: block; flex: none; }
+.gb-footer-blurb { margin: 0; font-size: 14px; line-height: 1.6; color: var(--gb-text); max-width: 320px; }
+.gb-footer-tag { font-size: 12.5px; color: var(--gb-text); margin-top: 10px; }
+.gb-footer-bottom { max-width: 1200px; margin: 0 auto; padding: 18px 24px 40px; font-size: 12.5px; color: var(--gb-text); border-top: 1px solid var(--gb-border); }
 @media (max-width: 860px) { .gb-footer .gb-footer-grid { grid-template-columns: 1fr 1fr; gap: 24px; } }
 /* Footer social row — gold-outline platform chips */
 .gb-social { display: flex; gap: 10px; margin-top: 16px; }
