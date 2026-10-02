@@ -1,0 +1,132 @@
+name: Govbot Release
+
+# Versioned releases are what make a Homebrew formula possible
+# (see issue #19): homebrew-core and taps install from stable,
+# versioned URLs, not the rolling `nightly` tag.
+#
+# Cutting a release:
+#   1. Bump `version` in actions/govbot/Cargo.toml (and Cargo.lock
+#      via `cargo build`).
+#   2. Tag and push: `git tag govbot-vX.Y.Z && git push origin govbot-vX.Y.Z`
+# The workflow verifies the tag matches Cargo.toml, builds bottled
+# binaries per platform, and publishes the GitHub Release with
+# SHA256 checksums. Afterwards, copy the checksums from the release's
+# SHA256SUMS file into Formula/govbot.rb (see docs/homebrew.md).
+
+on:
+  push:
+    tags:
+      - "govbot-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }} (${{ matrix.os }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            asset_name: govbot-linux-x86_64
+          - runner: macos-latest
+            target: aarch64-apple-darwin
+            asset_name: govbot-macos-arm64
+          # NOTE: if GitHub retires Intel macOS runners, drop this leg and
+          # the matching `on_intel` stanza in Formula/govbot.rb.
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+            asset_name: govbot-macos-x86_64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check tag matches Cargo.toml version
+        shell: bash
+        run: |
+          CARGO_VERSION=$(grep '^version =' actions/govbot/Cargo.toml | head -n 1 | cut -d'"' -f2)
+          EXPECTED_TAG="govbot-v${CARGO_VERSION}"
+          if [ "${{ github.ref_name }}" != "${EXPECTED_TAG}" ]; then
+            echo "::error::Tag '${{ github.ref_name }}' does not match actions/govbot/Cargo.toml version '${CARGO_VERSION}' (expected '${EXPECTED_TAG}')"
+            exit 1
+          fi
+          echo "Version check passed: ${EXPECTED_TAG}"
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            actions/govbot/target/
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('actions/govbot/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.target }}-cargo-
+
+      - name: Build binary
+        working-directory: actions/govbot
+        run: |
+          # Install target if not already installed
+          rustup target add ${{ matrix.target }} || true
+          cargo build --release --locked --bin govbot --target ${{ matrix.target }}
+
+      - name: Package bottle
+        shell: bash
+        run: |
+          BIN="actions/govbot/target/${{ matrix.target }}/release/govbot"
+          chmod +x "${BIN}"
+          # Bottled tarball for Formula/govbot.rb (binary at tarball root).
+          tar -czf "${{ matrix.asset_name }}.tar.gz" -C "$(dirname "${BIN}")" govbot
+          # Raw binary kept for install-nightly.sh compatibility.
+          cp "${BIN}" "${{ matrix.asset_name }}"
+          sha256sum "${{ matrix.asset_name }}.tar.gz" "${{ matrix.asset_name }}" > "${{ matrix.asset_name }}.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: |
+            ${{ matrix.asset_name }}.tar.gz
+            ${{ matrix.asset_name }}
+            ${{ matrix.asset_name }}.sha256
+          retention-days: 7
+
+  publish:
+    name: Publish release
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release_artifacts
+          merge-multiple: true
+
+      - name: Assemble checksums
+        shell: bash
+        run: |
+          cd release_artifacts
+          cat *.sha256 > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Create GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            release_artifacts/*
