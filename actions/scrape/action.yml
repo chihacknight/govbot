@@ -506,6 +506,11 @@ runs:
         # Add scraped files
         git add "_data/${{ inputs.state }}/"
 
+        # Durable per-day error/warning/skip history (scrape.sh writes this to
+        # .windycivi/warning_history.json) -- committed in the same commit so it
+        # never depends on GitHub Actions' ~90-day log/artifact retention.
+        git add ".windycivi/" 2>/dev/null || true
+
         # Every scrape run regenerates a fresh random UUID per bill/vote-event
         # file (that's how OpenStates names them), so a full delete-old/add-new
         # diff happens on every commit regardless of whether the underlying
