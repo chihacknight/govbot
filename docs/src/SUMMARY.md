@@ -4,6 +4,10 @@
 
 - [About govbot](./about.md)
 
+# Ask an AI
+
+- [Claude Desktop (MCP server)](./mcp.md)
+
 # Dashboard
 
 - [Legislation Dashboard](./dashboard-guide.md)

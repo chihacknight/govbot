@@ -27,6 +27,7 @@
 - [Legislation Data Catalogs](#data-catalogs)
   - [Data Structure](#data-structure)
   - [Read it from an AI assistant (no install)](#read-it-from-an-ai-assistant-no-install)
+  - [Ask it from Claude Desktop (MCP server)](#ask-it-from-claude-desktop-mcp-server)
 - [Contribute](#contribute)
 
 ## Example Projects
@@ -138,6 +139,25 @@ You don't need the CLI to explore the catalogs. Two files let any AI assistant
 This lookup-by-reading path is best for **specific** questions ("what is IL
 SB0813", "what did this sponsor introduce"). For big cross-state number-crunching,
 use the CLI + DuckDB above.
+
+### Ask it from Claude Desktop (MCP server)
+
+If you'd rather ask questions than run commands,
+[`actions/mcp`](actions/mcp) is a Claude Desktop server built on this data. It
+owns no database — every answer comes from the `govbot` CLI against repos
+cloned to your own computer, so anything it tells you can be reproduced from a
+terminal in the same folder.
+
+- Clone a state with no account or API key, then ask things like *"Which
+  Illinois bills mention rent control?"* — no SQL, every result cited back to
+  a repository, commit, and file path.
+- It never asks for your address and never invents a voting record: where the
+  data can't support a question, it says so.
+
+Install: add the server to `claude_desktop_config.json` and restart Claude
+Desktop — see [`actions/mcp`](actions/mcp#install-into-claude-desktop) (Node
+20+ and the `govbot` CLI required), or pick the **who_are_my_reps** prompt to
+start from your representatives.
 
 ## Contribute
 
