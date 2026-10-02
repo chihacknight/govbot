@@ -67,6 +67,26 @@ def _record_action_log_files_created(
     bucket[today] = bucket.get(today, 0) + count
 
 
+def _record_new_bill_seen(latest_timestamps: LatestTimestamps) -> None:
+    """Bump today's bucket in the new_bills_seen activity histogram.
+
+    Called once per bill in the "New bill" branch below (existing_metadata
+    was falsy) -- deliberately unconditional on whether the bill has any
+    actions at all, unlike _record_action_log_files_created above. GU has
+    277 real bills and zero action logs ever (confirmed 2026-10-02): a
+    "new bill" signal gated on actions would be permanently blind for GU,
+    exactly the gap this exists to avoid. Answers a different question than
+    action_log_files_created -- "did we discover a brand-new bill today,"
+    not "did anything new happen on any bill today" -- see
+    tamara-notes/processes/audit_new_bill_flatline.py, which uses this to
+    catch a scraper that's stuck at the same bill count while still
+    reporting GitHub Actions "success" (the real UT case, found 2026-10-02).
+    """
+    today = get_current_date()
+    bucket = latest_timestamps["new_bills_seen"]
+    bucket[today] = bucket.get(today, 0) + 1
+
+
 def handle_bill(
     STATE_ABBR: str,
     data: dict[str, Any],
@@ -154,6 +174,7 @@ def handle_bill(
             data["_processing"]["logs_latest_update"] = get_current_timestamp()
     else:
         # New bill: process all actions
+        _record_new_bill_seen(latest_timestamps)
         if actions:
             write_action_logs(
                 actions, bill_identifier, sources, session_id, save_path / "logs"
