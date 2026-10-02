@@ -408,6 +408,40 @@ OTHER_ERRORS=$(grep -E '(ERROR|EXCEPTION|TRACEBACK|AssertionError|TimeoutError|C
   grep -viE '( INFO |scrape attempt|retry|retrying|resolved|recovered|succeeded|SKIPPED BILL)' | \
   head -10 || echo "")
 
+# Scraper-logged WARNING-level lines (self.warning() in any scraper -- every scraper
+# routes through logging.getLogger("openstates"), confirmed in openstates-core's
+# openstates/scrape/base.py, so the formatted level token is always the literal,
+# uppercase word "WARNING" regardless of the scraper's own message text). Found via
+# MA: self.warning("Server Error on {}") was silently dropping ~210 bills per run for
+# over a month while the run still exited 0 and reported GHA "success" -- neither
+# EXCEPTIONS above (anchored on "Word+Error:", a different shape: a raw/unhandled
+# exception repr, not a logger-formatted line) nor OTHER_ERRORS (case-sensitive
+# "ERROR", which "Server Error"'s mixed-case "Error" never matches) ever saw it.
+# Deliberately a SEPARATE counter from error_count, not folded in -- WARNING is a
+# different severity than ERROR by construction (self.logger.warning vs .error), and
+# conflating them would hide exactly the "ran clean but quietly dropped data" signal
+# this exists to surface. Same exclusions as OTHER_ERRORS (retries, already-resolved,
+# INFO lines, and SKIPPED BILL -- which also logs via self.warning() and already has
+# its own dedicated counter below) so this doesn't double-count expected noise.
+# Full filtered set first (for an accurate count), display items truncated separately --
+# WARNING_ITEMS below is head-10'd for the JSON preview, so counting from it would cap
+# at 10 regardless of the real total (MA's real count was 214).
+_WARNING_LINES_ALL=$(grep -E '\bWARNING\b' "$SCRAPE_LOG" 2>/dev/null | \
+  grep -viE '( INFO |scrape attempt|retry|retrying|resolved|recovered|succeeded|SKIPPED BILL)' || echo "")
+WARNING_ITEMS=$(echo "$_WARNING_LINES_ALL" | head -10)
+# Same double-print pitfall as SKIPPED_COUNT below: count from the already-filtered
+# variable via `grep -c .` rather than piping grep -c straight after the exclusion
+# grep, which would print "0" on a zero-match stream AND trigger any `|| echo "0"`
+# fallback, corrupting the value into "0\n0".
+WARNING_COUNT=$(echo "$_WARNING_LINES_ALL" | grep -c . 2>/dev/null || true)
+WARNING_COUNT=${WARNING_COUNT:-0}
+# An empty $_WARNING_LINES_ALL still has one "line" (echo of an empty string), which
+# grep -c . (requiring at least one character) correctly reports as 0 -- but guard
+# explicitly since this value lands directly in JSON below, not past a truthiness check.
+if [ -z "$_WARNING_LINES_ALL" ]; then
+  WARNING_COUNT=0
+fi
+
 # Items a scraper deliberately skipped (logged some other independent item's fetch
 # failed after exhausting retries) and will pick up again on the next scheduled run --
 # distinct from OTHER_ERRORS above, which is stuff that actually needs attention.
@@ -524,7 +558,9 @@ cat > "$SUMMARY_FILE" <<EOF
   "error_count": ${ERROR_COUNT},
   "errors": $(echo "$ERRORS" | head -5 | jq -R -s 'split("\n") | map(select(. != ""))'),
   "skipped_count": ${SKIPPED_COUNT:-0},
-  "skipped_items": $(echo "$SKIPPED_ITEMS" | head -5 | jq -R -s 'split("\n") | map(select(. != ""))')
+  "skipped_items": $(echo "$SKIPPED_ITEMS" | head -5 | jq -R -s 'split("\n") | map(select(. != ""))'),
+  "warning_count": ${WARNING_COUNT:-0},
+  "warning_items": $(echo "$WARNING_ITEMS" | head -5 | jq -R -s 'split("\n") | map(select(. != ""))')
 }
 EOF
 
