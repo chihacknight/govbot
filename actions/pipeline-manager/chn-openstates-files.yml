@@ -318,7 +318,7 @@ locales:
     labels:
       - working
   pr:
-    template: openstates-to-ocd-files
+    template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Puerto Rico
     labels:

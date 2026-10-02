@@ -1,13 +1,6 @@
 name: OpenStates Scrape for pr
 
 on:
-  # Staggered by the state capital's timezone (see locale.scrape_cron in
-  # chn-openstates-scrape.yml) so each state scrapes shortly after its own
-  # legislative day ends, instead of every state firing at the same UTC
-  # instant regardless of local time -- previously that meant western states
-  # were effectively scraped in their own early evening/late night.
-  schedule:
-    - cron: "0 4 * * *"
   workflow_dispatch:
     inputs:
       force-update:
@@ -19,56 +12,22 @@ on:
         description: "Force self-hosted for this manual run instead of the default tinyproxy + GitHub-hosted path (only meaningful for locales configured runner: self-hosted; e.g. to test without the proxy)"
         default: false
 
-# A scrape can take hours (FL up to 24h). Without this, a new trigger
-# (schedule, manual dispatch, or a delayed cron catching up) cancels an
-# in-progress run outright rather than queuing behind it -- confirmed
-# happening for real: FL's schedule firing hours late cancelled a 6-hour-old
-# manual run, and the fresh replacement "succeeded" with a fraction of the
-# data, overwriting what the cancelled run had already saved. Same pattern
-# already used in format.yml/extract-text.yml.
+# See the active (non-paused) template for the full explanation.
 concurrency:
   group: scrape
   cancel-in-progress: false
 
 env:
   STATE_CODE: pr
-  # locale.runner is a render-time literal ("self-hosted" or "ubuntu-latest"),
-  # not a runtime value -- runs-on: and this env: block can't read each other
-  # or their own sibling keys, so the literal gets inlined directly wherever
-  # it's needed below instead of routed through a shared variable.
-  #
-  # inputs.use-self-hosted only ever populates on a workflow_dispatch event --
-  # it's simply unset (falsy) on the nightly `schedule` trigger regardless of
-  # its declared default, so a plain `inputs.use-self-hosted` check would only
-  # ever fire on a manual run. For a self-hosted-flagged locale, route through
-  # tinyproxy on a GitHub-hosted runner by default and treat self-hosted as an
-  # explicit manual opt-out -- proxy running unattended was the whole point;
-  # self-hosted alone silently depended on a laptop being on and connected for
-  # every single automatic run. Locales that were never self-hosted (the
-  # literal below is "ubuntu-latest") are untouched by any of this.
-  #
-  # locale.force_self_hosted (default "false") is a separate, stronger
-  # override for locales whose real scrape duration regularly exceeds
-  # GitHub-hosted runners' hard 6-hour execution cap -- a limit `timeout-minutes`
-  # cannot raise, no matter how high it's set. Tinyproxy still runs on
-  # ubuntu-latest under the hood, so it inherits that same cap; for a locale
-  # like this, the *scheduled* run needs to land on self-hosted directly, not
-  # just via a manual workflow_dispatch opt-out (confirmed on MA: every
-  # schedule-triggered run since Tinyproxy became the self-hosted default
-  # was killed at exactly 6h00m, never completing).
-  USE_PROXY: ${{ 'self-hosted' == 'self-hosted' && 'false' != 'true' && !(github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) }}
+  # See the active (non-paused) template for the full explanation -- same
+  # logic here, just no schedule trigger, since "paused" means dispatch-only
+  # by design.
+  USE_PROXY: ${{ 'self-hosted' == 'self-hosted' && !(github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) }}
 
 jobs:
   scrape:
     name: "🕷️ Scrape Data"
-    runs-on: ${{ ('false' == 'true' || (github.event_name == 'workflow_dispatch' && inputs.use-self-hosted)) && 'self-hosted' || ('self-hosted' == 'self-hosted' && 'ubuntu-latest' || 'self-hosted') }}
-    # Per-locale override (locale.scrape_timeout_minutes in
-    # chn-openstates-scrape.yml) -- this used to be a one-off hand-edit
-    # directly on FL's live workflow file (raised to 24h after its default
-    # 12h was hit mid-scrape), which meant it silently reverted back to the
-    # template default the next time apply.py's fully_override_dirs pushed
-    # the shared template out. Routing it through config instead means a
-    # rollout can't quietly undo it again.
+    runs-on: ${{ (github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) && 'self-hosted' || ('self-hosted' == 'self-hosted' && 'ubuntu-latest' || 'self-hosted') }}
     timeout-minutes: 720
     permissions:
       contents: write
@@ -88,11 +47,6 @@ jobs:
           commit-and-push: true
           force-update: ${{ inputs.force-update }}
           branch: main
-          # locale.docker_image (default matches action.yml's own default) -- config-driven
-          # so a locale temporarily on a custom test image (e.g. while a fix awaits upstream
-          # merge) survives a template re-apply instead of reverting silently. A hand-edit
-          # here used to do the same job but doesn't survive apply.py's fully_override_dirs.
-          docker-image: openstates/scrapers:latest
           api-keys: |
             {
               "DC_API_KEY": "${{ secrets.DC_API_KEY }}",
@@ -103,17 +57,9 @@ jobs:
               "HTTP_PROXY": "${{ env.USE_PROXY == 'true' && secrets.PROXY_URL || '' }}"
             }
 
-      # Cross-org trigger: scrape and format live in different orgs
-      # (govbot-openstates-scrapers / govbot-data), so workflow_run can't
-      # chain them -- it only works within a single repo. repository_dispatch
-      # is the primitive for this, authenticated via a short-lived GitHub App
-      # installation token instead of a long-lived PAT (the previous version
-      # of this dispatch died silently when its PAT expired -- see project
-      # notes). Always runs, even if the scrape step above failed: format's
-      # own SHA-staleness check already makes a no-op trigger cheap (~10s),
-      # so there's no cost to triggering unconditionally, and states that
-      # degrade gracefully (out-of-session, partial data) still deserve a
-      # fresh format pass over whatever did land.
+      # See the active (non-paused) template for the full explanation of why
+      # this needs repository_dispatch + a GitHub App token rather than
+      # workflow_run or a plain PAT.
       - name: Generate GitHub App token for cross-org dispatch
         id: app-token
         if: always()
