@@ -4,3 +4,5 @@ country:us/
 govbot.yml
 feeds/
 tapes/*.gif
+# npm wrapper: prebuilt binary downloaded by postinstall, never committed
+npm/vendor/

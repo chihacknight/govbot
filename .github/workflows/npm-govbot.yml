@@ -1,0 +1,57 @@
+name: npm govbot wrapper
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["npm-govbot-v*"]
+    paths:
+      - ".github/workflows/npm-govbot.yml"
+      - "actions/govbot/npm/**"
+      - "actions/govbot/Cargo.toml"
+  pull_request:
+    paths:
+      - ".github/workflows/npm-govbot.yml"
+      - "actions/govbot/npm/**"
+      - "actions/govbot/Cargo.toml"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: test + version sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Offline wrapper tests (no binary download)
+        working-directory: actions/govbot/npm
+        run: node --test test/
+
+      - name: package.json version matches Cargo.toml
+        working-directory: actions/govbot/npm
+        run: node scripts/sync-version.js --check
+
+  publish:
+    name: publish to npm
+    # Only on version tags like npm-govbot-v0.1.0; needs the NPM_TOKEN secret.
+    if: startsWith(github.ref, 'refs/tags/npm-govbot-v')
+    needs: [check]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # trusted publishing (no long-lived token needed)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+
+      - working-directory: actions/govbot/npm
+        run: npm publish --provenance --access public
