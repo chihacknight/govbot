@@ -37,6 +37,8 @@ locales:
     template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Arizona
+    labels:
+      - working
   ar:
     template: openstates-to-ocd-files-paused
     toolkit_branch: main
@@ -59,10 +61,14 @@ locales:
     template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Connecticut
+    labels:
+      - working
   dc:
     template: openstates-to-ocd-files
     toolkit_branch: main
     name: District of Columbia
+    labels:
+      - working
   de:
     template: openstates-to-ocd-files-paused
     toolkit_branch: main
@@ -277,6 +283,8 @@ locales:
     template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Texas
+    labels:
+      - working
   ut:
     template: openstates-to-ocd-files-paused
     toolkit_branch: main
@@ -293,6 +301,8 @@ locales:
     template: openstates-to-ocd-files-paused
     toolkit_branch: main
     name: Virginia
+    labels:
+      - working
   wa:
     template: openstates-to-ocd-files-paused
     toolkit_branch: main
