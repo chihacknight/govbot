@@ -1,0 +1,38 @@
+---
+description: govbot monorepo conventions — action layout, schemas, snapshots, CLI-first design
+globs:
+  - "actions/**/*"
+  - "schemas/**/*"
+  - "scripts/**/*"
+alwaysApply: false
+---
+
+# govbot conventions
+
+## Layout
+
+- `actions/` modules are self-contained: runnable as shell scripts with args
+  (Python, Bash, Rust, or TypeScript) AND as GitHub Actions via an `action.yml`.
+- Every action ships three things: `action.yml`, a `schemas/` folder (JSON Schema
+  types other actions can import), and `__snapshots__/` with real outputs.
+- Shared schemas live in repo-root `schemas/`; repo-level utilities in `scripts/`;
+  the Rust CLI in `actions/govbot/`; Pages dashboards in `docs/src/dashboard/`.
+
+## Design rules (from CLAUDE.md)
+
+- CLI-first, pipe-friendly. Portable by default: no implicit state, relative or
+  configurable paths, must work in a fresh clone.
+- Schema-first: define data shapes before transformation code.
+- Idempotent pipelines; trace data lineage (when/how fetched in metadata).
+- Fail loudly on validation errors; tolerate missing *optional* data.
+- Offline-first: snapshots and `actions/govbot/mocks/govbot_data/` (wy + gu samples)
+  let dev and tests run with no network. Never depend on live government sources in tests.
+- Output change ⇒ snapshot change. Review with `cargo insta review` (Rust) or the
+  action's `render-snapshots.sh`.
+
+## Data paths
+
+Bill records live at
+`country:us/state:{code}/sessions/{session}/bills/{bill_id}/metadata.json`
+with a sibling `logs/` timeline. The `:` segments are fine on Linux/macOS but
+cannot exist on Windows checkouts — don't "fix" them by renaming.

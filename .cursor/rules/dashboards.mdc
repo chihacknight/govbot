@@ -1,0 +1,45 @@
+---
+description: govbot dashboard conventions — shared tab bar, feeds, skins, taxonomy sync
+globs:
+  - "docs/src/dashboard/**/*"
+  - "docs/src/dashboard-guide.md"
+  - "scripts/govbot-dashboard.yml"
+  - "scripts/dashboard_tags.json"
+  - "actions/scrape-hearings/**/*"
+  - "actions/scrape-elections/**/*"
+  - "actions/scrape-maps/**/*"
+alwaysApply: false
+---
+
+# Dashboard conventions
+
+Four pages share one tab bar (order fixed): Legislation (`index.html`) ·
+Hearings (`hearings.html`) · Elections Happening in IL (`elections.html`) ·
+Site Architecture (`architecture.html`).
+
+## Shared elements — keep in sync across all four pages
+
+- Tab bar markup/order + accents (`.tab-legis` blue, `.tab-hearings` gold,
+  `.tab-elections` green, `.tab-arch` purple).
+- Floating `.to-top` liquid-glass "Back to Top" pill (after ~400px scroll).
+- `feed.xsl` processing instruction on every RSS feed (root feeds → `feed.xsl`,
+  one-directory-down feeds → `../feed.xsl`).
+- "New Design" switch: `data-design="new"` on `<html>`, per-page localStorage
+  key `govbot-<page>-design`, skin last in that page's stylesheet
+  (elections → Robinhood green, legislation → Stripe blurple, hearings → Polymarket).
+- All feed dates in Central time (`America/Chicago`).
+
+## Pipelines
+
+- Hearings (`actions/scrape-hearings/`): ilga/wa/ma/ak direct scrapes + federal
+  Regulations.gov (fallback: committed `federal_seed.json`). Emits `hearings.json`,
+  `hearings.xml`, granular feeds, `participation.json`.
+- Elections (`actions/scrape-elections/`): committed `elections_seed.json` structure,
+  scrapers only populate candidates; official vs `potential_candidates` strictly
+  separated; per-race feeds expand to one item per candidate/milestone.
+- Maps (`actions/scrape-maps/`): Chicago ward/police polygons → `maps.json`.
+- Taxonomy: `scripts/govbot-dashboard.yml` `tags:` must match the keyword fallback
+  in `scripts/dashboard_tags.json` (tested by `scripts/test_dashboard_tags.py`).
+
+See `CLAUDE.md` ("Pages Dashboard") and `docs/src/dashboard-guide.md` for the
+full data flow before editing dashboard code.

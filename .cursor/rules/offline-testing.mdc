@@ -1,0 +1,49 @@
+---
+description: govbot offline testing — mocks, snapshot suites, and just recipes
+globs:
+  - "actions/**/__snapshots__/**/*"
+  - "actions/**/test_*.py"
+  - "scripts/test_*.py"
+  - "**/justfile"
+  - "justfile"
+alwaysApply: false
+---
+
+# Offline testing
+
+All of these run with no network (stdlib only unless noted).
+
+## Python suites (run from repo root)
+
+```bash
+python3 actions/scrape-hearings/test_scrape_hearings.py
+python3 actions/scrape-elections/test_scrape_elections.py
+python3 scripts/test_build_people_roster.py
+python3 scripts/test_dashboard_tags.py
+python3 actions/scrape-maps/main.py --self-test
+```
+
+Or everything at once: `just test` (root `justfile`).
+
+## Rust CLI (`actions/govbot/`, needs Rust + `just`)
+
+```bash
+just setup   # toolchain + cargo-insta, first time only
+just test    # snapshot tests (insta)
+just review  # review snapshot diffs before accepting
+just check   # fmt --check + clippy -D warnings + tests
+just govbot logs --repos il --limit 10   # dev run, repo-local data dir
+just mocks wy gu                          # refresh mock data (needs network)
+```
+
+## Mock data
+
+`actions/govbot/mocks/govbot_data/repos/` holds Wyoming + Guam samples:
+`govbot logs --govbot-dir ./actions/govbot/mocks/govbot_data`.
+Note: mock bill subtrees use `country:us/...` paths, which Windows checkouts
+exclude — mock-based runs need Linux/macOS (or CI).
+
+## Rule
+
+If your change alters output, update or add snapshots. Never weaken a test to
+fit code; fix the code. Keep changes minimal and focused.
