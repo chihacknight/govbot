@@ -72,6 +72,18 @@ Use `just govbot ...` as your cli "dev" environment.
 
 We build snapshots off `examples`. Add examples to make a test.
 
+### Decoupled RSS (issue #26)
+
+RSS feed generation (`govbot build`) is a distribution concern, decoupled from
+core retrieval/analysis behind the `rss` Cargo feature (enabled by default, so
+`govbot build` works out of the box). Core data shaping (`publish::` helpers,
+`govbot logs`) has no RSS dependency. Consumers that embed the library without
+needing feeds (MCP servers, APIs, dashboards) can skip the RSS code entirely:
+
+```bash
+cargo build --no-default-features   # core only; `govbot build` explains itself and exits non-zero
+```
+
 ## Advanced
 
 ```bash

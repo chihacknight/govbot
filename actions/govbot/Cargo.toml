@@ -52,8 +52,15 @@ reqwest = { version = "0.11", features = ["blocking"] }
 sha2 = "0.10"
 # Timestamps
 chrono = { version = "0.4", features = ["serde"] }
-# RSS feed generation
-rss = "2.0"
+# RSS feed generation (distribution concern, decoupled from core retrieval/analysis
+# per chihacknight/govbot#26). Optional so MCP/API/dashboard consumers can build
+# with `--no-default-features` and skip RSS code entirely; enabled by default so
+# `govbot build` keeps working out of the box.
+rss = { version = "2.0", optional = true }
+
+[features]
+default = ["rss"]
+rss = ["dep:rss"]
 
 [[bin]]
 name = "govbot"

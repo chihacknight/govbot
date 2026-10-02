@@ -3,6 +3,7 @@ use govbot::git;
 use govbot::{TagMatcher, hash_text, TagFile, TagFileMetadata, BillTagResult};
 use govbot::selectors::ocd_files_select_default;
 use govbot::publish::{load_config, get_repos_from_config, filter_by_tags, deduplicate_entries, sort_by_timestamp};
+#[cfg(feature = "rss")]
 use govbot::rss;
 use futures::StreamExt;
 use futures::stream;
@@ -2097,10 +2098,14 @@ async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
     
     eprintln!("\nProcessed: {}, Skipped: {}", processed_count, skipped_count);
     eprintln!("\n✅ Tagging complete!");
-    
+
     Ok(())
 }
 
+/// Build the RSS feed + HTML index (requires the `rss` Cargo feature, on by default).
+/// Feed generation is a distribution concern decoupled from core retrieval/analysis
+/// (chihacknight/govbot#26): it consumes `govbot logs` output and renders it via `govbot::rss`.
+#[cfg(feature = "rss")]
 async fn run_build_command(cmd: Command) -> anyhow::Result<()> {
     let Command::Build {
         tags,
@@ -2437,8 +2442,20 @@ async fn run_build_command(cmd: Command) -> anyhow::Result<()> {
     fs::write(&html_output_path, html_content)?;
     eprintln!("✓ Generated HTML index: {}", html_output_path.display());
     eprintln!("  Tags included: {}", tags_to_use.join(", "));
-    
+
     Ok(())
+}
+
+/// Stub for builds without the `rss` Cargo feature: the `build` subcommand stays
+/// in the CLI surface, but feed rendering is unavailable. Rebuild with default
+/// features (or `--features rss`) to generate feeds.
+#[cfg(not(feature = "rss"))]
+async fn run_build_command(_cmd: Command) -> anyhow::Result<()> {
+    anyhow::bail!(
+        "the `build` command requires the `rss` Cargo feature, which is disabled in this build. \
+         RSS generation is decoupled from core govbot (chihacknight/govbot#26): rebuild with \
+         default features (or `--features rss`) to generate feeds."
+    )
 }
 
 async fn run_update_command() -> anyhow::Result<()> {
