@@ -606,12 +606,23 @@
   // The people on github.com/chihacknight/govbot/graphs/contributors (bots left out), with avatars
   // vendored in dashboard/assets/contributors/ — refresh this list as new people contribute.
   // Half of them are on screen at once (9 on desktop, 4 on phones); a cursor that pauses may hand
-  // over to the next person not shown, so everyone passes through. On phones @sartaj stays put.
+  // over to the next person not shown, so everyone passes through. @sartaj always stays on screen
+  // and now and then types "government data as Git" in a cursor-chat bubble.
+  // Between wanders the cursors do real work in the workspace, one task of each kind at a time:
+  // type a real govbot command into the terminal, rewrite the govbot.yml topic (excerpts of the
+  // real scripts/govbot-dashboard.yml descriptions), stick a note on the canvas, or drag a
+  // selection box.
   (function () {
     var space = document.getElementById("gl-crew");
     var layer = document.getElementById("gl-crew-cursors");
+    var fx = document.getElementById("gl-crew-fx");
     var copy = document.getElementById("gl-crew-copy");
-    if (!space || !layer || !copy) return;
+    if (!space || !layer || !copy || !fx) return;
+    var hist = document.getElementById("gl-crew-hist");
+    var typed = document.getElementById("gl-crew-typed");
+    var ymlKey = document.getElementById("gl-crew-key");
+    var ymlD1 = document.getElementById("gl-crew-d1");
+    var ymlD2 = document.getElementById("gl-crew-d2");
     var PEOPLE = [
       ["sartaj", "#3DDC84"], ["tamara-builds", "#F472B6"], ["frankies2727", "#60A5FA"], ["GrossNate", "#FBBF24"],
       ["kouglas", "#A78BFA"], ["eddiechacha", "#FB923C"], ["adaup1", "#22D3EE"], ["bbgits", "#F87171"],
@@ -619,8 +630,22 @@
       ["fionatagious", "#FDA4AF"], ["jleverenz", "#2DD4BF"], ["rrchow97", "#C084FC"], ["Japapino", "#FDBA74"],
       ["TahaMHusain", "#818CF8"], ["haileyplusplus", "#34D399"]
     ];
+    var CMDS = ["govbot clone il", "govbot logs | govbot tag", "govbot load", "govbot build",
+      "duckdb --ui govbot_data/govbot.duckdb", "govbot clone all"];
+    var TOPICS = [
+      ["housing", "Housing affordability, rental", "and tenant protections,"],
+      ["education", "Schools, school funding,", "curriculum, teachers,"],
+      ["transportation", "Roads and highways, transit", "and rail, bridges,"],
+      ["immigration", "Immigration, refugees and", "asylum, citizenship,"],
+      ["health care", "Health care, public health,", "insurance coverage,"]
+    ];
+    var NOTES = ["Review the IL bill synopses", "Write more DuckDB examples", "Test it on a phone", "Ship it!",
+      "Pair on a good first issue?", "Add the next state's hearings"];
+    var SAY = "government data as Git", CPS = 14, DEL_CPS = 28, HOLD = 2.4;
     var ARROW = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 2.5 L20 11.2 L12.2 13 L8.6 20.5 Z" fill="currentColor" stroke="#FFFFFF" stroke-width="1.6" stroke-linejoin="round"/></svg>';
     var W = 0, H = 0, keep = null, phone = false, cur = [], next = 0, raf = 0, last = 0, visible = false;
+    var sayCool = 1.5, taskCool = 1.2, busy = { term: false, yml: false, note: 0, marq: false };
+    var cmdI = 0, topicI = 0, noteI = 0;
 
     function measure() {
       W = space.clientWidth; H = space.clientHeight;
@@ -628,25 +653,49 @@
       keep = { x0: c.left - s.left - 30, x1: c.right - s.left + 10, y0: c.top - s.top - 30, y1: c.bottom - s.top + 12 };
       phone = W < 620;
     }
-    // Does a cursor (with its name label) at x,y cover the copy?
-    function overCopy(x, y) {
-      var lw = phone ? 140 : 170;
-      return x + lw > keep.x0 && x - 20 < keep.x1 && y + 44 > keep.y0 && y < keep.y1;
+    // Does a cursor (with its name label — and a bubble/note of size big) at x,y cover the copy?
+    function overCopy(x, y, big) {
+      var lw = big ? (phone ? 210 : 250) : (phone ? 140 : 170), lh = big ? 86 : 44;
+      return x + lw > keep.x0 && x - 20 < keep.x1 && y + lh > keep.y0 && y < keep.y1;
     }
     // A spot clear of the copy, preferably one reached without gliding across it.
-    function pick(fx, fy) {
+    function pick(fx0, fy0, big) {
       var best = null;
       for (var t = 0; t < 40; t++) {
-        var x = 12 + Math.random() * Math.max(40, W - (phone ? 150 : 190));
-        var y = 12 + Math.random() * Math.max(40, H - 44);
-        if (overCopy(x, y)) continue;
+        var x = 12 + Math.random() * Math.max(40, W - (big ? (phone ? 220 : 260) : (phone ? 150 : 190)));
+        var y = 12 + Math.random() * Math.max(40, H - (big ? 92 : 44));
+        if (overCopy(x, y, big)) continue;
         best = best || { x: x, y: y };
-        if (fx == null) return best;
+        if (fx0 == null) return best;
         var crosses = false;
-        for (var k = 1; k < 10 && !crosses; k++) crosses = overCopy(fx + (x - fx) * k / 10, fy + (y - fy) * k / 10);
+        for (var k = 1; k < 10 && !crosses; k++) crosses = overCopy(fx0 + (x - fx0) * k / 10, fy0 + (y - fy0) * k / 10, big);
         if (!crosses) return { x: x, y: y };
       }
       return best || { x: 12, y: H - 44 };
+    }
+    // An open patch of canvas (w×h at x,y) clear of the copy and every visible window, for a
+    // sticky note or a selection box; null when the layout leaves no room (then another task runs).
+    function freeSpot(w, h) {
+      var s = space.getBoundingClientRect(), boxes = [keep];
+      var cards = space.querySelectorAll(".gl-crew-card");
+      for (var i = 0; i < cards.length; i++) {
+        var r = cards[i].getBoundingClientRect();
+        if (r.width) boxes.push({ x0: r.left - s.left - 10, x1: r.right - s.left + 10, y0: r.top - s.top - 10, y1: r.bottom - s.top + 10 });
+      }
+      for (var t = 0; t < 60; t++) {
+        var x = 10 + Math.random() * (W - w - 20), y = 10 + Math.random() * (H - h - 20), ok = W - w > 20 && H - h > 20;
+        for (var b = 0; ok && b < boxes.length; b++) {
+          var q = boxes[b];
+          if (x < q.x1 && x + w > q.x0 && y < q.y1 && y + h > q.y0) ok = false;
+        }
+        if (ok) return { x: x, y: y };
+      }
+      return null;
+    }
+    // Where the caret of an element sits, in the workspace's coordinates.
+    function endOf(el) {
+      var s = space.getBoundingClientRect(), r = el.getBoundingClientRect();
+      return { x: r.right - s.left + 2, y: r.top - s.top + r.height * 0.55 };
     }
     function setPerson(c, i) {
       var p = PEOPLE[i];
@@ -663,11 +712,12 @@
       for (var i = 0; i < slots; i++) {
         var el = document.createElement("div");
         el.className = "gl-cur";
-        el.innerHTML = '<span class="gl-cur-ring"></span>' + ARROW + '<span class="gl-cur-label"></span>';
+        el.innerHTML = '<span class="gl-cur-ring"></span>' + ARROW + '<span class="gl-cur-label"></span>' +
+          (i === 0 ? '<span class="gl-cur-chat"></span>' : "");
         layer.appendChild(el);
-        var a = pick(), b = pick(a.x, a.y);
-        var c = { el: el, ring: el.firstChild, label: el.lastChild, x: a.x, y: a.y, vx: 0, vy: 0, tx: b.x, ty: b.y,
-          pause: Math.random() * 1.5, rv: 0 };
+        var big = i === 0, a = pick(null, null, big), b = pick(a.x, a.y, big);
+        var c = { el: el, ring: el.firstChild, label: el.querySelector(".gl-cur-label"), chat: el.querySelector(".gl-cur-chat"),
+          big: big, x: a.x, y: a.y, vx: 0, vy: 0, tx: b.x, ty: b.y, pause: Math.random() * 1.5, rv: 0, say: -1, task: null };
         setPerson(c, i);
         cur.push(c);
         place(c);
@@ -676,30 +726,151 @@
     }
     function place(c) {
       c.el.style.transform = "translate(" + c.x.toFixed(1) + "px," + c.y.toFixed(1) + "px)";
-      c.el.classList.toggle("flip", c.x > W - (phone ? 150 : 190));
+      c.el.classList.toggle("flip", c.x > W - (c.big ? (phone ? 220 : 260) : (phone ? 150 : 190)));
       c.ring.style.opacity = c.rv.toFixed(2);
       c.ring.style.transform = "scale(" + (1 + (1 - c.rv) * 1.4).toFixed(2) + ")";
     }
+
+    // ---- tasks ----
+    function startTask(c) {
+      var kinds = [];
+      if (!busy.term && typed) kinds.push("term");
+      if (!busy.yml && ymlKey) kinds.push("yml");
+      var noteSpot = busy.note < 2 ? freeSpot(190, 128) : null, marqSpot = !busy.marq ? freeSpot(210, 112) : null;
+      if (noteSpot) kinds.push("note");
+      if (marqSpot) kinds.push("marq");
+      if (!kinds.length) return false;
+      var k = kinds[Math.floor(Math.random() * kinds.length)], t = { kind: k, phase: "go", t: 0 };
+      if (k === "term") { busy.term = true; t.text = CMDS[cmdI++ % CMDS.length]; t.at = function () { return endOf(typed); }; }
+      if (k === "yml") {
+        busy.yml = true;
+        var nt = TOPICS[++topicI % TOPICS.length];
+        t.ops = [[ymlKey, nt[0]], [ymlD1, nt[1]], [ymlD2, nt[2]]]; t.op = 0;
+        t.at = function () { return endOf(t.ops[Math.min(t.op, 2)][0]); };
+      }
+      if (k === "note" || k === "marq") {
+        var spot = k === "note" ? noteSpot : marqSpot;
+        if (k === "note") { busy.note++; t.text = NOTES[noteI++ % NOTES.length]; } else busy.marq = true;
+        t.at = function () { return spot; };
+      }
+      c.task = t;
+      return true;
+    }
+    function endTask(c) {
+      var k = c.task.kind;
+      if (k === "term") busy.term = false;
+      if (k === "yml") busy.yml = false;
+      if (k === "marq") busy.marq = false;
+      c.task = null;
+      c.pause = 0.4 + Math.random();
+      var n = pick(c.x, c.y, c.big); c.tx = n.x; c.ty = n.y;
+    }
+    // One frame of a task's work; the cursor keeps its spring toward t.at() while it works.
+    function work(c, t, dt) {
+      t.t += dt;
+      if (t.kind === "term") {
+        var n = Math.min(t.text.length, Math.floor(t.t * CPS));
+        if (typed.textContent.length !== n || typed.textContent !== t.text.slice(0, n)) typed.textContent = t.text.slice(0, n);
+        if (t.t > t.text.length / CPS + 0.7) {             // "enter": the command joins the history
+          var line = document.createElement("span");
+          line.innerHTML = "<i>$</i> ";
+          line.appendChild(document.createTextNode(t.text));
+          hist.appendChild(line);
+          while (hist.children.length > 5) hist.removeChild(hist.firstChild);
+          typed.textContent = "";
+          endTask(c);
+        }
+      } else if (t.kind === "yml") {
+        var op = t.ops[t.op], el = op[0], want = op[1];
+        if (!t.from) { t.from = el.textContent; t.t = 0; el.classList.add("gl-crew-edit"); el.style.setProperty("--cc", PEOPLE[c.who][1]); }
+        var del = t.from.length / DEL_CPS;
+        el.textContent = t.t < del ? t.from.slice(0, Math.max(0, t.from.length - Math.floor(t.t * DEL_CPS)))
+          : want.slice(0, Math.min(want.length, Math.floor((t.t - del) * CPS)));
+        if (t.t > del + want.length / CPS + 0.25) {
+          el.textContent = want; el.classList.remove("gl-crew-edit");
+          t.from = null; t.op++;
+          if (t.op >= t.ops.length) endTask(c);
+        }
+      } else if (t.kind === "note") {
+        if (!t.el) {
+          t.el = document.createElement("div");
+          t.el.className = "gl-crew-note";
+          t.el.style.left = (c.x + 12) + "px"; t.el.style.top = (c.y + 46) + "px";   // under the cursor's name tag
+          t.el.innerHTML = '<span></span><small>— @' + PEOPLE[c.who][0] + "</small>";
+          fx.appendChild(t.el);
+          requestAnimationFrame(function () { t.el.classList.add("is-on"); });
+        }
+        t.el.firstChild.textContent = t.text.slice(0, Math.floor(t.t * CPS));
+        if (t.t > t.text.length / CPS + 0.5) {
+          var note = t.el;
+          setTimeout(function () { note.classList.add("is-off"); }, 7000);
+          setTimeout(function () { if (note.parentNode) note.parentNode.removeChild(note); busy.note = Math.max(0, busy.note - 1); }, 7700);
+          endTask(c);
+        }
+      } else if (t.kind === "marq") {
+        if (!t.el) {
+          t.x0 = c.x; t.y0 = c.y;
+          var d = { x: c.x + (phone ? 100 : 130) + Math.random() * 60, y: c.y + 50 + Math.random() * 40 };
+          t.at = function () { return d; };
+          t.el = document.createElement("div");
+          t.el.className = "gl-crew-marq";
+          t.el.style.setProperty("--cc", PEOPLE[c.who][1]);
+          fx.appendChild(t.el);
+        }
+        var x0 = Math.min(t.x0, c.x), y0 = Math.min(t.y0, c.y);
+        t.el.style.left = x0 + "px"; t.el.style.top = y0 + "px";
+        t.el.style.width = Math.abs(c.x - t.x0) + "px"; t.el.style.height = Math.abs(c.y - t.y0) + "px";
+        if (t.t > 1.8) {
+          var box = t.el; box.classList.add("is-off");
+          setTimeout(function () { if (box.parentNode) box.parentNode.removeChild(box); }, 600);
+          endTask(c);
+        }
+      }
+    }
+
     function step(dt) {
+      if (sayCool > 0) sayCool -= dt;
+      taskCool -= dt;
+      if (taskCool <= 0) {                                   // hand a task to someone idle
+        taskCool = 1.2 + Math.random() * 1.8;
+        var idle = cur.filter(function (o) { return !o.task && o.say < 0; });
+        if (idle.length) startTask(idle[Math.floor(Math.random() * idle.length)]);
+      }
       cur.forEach(function (c, i) {
         if (c.rv > 0) c.rv = Math.max(0, c.rv - dt * 1.6);
-        if (c.pause > 0) { c.pause -= dt; place(c); return; }
+        if (c.chat && c.say >= 0) {                      // typing, then holding the line
+          c.say += dt;
+          var n = Math.min(SAY.length, Math.floor(c.say * CPS));
+          if (c.chat.textContent.length !== n) c.chat.textContent = SAY.slice(0, n);
+          if (c.say > SAY.length / CPS + HOLD) { c.say = -1; c.chat.classList.remove("is-on"); c.el.classList.remove("is-saying"); sayCool = 6 + Math.random() * 6; }
+        }
+        var t = c.task;
+        if (t) { var p = t.at(); c.tx = p.x; c.ty = p.y; }
+        else if (c.pause > 0) { c.pause -= dt; place(c); return; }
         // A soft spring toward the next spot: quick start, gentle arrival, a hint of overshoot.
         var dx = c.tx - c.x, dy = c.ty - c.y;
-        c.vx += (dx * 5.2 - c.vx * 4.2) * dt;
-        c.vy += (dy * 5.2 - c.vy * 4.2) * dt;
+        var k = t && t.kind === "marq" && t.el ? 2.4 : 5.2;    // dragging a box is slower
+        c.vx += (dx * k - c.vx * 4.2) * dt;
+        c.vy += (dy * k - c.vy * 4.2) * dt;
         var sp = Math.sqrt(c.vx * c.vx + c.vy * c.vy);
         if (sp > 420) { c.vx *= 420 / sp; c.vy *= 420 / sp; }
         c.x += c.vx * dt; c.y += c.vy * dt;
-        if (Math.abs(dx) + Math.abs(dy) < 8 && sp < 40) {
+        var arrived = Math.abs(dx) + Math.abs(dy) < 8 && sp < 40;
+        if (t) {
+          if (t.phase === "go" && arrived) { t.phase = "work"; t.t = 0; c.rv = 1; }
+          if (t.phase === "work") work(c, t, dt);
+        } else if (arrived) {
           c.pause = 0.5 + Math.random() * 2.4;
-          if (Math.random() < 0.55) c.rv = 1;
-          else if (!(phone && i === 0) && Math.random() < 0.5) {
+          if (c.chat && sayCool <= 0 && c.say < 0) {      // @sartaj stops to type
+            c.say = 0; c.chat.textContent = ""; c.chat.classList.add("is-on"); c.el.classList.add("is-saying");
+            c.pause = SAY.length / CPS + HOLD + 0.4;
+          } else if (Math.random() < 0.45) c.rv = 1;
+          else if (i !== 0 && Math.random() < 0.5) {
             var shown = cur.map(function (o) { return o.who; }), w = next % PEOPLE.length;
             while (shown.indexOf(w) !== -1) { next++; w = next % PEOPLE.length; }
             setPerson(c, w); next++;
           }
-          var n = pick(c.x, c.y); c.tx = n.x; c.ty = n.y;
+          var nn = pick(c.x, c.y, c.big); c.tx = nn.x; c.ty = nn.y;
         }
         place(c);
       });
@@ -713,15 +884,20 @@
     function start() { if (!raf && !reduceMotion) { last = 0; raf = requestAnimationFrame(frame); } }
     function stop() { if (raf) cancelAnimationFrame(raf); raf = 0; }
     build();
+    if (reduceMotion) {                            // a still, composed scatter — @sartaj's line shown whole
+      if (cur[0] && cur[0].chat) { cur[0].chat.textContent = SAY; cur[0].chat.classList.add("is-on"); }
+      return;
+    }
     // Web fonts can change the copy's box: re-measure, and move anyone now sitting on it.
     window.addEventListener("load", function () {
       measure();
       cur.forEach(function (c) {
-        if (overCopy(c.x, c.y)) { var a = pick(); c.x = a.x; c.y = a.y; }
-        var n = pick(c.x, c.y); c.tx = n.x; c.ty = n.y; place(c);
+        if (c.task) return;
+        if (overCopy(c.x, c.y, c.big)) { var a = pick(null, null, c.big); c.x = a.x; c.y = a.y; }
+        var n = pick(c.x, c.y, c.big); c.tx = n.x; c.ty = n.y; place(c);
       });
     });
-    if (reduceMotion) return;                      // a still, composed scatter
+    if (typed) typed.textContent = "";                // the live prompt starts empty; cursors type into it
     if ("IntersectionObserver" in window) {
       new IntersectionObserver(function (es) {
         visible = es[0].isIntersecting;
@@ -737,8 +913,11 @@
       rt = setTimeout(function () {
         // phone ↔ desktop changes the slot count; otherwise just re-measure and keep moving
         var wasPhone = phone; measure();
-        if (wasPhone !== phone) build();
-        else if (Math.abs(space.clientWidth - lastW) > 40) cur.forEach(function (c) { var n = pick(c.x, c.y); c.tx = n.x; c.ty = n.y; });
+        if (wasPhone !== phone) {
+          fx.innerHTML = ""; busy = { term: false, yml: false, note: 0, marq: false };
+          if (typed) typed.textContent = "";
+          build();
+        } else if (Math.abs(space.clientWidth - lastW) > 40) cur.forEach(function (c) { if (!c.task) { var n = pick(c.x, c.y, c.big); c.tx = n.x; c.ty = n.y; } });
         lastW = space.clientWidth;
       }, 150);
     });
