@@ -3,9 +3,9 @@
 <section class="gl-hero">
 <div class="gl-wrap gl-hero-grid">
 <div class="gl-hero-copy">
-<div class="gl-overline gl-overline-ruled"><span class="gl-rule"></span><span>Open civic data · Nonpartisan</span><span class="gl-rule"></span></div>
+<div class="gl-overline gl-overline-ruled"><span class="gl-rule"></span><span>Open civic data · <span class="gl-ol-2">Government Transparency</span></span><span class="gl-rule"></span></div>
 <h1 class="gl-h1">See what your government is doing.<br><span class="gl-accent">Then use the data yourself.</span></h1>
-<p class="gl-lede">Every U.S. legislature, as data you can clone — plus hearings and elections, free to explore, follow and build on.</p>
+<p class="gl-lede">A nationwide layer of open legislative data. Every U.S. legislature, ready to explore, query, clone, and build on.</p>
 <div class="gl-btns"><a class="gl-btn gl-btn-primary" href="#projects">See the projects</a><a class="gl-btn gl-btn-ghost" href="#build">Get the data</a></div>
 </div>
 <div class="gl-art" aria-hidden="true"><div class="gl-halo"></div><img class="gl-art-img" src="dashboard/assets/liberty-hero.png" alt="" width="520" height="1000"><canvas class="gl-embers"></canvas></div>
@@ -21,15 +21,29 @@
 </div>
 </section>
 
+<section class="gl-crew" aria-label="Built by the Govbot community">
+<div class="gl-wrap gl-crew-space" id="gl-crew">
+<div class="gl-crew-card gl-crew-term" aria-hidden="true"><div class="gl-crew-bar"><b style="background:#F87171"></b><b style="background:#FBBF24"></b><b style="background:#3FB37F"></b><span>govbot — terminal</span></div><div class="gl-crew-code"><span><i>$</i> govbot init</span><span><i>$</i> govbot clone wy il</span><span><i>$</i> govbot logs | govbot tag</span><span><i>$</i> govbot load --memory-limit 32GB</span><span><i>$</i> govbot build</span><span><i>$</i> duckdb --ui govbot_data/govbot.duckdb<b class="gl-crew-caret"></b></span></div></div>
+<div class="gl-crew-card gl-crew-pr" aria-hidden="true"><div class="gl-crew-pr-top"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M6 8.5v7M18 15.5V10a3 3 0 0 0-3-3h-4"/></svg>Pull request #192<span class="gl-crew-merged">Merged</span></div><div class="gl-crew-pr-t">Shared site header, logo → homepage, live Social bots feed</div></div>
+<div class="gl-crew-card gl-crew-yml" aria-hidden="true"><div class="gl-crew-bar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg><span>govbot.yml</span></div><div class="gl-crew-yml-code"><span class="ln">1</span><span><em>repos</em>:</span><span class="ln">2</span><span>  - all</span><span class="ln">3</span><span><em>tags</em>:</span><span class="ln">4</span><span>  <em>housing</em>:</span><span class="ln">5</span><span>    <em>description</em>: |</span><span class="ln">6</span><span>      Housing affordability, rental and</span><span class="ln">7</span><span>      tenant protections, evictions,</span><span class="ln">8</span><span>    <em>threshold</em>: <u>0.72</u></span></div></div>
+<div class="gl-crew-card gl-crew-rss" aria-hidden="true"><span class="gl-crew-rss-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg></span><span><span class="gl-crew-rss-t">hearings.xml</span><span class="gl-crew-rss-d">Refreshed twice a day</span></span></div>
+<div class="gl-crew-copy" id="gl-crew-copy">
+<p class="gl-crew-text">Government moves every day — Govbot helps everyone keep up. Built by people who believe civic information should be open to everyone.</p>
+<a class="gl-crew-btn" href="https://github.com/chihacknight/govbot/graphs/contributors?all=1" target="_blank" rel="noopener"><span class="gl-crew-faces"><img src="dashboard/assets/contributors/sartaj.png" alt="" width="24" height="24" loading="lazy"><img src="dashboard/assets/contributors/tamara-builds.png" alt="" width="24" height="24" loading="lazy"><img src="dashboard/assets/contributors/frankies2727.png" alt="" width="24" height="24" loading="lazy"><img src="dashboard/assets/contributors/GrossNate.png" alt="" width="24" height="24" loading="lazy"><img src="dashboard/assets/contributors/kouglas.png" alt="" width="24" height="24" loading="lazy"></span>18 contributors · Meet them ↗</a>
+</div>
+<div class="gl-crew-cursors" id="gl-crew-cursors" aria-hidden="true"></div>
+</div>
+</section>
+
 <section id="projects" class="gl-sec">
 <div class="gl-wrap">
 <div class="gl-sec-head">
 <div><h2 class="gl-h2">Projects built on Govbot</h2><p class="gl-sub">Each one runs on the same open data. Yours could be next.</p></div>
-<div class="gl-car-nav"><span class="gl-count" id="gl-count" aria-live="polite">1 / 6</span><button type="button" class="gl-navbtn" data-car="prev" aria-label="Previous project" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><button type="button" class="gl-navbtn" data-car="next" aria-label="Next project"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div>
+<div class="gl-car-nav"><span class="gl-count" id="gl-count" aria-live="polite">1 / 5</span><button type="button" class="gl-navbtn" data-car="prev" aria-label="Previous project" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><button type="button" class="gl-navbtn" data-car="next" aria-label="Next project"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div>
 </div>
-<div class="gl-chips" role="group" aria-label="Choose a project"><button type="button" class="gl-chip" data-slide="0" aria-pressed="true">Legislation</button><button type="button" class="gl-chip" data-slide="1" aria-pressed="false">Hearings</button><button type="button" class="gl-chip" data-slide="2" aria-pressed="false">Elections</button><button type="button" class="gl-chip" data-slide="3" aria-pressed="false">Follow along</button><button type="button" class="gl-chip" data-slide="4" aria-pressed="false">Social bots</button><button type="button" class="gl-chip" data-slide="5" aria-pressed="false">Your project</button></div>
+<div class="gl-chips" role="group" aria-label="Choose a project"><button type="button" class="gl-chip" data-slide="0" aria-pressed="true">Legislation</button><button type="button" class="gl-chip" data-slide="1" aria-pressed="false">Hearings</button><button type="button" class="gl-chip" data-slide="2" aria-pressed="false">Elections</button><button type="button" class="gl-chip" data-slide="3" aria-pressed="false">Social bots</button><button type="button" class="gl-chip" data-slide="4" aria-pressed="false">Your project</button></div>
 <div class="gl-car" id="gl-car" tabindex="0" aria-roledescription="carousel" aria-label="Projects built on Govbot">
-<article class="gl-slide" style="--pc: var(--gb-blue-hi)" aria-roledescription="slide" aria-label="1 of 6: Legislation">
+<article class="gl-slide" style="--pc: var(--gb-blue-hi)" aria-roledescription="slide" aria-label="1 of 5: Legislation">
 <div class="gl-slide-head">
 <div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg></span>Legislation</div>
 <h3 class="gl-h3">What is government doing?</h3>
@@ -41,7 +55,7 @@
 <div id="activity-list"><div class="gb-loading"><div class="gb-spinner"></div><p>Loading recent bills…</p></div></div>
 </div>
 </article>
-<article class="gl-slide" style="--pc: var(--gb-primary-hi)" aria-roledescription="slide" aria-label="2 of 6: Hearings and public comment">
+<article class="gl-slide" style="--pc: var(--gb-primary-hi)" aria-roledescription="slide" aria-label="2 of 5: Hearings and public comment">
 <div class="gl-slide-head">
 <div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg></span>Hearings &amp; public comment</div>
 <h3 class="gl-h3">Can I have a say?</h3>
@@ -53,7 +67,7 @@
 <div id="hearings-list"><div class="gb-loading"><div class="gb-spinner"></div><p>Loading upcoming hearings…</p></div></div>
 </div>
 </article>
-<article class="gl-slide" style="--pc: var(--gb-amber-hi)" aria-roledescription="slide" aria-label="3 of 6: Illinois elections">
+<article class="gl-slide" style="--pc: var(--gb-amber-hi)" aria-roledescription="slide" aria-label="3 of 5: Illinois elections">
 <div class="gl-slide-head">
 <div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/><path d="M12 12v8"/></svg></span>Illinois elections</div>
 <h3 class="gl-h3">What's on my ballot?</h3>
@@ -68,33 +82,20 @@
 <div class="gl-elect-then" id="election-then">Then: Chicago municipal · February 23, 2027</div>
 </div>
 </article>
-<article class="gl-slide" style="--pc: var(--gb-purple-hi)" aria-roledescription="slide" aria-label="4 of 6: Follow along">
-<div class="gl-slide-head">
-<div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1.5"/></svg></span>Follow along · for residents</div>
-<h3 class="gl-h3">Want to keep up?</h3>
-<p class="gl-p">Follow anything by RSS, in any feed reader. No account.</p>
-</div>
-<div class="gl-slide-body">
-<a class="gl-feed" href="dashboard/hearings.xml"><span><span class="gl-feed-t">Every hearing</span><span class="gl-feed-p">hearings.xml</span></span><span class="gl-feed-go">Follow</span></a>
-<a class="gl-feed" href="dashboard/hearings/il.xml"><span><span class="gl-feed-t">One state's hearings — Illinois</span><span class="gl-feed-p">hearings/il.xml</span></span><span class="gl-feed-go">Follow</span></a>
-<a class="gl-feed" href="dashboard/elections/ballot-2026-11-03.xml"><span><span class="gl-feed-t">The Nov 3, 2026 Illinois ballot</span><span class="gl-feed-p">elections/ballot-2026-11-03.xml</span></span><span class="gl-feed-go">Follow</span></a>
-<a class="gl-feed" href="dashboard/elections/group-council.xml"><span><span class="gl-feed-t">Chicago City Council races</span><span class="gl-feed-p">elections/group-council.xml</span></span><span class="gl-feed-go">Follow</span></a>
-</div>
-</article>
-<article class="gl-slide gl-slide-bots" style="--pc: var(--gl-teal)" aria-roledescription="slide" aria-label="5 of 6: Social bots">
+<article class="gl-slide gl-slide-bots" style="--pc: var(--gl-teal)" aria-roledescription="slide" aria-label="4 of 5: Social bots">
 <div class="gl-slide-head">
 <div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg></span>Legislation tracker · 13 topics · 4 platforms</div>
 <h3 class="gl-h3">Track legislation wherever you scroll.</h3>
 <p class="gl-p">Govbot's social media bots track bills from Congress and state legislatures, summarize them in plain English, and put them where you already follow the news — across Bluesky, Twitter, Threads and Instagram.</p>
 <div class="gl-bt-group"><span class="gl-bt-h">Topics tracked</span><div class="gl-bts"><span class="gl-bt"><span class="gl-bt-dot" style="background: #818CF8"></span>AI, Data Centers &amp; Crypto</span><span class="gl-bt"><span class="gl-bt-dot" style="background: #94A3B8"></span>Criminal Justice</span><span class="gl-bt"><span class="gl-bt-dot" style="background: #60A5FA"></span>Education</span><span class="gl-bt"><span class="gl-bt-dot" style="background: #A78BFA"></span>Elections &amp; Voting</span><span class="gl-bt"><span class="gl-bt-dot" style="background: #4ADE80"></span>Environment &amp; Climate</span><span class="gl-bt"><span class="gl-bt-dot" style="background: #2DD4BF"></span>Healthcare</span><span class="gl-bt"><span class="gl-bt-dot" style="background: #FB923C"></span>Housing</span><span class="gl-bt"><span class="gl-bt-dot" style="background: #22D3EE"></span>Immigration</span><span class="gl-bt"><span class="gl-bt-dot" style="background: #F59E0B"></span>Labor</span><span class="gl-bt"><span class="gl-bt-dot" style="background: #E879F9"></span>LGBTQ</span><span class="gl-bt"><span class="gl-bt-dot" style="background: #F472B6"></span>Reproductive Rights</span><span class="gl-bt"><span class="gl-bt-dot" style="background: #FACC15"></span>Taxation</span><span class="gl-bt"><span class="gl-bt-dot" style="background: #38BDF8"></span>Transportation</span></div></div>
-<div class="gl-bt-group gl-follow"><span class="gl-bt-h">Follow along</span><div class="gl-plats"><a class="gl-plat" href="https://frankies2727.github.io/CHN-SocialMedia-Govbot-Main/" target="_blank" rel="noopener" aria-label="Govbot on Bluesky — 13 topic accounts"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 3.768c0 .69.378 5.65.624 6.479.815 2.736 3.713 3.66 6.383 3.364.136-.02.275-.039.415-.056-.138.022-.276.04-.415.056-3.912.58-7.387 2.005-2.83 7.078 5.013 5.19 6.87-1.113 7.823-4.308.953 3.195 2.81 9.498 7.823 4.308 4.556-5.073 1.082-6.498-2.83-7.078a8.741 8.741 0 0 1-.415-.056c.14.017.279.036.415.056 2.67.297 5.568-.628 6.383-3.364.246-.828.624-5.789.624-6.478 0-.69-.139-1.861-.902-2.206-.659-.298-1.664-.62-4.3 1.24C16.046 4.748 13.087 8.687 12 10.8Z"/></svg><span>Bluesky ↗</span></a><a class="gl-plat" href="https://x.com/Govbot27" target="_blank" rel="noopener" aria-label="Govbot on Twitter (X)"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/></svg><span>Twitter ↗</span></a><a class="gl-plat" href="https://www.threads.com/@legislationtracker.govbot" target="_blank" rel="noopener" aria-label="Govbot on Threads"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M16.5 11.2c-.3-3-2.1-4.4-4.6-4.4-2.2 0-3.6 1-4.2 2.3"/><path d="M8.2 14.6c.2 1.5 1.6 2.4 3.4 2.3 2.4-.1 4-1.7 4-4.6 0-.4 0-.8-.1-1.1-1-.2-2-.3-3-.2-2.2.1-3.5 1-3.4 2.4"/><path d="M19.4 7.2C18 4.2 15.4 2.6 12 2.6 6.6 2.6 3.6 6.3 3.6 12s3 9.4 8.4 9.4c3.4 0 5.8-1.3 7.1-3.7.9-1.7.9-3.6-.3-5.1"/></svg><span>Threads ↗</span></a><a class="gl-plat" href="https://www.instagram.com/legislationtracker.govbot/" target="_blank" rel="noopener" aria-label="Govbot on Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5.2"/><circle cx="12" cy="12" r="4"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg><span>Instagram ↗</span></a></div></div>
+<div class="gl-bt-group gl-follow"><span class="gl-bt-h">Follow along</span><div class="gl-plats"><a class="gl-plat" href="https://bsky.app/profile/govboteducation.bsky.social" target="_blank" rel="noopener" aria-label="Govbot on Bluesky"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 3.768c0 .69.378 5.65.624 6.479.815 2.736 3.713 3.66 6.383 3.364.136-.02.275-.039.415-.056-.138.022-.276.04-.415.056-3.912.58-7.387 2.005-2.83 7.078 5.013 5.19 6.87-1.113 7.823-4.308.953 3.195 2.81 9.498 7.823 4.308 4.556-5.073 1.082-6.498-2.83-7.078a8.741 8.741 0 0 1-.415-.056c.14.017.279.036.415.056 2.67.297 5.568-.628 6.383-3.364.246-.828.624-5.789.624-6.478 0-.69-.139-1.861-.902-2.206-.659-.298-1.664-.62-4.3 1.24C16.046 4.748 13.087 8.687 12 10.8Z"/></svg><span>Bluesky ↗</span></a><a class="gl-plat" href="https://x.com/Govbot27" target="_blank" rel="noopener" aria-label="Govbot on Twitter (X)"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/></svg><span>Twitter ↗</span></a><a class="gl-plat" href="https://www.threads.com/@legislationtracker.govbot" target="_blank" rel="noopener" aria-label="Govbot on Threads"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M16.5 11.2c-.3-3-2.1-4.4-4.6-4.4-2.2 0-3.6 1-4.2 2.3"/><path d="M8.2 14.6c.2 1.5 1.6 2.4 3.4 2.3 2.4-.1 4-1.7 4-4.6 0-.4 0-.8-.1-1.1-1-.2-2-.3-3-.2-2.2.1-3.5 1-3.4 2.4"/><path d="M19.4 7.2C18 4.2 15.4 2.6 12 2.6 6.6 2.6 3.6 6.3 3.6 12s3 9.4 8.4 9.4c3.4 0 5.8-1.3 7.1-3.7.9-1.7.9-3.6-.3-5.1"/></svg><span>Threads ↗</span></a><a class="gl-plat" href="https://www.instagram.com/legislationtracker.govbot/" target="_blank" rel="noopener" aria-label="Govbot on Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5.2"/><circle cx="12" cy="12" r="4"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg><span>Instagram ↗</span></a></div></div>
 </div>
 <div class="gl-slide-body gl-bf">
 <div class="gl-bf-head"><span class="gl-dot gl-bf-live"></span>Latest from the bots · every platform</div>
 <div class="gl-bf-win" id="gl-bf-win" role="region" aria-label="Latest posts from Govbot's social media bots" tabindex="0"><div class="gl-bf-list" id="gl-bf-list"><div class="gb-loading"><div class="gb-spinner"></div><p>Loading the latest posts…</p></div></div></div>
 </div>
 </article>
-<article class="gl-slide gl-slide-yours" style="--pc: var(--gb-primary-hi)" aria-roledescription="slide" aria-label="6 of 6: Your project">
+<article class="gl-slide gl-slide-yours" style="--pc: var(--gb-primary-hi)" aria-roledescription="slide" aria-label="5 of 5: Your project">
 <div class="gl-slide-head">
 <div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>Your project</div>
 <h3 class="gl-h3">Build the next one.</h3>
@@ -125,7 +126,7 @@
 <p class="gl-p">Paste this into Claude or ChatGPT — even on your phone:</p>
 <div class="gl-prompt"><span class="gl-code-t">Read this guide, then follow it to answer my question:<br>https://raw.githubusercontent.com/chihacknight/govbot/main/llms.txt<br><br>Question: What's the status of Wyoming HB0001 in the 2025 session, who sponsored it, and what's the official source link?</span><button type="button" class="gl-copy" aria-label="Copy AI prompt">Copy</button></div>
 </div>
-<div class="gl-btns"><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot/blob/main/catalog.json" target="_blank" rel="noopener">Data catalog ↗</a><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot/blob/main/actions/format/docs/DATA_STRUCTURES.md" target="_blank" rel="noopener">Data structure ↗</a><a class="gl-btn gl-btn-ghost" href="about.html">All commands &amp; SQL</a><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">Source ↗</a></div>
+<div class="gl-btns"><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot/blob/main/catalog.json" target="_blank" rel="noopener">Data catalog ↗</a><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot/blob/main/actions/format/docs/DATA_STRUCTURES.md" target="_blank" rel="noopener">Data structure ↗</a><a class="gl-btn gl-btn-ghost" href="about.html#querying-with-sql-duckdb">All commands &amp; SQL</a><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub Repo ↗</a></div>
 </div>
 </div>
 </div>
@@ -158,7 +159,7 @@
 
 <section id="stream" class="gl-sec gl-finale">
 <div class="gl-wrap">
-<div class="gl-finale-head"><span class="gl-overline">Democracy happens every day — Govbot helps everyone keep up.</span><h2 class="gl-h2 gl-h2-lg">From the firehose to the point.</h2></div>
+<div class="gl-finale-head"><h2 class="gl-h2 gl-h2-lg">From the firehose to the point.</h2></div>
 <figure class="stream-figure">
 <canvas id="stream-canvas" role="img" aria-label="Animation: a chaotic stream of raw government records — bills, hearings, votes, ballots, filings — flows in from the left into the Govbot robot, which sorts them into calm, labeled topic lanes on the right: AI and data centers, education, housing, labor rights, transportation, and more."></canvas>
 <div class="stream-bot" aria-hidden="true"><img class="stream-bot-img" src="dashboard/assets/govbot-bot.png" alt="" width="124" height="124"><span class="stream-bot-name">Govbot</span></div>
