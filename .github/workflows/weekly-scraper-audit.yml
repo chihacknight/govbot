@@ -71,11 +71,12 @@ jobs:
               --body-file "${RUNNER_TEMP}/weekly-audit-report.md"
           fi
 
-      - name: Commit flagged-vs-investigated tracking state
+      - name: Commit flagged-vs-investigated tracking state + weekly bill counts
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add actions/openstates-scrape-audits/output/audit_tracking.json
+          git add actions/openstates-scrape-audits/output/weekly_bill_counts.json
           if git diff --cached --quiet; then
             echo "No tracking changes to commit."
           else
