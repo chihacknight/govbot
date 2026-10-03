@@ -309,8 +309,9 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-crew-bar b + span { margin-left: 6px; }
 .gl-crew-code, .gl-crew-yml-code { padding: 11px 13px; font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 12.5px; color: var(--gb-text-2); }
-.gl-crew-code { display: flex; flex-direction: column; gap: 5px; }
+.gl-crew-code, .gl-crew-hist { display: flex; flex-direction: column; gap: 5px; }
 .gl-crew-code span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gl-crew-code .gl-crew-in, .gl-crew-code .gl-crew-typed { overflow: visible; }
 .gl-crew-code i { font-style: normal; color: var(--gb-primary); }
 .gl-crew-caret { display: inline-block; width: 7px; height: 14px; margin-left: 4px; vertical-align: -2px; background: var(--gb-primary);
   animation: gl-blink 1.1s steps(1) infinite; }
@@ -339,6 +340,18 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-crew-faces img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--gb-surface); }
 .gl-crew-faces img + img { margin-left: -7px; }
 .gl-crew-cursors { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+/* what the cursors leave behind: sticky notes they write and selection boxes they drag (landing.js) */
+.gl-crew-fx { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.gl-crew-note { position: absolute; width: 168px; box-sizing: border-box; padding: 10px 12px 9px; border-radius: 3px;
+  background: #FDE68A; color: #1F1A05; font-size: 13.5px; font-weight: 600; line-height: 1.35; box-shadow: 0 8px 18px rgba(0,0,0,.28);
+  transform: rotate(-2deg) scale(.6); opacity: 0; transition: transform .3s cubic-bezier(.2,1.4,.4,1), opacity .3s ease; }
+.gl-crew-note.is-on { transform: rotate(-2deg); opacity: 1; }
+.gl-crew-note.is-off { opacity: 0; transition: opacity .6s ease; }
+.gl-crew-note small { display: block; margin-top: 5px; font-size: 11px; font-weight: 600; opacity: .7; }
+.gl-crew-marq { position: absolute; border: 1.5px solid var(--cc); background: color-mix(in srgb, var(--cc) 14%, transparent);
+  border-radius: 2px; transition: opacity .5s ease; }
+.gl-crew-marq.is-off { opacity: 0; }
+.gl-crew-edit { background: color-mix(in srgb, var(--cc) 30%, transparent); border-radius: 2px; }
 .gl-cur { position: absolute; left: 0; top: 0; width: 22px; height: 22px; will-change: transform; transition: opacity .4s ease; }
 .gl-cur svg { position: absolute; left: 0; top: 0; overflow: visible; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
 .gl-cur-ring { position: absolute; left: -9px; top: -9px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--cc); opacity: 0; }
