@@ -1,0 +1,229 @@
+{
+  "as_of": "2026-10-02",
+  "states": {
+    "ak": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "al": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "ar": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "az": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "ca": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "co": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "ct": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "dc": {
+      "count": 11,
+      "days_with_data": 1
+    },
+    "de": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "fl": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "ga": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "gu": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "hi": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "ia": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "id": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "il": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "in": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "ks": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "ky": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "la": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "ma": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "md": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "me": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "mi": {
+      "count": 16,
+      "days_with_data": 1
+    },
+    "mn": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "mo": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "mp": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "ms": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "mt": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "nc": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "nd": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "ne": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "nh": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "nj": {
+      "count": 82,
+      "days_with_data": 1
+    },
+    "nm": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "nv": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "ny": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "oh": {
+      "count": 3,
+      "days_with_data": 1
+    },
+    "ok": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "or": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "pa": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "pr": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "ri": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "sc": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "sd": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "tn": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "tx": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "usa": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "ut": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "va": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "vi": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "vt": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "wa": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "wi": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "wv": {
+      "count": 0,
+      "days_with_data": 0
+    },
+    "wy": {
+      "count": 0,
+      "days_with_data": 0
+    }
+  }
+}

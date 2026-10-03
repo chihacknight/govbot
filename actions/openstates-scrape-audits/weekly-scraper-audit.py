@@ -28,6 +28,15 @@ Two checks:
      vote-fetch failures). Severity needs reading actual message content,
      which this script doesn't attempt -- it just makes the trend visible.
 
+Also writes output/weekly_bill_counts.json -- for all 56 states (not just
+flagged ones), the sum of new_bills_seen over the last 7 recorded days.
+Built 2026-10-03 to feed docs/src/state-status-reference.md's "Weekly Bill
+Count" column from real data on this script's own cadence, instead of a
+separate manual lookup that would immediately go stale the way the rest of
+that table did. This script already fetches the exact histogram needed for
+the flatline check above; this just also sums it for every state, not only
+the ones that flatlined.
+
 "Flagged vs. investigated" tracking (the idea pulled from
 actions/pipeline-manager/docs/staleness-audit-spec.md, never built until
 now): a small committed state file, output/audit_tracking.json, so a
@@ -66,6 +75,7 @@ REPO_ROOT = SCRIPT_DIR.parent.parent
 PIPELINE_MANAGER = REPO_ROOT / "actions" / "pipeline-manager"
 SESSION_CALENDAR = REPO_ROOT / "tamara-notes" / "session-dates" / "session-calendar-2026.md"
 TRACKING_FILE = SCRIPT_DIR / "output" / "audit_tracking.json"
+WEEKLY_BILL_COUNTS_FILE = SCRIPT_DIR / "output" / "weekly_bill_counts.json"
 
 DATA_ORG = "govbot-data"
 SCRAPER_ORG = "govbot-openstates-scrapers"
@@ -106,7 +116,13 @@ def load_session_info() -> dict[str, dict]:
     if not SESSION_CALENDAR.exists():
         return {}
     text = SESSION_CALENDAR.read_text()
-    rows = re.findall(r"^\| (\w+) \| [^|]+\| ([^|]+)\| ([^|]+)\| (✅|⏸️|❓) \|", text, re.M)
+    # Columns are: Code | Jurisdiction | Session | Convenes | Adjourns | In Session Now? | Notes
+    # -- two columns (Jurisdiction, Session) between Code and Convenes, not one. A prior
+    # version of this regex only skipped one, silently matching zero rows against the
+    # current file (confirmed 2026-10-03: load_session_info() returned {} for all 56
+    # states, meaning the flatline check below could never actually flag anything --
+    # in_session was always False). Fixed to skip both.
+    rows = re.findall(r"^\| (\w+) \| [^|]+\| [^|]+\| ([^|]+)\| ([^|]+)\| (✅|⏸️|❓) \|", text, re.M)
     out = {}
     for code, convenes_raw, adjourns_raw, status in rows:
         def parse(raw):
@@ -167,6 +183,7 @@ def main():
 
     flagged_now = {}
     warning_trends = {}
+    weekly_bill_counts = {}
 
     for i, code in enumerate(sorted(scraper_status.keys()), 1):
         print(f"[{i}/{len(scraper_status)}] {code}...", file=sys.stderr)
@@ -176,6 +193,16 @@ def main():
         zero_days = find_zero_stretch(new_bills_hist, now)
         info = session_info.get(code)
         in_session = bool(info and info["status"] == "in")
+
+        # For every state, not just flagged ones -- feeds state-status-reference.md's
+        # "Weekly Bill Count" column. A state with no histogram at all (never scraped,
+        # or the .windycivi file doesn't exist yet) gets count 0 / days_with_data 0,
+        # which is distinguishable from a real zero-bill week by days_with_data.
+        recent_bill_days = sorted(new_bills_hist.keys())[-7:]
+        weekly_bill_counts[code] = {
+            "count": sum(new_bills_hist[d] for d in recent_bill_days),
+            "days_with_data": len(recent_bill_days),
+        }
 
         if code not in EXCEPTIONS and zero_days is not None and in_session and zero_days >= FLATLINE_THRESHOLD_DAYS:
             flagged_now[code] = {"zero_days": zero_days, "session": session_line(info)}
@@ -203,6 +230,9 @@ def main():
         del tracking[c]
 
     save_tracking(tracking)
+    WEEKLY_BILL_COUNTS_FILE.write_text(json.dumps(
+        {"as_of": today_str, "states": weekly_bill_counts}, indent=2, sort_keys=True
+    ))
 
     lines = [f"# Weekly scraper-health audit -- {today_str}", ""]
     lines.append(f"## NEW flatline flags ({len(new_flags)})")
