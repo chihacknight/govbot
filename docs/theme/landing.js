@@ -712,7 +712,7 @@
       c.who = i;
       c.el.style.setProperty("--cc", p[1]);
       c.el.style.color = p[1];
-      c.label.innerHTML = '<img src="dashboard/assets/contributors/' + p[0] + '.png" alt="" width="18" height="18">@' + p[0];
+      c.label.innerHTML = '<img src="dashboard/assets/contributors/' + p[0] + '.png" alt="" width="18" height="18"><b>@' + p[0] + "</b>";
     }
     function build() {
       layer.innerHTML = "";

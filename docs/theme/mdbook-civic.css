@@ -355,12 +355,12 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-cur { position: absolute; left: 0; top: 0; width: 22px; height: 22px; will-change: transform; transition: opacity .4s ease; }
 .gl-cur svg { position: absolute; left: 0; top: 0; overflow: visible; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
 .gl-cur-ring { position: absolute; left: -9px; top: -9px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--cc); opacity: 0; }
-.gl-cur-label { position: absolute; top: 18px; left: 14px; display: inline-flex; align-items: center; gap: 6px; height: 26px;
+.gl-cur-label { position: absolute; top: 18px; left: 14px; width: -webkit-max-content; width: max-content; max-width: none; flex-wrap: nowrap; display: inline-flex; align-items: center; gap: 6px; height: 26px;
   padding: 0 10px 0 4px; border-radius: 999px; background: var(--cc); color: #0B1119; font-size: 12.5px; font-weight: 600;
   white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
 .gl-cur.flip .gl-cur-label { left: auto; right: 14px; }
 /* @sartaj's cursor-chat: types "government data as Git" when it pauses (landing.js) */
-.gl-cur-chat { position: absolute; top: 50px; left: 14px; max-width: 240px; padding: 7px 12px; border-radius: 4px 14px 14px 14px;
+.gl-cur-chat { position: absolute; top: 50px; left: 14px; width: -webkit-max-content; width: max-content; max-width: none; padding: 7px 12px; border-radius: 4px 14px 14px 14px;
   background: var(--cc); color: #0B1119; font-size: 14px; font-weight: 600; line-height: 1.3; white-space: nowrap;
   box-shadow: 0 6px 16px rgba(0,0,0,.28); opacity: 0; transform: translateY(-4px); transition: opacity .25s ease, transform .25s ease; }
 .gl-cur-chat.is-on { opacity: 1; transform: none; }
@@ -369,6 +369,8 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-cur.flip .gl-cur-chat { left: auto; right: 14px; border-radius: 14px 4px 14px 14px; }
 .gl-cur-chat::after { content: ""; display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -2px;
   background: currentColor; animation: gl-blink 1s steps(1) infinite; }
+/* the tag sits inside a 22px cursor box: size it to its own text (max-content) so no browser shrinks it */
+.gl-cur-label b { font-weight: inherit; white-space: nowrap; flex: none; }
 .gl-cur-label img { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; flex: none; box-shadow: 0 0 0 1.5px rgba(255,255,255,.85); }
 /* narrower screens: copy on top, the workspace windows below it, cursors roaming underneath the copy */
 @media (max-width: 1180px) {
