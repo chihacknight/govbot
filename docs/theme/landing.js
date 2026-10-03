@@ -602,6 +602,148 @@
     }
   })();
 
+  // ---- "Built together" band: the project's contributors as live multiplayer cursors ----
+  // The people on github.com/chihacknight/govbot/graphs/contributors (bots left out), with avatars
+  // vendored in dashboard/assets/contributors/ — refresh this list as new people contribute.
+  // Half of them are on screen at once (9 on desktop, 4 on phones); a cursor that pauses may hand
+  // over to the next person not shown, so everyone passes through. On phones @sartaj stays put.
+  (function () {
+    var space = document.getElementById("gl-crew");
+    var layer = document.getElementById("gl-crew-cursors");
+    var copy = document.getElementById("gl-crew-copy");
+    if (!space || !layer || !copy) return;
+    var PEOPLE = [
+      ["sartaj", "#3DDC84"], ["tamara-builds", "#F472B6"], ["frankies2727", "#60A5FA"], ["GrossNate", "#FBBF24"],
+      ["kouglas", "#A78BFA"], ["eddiechacha", "#FB923C"], ["adaup1", "#22D3EE"], ["bbgits", "#F87171"],
+      ["nate-j5", "#A3E635"], ["18indypeyton18", "#E879F9"], ["syobonaction", "#FACC15"], ["EmilySutter", "#38BDF8"],
+      ["fionatagious", "#FDA4AF"], ["jleverenz", "#2DD4BF"], ["rrchow97", "#C084FC"], ["Japapino", "#FDBA74"],
+      ["TahaMHusain", "#818CF8"], ["haileyplusplus", "#34D399"]
+    ];
+    var ARROW = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 2.5 L20 11.2 L12.2 13 L8.6 20.5 Z" fill="currentColor" stroke="#FFFFFF" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+    var W = 0, H = 0, keep = null, phone = false, cur = [], next = 0, raf = 0, last = 0, visible = false;
+
+    function measure() {
+      W = space.clientWidth; H = space.clientHeight;
+      var s = space.getBoundingClientRect(), c = copy.getBoundingClientRect();
+      keep = { x0: c.left - s.left - 30, x1: c.right - s.left + 10, y0: c.top - s.top - 30, y1: c.bottom - s.top + 12 };
+      phone = W < 620;
+    }
+    // Does a cursor (with its name label) at x,y cover the copy?
+    function overCopy(x, y) {
+      var lw = phone ? 140 : 170;
+      return x + lw > keep.x0 && x - 20 < keep.x1 && y + 44 > keep.y0 && y < keep.y1;
+    }
+    // A spot clear of the copy, preferably one reached without gliding across it.
+    function pick(fx, fy) {
+      var best = null;
+      for (var t = 0; t < 40; t++) {
+        var x = 12 + Math.random() * Math.max(40, W - (phone ? 150 : 190));
+        var y = 12 + Math.random() * Math.max(40, H - 44);
+        if (overCopy(x, y)) continue;
+        best = best || { x: x, y: y };
+        if (fx == null) return best;
+        var crosses = false;
+        for (var k = 1; k < 10 && !crosses; k++) crosses = overCopy(fx + (x - fx) * k / 10, fy + (y - fy) * k / 10);
+        if (!crosses) return { x: x, y: y };
+      }
+      return best || { x: 12, y: H - 44 };
+    }
+    function setPerson(c, i) {
+      var p = PEOPLE[i];
+      c.who = i;
+      c.el.style.setProperty("--cc", p[1]);
+      c.el.style.color = p[1];
+      c.label.innerHTML = '<img src="dashboard/assets/contributors/' + p[0] + '.png" alt="" width="18" height="18">@' + p[0];
+    }
+    function build() {
+      layer.innerHTML = "";
+      measure();
+      var slots = phone ? 4 : 9;
+      cur = [];
+      for (var i = 0; i < slots; i++) {
+        var el = document.createElement("div");
+        el.className = "gl-cur";
+        el.innerHTML = '<span class="gl-cur-ring"></span>' + ARROW + '<span class="gl-cur-label"></span>';
+        layer.appendChild(el);
+        var a = pick(), b = pick(a.x, a.y);
+        var c = { el: el, ring: el.firstChild, label: el.lastChild, x: a.x, y: a.y, vx: 0, vy: 0, tx: b.x, ty: b.y,
+          pause: Math.random() * 1.5, rv: 0 };
+        setPerson(c, i);
+        cur.push(c);
+        place(c);
+      }
+      next = slots;
+    }
+    function place(c) {
+      c.el.style.transform = "translate(" + c.x.toFixed(1) + "px," + c.y.toFixed(1) + "px)";
+      c.el.classList.toggle("flip", c.x > W - (phone ? 150 : 190));
+      c.ring.style.opacity = c.rv.toFixed(2);
+      c.ring.style.transform = "scale(" + (1 + (1 - c.rv) * 1.4).toFixed(2) + ")";
+    }
+    function step(dt) {
+      cur.forEach(function (c, i) {
+        if (c.rv > 0) c.rv = Math.max(0, c.rv - dt * 1.6);
+        if (c.pause > 0) { c.pause -= dt; place(c); return; }
+        // A soft spring toward the next spot: quick start, gentle arrival, a hint of overshoot.
+        var dx = c.tx - c.x, dy = c.ty - c.y;
+        c.vx += (dx * 5.2 - c.vx * 4.2) * dt;
+        c.vy += (dy * 5.2 - c.vy * 4.2) * dt;
+        var sp = Math.sqrt(c.vx * c.vx + c.vy * c.vy);
+        if (sp > 420) { c.vx *= 420 / sp; c.vy *= 420 / sp; }
+        c.x += c.vx * dt; c.y += c.vy * dt;
+        if (Math.abs(dx) + Math.abs(dy) < 8 && sp < 40) {
+          c.pause = 0.5 + Math.random() * 2.4;
+          if (Math.random() < 0.55) c.rv = 1;
+          else if (!(phone && i === 0) && Math.random() < 0.5) {
+            var shown = cur.map(function (o) { return o.who; }), w = next % PEOPLE.length;
+            while (shown.indexOf(w) !== -1) { next++; w = next % PEOPLE.length; }
+            setPerson(c, w); next++;
+          }
+          var n = pick(c.x, c.y); c.tx = n.x; c.ty = n.y;
+        }
+        place(c);
+      });
+    }
+    function frame(ts) {
+      raf = requestAnimationFrame(frame);
+      var dt = last ? Math.min((ts - last) / 1000, 0.08) : 0.016;
+      last = ts;
+      step(dt);
+    }
+    function start() { if (!raf && !reduceMotion) { last = 0; raf = requestAnimationFrame(frame); } }
+    function stop() { if (raf) cancelAnimationFrame(raf); raf = 0; }
+    build();
+    // Web fonts can change the copy's box: re-measure, and move anyone now sitting on it.
+    window.addEventListener("load", function () {
+      measure();
+      cur.forEach(function (c) {
+        if (overCopy(c.x, c.y)) { var a = pick(); c.x = a.x; c.y = a.y; }
+        var n = pick(c.x, c.y); c.tx = n.x; c.ty = n.y; place(c);
+      });
+    });
+    if (reduceMotion) return;                      // a still, composed scatter
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function (es) {
+        visible = es[0].isIntersecting;
+        if (visible && !document.hidden) start(); else stop();
+      }).observe(space);
+    } else { visible = true; start(); }
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) stop(); else if (visible) start();
+    });
+    var rt = 0, lastW = space.clientWidth;
+    window.addEventListener("resize", function () {
+      clearTimeout(rt);
+      rt = setTimeout(function () {
+        // phone ↔ desktop changes the slot count; otherwise just re-measure and keep moving
+        var wasPhone = phone; measure();
+        if (wasPhone !== phone) build();
+        else if (Math.abs(space.clientWidth - lastW) > 40) cur.forEach(function (c) { var n = pick(c.x, c.y); c.tx = n.x; c.ty = n.y; });
+        lastW = space.clientWidth;
+      }, 150);
+    });
+  })();
+
   // ---- Liberty embers: little green sparks rising off the torch and drifting up
   // past the crown, flickering like embers off a fireplace. Positions are in the
   // statue image's own pixels (520×1000) so they track it at every size.
