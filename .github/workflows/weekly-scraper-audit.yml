@@ -40,7 +40,7 @@ jobs:
 
       - name: Run audit
         run: |
-          python3 actions/pipeline-manager/scripts/weekly-scraper-audit.py \
+          python3 actions/scraper-audits/weekly-scraper-audit.py \
             --report-file "${RUNNER_TEMP}/weekly-audit-report.md"
 
       - name: Find existing tracking issue
@@ -75,7 +75,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add actions/pipeline-manager/audit_tracking.json
+          git add actions/scraper-audits/audit_tracking.json
           if git diff --cached --quiet; then
             echo "No tracking changes to commit."
           else

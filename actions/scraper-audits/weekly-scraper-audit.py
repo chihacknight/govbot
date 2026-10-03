@@ -29,11 +29,17 @@ Two checks:
      which this script doesn't attempt -- it just makes the trend visible.
 
 "Flagged vs. investigated" tracking (the idea pulled from
-docs/staleness-audit-spec.md, never built until now): a small committed
-state file, audit_tracking.json (same directory as this script), so a
-known issue doesn't re-alarm as if new every single week. The calling
-workflow is responsible for committing this file back after each run --
-see .github/workflows/weekly-scraper-audit.yml.
+actions/pipeline-manager/docs/staleness-audit-spec.md, never built until
+now): a small committed state file, audit_tracking.json (same directory as
+this script), so a known issue doesn't re-alarm as if new every single
+week. The calling workflow is responsible for committing this file back
+after each run -- see .github/workflows/weekly-scraper-audit.yml.
+
+This script lives in its own action (actions/scraper-audits/), separate
+from actions/pipeline-manager/ (repo/template provisioning) -- the only
+functional tie to pipeline-manager is reading its locale config
+(chn-openstates-scrape.yml) for the active/paused state list, via the
+relative path below, not shared ownership of any file here.
 
 Usage: python3 weekly-scraper-audit.py [--report-file path.md]
 """
@@ -49,9 +55,10 @@ from pathlib import Path
 import yaml
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PIPELINE_MANAGER = SCRIPT_DIR.parent
-SESSION_CALENDAR = PIPELINE_MANAGER.parent.parent / "tamara-notes" / "session-dates" / "session-calendar-2026.md"
-TRACKING_FILE = PIPELINE_MANAGER / "audit_tracking.json"
+REPO_ROOT = SCRIPT_DIR.parent.parent
+PIPELINE_MANAGER = REPO_ROOT / "actions" / "pipeline-manager"
+SESSION_CALENDAR = REPO_ROOT / "tamara-notes" / "session-dates" / "session-calendar-2026.md"
+TRACKING_FILE = SCRIPT_DIR / "audit_tracking.json"
 
 DATA_ORG = "govbot-data"
 SCRAPER_ORG = "govbot-openstates-scrapers"
