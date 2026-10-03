@@ -468,6 +468,21 @@ else
   ERRORS="$OTHER_ERRORS"
 fi
 
+# One-line, human-readable summary of what actually went wrong -- independent of
+# FAILURE_TYPE below. FAILURE_TYPE is a best-effort regex guess (bucketing into
+# N1/H3/S4/etc.) used for fleet-wide dashboard filtering, and a loose regex can
+# guess wrong (e.g. a bill numbered "429" false-matching the rate-limit check).
+# A wrong bucket silently misdirects triage -- the ::warning:: annotation
+# downstream used to show only the bucket name, so a misclassified failure read
+# as "rate limited" when it was actually an unhandled KeyError needing a real
+# code fix. The raw exception line is never wrong, so it's always surfaced
+# alongside the bucket, not instead of it. For a traceback, the last line is the
+# actual "ExceptionType: message" -- the header "Traceback (most recent call
+# last):" line is not useful on its own. Collapsed to one line and truncated so
+# it's safe to embed in a GHA ::warning::/::error:: annotation (which breaks on
+# embedded newlines) and doesn't blow up the summary.
+ERROR_SUMMARY=$(echo "$ERRORS" | grep -v '^\s*$' | tail -1 | tr '\n' ' ' | cut -c1-200)
+
 # Count unique error occurrences (rough estimate)
 if [ -n "$TRACEBACKS" ]; then
   # Same grep -c double-print pitfall as SKIPPED_COUNT above: if TRACEBACKS
@@ -543,6 +558,7 @@ cat > "$SUMMARY_FILE" <<EOF
   "state": "${STATE}",
   "exit_code": ${exit_code},
   "failure_type": "${FAILURE_TYPE}",
+  "error_summary": $(echo "$ERROR_SUMMARY" | jq -R -s '. | rtrimstr("\n")'),
   "is_active_block": ${IS_ACTIVE_BLOCK},
   "objects": {
     "bill": ${BILL_COUNT:-0},
@@ -577,6 +593,10 @@ echo "📊 Scrape summary written to $SUMMARY_FILE"
 # Keyed by calendar date (UTC); a same-day re-dispatch overwrites that day's
 # entry rather than accumulating -- this is a per-run snapshot of counts, not
 # an additive activity counter like format's action_log_files_created.
+# failure_type/error_summary ride along too (same values written to
+# scrape-summary.json above) so a daily digest can read one small committed
+# file per state -- same no-API-calls, no-retention-risk shape the weekly
+# scraper-health audit already relies on for new_bills_seen.
 WARNING_HISTORY_FILE="${OUTPUT_DIR}/.windycivi/warning_history.json"
 mkdir -p "$(dirname "$WARNING_HISTORY_FILE")"
 TODAY_UTC="$(date -u +%Y-%m-%d)"
@@ -590,11 +610,15 @@ echo "$EXISTING_HISTORY" | jq \
   --argjson error_count "${ERROR_COUNT:-0}" \
   --argjson skipped_count "${SKIPPED_COUNT:-0}" \
   --argjson sample_warnings "$(echo "$WARNING_ITEMS" | head -3 | jq -R -s 'split("\n") | map(select(. != ""))')" \
+  --arg failure_type "${FAILURE_TYPE}" \
+  --arg error_summary "${ERROR_SUMMARY}" \
   '.[$today] = {
      warning_count: $warning_count,
      error_count: $error_count,
      skipped_count: $skipped_count,
-     sample_warnings: $sample_warnings
+     sample_warnings: $sample_warnings,
+     failure_type: $failure_type,
+     error_summary: $error_summary
    }' > "${WARNING_HISTORY_FILE}.tmp" && mv "${WARNING_HISTORY_FILE}.tmp" "$WARNING_HISTORY_FILE"
 echo "📈 Warning history updated: $WARNING_HISTORY_FILE"
 
@@ -603,6 +627,14 @@ if [ -n "${GITHUB_ENV:-}" ]; then
   echo "SCRAPE_FAILURE_TYPE=${FAILURE_TYPE}" >> "$GITHUB_ENV"
   echo "SCRAPE_IS_ACTIVE_BLOCK=${IS_ACTIVE_BLOCK}" >> "$GITHUB_ENV"
   echo "SCRAPE_EXIT_CODE=${exit_code}" >> "$GITHUB_ENV"
+  # Multiline-safe GITHUB_ENV form, though ERROR_SUMMARY is already collapsed to
+  # one line above -- delimiter form costs nothing and guards against a future
+  # change relaxing that guarantee.
+  {
+    echo "SCRAPE_ERROR_SUMMARY<<SCRAPE_ERROR_SUMMARY_EOF"
+    echo "${ERROR_SUMMARY}"
+    echo "SCRAPE_ERROR_SUMMARY_EOF"
+  } >> "$GITHUB_ENV"
 fi
 
 exit $exit_code

@@ -1,0 +1,75 @@
+# Nightly scraper-error digest -- catches a scrape failure the same day it
+# happens, instead of up to a week later (the Weekly Scraper Audit's
+# bill-discovery flatline window) or a human stumbling onto it in a raw
+# Action log months later. Built 2026-10-02 after usa-legislation's scrape
+# crashed on an unhandled KeyError, got misclassified as H3_RATE_LIMITED, fell
+# back to nightly data, and the whole run still showed green -- nothing paged
+# on it anywhere. See actions/pipeline-manager/scripts/daily-scraper-error-digest.py
+# for the two checks (committed failure_type/error_summary history, plus a
+# live check for a run that never completed) and how noise is filtered.
+#
+# Deliberately separate from weekly-scraper-audit.yml: different signal
+# (per-run failures vs. multi-day bill-discovery silence), different cadence,
+# and a daily full-report comment on the weekly issue would drown it out.
+name: Daily Scraper Error Digest
+
+on:
+  schedule:
+    - cron: "0 13 * * *" # Daily, 13:00 UTC
+  workflow_dispatch: # Manual run
+
+permissions:
+  issues: write
+
+jobs:
+  digest:
+    name: "🔍 Daily scraper-error digest"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout govbot
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Run digest
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 actions/pipeline-manager/scripts/daily-scraper-error-digest.py \
+            --report-file "${RUNNER_TEMP}/daily-digest-report.md"
+
+      - name: Find existing tracking issue
+        id: find_issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          issue_number=$(gh issue list \
+            --repo "${{ github.repository }}" \
+            --search "\"Daily Scraper Error Digest\" in:title" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+          echo "issue_number=${issue_number}" >> "$GITHUB_OUTPUT"
+
+      - name: Post or update tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "${{ steps.find_issue.outputs.issue_number }}" ]; then
+            gh issue comment "${{ steps.find_issue.outputs.issue_number }}" \
+              --repo "${{ github.repository }}" \
+              --body-file "${RUNNER_TEMP}/daily-digest-report.md"
+          else
+            gh issue create \
+              --repo "${{ github.repository }}" \
+              --title "Daily Scraper Error Digest" \
+              --body-file "${RUNNER_TEMP}/daily-digest-report.md"
+          fi

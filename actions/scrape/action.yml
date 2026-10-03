@@ -412,6 +412,15 @@ runs:
         EXIT_CODE="${SCRAPE_EXIT_CODE:-$(jq -r '.exit_code // 0' "$SUMMARY_FILE" 2>/dev/null || echo "0")}"
         FAILURE_TYPE="${SCRAPE_FAILURE_TYPE:-$(jq -r '.failure_type // "UNKNOWN"' "$SUMMARY_FILE" 2>/dev/null || echo "UNKNOWN")}"
         IS_ACTIVE_BLOCK="${SCRAPE_IS_ACTIVE_BLOCK:-$(jq -r '.is_active_block // false' "$SUMMARY_FILE" 2>/dev/null || echo "false")}"
+        # The actual exception/error text, not just the FAILURE_TYPE bucket guess --
+        # see scrape.sh's ERROR_SUMMARY comment for why both are needed. Suffixed
+        # onto every annotation below so a misclassified bucket (e.g. a bill numbered
+        # "429" false-matching the rate-limit regex) never hides the real cause.
+        ERROR_SUMMARY="${SCRAPE_ERROR_SUMMARY:-$(jq -r '.error_summary // ""' "$SUMMARY_FILE" 2>/dev/null || echo "")}"
+        ERROR_SUFFIX=""
+        if [ -n "$ERROR_SUMMARY" ]; then
+          ERROR_SUFFIX=": ${ERROR_SUMMARY}"
+        fi
 
         if [ "$EXIT_CODE" = "0" ]; then
           echo "✅ Scrape succeeded (failure_type: $FAILURE_TYPE)"
@@ -429,8 +438,8 @@ runs:
             DAYS_OLD=$(( (NOW - TARBALL_MTIME) / 86400 ))
             TARBALL_AGE=" Fallback data is ${DAYS_OLD} day(s) old."
           fi
-          echo "🚨 ACTIVE BLOCK DETECTED ($FAILURE_TYPE) for ${{ inputs.state }}.$TARBALL_AGE"
-          echo "::error::${{ inputs.state }} scraper is being actively blocked ($FAILURE_TYPE). Data may be stale.$TARBALL_AGE"
+          echo "🚨 ACTIVE BLOCK DETECTED ($FAILURE_TYPE$ERROR_SUFFIX) for ${{ inputs.state }}.$TARBALL_AGE"
+          echo "::error::${{ inputs.state }} scraper is being actively blocked ($FAILURE_TYPE$ERROR_SUFFIX). Data may be stale.$TARBALL_AGE"
           # Do not exit 1 if we have fallback data — formatter can still run.
           # But the ::error:: annotation marks the action red so it is visible.
           if [ ! -f "$TARBALL" ]; then
@@ -447,11 +456,11 @@ runs:
 
         # All other failures: warn and use fallback if available, hard-fail if not.
         if [ -f "$TARBALL" ]; then
-          echo "⚠️ Scrape failed ($FAILURE_TYPE) but fallback data is available — continuing"
-          echo "::warning::${{ inputs.state }} scrape failed ($FAILURE_TYPE). Running on fallback data."
+          echo "⚠️ Scrape failed ($FAILURE_TYPE$ERROR_SUFFIX) but fallback data is available — continuing"
+          echo "::warning::${{ inputs.state }} scrape failed ($FAILURE_TYPE$ERROR_SUFFIX). Running on fallback data."
         else
-          echo "❌ Scrape failed ($FAILURE_TYPE) and no fallback data available"
-          echo "::error::Scrape failed for ${{ inputs.state }} ($FAILURE_TYPE). No fallback data available."
+          echo "❌ Scrape failed ($FAILURE_TYPE$ERROR_SUFFIX) and no fallback data available"
+          echo "::error::Scrape failed for ${{ inputs.state }} ($FAILURE_TYPE$ERROR_SUFFIX). No fallback data available."
           exit 1
         fi
 
