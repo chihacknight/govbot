@@ -1,18 +1,40 @@
-# Scraper Audits
+# OpenStates Scrape Audits
 
 Two independent, complementary checks catch scraper problems that a green GitHub Actions
 checkmark hides. Neither replaces the other — they watch for different failure shapes on
 different cadences.
 
+**Scope — OpenStates pipeline only.** This covers `actions/scrape/` (the OpenStates-based
+bill scraper, `chn-openstates-scrape.yml`, the `govbot-openstates-scrapers`/`govbot-data`
+orgs) specifically — hence "openstates" in the name. It has **no visibility into the other
+scraper pipelines** in this repo: `actions/scrape-elections/`, `actions/scrape-hearings/`,
+`actions/scrape-maps/`. Those would need their own equivalent checks if/when they need one;
+nothing here reads their output.
+
 **Why its own action, separate from `actions/pipeline-manager/`:** pipeline-manager's job is
 repo/template provisioning — generating and pushing the per-state workflow files, managing
 which locales exist, flipping active/paused status. This is a different concern: watching the
-*output* of those scrapers for health problems. The two share one real dependency (reading
-pipeline-manager's `chn-openstates-scrape.yml` for the active/paused locale list, via a
-relative path — see each script's header), but that's a read of one config file, not shared
+*output* of the OpenStates scrapers for health problems. The two share one real dependency
+(reading pipeline-manager's `chn-openstates-scrape.yml` for the active/paused locale list, via
+a relative path — see each script's header), but that's a read of one config file, not shared
 ownership. Keeping this as its own action means someone looking at `actions/fleet-monitor/`
 (the other observability tool in this repo, built independently) can find this and understand
 what it does without first untangling it from template provisioning.
+
+## Layout
+
+```
+weekly-scraper-audit.py          the production checks (this README documents both)
+daily-scraper-error-digest.py
+output/
+  audit_tracking.json            live state the weekly audit commits back each run --
+                                  separate from the code so a scheduled run's output diff
+                                  never looks like a code change in git history
+internal/                        manual investigation scratch work from building this
+                                  (one-off scripts, raw per-state audit output, planning
+                                  notes) -- kept for reference, not part of the production
+                                  path; internal/archive/ holds superseded drafts
+```
 
 ## Why this exists
 
@@ -61,7 +83,7 @@ warning volume isn't severity (NY's 22,000 warnings were almost entirely one ben
 message; DE's 459 were real vote-fetch failures), so this script deliberately doesn't try to
 score it.
 
-A small tracking file (`audit_tracking.json`, same directory as this README) remembers what's
+A small tracking file (`output/audit_tracking.json`) remembers what's
 already been flagged, so a known, still-unresolved issue shows as "STILL OPEN" rather than
 re-alarming as "NEW" every week.
 

@@ -4,7 +4,7 @@
 # Action log months later. Built 2026-10-02 after usa-legislation's scrape
 # crashed on an unhandled KeyError, got misclassified as H3_RATE_LIMITED, fell
 # back to nightly data, and the whole run still showed green -- nothing paged
-# on it anywhere. See actions/scraper-audits/daily-scraper-error-digest.py
+# on it anywhere. See actions/openstates-scrape-audits/daily-scraper-error-digest.py
 # for the two checks (committed failure_type/error_summary history, plus a
 # live check for a run that never completed) and how noise is filtered.
 #
@@ -43,7 +43,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          python3 actions/scraper-audits/daily-scraper-error-digest.py \
+          python3 actions/openstates-scrape-audits/daily-scraper-error-digest.py \
             --report-file "${RUNNER_TEMP}/daily-digest-report.md"
 
       - name: Find existing tracking issue

@@ -1,0 +1,2298 @@
+[
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "ak",
+    "org": "govbot-data",
+    "repo": "ak-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.65
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.66
+      }
+    ],
+    "data_commit_age_hours": 56.65,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "al",
+    "org": "govbot-data",
+    "repo": "al-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 57.0
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 57.02
+      }
+    ],
+    "data_commit_age_hours": 1732.83,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "ar",
+    "org": "govbot-data",
+    "repo": "ar-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 304.89
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.4
+      }
+    ],
+    "data_commit_age_hours": 1735.26,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "az",
+    "org": "govbot-data",
+    "repo": "az-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.64
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.66
+      }
+    ],
+    "data_commit_age_hours": 710.32,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "ca",
+    "org": "govbot-data",
+    "repo": "ca-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.67
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.69
+      }
+    ],
+    "data_commit_age_hours": 59.33,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "co",
+    "org": "govbot-data",
+    "repo": "co-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.73
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.96
+      }
+    ],
+    "data_commit_age_hours": 56.74,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "ct",
+    "org": "govbot-data",
+    "repo": "ct-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.75
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.76
+      }
+    ],
+    "data_commit_age_hours": 1727.32,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "dc",
+    "org": "govbot-data",
+    "repo": "dc-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 7.98
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 8.0
+      }
+    ],
+    "data_commit_age_hours": 14.26,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "de",
+    "org": "govbot-data",
+    "repo": "de-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.28
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.29
+      }
+    ],
+    "data_commit_age_hours": 56.28,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "fl",
+    "org": "govbot-data",
+    "repo": "fl-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.25
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.27
+      }
+    ],
+    "data_commit_age_hours": 1326.13,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "ga",
+    "org": "govbot-data",
+    "repo": "ga-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 585.36
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.97
+      }
+    ],
+    "data_commit_age_hours": 1602.45,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "gu",
+    "org": "govbot-data",
+    "repo": "gu-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 7.01
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 7.03
+      }
+    ],
+    "data_commit_age_hours": 7.02,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "hi",
+    "org": "govbot-data",
+    "repo": "hi-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 7.82
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 7.84
+      }
+    ],
+    "data_commit_age_hours": 820.32,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "ia",
+    "org": "govbot-data",
+    "repo": "ia-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 57.08
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 57.1
+      }
+    ],
+    "data_commit_age_hours": 61.92,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "id",
+    "org": "govbot-data",
+    "repo": "id-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.83
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.84
+      }
+    ],
+    "data_commit_age_hours": 1734.51,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "il",
+    "org": "govbot-data",
+    "repo": "il-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.26
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.29
+      }
+    ],
+    "data_commit_age_hours": 56.26,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "in",
+    "org": "govbot-data",
+    "repo": "in-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 57.03
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 57.05
+      }
+    ],
+    "data_commit_age_hours": 57.03,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "ks",
+    "org": "govbot-data",
+    "repo": "ks-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.23
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.25
+      }
+    ],
+    "data_commit_age_hours": 56.24,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "ky",
+    "org": "govbot-data",
+    "repo": "ky-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.63
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.65
+      }
+    ],
+    "data_commit_age_hours": 56.64,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "la",
+    "org": "govbot-data",
+    "repo": "la-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.58
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.6
+      }
+    ],
+    "data_commit_age_hours": 56.58,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "ma",
+    "org": "govbot-data",
+    "repo": "ma-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "cancelled",
+        "hours_since_success": 1260.68
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 7.83
+      }
+    ],
+    "data_commit_age_hours": 1260.69,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "md",
+    "org": "govbot-data",
+    "repo": "md-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.37
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.39
+      }
+    ],
+    "data_commit_age_hours": 1292.98,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "me",
+    "org": "govbot-data",
+    "repo": "me-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.79
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.81
+      }
+    ],
+    "data_commit_age_hours": 56.79,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "mi",
+    "org": "govbot-data",
+    "repo": "mi-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 7.95
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 7.96
+      }
+    ],
+    "data_commit_age_hours": 12.43,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "mn",
+    "org": "govbot-data",
+    "repo": "mn-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.3
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.32
+      }
+    ],
+    "data_commit_age_hours": 56.3,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "mo",
+    "org": "govbot-data",
+    "repo": "mo-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.65
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.67
+      }
+    ],
+    "data_commit_age_hours": 109.92,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "mp",
+    "org": "govbot-data",
+    "repo": "mp-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "failure",
+        "hours_since_success": null
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 6.74
+      }
+    ],
+    "data_commit_age_hours": 0.01,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "ms",
+    "org": "govbot-data",
+    "repo": "ms-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.36
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.37
+      }
+    ],
+    "data_commit_age_hours": 56.36,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "mt",
+    "org": "govbot-data",
+    "repo": "mt-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.48
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.52
+      }
+    ],
+    "data_commit_age_hours": 56.48,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "nc",
+    "org": "govbot-data",
+    "repo": "nc-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 7.93
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 7.95
+      }
+    ],
+    "data_commit_age_hours": 736.79,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "nd",
+    "org": "govbot-data",
+    "repo": "nd-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.18
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.19
+      }
+    ],
+    "data_commit_age_hours": 376.28,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "ne",
+    "org": "govbot-data",
+    "repo": "ne-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "failure",
+        "hours_since_success": null
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.38
+      }
+    ],
+    "data_commit_age_hours": 160.08,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "nh",
+    "org": "govbot-data",
+    "repo": "nh-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.14
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.15
+      }
+    ],
+    "data_commit_age_hours": 56.14,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "nj",
+    "org": "govbot-data",
+    "repo": "nj-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 8.23
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 8.25
+      }
+    ],
+    "data_commit_age_hours": 8.24,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "nm",
+    "org": "govbot-data",
+    "repo": "nm-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.49
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.5
+      }
+    ],
+    "data_commit_age_hours": 56.49,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "nv",
+    "org": "govbot-data",
+    "repo": "nv-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.32
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.34
+      }
+    ],
+    "data_commit_age_hours": 1729.41,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "ny",
+    "org": "govbot-data",
+    "repo": "ny-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 57.04
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 57.07
+      }
+    ],
+    "data_commit_age_hours": 61.14,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "oh",
+    "org": "govbot-data",
+    "repo": "oh-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 8.01
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 8.03
+      }
+    ],
+    "data_commit_age_hours": 14.37,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "ok",
+    "org": "govbot-data",
+    "repo": "ok-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 8.51
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 8.55
+      }
+    ],
+    "data_commit_age_hours": 8.52,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "or",
+    "org": "govbot-data",
+    "repo": "or-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.43
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.44
+      }
+    ],
+    "data_commit_age_hours": 1729.86,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "pa",
+    "org": "govbot-data",
+    "repo": "pa-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 8.59
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 8.61
+      }
+    ],
+    "data_commit_age_hours": 8.59,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "pr",
+    "org": "govbot-data",
+    "repo": "pr-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 8.52
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 8.57
+      }
+    ],
+    "data_commit_age_hours": 8.53,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "ri",
+    "org": "govbot-data",
+    "repo": "ri-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.22
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.23
+      }
+    ],
+    "data_commit_age_hours": 1732.22,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "sc",
+    "org": "govbot-data",
+    "repo": "sc-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.96
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.97
+      }
+    ],
+    "data_commit_age_hours": 56.96,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "sd",
+    "org": "govbot-data",
+    "repo": "sd-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.26
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.27
+      }
+    ],
+    "data_commit_age_hours": 1728.83,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "tn",
+    "org": "govbot-data",
+    "repo": "tn-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.77
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.79
+      }
+    ],
+    "data_commit_age_hours": 231.94,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "tx",
+    "org": "govbot-data",
+    "repo": "tx-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.78
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.79
+      }
+    ],
+    "data_commit_age_hours": 1734.49,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "usa",
+    "org": "govbot-data",
+    "repo": "usa-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 8.23
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 8.26
+      }
+    ],
+    "data_commit_age_hours": 8.23,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "ut",
+    "org": "govbot-data",
+    "repo": "ut-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.3
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.32
+      }
+    ],
+    "data_commit_age_hours": 1726.73,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "va",
+    "org": "govbot-data",
+    "repo": "va-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 57.07
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 57.08
+      }
+    ],
+    "data_commit_age_hours": 226.02,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "vi",
+    "org": "govbot-data",
+    "repo": "vi-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 223.91
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 7.99
+      }
+    ],
+    "data_commit_age_hours": 7.98,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "vt",
+    "org": "govbot-data",
+    "repo": "vt-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.14
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.16
+      }
+    ],
+    "data_commit_age_hours": 56.15,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "wa",
+    "org": "govbot-data",
+    "repo": "wa-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.49
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.51
+      }
+    ],
+    "data_commit_age_hours": 1728.68,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "wi",
+    "org": "govbot-data",
+    "repo": "wi-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.71
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.72
+      }
+    ],
+    "data_commit_age_hours": 520.58,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "wv",
+    "org": "govbot-data",
+    "repo": "wv-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.21
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.22
+      }
+    ],
+    "data_commit_age_hours": 952.85,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-files",
+    "config": "chn-openstates-files.yml",
+    "state": "wy",
+    "org": "govbot-data",
+    "repo": "wy-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "extract-text.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.39
+      },
+      {
+        "workflow": "format.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 56.4
+      }
+    ],
+    "data_commit_age_hours": 907.73,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "ak",
+    "org": "govbot-openstates-scrapers",
+    "repo": "ak-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 229.1
+      }
+    ],
+    "data_commit_age_hours": 59.02,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "al",
+    "org": "govbot-openstates-scrapers",
+    "repo": "al-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 63.06
+      }
+    ],
+    "data_commit_age_hours": 63.07,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "ar",
+    "org": "govbot-openstates-scrapers",
+    "repo": "ar-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 63.0
+      }
+    ],
+    "data_commit_age_hours": 1004.61,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "az",
+    "org": "govbot-openstates-scrapers",
+    "repo": "az-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 60.93
+      }
+    ],
+    "data_commit_age_hours": 60.93,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "ca",
+    "org": "govbot-openstates-scrapers",
+    "repo": "ca-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 60.32
+      }
+    ],
+    "data_commit_age_hours": 60.33,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "co",
+    "org": "govbot-openstates-scrapers",
+    "repo": "co-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 62.16
+      }
+    ],
+    "data_commit_age_hours": 882.9,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "ct",
+    "org": "govbot-openstates-scrapers",
+    "repo": "ct-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 568.8
+      }
+    ],
+    "data_commit_age_hours": 160.23,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "dc",
+    "org": "govbot-openstates-scrapers",
+    "repo": "dc-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 14.32
+      }
+    ],
+    "data_commit_age_hours": 14.32,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "de",
+    "org": "govbot-openstates-scrapers",
+    "repo": "de-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 62.54
+      }
+    ],
+    "data_commit_age_hours": 62.54,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "fl",
+    "org": "govbot-openstates-scrapers",
+    "repo": "fl-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "cancelled",
+        "hours_since_success": 1326.2
+      }
+    ],
+    "data_commit_age_hours": 1326.2,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "ga",
+    "org": "govbot-openstates-scrapers",
+    "repo": "ga-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 63.57
+      }
+    ],
+    "data_commit_age_hours": 63.57,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "gu",
+    "org": "govbot-openstates-scrapers",
+    "repo": "gu-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 7.04
+      }
+    ],
+    "data_commit_age_hours": 1307.81,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "hi",
+    "org": "govbot-openstates-scrapers",
+    "repo": "hi-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 57.28
+      }
+    ],
+    "data_commit_age_hours": 57.28,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "ia",
+    "org": "govbot-openstates-scrapers",
+    "repo": "ia-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 61.99
+      }
+    ],
+    "data_commit_age_hours": 62.05,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "id",
+    "org": "govbot-openstates-scrapers",
+    "repo": "id-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 471.19
+      }
+    ],
+    "data_commit_age_hours": 61.0,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "il",
+    "org": "govbot-openstates-scrapers",
+    "repo": "il-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 63.14
+      }
+    ],
+    "data_commit_age_hours": 159.26,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "in",
+    "org": "govbot-openstates-scrapers",
+    "repo": "in-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 473.67
+      }
+    ],
+    "data_commit_age_hours": 63.6,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "ks",
+    "org": "govbot-openstates-scrapers",
+    "repo": "ks-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 62.86
+      }
+    ],
+    "data_commit_age_hours": 62.87,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "ky",
+    "org": "govbot-openstates-scrapers",
+    "repo": "ky-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 63.61
+      }
+    ],
+    "data_commit_age_hours": 63.61,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "la",
+    "org": "govbot-openstates-scrapers",
+    "repo": "la-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 423.5
+      }
+    ],
+    "data_commit_age_hours": 62.64,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "ma",
+    "org": "govbot-openstates-scrapers",
+    "repo": "ma-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "cancelled",
+        "hours_since_success": 2094.52
+      }
+    ],
+    "data_commit_age_hours": 1328.95,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "md",
+    "org": "govbot-openstates-scrapers",
+    "repo": "md-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 63.73
+      }
+    ],
+    "data_commit_age_hours": 63.73,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "me",
+    "org": "govbot-openstates-scrapers",
+    "repo": "me-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 2269.79
+      }
+    ],
+    "data_commit_age_hours": 62.83,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "mi",
+    "org": "govbot-openstates-scrapers",
+    "repo": "mi-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 616.18
+      }
+    ],
+    "data_commit_age_hours": 12.48,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "mn",
+    "org": "govbot-openstates-scrapers",
+    "repo": "mn-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 62.49
+      }
+    ],
+    "data_commit_age_hours": 62.49,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "mo",
+    "org": "govbot-openstates-scrapers",
+    "repo": "mo-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 61.36
+      }
+    ],
+    "data_commit_age_hours": 61.65,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "mp",
+    "org": "govbot-openstates-scrapers",
+    "repo": "mp-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 6.75
+      }
+    ],
+    "data_commit_age_hours": 6.75,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "ms",
+    "org": "govbot-openstates-scrapers",
+    "repo": "ms-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 849.66
+      }
+    ],
+    "data_commit_age_hours": 62.77,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "mt",
+    "org": "govbot-openstates-scrapers",
+    "repo": "mt-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 60.87
+      }
+    ],
+    "data_commit_age_hours": 60.87,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "nc",
+    "org": "govbot-openstates-scrapers",
+    "repo": "nc-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 63.63
+      }
+    ],
+    "data_commit_age_hours": 63.64,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "nd",
+    "org": "govbot-openstates-scrapers",
+    "repo": "nd-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 592.11
+      }
+    ],
+    "data_commit_age_hours": 63.0,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "ne",
+    "org": "govbot-openstates-scrapers",
+    "repo": "ne-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 821.97
+      }
+    ],
+    "data_commit_age_hours": 63.0,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "nh",
+    "org": "govbot-openstates-scrapers",
+    "repo": "nh-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 62.68
+      }
+    ],
+    "data_commit_age_hours": 62.68,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "nj",
+    "org": "govbot-openstates-scrapers",
+    "repo": "nj-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 15.34
+      }
+    ],
+    "data_commit_age_hours": 63.66,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "nm",
+    "org": "govbot-openstates-scrapers",
+    "repo": "nm-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 61.9
+      }
+    ],
+    "data_commit_age_hours": 61.9,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "nv",
+    "org": "govbot-openstates-scrapers",
+    "repo": "nv-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 60.42
+      }
+    ],
+    "data_commit_age_hours": 60.43,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "ny",
+    "org": "govbot-openstates-scrapers",
+    "repo": "ny-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 639.39
+      }
+    ],
+    "data_commit_age_hours": 61.26,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "oh",
+    "org": "govbot-openstates-scrapers",
+    "repo": "oh-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 14.42
+      }
+    ],
+    "data_commit_age_hours": 14.42,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "ok",
+    "org": "govbot-openstates-scrapers",
+    "repo": "ok-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 62.8
+      }
+    ],
+    "data_commit_age_hours": 62.81,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "or",
+    "org": "govbot-openstates-scrapers",
+    "repo": "or-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 60.19
+      }
+    ],
+    "data_commit_age_hours": 60.19,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "pa",
+    "org": "govbot-openstates-scrapers",
+    "repo": "pa-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 713.35
+      }
+    ],
+    "data_commit_age_hours": 1733.18,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "pr",
+    "org": "govbot-openstates-scrapers",
+    "repo": "pr-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 14.49
+      }
+    ],
+    "data_commit_age_hours": 14.49,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "ri",
+    "org": "govbot-openstates-scrapers",
+    "repo": "ri-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 63.51
+      }
+    ],
+    "data_commit_age_hours": 63.51,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "sc",
+    "org": "govbot-openstates-scrapers",
+    "repo": "sc-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 305.09
+      }
+    ],
+    "data_commit_age_hours": 63.17,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "sd",
+    "org": "govbot-openstates-scrapers",
+    "repo": "sd-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 62.4
+      }
+    ],
+    "data_commit_age_hours": 62.4,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "tn",
+    "org": "govbot-openstates-scrapers",
+    "repo": "tn-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 304.51
+      }
+    ],
+    "data_commit_age_hours": 62.49,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "tx",
+    "org": "govbot-openstates-scrapers",
+    "repo": "tx-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 62.9
+      }
+    ],
+    "data_commit_age_hours": 111.5,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "usa",
+    "org": "govbot-openstates-scrapers",
+    "repo": "usa-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 10.78
+      }
+    ],
+    "data_commit_age_hours": 11.49,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "ut",
+    "org": "govbot-openstates-scrapers",
+    "repo": "ut-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 615.58
+      }
+    ],
+    "data_commit_age_hours": 108.99,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "va",
+    "org": "govbot-openstates-scrapers",
+    "repo": "va-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 63.66
+      }
+    ],
+    "data_commit_age_hours": 63.66,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "vi",
+    "org": "govbot-openstates-scrapers",
+    "repo": "vi-legislation",
+    "paused": false,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 377.12
+      }
+    ],
+    "data_commit_age_hours": 7156.66,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "vt",
+    "org": "govbot-openstates-scrapers",
+    "repo": "vt-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 735.73
+      }
+    ],
+    "data_commit_age_hours": 62.64,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "wa",
+    "org": "govbot-openstates-scrapers",
+    "repo": "wa-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 59.13
+      }
+    ],
+    "data_commit_age_hours": 59.13,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "wi",
+    "org": "govbot-openstates-scrapers",
+    "repo": "wi-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "cancelled",
+        "hours_since_success": 111.76
+      }
+    ],
+    "data_commit_age_hours": 57.7,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "wv",
+    "org": "govbot-openstates-scrapers",
+    "repo": "wv-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 63.02
+      }
+    ],
+    "data_commit_age_hours": 63.02,
+    "errors": []
+  },
+  {
+    "fleet": "chn-openstates-scrape",
+    "config": "chn-openstates-scrape.yml",
+    "state": "wy",
+    "org": "govbot-openstates-scrapers",
+    "repo": "wy-legislation",
+    "paused": true,
+    "polled_at": "2026-10-02T02:10:25.290351+00:00",
+    "workflows": [
+      {
+        "workflow": "openstates-scrape.yml",
+        "latest_conclusion": "success",
+        "hours_since_success": 62.44
+      }
+    ],
+    "data_commit_age_hours": 62.45,
+    "errors": []
+  }
+]

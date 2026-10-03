@@ -1,0 +1,272 @@
+{
+  "code": "nv",
+  "generated_at": "2026-10-02T02:19:31.542076+00:00",
+  "summary": {
+    "code": "nv",
+    "present": true,
+    "scraper": "paused",
+    "session": "out",
+    "fleet_monitor": {
+      "data_repo": {
+        "data_commit_age_hours": 1729.41,
+        "workflows": [
+          {
+            "workflow": "extract-text.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 56.32
+          },
+          {
+            "workflow": "format.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 56.34
+          }
+        ]
+      },
+      "scraper_repo": {
+        "data_commit_age_hours": 60.43,
+        "workflows": [
+          {
+            "workflow": "openstates-scrape.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 60.42
+          }
+        ]
+      }
+    },
+    "last_commit": "2026-07-15T13:13:23+00:00",
+    "days_since_commit": 78.5,
+    "bill_count": 27,
+    "log_date_min": "20251112T080000Z",
+    "log_date_max": "20251201T080000Z",
+    "log_file_count": 354,
+    "distinct_active_days": 12,
+    "busiest_day": "20251113",
+    "busiest_day_count": 50,
+    "busiest_day_share": 0.14,
+    "logs_per_bill": 13.1,
+    "vote_events_watermark": "2025-11-19T08:00:00",
+    "events_watermark": "1900-01-01T00:00:00",
+    "has_new_fields": false,
+    "implausible_fallbacks": {},
+    "orphan_count": 0,
+    "bills_indexed": 27
+  },
+  "bills": [
+    {
+      "id": "AB3",
+      "title": "Revises provisions relating to public office. (BDR\u00a024-21)",
+      "session": "2025Special36",
+      "action_count": 7,
+      "latest_action_date": "2025-11-20T08:00:00+00:00",
+      "latest_action_description": "Chapter 3."
+    },
+    {
+      "id": "AB4",
+      "title": "Revises provisions relating to public safety. (BDR\u00a015-31)",
+      "session": "2025Special36",
+      "action_count": 10,
+      "latest_action_date": "2025-12-01T08:00:00+00:00",
+      "latest_action_description": "Chapter 9."
+    },
+    {
+      "id": "AB5",
+      "title": "Enacts the Nevada Studio Infrastructure Jobs and Workforce Training Act. (BDR\u00a0S-13)",
+      "session": "2025Special36",
+      "action_count": 7,
+      "latest_action_date": "2025-11-19T08:00:00+00:00",
+      "latest_action_description": "Read third time. Lost. (Yeas:\u00a010, Nays:\u00a08, Excused:\u00a03.)"
+    },
+    {
+      "id": "AB2",
+      "title": "Revises provisions relating to alcoholic beverages. (BDR\u00a032-24)",
+      "session": "2025Special36",
+      "action_count": 7,
+      "latest_action_date": "2025-11-20T08:00:00+00:00",
+      "latest_action_description": "Chapter 2."
+    },
+    {
+      "id": "SB3",
+      "title": "Revises provisions relating to public assistance. (BDR\u00a038-20)",
+      "session": "2025Special36",
+      "action_count": 7,
+      "latest_action_date": "2025-11-20T08:00:00+00:00",
+      "latest_action_description": "Chapter 1."
+    },
+    {
+      "id": "SB4",
+      "title": "Revises provisions relating to state financial and governmental administration. (BDR\u00a0S-11)",
+      "session": "2025Special36",
+      "action_count": 10,
+      "latest_action_date": "2025-12-01T08:00:00+00:00",
+      "latest_action_description": "Chapter 11."
+    },
+    {
+      "id": "SB5",
+      "title": "Makes revisions relating to health care. (BDR\u00a040-32)",
+      "session": "2025Special36",
+      "action_count": 10,
+      "latest_action_date": "2025-12-01T08:00:00+00:00",
+      "latest_action_description": "Chapter 12."
+    },
+    {
+      "id": "SB2",
+      "title": "Revises provisions relating to legislative affairs. (BDR\u00a017-30)",
+      "session": "2025Special36",
+      "action_count": 6,
+      "latest_action_date": "2025-11-20T08:00:00+00:00",
+      "latest_action_description": "Enrolled and delivered to Governor.\rApproved by the Governor. Chapter 6."
+    },
+    {
+      "id": "AR1",
+      "title": "Provides for the appointment of the Assembly attaches. (BDR\u00a0R-27)",
+      "session": "2025Special36",
+      "action_count": 3,
+      "latest_action_date": "2025-11-14T08:00:00+00:00",
+      "latest_action_description": "Enrolled and delivered to Secretary of State.\rFile No. 2."
+    },
+    {
+      "id": "SB10",
+      "title": "Revises provisions relating to real property. (BDR\u00a010-38)",
+      "session": "2025Special36",
+      "action_count": 1,
+      "latest_action_date": "2025-11-19T08:00:00+00:00",
+      "latest_action_description": "Read first time. Referred to Committee on Jobs and Economy. To printer.\rFrom printer. To committee.\rFrom committee: Do pass.\rDeclared an emergency measure under the Constitution. Placed on General File.\rRead third time. Amended. (Amend. No. 32.)\rReprinting dispensed with.\rRead third time. Passed, as amended. Title approved, as amended. (Yeas:\u00a018, Nays:\u00a0None, Excused:\u00a03.) To printer.\rFrom printer. To engrossment. Engrossed. First reprint. To Assembly.\rIn Assembly.\rRead first time.\rDeclared an emergency measure under the Constitution.\rRead third time. Amended. (Amend. No. 35.)\rDispensed with reprinting.\rRead third time. Lost. (Yeas:\u00a027, Nays:\u00a010, Excused:\u00a05.)"
+    },
+    {
+      "id": "ACR5",
+      "title": "Directs the Joint Interim Standing Committee on Government Affairs to conduct an interim study on the activities of federal officials engaging in the investigation or enforcement of immigration laws in this State. (BDR\u00a0R-19)",
+      "session": "2025Special36",
+      "action_count": 3,
+      "latest_action_date": "2025-11-19T08:00:00+00:00",
+      "latest_action_description": "(No further action taken.)"
+    },
+    {
+      "id": "ACR2",
+      "title": "Authorizes certain reimbursement for travel. (BDR\u00a0R-5)",
+      "session": "2025Special36",
+      "action_count": 4,
+      "latest_action_date": "2025-11-15T08:00:00+00:00",
+      "latest_action_description": "Enrolled and delivered to Secretary of State.\rFile No. 7."
+    },
+    {
+      "id": "SR1",
+      "title": "Adopts the Rules of the Senate for the 36th Special Session of the Nevada Legislature. (BDR\u00a0R-2)",
+      "session": "2025Special36",
+      "action_count": 3,
+      "latest_action_date": "2025-11-14T08:00:00+00:00",
+      "latest_action_description": "Enrolled and delivered to Secretary of State.\rFile No. 1."
+    },
+    {
+      "id": "ACR3",
+      "title": "Authorizes certain reimbursement for Legislator security. (BDR\u00a0R-6)",
+      "session": "2025Special36",
+      "action_count": 4,
+      "latest_action_date": "2025-11-15T08:00:00+00:00",
+      "latest_action_description": "Enrolled and delivered to Secretary of State.\rFile No. 8."
+    },
+    {
+      "id": "ACR4",
+      "title": "Directs the Joint Interim Standing Committee on the Judiciary to conduct a study relating to road safety. (BDR\u00a0R-29)",
+      "session": "2025Special36",
+      "action_count": 5,
+      "latest_action_date": "2025-11-16T08:00:00+00:00",
+      "latest_action_description": "Enrolled and delivered to Secretary of State.\rFile No. 9."
+    },
+    {
+      "id": "AB1",
+      "title": "Revises provisions relating to governmental administration. (BDR\u00a019-22)",
+      "session": "2025Special36",
+      "action_count": 7,
+      "latest_action_date": "2025-11-20T08:00:00+00:00",
+      "latest_action_description": "Chapter 4."
+    },
+    {
+      "id": "AB6",
+      "title": "Revises provisions governing public safety. (BDR\u00a043-23)",
+      "session": "2025Special36",
+      "action_count": 9,
+      "latest_action_date": "2025-12-01T08:00:00+00:00",
+      "latest_action_description": "Chapter 10."
+    },
+    {
+      "id": "SB9",
+      "title": "Establishes provisions relating to public safety. (BDR\u00a01-17)",
+      "session": "2025Special36",
+      "action_count": 2,
+      "latest_action_date": "2025-11-19T08:00:00+00:00",
+      "latest_action_description": "From printer.\rPlaced on Secretary's desk.\r(No further action taken.)"
+    },
+    {
+      "id": "SB7",
+      "title": "Revises provisions relating to occupational diseases. (BDR\u00a053-36)",
+      "session": "2025Special36",
+      "action_count": 6,
+      "latest_action_date": "2025-12-01T08:00:00+00:00",
+      "latest_action_description": "Chapter 13."
+    },
+    {
+      "id": "SB1",
+      "title": "Revises provisions governing the short-term lease of a passenger car. (BDR\u00a043-26)",
+      "session": "2025Special36",
+      "action_count": 6,
+      "latest_action_date": "2025-11-20T08:00:00+00:00",
+      "latest_action_description": "Enrolled and delivered to Governor.\rApproved by the Governor. Chapter 5."
+    },
+    {
+      "id": "SB6",
+      "title": "Revises the Windsor Park Environmental Justice Act. (BDR\u00a0S-12)",
+      "session": "2025Special36",
+      "action_count": 4,
+      "latest_action_date": "2025-11-20T08:00:00+00:00",
+      "latest_action_description": "Enrolled and delivered to Governor.\rApproved by the Governor. Chapter 7."
+    },
+    {
+      "id": "SB8",
+      "title": "Revises provisions relating to employment. (BDR\u00a053-35)",
+      "session": "2025Special36",
+      "action_count": 5,
+      "latest_action_date": "2025-11-20T08:00:00+00:00",
+      "latest_action_description": "Enrolled and delivered to Governor.\rApproved by the Governor. Chapter 8."
+    },
+    {
+      "id": "AR2",
+      "title": "Provides that no allowances will be paid for the 36th Special Session for periodicals, stamps, stationery or communications. (BDR\u00a0R-4)",
+      "session": "2025Special36",
+      "action_count": 3,
+      "latest_action_date": "2025-11-14T08:00:00+00:00",
+      "latest_action_description": "Enrolled and delivered to Secretary of State.\rFile No. 3."
+    },
+    {
+      "id": "SR2",
+      "title": "Provides that no allowances will be paid for the 36th Special Session of the Nevada Legislature for periodicals, stamps, stationery or communications. (BDR\u00a0R-3)",
+      "session": "2025Special36",
+      "action_count": 3,
+      "latest_action_date": "2025-11-15T08:00:00+00:00",
+      "latest_action_description": "Enrolled and delivered to Secretary of State.\rFile No. 4."
+    },
+    {
+      "id": "SJR1",
+      "title": "Proposes to amend the Nevada Constitution to enact various requirements relating to the distribution and submission of mail ballots. (BDR\u00a0C-7)",
+      "session": "2025Special36",
+      "action_count": 2,
+      "latest_action_date": "2025-11-21T08:00:00+00:00",
+      "latest_action_description": "Enrolled and delivered to Secretary of State.\rFile No. 10."
+    },
+    {
+      "id": "ACR1",
+      "title": "Adopts the Joint Rules of the Senate and Assembly for the 36th Special Session of the Nevada Legislature. (BDR\u00a0R-1)",
+      "session": "2025Special36",
+      "action_count": 4,
+      "latest_action_date": "2025-11-15T08:00:00+00:00",
+      "latest_action_description": "Enrolled and delivered to Secretary of State.\rFile No. 6."
+    },
+    {
+      "id": "SR3",
+      "title": "Recognizes the appointment of the Senate staff. (BDR\u00a0R-28)",
+      "session": "2025Special36",
+      "action_count": 3,
+      "latest_action_date": "2025-11-15T08:00:00+00:00",
+      "latest_action_description": "Enrolled and delivered to Secretary of State.\rFile No. 5."
+    }
+  ]
+}

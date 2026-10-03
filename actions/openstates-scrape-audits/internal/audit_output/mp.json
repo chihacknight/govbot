@@ -1,0 +1,2472 @@
+{
+  "code": "mp",
+  "generated_at": "2026-10-02T02:19:31.542076+00:00",
+  "summary": {
+    "code": "mp",
+    "present": true,
+    "scraper": "active",
+    "session": "in",
+    "fleet_monitor": {
+      "data_repo": {
+        "data_commit_age_hours": 0.01,
+        "workflows": [
+          {
+            "workflow": "extract-text.yml",
+            "latest_conclusion": "failure",
+            "hours_since_success": null
+          },
+          {
+            "workflow": "format.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 6.74
+          }
+        ]
+      },
+      "scraper_repo": {
+        "data_commit_age_hours": 6.75,
+        "workflows": [
+          {
+            "workflow": "openstates-scrape.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 6.75
+          }
+        ]
+      }
+    },
+    "last_commit": "2026-07-14T13:02:58+00:00",
+    "days_since_commit": 79.6,
+    "bill_count": 302,
+    "log_date_min": "20151125T000000Z",
+    "log_date_max": "20350509T000000Z",
+    "log_file_count": 1800,
+    "distinct_active_days": 162,
+    "busiest_day": "20250731",
+    "busiest_day_count": 84,
+    "busiest_day_share": 0.05,
+    "logs_per_bill": 6.0,
+    "vote_events_watermark": "1900-01-01T00:00:00",
+    "events_watermark": "1900-01-01T00:00:00",
+    "has_new_fields": false,
+    "implausible_fallbacks": {},
+    "orphan_count": 0,
+    "bills_indexed": 302
+  },
+  "bills": [
+    {
+      "id": "HR 24-13",
+      "title": "To recognize the exceptional work, unwavering commitment, and outstanding service of Erlinda Naputi, in celebrating her 33 years of service to Joeten-Kiyu Public Library, thereby enriching the lives of the people in the Commonwealth of the Northern Marianas Islands.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-09-22",
+      "latest_action_description": "House Final Reading"
+    },
+    {
+      "id": "HB 24-7",
+      "title": "To ensure that the expenditure authority designated in the Annual Appropriation Act retains authority over all funds appropriated to it.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-04-22",
+      "latest_action_description": "SENATE-FA"
+    },
+    {
+      "id": "HR 24-14",
+      "title": "To honor Mr. Willie Tan for his visionary leadership, astute business acumen, philanthropic contributions, charitable character and lasting impact on the economic landscape and social fabric of the Commonwealth of the Northern Mariana Islands, as well as his unwavering dedication and commitment to the people of the CNMI.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-10-09",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SR 24-13",
+      "title": "Honorable Justice Perry B. Inos",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2026-02-13",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "HR 24-22",
+      "title": "Supporting the establishment of mandatory financial literacy education in CNMI public schools; urging the CNMI Public School System (PSS) and the Board of Education to collaborate with private financial institutions, workforce development partners, and accredited financial education providers; and encouraging a unified, community-wide effort to equip students with essential financial skills needed for lifelong success.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-12-15",
+      "latest_action_description": "House Final Reading"
+    },
+    {
+      "id": "HB 24-9",
+      "title": "To amend 4 CMC \u00a7 1803 by reallocating a portion of the Hotel Occupancy Tax received by the Marianas Visitors Authority to the Division of Parks and Recreation to support beautification efforts.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-08-29",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HR 24-25",
+      "title": "To Congratulate and Honor all the women in the Commonwealth as we celebrate their contributions and achievements during the month of March 2026 proclaimed as CNMI Women\u2019s Month and March 8th as International Women\u2019s Day.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2026-02-25",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SLI 24-06",
+      "title": "To amend ART II, Sec 11 of Constitution to allow a legislative member to be employed in the governemnt",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-03-17",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SLI 24-01",
+      "title": "MPLT to provide dividends to NMI registered voter",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-06-03",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HR 24-24",
+      "title": "Requesting and directing that the Commonwealth Utilities Corporation (CUC) undergo a comprehensive, independent, third-party audit by qualified utility expert auditors, including financial, operational \"desk,\" asset, compliance, and related examinations; requiring Commonwealth Public Utilities Commission (CPUC) coordination, formal CPUC docketing and public process for audit review; requiring public reporting, a corrective action plan, a ratepayer impact matrix, a public-facing audit implementation dashboard, and an immediate 90-day control-fix priority list.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2026-02-09",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HB 24-8",
+      "title": "To amend 1 CMC \u00a7 2803 to ensure that public land revenues are managed and invested by the Marianas Public Land Trust in accordance with Article XI, Section 6 of the Constitution of the Northern Mariana Islands.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-04-25",
+      "latest_action_description": "SENATE-FA"
+    },
+    {
+      "id": "HR 24-23",
+      "title": "To express the profound gratitude and commendation of the House of Representatives to Mrs. Jacqueline Ayuyu Quitugua for her extraordinary career spanning over 44 years, marked by unwavering dedication and transformative contributions to the education, well-being, and development of the youth and school communities in the Commonwealth of the Northern Marianas Islands, as she dawns her well-deserved retirement.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-12-29",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HR 24-15",
+      "title": "To honor and express our sincerest gratitude to Mr. Noboru Hirayama who has greatly contributed to the preservation and promotion of Japanese and Saipan history in the Commonwealth of the Northern Mariana Islands through his work in the reconstruction of the Saipan Katori Shrine.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-10-24",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-1",
+      "title": "To amend provisions in Title 6, Chapter 3, Sexual Offenses, Article 1. General Provisions, relating to sexual abuse/assault of minors.",
+      "session": "24",
+      "action_count": 6,
+      "latest_action_date": "2025-08-05",
+      "latest_action_description": "P.L. 24-08"
+    },
+    {
+      "id": "SR 24-12",
+      "title": "Jacqueline Ayuyu Quitugua",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-12-23",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HR 24-12",
+      "title": "To establish bi-annual legislative oversight hearings and reporting requirements for the Commonwealth Healthcare Corporation (CHCC), the Commonwealth Utilities Corporation (CUC), and the Commonwealth Public Utilities Commission (CPUC) regarding the implementation and impacts of Public Law No. 24-11; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-09-09",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SR 24-15",
+      "title": "Late Honorable Ana Atalig Sablan Teregeyo",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-03-10",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-6",
+      "title": "To amend the Appropriations and Budget Authority Act of Fiscal Year 2025, Public Law 23-26, to appropriate the balance of funds allocated for the Minimum Annual Payment to the Settlement Fund and to return government employees subject to austerity to 100% work hours; and for other purposes.",
+      "session": "24",
+      "action_count": 6,
+      "latest_action_date": "2025-02-15",
+      "latest_action_description": "House Final Reading"
+    },
+    {
+      "id": "SB 24-43",
+      "title": "Deregulate the hunting, taking or possession of deer or Sambar deer in the CNMI",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-09-15",
+      "latest_action_description": "SENATE-HWP"
+    },
+    {
+      "id": "HB 24-44",
+      "title": "To amend 9 CMC \u00a78209 by removing the seven-day grace period for motorists who violate 9 CMC \u00a7\u00a78203 and 8204 with the citation effective immediately; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-09-09",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HB 24-88",
+      "title": "To mandate that the Commonwealth Utilities Corporation undergo a comprehensive, independent, third-party utility expert audit; to require a formal Commonwealth Public Utilities Commission audit-review docket and transparent public review process; to require an enforceable corrective action plan, a ratepayer impact matrix, and a public audit implementation dashboard; to impose strict timelines and narrowly limited extensions; to require mandatory decennial audits; to establish compliance reporting and civil penalties for missed deadlines payable to the CNMI Treasury; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2026-03-19",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "SB 24-44",
+      "title": "Establish a Driver's Educ Program with the PSS",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-09-15",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HR 24-9",
+      "title": "To celebrate the 10th Anniversary of Latte Built 24hr Fitness and to recognize Derek Cutting's outstanding contributions to the health and well-being of the Commonwealth of the Northern Mariana Islands community, while also acknowledging the positive impact of local businesses on our island's growth and resilience.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-06-20",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-43",
+      "title": "To create a new criminal offense for Desecration or Theft of Memorials and Historical Sites.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-11-06",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HLB 24-44",
+      "title": "To amend Title 10, Division 1, Chapter 12 (Rota Casino Act of 2007) of the Commonwealth Code to: (1) establish a clear separation between the investigative and compliance functions of the Rota Casino Gaming RCGC (RCGC) and the adjudicatory/decision-making functions of the Commissioners; (2) establish an Investigations and Enforcement Division under the Executive Director; (3) authorize the procurement of qualified independent third-party investigative and professional services for criminal and financial due diligence of casino license applicants and related persons; (4) establish a Casino Regulatory Fee and a dedicated regulatory fund/account to provide stable annual funding for regulatory operations, including enforcement and monitoring; (5) strengthen conflicts of interest, disclosure, and recusal requirements for Commissioners; and for other purposes.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-01-16",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-5",
+      "title": "To amend the Saipan Zoning Law to define \u201cAutomobile Sales & Service\u201d and to establish a screening requirement for \u201cAutomobile Sales & Service\u201d businesses that are adjacent to certain zoning districts.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-03-21",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-81",
+      "title": "To establish a Non-Profit Organization Tax Credit to incentivize individual and corporate contributions, promote philanthropic engagement, and ensure the long-term viability of organizations that provide essential services and enhance the quality of life for the people of the CNMI.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-12-30",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HB 24-75",
+      "title": "To authorize the continued payment of employer premiums for the Group Health & Life Insurance (GHLI) Program by permitting expenditure of $3,747,585.00 recently identified by the Governor that shall be appropriated by the Legislature for FY 2026.",
+      "session": "24",
+      "action_count": 6,
+      "latest_action_date": "2025-12-23",
+      "latest_action_description": "Sent to Governor"
+    },
+    {
+      "id": "HLB 24-2",
+      "title": "To appropriate Eighty Four Thousand Dollars ($84,000.00) from revenues collected from poker fees in the Second Senatorial District; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-03-31",
+      "latest_action_description": "T.L.L. 24-2"
+    },
+    {
+      "id": "HLB 24-43",
+      "title": "To establish a docking and watercraft fee for derby event participants utilizing the West and East Docks on Rota; to include vessels, jet skis, kayaks, and canoes; to exempt bona fide Rota residents and educational activities; to provide penalties for violations; and to allocate collected revenues for conservation and community programs.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-01-16",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HR 24-7",
+      "title": "To honor the 55 years of exemplary service rendered by Peace Corps Volunteers to the Commonwealth of the Northern Mariana Islands, and to extend a warm and respectful welcome to those returning to the islands that they once called home.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-04-25",
+      "latest_action_description": "Duly Adopted"
+    },
+    {
+      "id": "HB 24-72",
+      "title": "To impose a remittance transfer tax within the Commonwealth of the Northern Mariana Islands equivalent to the federal excise tax under 26 U.S.C \u00a74475, to ensure equitable revenue capture from outbound remittances, to strengthen compliance with federal fiscal policy; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-11-12",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HB 24-86",
+      "title": "To amend the Operator\u2019s License Fees as codified under 9 CMC \u00a7 2202 to establish a 50% discount on all operator\u2019s license fees for CNMI government retirees, senior citizens, persons with disabilities, and military veterans with disabilities; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-01-16",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-26",
+      "title": "To amend the crime of child abuse.",
+      "session": "24",
+      "action_count": 5,
+      "latest_action_date": "2026-02-11",
+      "latest_action_description": "Sent to Governor"
+    },
+    {
+      "id": "HLB 24-28",
+      "title": "To re-appropriate the remaining fund balance of $221,649.00 under Saipan Local Law 22-16 (Project Code 2001E); and for other purposes.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-09-09",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-19",
+      "title": "To rename the \u201cCNMI Scholarship Office\u201d to the \u201cCNMI Scholarship and Financial Assistance Office\u201d.",
+      "session": "24",
+      "action_count": 6,
+      "latest_action_date": "2025-08-05",
+      "latest_action_description": "P.L. 24-10"
+    },
+    {
+      "id": "SB 24-21",
+      "title": "Release of liability, vehicles",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-07-14",
+      "latest_action_description": "Senate First Reading"
+    },
+    {
+      "id": "HLB 24-17",
+      "title": "To amend 10 CMC \u00a7 12114 to provide for the compensation of the members of the Rota Casino Commission.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-07-31",
+      "latest_action_description": "RLD"
+    },
+    {
+      "id": "HB 24-21",
+      "title": "To establish the Joint Oversight of Incoming Non-local Transfers Act to mandate Legislative and Executive Appropriation for all Non-Locally-Sourced Funds allocated for the Commonwealth of the Northern Mariana Islands.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-04-25",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-19",
+      "title": "To amend to authorize motor vehicle licnesure in CNMI",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2026-03-18",
+      "latest_action_description": "House Final Reading"
+    },
+    {
+      "id": "HLB 24-10",
+      "title": "To appropriate revenues collected for the Second Senatorial District pursuant to Public Law 20-59.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-05-15",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-26",
+      "title": "OGM for 1st and 2nd Sen. Districts",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-03-04",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-19",
+      "title": "To appropriate the remaining fund balance of $260,670.00 from the Third Senatorial District Developers Infrastructure Tax Fund allotted to Precinct I under Saipan Local Law 22-16; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-07-29",
+      "latest_action_description": "S.L.L. 24-07"
+    },
+    {
+      "id": "HB 24-17",
+      "title": "To amend 2 CMC \u00a7 2174 to provide the Commonwealth Ports Authority greater autonomy in managing its finances.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2035-05-09",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "HLB 24-26",
+      "title": "To appropriate $380,000.00 from revenues collected pursuant to Saipan Local Law 22-06; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-09-22",
+      "latest_action_description": "S.L.L. 24-11"
+    },
+    {
+      "id": "HB 24-28",
+      "title": "To establish a grand jury system in the Commonwealth for use in criminal investigations and prosecutions, and to provide for related powers and procedures.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-05-15",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-10",
+      "title": "To establish OMB within DOF",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-01-28",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-10",
+      "title": "To establish a change of name legal procedure in the CNMI.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-08-29",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "SB 24-28",
+      "title": "Disorderly Conduct and Public Intoxication Act of 2025",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-09-09",
+      "latest_action_description": "House Final Reading"
+    },
+    {
+      "id": "SB 24-17",
+      "title": "Economic Incentive Zone Renaming Act",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-06-20",
+      "latest_action_description": "House Final Reading"
+    },
+    {
+      "id": "HLB 24-21",
+      "title": "To appropriate $2,000,000.00 of the dividends collected by the Commonwealth Economic Development Authority (CEDA) from the Commonwealth Utilities Corporation (CUC) to assist the Department of Finance and Commonwealth Economic Development Authority with funding related to the Third Senatorial District.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-08-11",
+      "latest_action_description": "S.L.L. 24-10"
+    },
+    {
+      "id": "HLB 24-42",
+      "title": "To amend the Wedding Cake Mountain Wildlife Conservation Area, to authorize the Mayor of Rota to plan, construct, and maintain a pedestrian pathway at Wedding Cake Mountain and access to the Grotto, and to initiate actions necessary to qualify for federal grants, and for other purposes.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-01-16",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HR 24-6",
+      "title": "To honor and commend the life and legacy of the late Honorable Oscar Manglona Babauta for his life-long dedication and extensive contributions to the Commonwealth of the Northern Mariana Islands and to extend our heartfelt condolences to the bereaved family.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-03-25",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HLB 24-3",
+      "title": "To appropriate revenues collected for the Third Senatorial District pursuant to Public Law 20-59.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-03-21",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-87",
+      "title": "To require an independent valuation of the Commonwealth Utilities Corporation (CUC), restore constitutional and audit oversight, modernize procurement and review procedures, protect ratepayers, and clarify the economic framework for any privatization transaction; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2026-03-19",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HB 24-73",
+      "title": "To provide a nonrefundable tax credit to taxpayers who make donations of cash or food supplies to qualified community-based service organizations.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-11-12",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HLB 24-4",
+      "title": "To appropriate Thirty-Five Thousand Dollars ($35,000.00) for the Rota Medical Subsistence Allowance, Rota Little League Association and the Manamko trip, as well as Seven Hundred and Thiry-One Dollars ($731.00) for fuel and lubrication under the Rota, Department of Lands and Natural Resources.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-04-04",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HR 24-1",
+      "title": "To adopt the Rules for the House of Representatives and to appoint an Ad Hoc Committee to review the rules; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-01-13",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-45",
+      "title": "To re-appropriate Two Hundred Fifty-Six Thousand Two Hundred Thirty-Five Dollars ($256,235.00) from the fund balances allotted under Saipan Local Law 22-01, specifically Business Unit 4963V; and for other purposes.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-01-16",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-74",
+      "title": "To appropriate funds derived from trust interest income from the Marianas Public Land Trust towards payment of household allotments of Nutrition Assistance Program (NAP) benefits for November 2025.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-12-01",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "HB 24-80",
+      "title": "To Repeal and Re-Enact Public Law 24-14 to further Define and Identify General Revenues and approve revenues and resources of the Commonwealth of the Northern Mariana Islands as identified pursuant to Article III, Section 9 (a) of the CNMI Constitution, as amended, and 1 CMC Division 7, for Fiscal Year 2026 and make appropriations for the operations and activities of the Government of the Commonwealth of the Northern Mariana Islands, its agencies, instrumentalities, and independent programs, and to provide budget authority for government corporations for Fiscal Year 2026; and for other purposes.",
+      "session": "24",
+      "action_count": 6,
+      "latest_action_date": "2025-12-23",
+      "latest_action_description": "Sent to Governor"
+    },
+    {
+      "id": "SB 24-45",
+      "title": "Elias Parong Sablan Guma' Hustisia, limwal Aweewe, House of Justice",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-09-15",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-89",
+      "title": "To appropriate $300,000.00 of the dividends collected by the Commonwealth Economic Development Authority (CEDA) from the Commonwealth Utilities Corporation (CUC) to fund infrastructure projects in the Second Senatorial District.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-05-01",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "HB 24-42",
+      "title": "To mandate comprehensive, standards-based financial literacy education in all public high schools and middle schools of the Commonwealth of the Northern Mariana Islands (CNMI); to establish curriculum standards, teacher training support, integration with workforce development programs, and implementation timelines; and for other purposes.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-07-31",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HR 24-8",
+      "title": "To honor and congratulate the Saipan Southern High School Junior Reserve Officer Training Corps (JROTC) Manta Ray Battalion for their exceptional performance at the Golden Bear West Coast National Drill Meet.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-06-11",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "SB 24-42",
+      "title": "CNMI Fiscal impact of legislation",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-07-23",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-45",
+      "title": "To re-appropriate Fifty Thousand Dollars ($50,000.00) under Public Law No. 21-10, Section 2(G), for operational expenses of the Office of the Mayor of the Municipality of Rota.",
+      "session": "24",
+      "action_count": 5,
+      "latest_action_date": "2025-10-29",
+      "latest_action_description": "Sent to Governor"
+    },
+    {
+      "id": "HB 24-11",
+      "title": "To provide greater authority to government transit buses owned and operated by the Commonwealth Office of Transit Authority (COTA); to establish traffic safety measures, enhance public engagement, ensure fiscal responsibility, and comply with existing CNMI laws and federal standards; and for other purposes.",
+      "session": "24",
+      "action_count": 5,
+      "latest_action_date": "2026-02-20",
+      "latest_action_description": "Sent to Governor"
+    },
+    {
+      "id": "SB 24-29",
+      "title": "CNMI Doctrine of Waste in CNMI",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-03-06",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-20",
+      "title": "To appropriate Forty Two Thousand Dollars ($42,000.00) from revenues collected from poker fees in the Second Senatorial District; and for other purposes.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-07-31",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-16",
+      "title": "Foreign Corporation Liaison Act",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-06-20",
+      "latest_action_description": "House Final Reading"
+    },
+    {
+      "id": "HB 24-16",
+      "title": "To prioritize kinship placement for children in protective custody by requiring the Division of Youth Services identify and assess suitable kinship caregivers within 24 hours of removing a child from their home, mandating expedited judicial review of kinship placement recommendations, and prohibiting the placement of such children in confinement facilities.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-08-29",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HLB 24-18",
+      "title": "To appropriate $75,000.00 from revenues collected for the Third Senatorial District pursuant to Saipan Local Law 22-06; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-08-04",
+      "latest_action_description": "S.L.L. 24-08"
+    },
+    {
+      "id": "HB 24-29",
+      "title": "To reconcile public utility accounts between CHCC and CUC by waiving intra-governmental penalties and preserving enforceable debt obligations; and for other purposes.",
+      "session": "24",
+      "action_count": 6,
+      "latest_action_date": "2025-08-12",
+      "latest_action_description": "P.L. 24-11"
+    },
+    {
+      "id": "SB 24-11",
+      "title": "Regulate off-road vehicles",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-06-23",
+      "latest_action_description": "Senate First Reading"
+    },
+    {
+      "id": "HLB 24-27",
+      "title": "To appropriate Three Hundred and Five Thousand Dollars ($305,000.00) for the continued operation and regulatory oversight of the Rota Casino Gaming Commission; and for other purposes.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-09-09",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-20",
+      "title": "To require conspicuous warning labels be placed on all betel nut products and containers that are imported or sold in the CNMI.",
+      "session": "24",
+      "action_count": 6,
+      "latest_action_date": "2025-06-05",
+      "latest_action_description": "P.L. 24-02"
+    },
+    {
+      "id": "SB 24-18",
+      "title": "Amend budget submission of DPL",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-05-15",
+      "latest_action_description": "HOUSE-NR & WM"
+    },
+    {
+      "id": "SB 24-27",
+      "title": "Pension overpayment waiver",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-03-05",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-11",
+      "title": "To amend the Saipan Zoning Law of 2013, Section 1211 concerning nonconforming auto rental offices with vehicles, for enhanced industry clarity and infrastructure utilization in the Third Senatorial District; and for other purposes.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-05-15",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-29",
+      "title": "To rename the \u201cSmiling Cove Marina\u201d the \u201cDiego T. Benavente Smiling Cove Marina\u201d in honor of former Legislator and former Lieutenant Governor Diego Tenorio Benavente.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-11-07",
+      "latest_action_description": "SNILD"
+    },
+    {
+      "id": "HB 24-27",
+      "title": "To establish an excise tax for betelnut/areca nut and lime mix/afok/or bweesch.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-07-31",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HLB 24-16",
+      "title": "To re-appropriate Twenty-Six Thousand Dollars ($26,000.00) allotted under Saipan Local Law 20-26 and re-appropriate Twenty-Five Thousand Dollars ($25,000.00) allotted under Saipan Local Law 23-10; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-06-25",
+      "latest_action_description": "S.L.L. 24-03"
+    },
+    {
+      "id": "HB 24-18",
+      "title": "To earmark Two Hundred Thousand Dollars ($200,000.00) of Electronic Gaming (E-Gaming) license fees towards the Department of Finance for enforcement purposes. Introduced by  on March 21, 2025; referred to the House Committee on Ways and Means (MEMO).",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-07-31",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "SB 24-20",
+      "title": "Hunting Act of 2025",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-02-11",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-34",
+      "title": "To establish the \u201cSaipan Economic Incentive Zone\u201d within the Third Senatorial District, and to authorize the Commonwealth Economic Incentive Authority and other relevant agencies to administer and regulate investment activities within the designated zone.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-11-07",
+      "latest_action_description": "SNILD"
+    },
+    {
+      "id": "SB 24-02",
+      "title": "Establish agricultural water usage rates for commercial farmers/ranchers/livestock producers",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-02-26",
+      "latest_action_description": "SENATE-PUTC"
+    },
+    {
+      "id": "SB 24-05",
+      "title": "Establish Fire Reserve Corps",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-02-09",
+      "latest_action_description": "HOUSE-JGO"
+    },
+    {
+      "id": "HLB 24-33",
+      "title": "To amend Saipan Local Law 24-05 that appropriated the remaining fund balance of $85,500 under Saipan Local Law 23-04 for the repair, maintenance and improvements of recreational facilities in Precinct IV; and for other purposes.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-10-09",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-33",
+      "title": "Fire Chief of Fire & EMS",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-04-10",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-34",
+      "title": "To streamline business licensing in the Commonwealth by establishing a business start-up task force, a digital one-stop platform, a support center, and a conditional business licensing process.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-12-16",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "SB 24-34",
+      "title": "Deregulation of Electricity Market",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-04-24",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-33",
+      "title": "To statutorily define the scope of the Commonwealth\u2019s annual General Revenues within the meaning of Article XV, Section 1(e) of the NMI Constitution.",
+      "session": "24",
+      "action_count": 5,
+      "latest_action_date": "2026-03-03",
+      "latest_action_description": "Sent to Governor"
+    },
+    {
+      "id": "HB 24-93",
+      "title": "To amend 4CMC \u00a7 5611 to Allow for the issuance of two-year business licenses and to require the Department of Commerce and the Department of Finance to jointly promulgate implementing rules and regulations.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-02-09",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-67",
+      "title": "To promote government transparency, accountability, and digital accessibility by requiring standardized reporting of financial and grant information by all CNMI government entities, instrumentalities, and nonprofit recipients of public funds, in compliance with the Constitution, the Covenant, and applicable laws of the Commonwealth; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2026-04-10",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HLB 24-56",
+      "title": "To appropriate One Hundred Fifty-Six Thousand dollars ($156,000.00) from revenues collected from poker fees in the Second Senatorial District to respond to critical emergency situations and urgent recovery initiatives in the aftermath of Super Typhoon Sinlaku; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-04-28",
+      "latest_action_description": "T.L.L. 24-11"
+    },
+    {
+      "id": "HB 24-58",
+      "title": "To amend 4 CMC \u00a7 1305 to exempt services and the sale or exchange of securities and other similar assets from gross revenue tax; to amend 4 CMC \u00a7 1708 to allow rebates for exempted activities; to repeal 4 CMC \u00a7 1712; and for other purposes.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-09-02",
+      "latest_action_description": "HOUSE-WM"
+    },
+    {
+      "id": "SB 24-60",
+      "title": "Amend general business licensing framework",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-03-17",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-60",
+      "title": "To safeguard the Commonwealth\u2019s landfill capacity, public health, and environment by restricting the acceptance and disposal of waste generated off-island unless certain health, safety, and environmental conditions are met.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-09-11",
+      "latest_action_description": "HOUSE-NR"
+    },
+    {
+      "id": "SB 24-58",
+      "title": "Utility Billing Accuracy and Accountability Act 2026",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-02-25",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-94",
+      "title": "To amend the punishment for the crime of vandalism to include the option of confinement.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-02-09",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-51",
+      "title": "To appropriate Twenty Thousand Dollars ($20,000.00) for the Rota Aging Program and the Rota DCCA Flame Tree Arts.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-02-25",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-56",
+      "title": "To establish the CNMI Air Service Development Matching Fund to support federal air service development grants, such as the Small Community Air Service Development Program, and to provide procedures and responsibilities related to the use of the Fund.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-08-29",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-69",
+      "title": "To amend Title 70, Subchapter 70-30.3 of the Northern Mariana Islands Administrative Code by adding a new section to authorize Indefinite-Delivery, Indefinite-Quantity Contracts; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-10-24",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-51",
+      "title": "Amend State BOE quorum & removal of members provisions",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-11-19",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HJR 24-4",
+      "title": "To authorize the Commonwealth of the Northern Mariana Islands, through its Governor, to submit to the United States Department of Housing and Urban Development the Action Plan for the Community Development Block Grant Application No. B-25-ST69-0001, the Home Investment Partnership Grant Application No. M-25-ST69-0203, the National Housing Trust Fund Grant Application No. F-25-ST69-0203, and the Emergency Solutions Grant Application No. E-25-DC69-0001; to receive the funds requested therein; and to assume all responsibilities that may be imposed pursuant to those grants.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-07-31",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-51",
+      "title": "To establish revolving accounts for the Department of Lands & Natural Resources; and for other purposes.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-08-15",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HJR 24-3",
+      "title": "To urge the United States Congress to require all contractors and subcontractors performing federally funded work in the Commonwealth of the Northern Mariana Islands to register with the CNMI Department of Finance and certify compliance with CNMI tax laws as a condition of receiving federal payments, to request the U.S. Department of Defense to adopt a CNMI-specific clause in the Defense Federal Acquisition Regulation Supplement (DFARS) to institutionalize this requirement, and to affirm the CNMI\u2019s right under Section 703(b) of the Covenant to receive federal income tax revenues generated from contract work performed in the Commonwealth.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-07-31",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-56",
+      "title": "Penalties for taking or destroying historic or cultural artifacts",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-01-23",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-35",
+      "title": "Exempt Childcare providers",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-05-04",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-32",
+      "title": "To establish a tax on transient accommodations and to regulate the operation of short-term rentals in the Commonwealth; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-08-15",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "SB 24-32",
+      "title": "Solid Waste sub-accounts for 1st & 2nd Senatorial Districts",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-05-15",
+      "latest_action_description": "HOUSE-WM & NR"
+    },
+    {
+      "id": "HB 24-35",
+      "title": "To amend certain provisions of the CNMI Good Samaritan Act [7 CMC \u00a7 2801 et seq.]; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-02-20",
+      "latest_action_description": "Sent to Governor"
+    },
+    {
+      "id": "HLB 24-32",
+      "title": "To re-appropriate Seventy-Eight Thousand Nine Hundred Eighty Dollars ($78,980.00) allotted under Saipan Local Law 18-17; and for other purposes.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-10-09",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-04",
+      "title": "to advance Chamorro & Carolinian language education in the CNMI",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-07-14",
+      "latest_action_description": "HOUSE-ED"
+    },
+    {
+      "id": "SB 24-03",
+      "title": "To transfer management/supervision of soil and water conservation districts to NMC CREES",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-01-15",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-35",
+      "title": "To appropriate $16,925 of the Rota Poker License Fee Account under BU 3302; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-01-27",
+      "latest_action_description": "R.L.L. 24-06"
+    },
+    {
+      "id": "HB 24-50",
+      "title": "To authorize a loan between the Commonwealth Government and the Marianas Public Land Trust in the amount of $29,000,000 and authorize the Marianas Public Land Trust to withhold and retain net annual distributable income starting Fiscal Year 2026 for repayment and security of the loan.",
+      "session": "24",
+      "action_count": 6,
+      "latest_action_date": "2025-09-16",
+      "latest_action_description": "Sent to Governor"
+    },
+    {
+      "id": "SB 24-57",
+      "title": "Amend Business License",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-01-23",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HJR 24-2",
+      "title": "To formally recognize and commemorate the National Conference of State Legislatures on its 50th anniversary.",
+      "session": "24",
+      "action_count": 5,
+      "latest_action_date": "2025-07-03",
+      "latest_action_description": "Sent to Governor"
+    },
+    {
+      "id": "HB 24-57",
+      "title": "To re-establish a Government Liability Cap",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-11-06",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HJR 24-5",
+      "title": "To recognize and acknowledge the National Employer Support of the Guard and Reserve (ESGR) and the Guam-CNMI ESGR State Committee and their volunteer members for their exceptional service and commitment to our service men and women and to thank and appreciate our civilian employers for their utmost support to our service members by recognizing the week of August 4th through August 8th, 2025 as \u201cEmployer Support of the Guard and Reserve Week\u201d.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-07-31",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-68",
+      "title": "To conditionally authorize the Marianas Public Land Trust to establish a margin account solely to facilitate the $29,000,000 loan authorized under Public Law 24-13, subject to the continuing fiduciary and constitutional duties of the Trustees.",
+      "session": "24",
+      "action_count": 6,
+      "latest_action_date": "2025-11-17",
+      "latest_action_description": "Sent to Governor"
+    },
+    {
+      "id": "SB 24-50",
+      "title": "MPLT Margin Account",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-12-16",
+      "latest_action_description": "SENATE-FA"
+    },
+    {
+      "id": "HB 24-95",
+      "title": "To enhance economic opportunities for small businesses and local farmers by establishing new gross revenue tax exemptions, clarifying export treatment, simplifying tax administration in the CNMI; providing for phased implementation to ensure administrative feasibility and fiscal stability; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2026-02-09",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-61",
+      "title": "To enact a new Chapter 5 to Title 1, Division 8, Part 1 of the Commonwealth Code to establish dedicated funding and a special account for the Civil Service Commission; to provide a pro rata collection, certification, and transfer mechanism of funds; to authorize a continuing appropriation and expenditure authority; and to require reporting and legislative oversight.",
+      "session": "24",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "SB 24-59",
+      "title": "Homestead Dense Housing Authorization Act 2026",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-02-26",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-50",
+      "title": "To appropriate local funds from revenues collected pursuant to Saipan Local Law 11-2; and for other purposes.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-02-25",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-66",
+      "title": "To regulate advisory and consulting engagements with the Commonwealth by requiring compliance with procurement laws, Attorney General approval, and Public Auditor oversight; to impose a $50,000.00 cap per engagement; to establish priority qualifications; to void non-compliant contracts; to provide remedies and penalties for violations; and to sunset this Act after five years.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-10-03",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HB 24-92",
+      "title": "To appropriate $63,000.00 from Schedule A of Public Law 24-20 that was vetoed for the Soil and Water Conservation Districts; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2026-03-19",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HB 24-59",
+      "title": "To enact the \u201cCNMI Fair Billing Practices Act\u201d to establish clear and fair standards for back billing practices in the Commonwealth of the Northern Mariana Islands to protect consumers while allowing service providers to recover unpaid amounts lawfully due; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-12-22",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "SB 24-61",
+      "title": "Student Protection from AI-Generated Sexual Exploitation Act of 2026",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-04-07",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-57",
+      "title": "To re-appropriate Sixty thousand dollars ($60,000.00) allotted under Rota Local Law 24-07 and Twenty thousand dollars ($20,000.00) allotted under Rota Local Law 24-08 collected from poker fees in the First Senatorial District to respond to critical emergency situations and urgent recovery initiatives in the aftermath of Super Typhoon Sinlaku; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-04-29",
+      "latest_action_description": "R.L.L. 24-12"
+    },
+    {
+      "id": "SR 24-08",
+      "title": "Pamela Yvette M. Sablan",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-08-07",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HCR 24-1",
+      "title": "To approve revenues and resources of the Commonwealth of the Northern Mariana Islands, as identified pursuant to Article III, Section 9(a) of the Constitution, as amended, and 1 CMC, Division 7, for Fiscal Year 2025, beginning October 1, 2024, and ending on September 30, 2025.",
+      "session": "24",
+      "action_count": 6,
+      "latest_action_date": "2025-02-21",
+      "latest_action_description": "Sent to Governor"
+    },
+    {
+      "id": "SR 24-06",
+      "title": "Disapprove EO 2025-002",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-07-14",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SR 24-01",
+      "title": "Saipan Eagle Club",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-04-25",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "HB 24-100",
+      "title": "To amend the statutory language governing dormant and unclaimed accounts to clarify the regulatory provisions regarding dormancy periods, the perpetual right of owners to claim funds, and the administration of escheated funds.\n[AMENDING 4 CMC 6513]",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-02-25",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SLB 24-01",
+      "title": "Amend TLL 21-09 regulatorily compliant internet gaming",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-05-19",
+      "latest_action_description": "T.L.L. 24-03"
+    },
+    {
+      "id": "SJR 24-02",
+      "title": "State of the Commonwealth Address",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-04-24",
+      "latest_action_description": "House Final Reading"
+    },
+    {
+      "id": "SJR 24-05",
+      "title": "Nuclear energy technologies",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-05-21",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SR 24-07",
+      "title": "Late Juan Mundo Santos",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-03-16",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLI 24-1",
+      "title": "To amend Article XV, Section 1 of the Constitution of the Commonwealth of the Northern Mariana Islands to define \u201cGeneral Revenues\u201d and \u201cSpecial Revenues\u201d consistent with CNMI Supreme Court ruling, \u201cIn the Matter of a Petition for Certified Question,\u201d and to clarify that the Public School System\u2019s twenty-five percent guaranteed appropriation shall be calculated on the net General Revenues after crediting debt service and statutory obligations.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-10-09",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SR 24-09",
+      "title": "Herman Blas Cabrera",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-09-15",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "SJR 24-04",
+      "title": "State of the Commonwealth Address",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-05-15",
+      "latest_action_description": "House Final Reading"
+    },
+    {
+      "id": "SJR 24-03",
+      "title": "To support the passage of H.R. 2132 Essential Air Service",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-05-15",
+      "latest_action_description": "HOUSE-FFA"
+    },
+    {
+      "id": "HCommRes 24-6",
+      "title": "",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-03-18",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-101",
+      "title": "To name the structure for the CNMI Women\u2019s Association Center as the \u201cFelicidad Taman Ogumoro Women\u2019s Development Center\u201d; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-03-05",
+      "latest_action_description": "House Final Reading"
+    },
+    {
+      "id": "HCommRes 24-1",
+      "title": "To recognize and commend Dr. David S. Grauman and Dr. Elizabeth A. Kohnen for their exemplary service and selfless dedication to the Commonwealth Healthcare Corporation in the Commonwealth of the Northern Mariana Islands.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-02-14",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HR 24-17",
+      "title": "To honor, commend, and memorialize the life and legacy of the late Honorable Diego Tenorio Benavente for his distinguished public service, steadfast leadership, athletic and maritime accomplishments, and enduring contributions to the Commonwealth of the Northern Mariana Islands; and to extend the Legislature\u2019s deepest condolences and prayers to his wife, children, grandchildren, friends, and the entire Benavente family.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-11-25",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HB 24-3",
+      "title": "To eliminate the 10% distribution to the Commonwealth Utilities Corporation, and redistribute those funds equally between the Bureau of Motor Vehicles and the Department of Public Works to enhance their operational capacities; and for other purposes.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-02-14",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SR 24-10",
+      "title": "Disapprove Mariana Eland Corp new lease",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-09-15",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "HR 24-10",
+      "title": "To recognize the outstanding managerial and leadership contributions of Gloria Cavanagh in her services to the hospitality and business industry in the Commonwealth of the Northern Mariana Islands.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-06-20",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-4",
+      "title": "To amend the Investment Incentive Act of 2000 by refining eligibility criteria for Qualifying Certificates, strengthening procedural safeguards, mandating detailed reporting on investments and performance, and enhancing oversight mechanisms.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-06-20",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HR 24-26",
+      "title": "To recognize Aria Keilbach for her esteemed accomplishments as Miss Northern Marianas Earth 2025 representing the Commonwealth of the Northern Mariana Islands in Miss Earth.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2026-02-25",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HR 24-19",
+      "title": "To Express the Sense of the House of Representatives of the Twenty-Fourth Northern Marianas Commonwealth Legislature Regarding the United States Department of the Interior, Bureau of Ocean Energy Management\u2019s Request for Information and Interest on Commercial Leasing for Outer Continental Shelf Minerals Offshore the Commonwealth of the Northern Mariana Islands, Published in the Federal Register on November 12, 2025 (FR Doc. No. 2025-19852), and to Urge Respect for CNMI Self-Government, Indigenous Rights, Environmental Protection, Equitable Benefit-Sharing, and the Lessons of Global and Pacific History.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-12-05",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HR 24-21",
+      "title": "To encourage the Honorable David M. Apatang, Governor of the Commonwealth of the Northern Mariana Islands, to declare a Proactive Resilience Emergency Declaration to protect the Commonwealth\u2019s renewable energy future in light of the approaching federal deadline under the 2025 \u201cBig Beautiful Budget\u201d Act (BBB); and urging all agencies to fast-tract renewable energy projects before the opportunity expires.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-12-15",
+      "latest_action_description": "House Final Reading"
+    },
+    {
+      "id": "SLI 24-04",
+      "title": "Condominnium",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2026-03-06",
+      "latest_action_description": "SENATE-REDW"
+    },
+    {
+      "id": "SLI 24-03",
+      "title": "99 Year Private Land Lease",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-10-02",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HR 24-20",
+      "title": "To respectfully recognize the significant contributions of Victorino \u201cVic\u201d Sablan Cepeda to the educational and vocational advancement of the people of the Commonwealth of the Northern Mariana Islands.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-12-05",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HR 24-18",
+      "title": "To deeply honor and celebrate the impactful life and indelible legacy of the late Honorable Benigno Magofna Sablan, whose tireless dedication and myriad contributions were instrumental to the progress of the Commonwealth of the Northern Mariana Islands and to humbly offer our heartfelt condolences to his bereaved family.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-11-25",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HR 24-11",
+      "title": "To respectfully urge the National Oceanic and Atmospheric Administration (NOAA) to ensure meaningful and equitable involvement of Northern Marianas Descent (NMD) persons, and recognition of the Northern Mariana Islands\u2019 traditional knowledge, stewardship, and proprietary rights in all current and future activities related to ocean exploration, marine research, data ownership, and commercialization of marine resources in the Mariana Trench and surrounding waters.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-07-14",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SR 24-16",
+      "title": "Taiwan's meaningful participation in the World Health Assembly (WHA)",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-04-07",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-5",
+      "title": "To establish provisions for jaywalking; and for other purposes.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-08-29",
+      "latest_action_description": "House Final Reading"
+    },
+    {
+      "id": "HR 24-16",
+      "title": "To recognize and commend Project Buddy Check 670 for its unwavering dedication to empowering veterans and their families in the Commonwealth of the Northern Mariana Islands, and for its longstanding contributions to community service, unity, and the well-being of our veterans.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-11-25",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HB 24-2",
+      "title": "To establish a process for the delivery of a State of the Commonwealth Address to the Legislature by the Governor.",
+      "session": "24",
+      "action_count": 6,
+      "latest_action_date": "2025-08-05",
+      "latest_action_description": "House Final Reading"
+    },
+    {
+      "id": "SR 24-11",
+      "title": "CWO 4 Rosannie Castro McGee",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-10-09",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SLI 24-02",
+      "title": "Reducing the number of Senate and House members",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-07-11",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SLI 24-05",
+      "title": "25% of public land lease revenues for land compensation",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2026-03-06",
+      "latest_action_description": "SENATE-REDW"
+    },
+    {
+      "id": "HB 24-22",
+      "title": "To repeal and reenact the Justice Center Fund Revolving Account.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-04-24",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-13",
+      "title": "To amend 10 CMC \u00a7 12114 to provide for the compensation of the members of the Rota Casino Commission.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-06-11",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-25",
+      "title": "CEDA",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2026-02-26",
+      "latest_action_description": "Senate First Reading"
+    },
+    {
+      "id": "HJR 24-10",
+      "title": "To honor and congratulate CITADEL Pacific Ltd. (CPL) on the  occasion of its 20th Anniversary.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-12-30",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "HB 24-25",
+      "title": "To establish mandatory consecutive sentencing for repeat felony offenders on probation or parole, and to ensure consistent application of sentencing laws.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-05-29",
+      "latest_action_description": "SENATE-JGL"
+    },
+    {
+      "id": "SB 24-22",
+      "title": "Debit or credit card transaction",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-05-15",
+      "latest_action_description": "HOUSE-COMMERCE"
+    },
+    {
+      "id": "HLB 24-14",
+      "title": "To impose a 0.5% ad valorem local excise surtax for the privilege of importing construction materials from outside and within the Commonwealth by licensed construction contractors into the First Senatorial District.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-07-15",
+      "latest_action_description": "RLD"
+    },
+    {
+      "id": "HB 24-13",
+      "title": "To amend the fee structure for the Office of the Registrar of Corporations under the Department of Commerce and to remove daily penalty fees.",
+      "session": "24",
+      "action_count": 5,
+      "latest_action_date": "2026-02-11",
+      "latest_action_description": "Sent to Governor"
+    },
+    {
+      "id": "SB 24-14",
+      "title": "Temporarily suspend collection of certain charges by CUC",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-02-06",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-22",
+      "title": "To rename a portion of Lana Drive in the village of As Lito, Precinct I, to \u201cDiego T. Benavente Drive\u201d in honor of the Honorable Diego Tenorio Benavente, former Lieutenant Governor, Speaker of the House, and long-serving public servant of the Commonwealth.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-08-29",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-14",
+      "title": "To establish the Office of Financial Integrity and Compliance (OFIC) and the OFIC Oversight Committee to improve the CNMI Government's financial management and reporting.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-05-15",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HLB 24-25",
+      "title": "To appropriate Forty Two Thousand Dollars ($42,000.00) from revenues collected from poker fees in the Second Senatorial District; and for other purposes.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-08-29",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-13",
+      "title": "Commonwealth-Wide Whistleblower Protection Act 2025",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-07-14",
+      "latest_action_description": "HOUSE-JGO"
+    },
+    {
+      "id": "SB 24-47",
+      "title": "Contractors to be licensed in the CNMI",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-02-25",
+      "latest_action_description": "HOUSE-COMMERCE"
+    },
+    {
+      "id": "HB 24-40",
+      "title": "To amend Title 4 of the Commonwealth Code to clarify the application of business registration, licensing, and tax laws to foreign corporations engaged in land development, infrastructure development, or construction activities in the Commonwealth, including those related to development projects performed under or in connection with contracts, subcontracts, or agreements with the United States.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-07-31",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-40",
+      "title": "Amend Commercial vehicles",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2026-02-26",
+      "latest_action_description": "Senate First Reading"
+    },
+    {
+      "id": "HB 24-78",
+      "title": "To amend Title 4. Economic Resources, Division 6. Banking and Financial Institutions of the Commonwealth Code, to give the Banking Director authority to regulate digital asset businesses; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-02-20",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HB 24-47",
+      "title": "To realign the authority and duties of the CNMI Department of Labor; and for the other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-09-09",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HLB 24-8",
+      "title": "To appropriate the remaining fund balance of $85,500.00 under Saipan Local Law 23-04 for the repair, maintenance and improvements of recreational facilities in Precinct IV; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-07-09",
+      "latest_action_description": "S.L.L. 24-05"
+    },
+    {
+      "id": "HLB 24-49",
+      "title": "To appropriate Ninety Nine Thousand Six Hundred Twenty Five Dollars ($99,625.00) for Medical Subsistence, Municipal Scholarship, and operations of the Mayor of Rota. . Introduced on February 25, 2026.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-02-25",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-1",
+      "title": "To appropriate $11,877.00 for the operations of the Mayor Tinian and Aguiguan pursuant to 10 CMC \u00a7 2581 and 1 CMC \u00a7 1405.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-02-28",
+      "latest_action_description": "T.L.L. 24-1"
+    },
+    {
+      "id": "HLB 24-40",
+      "title": "To appropriate $300,000.00 of the dividends collected by the Commonwealth Economic Development Authority (CEDA) from the Commonwealth Utilities Corporation (CUC) to fund infrastructure projects in the Second Senatorial District.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-01-16",
+      "latest_action_description": "Withdrawn"
+    },
+    {
+      "id": "HR 24-4",
+      "title": "Objecting to the acquittal of Shayne Blanco Villanueva on charges of legislative contempt; urging the CNMI Attorney General and the U.S. Attorney to investigate and prosecute any and all CNMI and federal crimes related to the BOOST program; condemning the demonstrated bias against CNMI Assistant Attorney General James Kingman; denouncing the denial of due process with respect to the Commonwealth's ability to effectively prosecute its case; and urging the Judiciary and the CNMI Bar Association to review and investigate Judge Kenneth L. Govendo' s in-court comments made in Criminal Case No. 24-0028, as said comments undermine public confidence in the judiciary\u2019s impartiality and reflect a personal bias that was unbecoming of a member of the CNMI Judiciary.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-02-14",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-49",
+      "title": "Legislative Reasonable Allowance Act of 2025",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-10-03",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-71",
+      "title": "To allow for the Substance Abuse, Addiction & Rehabilitation (SAAR) Program to promulgate fees; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-11-06",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-85",
+      "title": "To amend 3 CMC \u00a7 1205, relating to the Chamorro and Carolinian Language Policy Commission\u2019s authority to assess fees for translation services; to establish a revolving fund; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2026-03-19",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HR 24-3",
+      "title": "Expressing profound gratitude to Paul Atalig Manglona, his wife, Lydia Manibusan Manglona, and their children, Deanna, Paul Jr., Denn, Pauline, Marla, and Amelia, for unselfishly sharing their husband and father with the people of the Commonwealth of the Northern Mariana Islands, and extending best wishes to him and his family on the occasion of his retirement.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-02-14",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-47",
+      "title": "To appropriate One Hundred Thousand Dollars ($100,000.00) for the continued operation and regulatory oversight of the Rota Casino Gaming Commission; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-04-28",
+      "latest_action_description": "R.L.L. 24-11"
+    },
+    {
+      "id": "HB 24-49",
+      "title": "To establish the CNMI Next/Gen 911 Telephone Communications System within the CNMI; and for other purposes.",
+      "session": "24",
+      "action_count": 5,
+      "latest_action_date": "2026-04-10",
+      "latest_action_description": "Sent to Governor"
+    },
+    {
+      "id": "HLB 24-6",
+      "title": "To appropriate the remaining fund balance of $50,411.00 under Saipan Local Law 21-10 (Project Code 7192H) for the maintenance, repairs and improvements of Commonwealth parks and recreational facilities in Precinct IV and for the purchase of base coarse to repair secondary roadways in Precinct IV; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-04-07",
+      "latest_action_description": "S.L.L. 24-01"
+    },
+    {
+      "id": "HB 24-82",
+      "title": "To amend Section 704(k) of Public Law 24-20 to prevent disruption or delay of allotments, payments, or expenditures of the Legislative Branch by adding a transition period of up to 270 days for the implementation of the Legislature\u2019s Finance Department; and for other purposes.",
+      "session": "24",
+      "action_count": 5,
+      "latest_action_date": "2026-01-05",
+      "latest_action_description": "P.L. 24-21"
+    },
+    {
+      "id": "HB 24-76",
+      "title": "To adopt the village delimitation and name master map for Saipan as the sole village delimitation and name master map of Saipan and to provide for the Office of the Mayor of Saipan to be the primary custodian for maintaining and preserving the master map and for the Department of Commerce \u2013 Central Statistics Division to be the secondary custodian; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-12-09",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HB 24-15",
+      "title": "To establish public sector employee and public sector employer relations through organized labor within the Commonwealth; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-05-15",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "SB 24-12",
+      "title": "Comprehensive Land Use Plan",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-02-06",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-24",
+      "title": "To establish the Rota Department of Public Works equipment rental fee, and for other purposes.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-08-29",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-12",
+      "title": "To promote economic recovery and provide relief to CNMI taxpayers by waiving penalties and interest on unpaid taxes due to financial and socioeconomic hardships; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-07-31",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HLB 24-23",
+      "title": "To establish the Rota Cultural Heritage and Education Tour Act, for other purposes.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-08-29",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-15",
+      "title": "Corporate Filing Number Act",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-06-20",
+      "latest_action_description": "House Final Reading"
+    },
+    {
+      "id": "HB 24-24",
+      "title": "To enact 4 CMC \u00a7 1208 and 4 CMC \u00a7 1312 to establish a Legal Services and Access to Justice Tax Credit.",
+      "session": "24",
+      "action_count": 5,
+      "latest_action_date": "2026-02-11",
+      "latest_action_description": "Sent to Governor"
+    },
+    {
+      "id": "HLB 24-15",
+      "title": "To appropriate revenues collected for the Third Senatorial District pursuant to Public Law 20-59. Introduced by",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-06-11",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-23",
+      "title": "Suspend Saipan Zoning Law",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-02-28",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-23",
+      "title": "To amend 9 CMC \u00a7 2116 to update the definitions of \u201cveteran\u201d and \u201cdisabled veteran\u201d and to allow a valid Veteran ID Card to be used as proof of veteran status when applying for a veteran\u2019s license plate.",
+      "session": "24",
+      "action_count": 6,
+      "latest_action_date": "2026-03-11",
+      "latest_action_description": "P.L. 24-23"
+    },
+    {
+      "id": "SB 24-24",
+      "title": "Interjurisdictional Corrections Compact",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2026-02-13",
+      "latest_action_description": "Senate First Reading"
+    },
+    {
+      "id": "HJR 24-11",
+      "title": "Directing the Commonwealth Utilities Corporation and all relevant Commonwealth government agencies and public corporations to expedite planning, permitting, and deployment of viable renewable energy, storage, and resilience projects \u2014 and to coordinate energy-security and infrastructure-resilience strategies \u2014 in light of the accelerated phase-out of federal clean-energy incentives under the One Big Beautiful Bill Act.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2026-01-20",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "HLB 24-12",
+      "title": "To appropriate $2,500,000.00 from revenues collected pursuant to Saipan Local Law 11-2 as amended; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-06-25",
+      "latest_action_description": "S.L.L. 24-04"
+    },
+    {
+      "id": "HLB 24-7",
+      "title": "To appropriate Eighty Four Thousand Dollars ($84,000.00) from revenues collected from poker fees in the Second Senatorial District; and for other purposes.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-04-25",
+      "latest_action_description": "TALD"
+    },
+    {
+      "id": "HB 24-48",
+      "title": "To adjust the 1992 salary cap of executive directors to a 2025 inflation-equivalent amount.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-08-15",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HR 24-2",
+      "title": "To amend the House of Representatives Rules of Procedure that were appended to House Resolution 24-1",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-03-11",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HLB 24-46",
+      "title": "To re-appropriate the fund balance of $50,000.00 under Saipan Local Law 22-16 (Project Code 2001E); and for other purposes.",
+      "session": "24",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "HB 24-77",
+      "title": "To amend the operating budget and scope of operations of the Office of Grants Management and State Clearinghouse (CNMI OGM-SC); and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-12-09",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HB 24-83",
+      "title": "Requiring Disclosure of 501(c)(3) Status for Government Funding.",
+      "session": "24",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "HLB 24-41",
+      "title": "To re-appropriate Eighty Thousand Dollars ($80,000.00) allotted under Saipan Local Law 20-26; and for other purposes.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2026-01-21",
+      "latest_action_description": "SNILD"
+    },
+    {
+      "id": "HR 24-5",
+      "title": "To Congratulate and Honor all the women in the Commonwealth as we celebrate their contributions and achievements during the month of March 2025 proclaimed as CNMI Women\u2019s Month and March 8th as International Women\u2019s Day.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-03-11",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-84",
+      "title": "To authorize the expenditure of $2,105,563.00 identified by the Governor as a surplus from Fiscal Year 2025 revenues that shall be appropriated by the Legislature to the Public School System and to the 25% Retirees\u2019 Pension Obligation.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-02-05",
+      "latest_action_description": "SENATE-FA"
+    },
+    {
+      "id": "SB 24-48",
+      "title": "Establish a Division of Customs and Biosecurity within the DOF",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2026-05-01",
+      "latest_action_description": "Senate First Reading"
+    },
+    {
+      "id": "HB 24-70",
+      "title": "To authorize the Public School System (PSS) to utilize unrestricted funds previously appropriated to PSS for Fiscal Year 2026; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-11-06",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "SB 24-41",
+      "title": "Child Abuse & Neglect Central Registry in CNMI",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-02-09",
+      "latest_action_description": "HOUSE-HW"
+    },
+    {
+      "id": "HB 24-79",
+      "title": "To amend Title 4, Division 2, Chapter 3 of the Commonwealth Code, to amend the Commonwealth Gaming provisions, remove exclusive license, and allow for more casino licenses; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-12-22",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-48",
+      "title": "To re-appropriate funds under Section 2(t)(d) of Saipan Local Law 23-04 (Project Code 7190M); and for other purposes.",
+      "session": "24",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "HLB 24-9",
+      "title": "To amend Rota Local Law 23-15, to appropriate One Hundred Fifty-Five Thousand Dollars ($155,000.00) for the continued operation of the Rota Casino Gaming Commission; and for other purposes.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-05-19",
+      "latest_action_description": "RLD"
+    },
+    {
+      "id": "HB 24-46",
+      "title": "To Define and Identify General Revenues and approve revenues and resources of the Commonwealth of the Northern Mariana Islands as identified pursuant to Article III, Section 9 (a) of the CNMI Constitution, as amended, and 1 CMC Division 7, for Fiscal Year 2026 and make appropriations for the operations and activities of the Government of the Commonwealth of the Northern Mariana Islands, its agencies, instrumentalities, and independent programs, and to provide budget authority for government corporations for Fiscal Year 2026; and for other purposes.",
+      "session": "24",
+      "action_count": 6,
+      "latest_action_date": "2025-09-30",
+      "latest_action_description": "P.L. 24-14 (IV)"
+    },
+    {
+      "id": "SB 24-46",
+      "title": "Gas service stations provide to public free compressed air",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-09-16",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-41",
+      "title": "To establish regulations on vehicle window tinting for safety and security in the Commonwealth of the Northern Mariana Islands; and for other purposes.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-07-31",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-63",
+      "title": "To amend Title 4 sections 1991 to 1995 relating to the 3% construction tax on gross revenues derived from certain non-residential construction projects and to enact a new section 1996 pertaining to Applicability; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-02-20",
+      "latest_action_description": "Sent to Governor"
+    },
+    {
+      "id": "HB 24-97",
+      "title": "To exempt the Commonwealth Ports Authority from the obligation to remit the one percent (1%) Public Auditor Fee pertaining to seaport revenues.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-02-25",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-52",
+      "title": "To appropriate $125,000.00 allotted under Saipan Local Law 20\u201126 (2)(r)(1); and for other purposes.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-03-18",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-90",
+      "title": "To mandate the Commonwealth Utilities Corporation to change the power, water, and wastewater rate for the Commonwealth Ports Authority to the commercial utility rate; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2026-02-09",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HJR 24-9",
+      "title": "To respectfully urge the United States Department of the Treasury, United States Customs and Border Protection, the United States Postal Service and any other responsible federal agencies to immediately cease and desist the implementation of Executive Order 14324 and remit to the Commonwealth of the Northern Mariana Islands all revenues collected under Executive Order 14324, or in the alternative, to recognize the CNMI\u2019s authority to collect such revenues itself consistent with the Covenant and applicable law in the event that said charges must be imposed.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-09-30",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "HB 24-64",
+      "title": "To establish the CNMI Vehicle Buy-Back and Modernization Program, enabling the systematic removal and auction of government vehicles seven years or older, regardless of operational status, and directing revenues to the CNMI Modernization Fund to support fleet upgrades across all agencies.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-10-02",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HLB 24-55",
+      "title": "To appropriate revenues collected for the Third Senatorial District pursuant to Public Law 20-59.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-05-04",
+      "latest_action_description": "S.L.L. 24-26"
+    },
+    {
+      "id": "HB 24-52",
+      "title": "H. B. NO. 24-52: An Act to strengthen currect domestic and family violence laws to ensure the protections of women and children and to recognize and penalize digital and electronic harassment as acts of domestic and family violence; and for other purposes.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-08-18",
+      "latest_action_description": "HOUSE-JGO"
+    },
+    {
+      "id": "HB 24-99",
+      "title": "To amend Title 6, Division 1, \u00a71609, Theft of Utility Services, to provide a permissive inference of intent under specified circumstances while preserving due process protections; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-02-25",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-55",
+      "title": "Patrick Henry Camacho Castro (Higher Fine Zone)",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-12-19",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-55",
+      "title": "To amend the penalties for illegally parking in spaces designated for persons with disabilities by strengthening and enforcing clear penalties for violation and repeat offenses and by ensuring accessible parking for persons with disabilities; and for other such purposes.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-08-29",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-52",
+      "title": "CEDA preferred dividend funds",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-11-19",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HJR 24-7",
+      "title": "To encourage the Honorable David M. Apatang, Governor of the Commonwealth of the Northern Mariana Islands, to declare a Proactive Resilience Emergency Declaration to protect the Commonwealth\u2019s renewable energy future in light of the approaching federal deadline under the 2025 \u201cBig Beautiful Budget\u201d Act (BBB); and urging all agencies to fast-tract renewable energy projects before the opportunity expires.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-09-02",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "SB 24-06",
+      "title": "Authorize CNMI DOC to pay inmates and establish work programs",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-01-22",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-30",
+      "title": "To re-appropriate the remaining fund balance of Forty-Eight Thousand Four Hundred Fifty Dollars ($48,450.00) allotted under Saipan Local Law 20-26; and for other purposes.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-10-09",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-39",
+      "title": "150 feet limit high water mark to the 1st Senatorial District",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-06-30",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-37",
+      "title": "To rename Isa Drive to \u201cGovernor Carlos S. Camacho Drive\u201d in honor of the First Governor of the Commonwealth of the Northern Mariana Islands.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-12-05",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-01",
+      "title": "CNMI Term Pension Plan",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-01-13",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-39",
+      "title": "To establish Treatment Program Enforcement Officers within the Judiciary to carry out enforcement, supervision, and monitoring functions essential to the success of court-supervised treatment programs, and to ensure that these officers are fully recognized as law enforcement personnel under Commonwealth law.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-08-29",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "SB 24-37",
+      "title": "Judiciary Compliance Officers",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-05-09",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-08",
+      "title": "Amend CNMI Recycling Act of 1999",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-07-31",
+      "latest_action_description": "House Final Reading"
+    },
+    {
+      "id": "HB 24-30",
+      "title": "To appropriate funds from Accounts 1501B and 1501S to support the operational and personnel needs of the CNMI Cannabis Commission and to direct the Secretary of Finance to establish and maintain a separate sub-account within the Cannabis Tax Account for the purpose of segregating and reserving PSS\u2019s designated share.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-04-07",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "SB 24-30",
+      "title": "Amend to certify non-emergency medical transport ambulances",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-03-06",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-37",
+      "title": "To suspend the operations of the Commonwealth Casino Commission; to transfer casino regulatory functions to the Commonwealth Lottery Commission on an interim basis; to establish a Division of Gaming within the Department of Finance; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-09-09",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HLB 24-39",
+      "title": "To appropriate Fifty-four Thousand Dollars ($54,000.00) from revenues collected from poker fees in the Second Senatorial District; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-01-27",
+      "latest_action_description": "T.L.L. 24-10"
+    },
+    {
+      "id": "HB 24-54",
+      "title": "To increase the number of military leave hours available to CNMI government employees and to broaden eligibility for its use.",
+      "session": "24",
+      "action_count": 6,
+      "latest_action_date": "2025-11-26",
+      "latest_action_description": "P.L. 24-18"
+    },
+    {
+      "id": "HJR 24-6",
+      "title": "Commending the distinguished life and extraordinary contributions of the late Honorable Governor Arnold Indalecio Palacios to the Commonwealth of the Northern Mariana Islands and its people and to acknowledge his enduring legacy as a genuine statesman.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-07-31",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-53",
+      "title": "AG on criminal investigative subpoenas",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-12-16",
+      "latest_action_description": "SENATE-JGL"
+    },
+    {
+      "id": "HB 24-53",
+      "title": "To amend 1 CMC \u00a7 7831 to exempt the Commonwealth Utilities Corporation (CUC) from the mandatory one percent (1%) Public Auditor Fee, forgive all arrears related to such fee, and establish a cost-based audit recovery system with mandatory reporting and penalties for noncompliance; and for other purposes.",
+      "session": "24",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "SB 24-54",
+      "title": "Health Insurance Coverage Act 2025",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-12-16",
+      "latest_action_description": "SENATE-HWP"
+    },
+    {
+      "id": "HB 24-98",
+      "title": "To amend Title 4 of the Commonwealth Code to provide Business Gross Revenue Tax relief for taxpayers operating at a net loss under the Northern Mariana Islands Territorial Income Tax; and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-02-25",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HJR 24-1",
+      "title": "To urgently request for the immediate inclusion of the Republic of the Philippines in the nonimmigrant Guam-CNMI Visa Waiver Program administered by the United States Department of Homeland Security.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-03-11",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-65",
+      "title": "To transfer the function of business licensing from the Department of Finance to the Department of Commerce; and for other purposes.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-10-02",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HB 24-91",
+      "title": "To appropriate $300,000.00 of the dividends collected by the Commonwealth Economic Development Authority (CEDA) from the Commonwealth Utilities Corporation (CUC) to fund infrastructure projects in the First Senatorial District.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-05-06",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HJR 24-8",
+      "title": "To urge the United States to take immediate and comprehensive action to identify, remove, and safely dispose of World War II-era unexploded ordnance throughout the Northern Mariana Islands.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-09-10",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "SB 24-62",
+      "title": "CNMI Dignified Aging and Long-Term Care Act of 2026",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-05-01",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-54",
+      "title": "To amend 10 CMC \u00a7 12143 to lower the local gambling taxes, including online gaming.",
+      "session": "24",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "HB 24-96",
+      "title": "To appropriate $960,235.74 in Tobacco Settlement Funds, identified by the Governor as additional funds available for appropriation in Governors Communication (House) 24-103, to the Marianas Visitors Authority for tourism recovery initiatives.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-05-01",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "HB 24-62",
+      "title": "To enact a Uniform Electronic Transactions Act to enable a more robust digital economy in the Commonwealth.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-02-13",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "HLB 24-53",
+      "title": "To appropriate $220,000.00 from revenues collected for the Third Senatorial District pursuant to Saipan Local Law 22-06; and for other purposes.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-03-18",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-31",
+      "title": "Cottage Food & Micronenterprise Home Kitchen Operations Act 2025",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-06-23",
+      "latest_action_description": "Senate First Reading"
+    },
+    {
+      "id": "HLB 24-38",
+      "title": "To appropriate the fund remaining balance of $48,450.33 under Section 2(t)(4) of Saipan Local Law 20-26 (Project Code 7190M) for the maintenance, repairs and improvements of Commonwealth parks and recreational facilities in Precinct IV; and for other purposes.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-01-16",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-36",
+      "title": "To establish a Prescription Drug Monitoring Program in the Commonwealth of the Northern Mariana Islands; and for other purposes.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-09-09",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "SB 24-36",
+      "title": "CNMI Castle Doctrine Act 2025",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-05-06",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-09",
+      "title": "CNMI Captive Insurance Act of 2025",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-05-15",
+      "latest_action_description": "House Final Reading"
+    },
+    {
+      "id": "HB 24-31",
+      "title": "To repeal restrictions on the use of funds in accounts established under 4 CMC \u00a7\u00a7 1215 and 53036(g).",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-07-31",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HB 24-38",
+      "title": "To establish a dedicated CNMI Emergency Reserve Fund (\u201cRainy Day Fund\u201d) with annual mandatory deposits and procedures for fund disbursement in times of declared emergency, while ensuring fiscal accountability.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-08-29",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HLB 24-36",
+      "title": "To re-appropriate the remaining fund balance of $89,217.00 under Saipan Local Law 22-15 (Project Code 3754H) for the maintenance and improvements of Commonwealth parks and recreational facilities in Precinct III and the maintenance and improvements of Garapan Core and the Froilan C. Tenorio Beach Road pathway in Precinct III; and for other purposes.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-12-05",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HLB 24-31",
+      "title": "To appropriate Twelve thousand Five Hundred Dollars ($12,500.00) for the personnel and operations of the Tinian Casino Gaming Commission; and for other purposes.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-10-09",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-07",
+      "title": "Establish Police Reserve Unit within DPS",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-01-27",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SB 24-38",
+      "title": "Jose Camacho Sablan Boating Safety Station",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-02-09",
+      "latest_action_description": "HOUSE-JGO"
+    },
+    {
+      "id": "HB 24-104",
+      "title": "To earmark the Phyto Sanitary Certificate and the Certificate of Origin fees collected by the Customs and Bio-Security, and for other purposes.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-03-18",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HCommRes 24-4",
+      "title": "To commemorate the life, legacy, and dedicated service of the late Dr. John Lamphear Doyle III, for his exceptional contributions to medicine and his profound impact on the well-being of the people of the CNMI, and to extend sincere condolences to his bereaved family.",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2025-06-20",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HCommRes 24-3",
+      "title": "To honor Alleena Villaluz for her exceptional achievements in the Scripps National Spelling Bee, academics, and extracurricular activities, and to celebrate her unwavering dedication and exemplary contributions as a role model for the Commonwealth of the Northern Mariana Islands.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-05-15",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-103",
+      "title": "To deposit the fiber optic telecommunications cable rights-of-way annual use fee into a Submerged Lands Revolving Fund Account for the management and maintenance of submerged lands.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2026-03-18",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SLB 24-02",
+      "title": "Gov Arnold I. Palacios Memorial Highway",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-08-13",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SJR 24-01",
+      "title": "Annex VI & China Flight Exemption",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-06-23",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "HCR 24-2",
+      "title": "To Define and Identify General Revenue and Approve revenues and resources of the Commonwealth of the Northern Mariana Islands, as identified pursuant to Article III, Section 9(a) of the Constitution, as amended, and 1 CMC, Division 7, for Fiscal Year 2026, beginning October 1, 2025, and ending on September 30, 2026.",
+      "session": "24",
+      "action_count": 6,
+      "latest_action_date": "2025-09-11",
+      "latest_action_description": "Sent to Governor"
+    },
+    {
+      "id": "SR 24-02",
+      "title": "CNMI First Annual Fishers Recognition Week",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-06-23",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "SR 24-05",
+      "title": "Stephanie Espartero Diaz",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-06-23",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "SLB 24-03",
+      "title": "Tinian Casino Gaming Control Commission members' compensation",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-12-22",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "SLB 24-04",
+      "title": "Abandoned Investigative deposits",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2026-02-04",
+      "latest_action_description": "Senate First Reading"
+    },
+    {
+      "id": "HB 24-102",
+      "title": "To amend the Fire Safety Code to apply the International Fire Code as the guiding standard in the Commonwealth.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2026-03-19",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "HCommRes 24-2",
+      "title": "To honor the life and legacy of the late Honorable Miguel Mendiola Sablan for his meaningful contributions to the Commonwealth of the Northern Mariana Islands and to extend our sincere condolences and sympathies to his family.",
+      "session": "24",
+      "action_count": 4,
+      "latest_action_date": "2025-03-25",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HCommRes 24-5",
+      "title": "To celebrate and commemorate the Northern Marianas Islands Football Association\u2019s (NMIFA) 20th Anniversary and the remarkable impact NMIFA has made in the Commonwealth of the Northern Marianas Islands.",
+      "session": "24",
+      "action_count": 3,
+      "latest_action_date": "2025-11-06",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HB 24-105",
+      "title": "To enact the Business Integrity and Regulation of Tourism Harms Act (\u201cBIRTH Act\u201d); and for other purposes.",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2026-04-02",
+      "latest_action_description": "House First Reading"
+    },
+    {
+      "id": "SR 24-04",
+      "title": "Taiwan's inclusion in the World Health Assembly (WHA)",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-05-09",
+      "latest_action_description": "Senate Final Reading"
+    },
+    {
+      "id": "SR 24-03",
+      "title": "Lt. Col Adrian Evangelista",
+      "session": "24",
+      "action_count": 2,
+      "latest_action_date": "2025-04-25",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "SR 23-14",
+      "title": "Late Honorable Benigno M. Sablan",
+      "session": "24",
+      "action_count": 1,
+      "latest_action_date": "2026-03-10",
+      "latest_action_description": "Date Introduced"
+    },
+    {
+      "id": "HCR 24-3",
+      "title": "To further approve revenues and resources of the Commonwealth of the Northern Mariana Islands, as identified under Article III, Section 9(a) of the Constitution, as amended, and Title 1, Division 7, of the Commonwealth Code, for Fiscal Year 2026, beginning October 1, 2025, and ending on September 30, 2026.",
+      "session": "24",
+      "action_count": 6,
+      "latest_action_date": "2025-12-23",
+      "latest_action_description": "Sent to Governor"
+    }
+  ]
+}

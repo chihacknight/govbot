@@ -1,0 +1,1240 @@
+{
+  "code": "vi",
+  "generated_at": "2026-10-02T02:19:31.542076+00:00",
+  "summary": {
+    "code": "vi",
+    "present": true,
+    "scraper": "active",
+    "session": "in",
+    "fleet_monitor": {
+      "data_repo": {
+        "data_commit_age_hours": 7.98,
+        "workflows": [
+          {
+            "workflow": "extract-text.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 223.91
+          },
+          {
+            "workflow": "format.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 7.99
+          }
+        ]
+      },
+      "scraper_repo": {
+        "data_commit_age_hours": 7156.66,
+        "workflows": [
+          {
+            "workflow": "openstates-scrape.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 377.12
+          }
+        ]
+      }
+    },
+    "last_commit": "2026-07-14T13:18:40+00:00",
+    "days_since_commit": 79.5,
+    "bill_count": 148,
+    "log_date_min": "20250113T000000Z",
+    "log_date_max": "20260519T000000Z",
+    "log_file_count": 1378,
+    "distinct_active_days": 117,
+    "busiest_day": "20250227",
+    "busiest_day_count": 102,
+    "busiest_day_share": 0.07,
+    "logs_per_bill": 9.3,
+    "vote_events_watermark": "1900-01-01T00:00:00",
+    "events_watermark": "1900-01-01T00:00:00",
+    "has_new_fields": false,
+    "implausible_fallbacks": {},
+    "orphan_count": 0,
+    "bills_indexed": 148
+  },
+  "bills": [
+    {
+      "id": "36-0142",
+      "title": "An act amending title 27 Virgin Islands Code, chapter 17, section 45, by changing the maximum number of members of the Board for the Licensing of Barbering and Cosmetology",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-08-26",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0145",
+      "title": "An act ratifying the Governor\u2019s approval of the Modification and Extension of Consolidated Major Coastal Zone Management Permit Nos. CZJ-04-14 (W) and CZJ-03-14 (L)",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-08-26",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0111",
+      "title": "An Act appropriating $20,000,000 from the Settlement Agreement between the Government of the Virgin Islands and the Estate of Jeffrey E. Epstein; Darren K. Indyke, in his individual capacity and in his capacity as the Co-Executor for the Estate of Jeffery E. Epstein and Administrator of The 1953 Trust; Richard D. Kahn, in his individual capacity and in his capacity as Co-Executor of the Estate of Jeffery E. Epstein and Administrator of The 1953 Trust; The 1953 Trust; Plan D, LLC; Great St. Jim, LLC; Nautilus, Inc.; Hyperion Air, LLC; Poplar, Inc.; Southern Trust Company, Inc.; Maple, Inc.; and Laurel, Inc. (collectively Defendants) to the Department of Public Works for the design and construction of a nursing home on St. Croix and a nursing home on St. Thomas",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-07-10",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0129",
+      "title": "An act amending Official Zoning Map No. SCZ-20 for the island of St. Croix to rezone Plot Nos. 36 and 37 Estate Richmond, St. Croix from C (Commercial) to B-3 (Business-Scattered)",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-08-29",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0116",
+      "title": "An Act amending and updating various sections of title 12 Virgin Islands Code",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-07-10",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0120",
+      "title": "An act appropriating the sum of $341,460 from the Virgin Islands Education Initiative Fund to the Virgin Islands Department of Education for the purpose of conducting evaluations to determine students\u2019 eligibility for special education services",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-07-10",
+      "latest_action_description": "To Senate"
+    },
+    {
+      "id": "36-0118",
+      "title": "An act amending Official Zoning Map No. STZ-1 1, St. Thomas to rezone Parcel No. 100-1C Estate Taarneberg, King\u2019s Quarter, St. Thomas from R-3 (Residential-Medium Density) to B-1 (Business-Central Business District)",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-08-29",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0127",
+      "title": "An act appropriating $300,000 from the General Fund of the Treasury of the Government of the Virgin Islands to the Roy Lester Schneider Hospital and Medical Center for medical supplies and additional staff for the Dialysis Unit",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-07-23",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0144",
+      "title": "An act amending title 14 Virgin Islands Code, chapter 113 to define and prohibit assault rifles, ban suppressors and silencers, and requiring safety training for licensed rifles and shotgun holders; prohibiting large-capacity magazines and preventing the illegal sales of firearms, firearm accessories and ammunition",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-08-26",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0143",
+      "title": "A resolution petitioning the President of the United States to ensure the Federal Emergency Management Agency has the necessary resources in the Virgin Islands",
+      "session": "36",
+      "action_count": 3,
+      "latest_action_date": "2025-08-26",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0119",
+      "title": "An act amending Act No. 8651 by reprogramming the appropriated funds to the Department of Sports, Parks, and Recreation to fund the completion of the Randall \u201cDoc\u201d James Racetrack on St. Croix",
+      "session": "36",
+      "action_count": 3,
+      "latest_action_date": "2025-07-10",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0126",
+      "title": "An act establishing a special committee to issue a Request for Proposal for the provision of a self-funded group health and dental insurance for government employees and retirees of the Government of the Virgin Islands",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-07-23",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0121",
+      "title": "An act to rename the Peter Carl Limpricht Park the TSK Park in honor of the Ten Sleepless Knights quelbe band and making an appropriation to effectuate that change",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-07-23",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0128",
+      "title": "An act amending Official Zoning Map No. STZ-4 to rezone Parcel No. 68A Estate Lindberg Bay, No. 4A, Southside Quarter, St. Thomas from P (Public) to R-3 (Residential-Medium Density)",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-07-23",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0117",
+      "title": "An act appropriating $296,700 from the General Fund of the Treasury of the Government of the Virgin Islands to the Virgin Islands Water and Power Authority for the purchase and installation of street lighting from the University of the Virgin Islands to Raphune Hill in St. Thomas",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-07-10",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0110",
+      "title": "An ct amending title 20 Virgin Islands Code, part I. chapter 1 to require a permit from the Virgin Islands Department of Public Works before the excavation of any public roadway",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2026-03-25",
+      "latest_action_description": "To Senate"
+    },
+    {
+      "id": "36-0096",
+      "title": "An act amending title 33 Virgin Islands Code, chapter 3, section 57, subsection (b) to increase the passenger manne terminal tax and title 33 Virgin Islands Code, chapter III by adding a section 3100hh to establish the Social Security Disability Insurance Fund",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-19",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0062",
+      "title": "An Act approving the lease agreement between the Government of the Virgin Islands, acting through its Commissioner of the Department of Property and Procurement, and the United States Department of Commerce, National Oceanic and Atmospheric Administration for a portion of the telecommunications tower located on Parcel R-22 of Tract 1 Estate Nazareth, No. 1 Red Hook Quarter, St. Thomas",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-07-17",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0065",
+      "title": "An Act amending Act No. 8512 by removing the responsibility of the Virgin Islands Port Authority from constructing a warehouse on former Addelita Cancryn Junior High School campus to requiring the Port Authority to assist with the design, retrofitting and renovation of an existing warehouse located on Parcel No. 1B and 47B-1 Gasverks Gade, No. 3 Crown Prince Quarter, St. Thomas",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0091",
+      "title": "An act repealing and re-enacting title 3 Virgin Islands Code chapter 25, section 570a, establishing a recruitment and retention program for police officers, correction officers, and registered nurses within the Division of Personnel",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-19",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0053",
+      "title": "An Act amending title 3 Virgin Islands Code, chapter 25, subchapter V, section 555b to increase the minimum annual salary for full time employees of the Government of the Virgin Islands, its semi-autonomous agencies and independent instrumentalities from $27,040 to $32,000",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-06-26",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0098",
+      "title": "An act approving the lease agreement between the Government of the Virgin Islands, acting through the Commissioner of the Department of Property and Procurement, and Caribbean Buzz, LLC for a portion of Remainder Parcel No. 3B Estate Susannaberg, 1 7A Cruz Bay Quarter, St. John, Virgin Islands for the purpose of operating and managing a helicopter transportation service at the existing helipad and for other permitted purposes",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2026-05-19",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0054",
+      "title": "An Act providing an appropriation from the General Fund of the Treasury of the Government of the Virgin Islands to the Governor Juan F. Luis Hospital and Medical Center and to the Roy L. Schneider Hospital and Medical Center to address medical staff needs",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0038",
+      "title": "An act amending title 29 Virgin Islands Code, chapter 10, subchapter III, section 551, subsection (a) by increasing the limit for outstanding bonds for the Virgin Islands Port Authority from $100 million to $500 million",
+      "session": "36",
+      "action_count": 6,
+      "latest_action_date": "2025-05-20",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0007",
+      "title": "A Resolution honoring and commending James Sasso for distinguished service in the mortuary and funeral service industry",
+      "session": "36",
+      "action_count": 6,
+      "latest_action_date": "2025-07-17",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0031",
+      "title": "An Act amending title 23 Virgin Islands Code, chapter 10, subchapter IV, section 1073 to exempt a public safety agency or private safety entity from liability for acts of negligence in the operation, administration or maintenance of a 911 service unless the acts are committed in a grossly negligent manner or are committed with willful intent",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-07-17",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0009",
+      "title": "A Resolution honoring and commending Mr. Steven van Beverhoudt for his years of dedicated service and numerous contributions to the people of the Virgin Islands",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0036",
+      "title": "An Act repealing and reenacting title 20 Virgin Islands Code, part II, chapter 43, section 512 increasing penalties for traffic violations; establishing a Virgin Islands Police Department Impound Lot; and for other related purposes",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-06-26",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0055",
+      "title": "An Act honoring and commending Mark Sabino for his outstanding service and commitment to the people of the Virgin Islands by renaming the West Indian Company Dock in St. Thomas \u201cThe Mark Sabino Marine Cruise Facility\u201d",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0052",
+      "title": "An Act amending title 29, Virgin Islands Code, chapter 9, section 502, regarding advertising devices on private property",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0099",
+      "title": "An act amending title 34 Virgin Islands Code, chapter 15 expanding the Elder and Dependent Adult Abuse Prevention Act",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-06-24",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0090",
+      "title": "An act amending title 1 Virgin Islands Code, chapter 11 by adding section 200m to declare the week beginning the Monday before the first Friday in June as the Virgin Islands Gun Violence Awareness Week",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-07-17",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0064",
+      "title": "An Act amending title 33 Virgin Islands Code, chapter 111, section 3100i aligning the disbursement and spending limitations of funds allotted to public schools from the Education Initiative Fund with the realities of academic planning, ensuring that funds are used to maximize student success",
+      "session": "36",
+      "action_count": 8,
+      "latest_action_date": "2025-07-17",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0063",
+      "title": "An Act amending title 33, Virgin Islands Code subtitle 1, chapter 3, sections 41, 42(a), and 43(a) and (c) to clarify that gross receipts taxes must be paid by all contractors doing business in the Virgin Islands regardless of physical location",
+      "session": "36",
+      "action_count": 6,
+      "latest_action_date": "2025-06-26",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0097",
+      "title": "A resolution commending the National Conference of State Legislatures (\u201cNCSL\u201d) on its 50th anniversary and recognizing the NCSL for its commitment to the legislative institution",
+      "session": "36",
+      "action_count": 6,
+      "latest_action_date": "2025-07-17",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0008",
+      "title": "An Act amending title 33 Virgin Islands Code, subtitle 2, chapter 89, subchapter I, section 2494 requiring the Lieutenant Governor to offset a property owner\u2019s property tax liability against any amount of money that the Government of the Virgin Islands owes to the property owner",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0037",
+      "title": "An Act amending title 4 Virgin Islands Code by establishing a Probate Division in the Superior Court of the Virgin Islands",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0030",
+      "title": "An Act amending title 24 Virgin Islands Code, chapter 1, section 4, increasing the Virgin Islands minimum wage",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0039",
+      "title": "An Act amending title 33 Virgin Islands Code, chapter 4 by increasing the costs to bring containers or flat rack containers into the Virgin Islands",
+      "session": "36",
+      "action_count": 3,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0006",
+      "title": "An Act appropriating $600,000 to the Department of Agriculture to be used to fund farmers in the Virgin Islands that produce crops and other food products; and for other related purposes",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0001",
+      "title": "A Resolution organizing and establishing the Majority Caucus, electing the officers, and appointing the chairpersons, vice-chairpersons, and members of the standing committees of the Thirty-Sixth Legislature of the Virgin Islands",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-01-24",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0023",
+      "title": "An Act amending title 33 Virgin Islands Code, chapter 4, section 72 relating to the highway user tax",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0024",
+      "title": "An Act amending title 14 Virgin Islands Code, chapter 85 by adding section 1710 declaring a person incapable of consent to sexual relations while the person is in police custody",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-07-17",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0012",
+      "title": "An Act amending title 3 Virgin Islands Code, chapter 27 to streamline the GERS disability annuity approval procedures and for other related issues",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-07-17",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0015",
+      "title": "An Act amending title 3 Virgin Islands Code, chapter 19, section 339a relating to the Division of Festivals by eliminating the assistant directors, increasing the number of directors from one to three, and requiring each director to submit a financial report to the Chairperson of the Committee on Budget, Appropriations and Finance of the Legislature of the Virgin Islands",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0041",
+      "title": "An Act amending sections 8 and 9 of Act No. 7267 by changing the authorized use of Matricula 22-a Estate Mars Hill, West End Quarter, St. Croix, Virgin Islands, and by reprogramming the $2,000,000 appropriation",
+      "session": "36",
+      "action_count": 3,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0079",
+      "title": "An Act amending title 19 Virgin Islands Code, part IV, chapter 37, to add a new subchapter mandating territorial hospitals to provide paternity testing services upon request",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-08",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0046",
+      "title": "An Act amending title 14 Virgin Islands Code, chapter 31, section 622, expanding the threshold for disorderly conduct",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0084",
+      "title": "An Act honoring and commending Alva Alphonse Swan also known as \u201cCoach Tumba\u201d for his significant contributions to the sport of basketball in the Virgin Islands by bestowing upon him the Key to the Territory",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-08",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0070",
+      "title": "If the Government purchases property from an individual for eminent domain, it must be used for the specified purpose and/or historical/archaeological preservation. If the purpose of said property is not executed in 30 years, the individuals and/or heir can petition the government and the Property must be returned as well as any funds exchanged for the property must be given back to government. The government cannot go back to claim eminent domain for less than 10 years.",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0048",
+      "title": "An Act amending title 22, Virgin Islands Code, chapter 3 relating to annual rate changes for medical malpractice liability insurance and amending title 27, Virgin Islands Code, chapter 1 by increasing the limitation on recovery in medical malpractice actions from $250,000 to $400,000; designating the records and testimony gathered by quality improvement committees as confidential; and establishing additional requirements for filing medical malpractice claims",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0077",
+      "title": "An act amending title 3 Virgin Islands Code, chapter 37 to enact the Virgin Islands Commission on Ethics and Conflicts of Interest",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-08",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0083",
+      "title": "An Act establishing a 90-day amnesty period for the waiver of penalties for payment of outstanding property taxes, income taxes, and gross receipt taxes for all tax years to assist taxpayers and businesses recovering from the aftermath of Hurricanes Irma and Maria and Tropical Storm Ernesto",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-08",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0014",
+      "title": "An Act amending title 20 Virgin Islands Code, part II, chapter 43, subchapter I to establish parking for expectant mothers or mothers with newborns",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0013",
+      "title": "An Act amending title 28 Virgin Islands Code, chapter 1, section 11 by increasing the time that a person must adversely possess a property before acquiring title and excluding certain property from being acquired by another person through a claim of adverse possession",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0025",
+      "title": "An Act appropriating $90,000 from the General Fund of the Treasury of the Government of the Virgin Islands to the Virgin Islands Department of Human Services to purchase all-in-one mobile health, wellness, and personal safety devices for Virgin Islands senior citizens and other vulnerable residents, and pay the annual service associated with maintenance of the devices",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0022",
+      "title": "An Act amending title 28 Virgin Islands Code, chapter 31, subchapter I, section 752 relating to notice for the termination of month-to-month residential tenancies and adding section 752 (b) requiring fair notice for rent increases for residential tenancies",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0049",
+      "title": "An Act establishing the Bureau of School Security within the Virgin Islands Department of Education",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0082",
+      "title": "An Act granting a perpetual access easement by the Government of the Virgin Islands for a portion of Parcel No. 75 Estate LaGrange, West End Quarter, St. Croix, for ingress and egress only",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-06-26",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0076",
+      "title": "An Act repealing title 25 Virgin Islands Code, chapter 17, section 501 and amending title 32 Virgin Islands Code, chapter 21 by adding an article XVII relating to cruise ship gaming in the territorial waters of the Virgin Islands",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-08",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0071",
+      "title": "An Act amending title 18 Virgin Islands Code, section 232 to provide the process for political parties to choose their nominees for public offices",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0085",
+      "title": "An Act to prevent or rescind any automatic implementation of salary adjustments made pursuant to the recommendations of the Virgin Islands Public Officials Compensation Commission, to reclaim unauthorized payments, and to establish enforcement and penalty provisions",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-06-26",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0078",
+      "title": "An act amending title 3 Virgin Islands Code, chapters 8 and 37 to enumerate the duties and functions of the Virgin Islands Commission on Ethics and Conflicts of Interest; appropriating $1,000,000 from the General Fund of the Treasury of the Government of the Virgin Islands to the Virgin Islands Commission on Ethics and Conflicts of Interest and for other related purposes",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-08",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0047",
+      "title": "An Act amending Act No. 8920 to appropriate $25,000,000 from the Southern Trust Company Settlement Fund to pay retroactive wages for retired and active government employees, and for other purposes",
+      "session": "36",
+      "action_count": 8,
+      "latest_action_date": "2025-05-20",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0040",
+      "title": "An Act approving the lease agreement between the Government of the Virgin Islands and Charles M. Kim V.I. Foundation, Inc. d/b/a Virgin Islands Museum of Art, for a portion of Lot No. 48b Norre Gade, Kings Quarter, St. Thomas, Virgin Islands",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-05-20",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0132",
+      "title": "An act amending title 3 Virgin Islands Code, chapter 27 by enacting the \u201cPublic Corruption Act\u201d providing for the suspension of retirement benefits of govermnent officials and employees, who are members of the Government Employees Retirement System, upon the conviction of any felony violating public trust, and applying those benefits toward the costs of imprisonment and restitution",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-08-26",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0135",
+      "title": "An act amending title 29 Virgin Islands Code, chapter 5, section 294 regarding expedited building permits for developers",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-08-26",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0103",
+      "title": "An act amending title 33 Virgin Islands Code, subtitle 3, chapter 111, section 3080 by reducing the percentages used to calculate post-service retirement annuities for the Governor and Lieutenant Governor and by establishing a minimum retirement age",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-06-24",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0104",
+      "title": "An Act amending title 17 Virgin Islands Code, chapter 11 by adding section 137 to allow a school district to accept volunteer school chaplains to provide support, services, and programs for students as assigned by the Board of Education",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-06-24",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0105",
+      "title": "An act amending title 7 Virgin Islands Code, chapter 13, subchapter III by prohibiting the possession, sale, or manufacture of tetrahydrocannabinolic acid, delta-6 THC, delta-8 THC and delta-10 THC products in the Virgin Islands and for other related purposes",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-06-24",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0102",
+      "title": "An act amending title 31 Virgin Islands Code, chapter 23 by re-enacting section 236b requiring the use of construction materials manufactured in the Virgin Islands, to the greatest extent practicable, for locally or federally funded contracts with the Government of the Virgin Islands",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-06-24",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0134",
+      "title": "An act repealing and reenacting title 18 Virgin Islands Code, chapter 1, section 2 relating to government employees\u2019 eligibility for elected offices, to allow government employees to run for political office while actively employed, unless specifically prohibited by federal or other laws",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-08-26",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0133",
+      "title": "An act amending title 17 Virgin Islands Code, chapter 10, section 111(a)(I) providing mental health education and instruction",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-08-26",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0115",
+      "title": "An act amending title 27, Virgin Islands Code, chapter 9, subchapter I, section 304 authorizing the Department of Licensing and Consumer Affairs to physically close a business when it finds that the business is causing a nuisance, presents a threat to safety or is disturbing the peace",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-07-10",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0112",
+      "title": "An act amending title 4 Virgin Islands Code, chapter 31, section 516 increasing the filing fee for general civil complaints in the Superior Court of the Virgin Islands and title 5 Virgin Islands Code, chapter 41, section 426 allowing for the collection of nine percent prejudgment interest when an offer of judgment is filed with the court",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-07-10",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0124",
+      "title": "An act repealing title 18, Virgin Islands Code, chapter 1, section 2 and enacting provisions to allow government employees seeking elected office to maintain their employment",
+      "session": "36",
+      "action_count": 3,
+      "latest_action_date": "2025-07-23",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0123",
+      "title": "An act amending title 20 Virgin Islands Code, part II, chapter 43, subchapter I, section 493 making it unlawful for a person who has 0.04 percent or more, by weight, of alcohol in his blood to operate a commercial motor vehicle, and making it unlawful for a person under the age of 21 years who has any detectable amount of alcohol in his blood, to operate a motor vehicle",
+      "session": "36",
+      "action_count": 3,
+      "latest_action_date": "2025-07-23",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0148",
+      "title": "An act amending title 3 Virgin Islands Code, chapter 16, section 274 by mandating that the Virgin Islands Taxicab Commission implement an electronic payment system",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-08-26",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0146",
+      "title": "A resolution amending Rule 810(e) and Rule 810(f) of the Rules of the 36th Legislature of the Virgin Islands to expand the timeframe for filing complaints alleging violations of the standards of conduct and to revise the provision regarding delayed discovery of violations",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-08-26",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0141",
+      "title": "An Act amending title 3 Virgin Islands Code, chapter 22, section 415, to add a term of service for appointees to the Board of Physical Therapy",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-08-26",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0122",
+      "title": "An act amending title 3 Virgin Islands Code, chapter 27, section 711 and chapter 28a, section 760, by requiring the Government Employees Retirement System to discontinue making disability retirement annuity payments to a member who resumes any employment",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-07-23",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0125",
+      "title": "An act amending title 3 Virgin Islands Code, chapters 25 and 27 relating to simultaneous payment of non-legislative annuities to serving members of the Legislature of the Virgin Islands",
+      "session": "36",
+      "action_count": 3,
+      "latest_action_date": "2025-07-23",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0113",
+      "title": "An act amending title 8 Virgin Islands Code, chapter 4 to assess liability on businesses that serve intoxicating beverages to patrons that have overconsumed the beverages",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-07-10",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0114",
+      "title": "An act honoring and commending Dilsa Capdeville for her many contributions to the Virgin Islands community through her roles in various areas of social services and advocacy for abused women and children and to rename the Bolongo Bay Head Start Facility the \u201cDilsa Capdeville Head Start Facility\u2019 in her honor",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-07-10",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0140",
+      "title": "An act amending title 3 Virgin Islands Code, chapter 22, section 403, clarifying the term of service for members of the Historic Preservation Commission",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-08-26",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0147",
+      "title": "An act approving the Hotel Development Agreement between the Government of the Virgin Islands and Haven Development, LLC",
+      "session": "36",
+      "action_count": 5,
+      "latest_action_date": "2025-08-29",
+      "latest_action_description": "Sent to Governor"
+    },
+    {
+      "id": "36-0004",
+      "title": "An Act amending title 9 Virgin Islands Code, chapter 15, subchapter II, section 233 relating to pawnbrokers to increase the fine for violating any law regulating pawnbrokers",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0003",
+      "title": "An Act amending title 19 Virgin Islands Code relating to nursing homes and assisted living facilities by adding a new chapter 76 to establish the services that nursing homes and assisted living facilities are required to provide; establishing limitations on financial charges, requirements for visitation, and the rights of a resident",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0035",
+      "title": "An Act amending title 15 Virgin Islands Code, article V to allow the Government of the Virgin Islands to implement the federal mandate of the Stephen J. Beck, Jr., Achieving Better Life Experiences, which provides for the establishment of savings accounts for persons with disabilities",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-07-17",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0032",
+      "title": "An Act amending title 33 Virgin Islands Code, subtitle 3, chapter 111, section 3080 by limiting the salary amount used to compute the service retirement annuity for the Governor and the Lieutenant Governor of the Virgin Islands",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-07-17",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0066",
+      "title": "An Act amending title 29 Virgin Islands Code, chapter 15 by adding a section 928a providing that all officials and employees of the Virgin Islands Public Finance Authority and its wholly owned subsidiaries must be members of the Government Employees Retirement System of the Virgin Islands",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0092",
+      "title": "An act approving the lease agreement between the Government of the Virgin Islands and St. John Taxi Services Corporation, for Parcel No. D-2 Estate Cruz Bay Town, Cruz Bay Quarter, St. John, Virgin Islands",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-19",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0059",
+      "title": "An Act amending title 20 Virgin Islands Code, chapter 45 to establish the suspension of driver's licenses for tax delinquency",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0095",
+      "title": "An act amending Official Zoning Map No. STZ-6, St. Thomas to establish a Planned Area Development on the R-2 zoned Parcel Nos. 4i Remainder and 4J Remainder Estate St. Joseph and Rosendahl, No. 4 Great Northside Quarter",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-06-26",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0061",
+      "title": "An Act amending title 3 Virgin Islands Code, chapter 27, section 706 and chapter 28A, section 755 allowing retirees who are receiving an annuity from the Government Employees Retirement System who are subsequently employed by the\rUniversity of the Virgin Islands (\u201cUVI\u201d), to continue to receive their GERS annuity while receiving their salary from the University if the retiree enrolls in a different retirement plan",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0057",
+      "title": "An Act amending title 5 Virgin Islands Code, chapter 314, section 3733, subsection (a) to require automatic expungement of the arrest record and complaint or information when the accused has been acquitted",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-07-17",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0068",
+      "title": "An Act appropriating $5,000,000 from the General Fund of the Treasury of the Government of the Virgin Islands to the Virgin Islands Police Department for the purchase and installation of rapid-shutter motion cameras throughout the territory",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0050",
+      "title": "An Act repealing and reenacting with amendments title 27 Virgin Islands Code, chapter 20, relating to the regulation of the profession of social work and social workers",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-07-17",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0033",
+      "title": "An Act amending Official Zoning Map No. STZ-9 for the island of St. Thomas to rezone Remainder Parcel No. 19-1-2, Parcel No. 19-1-2-7 (Eastern portion), and Parcel No. 19-1-2-7 (Western portion), Estate Smith Bay, Nos. 1, 2, and 3 East End Quarter, St. Thomas, Virgin Islands from A-2 (Agricultural Zone) to B-3 (Business Scattered)",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-06-26",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0034",
+      "title": "An Act to amend Official Zoning Map No. STZ-9 to allow for the rezoning of Parcel No. 19-1-2-4 Estate Smith Bay, Nos. 1, 2, and 3 East End Quarter, St. Thomas, Virgin Islands, from R-1 (Residential-Low Density) to B-3 (Business-Scattered) and to allow for a use variance from the B-3 (Business-Scattered) zoning designation",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-06-26",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0002",
+      "title": "A Resolution adopting the Rules of the 36th Legislature of the Virgin Islands",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-01-24",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0005",
+      "title": "An Act amending title 16 Virgin Islands Code, chapter 2, section 99 establishing a mandatory minimum bail amount in domestic violence cases",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-06-26",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0051",
+      "title": "An Act amending title 27 Virgin Islands Code, chapter 20 by establishing the Virgin Islands Board of Social Work Licensure",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-07-17",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0056",
+      "title": "An Act repealing Act No. 8722, Section 6, which authorized the suspension and abeyance of the horse racing Anti-Doping provisions of the Virgin Islands Code",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2026-03-25",
+      "latest_action_description": "To Senate"
+    },
+    {
+      "id": "36-0069",
+      "title": "An Act amending title 17 Virgin Islands Code, chapter 9, subchapter 1, section 82, subsection (a) by changing the age a child begins kindergarten from five years of age to four years of age",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0060",
+      "title": "An Act amending title 14 Virgin Islands Code, chapter 113, section 2251 allowing for the possession and use of laser/electric shim devices for self-defense purposes",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0094",
+      "title": "An act amending Official Zoning Map No. STZ-7 to rezone Parcel No. 2L Estate Bakkero, No. 5, Frenchman\u2019s Quarter, St. Thomas from R-1 (Residential-Low Density) to R-3 (Residential-Medium Density)",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-06-26",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0093",
+      "title": "An act appropriating $1,500,000 from the General Fund of the Treasury of the Government of the Virgin Islands to the Virgin Islands Diabetes Center of Excellence for staffing and operations within the Territory",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-19",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0067",
+      "title": "An Act amending title 17 Virgin Islands Code, chapter 5 by adding a section 41j requiring the Pledge of Allegiance and the Virgin Islands Motto to be recited at the beginning of each school day in public schools, but additionally provides that students may opt out of the recitatation",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0058",
+      "title": "An Act honoring and commending Dennis \u201cPumpa\u201d Lennox Leroy Liburd, Jr. for his many contributions to the Virgin Islands culture and music industry as a Soca artist by awarding him the Official key to the Territory and naming the main entrance of 6-Y Peters Rest Road, Christiansted, St. Croix in his honor",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0045",
+      "title": "An Act appropriating the sum of $400,000 from the Tourism Advertising Revolving Fund to the Virgin Islands Taxicab Commission for the implementation of technological upgrades",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0089",
+      "title": "An act approving the lease agreement between the Government of the Virgin Islands and PEO Productions, LLC d/b/a WSTA Radio, for Parcel No. 121 Submarine Base, No. 6, Southside Quarter, St. Thomas, Virgin Islands, Parcel No. 167 Sub Base, No. 6, Southside Quarter, St. Thomas and Parcel No. 171 Sub Base, No. 6, Southside Quarter, St. Thomas",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-08",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0042",
+      "title": "An Act amending title 33 Virgin Islands Code subtitle 3, chapter 118, section 3411 to increase the maximum judgement amount for the award of damages against the Government of the Virgin Islands",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0074",
+      "title": "An Act amending title 20 Virgin Islands Code, part I by adding a chapter 3 establishing the \u201cVirgin Islands Roadside Property Maintenance and Vegetation Act\u201d to require property owners to maintain roadside vegetation, prevent obstruction of public roads and utility lines, provide for enforcement, penalties, and exceptions, and for other related purposes",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-08",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0080",
+      "title": "An Act amending title 17 Virgin Islands Code, chapter 5 mandating a daily morning exercise routine for students in all public schools in the Virgin Islands",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-08",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0087",
+      "title": "An act amending title 7 Virgin Islands Code by adding chapter 16 to require the Virgin Islands Department of Agriculture to establish and manage a 30-acre orchard on St. Croix",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-08",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0073",
+      "title": "An Act amending title 18 Virgin Islands Code, chapter 1, section 4 and title 18 Virgin Islands Code, chapter 3, section 41 relating to the powers of the Supervisor of Elections and the Board of Elections",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0027",
+      "title": "An Act amending title 5 Virgin Islands Code, subtitle 3, part I, chapter 311 by enacting Jah\u2019niqua\u2019s Law requiring a defendant to pay restitution in the form of child maintenance if the victim of the offense was the parent or guardian of a minor child or dependent and if the defendant was convicted of negligent homicide by means of a motor vehicle, a violation of title 20 Virgin Islands Code, section 504, while under the influence of or affected by intoxicating liquor or narcotic drugs; or was convicted of driving under the influence of intoxicating liquors or controlled substances, a violation of title 20 Virgin Islands Code, section 493, which results in an accident that causes the victim to become disabled or totally and permanently disabled",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-07-17",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0018",
+      "title": "An Act amending title 3 Virgin Islands Code, chapter 25, subchapter V, section 551 by increasing the minimum salary amount for teachers from $3,200 per annum to $60,000 per annum and by making technical amendments",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0020",
+      "title": "An Act amending title 2 Virgin Islands Code, chapter 1, section 6 allowing the Police Chief of the Legislature; the Sergeant-of-Arms; or any security officer of the Legislature; who has peace officer status, to arrest a person who neglects or refuses to appear before the Legislature in obedience to subpoena",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0016",
+      "title": "An Act appropriating the sum of $800,000.00, from the Senior Citizens\u2019 Center Revolving Fund, to the Virgin Islands Department of Human Services for the general upkeep of senior centers throughout the Territory",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0029",
+      "title": "A Resolution honoring and commending Sonya Hough, the creator of the St. Croix \u201cCrucian\u201d Hook Bracelet and proprietor of one of the first hand-wrought jewelry stores in St. Croix",
+      "session": "36",
+      "action_count": 6,
+      "latest_action_date": "2025-07-17",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0011",
+      "title": "An Act amending title 3 Virgin Islands Code, section 715(a) by changing the composition of the GERS Board of Trustees so that active government employees can elect representatives to the Board",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0072",
+      "title": "An Act appropriating $405,000 from the General Fund of the Treasury of the Virgin Islands to the Virgin Islands Fire and Emergency Medical Services for the purchase of three ambulances",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0086",
+      "title": "An Act amending title 3 Virgin Islands Code, chapter 25, section 590b, the Caregivers Leave Act",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-08",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0081",
+      "title": "An act amending title 21 Virgin Islands Code, chapter 2, section 103, by increasing the compensation for nongovernment members of the Housing Finance Authority",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-08",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0075",
+      "title": "A Resolution honoring and commending Austin A. Venzen posthumously for his unwavering commitment to music education and the arts, through his work in the classrooms, conducting private music lessons, on the concert stages, and by bringing Virgin Islanders together in choirs, bands, and community events, to foster camaraderie, collaboration, and cultural enrichment",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-08",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0088",
+      "title": "An Act amending Act No. 8897, section 1, by reprogramming funds from the Hospital Ground-Bethel Baptist Church road project to the Coki Point Road project",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-05-08",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0043",
+      "title": "An Act amending title 19 Virgin Islands Code, part VI, chapter 53, subchapter IV, section 1481 by increasing the penalties for violation of sanitation laws",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-07-17",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0044",
+      "title": "A Resolution honoring and commending seven-year old twin brothers Kruz and Stefon Wilson for their heroic efforts and courage displayed when saving a drowning man at Magen\u2019s Bay Beach and for their exemplary conduct as young\rmembers of the community",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-03-28",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0010",
+      "title": "An Act amending title 3 Virgin Islands Code chapter 27, section 715, subsection (c) by striking \u201c, with the advice and consent of the Legislature,\u201d",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0017",
+      "title": "An Act amending title 3 Virgin Islands Code, chapter 9, section 138 relating to the powers of the Department of Public Works to provide for the operation of the Virgin Islands Transit System",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0028",
+      "title": "An Act approving the lease agreement between the Government of the Virgin Islands and Tropical Marine, Inc., for Parcel No. 37-1 Estate Nadir, No. 2 Red Hook Quarter, St. Thomas, Virgin Islands and a portion of unsurveyed Estate Nadir, No. 2. Red Hook Quarter, St. Thomas, Virgin Islands",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-05-20",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0021",
+      "title": "An Act amending title 19 Virgin Islands Code, part III, chapter 29, subchapter I relating to opioids and requiring that a practitioner discuss certain information with a patient when prescribing opioids",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-06-26",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0026",
+      "title": "An Act amending title 23 Virgin Islands Code, chapter 10, by adding a subchapter VI to establish the \u201cVirgin Islands Meteorological Office\u201d within the Virgin Islands Territorial Emergency Management Agency",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0019",
+      "title": "An Act amending title 12A Virgin Islands Code, chapter 2, subchapter I, section 101 to prohibit the imposition of a surcharge for the use of a credit or debit card",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-02-27",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0136",
+      "title": "An act amending title 23 Virgin Islands Code. chapter 17, subchapter II by adding new sections 1331 through 1336 mandating lethal weapon training for security guards and investigators",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-08-26",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0109",
+      "title": "An act amending title 33 Virgin Islands Code, chapter 111 to establish the Inspection and Safety on Public Highways Fund; amending title 20 Virgin Islands Code, chapter 39, section 435 relating to the collection of fees. amending title 20 Virgin Islands Code. chapter 41, section 461 relating to equipment and inspection of vehicle requirements, and title 20 Virgin Islands Code, chapter 38, section 416 relating to motor vehicle restrictions for the car rental industry",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-07-10",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0131",
+      "title": "A resolution to impose sanctions against Senator at Large Angel L. Bolques, Jr., for violating the Code of Ethical Conduct of the Thirty-Sixth Legislature of the Virgin Islands",
+      "session": "36",
+      "action_count": 5,
+      "latest_action_date": "2025-08-29",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0107",
+      "title": "A resolution honoring and commending Dr. Alfred Lee Anduze for his outstanding achievements and significant contributions to the fields of medicine, science, public health, and community empowerment",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-06-24",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0138",
+      "title": "An act to transfer certain parcels of real property in Subbase to the Virgin Islands Port Authority for the Crown Bay District Redevelopment Project",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-08-26",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0100",
+      "title": "An act amending title 3 Virgin Islands Code, chapter 25, subchapter V, section 559 relating to pay systems establishing a pay differential for French and Spanish speaking bilingual 911 Dispatch Operators, and amending title 3 Virgin Islands Code, chapter 25, subchapter IV, section 522, relating to entrance and promotion tests, to provide for foreign language proficiency tests",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-06-24",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0101",
+      "title": "An act to provide for continuity of operations in the Superior Court of the Virgin Islands in the event of prolonged judicial vacancies",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-06-24",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0106",
+      "title": "An act amending title 33 Virgin Islands Code, subtitle 3, chapter 113, section 3109(b) to require that violations committed by officers or employees of any governmental agency be reported to the Attorney General of the Virgin Islands for investigation and prosecution",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-06-24",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0139",
+      "title": "An act amending title 31 Virgin Islands Code to assess civil liability for destruction or damage to government property through wilful or negligent acts",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-08-26",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0130",
+      "title": "An act ratifying the Governor of the Virgin Islands approval of Major Coastal Zone Permit No. CZMJLW0001-24 issued to Trans America Fiber, U.S., LLC",
+      "session": "36",
+      "action_count": 7,
+      "latest_action_date": "2025-08-29",
+      "latest_action_description": "Sent to Lt. Governor"
+    },
+    {
+      "id": "36-0137",
+      "title": "An act amending title 33 Virgin Islands Code, subtitle 1, part I, chapter 3, section 47 requiring any person or entity not subject to 33 V.I.C. \u00a7 43, who receives payment for a performance or an entertainment, to pay a tax the rate of five percent on the amount of the payment received",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-08-26",
+      "latest_action_description": "Introduced"
+    },
+    {
+      "id": "36-0108",
+      "title": "An act amending title 20 Virgin Islands Code, chapter 37, subchapter II, section 409 relating to maximum encumbrance that may be outstanding against a taxicab medallion",
+      "session": "36",
+      "action_count": 4,
+      "latest_action_date": "2025-06-24",
+      "latest_action_description": "Introduced"
+    }
+  ]
+}

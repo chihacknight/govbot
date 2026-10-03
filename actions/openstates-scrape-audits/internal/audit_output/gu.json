@@ -1,0 +1,2269 @@
+{
+  "code": "gu",
+  "generated_at": "2026-10-02T02:19:31.542076+00:00",
+  "summary": {
+    "code": "gu",
+    "present": true,
+    "scraper": "active",
+    "session": "in",
+    "fleet_monitor": {
+      "data_repo": {
+        "data_commit_age_hours": 7.02,
+        "workflows": [
+          {
+            "workflow": "extract-text.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 7.01
+          },
+          {
+            "workflow": "format.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 7.03
+          }
+        ]
+      },
+      "scraper_repo": {
+        "data_commit_age_hours": 1307.81,
+        "workflows": [
+          {
+            "workflow": "openstates-scrape.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 7.04
+          }
+        ]
+      }
+    },
+    "last_commit": "2026-07-20T13:59:06+00:00",
+    "days_since_commit": 73.5,
+    "bill_count": 277,
+    "log_date_min": null,
+    "log_date_max": null,
+    "log_file_count": 0,
+    "distinct_active_days": 0,
+    "logs_per_bill": 0.0,
+    "vote_events_watermark": "1900-01-01T00:00:00",
+    "events_watermark": "1900-01-01T00:00:00",
+    "has_new_fields": false,
+    "implausible_fallbacks": {},
+    "orphan_count": 0,
+    "bills_indexed": 277
+  },
+  "bills": [
+    {
+      "id": "B 169-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0AND\u00a0RENUMBER\u00a0ARTICLE 8 OF CHAPTER 3, TITLE 10 GUAM CODE ANNOTATED TO A NEW CHAPTER 98 TO TITLE 10 GUAM CODE ANNOTATED RELATIVE TO ESTABLISHING GUAM COMMUNITY HEALTH CENTERS AS AN AUTONOMOUS AGENCY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 81-38",
+      "title": "AN ACT TO AMEND \u00a712401(d)c-53, ARTICLE 4, CHAPTER 12, TITLE 5, GUAM ADMINISTRATIVE RULES AND REGULATIONS RELATIVE TO CORRECTING THE DEFINITIONS OF SOLAR HVAC CONTRACTORS SUB-CLASSIFICATIONS OF LICENSES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 138-38",
+      "title": "AN ACT TO AMEND \u00a77.58 OF ARTICLE 2, CHAPTER 7, TITLE 9 GUAM CODE ANNOTATED RELATIVE TO HOLDING PERSONS CRIMINALLY RESPONSIBLE FOR CRIMES COMMITTED AFTER KNOWINGLY, WILLINGLY OR INTENTIONALLY CONSUMING ALCOHOL AND OTHER SUBSTANCES BY REPEALING THE LIMITATIONS OF THE INTOXICATION DEFENSE.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 72-38",
+      "title": "AN ACT TO AMEND \u00a7 65113 OF CHAPTER 65, TITLE 10, GUAM CODE ANNOTATED; TO AMEND \u00a7 22402 OF ARTICLE 4, CHAPTER 22, TITLE 5, GUAM CODE ANNOTATED; AND TO APPROPRIATE ONE MILLION DOLLARS ($1,000,000) FROM THE RAINY DAY FUND, RELATIVE TO ESTABLISHING THE DISASTER RESPONSE-EMERGENCY OPERATIONS FUND.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 23-38",
+      "title": "AN ACT TO\u00a0ADD A NEW ARTICLE 4 TO CHAPTER 33, TITLE 15, GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING THE UNIFORM REAL PROPERTY TRANSFER ON DEATH ACT, AND TO ADOPT A STANDARDIZED FORM FOR THE TRANSFER ON DEATH DEED.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 17-38",
+      "title": "AN ACT TO AMEND \u00a7 1913 OF CHAPTER 19, TITLE 1, GUAM CODE ANNOTATED, RELATIVE TO PROCEDURES FOR IMPLEMENTATION OF AUDIT RECOMMENDATIONS BY AGENCIES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 46-38",
+      "title": "AN ACT TO ADD A NEW \u00a7 85A103.1 TO CHAPTER 85A OF TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO ALLOWING THE GUAM COUNCIL ON THE ARTS AND HUMANITIES AGENCY (CAHA) TO GRANT EIGHT (8) GUAM MASTER AWARDS FOR AWARD YEARS 2018 AND 2022 WHEN THE AGENCY WAS UNABLE TO GIVE THE FOUR (4) AWARDS ALLOTTED FOR EACH OF THE SAID YEARS",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 6-38",
+      "title": "AN ACT TO TRANSFER LOT NO. 10063-REM-PTN-1, MUNICIPALITY OF DEDEDO, TO SPECIAL OLYMPICS GUAM FOR THE ESTABLISHMENT OF THEIR ADMINISTRATIVE OFFICE AND TRAINING FACILITY IN SUPPORT OF GUAM\u2019S SPECIAL OLYMPICS ATHLETES AND PROGRAM.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 56-38",
+      "title": "AN ACT RELATIVE TO INCLUDING PODIATRY UNDER THE GUAM BOARD OF MEDICAL EXAMINERS, AND TO ADOPT RULES AND REGULATIONS AND CODE OF ETHICS FOR PODIATRY BY ADDING A NEW SUBSECTION (9) AND AMENDING SUBSECTION (7) OF \u00a712202(a), AMENDING SUBSECTIONS (4), (7), (8) OF \u00a712202(b), SUBSECTIONS (a)(1) AND (2) OF \u00a712203, SUBSECTION (b)(1) AND (i)(2) OF \u00a712205, AND ADDING A NEW SUBSECTION(10) AND (11) TO \u00a712215(a), ALL OF CHAPTER 12, TITLE 10, GUAM CODE ANNOTATED.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 33-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7\u00a7 25.15(a)(2), 25.20(a)(2), AND \u00a7 25.10 OF CHAPTER 25, TITLE 9, GUAM CODE ANNOTATED, RELATIVE TO THE EXPANSION OF THE ELEMENTS FOR FIRST AND SECOND DEGREE CRIMINAL SEXUAL CONDUCT.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 62-38",
+      "title": "AN ACT TO ADD A NEW CHAPTER 18 TO TITLE 4 OF GUAM CODE ANNOTATED, RELATIVE TO ENSURING FAIR EMPLOYMENT PRACTICES IN THE GOVERNMENT OF GUAM; AND TO CITE THIS ACT AS THE \u201cNO MORE PARI PARI ACT OF 2025\u201d.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 128-38",
+      "title": "AN ACT TO AMEND \u00a76205 OF CHAPTER 6, TITLE 4, GUAM CODE ANNOTATED RELATIVE TO REQUIRING THAT COPIES OF PETITIONS FOR ABOVE-STEP RECRUITMENTS BE POSTED ON THE GUAM PUBLIC NOTICE WEBSITE AND SENT TO THE SPEAKER OF I LIHESLATURAN GU\u00c5HAN.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 91-38",
+      "title": "AN ACT TO ADD A NEW (n) TO \u00a763201 AND AMEND \u00a763202(a)AND \u00a763203(a), ALL OF ARTICLE 2, CHAPTER63, TITLE 10, GUAM CODE ANNOTATED RELATIVETO ESTABLISHING A MINIMUM RESIDENCYREQUIREMENT FOR THE GUAM NATIONAL GUARDLEADERSHIP.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 179-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0CHAPTER 65 OF TITLE 10, TO\u00a0AMEND\u00a0\u00a7 14.107 OF ARTICLE 14.1, CHAPTER 1, TITLE 5, AND TO\u00a0AMEND\u00a0\u00a7 22402 OF ARTICLE 4, CHAPTER 22, TITLE 5, ALL OF THE GUAM CODE ANNOTATED, RELATIVE TO ABOLISHING THE OFFICE OF CIVIL DEFENSE AND STRENGTHENING THE ADMINISTRATION OF EMERGENCY MANAGEMENT FUNCTIONS BY CREATING THE BUREAU OF EMERGENCY MANAGEMENT WITHIN THE GUAM FIRE DEPARTMENT AND ASSIGNING RESPONSIBILITIES THERETO.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 159-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW PARAGRAPH (o) TO \u00a7 61531 OF CHAPTER 61, TITLE 21, GUAM CODE ANNOTATED RELATIVE TO GRANTING THE DEPARTMENT OF PUBLIC WORKS TO DETERMINE THE MINIMUM NUMBER OF PARKING SPACES REQUIRED FOR HOMELESS SHELTERS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 108-38",
+      "title": "AN ACT TO ADD \u00a710404.1 AND TO AMEND \u00a7 10404 OF ARTICLE 4, CHAPTER 10, TITLE 12 AND RELATIVE TO AUTHORIZING CUSTOMS AND QUARANTINE AGENCY TO ENTER INTO A PUBLIC-PRIVATE PARTNERSHIP TO SCREEN ALL CARGO ENTERING GUAM AT ITS PORTS OF ENTRY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 42-38",
+      "title": "AN ACT TO AMEND \u00a7 88102; ADD A NEW \u00a7 88109; AND TO AMEND \u00a7 88104(g) AND (h), ALL OF CHAPTER 88, TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO STRENGTHENING THE FISCAL SUSTAINABILITY; ESTABLISHING THE PERSONNEL POLICY; AND INCREASING STIPENDS PAID TO COMMISSION MEMBERS, RESPECTIVELY, OF I KUMISI\u00d3N I FINO\u2019 CHAMORU YAN I FINA\u2019N\u00c5\u2019GUEN I HISTORIA YAN I LINA\u2019LA\u2019 I TAOTAO T\u00c5NO\u2019.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 13-38",
+      "title": "AN ACT TO ADD A NEW CHAPTER 98 TO DIVISION 4 TITLE 10 GUAM CODE ANNOTATED RELATIVE TO ESTABLISHING A PUBLIC-PRIVATE PARTNERSHIP FOR GUAM\u2019S PUBLIC HOSPITAL.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 85-38",
+      "title": "AN ACT TO\u00a0REPEAL\u00a0AND\u00a0REENACT\u00a0TO DIVISION 4, OF CHAPTER 41, TITLE 5, GUAM CODE ANNOTATED; ADD A NEW \u00a7 1103(C) TO CHAPTER 1, TITLE 18, GUAM CODE ANNOTATED;\u00a0AMEND\u00a0\u00a7 10101 OF CHAPTER 10, TITLE 18, GUAM CODE ANNOTATED; AND\u00a0ADD\u00a0A NEW \u00a7 1909(E) TO CHAPTER 19, TITLE 1, GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING THE GUAM STATE VETERANS AGENCY, PROVIDING FOR ITS GOVERNANCE AND OPERATIONS WITH AN ELECTED GUAM VETERANS GOVERNING COMMISSION, ESTABLISHING A VETERANS SERVICE PROVIDER CERTIFICATION PROGRAM, AND TO AUTHORIZE A PROCESS FOR SPECIAL ASSESSMENTS FOR VETERANS\u2019 SERVICES; TO BE KNOWN AS THE \u201cGUAM VETERANS EMPOWERMENT ACT OF 2025\u201d.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 27-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7\u00a7 60100, 60102, 60103, 60106, 60108(b)(5), 60111, 60114(b), AND 60118 OF CHAPTER 60, TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO OWNERSHIP, POSSESSION, AND USE OF FIREARM SILENCERS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 76-38",
+      "title": "AN ACT TO ADD A NEW \u00a784124 TO CHAPTER 84, TITLE 10 GUAM CODE ANNOTATED; RELATIVE TO EMERGENCY CARE IMMUNITY FROM LIABILITY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 66-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 65121 TO DIVISION 3, CHAPTER 65, TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO CODIFYING THE GUAM COMPREHENSIVE EMERGENCY MANAGEMENT PLAN (GCEMP) AND REQUIRING AN ANNUAL REVIEW AND EXERCISE OF THE PLAN.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 37-38",
+      "title": "AN ACT TO APPROPRIATE ONE MILLION DOLLARS ($1,000,000) FROM THE FISCAL YEAR 2025 GENERAL FUND REVENUES COLLECTED IN EXCESS OF THE ADOPTED LEVELS ENUMERATED IN PUBLIC LAW 37-125 TO THE GUAM UNIQUE MERCHANDISE AND ART (GUMA) FOR THE PURPOSE OF PROVIDING MENTORING AND FINANCIAL ASSISTANCE TO START-UP BUSINESSES BEING DEVELOPED WITH THEIR PROGRAM",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 95-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 25101(a) OF CHAPTER 25, TITLE 10, GUAM CODE ANNOTATED, AND \u00a7 2402(c) OF CHAPTER 2, TITLE 10, GUAM CODE ANNOTATED; AND TO\u00a0ADD\u00a0A NEW \u00a7 2402.1 TO CHAPTER 2, TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO ALLOWING CHILDCARE FACILITIES TO OPERATE AS INTERGENERATIONAL DAYCARE CENTERS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 2-38",
+      "title": "AN ACT TO ADD A NEW \u00a722439 OF CHAPTER 22, TITLE 5 GUAM CODE ANNOTATED, RELATIVE TO PROHIBITING THE GOVERNMENT OF GUAM FROM PASSING ON FEES CHARGED BY CREDIT CARD PROCESSORS TO COLLECT PAYMENT OF TAXES OR USE GOVERNMENT OF GUAM SERVICES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 52-38",
+      "title": "AN ACT TO REPEAL \u00a73101.3 OF ARTICLE 1, CHAPTER 3, TITLE 16, GUAM CODE ANNOTATED, RELATIVE TO ENDING MOTOR VOTER REGISTRATION, AS ENACTED BY PUBLIC LAW 33-34.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 118-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 58128.8 TO CHAPTER 58, TITLE 12, GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING AN UNPLEDGED BUSINESS PRIVILEGE TAX REBATE ON MEDICAID RECEIPTS, TO BE KNOWN AS THE \u201cGUAM MEDICAID ACCESS ENHANCEMENT ACT.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 149-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 7160(e), AND \u00a7 7161(f), CHAPTER 7, TITLE 16, GUAM CODE ANNOTATED, RELATIVE TO WAIVING VETERANS LICENSE PLATE FEES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 158-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 77108 TO CHAPTER 77, TITLE 10 AND TO REPEAL SECTION 4 OF PUBLIC LAW 30-202 RELATIVE TO AUTHORIZING THE GUAM POLICE DEPARTMENT TO HIRE ITS OWN ATTORNEY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 109-38",
+      "title": "AN ACT TO AUTHORIZE THE PORT AUTHORITY OF GUAM TO GRANT A DOLLAR-FOR-DOLLAR OFFSET AGAINST LEASE PAYMENTS FOR TENANTS WHO INVEST IN TANGIBLE, DOCUMENTED IMPROVEMENTS TO PORT PROPERTY THAT PROVIDE HIGH VALUE TO THE COMMUNITY OR ENHANCE PORT OPERATIONS; AND TO ESTABLISH A STREAMLINED PROCESS FOR IMPLEMENTATION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 43-38",
+      "title": "AN ACT TO AMEND, CHAPTER 12, SECTION 9,\u00a0 PUBLIC LAW 37-125, GUAM CODE ANNOTATED RELATIVE TO TEMPORARY EMPLOYMENT OF RETIRED GUAM DEPARTMENT OF EDUCATION TEACHERS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 12-38",
+      "title": "AN ACT TO RESERVE LOT NO. 2417-1-R7, THE FORMER DEPARTMENT OF PUBLIC HEALTH AND SOCIAL SERVICES MAIN BUILDING IN MANGILAO, FOR IMMEDIATE USE BY THE DEPARTMENT OF PUBLIC HEALTH AND SOCIAL SERVICES AND TO AUTHORIZE ITS USE FOR THE GUAM COMMUNITY COLLEGE NURSING PROGRAM.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 84-38",
+      "title": "AN ACT TO ADD A NEW (s) TO \u00a7 3101, ARTICLE 1, CHAPTER 3, TITLE 16, GUAM CODE ANNOTATED RELATIVE TO ADOPTING MILITARY CERTIFICATIONS AS QUALIFICATION FOR GUAM CHAUFFEUR\u2019S LICENSES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 26-38",
+      "title": "AN ACT TO STRENGTHEN HOUSING OPTIONS BY ADDING A NEW SUBARTICLE 3 TO ARTICLE 1 OF CHAPTER 61, TITLE 21, GUAM CODE ANNOTATED, RELATIVE TO AUTHORIZING THE CONSTRUCTION OF ACCESSORY DWELLING UNITS (ADUs) IN RESIDENTIAL ZONES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 77-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 104116.1 TO ARTICLE 1 OF CHAPTER 104 OF TITLE 21, GUAM CODE ANNOTATED RELATIVE TO CLARIFYING REAL ESTATE BROKERAGE AGREEMENTS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 67-38",
+      "title": "AN ACT TO\u00a0REPEAL\u00a0AND\u00a0RE-ENACT\u00a0\u00a7 1203.1 OF ARTICLE 2, TITLE 12, GUAM CODE ANNOTATED, RELATIVE TO PROVIDING AUTHORITY TO THE ANTONIO B. WON PAT INTERNATIONAL AIRPORT AUTHORITY, GUAM TO ADOPT POLICIES AND PROCEDURES FOR THE SOLICITATION, SELECTION, AND AWARD OF AGREEMENTS BETWEEN THE AUTHORITY AND ANY OTHER PARTY FOR THE USE OF AIRPORT FACILITIES AND PROPERTIES FOR AIRPORT PURPOSES AND/OR VISITOR RELATED ACTIVITIES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 36-38",
+      "title": "AN ACT TO APPROPRIATE NO MORE THAN ONE MILLION DOLLARS ($1,000,000) FROM THE FISCAL YEAR 2025 GENERAL FUND REVENUES COLLECTED IN EXCESS OF THE ADOPTED LEVELS ENUMERATED IN PUBLIC LAW 37-125 TO THE H\u00c5GAT MAYOR\u2019S OFFICE FOR THE PURPOSE OF THE REVITALIZATION AND RENOVATION OF THE FORMER H\u00c5GAT FIRE STATION AND POLICE STATION FOR THE PURPOSE OF THE CREATION OF THE H\u00c5GAT MULTI-PURPOSE FACILITY",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 94-38",
+      "title": "AN ACT TO AMEND \u00a7\u00a7 4301.1(g), 4302(c)(8), 4302(c)(9), \u00a74302(e) OF CHAPTER 4, TITLE 4, GUAM CODE ANNOTATED; AND ALL OF \u00a7 5118 OF CHAPTER 5, TITLE 5, GUAM CODE ANNOTATED; AND \u00a7\u00a7 13102(c), 13107, 13108, 13110(b), AND 13115(d)(11) OF CHAPTER 13, TITLE 2, GUAM ADMINISTRATIVE RULES AND REGULATIONS, RELATIVE TO CLARIFYING SELECTION OF THE GOVERNMENT OF GUAM GROUP HEALTH INSURANCE CONTRACTS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 3-38",
+      "title": "AN ACT TO ADD A NEW CHAPTER 10 AND CHAPTER 11 TO DIVISION 1, TITLE 11 GUAM CODE ANNOTATED AND ADD A NEW CHAPTER 98 TO DIVISION 4, TITLE 10 GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING AN ELECTRONIC NICOTINE DELIVERY SYSTEMS (ENDS) PRODUCT TAX AND LICENSING WHICH SHALL BE CITED AS THE \u201cENDS EXCISE ACT OF 2025\u201d AND ESTABLISH A DEPARTMENT OF REVENUE AND TAXATION REVOLVING FUND AND A GUAM MEMORIAL HOSPITAL AUTHORITY REVOLVING FUND.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 53-38",
+      "title": "AN ACT TO\u00a0REPEAL\u00a0\u00a7 9107 OF CHAPTER 9, TITLE 3, GUAM CODE ANNOTATED , RELATIVE TO SAFEGUARDING THE PRIVACY OF REGISTERED VOTERS, TO BE CITED AS THE \u201cVOTER PRIVACY PROTECTION ACT OF 2025.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 119-38",
+      "title": "AN ACT TO REENACT \u00a7 5127(d) OF SUBARTICLE C, ARTICLE 2, CHAPTER 5, TITLE 5, GUAM CODE ANNOTATED, AS REPEALED IN PUBLIC LAW 38-1, RELATIVE TO RESTORING LEGISLATIVE OVERSIGHT ON EXCEPTIONAL TERM CONTRACTS",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 148-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW ARTICLE 5 TO DIVISION 3, CHAPTER 37, TITLE 5, GUAM CODE ANNOTATED; RELATIVE TO THE PROTECTION OF PUBLIC EMPLOYEES AND TO BE TITLED AS \u201cTHE PUBLIC EMPLOYEE GRIEVANCE PROTECTION AND DEPARTMENT/AGENCY HEAD RECUSAL\u201d UNDER THE FALSE CLAIMS AND WHISTLEBLOWER ACT.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 168-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 849.18 TO CHAPTER 8, TITLE 1 GUAM CODE ANNOTATED; RELATIVE TO DESIGNATING ROUTE 6 AND ROUTE 7 AS THE \u201cWORLD WAR TWO SURVIVORS MEMORIAL HIGHWAY\u201d.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 139-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0NEW \u00a7\u00a7 13321.1 AND 13321.2 TO ARTICLE 3, CHAPTER 13, TITLE 19, GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING THE FOSTER CARE BILL OF RIGHTS; AND TO CITE THIS ACT AS THE \u201cFOSTER CARE BILL OF RIGHTS ACT OF 2025.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 80-38",
+      "title": "AN ACT TO AMEND \u00a7\u00a7 3101 AND 3103 OF ARTICLE 1, AND \u00a7\u00a7 3109, 3111, 3113, 3115, 3117, 3119, 3121, 3123 AND 3125 OF ARTICLE 2, CHAPTER 31, TITLE 15, GUAM CODE ANNOTATED, RELATIVE TO INCREASING THE THRESHOLDS FOR ESTATES OF SMALL VALUE BY FIFTY PERCENT (50%)",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 73-38",
+      "title": "AN ACT TO AUTHORIZE THE TRANSFER OF THE TITLE OF OWNERSHIP AND ADMINISTRATIVE JURISDICTION OF LOT 15, BLOCK F, TRACT 9 IN BARRIGADA HEIGHTS FROM THE CHAMORRO LAND TRUST COMMISSION TO THE GUAM POLICE DEPARTMENT FOR THE DEVELOPMENT OF A PUBLIC SAFETY EMERGENCY COMMUNICATIONS CENTER.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 22-38",
+      "title": "AN ACT TO AMEND \u00a7 52.10 OF CHAPTER 52 OF TITLE 9 GUAM CODE ANNOTATED, AND TO ADD A NEW \u00a7 52.70 TO CHAPTER 52 OF TITLE 9 GUAM CODE ANNOTATED, RELATIVE TO INTERFERING WITH A JUDICIAL OFFICER.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 16-38",
+      "title": "AN ACT TO ADD A NEW ARTICLE 2 TO CHAPTER 2, TITLE 4, GUAM CODE ANNOTATED RELATIVE TO REPORTING REQUIREMENTS ON THE USE OF UNCLASSIFIED EMPLOYMENT.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 47-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 1909(c)(1), \u00a7 1909(c)(2), \u00a7 1909(c)(3), AND \u00a7 1909(c)(4), TO CHAPTER 19 OF TITLE 1, GUAM CODE ANNOTATED, RELATIVE TO THE DUTIES OF THE PUBLIC AUDITOR.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 7-38",
+      "title": "AN ACT TO REPEAL AND REENACT A NEW \u00a7 75122(c)(2), AND ADD A NEW \u00a7 75122(d) AND \u00a7 75122(e) TO CHAPTER 75 OF TITLE 21, GUAM CODE ANNOTATED RELATIVE TO REQUIRING THE CHAMORRO LAND TRUST TO SOLICIT COMPETITIVE BIDS FOR THE MASS GRADING AND MINERAL EXTRACTION OF A PORTION OF LOT 5412, MANGILAO.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 57-38",
+      "title": "AN ACT TO ADD A NEW SUBARTICLE 3 AND A NEW \u00a7 61103(mm) OF ARTICLE 1; AND AMEND \u00a7\u00a7 61304(a)(4), 61305(a)(4), AND 61306(a) OF ARTICLE 3, ALL OF CHAPTER 61, TITLE 21, GUAM CODE ANNOTATED, RELATIVE TO AUTHORIZING THE CONSTRUCTION OF ACCESSORY DWELLING UNITS (ADUs) IN RESIDENTIAL ZONES TO STRENGTHEN HOUSING OPTIONS ON GUAM",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 32-38",
+      "title": "AN ACT TO AUTHORIZE THE TRANSFER OF LOT 5173-1-R2NEW-R7 AND LOT 5173-1-R2NEW-6 IN THE MUNICIPALITY OF TAMUNING FROM THE CHAMORRO LAND TRUST COMMISSION TO THE HEIRS OF FRANCISCO D. PEREZ, THE ORIGINAL LANDOWNER.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 63-38",
+      "title": "AN ACT TO\u00a0APPROPRIATE\u00a0THIRTY-NINE THOUSAND DOLLARS ($39,000.00) FROM THE FUNDS OF THE OFFICE OF SENATOR TELO T. TAITAGUE TO THE DEPARTMENT OF PUBLIC HEALTH AND SOCIAL SERVICES, FOSTER CARE DIVISION TO PROVIDE NEEDED SUPPORT AND SUPPLIES TO FOSTER CHILDREN.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 90-38",
+      "title": "AN ACT TO AMEND \u00a726203.2 OF CHAPTER 26 TITLE 11, GUAM CODE ANNOTATED, RELATIVE TO PERMANENTLY INCREASING THE GROSS THRESHOLD FOR LIMITED EXEMPTIONS ON THE BUSINESS PRIVILEGE TAXES FOR CERTAIN SMALL BUSINESSES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 129-38",
+      "title": "AN ACT TO ADD A NEW \u00a7 1041 TO CHAPTER 10, TITLE 1, GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING FEBRUARY 21 OF EACH YEAR AS HA\u2019\u00c5NEN HILA\u2019 N\u00c5NA (MOTHER LANGUAGE DAY).",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 178-38",
+      "title": "AN ACT TO ADD A\u00a0 NEW \u00a71115 TO CHAPTER 1, TITLE 11, GUAM CODE ANNOTATED RELATIVE TO REQUIRING THE DEPARTMENT OF REVENUE AND TAXATION TO ISSUE A REQUEST FOR PROPOSAL (RFP) FOR A PILOT ROBOTIC PROCESS AUTOMATION\u00a0 PROGRAM.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 250-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 40110 TO ARTICLE 1 OF CHAPTER 40, TITLE 7, GUAM CODE ANNOTATED, RELATIVE TO THE ISSUANCE AND EXTENSION OF PROTECTIVE ORDERS AT SENTENCING AND UPON RELEASE FROM INCARCERATION; AND TO CITE THIS ACT AS THE \u201cVICTIM PROTECTION CONTINUITY ACT OF 2025.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 78-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7\u00a7 2701, 2702, AND 2703; AND TO ADD\u00a0A NEW \u00a7 2707; ALL OF ARTICLE 7, CHAPTER 2, TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO IMPLEMENTING THE RESTAURANT MEALS PROGRAM (RMP) UNDER THE SUPPLEMENTAL NUTRITION ASSISTANCE PROGRAM (SNAP); AND TO CITE THIS ACT AS THE \u201cMEALS FOR AT-RISK HOUSEHOLDS ACT OF 2025.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 29-38",
+      "title": "AN ACT TO ADD A NEW ARTICLE 6 OF CHAPTER 48, DIVISION 1, TITLE 21, GUAM CODE ANONTATED, RELATIVE TO PROHIBITIONS ON DISCRIMINATION IN HOUSING BASED ON SOURCE OF INCOME (SOI) AS TO PROMOTE EQUITABLE ACCESS TO HOUSING.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 190-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW CHAPTER 5 TO TITLE 6 OF THE GUAM ADMINISTRATIVE RULES AND REGULATIONS, RELATIVE TO ADOPTING THE UPDATED GUAM ELECTION MANUAL, PURSUANT TO CHAPTER 9, TITLE 5, GUAM CODE ANNOTATED.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 201-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 3102.3 OF ARTICLE 1, CHAPTER 3, DIVISION 2, TITLE 17, GUAM CODE ANNOTATED, RELATIVE TO EXTENDING TERMS OF OFFICE AND IMPLEMENTING STAGGERED TERMS FOR THE GUAM EDUCATION BOARD TO ENHANCE STABILITY, CONTINUITY, AND FOCUS ON STUDENT OUTCOMES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 163-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a77146.1 OF CHAPTER 7, TITLE 16, GUAM CODE ANNOTATED, RELATIVE TO TRANSFER-ON-DEATH BENEFICIARY DESIGNATION FOR MOTOR VEHICLES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 132-38",
+      "title": "AN ACT TO AMEND \u00a7 45200(a), \u00a7 45201, \u00a7 45202, AND \u00a7 45203, ALL OF ARTICLE 2, CHAPTER 45, TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO UPDATING THE GUAM ENVIRONMENTAL TRUST FUND THAT ENHANCES THE RESPONSE TO ENVIRONMENTAL EMERGENCIES AND INCREASES THE CAPACITY OF GUAM ENVIRONMENTAL PROTECTION AGENCY TO SAFEGUARD THE HEALTH OF OUR ENVIRONMENT AND PEOPLE.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 235-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0SECTION 8 OF CHAPTER I OF PUBLIC LAW 38-60, RELATIVE TO PRE-DEVELOPMENT STAGE DUTIES IN THE SIMON A. SANCHEZ HIGH SCHOOL PROJECT.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 264-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 12106(h) OF CHAPTER 12, TITLE 17, GUAM CODE ANNOTATED, RELATIVE TO INCREASING THE CAP ON CHARTER SCHOOLS FROM SEVEN (7) TO EIGHT (8) TO ADVANCE EARLY INTERVENTION AND INCLUSIVE EDUCATION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 106-38",
+      "title": "AN ACT TO AMEND SUBSECTION (b) OF \u00a760.80, CHAPTER 60, TITLE 8 OF THE GUAM CODE ANNOTATED, RELATIVE TO PROHIBITING PLEA DEALS WITHOUT REASONABLE PROOF OF VICTIM NOTIFICATION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 157-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 25.25 OF CHAPTER 25, TITLE 9, GUAM CODE ANNOTATED, RELATIVE TO ADDING STRONGER PENALTIES FOR CRIMES OF THIRD DEGREE CRIMINAL SEXUAL CONDUCT COMMITTED AGAINST YOUNGER VICTIMS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 147-38",
+      "title": "AN ACT TO AUTHORIZE AN INTERAGENCY LOAN FROM THE CHAMORRO LAND TRUST COMMISSION TO THE GUAM MEMORIAL HOSPITAL AUTHORITY IN THE AMOUNT OF NINE MILLION DOLLARS ($9,000,000) FOR URGENT FACILITY AND SUPPLY NEEDS, AND TO ESTABLISH THE TERMS AND CONDITIONS OF SUCH LOAN",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 116-38",
+      "title": "AN ACT TO DEAPPROPRIATE FORTY-TWO THOUSAND DOLLARS ($42,000.00) FROM THE FUNDS OF THE OFFICE OF SENATOR TELO T. TAITAGUE AND TO REAPPROPRIATE SAID SUM TO THE DEPARTMENT OF AGRICULTURE\u2019S LAW ENFORCEMENT SECTION\u2019S CONSERVATION CORPS APPRENTICE PROGRAM.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 274-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0SECTION 1(aa)(3) OF CHAPTER V (EXECUTIVE BRANCH), PUBLIC LAW 38-60, RELATIVE TO AUTHORIZING THE GUAM FIRE DEPARTMENT TO EXPEND THREE HUNDRED THOUSAND DOLLARS ($300,000) FROM THE DEPARTMENT\u2019S UNEXPENDED APPROPRIATED FUNDS FROM PRIOR FISCAL YEARS FOR THE ESTABLISHMENT OF A TUMON RESCUE BASE.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 225-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 58110 OF ARTICLE 1, AND TO\u00a0AMEND\u00a0\u00a7 58205 OF ARTICLE 2, BOTH OF CHAPTER 58, TITLE 12, GUAM CODE ANNOTATED, RELATIVE TO EXPANDING PUBLIC INVESTMENTS AND COMMUNITY CONTRIBUTIONS UNDER GUAM\u2019S QUALIFYING CERTIFICATES LAW TO INCLUDE EMERGENCY RESPONSE RESOURCES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 122-38",
+      "title": "AN ACT RELATIVE TO GRANTING PRESCRIPTIVE AUTHORITY TO PHYSICIAN ASSISTANTS AND INCLUDING PHYSICIAN ASSISTANTS ON THE GUAM BOARD OF MEDICAL EXAMINERS, AND TO ADOPT RULES AND REGULATIONS AND CODE OF ETHICS FOR PHYSICIAN ASSISTANTS BY ADDING A NEW (10) AND (11) OF \u00a712215 AND AMENDING (7) TO \u00a712202(a), (7) AND (8) TO 12202(b), \u00a712203(a) (1) TO (4), AND \u00a7121609, ALL OF CHAPTER 12, TITLE 10, GUAM CODE ANNOTATED.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 173-38",
+      "title": "AN ACT TO AUTHORIZE RENEWAL OF THE LEASE OF A PORTION OF LOT NO. 2288-1-1-1, MANGILAO, AND THE MANGILAO KOBAN TO THE VIETNAM VETERANS OF AMERICA, CHAPTER 668, BY AMENDING \u00a7681103 OF CHAPTER 68, TITLE 21, GUAM CODE ANNOTATED.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 211-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 4109(g)(4) TO CHAPTER 4 OF TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO PRIORITIZING PUBLIC SAFETY SERVICES BY RESTRICTING THE DE-APPROPRIATION OR TRANSFER OF UNEXPENDED PRIOR FISCAL YEAR APPROPRIATIONS FROM THE GUAM POLICE DEPARTMENT, GUAM FIRE DEPARTMENT, DEPARTMENT OF CORRECTIONS, AND GUAM CUSTOMS AND QUARANTINE AGENCY TO THE GENERAL FUND.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 180-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 4302.2(d) OF CHAPTER 4, TITLE 4, GUAM CODE ANNOTATED RELATIVE TO INCLUDING ANNUAL AUDIT TO BE PAID BY THE TRUST FUND ACCOUNTS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 39-38",
+      "title": "AN ACT TO APPROPRIATE TEN MILLION DOLLARS ($10,000,000) FROM FISCAL YEAR 2025 GENERAL FUND REVENUES COLLECTED IN EXCESS OF THE ADOPTED LEVELS ENUMERATED IN PUBLIC LAW 37-125 TO THE DEPARTMENT OF PUBLIC WORKS FOR VILLAGE STREETS AND ROADS RESURFACING AND REPAIRS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 68-38",
+      "title": "AN ACT TO AMEND SUBSECTION \u201cY\u201d OF SECTION 12107 CHAPTER 12 OF TITLE 17 GUAM CODE ANNOTATED RELATIVE TO THE RESPONSIBILITY OF LIABILITIES OF AN ACADEMY CHARTER SCHOOL.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 240-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0SECTION 61309, ARTICLE 3, CHAPTER 61, TITLE 21, GUAM CODE ANNOTATED RELATIVE TO ADDING TEMPORARY WORKFORCE HOUSING AS A PERMITTED USE FOR M1 LIGHT INDUSTRIAL ZONES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 260-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 7120.3(b) OF CHAPTER 7, TITLE 16, GUAM CODE ANNOTATED, RELATIVE TO ALLOWING CHILDREN TO RECEIVE SPECIAL GOLD STAR LICENSE PLATES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 48-38",
+      "title": "AN ACT TO ADD A NEW \u00a7 4131 OF ARTICLE 1, CHAPTER 4, TITLE 4, GUAM CODE ANNOTATED, RELATIVE TO AUTHORIZING LIMITED LEAVE BENEFITS FOR RETIRED TEACHERS REHIRED ON CONTRACT TO FILL TEACHING VACANCIES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 19-38",
+      "title": "AN ACT TO REPEAL AND REENACT \u00a7 7161 (a) AND (e) AND TO AMEND \u00a7 7161 (b) ALL OF CHAPTER 7, TITLE 16, GUAM CODE ANNOTATED, RELATIVE TO UPDATING THE STREET LIGHT FUND TO AUTHORIZE THE DEPARTMENT OF PUBLIC WORKS TO FACILITATE INSTALLATION AND REPLACEMENT OF STREET LIGHTS AND ENHANCE SAFETY FOR PEDESTRIANS, BICYCLISTS, AND MOTORISTS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 231-38",
+      "title": "AN ACT TO ADD A NEW ARTICLE 8, CHAPTER 26; AND TO ADD A NEW \u00a7 24713, CHAPTER 24; ALL OF TITLE 11, GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING A GUAM TAX AMNESTY PROGRAM FOR TAX LIABILITIES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 153-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7\u00a7 4102 AND 4104 OF CHAPTER 4, TITLE 3, GUAM CODE ANNOTATED, RELATIVE TO MODERNIZING PRECINCT REALIGNMENT AND THE COMPOSITION OF PRECINCT BOARDS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 102-38",
+      "title": "AN ACT TO ESTABLISH THE GUAM TARIFF ADVANTAGE DEVELOPMENT ACT (\u201cGTADA\u201d), UTILIZING GUAM\u2019S UNIQUE TARIFF-EXEMPT STATUS TO INCENTIVIZE ECONOMIC DIVERSIFICATION, ENHANCE MANUFACTURING OPPORTUNITIES, ATTRACT FOREIGN DIRECT INVESTMENT, AND SUPPORT JOB CREATION; TO AMEND TITLE 11 AND TITLE 12 OF THE GUAM CODE ANNOTATED TO ESTABLISH PROCEDURES, INCENTIVES, AND ADMINISTRATIVE STRUCTURES NECESSARY THERETO, AND PROVIDE FOR EFFECTIVE IMPLEMENTATION AND OVERSIGHT.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 205-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 6802 (e) OF ARTICLE 8, CHAPTER 6, TITLE 12, GUAM CODE ANNOTATED, RELATIVE TO THE DISCOUNT ON THE PURCHASE OF TOBACCO TAX STAMPS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 194-38",
+      "title": "AN ACT TO\u00a0REPEAL\u00a0\u00a7 22421 OF CHAPTER 22, TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO THE AUTONOMOUS AGENCY COLLECTIONS FUND",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 254-38",
+      "title": "AN ACT\u00a0 TO \u00a0AMEND\u00a0\u00a79401, \u00a79402, \u00a79403, \u00a79405, \u00a79406(a)(1), AND \u00a79409 OF ARTICLE 4, CHAPTER 9, TITLE 3, GUAM ADMINISTRATIVE RULES AND REGULATIONS, RELATIVE TO ALIGNING CANNABIS AGRICULTURAL REQUIREMENTS WITH GENERAL AGRICULTURAL PRACTICES ON GUAM; AND TO MAKE OTHER NECESSARY CONFORMING AMENDMENTS",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 136-38",
+      "title": "AN ACT TO AMEND P.L. 35-138 RELATIVE TO MODIFYING THE EFFECTIVE DATE OF THE TAX CREDITS FOR THE GUAM MEMORIAL HOSPITAL AUTHORITY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 167-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 34.70 (f) AND \u00a7 34.70 (i) OF CHAPTER 34, TITLE 9 GUAM CODE ANNOTATED; RELATIVE TO INCREASING PENALTIES FOR GRAFFITI VIOLATIONS ON PUBLIC AND PRIVATE PROPERTY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 177-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 1041, CHAPTER 10, TITLE 1, GUAM CODE ANNOTATED; RELATIVE TO DESIGNATING DECEMBER 10 AS \u201cINSULAR FORCE GUARD MEMORIAL DAY\u201d.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 126-38",
+      "title": "AN ACT TO ADD A NEW \u00a7 28112(d) OF CHAPTER 28, TITLE 11 GUAM CODE ANNOTATED RELATIVE TO EDUCATIONAL ADVANCEMENT AND PROVIDING SAFE LEARNING ENVIRONMENTS FOR OUR YOUTH.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 244-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW CHAPTER 72, DIVISION 2, TO TITLE 21 OF THE GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING THE UNIFORM CONSERVATION EASEMENT ACT TO PROVIDE AN ADDITIONAL OPTION FOR THE CONSERVATION OF ECOLOGICALLY AND CULTURALLY SIGNIFICANT LAND.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 184-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 14.101, TO\u00a0ADD\u00a0A NEW \u00a7 14.104.2(f), AND TO\u00a0AMEND\u00a0\u00a7 14.105, ALL OF ARTICLE 14.1, CHAPTER 1, TITLE 5, GUAM CODE, ANNOTATED, RELATIVE TO STRENGTHENING HOMELAND SECURITY SERVICES FOR THE PEOPLE OF GUAM BY REQUIRING MERIT-BASED GRANTS MANAGEMENT AND FUSION CENTER DIRECTOR POSITIONS, AND REQUIRING THE SUBMISSION OF PROJECT PERFORMANCE, COMPLIANCE, AND FINANCIAL REPORTS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 215-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW SUBSECTION (E) TO \u00a7 21103 OF CHAPTER 21, DIVISION 2, TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO WAIVING SANITARY PERMIT FEES FOR STUDENT-LED FUNDRAISERS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 112-38",
+      "title": "AN ACT TO APPROPRIATE FORTY-TWO THOUSAND DOLLARS ($42,000.00) FROM THE FUNDS OF THE OFFICE OF SENATOR TELO T. TAITAGUE TO THE DEPARTMENT OF CORRECTIONS ADMINISTRATIVE SERVICE DIVISION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 143-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 5117.2 TO CHAPTER 5, TITLE 5, GUAM CODE ANNOTATED RELATIVE TO GRANTING THE DIRECTOR OF PUBLIC WORKS PROCUREMENT AUTHORITY FOR SMALL PURCHASES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 221-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW ARTICLE 4 TO CHAPTER 3 OF TITLE 19, GUAM CODE ANNOTATED, RELATIVE TO THE RECOGNITION AND REGULATION OF COMMON LAW MARRIAGE IN GUAM.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 8-38",
+      "title": "AN ACT TO AMEND \u00a7 5127(a) AND REPEAL \u00a7 5127(d) OF SUBARTICLE C, ARTICLE 2, CHAPTER 5, TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO THE EXTENSION OF GOVERNMENT OF GUAM LEASES FROM FIVE (5) TO FIFTEEN (15) YEARS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 58-38",
+      "title": "AN ACT TO APPROPRIATE FIVE MILLION SEVEN HUNDRED FIFTY THOUSAND NINE HUNDRED EIGHTY-FOUR DOLLARS ($5,750,984) FROM THE FISCAL YEAR 2025 GENERAL FUND REVENUES COLLECTED IN EXCESS OF THE ADOPTED LEVELS ENUMERATED IN PUBLIC LAW 37-125 TO THE UNIVERSITY OF GUAM FOR THE PURPOSE OF REPAIRS, MAINTENANCE, CAPITAL IMPROVEMENT PROJECTS AND ACCREDITATION RELATED PRIORITIES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 270-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a773128 AND \u00a773143 OF CHAPTER 73, TITLE 5 GUAM CODE ANNOTATED AND \u00a72406, \u00a72412 OF CHAPTER 2, TITLE 4 GUAM ADMINISTRATIVE RULES AND REGULATIONS RELATIVE TO STRENGTHENING THE INSPECTION OF INCOMING CARGO IN GUAM.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 49-38",
+      "title": "AN ACT TO TRANSFER LOT NO. 258, MUNICIPALITY OF PITI, TO THE DEPARTMENT OF PARKS AND RECREATION FOR THE PURPOSE OF EXPANDING THE FOOTPRINT AND CAPACITY OF THE VICENTE A. LIMTIACO MEMORIAL PARK.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 261-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 23111(e) OF CHAPTER 23, TITLE 5, GUAM CODE ANNOTATED RELATIVE TO AUTHORIZING PATIENT CAREGIVERS, SUPPORT PERSONS, OR MEDICAL ESCORTS TO USE TRAVEL BANK MILEAGE FROM THE SENATOR EDWARD J. CRUZ MEDICAL REFERRAL AND EDUCATION MILEAGE PROGRAM TO ACCOMPANY ELIGIBLE PATIENTS WHO REQUIRE OFF-ISLAND MEDICAL TREATMENT.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 230-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 849.18 TO CHAPTER 8, TITLE 1, GUAM CODE ANNOTATED; RELATIVE TO DESIGNATING THE MAIN ADMINISTRATIVE AND PATIENT SERVICE BUILDINGS AT THE GUAM MEMORIAL HOSPITAL AS THE \u201cDR. RAMON MANALISAY SABLAN ADMINISTRATIVE AND PATIENT SERVICES BUILDINGS\u201d, AND TO REQUIRE ANY FUTURE GUAM MEMORIAL HOSPITAL COMPLEX TO RETAIN SUCH DESIGNATIONS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 18-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 5707(a) OF ARTICLE 12, CHAPTER 5, TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO THE PROCEDURE FOR JUDICIAL REVIEW OF DECISIONS MADE BY THE PUBLIC AUDITOR IN PROCUREMENT APPEALS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 152-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 5212 OF CHAPTER 5, TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO REMOVING BID SECURITY AND REQUIRING A PERFORMANCE BOND FOR GOODS AND SERVICES IN ORDER TO IMPROVE COMPETITION FOR GOVERNMENT PROCUREMENT.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 103-38",
+      "title": "AN ACT TO AMEND AND RE-NUMBER \u00a7 51102(h)(11) OF CHAPTER 51, TITLE 17, TO AMEND \u00a7 51103(b)(4) OF CHAPTER 51, TITLE 17, AND TO AMEND \u00a7 7120 OF CHAPTER 7, TITLE 22, ALL OF THE GUAM CODE ANNOTATED, RELATIVE TO AUTHORIZING THE TEMPORARY CERTIFICATION OF PEACE OFFICERS AND TO AUTHORIZING THE MANPOWER DEVELOPMENT FUND FOR CERTIFICATION COURSES REQUIRED BY THE PEACE OFFICER STANDARDS AND TRAINING COMMISSION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 195-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7849.18 TO CHAPTER 8, TITLE 1 GUAM CODE ANNOTATED RELATIVE TO RENAMING THE GEORGE WASHINGTON FOOTBALL FIELD AS THE LORING SANTOS CRUZ FOOTBALL FIELD.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 204-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7\u00a7 3102.1 AND 3125 OF ARTICLE 1, CHAPTER 3, DIVISION 2, TITLE 17, GUAM CODE ANNOTATED, RELATIVE TO REQUIRING GUAM EDUCATION BOARD CONFIRMATION OF DEPUTY SUPERINTENDENT APPOINTMENTS TO ENHANCE OVERSIGHT, ACCOUNTABILITY, AND FOCUS ON STUDENT OUTCOMES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 255-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0CHAPTER 67 OF TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO MODERNIZING AND EXPANDING THE GUAM OFFICE OF VETERANS AFFAIRS (GOVA) WITH THE INTENT OF STRENGTHENING SERVICES, IMPROVING ACCOUNTABILITY, ESTABLISHING RESPONSIBILITIES IN STATUTE, ENHANCING SUPPORT FOR GUAM\u2019S VETERANS, THEIR FAMILIES, AND TRANSITIONING SERVICE MEMBERS, AND TRANSFORMING THE OFFICE INTO A COMPREHENSIVE VETERANS AGENCY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 137-38",
+      "title": "AN ACT TO ADD A NEW \u00a7 25.50 TO CHAPTER 25, AND A NEW \u00a7 19.82 TO CHAPTER 19, BOTH OF TITLE 9, GUAM CODE ANNOTATED, RELATIVE TO THE DEFINITION AND INCLUSION OF INTERFERING WITH THE REPORTING OF CRIMINAL SEXUAL CONDUCT OFFENSES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 166-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0SUBSECTION (c) OF \u00a7 3603 AND TO\u00a0ADD\u00a0NEW \u00a7 3612 AND \u00a7 3613 TO ARTICLE 6, CHAPTER 3, TITLE 22, GUAM CODE ANNOTATED, RELATIVE TO EXTENDING FAMILY CARE AND MEDICAL LEAVE TO VICTIMS OF DOMESTIC OR SEXUAL VIOLENCE, STALKING, AND HUMAN TRAFFICKING; AND TO CITE THIS ACT AS THE \u201cSAFE LEAVE ACT OF 2025.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 176-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 5128 TO CHAPTER 5, TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO COMMERCIAL LEASE EXTENSION FOR TENANTS IN GOOD STANDING.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 127-38",
+      "title": "AN ACT TO ADD A NEW \u00a7 28112(d) OF CHAPTER 28, TITLE 11 GUAM CODE ANNOTATED, RELATIVE TO STRENGTHENING DEPARTMENT OF PUBLIC HEALTH AND SOCIAL SERVICES\u2019 INSPECTION CAPACITY TO PROTECT THE HEALTH OF OUR PEOPLE.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 245-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0SECTION 3 OF PUBLIC LAW 37-116, RELATIVE TO EXTENDING THE SUNSET PROVISION FOR THE TEMPORARY EXEMPTION OF CANNABIS LABORATORY TESTING REQUIREMENTS FROM TWO (2) YEARS TO FIVE (5) YEARS AFTER THE DATE OF ENACTMENT.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 214-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0ARTICLE 3 OF CHAPTER 15, TITLE 4, GUAM CODE ANNOTATED, RELATIVE TO STRENGTHENING THE INDEPENDENCE AND EFFECTIVENESS OF THE GUAM ETHICS COMMISSION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 185-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 3110 OF CHAPTER 3, TITLE 3, GUAM CODE ANNOTATED, AS ENACTED BY PUBLIC LAW 38-32 RELATIVE TO THE TERM OF APPOINTMENT FOR REGISTRATION CLERKS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 113-38",
+      "title": "AN ACT TO APPROPRIATE SEVENTY THOUSAND DOLLARS ($70,000.00) FROM THE FUNDS OF THE OFFICE OF SENATOR TELO T. TAITAGUE TO THE UNIVERSITY OF GUAM\u2019S WATER & ENVIRONMENT RESARCH INSTITUTE OF THE WESTERN PACIFIC (WERI) TO SUPPORT RESEARCH, TRAINING AND OUTREACH ACTIVITIES, AND DAILY OPERATIONS IN THE DETECTION OF SALINITY LEVELS IN PROBLEMATIC WELLS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 142-38",
+      "title": "AN ACT TO AMEND \u00a7 13108.1 OF CHAPTER 13, TITLE 2, GUAM CODE ANNOTATED, RELATIVE TO AMENDING THE SPECIAL COST OF LIVING ECONOMIC TASK FORCE.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 220-38",
+      "title": "AN ACT TO\u00a0REPEAL\u00a0AND\u00a0REENACT\u00a0\u00a7 21002 OF ARTICLE 10, CHAPTER 2, TITLE 10, GUAM CODE ANNOTATED, AND TO\u00a0ADD\u00a0\u00a0 A\u00a0\u00a0 NEW CHAPTER 40C TO TITLE 7, GUAM CODE ANNOTATED, RELATIVE TO CLARIFYING DEFINITIONS RELATED TO ELDERLY OR ADULT WITH A DISABILITY ABUSE; AND TO ESTABLISHING PROTECTION AND SUPPORT FOR THE ELDERLY AND ADULTS WITH A DISABILITY WHO ARE VICTIMS OF ABUSE; AND TO CITE THIS ACT AS THE \u201cGUAM ELDER AND DISABILITY WELFARE ACT OF 2025.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 9-38",
+      "title": "AN ACT TO APPROPRIATE FIFTEEN MILLION EIGHT HUNDRED TWENTY-EIGHT THOUSAND DOLLARS ($15,828,000) FROM FISCAL YEAR 2025 GENERAL FUND REVENUES COLLECTED IN EXCESS OF THE ADOPTED LEVELS ENUMERATED IN PUBLIC LAW 37-125 TO THE GUAM POWER AUTHORITY FOR A THREE (3)-MONTH EXTENSION TO THE PRUGR\u00c5MAN AYUDA PARA I TAOTAO-TA ENERGY CREDIT PROGRAM, RELATIVE TO PROVIDING CUSTOMERS WITH THREE HUNDRED DOLLARS ($300) CREDIT TOWARD THEIR ACCOUNT.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 271-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 55.75 TO CHAPTER 55 TITLE 9 GUAM CODE ANNOTATED RELATIVE TO DETERRING THE TAMPERING OF GUAM CUSTOMS AND QUARANTINE AGENCY SEALS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 59-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 26110.2 TO CHAPTER 26, DIVISION 2, TITLE 11, GUAM CODE ANNOTATED, RELATIVE TO REQUIRING THE ITEMIZATION OF BUSINESS PRIVILEGE TAX ON ALL SALES RECEIPTS, INVOICES AND OTHER DOCUMENTATION PROVIDED TO CUSTOMERS, AND TO ESTABLISH PENALTIES FOR NON-COMPLIANCE, TO BE KNOWN AS THE \u201cBUSINESS PRIVILEGE TAX TRANSPARENCY ACT OF 2025.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 79-38",
+      "title": "AN ACT TO AUTHORIZE I MAGA\u2019H\u00c5GAN GUAHAN TO SELL A PORTION OF BLOCK 8 IN NEW AGAT DESIGNATED AS BLOCK 8 PARK AREA AND TO DEPOSIT THEPROCEEDS OF THE SALE INTO THE CHAMORRO LAND TRUST INFRASTRUCTURE AND SURVEY FUND.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 251-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a731101. OF CHAPTER 31, DIVISION 4, TITLE 17, GUAM CODE ANNOTATED, RELATIVE TO THE GUAM COMMUNITY COLLEGE BOARD OF TRUSTEES COMPOSITION TO ENHANCE BUSINESS AND INDUSTRY REPRESENTATION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 200-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 12112 OF CHAPTER 12, ARTICLE 1, TITLE 17, GUAM CODE ANNOTATED, RELATIVE TO REQUIRING THE GUAM ACADEMY CHARTER SCHOOLS COUNCIL TO REVIEW AND APPROVE ALL CONTRACTS, MEMORANDA OF AGREEMENT, MEMORANDA OF UNDERSTANDING, AND SIMILAR BINDING AGREEMENTS ENTERED INTO BY ACADEMY CHARTER SCHOOLS, TO ENHANCE OVERSIGHT, ACCOUNTABILITY, AND COMPLIANCE WITH PUBLIC FUNDING REQUIREMENTS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 191-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 70.460 TO ARTICLE 4 OF CHAPTER 70, TITLE 9, GUAM CODE ANNOTATED, RELATIVE TO PROHIBITING THE UNAUTHORIZED OPERATION OF UNMANNED AIRCRAFT OVER GOVERNMENT OF GUAM CORRECTIONAL AND DETENTION FACILITIES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 28-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 28112(c) OF CHAPTER 28, TITLE 11, GUAM CODE ANNOTATED, RELATIVE TO INCREASING GUAM ENVIRONMENTAL PROTECTION AGENCY\u2019S COMPLIANCE AND ENFORCEMENT CAPACITY TO PROTECT THE HEALTH OF OUR ENVIRONMENT AND PEOPLE.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 162-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 19.50 OF CHAPTER 19, TITLE 9, GUAM CODE ANNOTATED, RELATIVE TO ADDING FINES AND STRONGER PENALTIES TERRORISTIC CONDUCT INCLUDING BOMB SCARE THREATS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 133-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7\u00a7 66215, 66216, AND 66217 TO ARTICLE 2, CHAPTER 66, TITLE 21 OF THE GUAM CODE ANNOTATED, RELATIVE TO AUTHORIZING THE USE OF THIRD-PARTY ASSISTANCE IN PERMIT APPLICATION REVIEWS, TO ESTABLISH CONDITIONAL APPROVAL FOR PERMIT APPLICATIONS AND TO CITE THIS ACT AS THE \u201cPERMIT APPLICATIONS REVIEW AND CONDITIONAL APPROVAL ACT OF 2025.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 234-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a773157\u00a0 TO ARTICLE 1, CHAPTER 73, DIVISION 3 OF TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO MANDATING THE ADOPTION OF THE AUTOMATED SYSTEM FOR CUSTOMS DATA (ASYCUDA) AS THE OFFICIAL CUSTOMS MANAGEMENT SYSTEM OF THE GUAM CUSTOMS AND QUARANTINE AGENCY, AND TO AUTHORIZE AGREEMENTS WITH THE UNITED NATIONS CONFERENCE ON TRADE AND DEVELOPMENT (UNCTAD) FOR ITS IMPLEMENTATION AND MAINTENANCE.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 265-38",
+      "title": "AN ACT TO AUTHORIZE THE GUAM CUSTOM AND QUARANTINE AGENCY TO USE ITS UNEXPENDED FY2025 GENERAL FUND APPROPRIATIONS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 107-38",
+      "title": "AN ACT TO ADD A NEW ARTICLE 5 TO CHAPTER 4, TITLE 19 OF THE GUAM CODE ANNOTATED AND TO RECODIFY 18 GCA \u00a790113 AS A NEW \u00a74502 THEREOF, RELATIVE TO ESTABLISHING CRIMINAL LIABILITY FOR FAILURE OF A PARENT OR LEGAL GUARDIAN TO EXERCISE REASONABLE CARE, SUPERVISION, PROTECTION, AND CONTROL OVER THEIR MINOR CHILD WHEN SUCH ACT OR OMISSION PERMITS OR ENCOURAGES THE MINOR CHILD TO COMMIT A FELONY OR MISDEMEANOR CRIME.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 156-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7\u00a7 58104(b)(2) AND 58106; ALL OF CHAPTER 58, TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO AUTHORIZING THE EXTENSION OF LEASE AGREEMENTS UNDER THE GUAM EDUCATION FINANCING FOUNDATION (GEFF) TO FINANCE THE CAPITAL IMPROVEMENTS AND MODERNIZATION OF GUAM DEPARTMENT OF EDUCATION (GDOE) FACILITIES WITH FIFTY-NINE MILLION THREE HUNDRED SEVENTY THOUSAND DOLLARS ($ 59,370,000).",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 146-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 5117.3 TO CHAPTER 5, TITLE 5, GUAM CODE ANNOTATED RELATIVE TO GRANTING THE EXECUTIVE DIRECTOR OF THE MAYORS COUNCIL OF GUAM PROCUREMENT AUTHORITY FOR PROCUREMENT GOODS AND SERVICES THAT DO NOT EXCEED A VALUE OF FIVE HUNDRED THOUSAND DOLLARS ($500,000).",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 117-38",
+      "title": "AN ACT TO DEAPPROPRIATE TWENTY-FIVE THOUSAND DOLLARS ($25,000.00) FROM THE FUNDS OF THE OFFICE OF SENATOR TELO T. TAITAGUE TO REAPPROPRIATE SAID SUMS TO THE GUAHAN PAWS FOR PETS, A NON-PROFIT ORGANIZATION THAT PROVIDES FOSTERING AND ADOPTION SERVICES FOR ANIMALS UNDER ITS CARE.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 275-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW SECTION 1(m)(8) TO CHAPTER V (EXECUTIVE BRANCH) OF PUBLIC LAW 38-60, RELATIVE TO PROVIDING THE GUAM POLICE DEPARTMENT WITH CONTINUING APPROPRIATION AUTHORITY FOR CRITICAL OBLIGATIONS INCLUDING THE REPAIR OR REPLACEMENT OF THE HEATING, VENTILATION, AND AIR CONDITIONING (HVAC) SYSTEM AT THE GREGORIO G. PEREZ CRIME LAB BUILDING IN MANGILAO.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 224-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW ARTICLE 5 TO CHAPTER 18, TITLE 1 OF THE GUAM CODE ANNOTATED, RELATIVE TO REVITALIZING MANDATORY GOVERNMENT-WIDE RECYCLING.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 123-38",
+      "title": "AN ACT RELATIVE TO INCLUDING PHYSICIAN ASSISTANTS ON THE GUAM BOARD OF MEDICAL EXAMINERS, UPDATING PRESCRIPTIVE AUTHORITY FOR PHYSICIAN ASSISTANTS, AND ADOPTING RULES AND REGULATIONS AND CODE OF ETHICS FOR PHYSICIAN ASSISTANTS BY ADDING A NEW (10) AND (11) TO \u00a712215 AND AMENDING 12101(r), (7) OF \u00a712202(a), (7) AND (8) OF 12202(b), \u00a712203(a) (1) TO (4), AND \u00a7121609, ALL OF CHAPTER 12, TITLE 10, GUAM CODE ANNOTATED.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 172-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 8107.2 TO CHAPTER 8, TITLE 5, GUAM CODE ANNOTATED; RELATIVE TO REQUIRING THE DEPARTMENT OF PUBLIC WORKS PUBLISH AND MAINTAIN A RECORD OF ANTICIPATED, ON-GOING, ON-HOLD, AND COMPLETED PROJECTS ON ITS WEBSITE, PURSUANT TO OPEN GOVERNMENT REQUIREMENTS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 38-38",
+      "title": "AN ACT TO APPROPRIATE FOUR MILLION DOLLARS ($4,000,000) FROM THE FISCAL YEAR 2025 GENERAL FUND REVENUES COLLECTED IN EXCESS OF THE ADOPTED LEVELS ENUMERATED IN PUBLIC LAW 37-125 TO THE UNIVERSITY OF GUAM FOR THE PURPOSE OF REPAIRS, MAINTENANCE, CAPITAL IMPROVEMENT PROJECTS AND ACCREDITATION RELATED PRIORITIES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 181-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 5901, CHAPTER 5, TITLE 5, GUAM CODE ANNOTATED; RELATIVE TO EXPANDING THE MEMBERSHIP OF THE PROCUREMENT ADVISORY COUNCIL TO INCLUDE REPRESENTATIVES FROM THE BUSINESS COMMUNITY AND APPOINTEES OF THE SPEAKER OF I LIHESLATURAN GU\u00c5HAN.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 210-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW ARTICLE 3 TO DIVISION 1, CHAPTER 6, TITLE 17 OF THE GUAM ADMINISTRATIVE RULES AND REGULATIONS, RELATIVE TO THE DEPARTMENT OF LABOR PROMULGATION OF RULES AND REGULATIONS FOR THE IMPLEMENTATION AND ENFORCEMENT OF PUBLIC LAW 36-118, THE \u201cPREGNANT WORKERS FAIRNESS ACT.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 241-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0P.L. 38-60 RELATIVE TO EXPEDITING THE RELEASE OF THE TWENTY MILLION DOLLARS ($20,000,000) APPROPRIATED FOR THE GUAM MEMORIAL HOSPITAL FOR OPERATIONS IN FISCAL YEAR 2026.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 69-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW CHAPTER 16 TO DIVISION 1 OF TITLE 5, GUAM CODE ANNOTATED RELATIVE TO REQUIREMENTS FOR FEDERAL FUNDING ACCEPTANCE.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 100-38",
+      "title": "AN ACT TO AMEND \u00a7 1102, CHAPTER 1, DIVISION 1; TO AMEND \u00a7 2407(f) OF ARTICLE 4, CHAPTER 2, DIVISION 1; AMEND ARTICLE 1, CHAPTER 12; ADD A NEW \u00a7 12101.1 OF ARTICLE 1, CHAPTER 12; ADD A NEW \u00a7 80110 (c)(11) TO CHAPTER 80, DIVISION 4; ADD A NEW \u00a7 86105 (e) TO CHAPTER 86, ALL OF TITLE 10, GUAM CODE ANNOTATED; ADD A NEW \u00a7 3102.1 (t) TO CHAPTER 3; AMEND \u00a7 16104.1 TO CHAPTER 16; ADD A NEW \u00a7 31108 (h) TO CHAPTER 31, ALL OF TITLE 17, GUAM CODE ANNOTATED; AND TO AMEND \u00a7 2102 TO CHAPTER 2, TITLE 7, GUAM CODE ANNOTATED, RELATIVE TO INCREASING AWARENESS OF AND STRENGTHENING EARLY CHILDHOOD DEVELOPMENT BY EXPANDING GUAM\u2019S EARLY CHILD CARE AND EDUCATION SYSTEM.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 151-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 5212 OF CHAPTER 5, TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO UPDATING BID BOND REQUIREMENTS IN ORDER TO IMPROVE COMPETITION FOR GOVERNMENT PROCUREMENT.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 233-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 40114.1 TO ARTICLE 1 OF CHAPTER 40, TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO ASSIGNING A PORTION OF LOT NO. 87-5-R2 IN HAG\u00c5T\u00d1A, TO THE HAG\u00c5T\u00d1A MAYOR\u2019S OFFICE FOR THE DEVELOPMENT OF COMMUNITY SPORTS AND RECREATION FACILITIES, AND TO FURTHER AUTHORIZING THAT OFFICE TO ENTER INTO A MEMORANDUM OF AGREEMENT WITH THE GUAM FOOTBALL ASSOCIATION FOR THE CONSTRUCTION AND MANAGEMENT OF A FOOTBALL PITCH AND RELATED FACILITIES ON A PORTION OF THE PROPERTY IDENTIFIED HEREIN.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 262-38",
+      "title": "AN ACT TO APPROPRIATE THE SUM OF EIGHT HUNDRED NINETY THOUSAND ($890,000) TO I LIHESLATURAN GU\u00c5HAN FOR ITS CYBERSECURITY AND AUTOMATIONS NEEDS FOR FY 2026.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 165-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0SUBSECTION (d) OF \u00a7 3101 OF ARTICLE 1, CHAPTER 3, TITLE 16, GUAM CODE ANNOTATED, RELATIVE TO EXTENDING THE PERIOD DURING WHICH HOLDERS OF VALID U.S. DRIVER\u2019S LICENSES MAY OPERATE MOTOR VEHICLES IN GUAM.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 134-38",
+      "title": "AN ACT TO AMEND \u00a7 5213 OF CHAPTER 5, TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO INCREASING THE SMALL PURCHASE THRESHOLD.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 256-38",
+      "title": "AN ACT TO TO\u00a0AMEND\u00a0\u00a7 12106(h) OF CHAPTER 12, TITLE 17, GUAM CODE ANNOTATED, RELATIVE TO INCREASING THE CAP ON CHARTER SCHOOLS FROM SEVEN (7) TO EIGHT (8) TO ADVANCE TOURISM AND HOSPITALITY CAREER AND TECHNICAL EDUCATION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 207-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 75A107(a);\u00a0ADD\u00a0NEW \u00a7 75A123(c); AND\u00a0AMEND\u00a0\u00a7 75A124; ALL OF CHAPTER 75A, TITLE 21, GUAM CODE ANNOTATED, RELATIVE TO AUTHORIZING THE CHAMORRO LAND TRUST COMMISSION TO LEASE PARCELS WITH UNDIVIDED INTEREST TO PROVIDE AFFORDABLE HOUSING OPTIONS TO THE BENEFICIARIES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 196-38",
+      "title": "AN ACT TO APPROPRIATE FROM THE GENERAL FUND UNAPPROPRIATED BALANCE AS OF SEPTEMBER 30, 2025 TWO MILLION NINE HUNDRED TWELVE THOUSAND EIGHTY-SIX DOLLARS ($2,912,086) TO GBHWC FOR THE INTENSIVE PSYCHIATRIC TREATMENT STABILIZATION 24-HOUR THERAPEUTIC GROUP HOME FOR CHILDREN AND ADOLESCENTS WITH SERIOUS EMOTIONAL DISTURBANCE AND NINE HUNDRED FORTY-SEVEN THOUSAND TWO HUNDRED FORTY-NINE DOLLARS ($947,249) TO DOA FOR RESIDENTIAL TREATMENT FUND.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 186-38",
+      "title": "AN ACT TO APPROPRIATE THE UN-ALLOTTED BALANCE OF THE PHARMACEUTICAL FUND TO THE GUAM MEMORIAL HOSPITAL AUTHORITY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 217-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW ARTICLE \u00a770124 TO CHAPTER 70 OF TITLE 21, GUAM CODE ANNOTATED, RELATIVE TO AUTHORIZING LICENSED ELECTRICIANS TO CONDUCT WEATHERHEAD INSPECTIONS AND CERTIFICATION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 246-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 1303.1 OF CHAPTER 1, TITLE 5, GUAM CODE ANNOTATED, TO\u00a0ADD\u00a0THE GUAM CANCER TRUST FUND TO THE LIST OF ENTITIES AND INSTRUMENTALITIES EXEMPT FROM THE BUREAU OF BUDGET AND MANAGEMENT RESEARCH ALLOTMENT RELEASE CONTROL, TO ENSURE TIMELY AND CONSISTENT ACCESS TO APPROPRIATED FUNDS FOR CANCER PROGRAMS AND SERVICES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 124-38",
+      "title": "AN ACT TO AMEND \u00a7 403(n) OF CHAPTER 4, TITLE 1, GUAM CODE ANNOTATED, RELATIVE TO CHANGING THE OFFICIAL NAME OF THE MUNICIPALITY OF \u201cASAN\u201d TO ITS NAME IN THE CHAMORU LANGUAGE, NAMELY \u201cASSAN-MA\u2019INA.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 175-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7\u00a7 61541(b), (c) & (f); 61546 & 61547 OF CHAPTER 61, TITLE 21, GUAM CODE ANNOTATED, RELATIVE TO MAKING PRACTICABLE IMPROVEMENTS TO GUAM\u2019S SIGN LAWS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 272-38",
+      "title": "AN ACT TO APPROPRIATE THE SUM OF TWENTY MILLION DOLLARS ($20,000,000) FROM THE FISCAL YEAR 2025 EXCESS REVENUES COLLECTED ABOVE THE LEVELS ADOPTED IN PUBLIC LAW 125-37 TO THE GUAM DEPARTMENT OF PUBLIC HEALTH AND SOCIAL SERVICES FOR THE REFURBISHMENT OF THE FORMER PUBLIC HEALTH MANGILAO FACILITY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 223-38",
+      "title": "AN ACT TO AUTHORIZE A CONTINUING APPROPRIATION FROM PUBLIC LAW 37-125 TO THE GUAM COMMISSION FOR EDUCATOR CERTIFICATION (GCEC) FOR THE PURPOSE OF ADDRESSING BUDGET SHORTFALLS FOR PERSONNEL SERVICES AND OPERATIONS",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 141-38",
+      "title": "AN ACT TO ADD A NEW \u00a7 51104(h) TO ARTICLE 1, CHAPTER 51, DIVISION 2, TITLE 10, GUAM CODE ANNOTATED, TO REPEAL \u00a7 23104(d)(5), AND ADD A NEW \u00a7 23104.1 TO ALL OF CHAPTER 23, DIVISION 4, TITLE 22 OF THE GUAM ADMINISTRATIVE RULES AND REGULATIONS RELATIVE TO EXPANDING LIMITED EXEMPTIONS FROM PERMITTING REQUIREMENTS FOR SMALL-SCALE, ON-SITE COMPOSTING ACTIVITIES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 110-38",
+      "title": "AN ACT TO ADD A NEW CHAPTER 16 TO TITLE 5 OF THE GUAM CODE ANNOTATED, RELATIVE TO CODIFYING THE CRIMINAL JUSTICE AUTOMATION COMMISSION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 130-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7\u00a7 1000(a) AND 1025 AND 1037 OF CHAPTER 10, TITLE 1, GUAM CODE ANNOTATED; AND TO\u00a0AMEND\u00a0THE TITLE AND \u00a7\u202f 88102 OF CHAPTER 88, TITLE 5, GUAM CODE \u202fANNOTATED, RELATIVE TO ADOPTING CHAMORU ORTHOGRAPHY FOR OFFICIAL HOLIDAYS, AND TO UPDATING THE ENABLING ACT OF I KUMISION I FINO\u2019 CHAMORU YAN I FINA\u2019N\u00c5\u2019GUEN I HISTORIA YAN I LINA\u2019LA\u2019 I TAOTAO T\u00c5NO\u2019.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 89-38",
+      "title": "AN ACT TO\u00a0ADD \u00a0A NEW CHAPTER 40A, DIVISION 2, TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO CLARIFYING PROTECTIONS FROM LIABILITY FOR FOOD DONATIONS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 161-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 8121(e) OF CHAPTER 8, TITLE 4, GUAM CODE ANNOTATED RELATIVE DESIGNATING RETIREES, WHO ARE REEMPLOYED IN THE GOVERNMENT OF GUAM, AS INELIGIBLE FOR THE ACTIVE EMPLOYEE HEALTH PLAN.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 192-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a767100, \u00a767101, \u00a767103, AND \u00a767107\u00a0 AND TO\u00a0REPEAL\u00a0\u00a7 67107.1 OF CHAPTER 67, TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO THE APPOINTMENT OF THE VETERANS AFFAIRS OFFICER AND MEMBERS OF THE GUAM VETERANS COMMISSION, THE POWERS AND DUTIES OF THE VETERANS AFFAIRS OFFICER, THE COMPOSITION AND OPERATIONS OF THE GUAM VETERANS COMMISSION, AND THE DEFINITION OF A VETERAN.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 203-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a743103 OF CHAPTER 43, DIVISION 2, TITLE 11, GUAM CODE ANNOTATED, RELATIVE TO INCREASING THE TAX REBATE FOR QUALIFIED EDUCATOR EXPENSES FROM FIVE HUNDRED DOLLARS ($500) TO ONE THOUSAND DOLLARS ($1,000) UNDER THE EDUCATOR APPRECIATION ACT.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 252-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 12106(h) OF CHAPTER 12, TITLE 17, GUAM CODE ANNOTATED, RELATIVE TO INCREASING THE CAP ON CHARTER SCHOOLS FROM SEVEN (7) TO EIGHT (8) TO ADVANCE CAREER AND TECHNICAL EDUCATION THROUGH PARTNERSHIP WITH GUAM COMMUNITY COLLEGE.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 155-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW ARTICLE 3 TO CHAPTER 1, TITLE 19, GUAM ADMINISTRATIVE RULES AND REGULATIONS, RELATIVE TO ADOPTING \u201cTHE RULES AND REGULATIONS FOR THE ADJUDICATION OF VICTIM CLAIMS 2024\u201d ATTACHED HERETO AS EXHIBIT \u201cA\u201d.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 104-38",
+      "title": "AN ACT TO AMEND \u00a7\u00a7 45.10(C) AND 80.60; AND TO ADD \u00a7\u00a7 40.20(H) AND (I), 45.10(D), 100.40 AND 160.96 TO TITLE 8; TO REPEAL AND REENACT \u00a7\u00a7 30104.1 AND 30118.1, AND TO ADD \u00a7\u00a7 30104.2 AND 30104.3 TO TITLE 5, AND TO ADD \u00a7 10107(S) TO TITLE 12, ALL OF THE GUAM CODE ANNOTATED, RELATIVE TO ENACTING THE \u201cCRIME VICTIM & PEOPLE OF GUAM\u2019S PROTECTION REFORM ACT OF 2025.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 266-38",
+      "title": "AN ACT MAKING APPROPRIATIONS FOR THE OPERATIONS OF THE EXECUTIVE BRANCH OF THE GOVERNMENT OF GUAM FOR FISCAL YEAR ENDING SEPTEMBER 30, 2027, MAKING OTHER APPROPRIATIONS, AND ESTABLISHING MISCELLANEOUS AND ADMINISTRATIVE PROVISIONS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 237-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW CHAPTER 8, DIVISION 1, TITLE 17 OF THE GUAM ADMINISTRATIVE RULES AND REGULATIONS, RELATIVE TO THE DEPARTMENT OF LABOR PROMULGATION OF RULES AND REGULATIONS FOR THE IMPLEMENTATION AND ENFORCEMENT OF THE GUAM REGISTERED APPRENTICESHIP PROGRAM PURSUANT TO PUBLIC LAW 35-39.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 227-38",
+      "title": "AN ACT TO AUTHORIZE THE GUAM DEPARTMENT OF AGRICULTURE TO CARRY FORWARD UNEXPENDED APPROPRIATED FUNDS FROM PRIOR FISCAL YEARS UNTIL SUCH FUNDS ARE FULLY EXPENDED.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 276-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 121504.1 AND \u00a7 12904 BOTH OF CHAPTER 12, TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO INCLUDING DRY NEEDLING AND SPINAL MANIPULATION AS AUTHORIZED ACTIVITIES FOR LICENSED PRACTICTIONERS OF ACUPUNCTURE AND ORIENTAL MEDICINE.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 114-38",
+      "title": "AN ACT TO APPROPRIATE THIRTY-FIVE THOUSAND DOLLARS ($35,000.00) FROM THE FUNDS OF THE OFFICE OF SENATOR TELO T. TAITAGUE TO THE GUAM ANIMALS IN NEED (GAIN) TO UPGRADE DRIVEWAY REPAIRS; SECURITY CAMERAS; FENCE REPAIRS; NEW FRONT DOOR INSTALLATION, AND TYPHOON SHUTTERS AND RESOURCES NEEDED FOR THE CARE OF THE ANIMALS AT THE FACILITY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 145-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 771103 (a) AND \u00a7 771106 OF ARTICLE 11, CHAPTER 77, TITLE 12 GUAM CODE ANNOTATED, RELATIVE TO TAX CREDITS FOR MEDICAL EQUIPMENT FOR THE GUAM MEMORIAL HOSPITAL AUTHORITY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 242-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7\u00a7 2102, 2104, 2105, 2110, AND 2111 OF CHAPTER 21, TITLE 1, GUAM CODE ANNOTATED, RELATIVE TO REMOVING ANCESTRY-BASED VOTER RESTRICTIONS IN GUAM\u2019S POLITICAL STATUS PLEBISCITE AND ENSURING COMPLIANCE WITH THE FIFTEENTH AMENDMENT TO THE UNITED STATES CONSTITUTION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 213-38",
+      "title": "AN ACT TO AMEND \u00a7 76102, \u00a7 76103, \u00a7 76104\u00a0 ALL OF ARTICLE 1, AND\u00a0 CHAPTER 76, TITLE 21 GUAM CODE ANNOTATED, RELATIVE TO CLARIFYING THE ROLE OF THE GUAM HISTORIC RESOURCES DIVISION\u00a0 IN REVITALIZING AND PROMOTING PRESERVATION OF HISTORIC SITES AND CULTURAL LANDSCAPES OF GU\u00c5HAN.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 182-38",
+      "title": "AN ACT TO AUTHORIZE THE TRANSFER OF THE TITLE OF OWNERSHIP AND ADMINISTRATIVE JURISDICTION OF LOT 527-R1 IN MALESSO\u2019 FROM THE CHAMORRO LAND TRUST COMMISSION TO THE GUAM NATIONAL GUARD FOR THE DEVELOPMENT OF TRAINING AREAS AND FACILITIES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 171-38",
+      "title": "AN ACT TO ADD A NEW CHAPTER 28A TO TITLE 9, GUAM CODE ANNOTATED; TO ADD A NEW PARAGRAPH (12) TO \u00a7 25.10(a) AND TO ADD A NEW \u00a7 25.50 TO CHAPTER 25, TITLE 9, GCA; AND TO ADD A NEW ARTICLE 7 TO CHAPTER 24, TITLE 7, GCA, RELATIVE TO PROHIBITING THE CREATION, POSSESSION, DISCLOSURE, OR THREATENED DISCLOSURE OF NONCONSENSUAL INTIMATE DEPICTIONS, WHETHER AUTHENTIC OR TECHNOLOGICALLY MANIPULATED (\u201cDEEPFAKES\u201d), AND TO PROVIDE CRIMINAL PENALTIES, CIVIL REMEDIES, FORFEITURE, VICTIM-PRIVACY SAFEGUARDS, AND EXPANDED JURISDICTION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 99-38",
+      "title": "AN ACT TO ADD A NEW \u00a7 3118, \u00a7 3118.1, AND \u00a7 3118.2 TO CHAPTER 3 OF TITLE 16, GUAM CODE ANNOTATED, RELATIVE TO AUTHORIZING THE DEPARTMENT OF REVENUE AND TAXATION TO ENTER INTO DRIVER\u2019S LICENSE RECIPROCITY AGREEMENTS WITH FOREIGN COUNTRIES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 120-38",
+      "title": "AN ACT RELATIVE TO INCLUDING PHYSICIAN ASSISTANTS ON THE GUAM BOARD OF MEDICAL EXAMINERS, AND TO ADOPT RULES AND REGULATIONS AND CODE OF ETHICS FOR PHYSICIAN ASSISTANTS BY ADDING A NEW (10) AND (11) OF \u00a712215 AND AMENDING (7) TO \u00a712202(a), (7) AND (8) TO 12202(b), AND \u00a712203(a) (1) TO (4), ALL OF CHAPTER 12, TITLE 10, GUAM CODE ANNOTATED.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 88-38",
+      "title": "AN ACT TO\u00a0REPEAL AND\u00a0REENACT\u00a0CHAPTER 25 OF TITLE 16, GUAM CODE ANNOTATED, RELATIVE TO ASSESSING THE TAXATION OF VEHICLE TITLE TRANSFERS ON THE BILL OF SALE ONLY AND STREAMLINING VEHICLE OWNERSHIP TRANSFERS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 131-38",
+      "title": "AN ACT TO AUTHORIZE THE CHAMORRO LAND TRUST TO SELL A PORTION OF LOT 5174-REM-1 MUNICIPALITY OF TAMUNING CONSISTING OF AN AREA OF 1485\u00b1 SQ.FT. (138\u00b1 SQ.M.) AND TO DEPOSIT THE PROCEEDS OF THE SALE INTO THE CHAMORRO LAND TRUST INFRASTRUCTURE AND SURVEY FUND.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 160-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW ARTICLE 8 TO CHAPTER 66, TITLE 21, GUAM CODE ANNOTATED RELATIVE ADOPTING THE INTERNATIONAL PROPERTY MANAGEMENT CODE FOR CERTAIN PROPERTIES ON H (HOTEL) ZONED LOTS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 202-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW CHAPTER 56 TO DIVISION 5 OF TITLE 17, GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING THE \u201cGUAM VETERANS HIGHER EDUCATION BENEFITS ACT.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 193-38",
+      "title": "AN ACT TO APPROPRIATE FOUR MILLION SIX HUNDRED FIFTY-SIX THOUSAND FIVE HUNDRED SIXTY-EIGHT DOLLARS ($4,656,568) FROM THE GENERAL FUND UNAPPROPRIATED BALANCE AS OF SEPTEMBER 30, 2025 TO THE WORKER\u2019S COMPENSATION FUND FOR THE WORKERS COMPENSATION COMMISSION TO PAY UNPAID CLAIMS AND/OR VENDOR PAYMENTS FOR FY2024 AND FY2025 AND APPROPRIATE ADDITIONAL FUNDING FOR FY2026",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 253-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a747113 TO CHAPTER 47, TITLE 10 GUAM CODE ANNOTATED RELATIVE TO PROHIBITING AND DETERRING SEABED MINING IN THE WATERS OF GUAM AND THE SURROUNDING SEA.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 154-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 3102 AND\u00a0ADD\u00a0A NEW \u00a7 3102.1(h) TO CHAPTER 3, TITLE 3, AND\u00a0AMEND\u00a0\u00a7 3103.3(c)(1) OF CHAPTER 3, TITLE 16, GUAM CODE ANNOTATED, RELATIVE TO REQUIRING DOCUMENTARY PROOF OF UNITED STATES CITIZENSHIP TO ALIGN GUAM VOTER REGISTRATION PRACTICES WITH FEDERAL ELECTION INTEGRITY STANDARDS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 105-38",
+      "title": "AN ACT TO AMEND SUBSECTION (a) OF \u00a780.70, CHAPTER 80, TITLE 9 OF THE GUAM CODE ANNOTATED, RELATIVE TO PROHIBITING PAROLE FOR VIOLENT AND SEXUAL OFFENSES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 267-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a75150 OF SUBARTICLE F, ARTICLE 2, CHAPTER 5, DIVISION 1, TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO UPDATING THE DUTIES OF THE ATTORNEY GENERAL BY INCREASING THE THRESHOLD FOR PROCUREMENT OVERSIGHT AND ADVISEMENT FOR AN AMOUNT OF EIGHT HUNDRED THOUSAND (800,000) TO ONE MILLION FIVE HUNDRED THOUSAND DOLLARS ($1,500,000) OR MORE.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 236-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW ARTICLE 6, CHAPTER 7, TITLE 9, GUAM CODE ANNOTATED; RELATIVE TO ABOLISHING THE \u201cROUGH SEX\u201d DEFENSE IN CASES OF SERIOUS INJURY OR DEATH AND TO BE CITED AS THE \u201cKRYSTAL MITCHELL LAW\u201d.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 226-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a76236 TO ARTICLE 2 OF CHAPTER 6 TITLE 4, GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING INCENTIVE PAY FOR CERTAIN GUAM DEPARTMENT OF EDUCATION EMPLOYEES WHO OBTAIN AND UTILIZE SPECIALIZED CERTIFICATIONS OR TRAINING IN CRITICAL SHORTAGE AREAS, INCLUDING SPECIAL EDUCATION, LANGUAGE ACCESS, AND DISABILITY SERVICES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 277-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 12901 AND ADD A NEW \u00a7\u00a7 12907 AND 12908 ALL OF ARTICLE 9 CHAPTER 12, TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO AUTHORIZING AND REGULATING ACUPUNCTURE AND ORIENTAL MEDICINE ASSISTANTS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 115-38",
+      "title": "AN ACT TO DEAPPROPRIATE FORTY-TVVO THOUSAND DOLLARS ($42,000.00) FROM THE FUNDS OF THE OFFICE OF SENATOR TELO T. TAITAGUE AND TO REAPPROPRIATE SAID SUM TO THE DEPARTMENT OF PARKS AND RECREATION\u2019S PARK POLICE SECTION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 144-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7\u00a7 771403 AND 771405 OF CHAPTER 77, TITLE 12, GUAM CODE ANNOTATED, RELATIVE TO EXTENDING THE AUTHORIZED TAX CREDITS FOR THE REHABILITATION AND IMPROVEMENTS OF THE FOOTBALL FIELDS OPERATED BY THE GUAM NATIONAL YOUTH FOOTBALL FEDERATION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 243-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 5425(g) OF ARTICLE 9, CHAPTER 5, TITLE 5, GUAM CODE ANNOTATED; AND TO ADD A NEW \u00a7 5425.1 TO ARTICLE 9, CHAPTER 5, TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO REMOVING THE AUTOMATIC STAY OF PROCUREMENT UPON THE FILING OF A PROTEST AND REQUIRING AN AFFIRMATIVE DETERMINATION OR ORDER TO STAY AN AWARD, TO MODERNIZE GUAM\u2019S PROCUREMENT REGIME.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 183-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0SECTION 2(b) OF PUBLIC LAW 34-112, AS AMENDED, RELATIVE TO SUPPORTING THE GUAM CUSTOMS AND QUARANTINE AGENCY\u2019S ONGOING EFFORTS TO DEVELOP THE CUSTOMS SATELLITE INSPECTION, HOLDING, AND SECURED STERILE FACILITY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 212-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0\u00a7 51111 (a)(9) OF ARTICLE 1, CHAPTER 51, DIVISION 2, TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO UPDATING THE PROHIBITION OF OPEN DETONATION AND CLARIFYING THE IMPLEMENTATION OF SAFE ALTERNATIVES FOR THE PROTECTION OF GUAM\u2019S AIR, WATER, LAND, AND THE HEALTH OF ITS PEOPLE.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 170-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 849.18 TO CHAPTER 8, TITLE 1 GUAM CODE ANNOTATED; RELATIVE TO DESIGNATING ROUTE 6 AS THE \u201cWORLD WAR TWO SURVIVORS MEMORIAL HIGHWAY\u201d.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 121-38",
+      "title": "AN ACT TO AMEND \u00a754B102 OF CHAPTER 54B, TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO ALLOWING FOR FURTHER EXEMPTIONS TO THE \u201cCHOOSE TO REUSE: MUNGNGA MA AYEK I PLASTEK ACT OF 2018.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 98-38",
+      "title": "AN ACT TO APPROPRIATE TEN MILLION DOLLARS ($10,000,000) FROM FISCAL YEAR 2025 GENERAL FUND REVENUES COLLECTED IN EXCESS OF THE ADOPTED LEVELS ENUMERATED IN PUBLIC LAW 37-125 TO THE GUAM WATERWORKS AUTHORITY FOR THE DESIGN AND CONSTRUCTION OF WASTEWATER INFRASTRUCTURE IN PARENTAL AND DECEDENT SUBDIVISIONS OVER THE NORTHERN GUAM LENS AQUIFER.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 101-38",
+      "title": "AN ACT TO ADD A NEW \u00a7 26203 (f) TO ARTICLE 2, CHAPTER 26, TITLE 11 GUAM CODE ANNOTATED, RELATIVE TO EXPANDING THE BUSINESS PRIVILEGE TAX EXEMPTIONS LIST TO INCLUDE PRESCRIPTION DRUGS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 150-38",
+      "title": "AN ACT TO REZONE LOT NO. 5228-R4-R2-1 (PORTION) IN THE MUNICIPALITY OF BARRIGADA FROM ARGRICULTURAL (\u201cA\u201d) TO LIGHT INDUSTRIAL (\u201cM-1\u201d).",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 232-38",
+      "title": "AN ACT\u00a0AMEND\u00a0\u00a7\u00a7 1.10, 1.14, 1.16, 1.18, 1.19, 1.20, 1.22, 1.24, 1.26, 1.30 AND 1.60 OF CHAPTER 1, TO\u00a0REPEAL\u00a0AND\u00a0\u00a0REENACT\u00a0\u00a7\u00a7 1.12, 1.34, 1.36, 1.38, 1.42, 1.44, 1.46, 1.48 OF CHAPTER 1 AND TO\u00a0REPEAL\u00a0\u00a7 1.80 OF CHAPTER 1; TO\u00a0AMEND\u00a0\u00a7\u00a7 4.45, 4.50, 4.70 AND 4.75 OF CHAPTER 4; TO\u00a0AMEND\u00a0\u00a7\u00a7 16.30, 16.40 AND 16.50 OF CHAPTER 16; TO\u00a0AMEND\u00a0\u00a7\u00a7 19.50, 19.70 AND 19.81 OF CHAPTER 19; TO\u00a0AMEND\u00a0\u00a7 25.10 OF CHAPTER 25; TO\u00a0AMEND\u00a0\u00a7\u00a7 25A102, 25A103, 25A104, 25A105 AND TO\u00a0ADD\u00a0A NEW \u00a7 25A106 OF CHAPTER 25A; TO\u00a0AMEND\u00a0\u00a7\u00a7 31.30 AND 31.70, TO\u00a0REPEAL\u00a0\u00a7\u00a7 31.35, 31.37, 31.60 AND 31.65 OF CHAPTER 31; TO\u00a0AMEND\u00a0\u00a7\u00a7 34.50, 34.60 AND 34.70 OF CHAPTER 34; TO\u00a0AMEND\u00a0\u00a7 37.20 AND TO\u00a0REPEAL\u00a037.40 OF CHAPTER 37; TO\u00a0AMEND\u00a0\u00a7\u00a7 43.20 AND 43.31 OF CHAPTER 43; TO\u00a0AMEND\u00a0\u00a7\u00a7 46.30, 46.35, 46.80, 46.102, 46.103 AND 46.504 AND TO\u00a0REPEAL\u00a0\u00a7\u00a7 46.50 AND 46.104 OF CHAPTER 46; TO\u00a0AMEND\u00a0\u00a7\u00a7 52.10, 52.30, 52.55 AND 52.60 OF CHAPTER 52; TO\u00a0AMEND\u00a0\u00a7\u00a7 55.10, 55.15, 55.20, 55.25, 55.30, 55.35, 55.40, 55.50 AND 55.60 OF CHAPTER 55; TO\u00a0AMEND\u00a0\u00a7\u00a7 70.15, 70.20, 70.25, 70.35, 70.50, 70.60(a), 70.65(g), 70.80(b), 70.320(d), 70.330(c) AND 70.420, TO\u00a0REPEAL\u00a0\u00a7\u00a7 70.55, AND 70.430 OF CHAPTER 70; TO\u00a0AMEND\u00a0CHAPTER 71; TO\u00a0REPEAL\u00a0CHAPTERS 86 AND 87; TO\u00a0AMEND\u00a0\u00a7\u00a7 90.10, 90.15, 90.16, 90.25, 90.27, 90.30, 90.35, 90.40, 90.41, 90.42, 90.43, 90.44, 90.45, 90.47, 90.48, 90.49, 90.51, 90.54, 90.90 AND 90.91, TO\u00a0ADD\u00a0A NEW \u00a7 90.26, TO\u00a0REPEAL\u00a0\u00a7\u00a7 90.20, 90.80, 90.82 AND 90.84 OF CHAPTER 90 ALL OF TITLE 9 GUAM CODE ANNOTATED; TO\u00a0ADD\u00a0A NEW ARTICLE 3, CHAPTER 20 OF TITLE 19 GUAM CODE ANNOTATED; AND TO\u00a0AMEND\u00a0\u00a760109, \u00a760110, CHAPTER 60 OF TITLE 10 GUAM CODE ANNOTATED AS RECOMMENDED BY THE GUAM CRIMINAL LAW AND PROCEDURE REVIEW COMMISSION RELATIVE TO THE COMMISSION\u2019S MANDATE TO RECOMMEND ENACTMENTS, AMENDMENTS AND REPEALS TO GUAM\u2019S CRIMINAL LAWS AND PROCEDURES TO\u00a0I LIHESLATURAN GU\u00c5HAN.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 263-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0SECTIONS 8137(b)(1), 8143, 8146, 8154, AND 8157, ARTICLE 1, CHAPTER 8, TITLE 4 OF THE GUAM CODE ANNOTATED RELATIVE TO THE DEFINED BENEFIT PLAN.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 164-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW ARTICLE 2A TO CHAPTER 61 OF TITLE 21, GUAM CODE ANNOTATED, RELATIVE TO STREAMLINING THE ZONING LAW FOR AFFORDABLE HOUSING.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 135-38",
+      "title": "AN ACT TO AMEND THE CHAMORRO LAND TRUST LEASE AGREEMENT WITH THE GUAM INTERNATIONAL COUNTRY CLUB, INCORPORATED.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 257-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0ARTICLE 4 OF CHAPTER 77, TITLE 12, GUAM CODE ANNOTATED, RELATIVE TO TAX CREDITS FOR CONTRIBUTORS TO PUBLIC SCHOOL SPORTS FACILITIES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 197-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7\u00a7 122101(b)(2), 122102,(a)(2)(A), AND 122102(b)(2) OF ARTICLE 21, CHAPTER 12, TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO UPDATING THE QUALIFICATIONS OF THE DIETITIAN AND NUTRITIONIST PROFESSIONS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 206-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 12202 (c),\u00a0AMEND\u00a0\u00a7 12205 (c), \u00a7 12206 AND\u00a0ADD\u00a0A NEW 12206.1 AND \u00a7 12207 (a) (5) TO ARTICLE 2, CHAPTER 12, TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO BUILDING A MORE DIVERSE AND SUSTAINABLE HEALTHCARE WORKFORCE ON GUAM BY EXPANDING LICENSURE PATHWAYS FOR FOREIGN MEDICAL GRADUATES AND ESTABLISHING A LOCAL CONRAD 30 J-1 PHYSICIAN WAIVER PROGRAM.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 216-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW ARTICLE 4 TO CHAPTER 6 OF TITLE 4, GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING A NEW GUAM ELECTED OFFICIALS\u2019 COMPENSATION COMMISSION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 187-38",
+      "title": "AN ACT TO APPROPRIATE THE SUM OF THIRTY-TWO MILLION DOLLARS ($32,000,000) FROM THE GENERAL FUND REALIZED FROM BOND REFUNDING SAVINGS NOT FACTORED INTO THE FISCAL YEAR 2026 BUDGET FOR CAPITAL IMPROVEMENT PROJECTS AND LIFE SAVING SUPPLIES AND MATERIALS AT THE GUAM MEMORIAL HOSPITAL AUTHORITY AND OTHER HEALTH-RELATED FACILITIES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 247-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0NEW \u00a7 63134 TO CHAPTER 63, TITLE 5, GUAM CODE ANNOTATED RELATIVE TO BANNING OCTOPUS FARMING AND AQUACULTURE ON GUAM.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 125-38",
+      "title": "AN ACT TO ADD A NEW \u00a7 70133 AND RENUMBER THE EXISTING \u00a7 70133 TO \u00a7 70134, ALL OF CHAPTER 70, TITLE 11, GUAM CODE ANNOTATED, RELATIVE TO EXPANDING HOUSING AVAILABILITY BY AUTHORIZING THE DEPARTMENT OF REVENUE AND TAXATION TO ISSUE TEMPORARY BUSINESS LICENSES FOR RESIDENTIAL UNITS THAT MEET INSPECTION REQUIREMENTS ESTABLISHED BY A CERTIFIED HOME INSPECTOR LICENSED BY THE GOVERNMENT OF GUAM.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 174-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW CHAPTER 53 TO DIVISION 2 OF TITLE 12, GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING THE GUAM FREE TRADE ZONE ACT OF 2025; TO DESIGNATE A FREE TRADE LOGISTICS ZONE, TO ESTABLISH TRADE FACILITATION INCENTIVES, AND TO PROMOTE GUAM AS A RE-EXPORT CENTER FOR THE INDO-PACIFIC REGION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 273-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW SECTION (8) TO PUBLIC LAW 38-60 CHAPTER V, SUBSECTION (M) RELATIVE TO AUTHORIZING THE GUAM POLICE DEPARTMENT TO USE ITS UNEXPENDED FY2026 GENERAL FUND APPROPRIATIONS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 222-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 24313 TO CHAPTER 24 OF TITLE 11, GUAM CODE ANNOTATED, RELATIVE TO EXEMPTING OWNER-OCCUPIED RESIDENTIAL PROPERTIES PURCHASED FOR TWO HUNDRED FIFTY THOUSAND DOLLARS ($250,000) OR LESS FROM PROPERTY TAXATION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 140-38",
+      "title": "AN ACT TO ADD A NEW \u00a7 90.16.2 TO ARTICLE 1 OF CHAPTER 90, TITLE 9, GUAM CODE ANNOTATED, RELATIVE TO SALARY, RECRUITMENT AND RETENTION STUDIES FOR LAW ENFORCEMENT OFFICERS EMPLOYED BY THE GUAM DEPARTMENT OF CORRECTIONS; TO BE KNOWN AS THE \u201cFAIR COMPENSATION AND RETENTION FOR CORRECTIONAL OFFICERS ACT OF 2025.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 111-38",
+      "title": "AN ACT TO APPROPRIATE FIFTY-FIVE THOUSAND DOLLARS ($55,000.00) FROM THE FUNDS OF THE OFFICE OF SENATOR TELO T. TAITAGUE TO HARVEST HOUSE RESOURCE CENTER TO PROVIDE NEEDED SUPPORT AND SUPPLIES TO FOSTER CHILDREN.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 239-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 24117 TO ARTICLE 1, CHAPTER 24, TITLE 11, GUAM CODE ANNOTATED, RELATIVE TO EXEMPTING OWNER-OCCUPIED RESIDENTIAL PROPERTIES FROM PROPERTY TAXATION OF UP TO THREE HUNDRED FIFTY THOUSAND DOLLARS ($350,000).",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 11-38",
+      "title": "AN ACT TO AMEND \u00a7 26202(a), \u00a7 26202(c), \u00a7 26202(d), \u00a7 26202(e), \u00a7 26202(f), \u00a7 26202(g), \u00a7 26202(h), \u00a7 26202(i), AND \u00a7 26202(j), ALL OF ARTICLE 2, CHAPTER 26, TITLE 11, GUAM CODE ANNOTATED, RELATIVE TO DELIVERING FINANCIAL RELIEF TO GUAM FAMILIES AND BUSINESSES IN THE FACE OF HIGHER COSTS OF LIVING, BY RESTORING THE BUSINESS PRIVILEGE TAX RATE TO FOUR PERCENT (4%).",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 40-38",
+      "title": "AN ACT TO APPROPRIATE THREE MILLION FIVE HUNDRED THOUSAND DOLLARS ($3,500,000) FROM FISCAL YEAR 2025 GENERAL FUND REVENUES COLLECTED IN EXCESS OF THE ADOPTED LEVELS ENUMERATED IN PUBLIC LAW 37-125 TO THE GUAM PRESERVATION TRUST FOR THE PURPOSE OF THE REHABILITATION OF THE HISTORIC FRANCISCO Q. SANCHEZ ELEMENTARY SCHOOL PROPERTY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 268-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 77134 TO ARTICLE 1, CHAPTER 77, TITLE 21 GUAM CODE ANNOTATED RELATIVE TO CREATING A BEACH AND COAST WARNING AND NOTIFICATION SYSTEM FOR HAZARDOUS CONDITIONS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 74-38",
+      "title": "AN ACT TO ADD A NEW \u00a78125 TO ARTICLE 1, TO ADD A NEW \u00a7 8505(c) TO ARTICLE 5, TO AMEND \u00a7\u00a7 8502(c)(2) AND \u00a7 8505((b)(3) OF ARTICLE 5; AND REPEAL \u00a7 8506 OF ARTICLE 5, ALL OF CHAPTER 8, TITLE 12, GUAM CODE ANNOTATED, RELATIVE TO NET METERING AND THE OPERATIONS OF THE GUAM POWER AUTHORITY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 25-38",
+      "title": "AN ACT TO AMEND \u00a7 8104(a)(5)(A) AND \u00a7 8104(a)(5)(B), TO RENUMBER \u00a7 8104(a)(5)(C) AS\u00a0 \u00a7 8104(a)(5)(D); AND TO ADD A NEW \u00a78104(a)(5)(C), ALL OF CHAPTER 8, TITLE 5, GUAM CODE ANNOTATED; RELATIVE TO MODERNIZING PUBLIC HEARING NOTICE REQUIREMENTS BY AUTHORIZING THE POSTING OF PUBLIC NOTICES IN LOCALLY LICENSED ELECTRONIC NEWSPAPERS AND WEBSITES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 87-38",
+      "title": "AN ACT TO A NEW \u00a7 12130 TO ARTICLE 1, CHAPTER 12, GUAM CODE ANNOTATED RELATIVE TO PROVIDING ALTERNATIVES TO SHORT-TERM LEASES OF LAND FOR CONSTRUCTION PROJECT STAGING, STORAGE OF SUPPLIES, CONSTRUCTION MATERIALS OR EQUIPMENT FOR AGENCIES WHOSE LEASE RATES ARE APPROVED BY THE PUC AND NOTWITHSTANDING SUCH APPROVED LEASE RATES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 97-38",
+      "title": "AN ACT TO REPEAL AND REENACT CHAPTER 11 OF TITLE 12, GUAM CODE ANNOTATED; AND TO AMEND \u00a745.30(b) AND \u00a745.40 OF CHAPTER 45, TITLE 8, GUAM CODE ANNOTATED; RELATIVE TO THE REORGANIZATION OF THE GUAM PUBLIC DEFENDER SERVICE CORPORATION TO PROVIDE EFFECTIVE LEGAL AID AND SERVICES TO PERSONS WHO ARE ENTITLED TO COUNSEL UNDER THE ORGANIC ACT OF GUAM, THE LAWS OF GUAM, AND THE UNITED STATES CONSTITUTION AND TO CITE THIS ACT AS THE \u201cGUAM PUBLIC DEFENDER SERVICE CORPORATION ACT OF 2025.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 35-38",
+      "title": "AN ACT TO ADD A NEW ARTICLE 10 TO CHAPTER 63, TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO PROHIBITING THE IMPORT OF SKINCARE PRODUCTS THAT POSE A DANGER TO GUAM\u2019S CORAL REEFS AND MARINE LIFE",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 64-38",
+      "title": "AN ACT TO ADD A NEW CHAPTER 16 TO TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING THE GUAM ARTIFICIAL INTELLIGENCE (AI) REGULATORY TASK FORCE TO DEVELOP A COMPREHENSIVE FRAMEWORK FOR THE REGULATION OF ARTIFICIAL INTELLIGENCE (AI) IN THE GOVERNMENT OF GUAM AND PRIVATE SECTOR WHILE PROTECTING CONSTITUTIONAL AND ORGANIC ACT RIGHTS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 50-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 4108.1 TO CHAPTER 4, TITLE 4, GUAM CODE ANNOTATED, RELATIVE TO TEMPORARY EMPLOYMENT OF GOVERNMENT OF GUAM RETIRED EMPLOYEES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 229-38",
+      "title": "AN ACT TO APPROPRIATE THE SUM OF NINE MILLION TWO HUNDRED FIFTY-FOUR THOUSAND SIX HUNDRED TWENTY-FIVE DOLLARS ($9,254,625) FROM THE FISCAL YEAR 2025 NET UNOBLIGATED EXCESS REVENUE, TO PAY PRIOR YEAR OBLIGATIONS OF AVIATION FUEL TAX ARREARAGES FOR THE A.B. WON PAT INTERNATIONAL AIRPORT AUTHORITY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 209-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW ARTICLE 6 TO CHAPTER 8 OF TITLE 3, RELATIVE TO PROHIBITING THE CREATION AND DISTRIBUTION OF MATERIALLY DECEPTIVE MEDIA PRODUCED BY GENERATIVE ARTIFICIAL INTELLIGENCE IN CONNECTION WITH ELECTIONS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 198-38",
+      "title": "AN ACT MAKING REVISIONS TO THE GENERAL FUND, AND THE GUAM HIGHWAY FUND FOR THE OPERATIONS OF THE EXECUTIVE, LEGISLATIVE, AND JUDICIAL BRANCHES OF THE GOVERNMENT OF GUAM FOR FISCAL YEAR ENDING SEPTEMBER 30, 2026, MAKING NEW APPROPRIATIONS, AND ESTABLISHING MISCELLANEOUS AND ADMINISTRATIVE PROVISIONS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 21-38",
+      "title": "AN ACT TO TRANSFER LOT NO. 2417-1-R7, MUNICIPALITY OF MANGILAO, FORMERLY KNOWN AS THE DEPARTMENT OF PUBLIC HEALTH AND SOCIAL SERVICES CENTRAL HEADQUARTERS, FROM THE DEPARTMENT OF PUBLIC HEALTH AND SOCIAL SERVICES TO THE GUAM COMMUNITY COLLEGE FOR THE CONSTRUCTION OF A NURSING ANNEX.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 70-38",
+      "title": "AN ACT TO ADD A NEW \u00a73135 TO ARTICLE 1, CHAPTER 3, TITLE 17, GUAM CODE ANNOTATED RELATIVE TO AUTHORIZING THE GUAM DEPARTMENT OF EDUCATION TO LEASE PROPERTY WITHIN ITS JURISDICTION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 258-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 2116 TO CHAPTER 21, TITLE 1, GUAM CODE ANNOTATED, RELATIVE TO REQUIRING A 2026 GENERAL ELECTION LEGISLATIVE SUBMISSION QUESTION ON GUAM\u2019S RIGHT TO SELF-DETERMINATION THROUGH A PUBLIC VOTE, AND PROVIDING FOR UNIVERSAL REGISTERED VOTER ELIGIBILITY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 83-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 1203.1 OF ARTICLE 2, CHAPTER 1, TITLE 5, GUAM CODE ANNOTATED; AND \u00a7 45112 OF ARTICLE 1, CHAPTER 45, TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO ALLOWING THE BUREAU OF STATISTICS AND PLANS GUAM COASTAL MANAGEMENT PROGRAM AND THE GUAM ENVIRONMENTAL PROTECTION AGENCY TO EMPLOY ENVIRONMENTAL LAW ATTORNEYS FOR THEIR EXCLUSIVE USE.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 44-38",
+      "title": "AN ACT MAKING APPROPRIATIONS FOR THE OPERATIONS OF THE EXECUTIVE BRANCH OF THE GOVERNMENT OF GUAM FOR FISCAL YEAR ENDING SEPTEMBER 30, 2026, MAKING OTHER APPROPRIATIONS, AND ESTABLISHING MISCELLANEOUS AND ADMINISTRATIVE PROVISIONS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 15-38",
+      "title": "AN ACT TO AMEND \u00a7 5127 OF SUBARTICLE C, ARTICLE 2, CHAPTER 5, DIVISION 1, TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO COMMERCIAL LEASING OF PUBLIC REAL PROPERTY AND RELATED FACILITIES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 4-38",
+      "title": "AN ACT TO ADD A NEW \u00a7 3122 TO ARTICLE 1, CHAPTER 3, TITLE 22, GUAM CODE ANNOTATED RELATIVE TO ENHANCING THE LOCAL MINIMUM WAGE OF GUAM.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 54-38",
+      "title": "AN ACT TO\u00a0AMEND \u00a7 1117 AND\u00a0ADD \u00a7 1124 OF CHAPTER 1, TITLE 3, AND\u00a0AMEND\u00a0\u00a7\u00a7 3105 AND 3110 OF CHAPTER 3, TITLE 3, AND\u00a0AMEND\u00a0\u00a7 14105 OF CHAPTER 14, TITLE 3, GUAM CODE ANNOTATED, RELATIVE TO UPDATING GUAM\u2019S ELECTION LAWS AND IMPROVING VOTER REGISTRATION, ELECTION PROCEDURES, AND BALLOT HANDLING.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 93-38",
+      "title": "AN ACT TO ADD A NEW ITEM (40) TO \u00a7 26203(k) OF CHAPTER 26, TITLE 11, GUAM CODE ANNOTATED, RELATIVE TO EXEMPTING AMOUNTS RECEIVED FROM MEDICAID PAYMENTS FOR ELIGIBLE SERVICES BY HEALTH CARE PROVIDERS FROM BUSINESS PRIVILEGE TAXES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 248-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0CHAPTER 67 OF TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO MODERNIZING AND EXPANDING THE GUAM OFFICE OF VETERANS AFFAIRS (GOVA) WITH THE INTENT OF STRENGTHENING SERVICES, IMPROVING ACCOUNTABILITY, ESTABLISHING RESPONSIBILTIES IN STATUTE, ENHANCING SUPPORT FOR GUAM\u2019S VETERANS, THEIR FAMILIES, AND TRANSITIONING SERVICE MEMBERS, AND TRANSFORMING THE OFFICE INTO A COMPREHENSIVE VETERANS AGENCY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 60-38",
+      "title": "AN ACT TO\u00a0APPROPRIATE\u00a0ONE HUNDRED FIFTY THOUSAND DOLLARS ($150,000) FROM FISCAL YEAR 2025 GENERAL FUND REVENUES COLLECTED IN EXCESS OF THE ADOPTED LEVELS ENUMERATED IN PUBLIC LAW 37-125 TO THE DEPARTMENT OF INTEGRATED SERVICES FOR INDIVIDUALS WITH DISABILITIES (DISID) RELATIVE TO IMPROVING ACCESS TO PRIVATE CARE SERVICES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 31-38",
+      "title": "AN ACT TO AMEND CHAPTER 7 OF DIVISION 1, TITLE 10, GUAM CODE ANNOTATED, AND ADD A NEW (N) TO \u00a79302 (b) (1) OF CHAPTER 9, OF DIVISION 1, TITLE 26, GUAM ADMINISTRATIVE RULES AND REGULATIONS, RELATIVE TO EXPANDING OPTIONS FOR ASSISTED LIVING FACILITIES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 188-38",
+      "title": "AN ACT TO APPROPRIATE THE SUM OF NINETEEN MILLION SEVEN HUNDRED FORTY-FIVE THOUSAND SEVEN HUNDRED FOURTEEN DOLLARS ($19,745,714) FROM THE DEBT SERVICE SAVINGS RESULTING FROM THE GOVERNMENT OF GUAM BUSINESS PRIVILEGE TAX REFUNDING BONDS, SERIES 2025G, WHICH REDEEM THE SERIES 2015D BONDS, TO THE GUAM MEMORIAL HOSPITAL AUTHORITY FOR CRITICAL CAPITAL IMPROVEMENTS AND OPERATIONAL COSTS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 219-38",
+      "title": "AN ACT TO\u00a0\u00a0AMEND\u00a0 SUBSECTION\u00a0 (K)\u00a0 OF \u00a782A201 OF ARTICLE 2; TO\u00a0ADD\u00a0NEW \u00a7 82A402, \u00a7\u00a0 82A403, AND \u00a7 82A404 TO ARTICLE 4; AND TO\u00a0AMEND\u00a0\u00a7 82A501 OF ARTICLE 5; ALL OF CHAPTER 82A, TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO EXPANDING PETITIONING AUTHORITY FOR ASSISTED OUTPATIENT TREATMENT UNDER THE BABY ALEXYA LAW; AND TO CITE THIS ACT AS THE \u201cBABY ALEXYA LAW REFORM ACT OF 2025.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 20-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7\u00a7 58109 AND 58110 OF CHAPTER 58, AND TO\u00a0REPEAL\u00a0CHAPTER 58B OF DIVISION 3, TITLE 10, GUAM CODE ANNOTATED, AS ENACTED BY PUBLIC LAW 37-47, RELATIVE TO THE REPEAL OF THE LEGALIZATION OF CONSUMER GRADE FIREWORKS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 199-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a727027 TO CHAPTER 27, TITLE 17, OF THE GUAM CODE ANNOTATED RELATIVE TO ADDING A LIFETIME TEACHING CERTIFICATE FOR EXPERIENCED EDUCATORS ON GUAM.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 208-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0PUBLIC LAW 37-135 TO PROVIDE A ONE-TIME TWO HUNDRED DOLLAR ($200) SUPPLEMENTAL COST-OF-LIVING ALLOWANCE (COLA) TO ELIGIBLE RETIREES AND SURVIVORS WHO LAST RENDERED GOVERNMENT SERVICE WITH AUTONOMOUS AGENCIES AND PUBLIC CORPORATIONS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 259-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW CHAPTER 54 TO DIVISION 2, TITLE 11, GUAM CODE ANNOTATED; RELATIVE TO ESTABLISHING A TAX CREDIT FOR CONTRIBUTIONS TO NON-PROFIT AND FAITH-BASED ORGANIZATIONS PROVIDING MARRIAGE AND FAMILY COUNSELING SERVICES BY LICENSED PROVIDERS; AND TO PROMOTE FAMILY STABILITY AND COMMUNITY WELL-BEING.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 71-38",
+      "title": "AN ACT TO INDEFINITELY SUSPEND THE BUSINESS PRIVILEGE TAX ON BABY PRODUCTS, FEMININE HYGIENE PRODUCTS, FOOD, INCONTINENCE PRODUCTS, MEDICAL DEVICES, AND MEDICINE; AND TO CITE THIS ACT THE \u201cGUAM CRISIS READINESS AND ECONOMIC RELIEF ACT OF 2025\u2033.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 82-38",
+      "title": "AN ACT TO AMEND CHAPTER 10 OF DIVISION 1, TITLE 10, GUAM CODE ANNOTATED; TO ADD A NEW \u00a7 42A101(i)(20) TO CHAPTER 42A OF DIVISION 3, TITLE 7, GUAM CODE ANNOTATED; TO AMEND \u00a7 42A101(j) OF CHAPTER 42A, DIVISION 3, TITLE 7, GUAM CODE ANNOTATED; RELATIVE TO MEDICAL MALPRACTICE IN THE TERRITORY OF GUAM; AND TO CITE THIS ACT THE \u201cDO NO HARM: THE ANTI-MEDICAL MISCONDUCT ACT OF 2025\u201d.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 45-38",
+      "title": "AN ACT TO ADD A NEW CHAPTER 94 TO TITLE 9 OF GUAM CODE ANNOTATED, RELATIVE TO REQUIRING THOSE CONVICTED OF VEHICULAR HOMICIDE WHILE IMPAIRED TO PAY RESTITUTION TO THE SURVIVING MINOR CHILDREN OF THE VICTIM; AND TO CITE THIS ACT AS \u201cBENTLEY\u2019S LAW\u201d.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 14-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 1909(c) OF CHAPTER 19, TITLE 1, GUAM CODE ANNOTATED, RELATIVE TO THE DUTIES OF THE PUBLIC AUDITOR.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 5-38",
+      "title": "AN ACT TO AMEND \u00a7 7120.2(d), CHAPTER 7, TITLE 16, GUAM CODE ANNOTATED RELATIVE TO VETERANS LICENSE PLATES DESIGNS AND RECOGNITIONS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 55-38",
+      "title": "AN ACT TO\u00a0REPEAL AND\u00a0REENACT\u00a0\u00a7 17116 OF CHAPTER 17, TITLE 3, GUAM CODE ANNOTATED, RELATIVE TO CLARIFYING REPORTING REQUIREMENTS AND ESTABLISHING A QUARTERLY REPORTING SYSTEM FOR GUAM ELECTION CAMPAIGN FINANCES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 92-38",
+      "title": "AN ACT TO ADD A NEW \u00a7 1041 TO CHAPTER 10, TITLE 1, GUAM CODE ANNOTATED, RELATIVE TO DESIGNATING THE MONTH OF NOVEMBER AS \u201cVETERANS SERVICE RECOGNITION MONTH\u201d IN GUAM AND ESTABLISHING PROGRAMS AND ACTIVITIES TO HONOR AND SUPPORT VETERANS THROUGHOUT THE MONTH.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 61-38",
+      "title": "AN ACT TO ADD A NEW CHAPTER 36, RELATIVE TO ESTABLISHING THE OFFICE OF THE ELECTED PUBLIC PROSECUTOR, AND TO REPEAL \u00a7\u00a7 30104 AND 30104.1, AND AMEND \u00a7\u00a7 30102 AND 30109, ALL OF CHAPTER 30, TITLE 5, GUAM CODE ANNOTATED, RELATIVE TO RESTORING THE APPOINTED OFFICE OF THE ATTORNEY GENERAL.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 249-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 22107 (I) TO CHAPTER 22, TITLE 7, GUAM CODE ANNOTATED; RELATIVE TO EXEMPTING CERTIFIED SPECIALISTS PROVIDING DIRECT SERVICES TO STUDENTS WITH SPECIALIZED NEEDS FROM JURY DUTY.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 218-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW \u00a7 421 TO CHAPTER 4, TITLE 1, GUAM CODE ANNOTATED, RELATIVE TO MANDATING THE OFFICIAL USE OF THE SPELLING \u201cCHAMORU\u201d IN PLACE OF \u201cCHAMORRO\u201d IN GUAM LAW, POLICY, AND PUBLIC DOCUMENTS, AND TO REQUIRE IMPLEMENTATION OF THIS CHANGE BY ALL GOVERNMENT AGENCIES AND PUBLIC EDUCATION INSTITUTIONS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 189-38",
+      "title": "AN ACT TO\u00a0REPEAL\u00a0AND\u00a0REENACT\u00a0CHAPTER 3, TITLE 6, GUAM ADMINISTRATIVE RULES AND REGULATIONS, AND ADOPT THE ATTACHED EXHIBITS A, EXHIBIT B AND EXHIBIT C, RELATIVE TO UPDATING THE GUAM ELECTION COMMISSION ELECTION CAMPAIGN CONTRIBUTIONS AND EXPENDITURES RULES AND REGULATIONS AND REPORT FORMS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 30-38",
+      "title": "AN ACT TO ADD A NEW ARTICLE 11 TO CHAPTER 51A OF TITLE 10, GUAM CODE ANNOTATED; AND ADD A NEW \u00a7 14104(p) TO CHAPTER 14 OF TITLE 12, GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING THE GUAM SOLID WASTE AUTHORITY ISLANDWIDE COLLECTION PLAN.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 10-38",
+      "title": "AN ACT TO ADD NEW \u00a7\u00a7 4131 AND 4131.1 TO ARTICLE 1 OF CHAPTER 4, TITLE 4, GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING THE GOVERNMENT OF GUAM PUBLIC SAFETY AND LAW ENFORCEMENT OFFICERS\u2019 LINE OF DUTY DEATH BENEFIT, AND TO REQUIRE THE DEVELOPMENT OF ADMINISTRATIVE RULES AND REGULATIONS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 238-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a725105 OF CHAPTER 25, DIVISION 2, TITLE 10, GUAM CODE ANNOTATED RELATIVE TO GRANTING EXEMPTION OF TITLE 26 OF THE GUAM ADMINISTRATIVE RULES AND REGULATIONS RELATED TO SANITARY INSPECTION REQUIREMENTS, AND FOR OTHER PURPOSES.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 269-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0SECTION 1(aa)(3) OF CHAPTER V (EXECUTIVE BRANCH), PUBLIC LAW 38-60, RELATIVE TO AUTHORIZING THE GUAM FIRE DEPARTMENT TO EXPEND FOUR HUNDRED FIFTY THOUSAND DOLLARS ($450,000) FROM THE DEPARTMENT\u2019S UNEXPENDED APPROPRIATED FUNDS FROM PRIOR FISCAL YEARS FOR A \u201c911 SURCHARGE\u201d RATE STUDY PURSUANT TO 12 GCA CHAPTER 12.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 41-38",
+      "title": "AN ACT TO ADD A NEW (j) TO \u00a7 80105 OF CHAPTER 80, TITLE 21 GUAM CODE ANNOTATED RELATIVE TO TRANSFERRING LOT NOS. 7100, 7102, 7103 AND 7146 IN JANOM, IN THE MUNICIPALITY OF YIGO, GUAM, TO THE GUAM ANCESTRAL LAND USE COMMISSION.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 75-38",
+      "title": "AN ACT TO\u00a0AMEND\u00a0\u00a7 3101(b) OF CHAPTER 3, TITLE 16, GUAM CODE ANNOTATED, RELATIVE TO EXEMPTING ACTIVE-DUTY SERVICE MEMBERS AND THEIR DEPENDENTS FROM DRIVER\u2019S LICENSING REQUIREMENTS.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 24-38",
+      "title": "AN ACT TO ADD A NEW CHAPTER 98 OF TITLE 10, GUAM CODE ANNOTATED, RELATIVE TO EMERGENCY CONTRACEPTION FOR SURVIVORS OF RAPE.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 86-38",
+      "title": "AN ACT TO ADD A NEW \u00a7 3135 TO ARTICLE 1, OF CHAPTER 3, TITLE 17, GUAM CODE ANNOTATED, RELATIVE TO THE CREATION AND TO THE ADMINISTRATION OF THE AMERICAN RESCUE PLAN ACT (ARPA) UPFRONT PAYMENT FUND; AND TO APPROPRIATE THIRTY MILLION DOLLARS ($30,000,000) FROM THE RAINY DAY FUND TO THE ARPA UPFRONT PAYMENT FUND.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 96-38",
+      "title": "AN ACT TO REPEAL AND REENACT CHAPTER 11 OF TITLE 12, GUAM CODE ANNOTATED; AND TO AMEND \u00a745.30(b) AND \u00a745.40 OF CHAPTER 45, TITLE 8, GUAM CODE ANNOTATED; RELATIVE TO THE REORGANIZATION OF THE GUAM PUBLIC DEFENDER SERVICE CORPORATION TO PROVIDE EFFECTIVE LEGAL AID AND SERVICES TO PERSONS WHO ARE ENTITLED TO COUNSEL UNDER THE ORGANIC ACT OF GUAM, THE LAWS OF GUAM, AND THE UNITED STATES CONSTITUTION AND TO CITE THIS ACT AS THE \u201cGUAM PUBLIC DEFENDER SERVICE CORPORATION ACT OF 2025.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 34-38",
+      "title": "AN ACT TO AMEND \u00a7 2108 OF CHAPTER 2, TITLE 4, GUAM CODE ANNOTATED, RELATIVE TO REQUIRING EMPLOYEES WHO RESIGN FROM GOVERNMENT OF GUAM EMPLOYMENT TO SUBMIT TO AND PASS DRUG TESTING TO RETAIN REEMPLOYMENT RIGHTS IF\u2019 SAID RESIGNATION WAS TENDERED WITHIN THIRTY (30) DAYS OF AN ANNOUNCED OR RANDOM DRUG TESTING, AND TO REQUIRE EMPLOYEES TO SUBMIT TO DRUG TESTING PRIOR TO RE-EMPLOYMENT",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 65-38",
+      "title": "AN ACT TO AMEND SECTION 1908 OF CHAPTER 19, TITLE 1 GUAM CODE ANNOTATED; RELATIVE TO THE DUTIES OF THE PUBLIC AUDITOR WITH REGARD TO AUDITS ON NON-PROFIT AND NON-GOVERNMENTAL ORGANIZATIONS THAT RECEIVE FUNDING FROM ANY DEPARTMENT OR AGENCY OF THE GOVERNMENT OF GUAM",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 1-38",
+      "title": "AN ACT TO AMEND \u00a7 26603(d)(5)(B) OF ARTICLE 2, CHAPTER 26, TITLE 11 GUAM CODE ANNOTATED, RELATIVE TO THE ANNUAL APPROPRIATION LEVEL TO THE GUAM CANCER TRUST FUND.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 51-38",
+      "title": "AN ACT TO AMEND SECTION 2 OF PUBLIC LAW 34-61, RELATIVE TO TRANSFERRING THE TITLE OF OWNERSHIP OF LOT NO. 7054-1, MUNICIPALITY OF YIGO, FROM THE CHAMORRO LAND TRUST COMMISSION TO THE GUAM POLICE DEPARTMENT.",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    },
+    {
+      "id": "B 228-38",
+      "title": "AN ACT TO\u00a0ADD\u00a0A NEW ARTICLE 4 TO CHAPTER 58, TITLE 12, GUAM CODE ANNOTATED, RELATIVE TO ESTABLISHING THE \u201cENHANCING TOURISM AESTHETICS PROGRAM.\u201d",
+      "session": "38th",
+      "action_count": 0,
+      "latest_action_date": null,
+      "latest_action_description": null
+    }
+  ]
+}

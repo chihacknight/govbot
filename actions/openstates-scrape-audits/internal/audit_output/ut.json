@@ -1,0 +1,368 @@
+{
+  "code": "ut",
+  "generated_at": "2026-10-02T02:19:31.542076+00:00",
+  "summary": {
+    "code": "ut",
+    "present": true,
+    "scraper": "paused",
+    "session": "out",
+    "fleet_monitor": {
+      "data_repo": {
+        "data_commit_age_hours": 1726.73,
+        "workflows": [
+          {
+            "workflow": "extract-text.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 56.3
+          },
+          {
+            "workflow": "format.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 56.32
+          }
+        ]
+      },
+      "scraper_repo": {
+        "data_commit_age_hours": 108.99,
+        "workflows": [
+          {
+            "workflow": "openstates-scrape.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 615.58
+          }
+        ]
+      }
+    },
+    "last_commit": "2026-07-15T13:49:54+00:00",
+    "days_since_commit": 78.5,
+    "bill_count": 40,
+    "log_date_min": "20250902T185019Z",
+    "log_date_max": "20260326T190825Z",
+    "log_file_count": 1274,
+    "distinct_active_days": 71,
+    "busiest_day": "20251006",
+    "busiest_day_count": 363,
+    "busiest_day_share": 0.28,
+    "logs_per_bill": 31.9,
+    "vote_events_watermark": "2026-03-07T07:00:14",
+    "events_watermark": "1900-01-01T00:00:00",
+    "has_new_fields": false,
+    "implausible_fallbacks": {},
+    "orphan_count": 0,
+    "bills_indexed": 39
+  },
+  "bills": [
+    {
+      "id": "SB 1005",
+      "title": "Local Option Sales Tax Amendments",
+      "session": "2025S1",
+      "action_count": 25,
+      "latest_action_date": "2025-10-14T22:40:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "SB 1002",
+      "title": "Higher Education Recodification External References",
+      "session": "2025S1",
+      "action_count": 25,
+      "latest_action_date": "2025-10-14T22:35:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "SB 1003",
+      "title": "Judiciary Amendments",
+      "session": "2025S1",
+      "action_count": 26,
+      "latest_action_date": "2025-10-14T22:37:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "SB 1004",
+      "title": "Revisor's Technical Corrections to Utah Code",
+      "session": "2025S1",
+      "action_count": 25,
+      "latest_action_date": "2025-10-14T22:38:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "HB 1001",
+      "title": "Great Salt Lake Amendments",
+      "session": "2025S1",
+      "action_count": 25,
+      "latest_action_date": "2025-10-14T22:22:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "SB 1010",
+      "title": "County Recodification External References Modifications",
+      "session": "2025S1",
+      "action_count": 26,
+      "latest_action_date": "2025-10-14T22:44:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "SB 1011",
+      "title": "Redistricting Standards",
+      "session": "2025S1",
+      "action_count": 28,
+      "latest_action_date": "2025-10-06T19:17:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "SB 1001",
+      "title": "Higher Education Recodification",
+      "session": "2025S1",
+      "action_count": 25,
+      "latest_action_date": "2025-10-14T22:34:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "SB 1006",
+      "title": "Title 17 Recodification General Provisions and County Officers",
+      "session": "2025S1",
+      "action_count": 25,
+      "latest_action_date": "2025-10-14T22:41:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "SB 1008",
+      "title": "Municipal Land Use, Development, and Management Act Recodification",
+      "session": "2025S1",
+      "action_count": 25,
+      "latest_action_date": "2025-10-14T22:43:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "SB 1009",
+      "title": "County Recodification External References Amendments",
+      "session": "2025S1",
+      "action_count": 25,
+      "latest_action_date": "2025-10-14T22:44:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "SB 1007",
+      "title": "Title 17 Recodification County Programs and Related Provisions",
+      "session": "2025S1",
+      "action_count": 26,
+      "latest_action_date": "2025-10-14T22:41:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "HB 1004",
+      "title": "Election Records Amendments",
+      "session": "2025S1",
+      "action_count": 32,
+      "latest_action_date": "2025-10-14T22:28:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "HB 1003",
+      "title": "Emissions Inspection Amendments",
+      "session": "2025S1",
+      "action_count": 25,
+      "latest_action_date": "2025-10-14T22:26:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "HB 1002",
+      "title": "Property Manager Amendments",
+      "session": "2025S1",
+      "action_count": 25,
+      "latest_action_date": "2025-10-14T22:25:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "HJR 101",
+      "title": "Joint Resolution on Federal Funds",
+      "session": "2025S1",
+      "action_count": 26,
+      "latest_action_date": "2025-10-06T22:33:00+00:00",
+      "latest_action_description": "House/ received enrolled bill from Printing"
+    },
+    {
+      "id": "HB 1005",
+      "title": "County Governance Amendments",
+      "session": "2025S1",
+      "action_count": 27,
+      "latest_action_date": "2025-10-14T22:30:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "SB 1012",
+      "title": "Congressional Boundaries Designation",
+      "session": "2025S1",
+      "action_count": 26,
+      "latest_action_date": "2025-10-07T03:07:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "HB 109",
+      "title": "Utah Fits All Scholarship Program Alterations",
+      "session": "2026",
+      "action_count": 11,
+      "latest_action_date": "2026-03-07T06:59:59+00:00",
+      "latest_action_description": "House/ filed"
+    },
+    {
+      "id": "HB 107",
+      "title": "Vehicle Sales Tax Amendments",
+      "session": "2026",
+      "action_count": 24,
+      "latest_action_date": "2026-03-07T06:59:59+00:00",
+      "latest_action_description": "House/ filed"
+    },
+    {
+      "id": "HB 100",
+      "title": "Electroconvulsive Therapy Prohibition Amendments",
+      "session": "2026",
+      "action_count": 17,
+      "latest_action_date": "2026-03-07T06:59:59+00:00",
+      "latest_action_description": "House/ filed"
+    },
+    {
+      "id": "HB 101",
+      "title": "Firearm Background Check Amendments",
+      "session": "2026",
+      "action_count": 45,
+      "latest_action_date": "2026-03-26T19:06:16+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "HB 106",
+      "title": "School Attendance Changes",
+      "session": "2026",
+      "action_count": 15,
+      "latest_action_date": "2026-03-07T06:59:59+00:00",
+      "latest_action_description": "House/ filed"
+    },
+    {
+      "id": "HB 108",
+      "title": "Minors in State Custody Amendments",
+      "session": "2026",
+      "action_count": 49,
+      "latest_action_date": "2026-03-17T15:37:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "HB 112",
+      "title": "Political Advertising Amendments",
+      "session": "2026",
+      "action_count": 42,
+      "latest_action_date": "2026-03-07T06:59:59+00:00",
+      "latest_action_description": "House/ filed"
+    },
+    {
+      "id": "HB 113",
+      "title": "Emergency Reporting Abuse Amendments",
+      "session": "2026",
+      "action_count": 55,
+      "latest_action_date": "2026-03-26T19:08:25+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "HB 103",
+      "title": "Underage Marriage Amendments",
+      "session": "2026",
+      "action_count": 43,
+      "latest_action_date": "2026-03-26T19:07:07+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "HB 104",
+      "title": "State Holiday Amendments",
+      "session": "2026",
+      "action_count": 18,
+      "latest_action_date": "2026-03-07T06:59:59+00:00",
+      "latest_action_description": "House/ filed"
+    },
+    {
+      "id": "HB 105",
+      "title": "Child Welfare Revisions",
+      "session": "2026",
+      "action_count": 43,
+      "latest_action_date": "2026-03-17T15:37:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "HB 102",
+      "title": "Victim Privacy Amendments",
+      "session": "2026",
+      "action_count": 47,
+      "latest_action_date": "2026-03-26T19:06:42+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "HB 11",
+      "title": "Dyed Diesel Fuel Search Amendments",
+      "session": "2026",
+      "action_count": 35,
+      "latest_action_date": "2026-02-27T21:45:23+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "HB 1",
+      "title": "Public Education Base Budget Amendments",
+      "session": "2026",
+      "action_count": 33,
+      "latest_action_date": "2026-02-01T06:18:35+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "HB 111",
+      "title": "Wildlife Amendments",
+      "session": "2026",
+      "action_count": 58,
+      "latest_action_date": "2026-03-25T15:52:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "HB 110",
+      "title": "Offender Modifications",
+      "session": "2026",
+      "action_count": 76,
+      "latest_action_date": "2026-03-26T19:07:42+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "SJR 201",
+      "title": "Joint Resolution Amending Court Rules of Procedure",
+      "session": "2025S2",
+      "action_count": 24,
+      "latest_action_date": "2025-12-10T04:31:00+00:00",
+      "latest_action_description": "Senate/ received enrolled bill from Printing"
+    },
+    {
+      "id": "SB 2001",
+      "title": "Election Amendments",
+      "session": "2025S2",
+      "action_count": 26,
+      "latest_action_date": "2025-12-11T22:10:00+00:00",
+      "latest_action_description": "Senate/ to Governor"
+    },
+    {
+      "id": "HJR 201",
+      "title": "Joint Resolution Regarding Constitutional Authority",
+      "session": "2025S2",
+      "action_count": 25,
+      "latest_action_date": "2025-12-10T04:25:00+00:00",
+      "latest_action_description": "House/ received enrolled bill from Printing"
+    },
+    {
+      "id": "HB 2001",
+      "title": "Public Sector Labor Union Modification",
+      "session": "2025S2",
+      "action_count": 26,
+      "latest_action_date": "2025-12-11T22:08:00+00:00",
+      "latest_action_description": "Governor Signed"
+    },
+    {
+      "id": "SB 2002",
+      "title": "Appellate Court Jurisdiction Amendments",
+      "session": "2025S2",
+      "action_count": 25,
+      "latest_action_date": "2025-12-11T22:11:00+00:00",
+      "latest_action_description": "Governor Signed"
+    }
+  ]
+}

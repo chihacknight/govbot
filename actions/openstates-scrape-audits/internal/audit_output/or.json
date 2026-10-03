@@ -1,0 +1,2512 @@
+{
+  "code": "or",
+  "generated_at": "2026-10-02T02:19:31.542076+00:00",
+  "summary": {
+    "code": "or",
+    "present": true,
+    "scraper": "paused",
+    "session": "out",
+    "fleet_monitor": {
+      "data_repo": {
+        "data_commit_age_hours": 1729.86,
+        "workflows": [
+          {
+            "workflow": "extract-text.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 56.43
+          },
+          {
+            "workflow": "format.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 56.44
+          }
+        ]
+      },
+      "scraper_repo": {
+        "data_commit_age_hours": 60.19,
+        "workflows": [
+          {
+            "workflow": "openstates-scrape.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 60.19
+          }
+        ]
+      }
+    },
+    "last_commit": "2026-07-15T13:47:04+00:00",
+    "days_since_commit": 78.5,
+    "bill_count": 307,
+    "log_date_min": "20250830T032853Z",
+    "log_date_max": "20260416T235700Z",
+    "log_file_count": 7944,
+    "distinct_active_days": 54,
+    "busiest_day": "20260202",
+    "busiest_day_count": 1120,
+    "busiest_day_share": 0.14,
+    "logs_per_bill": 25.9,
+    "vote_events_watermark": "1900-01-01T00:00:00",
+    "events_watermark": "1900-01-01T00:00:00",
+    "has_new_fields": false,
+    "implausible_fallbacks": {},
+    "orphan_count": 0,
+    "bills_indexed": 307
+  },
+  "bills": [
+    {
+      "id": "HB3992",
+      "title": "Relating to state financial administration; and declaring an emergency.",
+      "session": "2025S1",
+      "action_count": 21,
+      "latest_action_date": "2025-11-13T18:42:54+00:00",
+      "latest_action_description": "Chapter 2, (2025 Laws): Effective date November 7, 2025."
+    },
+    {
+      "id": "HCR51",
+      "title": "Adjourning sine die the 2025 special session of the Eighty-third Legislative Assembly.",
+      "session": "2025S1",
+      "action_count": 14,
+      "latest_action_date": "2025-10-09T18:04:53+00:00",
+      "latest_action_description": "Filed with Secretary of State."
+    },
+    {
+      "id": "HB3991",
+      "title": "Relating to transportation; prescribing an effective date; and providing for revenue raising that requires approval by a three-fifths majority.",
+      "session": "2025S1",
+      "action_count": 25,
+      "latest_action_date": "2025-11-13T18:42:54+00:00",
+      "latest_action_description": "Chapter 1, (2025 Laws): Effective date December 31, 2025."
+    },
+    {
+      "id": "HB4083",
+      "title": "Relating to behavioral health care providers; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-03-17T17:50:42+00:00",
+      "latest_action_description": "Chapter 16, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4077",
+      "title": "Relating to the securitization of a public utility's insurance program; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 17,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 47, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4048",
+      "title": "Relating to rural health care tax credits; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4070",
+      "title": "Relating to health care; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 44, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4084",
+      "title": "Relating to economic development; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 28,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 50, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4046",
+      "title": "Relating to nuclear energy; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4079",
+      "title": "Relating to policies for when federal immigration authorities enter public education property; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 48, (2026 Laws): Effective date September 30, 2026."
+    },
+    {
+      "id": "SB1600",
+      "title": "Relating to Legislative Equity Office operations; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4041",
+      "title": "Relating to public safety; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-03-17T17:50:42+00:00",
+      "latest_action_description": "Chapter 14, (2026 Laws): Effective date March 5, 2026."
+    },
+    {
+      "id": "SCR202",
+      "title": "Urging Oregonians to avoid psychoactive drug use except for legitimate medical purposes.",
+      "session": "2026R1",
+      "action_count": 5,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4015",
+      "title": "Relating to connection to federal tax law; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SCR205",
+      "title": "Adjourning sine die the 2026 regular session of the Eighty-third Legislative Assembly.",
+      "session": "2026R1",
+      "action_count": 11,
+      "latest_action_date": "2026-03-10T20:17:18+00:00",
+      "latest_action_description": "Filed With Secretary of State."
+    },
+    {
+      "id": "HB4012",
+      "title": "Relating to labor contractors; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-03-17T17:50:42+00:00",
+      "latest_action_description": "Chapter 6, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4024",
+      "title": "Relating to speculative ticket sales; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-03-17T17:50:42+00:00",
+      "latest_action_description": "Chapter 9, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4023",
+      "title": "Relating to mass transit districts initiated by resolution; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4040",
+      "title": "Relating to health care; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 23,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 109, (2026 Laws): Effective date April 7, 2026."
+    },
+    {
+      "id": "HB4047",
+      "title": "Relating to rural emergency hospitals; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 22,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 35, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4078",
+      "title": "Relating to an income tax subtraction allowed for plaintiffs in wildfire litigation; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1601",
+      "title": "Relating to state financial administration; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-14T19:38:56+00:00",
+      "latest_action_description": "Effective date, April 7, 2026."
+    },
+    {
+      "id": "HB4085",
+      "title": "Relating to autonomous vehicles.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4071",
+      "title": "Relating to recreation; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4076",
+      "title": "Relating to energy; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 46, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4082",
+      "title": "Relating to housing for older persons; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 49, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4049",
+      "title": "Relating to Harney Basin water; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 8,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4022",
+      "title": "Relating to children's literacy.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-03-17T17:50:42+00:00",
+      "latest_action_description": "Chapter 8, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "HB4025",
+      "title": "Relating to the residential rates of public utilities; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-03-17T17:50:42+00:00",
+      "latest_action_description": "Chapter 10, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "SCR204",
+      "title": "Honoring the Association of Oregon Counties on the 120th anniversary of its founding.",
+      "session": "2026R1",
+      "action_count": 16,
+      "latest_action_date": "2026-02-27T21:45:26+00:00",
+      "latest_action_description": "Filed With Secretary of State."
+    },
+    {
+      "id": "HB4013",
+      "title": "Relating to labor standards.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-03-17T17:50:42+00:00",
+      "latest_action_description": "Chapter 7, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "SCR203",
+      "title": "In memoriam: Moses Ross.",
+      "session": "2026R1",
+      "action_count": 14,
+      "latest_action_date": "2026-03-02T18:26:49+00:00",
+      "latest_action_description": "Filed With Secretary of State."
+    },
+    {
+      "id": "HB4014",
+      "title": "Relating to state finance; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-03-06T17:35:21+00:00",
+      "latest_action_description": "At Desk upon adjournment."
+    },
+    {
+      "id": "HB4166",
+      "title": "Relating to community safety.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4159",
+      "title": "Relating to the Oregon Government Ethics Commission.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 124, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "SB1512",
+      "title": "Relating to workforce development.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-03-17T17:33:50+00:00",
+      "latest_action_description": "Effective date, January 1, 2027."
+    },
+    {
+      "id": "HB4161",
+      "title": "Relating to use of official position or office; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 125, (2026 Laws): Effective date April 7, 2026."
+    },
+    {
+      "id": "SB1515",
+      "title": "Relating to wrongful convictions; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 23,
+      "latest_action_date": "2026-04-14T19:38:56+00:00",
+      "latest_action_description": "Effective date, April 7, 2026."
+    },
+    {
+      "id": "HB4157",
+      "title": "Relating to hearsay; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 23,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 71, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4168",
+      "title": "Relating to food assistance.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1523",
+      "title": "Relating to electronic access to residential tenancies; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-03-17T17:33:50+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "HB4150",
+      "title": "Relating to recipients of public funds; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1524",
+      "title": "Relating to horse racing.",
+      "session": "2026R1",
+      "action_count": 11,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1584",
+      "title": "Relating to the creation of credits for the restoration of salmon habitat; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1570",
+      "title": "Relating to protections in health care facilities; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "HB4104",
+      "title": "Relating to economic development; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1577",
+      "title": "Relating to the labeling of alternative protein food products.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1583",
+      "title": "Relating to substance use.",
+      "session": "2026R1",
+      "action_count": 5,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1548",
+      "title": "Relating to marijuana; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 13,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4103",
+      "title": "Relating to artificial intelligence.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1541",
+      "title": "Relating to greenhouse gas emissions; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4135",
+      "title": "Relating to HPV Awareness Day; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-03-17T17:50:42+00:00",
+      "latest_action_description": "Chapter 4, (2026 Laws): Effective date March 4, 2026."
+    },
+    {
+      "id": "SB1546",
+      "title": "Relating to artificial intelligence companions.",
+      "session": "2026R1",
+      "action_count": 24,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, January 1, 2027."
+    },
+    {
+      "id": "SB1579",
+      "title": "Relating to false reports of child abuse; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 10,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4132",
+      "title": "Relating to veterans; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 23,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 117, (2026 Laws): Effective date July 1, 2026."
+    },
+    {
+      "id": "HB4151",
+      "title": "Relating to initiating a false report.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 122, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "SB1525",
+      "title": "Relating to organizations relevant to Oregon's coastal resources; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 24,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "HB4156",
+      "title": "Relating to medical assistance reimbursement of emergency medical services; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 70, (2026 Laws): Effective date March 31, 2026."
+    },
+    {
+      "id": "HB4169",
+      "title": "Relating to health care.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1522",
+      "title": "Relating to housing.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4160",
+      "title": "Relating to procedures for medical emergencies in schools; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 72, (2026 Laws): Effective date July 1, 2027."
+    },
+    {
+      "id": "SB1514",
+      "title": "Relating to the regulation of public property with respect to persons experiencing homelessness; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4167",
+      "title": "Relating to environmental regulation.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4158",
+      "title": "Relating to wage requirements for individuals performing companionship services.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1513",
+      "title": "Relating to real estate professionals; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, March 31, 2026."
+    },
+    {
+      "id": "SB1547",
+      "title": "Relating to licensed behavioral health and wellness practitioners; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-03-17T17:33:50+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "SB1578",
+      "title": "Relating to rural residential development.",
+      "session": "2026R1",
+      "action_count": 5,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4133",
+      "title": "Relating to alignment with federal education law; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1540",
+      "title": "Relating to property insurance; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 8,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4134",
+      "title": "Relating to funding for natural resource matters; prescribing an effective date; and providing for revenue raising that requires approval by a three-fifths majority.",
+      "session": "2026R1",
+      "action_count": 23,
+      "latest_action_date": "2026-04-13T15:31:00+00:00",
+      "latest_action_description": "Chapter 140, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "SB1582",
+      "title": "Relating to energy; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1576",
+      "title": "Relating to accessibility standards for housing; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "SB1549",
+      "title": "Relating to a tax credit for political contributions; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4102",
+      "title": "Relating to Department of Environmental Quality regulatory processes; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 55, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "SB1571",
+      "title": "Relating to consumer products for adults; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "SB1585",
+      "title": "Relating to matching grants for cities; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 22,
+      "latest_action_date": "2026-04-14T19:38:56+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "HB4105",
+      "title": "Relating to reliable forest management outcomes; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4127",
+      "title": "Relating to Medicaid payments to reproductive health care providers; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 23,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 63, (2026 Laws): Effective date March 31, 2026."
+    },
+    {
+      "id": "SB1598",
+      "title": "Relating to access to health services; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 23,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, March 31, 2026."
+    },
+    {
+      "id": "HB4118",
+      "title": "Relating to food; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1553",
+      "title": "Relating to wildfires resulting from the fault of an electric company; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SJR201",
+      "title": "Proposing an amendment to the Oregon Constitution relating to surplus revenue.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4120",
+      "title": "Relating to smoking policies in residential tenancies.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 60, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "SB1554",
+      "title": "Relating to infants born alive.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB5202",
+      "title": "Relating to state financial administration; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4116",
+      "title": "Relating to consumer finance loans; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 25,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 113, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "SB1596",
+      "title": "Relating to play-based learning.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-03-17T17:33:50+00:00",
+      "latest_action_description": "Effective date, January 1, 2027."
+    },
+    {
+      "id": "HB4129",
+      "title": "Relating to fuel; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1562",
+      "title": "Relating to local taxation; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4111",
+      "title": "Relating to immigration-related practices; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 57, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "SB1565",
+      "title": "Relating to snowmobiles; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "SB1591",
+      "title": "Relating to an inland port; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1531",
+      "title": "Relating to funding for emergency medical services.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4145",
+      "title": "Relating to firearms; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 26,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 120, (2026 Laws): Effective date April 7, 2026."
+    },
+    {
+      "id": "SB1536",
+      "title": "Relating to educational assessments.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1509",
+      "title": "Relating to electors of President and Vice President of the United States; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-14T19:38:56+00:00",
+      "latest_action_description": "Effective date, July 1, 2026."
+    },
+    {
+      "id": "HB4142",
+      "title": "Relating to marijuana for medical use; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-04-13T15:31:00+00:00",
+      "latest_action_description": "Chapter 118, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "SB5702",
+      "title": "Relating to state financial administration; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-04-14T19:38:56+00:00",
+      "latest_action_description": "Effective date, April 7, 2026."
+    },
+    {
+      "id": "HB4174",
+      "title": "Relating to public records.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1507",
+      "title": "Relating to revenue; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 24,
+      "latest_action_date": "2026-04-14T19:38:56+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "SB1538",
+      "title": "Relating to conduct of public education; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 23,
+      "latest_action_date": "2026-03-17T17:33:50+00:00",
+      "latest_action_description": "Effective date, July 1, 2026."
+    },
+    {
+      "id": "HB4173",
+      "title": "Relating to public meetings.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HCR201",
+      "title": "Celebrating the Oregon Fire District Directors Association.",
+      "session": "2026R1",
+      "action_count": 16,
+      "latest_action_date": "2026-02-27T22:58:55+00:00",
+      "latest_action_description": "Filed with Secretary of State."
+    },
+    {
+      "id": "HB5204",
+      "title": "Relating to state financial administration; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 17,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 129, (2026 Laws): Effective date April 7, 2026."
+    },
+    {
+      "id": "HB4110",
+      "title": "Relating to ibogaine; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1590",
+      "title": "Relating to public lands; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 22,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, March 31, 2026."
+    },
+    {
+      "id": "SB1564",
+      "title": "Relating to the City of Woodburn's urban growth boundary; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4117",
+      "title": "Relating to universal representation; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB5203",
+      "title": "Relating to state financial administration; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 17,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 128, (2026 Laws): Effective date April 7, 2026."
+    },
+    {
+      "id": "HB4128",
+      "title": "Relating to sale of single-family residences.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 64, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "SB1563",
+      "title": "Relating to civil rights; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-06T20:54:00+00:00",
+      "latest_action_description": "At President's desk upon adjournment."
+    },
+    {
+      "id": "SB1597",
+      "title": "Relating to energy generation; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 14,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4121",
+      "title": "Relating to emergency management.",
+      "session": "2026R1",
+      "action_count": 23,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 114, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "SB1555",
+      "title": "Relating to the constitutional requirements for public education appropriations; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 5,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1599",
+      "title": "Relating to a special election date for Referendum Petition 2026-302; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 29,
+      "latest_action_date": "2026-03-04T23:11:51+00:00",
+      "latest_action_description": "Effective date, March 2, 2026."
+    },
+    {
+      "id": "HB4126",
+      "title": "Relating to road usage charges; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4119",
+      "title": "Relating to workers' compensation.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1552",
+      "title": "Relating to the transfer of real property; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1506",
+      "title": "Relating to the Bureau of Labor and Industries; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 8,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1539",
+      "title": "Relating to providing animal health care.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, January 1, 2027."
+    },
+    {
+      "id": "HB4172",
+      "title": "Relating to government ethics.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1501",
+      "title": "Relating to the Moda Center; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 26,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, March 31, 2026."
+    },
+    {
+      "id": "SB5703",
+      "title": "Relating to state financial administration; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-14T19:38:56+00:00",
+      "latest_action_description": "Effective date, April 7, 2026."
+    },
+    {
+      "id": "HB4175",
+      "title": "Relating to transportation.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1537",
+      "title": "Relating to boards of education of community college districts; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 17,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1508",
+      "title": "Relating to elections.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4143",
+      "title": "Relating to payments to the federal government; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 13,
+      "latest_action_date": "2026-03-06T21:48:00+00:00",
+      "latest_action_description": "At President's desk upon adjournment."
+    },
+    {
+      "id": "SB1530",
+      "title": "Relating to crime; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 13,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4144",
+      "title": "Relating to batteries.",
+      "session": "2026R1",
+      "action_count": 23,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 119, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "HB4036",
+      "title": "Relating to affordable housing; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 22,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 107, (2026 Laws): Effective date April 7, 2026."
+    },
+    {
+      "id": "HB4009",
+      "title": "Relating to transportation; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4031",
+      "title": "Relating to the siting of renewable energy facilities; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-03-17T17:50:42+00:00",
+      "latest_action_description": "Chapter 12, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4007",
+      "title": "Relating to transportation; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 22,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 101, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4038",
+      "title": "Relating to health care cost growth; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4054",
+      "title": "Relating to downcoding.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4098",
+      "title": "Relating to violations of the Insurance Code as unlawful trade practices.",
+      "session": "2026R1",
+      "action_count": 12,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "Failed."
+    },
+    {
+      "id": "HB4053",
+      "title": "Relating to emergency medical services; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 37, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4091",
+      "title": "Relating to the Oregon National Guard; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 15,
+      "latest_action_date": "2026-03-06T21:48:00+00:00",
+      "latest_action_description": "At President's desk upon adjournment."
+    },
+    {
+      "id": "HB4065",
+      "title": "Relating to seed contract payments; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 41, (2026 Laws): Effective date March 31, 2026."
+    },
+    {
+      "id": "HB4062",
+      "title": "Relating to evaluating Business Oregon programs; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 22,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 40, (2026 Laws): Effective date March 31, 2026."
+    },
+    {
+      "id": "HJM201",
+      "title": "Urging Congress to pass legislation to permanently extend federal tax cuts for wildfire victims.",
+      "session": "2026R1",
+      "action_count": 15,
+      "latest_action_date": "2026-02-27T22:58:55+00:00",
+      "latest_action_description": "Filed with Secretary of State."
+    },
+    {
+      "id": "HB4096",
+      "title": "Relating to felon in possession of a firearm.",
+      "session": "2026R1",
+      "action_count": 5,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4001",
+      "title": "Relating to immigration.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4006",
+      "title": "Relating to water rights with points of diversion between river miles 252 and 303 on the Columbia River.",
+      "session": "2026R1",
+      "action_count": 5,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4039",
+      "title": "Relating to medical assistance; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 32, (2026 Laws): Effective date March 31, 2026."
+    },
+    {
+      "id": "HB4030",
+      "title": "Relating to packaging subject to producer responsibility requirements; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4037",
+      "title": "Relating to housing; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 108, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4008",
+      "title": "Relating to a transit funding task force; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4097",
+      "title": "Relating to the Oregon Ocean Science Trust.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-03-17T17:50:42+00:00",
+      "latest_action_description": "Chapter 18, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "HB4063",
+      "title": "Relating to Kei trucks.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4064",
+      "title": "Relating to acquisitions of real property by foreclosure for delinquent taxes; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4090",
+      "title": "Relating to county vehicle registration fees; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4099",
+      "title": "Relating to a task force on veterans in crisis; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-03-17T17:50:42+00:00",
+      "latest_action_description": "Chapter 19, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4052",
+      "title": "Relating to a tax credit for de novo banks; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 36, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4055",
+      "title": "Relating to information security; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SCR206",
+      "title": "In memoriam: State Senator Aaron Lionel Woods.",
+      "session": "2026R1",
+      "action_count": 15,
+      "latest_action_date": "2026-03-05T19:38:58+00:00",
+      "latest_action_description": "Filed With Secretary of State."
+    },
+    {
+      "id": "HB4011",
+      "title": "Relating to mandatory subjects of collective bargaining for school districts.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SCR201",
+      "title": "Celebrating the 250th anniversary of the United States Postal Service.",
+      "session": "2026R1",
+      "action_count": 15,
+      "latest_action_date": "2026-02-27T21:45:26+00:00",
+      "latest_action_description": "Filed With Secretary of State."
+    },
+    {
+      "id": "HB4029",
+      "title": "Relating to solar energy systems; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-03-17T17:50:42+00:00",
+      "latest_action_description": "Chapter 11, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4016",
+      "title": "Relating to tax compliance; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 22,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 102, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "SCR208",
+      "title": "Amending Legislative Branch Personnel Rule 27 and adopting Legislative Branch Personnel Rule 27-C.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4020",
+      "title": "Relating to permits; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 22,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 104, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4018",
+      "title": "Relating to elections; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 29,
+      "latest_action_date": "2026-04-13T15:31:00+00:00",
+      "latest_action_description": "Chapter 139, (2026 Laws): Effective date April 9, 2026."
+    },
+    {
+      "id": "HB4027",
+      "title": "Relating to the Bureau of Labor and Industries; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 25,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 30, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4073",
+      "title": "Relating to administrative law.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4087",
+      "title": "Relating to infants born alive.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4080",
+      "title": "Relating to portable solar photovoltaic energy devices; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4074",
+      "title": "Relating to hospital staffing.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4042",
+      "title": "Relating to the welfare of young people.",
+      "session": "2026R1",
+      "action_count": 12,
+      "latest_action_date": "2026-03-06T23:33:00+00:00",
+      "latest_action_description": "At President's desk upon adjournment."
+    },
+    {
+      "id": "HB4089",
+      "title": "Relating to criminal offenses related to work.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 53, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "HB4045",
+      "title": "Relating to search warrant response time limits; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 34, (2026 Laws): Effective date March 31, 2026."
+    },
+    {
+      "id": "HJR201",
+      "title": "Proposing an amendment to the Oregon Constitution relating to primary elections.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4019",
+      "title": "Relating to permits; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4026",
+      "title": "Relating to consumer protection.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4021",
+      "title": "Relating to administrative rules; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 105, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "SCR209",
+      "title": "Establishing deadlines for presession-filed legislative measures for the 2027 regular session of the Eighty-fourth Legislative Assembly.",
+      "session": "2026R1",
+      "action_count": 14,
+      "latest_action_date": "2026-03-10T20:17:18+00:00",
+      "latest_action_description": "Filed With Secretary of State."
+    },
+    {
+      "id": "HB4028",
+      "title": "Relating to behavioral health.",
+      "session": "2026R1",
+      "action_count": 12,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4017",
+      "title": "Relating to use of campaign contributions; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 103, (2026 Laws): Effective date April 7, 2026."
+    },
+    {
+      "id": "SCR207",
+      "title": "Establishing procedural rules for legislative branch.",
+      "session": "2026R1",
+      "action_count": 10,
+      "latest_action_date": "2026-02-06T17:21:00+00:00",
+      "latest_action_description": "Filed With Secretary of State."
+    },
+    {
+      "id": "HB4010",
+      "title": "Relating to required payments for changes to the scope of work on construction contracts; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4044",
+      "title": "Relating to emergency management.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4043",
+      "title": "Relating to courts.",
+      "session": "2026R1",
+      "action_count": 23,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 33, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "HB4088",
+      "title": "Relating to health; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 52, (2026 Laws): Effective date March 31, 2026."
+    },
+    {
+      "id": "HB4075",
+      "title": "Relating to hospital finance; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 27,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 111, (2026 Laws): Effective date April 7, 2026."
+    },
+    {
+      "id": "HB4081",
+      "title": "Relating to photo radar in highway work zones.",
+      "session": "2026R1",
+      "action_count": 8,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4086",
+      "title": "Relating to economic development; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 24,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 51, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4072",
+      "title": "Relating to arraignment; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 45, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "SB1574",
+      "title": "Relating to voting at primary elections.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1580",
+      "title": "Relating to compensation for journalism.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4100",
+      "title": "Relating to bulk fuel terminals; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 22,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 54, (2026 Laws): Effective date March 31, 2026."
+    },
+    {
+      "id": "SB1587",
+      "title": "Relating to data brokers; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "SB1573",
+      "title": "Relating to syringe service programs.",
+      "session": "2026R1",
+      "action_count": 5,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4138",
+      "title": "Relating to limitations on the actions of public employees; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 23,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 66, (2026 Laws): Effective date March 31, 2026."
+    },
+    {
+      "id": "HB4107",
+      "title": "Relating to urgent care centers.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 56, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "SB1545",
+      "title": "Relating to corner crossing; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 5,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4131",
+      "title": "Relating to mobile pharmacies; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 22,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 116, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "SB1542",
+      "title": "Relating to transportation.",
+      "session": "2026R1",
+      "action_count": 5,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4109",
+      "title": "Relating to unemployment insurance benefits.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4136",
+      "title": "Relating to tax treatment of mortgage interest; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1589",
+      "title": "Relating to lobbying; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4162",
+      "title": "Relating to cannabis worker unionization.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 73, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "SB1529",
+      "title": "Relating to health care.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1516",
+      "title": "Relating to public safety; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, March 31, 2026."
+    },
+    {
+      "id": "HB4165",
+      "title": "Relating to campaign finance.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1511",
+      "title": "Relating to the estate tax; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 12,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4153",
+      "title": "Relating to farm stores.",
+      "session": "2026R1",
+      "action_count": 24,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 123, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "SB1518",
+      "title": "Relating to worker protections.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-03-04T23:11:51+00:00",
+      "latest_action_description": "Effective date, January 1, 2027."
+    },
+    {
+      "id": "SB1527",
+      "title": "Relating to health care.",
+      "session": "2026R1",
+      "action_count": 17,
+      "latest_action_date": "2026-03-17T17:33:50+00:00",
+      "latest_action_description": "Effective date, January 1, 2027."
+    },
+    {
+      "id": "HB4154",
+      "title": "Relating to student attendance data; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 69, (2026 Laws): Effective date March 31, 2026."
+    },
+    {
+      "id": "SB1520",
+      "title": "Relating to the administration of moneys within the Paid Family and Medical Leave Insurance Fund; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-03-04T23:13:56+00:00",
+      "latest_action_description": "Effective on the 91st day following adjournment sine die."
+    },
+    {
+      "id": "SB1543",
+      "title": "Relating to transportation; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 6,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4108",
+      "title": "Relating to annexation of land noncontiguous to a city.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 112, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "SB1588",
+      "title": "Relating to inclusive utility investment programs.",
+      "session": "2026R1",
+      "action_count": 5,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4137",
+      "title": "Relating to the transfer of interest in motor vehicles.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 65, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "SB1544",
+      "title": "Relating to transportation; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 22,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "HB4130",
+      "title": "Relating to farm use.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 115, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "SB1572",
+      "title": "Relating to education; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4139",
+      "title": "Relating to cannabis; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 8,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1586",
+      "title": "Relating to economic development; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 6,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4106",
+      "title": "Relating to transportation of persons subject to involuntary treatment; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1581",
+      "title": "Relating to school meals; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 8,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1575",
+      "title": "Relating to hospice licensure; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-04-14T19:38:56+00:00",
+      "latest_action_description": "Effective date, April 7, 2026."
+    },
+    {
+      "id": "HB4101",
+      "title": "Relating to the offense of fleeing or attempting to elude a police officer; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4155",
+      "title": "Relating to infertility.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1521",
+      "title": "Relating to local requirements to develop affordable housing.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, January 1, 2027."
+    },
+    {
+      "id": "HB4152",
+      "title": "Relating to remote marriage solemnization of deployed persons.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-03-17T17:50:42+00:00",
+      "latest_action_description": "Chapter 20, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "SB1519",
+      "title": "Relating to total disability.",
+      "session": "2026R1",
+      "action_count": 24,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, January 1, 2027."
+    },
+    {
+      "id": "SB1526",
+      "title": "Relating to the facilitation of projects.",
+      "session": "2026R1",
+      "action_count": 8,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4164",
+      "title": "Relating to campaign finance.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1510",
+      "title": "Relating to taxation; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "HB4163",
+      "title": "Relating to automatic voter registration.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1528",
+      "title": "Relating to health care.",
+      "session": "2026R1",
+      "action_count": 11,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1517",
+      "title": "Relating to civil litigation; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 23,
+      "latest_action_date": "2026-04-14T19:38:56+00:00",
+      "latest_action_description": "Effective date, April 7, 2026."
+    },
+    {
+      "id": "SB1535",
+      "title": "Relating to child care; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 24,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "HB4141",
+      "title": "Relating to debt resolution services; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1532",
+      "title": "Relating to services for vulnerable persons; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-03-17T17:33:50+00:00",
+      "latest_action_description": "Effective date, March 10, 2026."
+    },
+    {
+      "id": "HB4179",
+      "title": "Relating to entities created by the Oregon Health and Science University.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 127, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "HB4146",
+      "title": "Relating to alcohol; prescribing an effective date; providing for revenue raising that requires approval by a three-fifths majority.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1504",
+      "title": "Relating to the administration of epinephrine.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-03-17T17:33:50+00:00",
+      "latest_action_description": "Effective date, January 1, 2027."
+    },
+    {
+      "id": "HB4170",
+      "title": "Relating to housing.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB5701",
+      "title": "Relating to state financial administration; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-04-14T19:38:56+00:00",
+      "latest_action_description": "Effective date, April 7, 2026."
+    },
+    {
+      "id": "HB4148",
+      "title": "Relating to local taxation; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 121, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4177",
+      "title": "Relating to public meetings; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-04-16T23:57:00+00:00",
+      "latest_action_description": "Governor vetoed."
+    },
+    {
+      "id": "HB4123",
+      "title": "Relating to landlord disclosure of confidential information; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 61, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "SJR202",
+      "title": "Proposing an amendment to the Oregon Constitution relating to the duration of regular sessions of the Legislative Assembly.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1568",
+      "title": "Relating to perinatal services; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, March 31, 2026."
+    },
+    {
+      "id": "SB1557",
+      "title": "Relating to courts; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 23,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "HB4124",
+      "title": "Relating to the state post-secondary education system; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 22,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 62, (2026 Laws): Effective date March 31, 2026."
+    },
+    {
+      "id": "SB1550",
+      "title": "Relating to scrutinizing death.",
+      "session": "2026R1",
+      "action_count": 8,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4112",
+      "title": "Relating to outdoor school; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1559",
+      "title": "Relating to health care.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HCR203",
+      "title": "Adjourning sine die the 2026 regular session of the Eighty-third Legislative Assembly.",
+      "session": "2026R1",
+      "action_count": 5,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "At Desk upon adjournment."
+    },
+    {
+      "id": "SB1566",
+      "title": "Relating to the prevailing rate of wage; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1592",
+      "title": "Relating to primary elections.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB5201",
+      "title": "Relating to state financial administration; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HCR204",
+      "title": "Establishing deadlines for presession-filed legislative measures for the 2027 regular session of the Eighty-fourth Legislative Assembly.",
+      "session": "2026R1",
+      "action_count": 5,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "At Desk upon adjournment."
+    },
+    {
+      "id": "HB4115",
+      "title": "Relating to health care providers; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 22,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 59, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "SB1595",
+      "title": "Relating to professional workforce; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, March 31, 2026."
+    },
+    {
+      "id": "SB1561",
+      "title": "Relating to restoration of dwellings damaged by involuntary causes.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, January 1, 2027."
+    },
+    {
+      "id": "SB1502",
+      "title": "Relating to proposed legislative measures to be filed by the Secretary of State; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 17,
+      "latest_action_date": "2026-04-14T19:38:56+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "HB4149",
+      "title": "Relating to homeless students.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 68, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "HB4176",
+      "title": "Relating to health care.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1505",
+      "title": "Relating to the Home and Community-Based Services Workforce Standards Board.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4171",
+      "title": "Relating to immigration.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1533",
+      "title": "Relating to the rights of children in care; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, March 31, 2026."
+    },
+    {
+      "id": "HB4178",
+      "title": "Relating to rounding procedures in transactions; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 17,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 126, (2026 Laws): Effective date April 7, 2026."
+    },
+    {
+      "id": "HB4147",
+      "title": "Relating to medical assistance; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 11,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1534",
+      "title": "Relating to the welfare of young people; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 8,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4140",
+      "title": "Relating to metal property.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 67, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "HB4114",
+      "title": "Relating to law enforcement operations; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 22,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 58, (2026 Laws): Effective date March 31, 2026."
+    },
+    {
+      "id": "SB1560",
+      "title": "Relating to allowable uses of place of worship.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1594",
+      "title": "Relating to immigration; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 22,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, March 31, 2026."
+    },
+    {
+      "id": "HCR202",
+      "title": "Declaring a state policy goal that by 2033 Oregon's health care system will be more affordable and accessible.",
+      "session": "2026R1",
+      "action_count": 15,
+      "latest_action_date": "2026-03-06T18:22:05+00:00",
+      "latest_action_description": "Filed with Secretary of State."
+    },
+    {
+      "id": "HB4113",
+      "title": "Relating to housing development opportunities conditioned upon land conservation.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1558",
+      "title": "Relating to hospital staffing.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1593",
+      "title": "Relating to recreation; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 8,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1567",
+      "title": "Relating to mixed income housing; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 24,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "HB4125",
+      "title": "Relating to revenue estimates; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1551",
+      "title": "Relating to fire hardening of residential properties; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "SJR203",
+      "title": "Proposing an amendment to the Oregon Constitution relating to the identifiability of law enforcement officers.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4122",
+      "title": "Relating to student government at public universities.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1569",
+      "title": "Relating to public employee retirement.",
+      "session": "2026R1",
+      "action_count": 8,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "SB1556",
+      "title": "Relating to representation of persons in the magistrate division of the Oregon Tax Court; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 23,
+      "latest_action_date": "2026-04-06T18:52:40+00:00",
+      "latest_action_description": "Effective date, June 5, 2026."
+    },
+    {
+      "id": "HB4050",
+      "title": "Relating to funding for education; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4068",
+      "title": "Relating to residential treatment homes for transition aged youth; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-03-17T17:50:42+00:00",
+      "latest_action_description": "Chapter 15, (2026 Laws): Effective date March 5, 2026."
+    },
+    {
+      "id": "HB4057",
+      "title": "Relating to the development of children; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 110, (2026 Laws): Effective date April 7, 2026."
+    },
+    {
+      "id": "HB4061",
+      "title": "Relating to a unified trade strategy for Oregon; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 23,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 39, (2026 Laws): Effective date March 31, 2026."
+    },
+    {
+      "id": "HB4095",
+      "title": "Relating to semi-independent state agencies.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4059",
+      "title": "Relating to child abuse; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 8,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4092",
+      "title": "Relating to child safety systems.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-03-17T17:50:42+00:00",
+      "latest_action_description": "Chapter 17, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "HB4066",
+      "title": "Relating to education; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 42, (2026 Laws): Effective date March 31, 2026."
+    },
+    {
+      "id": "HB4032",
+      "title": "Relating to fuel storage sites.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4035",
+      "title": "Relating to land use; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 31, (2026 Laws): Effective date March 31, 2026."
+    },
+    {
+      "id": "HB4003",
+      "title": "Relating to medical assistance; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4004",
+      "title": "Relating to natural resources; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 21,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 29, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4058",
+      "title": "Relating to human services; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4067",
+      "title": "Relating to education.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4093",
+      "title": "Relating to protections for persons with disabilities.",
+      "session": "2026R1",
+      "action_count": 7,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4094",
+      "title": "Relating to compensation for certain unused paid time off upon termination of employment; prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 8,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4060",
+      "title": "Relating to fluorescent lamps; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 38, (2026 Laws): Effective date March 31, 2026."
+    },
+    {
+      "id": "HB4069",
+      "title": "Relating to the safety of behavioral health workers; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 18,
+      "latest_action_date": "2026-04-06T17:33:05+00:00",
+      "latest_action_description": "Chapter 43, (2026 Laws): Effective date July 1, 2027."
+    },
+    {
+      "id": "HB4056",
+      "title": "Relating to fire protection costs; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 3,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4051",
+      "title": "Relating to first-time homeownership; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 5,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4005",
+      "title": "Relating to Water Professionals Appreciation Week; and prescribing an effective date.",
+      "session": "2026R1",
+      "action_count": 19,
+      "latest_action_date": "2026-03-17T17:50:42+00:00",
+      "latest_action_description": "Chapter 5, (2026 Laws): Effective date June 5, 2026."
+    },
+    {
+      "id": "HB4002",
+      "title": "Relating to legislative measures; declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 4,
+      "latest_action_date": "2026-03-07T00:17:00+00:00",
+      "latest_action_description": "In committee upon adjournment."
+    },
+    {
+      "id": "HB4034",
+      "title": "Relating to animal rescue entities.",
+      "session": "2026R1",
+      "action_count": 20,
+      "latest_action_date": "2026-03-17T17:50:42+00:00",
+      "latest_action_description": "Chapter 13, (2026 Laws): Effective date January 1, 2027."
+    },
+    {
+      "id": "HB4033",
+      "title": "Relating to emergency volunteers; and declaring an emergency.",
+      "session": "2026R1",
+      "action_count": 22,
+      "latest_action_date": "2026-04-13T15:31:38+00:00",
+      "latest_action_description": "Chapter 106, (2026 Laws): Effective date April 7, 2026."
+    }
+  ]
+}
