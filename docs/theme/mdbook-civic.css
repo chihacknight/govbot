@@ -520,6 +520,9 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
   .gl-hero-copy .gl-btns { flex-direction: column; align-items: flex-start; }
   /* the overline runs the full hero width on its own line, above the statue's torch */
   .gl-hero-copy .gl-overline-ruled { width: calc(100vw - 64px); font-size: 12px; letter-spacing: .1em; }
+  /* too long for one phone line: break after the dot ("Open civic data ·" / "Government Transparency") */
+  .gl-hero-copy .gl-overline-ruled > span:not(.gl-rule) { text-align: center; line-height: 1.5; }
+  .gl-hero-copy .gl-overline-ruled .gl-ol-2 { display: block; }
   .gl-art { position: absolute; z-index: 1; top: 34px; bottom: -36px; right: -16px; width: 70%; height: auto;
     border-radius: 0 !important; background: none !important;
     -webkit-mask-image: linear-gradient(to right, transparent 0, #000 26%);

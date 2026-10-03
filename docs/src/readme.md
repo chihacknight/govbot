@@ -3,9 +3,9 @@
 <section class="gl-hero">
 <div class="gl-wrap gl-hero-grid">
 <div class="gl-hero-copy">
-<div class="gl-overline gl-overline-ruled"><span class="gl-rule"></span><span>Open civic data · Nonpartisan</span><span class="gl-rule"></span></div>
+<div class="gl-overline gl-overline-ruled"><span class="gl-rule"></span><span>Open civic data · <span class="gl-ol-2">Government Transparency</span></span><span class="gl-rule"></span></div>
 <h1 class="gl-h1">See what your government is doing.<br><span class="gl-accent">Then use the data yourself.</span></h1>
-<p class="gl-lede">Every U.S. legislature, as data you can clone — plus hearings and elections, free to explore, follow and build on.</p>
+<p class="gl-lede">A nationwide layer of open legislative data. Every U.S. legislature, ready to explore, query, clone, and build on.</p>
 <div class="gl-btns"><a class="gl-btn gl-btn-primary" href="#projects">See the projects</a><a class="gl-btn gl-btn-ghost" href="#build">Get the data</a></div>
 </div>
 <div class="gl-art" aria-hidden="true"><div class="gl-halo"></div><img class="gl-art-img" src="dashboard/assets/liberty-hero.png" alt="" width="520" height="1000"><canvas class="gl-embers"></canvas></div>
@@ -112,7 +112,7 @@
 <p class="gl-p">Paste this into Claude or ChatGPT — even on your phone:</p>
 <div class="gl-prompt"><span class="gl-code-t">Read this guide, then follow it to answer my question:<br>https://raw.githubusercontent.com/chihacknight/govbot/main/llms.txt<br><br>Question: What's the status of Wyoming HB0001 in the 2025 session, who sponsored it, and what's the official source link?</span><button type="button" class="gl-copy" aria-label="Copy AI prompt">Copy</button></div>
 </div>
-<div class="gl-btns"><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot/blob/main/catalog.json" target="_blank" rel="noopener">Data catalog ↗</a><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot/blob/main/actions/format/docs/DATA_STRUCTURES.md" target="_blank" rel="noopener">Data structure ↗</a><a class="gl-btn gl-btn-ghost" href="about.html">All commands &amp; SQL</a><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">Source ↗</a></div>
+<div class="gl-btns"><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot/blob/main/catalog.json" target="_blank" rel="noopener">Data catalog ↗</a><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot/blob/main/actions/format/docs/DATA_STRUCTURES.md" target="_blank" rel="noopener">Data structure ↗</a><a class="gl-btn gl-btn-ghost" href="about.html#querying-with-sql-duckdb">All commands &amp; SQL</a><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub Repo ↗</a></div>
 </div>
 </div>
 </div>
