@@ -606,7 +606,8 @@
   // The people on github.com/chihacknight/govbot/graphs/contributors (bots left out), with avatars
   // vendored in dashboard/assets/contributors/ — refresh this list as new people contribute.
   // Half of them are on screen at once (9 on desktop, 4 on phones); a cursor that pauses may hand
-  // over to the next person not shown, so everyone passes through. On phones @sartaj stays put.
+  // over to the next person not shown, so everyone passes through. @sartaj always stays on screen,
+  // and now and then stops to type "government data as Git" in a cursor-chat bubble.
   (function () {
     var space = document.getElementById("gl-crew");
     var layer = document.getElementById("gl-crew-cursors");
@@ -621,6 +622,7 @@
     ];
     var ARROW = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 2.5 L20 11.2 L12.2 13 L8.6 20.5 Z" fill="currentColor" stroke="#FFFFFF" stroke-width="1.6" stroke-linejoin="round"/></svg>';
     var W = 0, H = 0, keep = null, phone = false, cur = [], next = 0, raf = 0, last = 0, visible = false;
+    var SAY = "government data as Git", TYPE_CPS = 14, HOLD = 2.4, sayCool = 1.5;
 
     function measure() {
       W = space.clientWidth; H = space.clientHeight;
@@ -628,22 +630,22 @@
       keep = { x0: c.left - s.left - 30, x1: c.right - s.left + 10, y0: c.top - s.top - 30, y1: c.bottom - s.top + 12 };
       phone = W < 620;
     }
-    // Does a cursor (with its name label) at x,y cover the copy?
-    function overCopy(x, y) {
-      var lw = phone ? 140 : 170;
-      return x + lw > keep.x0 && x - 20 < keep.x1 && y + 44 > keep.y0 && y < keep.y1;
+    // Does a cursor (with its name label — and @sartaj's chat bubble) at x,y cover the copy?
+    function overCopy(x, y, big) {
+      var lw = big ? (phone ? 210 : 250) : (phone ? 140 : 170), lh = big ? 86 : 44;
+      return x + lw > keep.x0 && x - 20 < keep.x1 && y + lh > keep.y0 && y < keep.y1;
     }
     // A spot clear of the copy, preferably one reached without gliding across it.
-    function pick(fx, fy) {
+    function pick(fx, fy, big) {
       var best = null;
       for (var t = 0; t < 40; t++) {
-        var x = 12 + Math.random() * Math.max(40, W - (phone ? 150 : 190));
-        var y = 12 + Math.random() * Math.max(40, H - 44);
-        if (overCopy(x, y)) continue;
+        var x = 12 + Math.random() * Math.max(40, W - (big ? (phone ? 220 : 260) : (phone ? 150 : 190)));
+        var y = 12 + Math.random() * Math.max(40, H - (big ? 92 : 44));
+        if (overCopy(x, y, big)) continue;
         best = best || { x: x, y: y };
         if (fx == null) return best;
         var crosses = false;
-        for (var k = 1; k < 10 && !crosses; k++) crosses = overCopy(fx + (x - fx) * k / 10, fy + (y - fy) * k / 10);
+        for (var k = 1; k < 10 && !crosses; k++) crosses = overCopy(fx + (x - fx) * k / 10, fy + (y - fy) * k / 10, big);
         if (!crosses) return { x: x, y: y };
       }
       return best || { x: 12, y: H - 44 };
@@ -663,11 +665,12 @@
       for (var i = 0; i < slots; i++) {
         var el = document.createElement("div");
         el.className = "gl-cur";
-        el.innerHTML = '<span class="gl-cur-ring"></span>' + ARROW + '<span class="gl-cur-label"></span>';
+        el.innerHTML = '<span class="gl-cur-ring"></span>' + ARROW + '<span class="gl-cur-label"></span>' +
+          (i === 0 ? '<span class="gl-cur-chat"></span>' : "");
         layer.appendChild(el);
-        var a = pick(), b = pick(a.x, a.y);
-        var c = { el: el, ring: el.firstChild, label: el.lastChild, x: a.x, y: a.y, vx: 0, vy: 0, tx: b.x, ty: b.y,
-          pause: Math.random() * 1.5, rv: 0 };
+        var big = i === 0, a = pick(null, null, big), b = pick(a.x, a.y, big);
+        var c = { el: el, ring: el.firstChild, label: el.querySelector(".gl-cur-label"), chat: el.querySelector(".gl-cur-chat"),
+          big: big, x: a.x, y: a.y, vx: 0, vy: 0, tx: b.x, ty: b.y, pause: Math.random() * 1.5, rv: 0, say: -1 };
         setPerson(c, i);
         cur.push(c);
         place(c);
@@ -676,13 +679,20 @@
     }
     function place(c) {
       c.el.style.transform = "translate(" + c.x.toFixed(1) + "px," + c.y.toFixed(1) + "px)";
-      c.el.classList.toggle("flip", c.x > W - (phone ? 150 : 190));
+      c.el.classList.toggle("flip", c.x > W - (c.big ? (phone ? 220 : 260) : (phone ? 150 : 190)));
       c.ring.style.opacity = c.rv.toFixed(2);
       c.ring.style.transform = "scale(" + (1 + (1 - c.rv) * 1.4).toFixed(2) + ")";
     }
     function step(dt) {
+      if (sayCool > 0) sayCool -= dt;
       cur.forEach(function (c, i) {
         if (c.rv > 0) c.rv = Math.max(0, c.rv - dt * 1.6);
+        if (c.chat && c.say >= 0) {                      // typing, then holding the line
+          c.say += dt;
+          var n = Math.min(SAY.length, Math.floor(c.say * TYPE_CPS));
+          if (c.chat.textContent.length !== n) c.chat.textContent = SAY.slice(0, n);
+          if (c.say > SAY.length / TYPE_CPS + HOLD) { c.say = -1; c.chat.classList.remove("is-on"); c.el.classList.remove("is-saying"); sayCool = 6 + Math.random() * 6; }
+        }
         if (c.pause > 0) { c.pause -= dt; place(c); return; }
         // A soft spring toward the next spot: quick start, gentle arrival, a hint of overshoot.
         var dx = c.tx - c.x, dy = c.ty - c.y;
@@ -693,13 +703,16 @@
         c.x += c.vx * dt; c.y += c.vy * dt;
         if (Math.abs(dx) + Math.abs(dy) < 8 && sp < 40) {
           c.pause = 0.5 + Math.random() * 2.4;
-          if (Math.random() < 0.55) c.rv = 1;
-          else if (!(phone && i === 0) && Math.random() < 0.5) {
+          if (c.chat && sayCool <= 0 && c.say < 0) {      // @sartaj stops to type
+            c.say = 0; c.chat.textContent = ""; c.chat.classList.add("is-on"); c.el.classList.add("is-saying");
+            c.pause = SAY.length / TYPE_CPS + HOLD + 0.4;
+          } else if (Math.random() < 0.55) c.rv = 1;
+          else if (i !== 0 && Math.random() < 0.5) {
             var shown = cur.map(function (o) { return o.who; }), w = next % PEOPLE.length;
             while (shown.indexOf(w) !== -1) { next++; w = next % PEOPLE.length; }
             setPerson(c, w); next++;
           }
-          var n = pick(c.x, c.y); c.tx = n.x; c.ty = n.y;
+          var n = pick(c.x, c.y, c.big); c.tx = n.x; c.ty = n.y;
         }
         place(c);
       });
@@ -717,11 +730,14 @@
     window.addEventListener("load", function () {
       measure();
       cur.forEach(function (c) {
-        if (overCopy(c.x, c.y)) { var a = pick(); c.x = a.x; c.y = a.y; }
-        var n = pick(c.x, c.y); c.tx = n.x; c.ty = n.y; place(c);
+        if (overCopy(c.x, c.y, c.big)) { var a = pick(null, null, c.big); c.x = a.x; c.y = a.y; }
+        var n = pick(c.x, c.y, c.big); c.tx = n.x; c.ty = n.y; place(c);
       });
     });
-    if (reduceMotion) return;                      // a still, composed scatter
+    if (reduceMotion) {                            // a still, composed scatter — @sartaj's line shown whole
+      if (cur[0] && cur[0].chat) { cur[0].chat.textContent = SAY; cur[0].chat.classList.add("is-on"); }
+      return;
+    }
     if ("IntersectionObserver" in window) {
       new IntersectionObserver(function (es) {
         visible = es[0].isIntersecting;
@@ -738,7 +754,7 @@
         // phone ↔ desktop changes the slot count; otherwise just re-measure and keep moving
         var wasPhone = phone; measure();
         if (wasPhone !== phone) build();
-        else if (Math.abs(space.clientWidth - lastW) > 40) cur.forEach(function (c) { var n = pick(c.x, c.y); c.tx = n.x; c.ty = n.y; });
+        else if (Math.abs(space.clientWidth - lastW) > 40) cur.forEach(function (c) { var n = pick(c.x, c.y, c.big); c.tx = n.x; c.ty = n.y; });
         lastW = space.clientWidth;
       }, 150);
     });
