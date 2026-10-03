@@ -371,6 +371,237 @@
     }
   }, true);
 
+  // ---- Social bots slide: a live, auto-scrolling feed of what the bots really posted ----
+  // Sources (both public, CORS-open, fetched fail-soft and only once the carousel nears the screen):
+  //  - Twitter (X), Threads and Instagram: the bot repo's own dashboard data (its `feed` records the
+  //    exact post text + URL + posted time; `records` carries each bill's latest action).
+  //  - Bluesky: one account per topic, read from Bluesky's public AppView API (no auth). Its posts
+  //    put the dated action line ("Sept. 2, 2026: Interim Study Report…") in the bot's own reply,
+  //    so the chip is read from that reply for the posts shown (none found → no chip, never a guess).
+  // The newest few per platform are interleaved (every platform shows) and the list is rendered
+  // twice so the auto-scroll can wrap seamlessly; the copy is aria-hidden and out of the tab order.
+  (function () {
+    var list = document.getElementById("gl-bf-list");
+    var win = document.getElementById("gl-bf-win");
+    if (!list || !win) return;
+    var BOTS_DATA = "https://frankies2727.github.io/CHN-SocialMedia-Govbot-Main/data.json";
+    var BSKY_API = "https://public.api.bsky.app/xrpc/app.bsky.feed.";
+    var PER_PLATFORM = 5;                       // 4 platforms × 5 = the newest 20 posts
+    var AVATAR = "dashboard/assets/govbot-mark.png";
+    // Topic key → [display name, dot colour]; names match the slide's "Topics tracked" chips.
+    var TOPICS = {
+      ai_data_centers: ["AI, Data Centers & Crypto", "#818CF8"], criminal_justice: ["Criminal Justice", "#94A3B8"],
+      education: ["Education", "#60A5FA"], elections_voting_rights: ["Elections & Voting", "#A78BFA"],
+      environment_climate: ["Environment & Climate", "#4ADE80"], healthcare: ["Healthcare", "#2DD4BF"],
+      housing: ["Housing", "#FB923C"], immigration: ["Immigration", "#22D3EE"], labor: ["Labor", "#F59E0B"],
+      lgbtq: ["LGBTQ", "#E879F9"], reproductive_rights: ["Reproductive Rights", "#F472B6"],
+      taxation: ["Taxation", "#FACC15"], transportation: ["Transportation", "#38BDF8"]
+    };
+    var BSKY = {
+      ai_data_centers: "govbotaidatacenter", criminal_justice: "govbotcrimejustice", education: "govboteducation",
+      elections_voting_rights: "govbotelections", environment_climate: "govbotclimate", healthcare: "govbothealthcare",
+      housing: "govbothousing", immigration: "govbotimmigration", labor: "govbotlaborrights", lgbtq: "govbotlgbtq",
+      reproductive_rights: "govbotreproductive", taxation: "govbottaxation", transportation: "govbottransport"
+    };
+    var PLAT = {
+      "x-including-Crypto": { key: "x", name: "Twitter", color: "var(--gb-text)", handle: "@Govbot27" },
+      "meta-threads": { key: "threads", name: "Threads", color: "var(--gb-text)", handle: "@legislationtracker.govbot" },
+      "instagram": { key: "instagram", name: "Instagram", color: "#E4405F", handle: "@legislationtracker.govbot" },
+      "bluesky": { key: "bluesky", name: "Bluesky", color: "#1185FE" }
+    };
+    var MON = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
+
+    // "Oct 1, 2026" — the day the post went up, in Central time like the rest of the site.
+    function postedDay(iso) {
+      var d = new Date(iso);
+      if (isNaN(d)) return "";
+      try { return d.toLocaleDateString("en-US", { timeZone: "America/Chicago", month: "short", day: "numeric", year: "numeric" }); }
+      catch (e) { return d.toDateString().slice(4); }
+    }
+    // "Sept 27 · Approved by the Governor" from a record's YYYY-MM-DD date + raw action text.
+    function actionLine(ymd, action) {
+      // Drop the trailing vote/date detail some legislatures append ("…  06/02/2026 (Vote 14-0; RC).").
+      var a = String(action || "").split(/\s{2,}/)[0].replace(/\s+\d{1,2}\/\d{1,2}\/\d{4}\b.*$/, "").replace(/[.:;,\s]+$/, "").trim();
+      if (!a) return "";
+      if (a.length > 72) a = a.slice(0, 72).replace(/\s+\S*$/, "") + "…";
+      a = a.charAt(0).toUpperCase() + a.slice(1);
+      var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd || "");
+      if (!m) return a;
+      var when = MON[+m[2] - 1] + " " + (+m[3]) + (+m[1] !== new Date().getFullYear() ? ", " + m[1] : "");
+      return when + " · " + a;
+    }
+    // A bot post's text: optional "<emoji> Topic" line, then "<emoji> ST BILL — Headline", then the
+    // summary paragraphs. Keep the headline and the first sentence or two of the summary.
+    function parsePost(text) {
+      var lines = String(text || "").split("\n");
+      var hi = -1;
+      for (var i = 0; i < lines.length; i++) { if (lines[i].indexOf(" — ") !== -1) { hi = i; break; } }
+      if (hi === -1) return null;
+      var headline = lines[hi].replace(/^[^A-Za-z0-9]+/, "").trim();
+      var para = "";
+      for (var j = hi + 1; j < lines.length; j++) { var l = lines[j].trim(); if (l && l !== "...") { para = l; break; } }
+      para = para.replace(/\s*(\.\.\.|…)+\s*$/, "").trim();
+      var sentences = para.match(/[^.!?]+[.!?]+["’”')]*\s*/g) || [para];
+      var body = "";
+      for (var k = 0; k < sentences.length; k++) {
+        if (body && (body + sentences[k]).length > 260) break;
+        body += sentences[k];
+      }
+      return { headline: headline, body: body.trim(), cardTitle: headline.replace(/^.*? — /, "") };
+    }
+    function topicOf(key) { return TOPICS[key] || [key ? String(key).replace(/_/g, " ") : "Legislation", "#A5ADBC"]; }
+
+    function postHtml(p, clone) {
+      var t = topicOf(p.topic), pl = PLAT[p.platform];
+      var tab = clone ? ' tabindex="-1"' : "";
+      var body = p.platform === "instagram"
+        ? '<div class="gl-post-ig"><div class="gl-igcard" aria-hidden="true"><span class="gl-igcard-t">' + esc(t[0]) + '</span>' +
+          '<span class="gl-igcard-h">' + esc(p.cardTitle) + '</span></div><div class="gl-post-body">' + esc(p.body) + '</div></div>'
+        : '<div class="gl-post-body">' + esc(p.body) + '</div>';
+      return '<article class="gl-post" style="--tc: ' + t[1] + '; --plc: ' + pl.color + '">' +
+        '<img class="gl-post-av" src="' + AVATAR + '" alt="" width="40" height="40" loading="lazy">' +
+        '<div class="gl-post-main"><div class="gl-post-top"><span class="gl-post-name">Govbot</span>' +
+        '<span class="gl-post-handle">' + esc(p.handle) + '</span>' +
+        '<span class="gl-post-when">· Posted: ' + esc(p.when) + '</span>' +
+        '<span class="gl-post-plat"><i></i>' + esc(pl.name) + '</span></div>' +
+        '<div class="gl-post-h">' + esc(p.headline) + '</div>' + body +
+        '<div class="gl-post-foot">' + (p.action ? '<span class="gl-post-act">' + esc(p.action) + '</span>' : "") +
+        '<span class="gl-post-topic"><i></i>' + esc(t[0]) + '</span>' +
+        '<a class="gl-post-link" href="' + escAttr(p.url) + '" target="_blank" rel="noopener"' + tab +
+        ' aria-label="View the ' + escAttr(pl.name) + ' post: ' + escAttr(p.headline) + '">View post ↗</a></div></div></article>';
+    }
+
+    function loadDashboard() {
+      return fetch(BOTS_DATA).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .catch(function () { return null; });
+    }
+    function loadBluesky() {
+      var handles = Object.keys(BSKY);
+      return Promise.all(handles.map(function (topic) {
+        var actor = BSKY[topic] + ".bsky.social";
+        return fetch(BSKY_API + "getAuthorFeed?actor=" + encodeURIComponent(actor) + "&limit=2&filter=posts_no_replies")
+          .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+          .then(function (d) {
+            return ((d && d.feed) || []).filter(function (it) { return it.post && !it.reason; }).map(function (it) {
+              var rec = it.post.record || {};
+              return { topic: topic, handle: "@" + actor, text: rec.text, at: rec.createdAt || it.post.indexedAt, uri: it.post.uri,
+                url: "https://bsky.app/profile/" + actor + "/post/" + String(it.post.uri).split("/").pop() };
+            });
+          })
+          .catch(function () { return []; });
+      })).then(function (all) { return [].concat.apply([], all); });
+    }
+
+    // A shown Bluesky post's action line, from the bot's own reply: "Sept. 2, 2026: <action>".
+    var MONTH_IX = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+    function bskyAction(p) {
+      return fetch(BSKY_API + "getPostThread?depth=1&parentHeight=0&uri=" + encodeURIComponent(p.uri))
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function (d) {
+          var me = p.handle.slice(1), replies = (d && d.thread && d.thread.replies) || [];
+          for (var i = 0; i < replies.length; i++) {
+            var rp = replies[i].post;
+            if (!rp || !rp.author || rp.author.handle !== me) continue;
+            var m = /^([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2}),\s+(\d{4}):\s*(.+)$/m.exec((rp.record && rp.record.text) || "");
+            var mo = m && MONTH_IX[m[1].toLowerCase()];
+            if (mo) {
+              p.action = actionLine(m[3] + "-" + (mo < 10 ? "0" : "") + mo + "-" + (+m[2] < 10 ? "0" : "") + (+m[2]), m[4]);
+              return;
+            }
+          }
+        })
+        .catch(function () { /* no chip */ });
+    }
+
+    function build(dash, bsky) {
+      var byPlat = { "x-including-Crypto": [], "meta-threads": [], "instagram": [], "bluesky": [] };
+      ((dash && dash.feed) || []).forEach(function (r) {
+        if (!byPlat[r.platform] || r.platform === "bluesky" || !r.post_url || !r.posted_at) return;
+        var x = parsePost(r.posted);
+        if (!x) return;
+        byPlat[r.platform].push({ platform: r.platform, topic: r.topic, handle: PLAT[r.platform].handle, at: r.posted_at,
+          when: postedDay(r.posted_at), url: r.post_url, headline: x.headline, body: x.body, cardTitle: x.cardTitle,
+          action: actionLine(r.date, r.action) });
+      });
+      (bsky || []).forEach(function (b) {
+        var x = parsePost(b.text);
+        if (!x) return;
+        byPlat.bluesky.push({ platform: "bluesky", topic: b.topic, handle: b.handle, at: b.at, when: postedDay(b.at),
+          url: b.url, uri: b.uri, headline: x.headline, body: x.body, cardTitle: x.cardTitle, action: "" });
+      });
+      var lanes = Object.keys(byPlat).map(function (k) {
+        var seen = {};
+        return byPlat[k].sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); })
+          .filter(function (p) { if (seen[p.url]) return false; seen[p.url] = 1; return true; })
+          .slice(0, PER_PLATFORM);
+      }).filter(function (l) { return l.length; })
+        .sort(function (a, b) { return String(b[0].at).localeCompare(String(a[0].at)); });
+      var out = [];
+      for (var i = 0; i < PER_PLATFORM; i++) lanes.forEach(function (l) { if (l[i]) out.push(l[i]); });
+      return out;
+    }
+
+    var paused = false, raf = 0, last = 0, pos = 0, looping = false;
+    var slide = win.closest(".gl-slide");
+    function canRun() {
+      return looping && !paused && !document.hidden && (!slide || slide.classList.contains("is-active"));
+    }
+    function frame(ts) {
+      raf = requestAnimationFrame(frame);
+      var dt = last ? Math.min(ts - last, 64) : 16;
+      last = ts;
+      if (!canRun()) { pos = win.scrollTop; return; }
+      pos += dt * 0.025;                                   // ~25px a second
+      // One loop = the distance from the first post to the first post of the hidden copy.
+      var clone = list.lastElementChild, period = clone ? clone.offsetTop - list.firstElementChild.offsetTop : 0;
+      if (period > 0 && pos >= period) pos -= period;
+      win.scrollTop = pos;
+    }
+    function pause() { paused = true; }
+    function resume() { paused = false; pos = win.scrollTop; }
+    win.addEventListener("mouseenter", pause);
+    win.addEventListener("mouseleave", resume);
+    win.addEventListener("focusin", pause);
+    win.addEventListener("focusout", resume);
+    // A touch pauses it; it picks up again a few seconds after the finger lifts.
+    var touchT = 0;
+    win.addEventListener("touchstart", function () { clearTimeout(touchT); pause(); }, { passive: true });
+    win.addEventListener("touchend", function () { clearTimeout(touchT); touchT = setTimeout(resume, 3000); }, { passive: true });
+    win.addEventListener("wheel", function () { pos = win.scrollTop; }, { passive: true });
+
+    var started = false;
+    function start() {
+      if (started) return;
+      started = true;
+      var posts = [];
+      Promise.all([loadDashboard(), loadBluesky()]).then(function (res) {
+        posts = build(res[0], res[1]);
+        return Promise.all(posts.filter(function (p) { return p.uri; }).map(bskyAction));
+      }).then(function () {
+        if (!posts.length) {
+          list.innerHTML = stateHtml("error", "Couldn't load the bots' posts",
+            "The social feeds didn't respond. You can still see every post on the bots' own dashboard.",
+            "https://frankies2727.github.io/CHN-SocialMedia-Govbot-Main/", "Open the bot dashboard ↗");
+          return;
+        }
+        var html = posts.map(function (p) { return postHtml(p, false); }).join("");
+        looping = !reduceMotion && posts.length > 2;
+        list.innerHTML = looping
+          ? html + '<div class="gl-bf-list" aria-hidden="true">' + posts.map(function (p) { return postHtml(p, true); }).join("") + "</div>"
+          : html;
+        if (looping) raf = requestAnimationFrame(frame);
+      });
+    }
+    if ("IntersectionObserver" in window) {
+      var io = new IntersectionObserver(function (es) {
+        if (es.some(function (e) { return e.isIntersecting; })) { io.disconnect(); start(); }
+      }, { rootMargin: "600px 0px" });
+      io.observe(car || win);
+    } else {
+      start();
+    }
+  })();
+
   // ---- Liberty embers: little green sparks rising off the torch and drifting up
   // past the crown, flickering like embers off a fireplace. Positions are in the
   // statue image's own pixels (520×1000) so they track it at every size.

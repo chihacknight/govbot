@@ -96,10 +96,10 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
    The .activity-row / .ar-* / .mini-date / .stream-* rules are carried over
    from the retired dashboard homepage so the ported landing.js renders as before.
    =========================================================================== */
-.gb-landing { --gl-teal: #5CC8DA; --gl-halo: rgba(61,220,132,.16); color: var(--gb-text); font-size: 16px; }
-:root[data-theme="light"] .gb-landing { --gl-teal: #0E6F80; --gl-halo: rgba(4,26,15,.94); }
+.gb-landing { --gl-teal: #5CC8DA; --gl-halo: rgba(61,220,132,.16); --gl-fgold: #E5B94E; color: var(--gb-text); font-size: 16px; }
+:root[data-theme="light"] .gb-landing { --gl-teal: #0E6F80; --gl-halo: rgba(4,26,15,.94); --gl-fgold: #8A6100; }
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme]) .gb-landing { --gl-teal: #0E6F80; --gl-halo: rgba(4,26,15,.94); }
+  :root:not([data-theme]) .gb-landing { --gl-teal: #0E6F80; --gl-halo: rgba(4,26,15,.94); --gl-fgold: #8A6100; }
 }
 /* neutralise mdbook's content typography inside the landing */
 .gb-landing h1, .gb-landing h2, .gb-landing h3 { margin: 0; border: 0; }
@@ -250,6 +250,59 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gb-landing .gl-bot { display: flex; flex-direction: column; gap: 4px; padding: 18px; border: 1px solid var(--gb-border);
   border-radius: 16px; text-decoration: none; color: var(--gb-text); }
 .gb-landing .gl-bot:hover { border-color: var(--pc); background: var(--gb-hover); }
+/* Social bots slide: topics, platform buttons and a live auto-scrolling feed of the bots' real posts
+   (filled by landing.js). --gl-fgold is a true gold (the brand --gb-gold is green now) for the
+   feed's posted date, action chip, topic and "View post" — 4.5:1+ on the card in both themes. */
+.gl-bt-group { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; }
+.gl-follow { margin-top: auto; padding-top: 6px; }
+.gl-bt-h { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gb-text-muted); }
+.gl-bts { display: flex; flex-wrap: wrap; gap: 6px; }
+.gl-bt { display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 10px; border-radius: 999px;
+  border: 1px solid var(--gb-border); font-size: 12.5px; color: var(--gb-text-2); }
+.gl-bt-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.gl-plats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.gb-landing a.gl-plat { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 46px; padding: 0 14px;
+  border-radius: 999px; background: var(--gb-primary); color: var(--gb-on-primary) !important; font-size: 15px; font-weight: 600;
+  text-decoration: none; transition: filter .15s ease; }
+.gb-landing a.gl-plat:hover { filter: brightness(1.08); }
+.gl-plat svg { width: 18px; height: 18px; flex: none; }
+.gl-bf { border-radius: 18px; border: 1px solid var(--gb-border); background: var(--gb-bg); overflow: hidden; height: 600px; }
+.gl-bf-head { display: flex; align-items: center; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--gb-border);
+  font-size: 13px; font-weight: 600; color: var(--gb-text-2); }
+.gl-bf-live { animation: gl-live 1.8s ease-in-out infinite; }
+@keyframes gl-live { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.7); } }
+.gl-bf-win { position: relative; flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px; scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px, #000 calc(100% - 36px), transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 22px, #000 calc(100% - 36px), transparent 100%); }
+.gl-bf-win::-webkit-scrollbar { display: none; }
+.gl-bf-win:focus-visible { outline: 2px solid var(--gb-gold); outline-offset: -2px; }
+.gl-bf-list { display: flex; flex-direction: column; gap: 10px; }
+.gl-post { display: flex; gap: 12px; padding: 14px; border-radius: 14px; border: 1px solid var(--gb-border); background: var(--gb-surface);
+  transition: border-color .2s ease; }
+.gl-post:hover { border-color: var(--gb-border-strong); }
+.gl-post-av { width: 40px; height: 40px; border-radius: 50%; flex: none; object-fit: cover; border: 2px solid var(--tc); box-sizing: border-box; }
+.gl-post-main { display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1; }
+.gl-post-top { display: flex; align-items: baseline; gap: 8px; min-width: 0; font-size: 13px; }
+.gl-post-name { font-size: 14px; font-weight: 700; color: var(--gb-text); white-space: nowrap; }
+.gl-post-handle { color: var(--gb-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.gl-post-when { font-weight: 600; color: var(--gl-fgold); white-space: nowrap; flex: none; }
+.gl-post-plat { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; flex: none; font-size: 12px; font-weight: 600; color: var(--gb-text-2); }
+.gl-post-plat i { width: 8px; height: 8px; border-radius: 2px; background: var(--plc); }
+.gl-post-h { font-size: 14.5px; font-weight: 700; line-height: 1.35; color: var(--gb-text); }
+.gl-post-body { font-size: 13.5px; line-height: 1.5; color: var(--gb-text-2); }
+.gl-post-ig { display: flex; gap: 12px; align-items: stretch; }
+.gl-igcard { width: 112px; flex: none; aspect-ratio: 4 / 5; box-sizing: border-box; padding: 10px; border-radius: 8px; background: #11161F;
+  border: 1px solid #273042; display: flex; flex-direction: column; justify-content: space-between; }
+.gl-igcard-t { align-self: flex-start; font-size: 8px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 6px;
+  border-radius: 999px; background: var(--tc); color: #080B12; }
+.gl-igcard-h { font-size: 10.5px; font-weight: 700; line-height: 1.25; color: #F4F5F7; border-bottom: 2px solid var(--tc); padding-bottom: 4px; }
+.gl-post-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.gl-post-act { display: inline-flex; align-items: center; min-height: 24px; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  color: var(--gl-fgold); background: color-mix(in srgb, var(--gl-fgold) 12%, transparent); border: 1px solid color-mix(in srgb, var(--gl-fgold) 40%, transparent); }
+.gl-post-topic { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--gl-fgold); }
+.gl-post-topic i { width: 7px; height: 7px; border-radius: 50%; background: var(--tc); }
+.gb-landing a.gl-post-link { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--gl-fgold) !important; text-decoration: none; }
+.gb-landing a.gl-post-link:hover { text-decoration: underline; }
 .gl-yours-note { justify-content: center; gap: 10px; padding: 22px; border-radius: 16px; background: var(--gb-row-alt, var(--gb-surface-2)); }
 .gl-yours-note a { font-weight: 600; }
 
@@ -411,6 +464,7 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
   .gl-car { transition: none; }
   .gl-slide { transition: none; }
   .gl-timeline li.is-now::before, .gl-timeline li.is-now::after { animation: none; }
+  .gl-bf-live { animation: none; }
 }
 
 /* responsive */
@@ -432,6 +486,8 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
   .gl-sec-head { flex-direction: column; align-items: flex-start; }
   .gl-slide { flex-basis: 100%; grid-template-columns: minmax(0, 1fr); padding: 20px; gap: 20px; }
   .gl-slide-cta { margin-top: 6px; }
+  .gl-bf { height: 520px; }
+  .gl-follow { margin-top: 4px; }
   .gl-h3 { font-size: 27px; }
   .gl-build, .gl-story { grid-template-columns: minmax(0, 1fr); }
   .gl-elect-date { font-size: 36px; }
@@ -440,6 +496,17 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
   .gl-center { flex-direction: column; align-items: stretch; }
 }
 @media (max-width: 620px) { .gb-landing .stream-figure { height: 440px; } }
+/* phone: the post's handle drops to its own line so the name, posted date and platform fit */
+@media (max-width: 620px) {
+  .gl-post-top { flex-wrap: wrap; row-gap: 2px; }
+  .gl-post-handle { order: 5; flex-basis: 100%; }
+  .gl-igcard { width: 92px; }
+  .gl-post { padding: 12px; gap: 10px; }
+  .gl-post-av { width: 32px; height: 32px; }
+  .gl-post-act { border-radius: 10px; padding: 3px 9px; }
+  .gl-bf-win { padding: 10px; }
+  .gb-landing a.gl-plat { font-size: 14px; padding: 0 10px; gap: 7px; white-space: nowrap; }
+}
 @media (max-width: 560px) {
   .stream-bot-name { font-size: 13px; margin-top: 5px; }
   .stream-cap { font-size: 9px; letter-spacing: .06em; padding: 0 12px; }
