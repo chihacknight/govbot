@@ -74,6 +74,7 @@ actions/
   pipeline-manager/  # Orchestrates data pipelines
   report-publisher/  # Generates reports
   scrape/       # Web scraping for government data sources
+  openstates-scrape-audits/  # Weekly/daily checks that catch OpenStates scraper failures a green checkmark hides
 schemas/        # Shared JSON schemas for data validation
 scripts/        # Repository-level utility scripts
 ```

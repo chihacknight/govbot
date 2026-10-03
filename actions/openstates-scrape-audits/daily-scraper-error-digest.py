@@ -44,6 +44,17 @@ stale noise:
      to catch a `cancelled`/`timed_out` conclusion or a run still not
      `completed` long after it should be.
 
+This script lives in its own action (actions/openstates-scrape-audits/),
+scoped specifically to the OpenStates-based bill scraper pipeline
+(actions/scrape/, chn-openstates-scrape.yml) -- it has no visibility into
+the other scraper pipelines in this repo (actions/scrape-elections/,
+actions/scrape-hearings/, actions/scrape-maps/), hence the explicit
+"openstates" in the name. Separate from actions/pipeline-manager/
+(repo/template provisioning) -- the only functional tie to
+pipeline-manager is reading its locale config (chn-openstates-scrape.yml)
+for the active/paused state list, via the relative path below, not shared
+ownership of any file here.
+
 Usage: python3 daily-scraper-error-digest.py [--report-file path.md]
 """
 import argparse
@@ -59,7 +70,8 @@ from pathlib import Path
 import yaml
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PIPELINE_MANAGER = SCRIPT_DIR.parent
+REPO_ROOT = SCRIPT_DIR.parent.parent
+PIPELINE_MANAGER = REPO_ROOT / "actions" / "pipeline-manager"
 
 SCRAPER_ORG = "govbot-openstates-scrapers"
 GITHUB_API = "https://api.github.com"

@@ -1,0 +1,607 @@
+[
+  {
+    "code": "ak",
+    "run_id": 36583087587,
+    "run_date": "2026-09-29T14:29:44Z",
+    "warning_count": 9,
+    "sample_warnings": [
+      "2026-09-29T14:31:09.4618544Z 14:30:59 WARNING openstates: no session provided, using active sessions: {'34'}",
+      "2026-09-29T14:31:51.2293408Z 14:31:43 WARNING openstates: Falling back to short title on https://www.akleg.gov/basis/Bill/Detail/34?Root=HB32",
+      "2026-09-29T14:35:23.9751517Z 14:35:23 WARNING openstates: no session provided, using active sessions: {'34'}"
+    ],
+    "log_lines": 13114
+  },
+  {
+    "code": "al",
+    "run_id": 36559066533,
+    "run_date": "2026-09-29T11:00:30Z",
+    "warning_count": 25,
+    "sample_warnings": [
+      "2026-09-29T11:03:19.9603614Z 11:03:18 WARNING openstates: no session provided, using active sessions: {'2026rs'}",
+      "2026-09-29T11:05:19.1484629Z 11:05:17 WARNING openstates: No sponsors for HR41",
+      "2026-09-29T11:05:19.1495741Z 11:05:17 WARNING openstates: No sponsors for HR54"
+    ],
+    "log_lines": 7689
+  },
+  {
+    "code": "ar",
+    "run_id": 36559971918,
+    "run_date": "2026-09-29T11:09:16Z",
+    "warning_count": 3,
+    "sample_warnings": [
+      "2026-09-29T11:10:22.7984028Z 11:10:21 WARNING openstates: no session provided, using active sessions: {'2026S1'}",
+      "2026-09-29T11:10:22.7989374Z 11:10:22 WARNING openstates: Skipping row in session 2027R because it does not match 2026S1",
+      "2026-09-29T11:10:22.7993344Z 11:10:22 WARNING openstates: ARBillScraper raised EmptyScrape, continuing without any results"
+    ],
+    "log_lines": 1376
+  },
+  {
+    "code": "az",
+    "run_id": 36568674231,
+    "run_date": "2026-09-29T12:31:28Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T12:32:35.9552770Z 12:32:31 WARNING openstates: no session provided, using active sessions: {'57th-2nd-regular'}"
+    ],
+    "log_lines": 56831
+  },
+  {
+    "code": "ca",
+    "run_id": 36575466930,
+    "run_date": "2026-09-29T13:29:27Z",
+    "warning_count": 1287,
+    "sample_warnings": [
+      "2026-09-29T13:32:53.6961737Z WARNING: Error parsing dependencies of textract: .* suffix can only be used with `==` or `!=` operators",
+      "2026-09-29T13:45:48.8628878Z WARNING: Error parsing dependencies of textract: .* suffix can only be used with `==` or `!=` operators",
+      "2026-09-29T13:45:52.8033055Z 13:45:52 WARNING openstates: no session provided, using active sessions: {'20252026'}"
+    ],
+    "log_lines": 201302
+  },
+  {
+    "code": "co",
+    "run_id": 36564841132,
+    "run_date": "2026-09-29T11:56:10Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T11:57:19.3057060Z 11:57:16 WARNING openstates: no session provided, using active sessions: {'2026A'}"
+    ],
+    "log_lines": 1875
+  },
+  {
+    "code": "ct",
+    "run_id": 36556394677,
+    "run_date": "2026-09-29T10:34:23Z",
+    "warning_count": 3,
+    "sample_warnings": [
+      "2026-09-29T10:40:22.7256179Z 10:35:34 WARNING openstates: no session provided, using active sessions: {'2026'}",
+      "2026-09-29T10:50:03.6232564Z 10:40:48 WARNING openstates: no session provided, using active sessions: {'2026'}",
+      "2026-09-29T10:58:38.3997130Z 10:50:29 WARNING openstates: no session provided, using active sessions: {'2026'}"
+    ],
+    "log_lines": 1648
+  },
+  {
+    "code": "dc",
+    "run_id": 36849432190,
+    "run_date": "2026-10-01T10:29:14Z",
+    "warning_count": 2,
+    "sample_warnings": [
+      "2026-10-01T10:30:31.6929530Z 10:30:16 WARNING openstates: no session provided, using active sessions: {'26'}",
+      "2026-10-01T10:41:32.2056099Z 10:41:31 WARNING openstates: Skipping bill B26-0260 which is listed as broken (returning 500 when we request its details)"
+    ],
+    "log_lines": 17674
+  },
+  {
+    "code": "de",
+    "run_id": 36555492413,
+    "run_date": "2026-09-29T10:25:35Z",
+    "warning_count": 2181,
+    "sample_warnings": [
+      "2026-09-29T10:26:44.3770226Z 10:26:41 WARNING openstates: no session provided, using active sessions: {'153'}",
+      "2026-09-29T10:27:04.0413460Z 10:27:04 WARNING openstates: Failed to fetch scrape_actions on attempt 3 of 3, giving up",
+      "2026-09-29T10:27:04.0414034Z 10:27:04 WARNING openstates: No actions returned for HB 481"
+    ],
+    "log_lines": 37557
+  },
+  {
+    "code": "fl",
+    "run_id": 31151185583,
+    "run_date": "2026-08-07T05:37:17Z",
+    "warning_count": 5735,
+    "sample_warnings": [
+      "2026-08-07T06:02:43.9232260Z WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested",
+      "2026-08-07T06:02:43.9884250Z 06:00:05 WARNING openstates: no session provided, using active sessions: {'2026F', '2026'}",
+      "2026-08-07T06:02:43.9951430Z 06:00:11 WARNING fl.bills.BillDetail: No citations table for HJR 1F"
+    ],
+    "log_lines": 64858
+  },
+  {
+    "code": "ga",
+    "run_id": 36554678642,
+    "run_date": "2026-09-29T10:17:49Z",
+    "warning_count": 95,
+    "sample_warnings": [
+      "2026-09-29T10:20:26.3460844Z 10:19:24 WARNING openstates: no session provided, using active sessions: {'2026_ss'}",
+      "2026-09-29T10:20:26.3465456Z 10:20:11 WARNING openstates: Code HRECL for action House Lost Reconsidered Bill/Resolution not recognized.",
+      "2026-09-29T10:20:26.3470032Z 10:20:18 WARNING openstates: Code HRECL for action House Lost Reconsidered Bill/Resolution not recognized."
+    ],
+    "log_lines": 2749
+  },
+  {
+    "code": "gu",
+    "run_id": 36911727866,
+    "run_date": "2026-10-01T19:05:38Z",
+    "warning_count": 3,
+    "sample_warnings": [
+      "2026-10-01T19:06:41.2082500Z 19:06:40 WARNING openstates: no session provided, using active sessions: {'38th'}",
+      "2026-10-01T19:07:07.7211662Z 19:07:07 WARNING openstates: no session provided, using active sessions: {'38th'}",
+      "2026-10-01T19:07:34.0775696Z 19:07:33 WARNING openstates: no session provided, using active sessions: {'38th'}"
+    ],
+    "log_lines": 2471
+  },
+  {
+    "code": "hi",
+    "run_id": 36597330144,
+    "run_date": "2026-09-29T16:23:12Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T16:24:52.4962369Z 16:24:50 WARNING openstates: no session provided, using active sessions: {'2026'}"
+    ],
+    "log_lines": 68644
+  },
+  {
+    "code": "ia",
+    "run_id": 36559389640,
+    "run_date": "2026-09-29T11:03:35Z",
+    "warning_count": 846,
+    "sample_warnings": [
+      "2026-09-29T11:07:53.4221933Z 11:07:53 WARNING openstates: no session provided, using active sessions: {'2025-2026'}",
+      "2026-09-29T11:08:27.7573159Z 11:08:24 WARNING openstates: Duplicate entry in 'versions' - URL: https://www.legis.iowa.gov/docs/publications/LGR/91/attachments/SJR2010.html",
+      "2026-09-29T11:08:43.5262741Z 11:08:39 WARNING openstates: Duplicate entry in 'versions' - URL: https://www.legis.iowa.gov/docs/publications/LGE/91/attachments/SF22.html"
+    ],
+    "log_lines": 24980
+  },
+  {
+    "code": "id",
+    "run_id": 36568898436,
+    "run_date": "2026-09-29T12:33:28Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T12:35:01.4854343Z 12:34:37 WARNING openstates: no session provided, using active sessions: {'2026'}"
+    ],
+    "log_lines": 8558
+  },
+  {
+    "code": "il",
+    "run_id": 36558729831,
+    "run_date": "2026-09-29T10:57:08Z",
+    "warning_count": 0,
+    "sample_warnings": [],
+    "log_lines": 1512
+  },
+  {
+    "code": "in",
+    "run_id": 36554180697,
+    "run_date": "2026-09-29T10:13:05Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T10:14:13.3464090Z 10:14:11 WARNING openstates: no session provided, using active sessions: {'2026'}"
+    ],
+    "log_lines": 15991
+  },
+  {
+    "code": "ks",
+    "run_id": 36560227140,
+    "run_date": "2026-09-29T11:11:43Z",
+    "warning_count": 1401,
+    "sample_warnings": [
+      "2026-09-29T11:12:46.8245314Z 11:12:46 WARNING openstates: no session provided, using active sessions: {'2025-2026'}",
+      "2026-09-29T11:12:46.8252115Z 11:12:46 WARNING openstates: No date found for action row Hearing: Tuesday, March 17, 2026, 9:00 AM \u2014 Room 346-S event for SB1 in 2025-2026",
+      "2026-09-29T11:12:46.8253272Z 11:12:46 WARNING openstates: No date found for action row Hearing: Thursday, January 23, 2025, 10:30 AM \u2014 Room 144-S event for SB1 in 2025-2026"
+    ],
+    "log_lines": 12571
+  },
+  {
+    "code": "ky",
+    "run_id": 36555981586,
+    "run_date": "2026-09-29T10:30:23Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T10:31:28.8146078Z 10:31:28 WARNING openstates: no session provided, using active sessions: {'2026RS'}"
+    ],
+    "log_lines": 12463
+  },
+  {
+    "code": "la",
+    "run_id": 36560183726,
+    "run_date": "2026-09-29T11:11:18Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T11:12:34.3467764Z 11:12:32 WARNING openstates: no session provided, using active sessions: {'2026'}"
+    ],
+    "log_lines": 35393
+  },
+  {
+    "code": "ma",
+    "run_id": 31150546891,
+    "run_date": "2026-08-07T05:25:34Z",
+    "warning_count": 218,
+    "sample_warnings": [
+      "2026-08-07T06:02:19.8716150Z WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested",
+      "2026-08-07T06:02:19.9457920Z 05:59:32 WARNING openstates: no session provided, using active sessions: {'194th'}",
+      "2026-08-07T06:02:19.9637830Z 06:00:21 WARNING openstates: Server Error on https://malegislature.gov/Bills/194/HD903"
+    ],
+    "log_lines": 76820
+  },
+  {
+    "code": "md",
+    "run_id": 36554323309,
+    "run_date": "2026-09-29T10:14:26Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T10:15:38.5797364Z 10:15:30 WARNING openstates: no session provided, using active sessions: {'2026'}"
+    ],
+    "log_lines": 12235
+  },
+  {
+    "code": "me",
+    "run_id": 36554516213,
+    "run_date": "2026-09-29T10:16:14Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T10:17:43.6620564Z 10:17:41 WARNING openstates: no session provided, using active sessions: {'132'}"
+    ],
+    "log_lines": 33744
+  },
+  {
+    "code": "mi",
+    "run_id": 36850831716,
+    "run_date": "2026-10-01T10:42:45Z",
+    "warning_count": 473,
+    "sample_warnings": [
+      "2026-10-01T10:44:37.8263426Z 10:44:00 WARNING openstates: no session provided, using active sessions: {'2025-2026'}",
+      "2026-10-01T10:49:28.3685569Z 10:49:10 WARNING openstates: piece without vtype set:",
+      "2026-10-01T10:49:28.3686402Z 10:49:10 WARNING openstates: vote count mismatch for SB 0018 ROLL CALL: ROLL CALL # 214 YEAS 36 NAYS 0 EXCUSED 2 NOT VOTING 0, 36 != 4"
+    ],
+    "log_lines": 39577
+  },
+  {
+    "code": "mn",
+    "run_id": 36559043710,
+    "run_date": "2026-09-29T11:00:17Z",
+    "warning_count": 1717,
+    "sample_warnings": [
+      "2026-09-29T11:02:00.2696684Z 11:01:46 WARNING openstates: no session provided, using active sessions: {'2025-2026'}",
+      "2026-09-29T11:03:17.2339252Z 11:03:13 WARNING openstates: ACTION without date: See HF719",
+      "2026-09-29T11:03:17.2347556Z 11:03:15 WARNING openstates: ACTION without date: See SF1959"
+    ],
+    "log_lines": 59155
+  },
+  {
+    "code": "mo",
+    "run_id": 36559065607,
+    "run_date": "2026-09-29T11:00:29Z",
+    "warning_count": 1365,
+    "sample_warnings": [
+      "2026-09-29T11:02:09.4833844Z 11:01:52 WARNING openstates: no session provided, using active sessions: {'2026'}",
+      "2026-09-29T11:35:49.6446610Z 11:35:48 WARNING openstates: Missing bill identifier element. Skipping.",
+      "2026-09-29T11:38:56.7804078Z 11:38:32 WARNING openstates: Missing bill identifier element. Skipping."
+    ],
+    "log_lines": 19641
+  },
+  {
+    "code": "mp",
+    "run_id": 36913812057,
+    "run_date": "2026-10-01T19:22:31Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-10-01T19:23:47.6328735Z 19:23:44 WARNING openstates: no session provided, using active sessions: {'24'}"
+    ],
+    "log_lines": 2593
+  },
+  {
+    "code": "ms",
+    "run_id": 36560402717,
+    "run_date": "2026-09-29T11:13:25Z",
+    "warning_count": 2,
+    "sample_warnings": [
+      "2026-09-29T11:14:40.5318522Z 11:14:40 WARNING openstates: no session provided, using active sessions: {'20261E', '2026'}",
+      "2026-09-29T11:21:28.4852961Z 11:21:27 WARNING openstates: Can't find vote file http://billstatus.ls.state.ms.us/2026/pdf/votes/house/1000002.pdf, skipping"
+    ],
+    "log_lines": 36789
+  },
+  {
+    "code": "mt",
+    "run_id": 36562830375,
+    "run_date": "2026-09-29T11:36:46Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T11:39:19.3613852Z 11:38:59 WARNING openstates: no session provided, using active sessions: {'2025'}"
+    ],
+    "log_lines": 75832
+  },
+  {
+    "code": "nc",
+    "run_id": 36554632279,
+    "run_date": "2026-09-29T10:17:22Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T10:18:49.4149457Z 10:18:34 WARNING openstates: no session provided, using active sessions: {'2025'}"
+    ],
+    "log_lines": 14016
+  },
+  {
+    "code": "nd",
+    "run_id": 36558949275,
+    "run_date": "2026-09-29T10:59:22Z",
+    "warning_count": 2,
+    "sample_warnings": [
+      "2026-09-29T11:03:43.2368191Z 11:00:38 WARNING openstates: no session provided, using active sessions: {'69'}",
+      "2026-09-29T11:09:44.3239921Z 11:09:42 WARNING nd.bills.BillList: Skipped duplicate vote vote-modal-202501S00396 on SB 2400"
+    ],
+    "log_lines": 11386
+  },
+  {
+    "code": "ne",
+    "run_id": 36558949679,
+    "run_date": "2026-09-29T10:59:23Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T11:01:09.0322332Z 11:01:08 WARNING openstates: no session provided, using active sessions: {'109'}"
+    ],
+    "log_lines": 23252
+  },
+  {
+    "code": "nh",
+    "run_id": 36555678430,
+    "run_date": "2026-09-29T10:27:24Z",
+    "warning_count": 3656,
+    "sample_warnings": [
+      "2026-09-29T10:29:03.9531968Z 10:29:00 WARNING openstates: no session provided, using active sessions: {'2026'}",
+      "2026-09-29T10:29:03.9546167Z 10:29:02 WARNING openstates: Missing version_id for SB34, can't build bill page",
+      "2026-09-29T10:30:37.1768779Z 10:29:30 WARNING openstates: Missing version_id for SB211, can't build bill page"
+    ],
+    "log_lines": 15715
+  },
+  {
+    "code": "nj",
+    "run_id": 36851173883,
+    "run_date": "2026-10-01T10:46:04Z",
+    "warning_count": 289,
+    "sample_warnings": [
+      "2026-10-01T10:47:42.4941177Z 10:47:40 WARNING openstates: no session provided, using active sessions: {'222'}",
+      "2026-10-01T10:47:43.7390302Z 10:47:42 WARNING openstates: unknown bill A4345 in document database",
+      "2026-10-01T10:47:43.7391610Z 10:47:42 WARNING openstates: unknown bill A5490 in document database"
+    ],
+    "log_lines": 14226
+  },
+  {
+    "code": "nm",
+    "run_id": 36566806896,
+    "run_date": "2026-09-29T12:14:29Z",
+    "warning_count": 5,
+    "sample_warnings": [
+      "2026-09-29T12:15:41.9147113Z 12:15:37 WARNING openstates: no session provided, using active sessions: {'2026'}",
+      "2026-09-29T12:15:41.9150925Z 12:15:39 WARNING openstates: No match, skipping PREFILE",
+      "2026-09-29T12:15:41.9156732Z 12:15:41 WARNING openstates: document for unknown bill SJR0C.PDF"
+    ],
+    "log_lines": 3189
+  },
+  {
+    "code": "nv",
+    "run_id": 36576807049,
+    "run_date": "2026-09-29T13:40:16Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T13:41:33.6471965Z 13:41:26 WARNING openstates: no session provided, using active sessions: {'2025Special36'}"
+    ],
+    "log_lines": 1814
+  },
+  {
+    "code": "ny",
+    "run_id": 36554368461,
+    "run_date": "2026-09-29T10:14:53Z",
+    "warning_count": 22000,
+    "sample_warnings": [
+      "2026-09-29T10:18:45.8108892Z 10:18:43 WARNING openstates: no session provided, using active sessions: {'2025-2026'}",
+      "2026-09-29T10:18:45.8116616Z 10:18:45 WARNING openstates: No active version for S11, assuming first",
+      "2026-09-29T10:18:47.4424749Z 10:18:46 WARNING openstates: No active version for S12, assuming first"
+    ],
+    "log_lines": 282413
+  },
+  {
+    "code": "oh",
+    "run_id": 36850829368,
+    "run_date": "2026-10-01T10:42:44Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-10-01T10:43:58.0385615Z 10:43:55 WARNING openstates: no session provided, using active sessions: {'136'}"
+    ],
+    "log_lines": 26597
+  },
+  {
+    "code": "ok",
+    "run_id": 36558930204,
+    "run_date": "2026-09-29T10:59:11Z",
+    "warning_count": 24,
+    "sample_warnings": [
+      "2026-09-29T11:00:58.7489073Z 11:00:57 WARNING openstates: no session provided, using active sessions: {'2026'}",
+      "2026-09-29T11:01:16.5129167Z 11:01:15 WARNING openstates: blank bill on http://www.oklegislature.gov/BillInfo.aspx?Bill=SJR1216&session=2600 - skipping",
+      "2026-09-29T11:01:16.5130158Z 11:01:15 WARNING openstates: skipping likely bad bill due to identifier SJR9999"
+    ],
+    "log_lines": 63142
+  },
+  {
+    "code": "or",
+    "run_id": 36578952796,
+    "run_date": "2026-09-29T13:57:10Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T13:58:17.1134943Z 13:58:11 WARNING openstates: no session provided, using active sessions: {'2026R1'}"
+    ],
+    "log_lines": 2166
+  },
+  {
+    "code": "pa",
+    "run_id": 36849714431,
+    "run_date": "2026-10-01T10:31:50Z",
+    "warning_count": 0,
+    "sample_warnings": [],
+    "log_lines": 1529
+  },
+  {
+    "code": "pr",
+    "run_id": 36850941896,
+    "run_date": "2026-10-01T10:43:50Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-10-01T10:45:24.4319121Z 10:45:23 WARNING openstates: no session provided, using active sessions: {'2025-2028'}"
+    ],
+    "log_lines": 57506
+  },
+  {
+    "code": "ri",
+    "run_id": 36556408591,
+    "run_date": "2026-09-29T10:34:32Z",
+    "warning_count": 323,
+    "sample_warnings": [
+      "2026-09-29T10:35:47.0522698Z 10:35:45 WARNING openstates: no session provided, using active sessions: {'2026'}",
+      "2026-09-29T10:35:56.7259256Z 10:35:56 WARNING openstates: No metainf for this bill. Aborting snag",
+      "2026-09-29T10:35:56.7261595Z 10:35:56 WARNING openstates: No metainf for this bill. Aborting snag"
+    ],
+    "log_lines": 25391
+  },
+  {
+    "code": "sc",
+    "run_id": 36554724021,
+    "run_date": "2026-09-29T10:18:15Z",
+    "warning_count": 493,
+    "sample_warnings": [
+      "2026-09-29T10:19:52.5111046Z 10:19:50 WARNING openstates: no session provided, using active sessions: {'2025-2026'}",
+      "2026-09-29T10:30:47.9030894Z 10:30:47 WARNING openstates: duplicate usage of https://www.scstatehouse.gov/votehistory.php?KEY=27873, skipping",
+      "2026-09-29T10:30:47.9035367Z 10:30:47 WARNING openstates: duplicate usage of https://www.scstatehouse.gov/votehistory.php?KEY=27900, skipping"
+    ],
+    "log_lines": 43496
+  },
+  {
+    "code": "sd",
+    "run_id": 36560550884,
+    "run_date": "2026-09-29T11:14:53Z",
+    "warning_count": 11,
+    "sample_warnings": [
+      "2026-09-29T11:17:25.4360130Z 11:17:24 WARNING openstates: no session provided, using active sessions: {'2026'}",
+      "2026-09-29T11:17:27.0827295Z 11:17:26 WARNING openstates: Bad Vote chamber: '3 A', skipping",
+      "2026-09-29T11:17:27.0829517Z 11:17:26 WARNING openstates: Bad Vote chamber: '3 A', skipping"
+    ],
+    "log_lines": 12737
+  },
+  {
+    "code": "tn",
+    "run_id": 36558826862,
+    "run_date": "2026-09-29T10:58:08Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T11:00:35.9245262Z 11:00:34 WARNING openstates: no session provided, using active sessions: {'114S1', '114'}"
+    ],
+    "log_lines": 107965
+  },
+  {
+    "code": "tx",
+    "run_id": 36558960944,
+    "run_date": "2026-09-29T10:59:29Z",
+    "warning_count": 73,
+    "sample_warnings": [
+      "2026-09-29T11:00:45.9552041Z 11:00:39 WARNING openstates: no session provided, using active sessions: {'892'}",
+      "2026-09-29T11:01:30.3425993Z 11:01:27 WARNING openstates: Skipping public hearing action with no date",
+      "2026-09-29T11:01:30.3429864Z 11:01:28 WARNING openstates: Skipping public hearing action with no date"
+    ],
+    "log_lines": 3752
+  },
+  {
+    "code": "usa",
+    "run_id": 36850308303,
+    "run_date": "2026-10-01T10:37:38Z",
+    "warning_count": 66,
+    "sample_warnings": [
+      "2026-10-01T10:40:41.6938820Z 10:40:37 WARNING openstates: no session provided, using active sessions: {'119'}",
+      "2026-10-01T10:47:10.6054063Z 10:47:10 WARNING openstates: Duplicate entry in 'documents' - URL: https://www.cbo.gov/publication/62127",
+      "2026-10-01T10:50:39.5854377Z 10:50:31 WARNING openstates: Duplicate entry in 'documents' - URL: https://www.congress.gov/119/crpt/hrpt108/CRPT-119hrpt108.pdf"
+    ],
+    "log_lines": 111989
+  },
+  {
+    "code": "ut",
+    "run_id": 36567835074,
+    "run_date": "2026-09-29T12:23:55Z",
+    "warning_count": 0,
+    "sample_warnings": [],
+    "log_lines": 1439
+  },
+  {
+    "code": "va",
+    "run_id": 36555790005,
+    "run_date": "2026-09-29T10:28:31Z",
+    "warning_count": 25,
+    "sample_warnings": [
+      "2026-09-29T10:29:49.3980460Z 10:29:49 WARNING openstates: Duplicate entry in 'documents' - URL: https://lis.virginia.gov/cgi-bin/legp604.exe?20261+oth+HB1000F122",
+      "2026-09-29T10:29:49.4729658Z 10:29:49 WARNING openstates: Duplicate entry in 'documents' - URL: https://lis.virginia.gov/cgi-bin/legp604.exe?20261+oth+HB1006F122",
+      "2026-09-29T10:29:49.4985768Z 10:29:49 WARNING openstates: Duplicate entry in 'documents' - URL: https://lis.virginia.gov/cgi-bin/legp604.exe?20261+oth+HB1007F122"
+    ],
+    "log_lines": 46409
+  },
+  {
+    "code": "vi",
+    "run_id": 36850812276,
+    "run_date": "2026-10-01T10:42:34Z",
+    "warning_count": 0,
+    "sample_warnings": [],
+    "log_lines": 1319
+  },
+  {
+    "code": "vt",
+    "run_id": 36555677874,
+    "run_date": "2026-09-29T10:27:24Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T10:28:37.3133265Z 10:28:30 WARNING openstates: no session provided, using active sessions: {'2025-2026'}"
+    ],
+    "log_lines": 19351
+  },
+  {
+    "code": "wa",
+    "run_id": 36575238198,
+    "run_date": "2026-09-29T13:27:34Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T13:29:13.5163488Z 13:29:05 WARNING openstates: no session provided, using active sessions: {'2025-2026'}"
+    ],
+    "log_lines": 45609
+  },
+  {
+    "code": "wi",
+    "run_id": 36311940248,
+    "run_date": "2026-09-27T10:15:17Z",
+    "warning_count": 0,
+    "sample_warnings": [],
+    "log_lines": 1606
+  },
+  {
+    "code": "wv",
+    "run_id": 36554056707,
+    "run_date": "2026-09-29T10:11:54Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T10:14:35.9146408Z 10:13:14 WARNING openstates: no session provided, using active sessions: {'2026'}"
+    ],
+    "log_lines": 31318
+  },
+  {
+    "code": "wy",
+    "run_id": 36563338775,
+    "run_date": "2026-09-29T11:41:47Z",
+    "warning_count": 1,
+    "sample_warnings": [
+      "2026-09-29T11:42:48.7782086Z 11:42:47 WARNING openstates: no session provided, using active sessions: {'2026'}"
+    ],
+    "log_lines": 6668
+  }
+]

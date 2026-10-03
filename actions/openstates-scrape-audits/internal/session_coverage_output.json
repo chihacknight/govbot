@@ -1,0 +1,552 @@
+[
+  {
+    "code": "ak",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-05-20",
+    "log_date_max": "20260716T000000Z",
+    "genuine_gap_days": -57,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "al",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-04-09",
+    "log_date_max": "20260508T040000Z",
+    "genuine_gap_days": -29,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "ar",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-04-29",
+    "log_date_max": "20260506T190630Z",
+    "genuine_gap_days": -7,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "az",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-06-13",
+    "log_date_max": "20260622T000000Z",
+    "genuine_gap_days": -9,
+    "last_commit": "2026-09-29",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "ca",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-08-31",
+    "log_date_max": "20260716T000000Z",
+    "genuine_gap_days": 46,
+    "last_commit": "2026-07-20",
+    "clone_could_explain_gap": true
+  },
+  {
+    "code": "co",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-05-13",
+    "log_date_max": "20260604T000000Z",
+    "genuine_gap_days": -22,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "ct",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-05-06",
+    "log_date_max": "20260604T000000Z",
+    "genuine_gap_days": -29,
+    "last_commit": "2026-09-29",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "dc",
+    "scraper_status": "active",
+    "session_status": "in",
+    "adjourns": "2026-12-31",
+    "log_date_max": "20261023T040000Z",
+    "genuine_gap_days": 69,
+    "last_commit": "2026-10-01",
+    "clone_could_explain_gap": true
+  },
+  {
+    "code": "de",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-06-30",
+    "log_date_max": "20260706T000000Z",
+    "genuine_gap_days": -6,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "fl",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-03-13",
+    "log_date_max": "20260701T000000Z",
+    "genuine_gap_days": -110,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "ga",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-04-02",
+    "log_date_max": "20280701T000000Z",
+    "genuine_gap_days": -821,
+    "last_commit": "2026-07-20",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "gu",
+    "scraper_status": "active",
+    "session_status": "in",
+    "adjourns": "2026-12-31",
+    "log_date_max": null,
+    "note": "no log files found"
+  },
+  {
+    "code": "hi",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-05-08",
+    "log_date_max": "20260714T000000Z",
+    "genuine_gap_days": -67,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "ia",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-04-21",
+    "log_date_max": "20260503T000000Z",
+    "genuine_gap_days": -12,
+    "last_commit": "2026-07-20",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "id",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-04-02",
+    "log_date_max": "20260402T000000Z",
+    "genuine_gap_days": 0,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "il",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-05-31",
+    "log_date_max": "20260713T000000Z",
+    "genuine_gap_days": -43,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "in",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-02-27",
+    "log_date_max": "20260312T000000Z",
+    "genuine_gap_days": -13,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "ks",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-04-10",
+    "log_date_max": "20260410T000000Z",
+    "genuine_gap_days": 0,
+    "last_commit": "2026-07-20",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "ky",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-04-15",
+    "log_date_max": "20260427T040000Z",
+    "genuine_gap_days": -12,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "la",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-06-01",
+    "log_date_max": "20260625T000000Z",
+    "genuine_gap_days": -24,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "ma",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-07-31",
+    "log_date_max": "20260730T000000Z",
+    "genuine_gap_days": 1,
+    "last_commit": "2026-07-16",
+    "clone_could_explain_gap": true
+  },
+  {
+    "code": "md",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-04-13",
+    "log_date_max": "20260531T000000Z",
+    "genuine_gap_days": -48,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "me",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-04-15",
+    "log_date_max": "20260414T000000Z",
+    "genuine_gap_days": 1,
+    "last_commit": "2026-07-20",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "mi",
+    "scraper_status": "active",
+    "session_status": "in",
+    "adjourns": "2026-12-31",
+    "log_date_max": "20260715T000000Z",
+    "genuine_gap_days": 169,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": true
+  },
+  {
+    "code": "mn",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-05-18",
+    "log_date_max": "20270101T000000Z",
+    "genuine_gap_days": -228,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "mo",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-05-15",
+    "log_date_max": "20260713T050000Z",
+    "genuine_gap_days": -59,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "mp",
+    "scraper_status": "active",
+    "session_status": "in",
+    "adjourns": "2026-12-31",
+    "log_date_max": "20350509T000000Z",
+    "genuine_gap_days": -3051,
+    "last_commit": "2026-07-14",
+    "clone_could_explain_gap": true
+  },
+  {
+    "code": "ms",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-04-15",
+    "log_date_max": "20260428T050000Z",
+    "genuine_gap_days": -13,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "mt",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": null,
+    "log_date_max": "20260325T175437Z",
+    "note": "no fixed Adjourns date (territory / no regular session / not a LegiScan jurisdiction)"
+  },
+  {
+    "code": "nc",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-08-31",
+    "log_date_max": "20260708T000000Z",
+    "genuine_gap_days": 54,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": true
+  },
+  {
+    "code": "nd",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": null,
+    "log_date_max": "20260128T000000Z",
+    "note": "no fixed Adjourns date (territory / no regular session / not a LegiScan jurisdiction)"
+  },
+  {
+    "code": "ne",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-04-17",
+    "log_date_max": "20260417T050000Z",
+    "genuine_gap_days": 0,
+    "last_commit": "2026-07-14",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "nh",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-06-04",
+    "log_date_max": "20260629T000000Z",
+    "genuine_gap_days": -25,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "nj",
+    "scraper_status": "active",
+    "session_status": "in",
+    "adjourns": "2028-01-11",
+    "log_date_max": "20260624T040000Z",
+    "genuine_gap_days": 566,
+    "last_commit": "2026-07-20",
+    "clone_could_explain_gap": true
+  },
+  {
+    "code": "nm",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-02-19",
+    "log_date_max": "20260429T000000Z",
+    "genuine_gap_days": -69,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "nv",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": null,
+    "log_date_max": "20251201T080000Z",
+    "note": "no fixed Adjourns date (territory / no regular session / not a LegiScan jurisdiction)"
+  },
+  {
+    "code": "ny",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-06-05",
+    "log_date_max": "20260713T000000Z",
+    "genuine_gap_days": -38,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "oh",
+    "scraper_status": "active",
+    "session_status": "in",
+    "adjourns": "2026-12-31",
+    "log_date_max": "20260923T040000Z",
+    "genuine_gap_days": 99,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": true
+  },
+  {
+    "code": "ok",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-05-14",
+    "log_date_max": "20260601T000000Z",
+    "genuine_gap_days": -18,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "or",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-03-06",
+    "log_date_max": "20260416T235700Z",
+    "genuine_gap_days": -41,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "pa",
+    "scraper_status": "active",
+    "session_status": "in",
+    "adjourns": "2026-11-30",
+    "log_date_max": "20260714T040000Z",
+    "genuine_gap_days": 139,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": true
+  },
+  {
+    "code": "pr",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-06-30",
+    "log_date_max": "20261104T040000Z",
+    "genuine_gap_days": -127,
+    "last_commit": "2026-07-20",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "ri",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-06-11",
+    "log_date_max": "20260626T000000Z",
+    "genuine_gap_days": -15,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "sc",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-05-14",
+    "log_date_max": "20260709T000000Z",
+    "genuine_gap_days": -56,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "sd",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-03-30",
+    "log_date_max": "20260330T000000Z",
+    "genuine_gap_days": 0,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "tn",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-04-24",
+    "log_date_max": "20260514T000000Z",
+    "genuine_gap_days": -20,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "tx",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": null,
+    "log_date_max": "20260415T000000Z",
+    "note": "no fixed Adjourns date (territory / no regular session / not a LegiScan jurisdiction)"
+  },
+  {
+    "code": "usa",
+    "scraper_status": "active",
+    "session_status": "in",
+    "adjourns": "2026-10-30",
+    "log_date_max": "20260709T040000Z",
+    "genuine_gap_days": 113,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": true
+  },
+  {
+    "code": "ut",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-03-07",
+    "log_date_max": "20260326T190825Z",
+    "genuine_gap_days": -19,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "va",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-03-14",
+    "log_date_max": "20260701T000000Z",
+    "genuine_gap_days": -109,
+    "last_commit": "2026-09-30",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "vi",
+    "scraper_status": "active",
+    "session_status": "in",
+    "adjourns": "2026-12-31",
+    "log_date_max": "20260519T000000Z",
+    "genuine_gap_days": 226,
+    "last_commit": "2026-07-14",
+    "clone_could_explain_gap": true
+  },
+  {
+    "code": "vt",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-05-29",
+    "log_date_max": "20260529T000000Z",
+    "genuine_gap_days": 0,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "wa",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-03-12",
+    "log_date_max": "20260401T000000Z",
+    "genuine_gap_days": -20,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "wi",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-03-19",
+    "log_date_max": "20260708T050000Z",
+    "genuine_gap_days": -111,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "wv",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-03-14",
+    "log_date_max": "20260629T000000Z",
+    "genuine_gap_days": -107,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  },
+  {
+    "code": "wy",
+    "scraper_status": "paused",
+    "session_status": "out",
+    "adjourns": "2026-03-11",
+    "log_date_max": "20260311T173342Z",
+    "genuine_gap_days": 0,
+    "last_commit": "2026-07-15",
+    "clone_could_explain_gap": false
+  }
+]

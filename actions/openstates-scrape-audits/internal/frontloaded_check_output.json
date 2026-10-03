@@ -1,0 +1,392 @@
+[
+  {
+    "code": "ak",
+    "bills_with_dates": 856,
+    "distinct_weeks": 38,
+    "busiest_week": "2025-01-20",
+    "busiest_week_share": 0.19
+  },
+  {
+    "code": "al",
+    "bills_with_dates": 1507,
+    "distinct_weeks": 30,
+    "busiest_week": "2026-01-12",
+    "busiest_week_share": 0.2
+  },
+  {
+    "code": "ar",
+    "bills_with_dates": 1930,
+    "distinct_weeks": 23,
+    "busiest_week": "2025-01-27",
+    "busiest_week_share": 0.12
+  },
+  {
+    "code": "az",
+    "bills_with_dates": 2188,
+    "distinct_weeks": 23,
+    "busiest_week": "2026-01-19",
+    "busiest_week_share": 0.31
+  },
+  {
+    "code": "ca",
+    "bills_with_dates": 5019,
+    "distinct_weeks": 59,
+    "busiest_week": "2025-02-17",
+    "busiest_week_share": 0.25
+  },
+  {
+    "code": "co",
+    "bills_with_dates": 749,
+    "distinct_weeks": 20,
+    "busiest_week": "2026-02-02",
+    "busiest_week_share": 0.17
+  },
+  {
+    "code": "ct",
+    "bills_with_dates": 1283,
+    "distinct_weeks": 12,
+    "busiest_week": "2026-02-23",
+    "busiest_week_share": 0.2
+  },
+  {
+    "code": "dc",
+    "bills_with_dates": 1834,
+    "distinct_weeks": 84,
+    "busiest_week": "2025-10-06",
+    "busiest_week_share": 0.04
+  },
+  {
+    "code": "de",
+    "bills_with_dates": 1294,
+    "distinct_weeks": 54,
+    "busiest_week": "2025-05-12",
+    "busiest_week_share": 0.05
+  },
+  {
+    "code": "fl",
+    "bills_with_dates": 1927,
+    "distinct_weeks": 34,
+    "busiest_week": "2026-01-05",
+    "busiest_week_share": 0.36
+  },
+  {
+    "code": "ga",
+    "bills_with_dates": 5656,
+    "distinct_weeks": 28,
+    "busiest_week": "2025-02-24",
+    "busiest_week_share": 0.06
+  },
+  {
+    "code": "gu",
+    "bills_with_dates": 0,
+    "note": "no bills have any dated action"
+  },
+  {
+    "code": "hi",
+    "bills_with_dates": 11420,
+    "distinct_weeks": 53,
+    "busiest_week": "2025-01-13",
+    "busiest_week_share": 0.31
+  },
+  {
+    "code": "ia",
+    "bills_with_dates": 3740,
+    "distinct_weeks": 34,
+    "busiest_week": "2025-03-03",
+    "busiest_week_share": 0.09
+  },
+  {
+    "code": "id",
+    "bills_with_dates": 1607,
+    "distinct_weeks": 25,
+    "busiest_week": "2026-02-16",
+    "busiest_week_share": 0.08
+  },
+  {
+    "code": "il",
+    "bills_with_dates": 12753,
+    "distinct_weeks": 83,
+    "busiest_week": "2025-02-03",
+    "busiest_week_share": 0.2
+  },
+  {
+    "code": "in",
+    "bills_with_dates": 935,
+    "distinct_weeks": 11,
+    "busiest_week": "2026-01-05",
+    "busiest_week_share": 0.56
+  },
+  {
+    "code": "ks",
+    "bills_with_dates": 1483,
+    "distinct_weeks": 24,
+    "busiest_week": "2025-02-03",
+    "busiest_week_share": 0.2
+  },
+  {
+    "code": "ky",
+    "bills_with_dates": 3178,
+    "distinct_weeks": 22,
+    "busiest_week": "2026-01-05",
+    "busiest_week_share": 0.12
+  },
+  {
+    "code": "la",
+    "bills_with_dates": 2628,
+    "distinct_weeks": 22,
+    "busiest_week": "2026-02-23",
+    "busiest_week_share": 0.38
+  },
+  {
+    "code": "ma",
+    "bills_with_dates": 11105,
+    "distinct_weeks": 81,
+    "busiest_week": "2025-02-24",
+    "busiest_week_share": 0.58
+  },
+  {
+    "code": "md",
+    "bills_with_dates": 5288,
+    "distinct_weeks": 62,
+    "busiest_week": "2026-02-02",
+    "busiest_week_share": 0.16
+  },
+  {
+    "code": "me",
+    "bills_with_dates": 2256,
+    "distinct_weeks": 43,
+    "busiest_week": "2025-03-03",
+    "busiest_week_share": 0.08
+  },
+  {
+    "code": "mi",
+    "bills_with_dates": 3848,
+    "distinct_weeks": 69,
+    "busiest_week": "2025-06-09",
+    "busiest_week_share": 0.04
+  },
+  {
+    "code": "mn",
+    "bills_with_dates": 10638,
+    "distinct_weeks": 32,
+    "busiest_week": "2025-02-10",
+    "busiest_week_share": 0.1
+  },
+  {
+    "code": "mo",
+    "bills_with_dates": 3220,
+    "distinct_weeks": 21,
+    "busiest_week": "2025-12-01",
+    "busiest_week_share": 0.4
+  },
+  {
+    "code": "mp",
+    "bills_with_dates": 296,
+    "distinct_weeks": 62,
+    "busiest_week": "2025-02-10",
+    "busiest_week_share": 0.07
+  },
+  {
+    "code": "ms",
+    "bills_with_dates": 4222,
+    "distinct_weeks": 15,
+    "busiest_week": "2026-01-19",
+    "busiest_week_share": 0.31
+  },
+  {
+    "code": "mt",
+    "bills_with_dates": 4495,
+    "distinct_weeks": 33,
+    "busiest_week": "2024-12-09",
+    "busiest_week_share": 0.32
+  },
+  {
+    "code": "nc",
+    "bills_with_dates": 2334,
+    "distinct_weeks": 33,
+    "busiest_week": "2025-03-24",
+    "busiest_week_share": 0.2
+  },
+  {
+    "code": "nd",
+    "bills_with_dates": 1101,
+    "distinct_weeks": 12,
+    "busiest_week": "2025-01-06",
+    "busiest_week_share": 0.36
+  },
+  {
+    "code": "ne",
+    "bills_with_dates": 1632,
+    "distinct_weeks": 33,
+    "busiest_week": "2025-01-13",
+    "busiest_week_share": 0.19
+  },
+  {
+    "code": "nh",
+    "bills_with_dates": 2464,
+    "distinct_weeks": 23,
+    "busiest_week": "2025-01-06",
+    "busiest_week_share": 0.2
+  },
+  {
+    "code": "nj",
+    "bills_with_dates": 19230,
+    "distinct_weeks": 64,
+    "busiest_week": "2026-01-12",
+    "busiest_week_share": 0.39
+  },
+  {
+    "code": "nm",
+    "bills_with_dates": 814,
+    "distinct_weeks": 9,
+    "busiest_week": "2026-02-02",
+    "busiest_week_share": 0.32
+  },
+  {
+    "code": "nv",
+    "bills_with_dates": 27,
+    "distinct_weeks": 2,
+    "busiest_week": "2025-11-10",
+    "busiest_week_share": 0.89
+  },
+  {
+    "code": "ny",
+    "bills_with_dates": 25321,
+    "distinct_weeks": 78,
+    "busiest_week": "2025-01-06",
+    "busiest_week_share": 0.14
+  },
+  {
+    "code": "oh",
+    "bills_with_dates": 2433,
+    "distinct_weeks": 80,
+    "busiest_week": "2026-05-11",
+    "busiest_week_share": 0.04
+  },
+  {
+    "code": "ok",
+    "bills_with_dates": 9261,
+    "distinct_weeks": 31,
+    "busiest_week": "2025-02-03",
+    "busiest_week_share": 0.67
+  },
+  {
+    "code": "or",
+    "bills_with_dates": 307,
+    "distinct_weeks": 5,
+    "busiest_week": "2026-02-02",
+    "busiest_week_share": 0.93
+  },
+  {
+    "code": "pa",
+    "bills_with_dates": 4856,
+    "distinct_weeks": 80,
+    "busiest_week": "2025-01-20",
+    "busiest_week_share": 0.05
+  },
+  {
+    "code": "pr",
+    "bills_with_dates": 5117,
+    "distinct_weeks": 82,
+    "busiest_week": "2024-12-30",
+    "busiest_week_share": 0.07
+  },
+  {
+    "code": "ri",
+    "bills_with_dates": 5612,
+    "distinct_weeks": 46,
+    "busiest_week": "2025-02-24",
+    "busiest_week_share": 0.13
+  },
+  {
+    "code": "sc",
+    "bills_with_dates": 2469,
+    "distinct_weeks": 29,
+    "busiest_week": "2024-12-02",
+    "busiest_week_share": 0.23
+  },
+  {
+    "code": "sd",
+    "bills_with_dates": 668,
+    "distinct_weeks": 10,
+    "busiest_week": "2026-01-26",
+    "busiest_week_share": 0.32
+  },
+  {
+    "code": "tn",
+    "bills_with_dates": 60,
+    "distinct_weeks": 10,
+    "busiest_week": "2024-12-16",
+    "busiest_week_share": 0.27
+  },
+  {
+    "code": "tx",
+    "bills_with_dates": 692,
+    "distinct_weeks": 4,
+    "busiest_week": "2025-08-18",
+    "busiest_week_share": 0.37
+  },
+  {
+    "code": "usa",
+    "bills_with_dates": 1702,
+    "distinct_weeks": 73,
+    "busiest_week": "2025-02-10",
+    "busiest_week_share": 0.16
+  },
+  {
+    "code": "ut",
+    "bills_with_dates": 39,
+    "distinct_weeks": 7,
+    "busiest_week": "2025-09-29",
+    "busiest_week_share": 0.49
+  },
+  {
+    "code": "va",
+    "bills_with_dates": 299,
+    "distinct_weeks": 11,
+    "busiest_week": "2026-06-15",
+    "busiest_week_share": 0.41
+  },
+  {
+    "code": "vi",
+    "bills_with_dates": 148,
+    "distinct_weeks": 25,
+    "busiest_week": "2025-01-13",
+    "busiest_week_share": 0.41
+  },
+  {
+    "code": "vt",
+    "bills_with_dates": 1718,
+    "distinct_weeks": 41,
+    "busiest_week": "2026-01-05",
+    "busiest_week_share": 0.12
+  },
+  {
+    "code": "wa",
+    "bills_with_dates": 3411,
+    "distinct_weeks": 36,
+    "busiest_week": "2025-01-20",
+    "busiest_week_share": 0.11
+  },
+  {
+    "code": "wi",
+    "bills_with_dates": 2751,
+    "distinct_weeks": 60,
+    "busiest_week": "2026-03-16",
+    "busiest_week_share": 0.06
+  },
+  {
+    "code": "wv",
+    "bills_with_dates": 5684,
+    "distinct_weeks": 22,
+    "busiest_week": "2026-01-12",
+    "busiest_week_share": 0.18
+  },
+  {
+    "code": "wy",
+    "bills_with_dates": 891,
+    "distinct_weeks": 21,
+    "busiest_week": "2025-01-13",
+    "busiest_week_share": 0.15
+  }
+]

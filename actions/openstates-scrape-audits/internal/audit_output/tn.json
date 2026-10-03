@@ -1,0 +1,536 @@
+{
+  "code": "tn",
+  "generated_at": "2026-10-02T02:19:31.542076+00:00",
+  "summary": {
+    "code": "tn",
+    "present": true,
+    "scraper": "paused",
+    "session": "out",
+    "fleet_monitor": {
+      "data_repo": {
+        "data_commit_age_hours": 231.94,
+        "workflows": [
+          {
+            "workflow": "extract-text.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 56.77
+          },
+          {
+            "workflow": "format.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 56.79
+          }
+        ]
+      },
+      "scraper_repo": {
+        "data_commit_age_hours": 62.49,
+        "workflows": [
+          {
+            "workflow": "openstates-scrape.yml",
+            "latest_conclusion": "success",
+            "hours_since_success": 304.51
+          }
+        ]
+      }
+    },
+    "last_commit": "2026-07-15T13:20:40+00:00",
+    "days_since_commit": 78.5,
+    "bill_count": 61,
+    "log_date_min": "20241106T000000Z",
+    "log_date_max": "20260514T000000Z",
+    "log_file_count": 1202,
+    "distinct_active_days": 143,
+    "busiest_day": "20250115",
+    "busiest_day_count": 67,
+    "busiest_day_share": 0.06,
+    "logs_per_bill": 19.7,
+    "vote_events_watermark": "2026-05-06T00:00:00",
+    "events_watermark": "1900-01-01T00:00:00",
+    "has_new_fields": false,
+    "implausible_fallbacks": {},
+    "orphan_count": 0,
+    "bills_indexed": 60
+  },
+  "bills": [
+    {
+      "id": "HB 0047",
+      "title": "Education - As enacted, authorizes local boards of education and public charter school governing bodies to allow schools in the LEA or the public charter school, as applicable, to display the Ten Commandments, the first sentence of the second paragraph of the preamble to the Declaration of Independence, and the preamble to the United States Constitution in a prominent location in a school building. - Amends TCA Title 49.",
+      "session": "114",
+      "action_count": 50,
+      "latest_action_date": "2026-05-14",
+      "latest_action_description": "Effective date(s) 07/01/2026"
+    },
+    {
+      "id": "HB 0040",
+      "title": "General Assembly, Directed Studies - As enacted, requires TACIR to study the availability of housing and other treatment facilities for juvenile offenders who have been adjudicated delinquent and committed to the department of children's services, and the availability of local juvenile detention centers and other facilities for the housing and treatment of juvenile offenders who have been detained by the juvenile court prior to an adjudicatory hearing; requires TACIR to report its findings and recommendations. - Amends TCA Title 37; Title 39 and Title 40.",
+      "session": "114",
+      "action_count": 22,
+      "latest_action_date": "2025-05-15",
+      "latest_action_description": "Comp. became Pub. Ch. 418"
+    },
+    {
+      "id": "HB 0049",
+      "title": "District Attorneys - As enacted, expands the proceedings for which a district attorney general pro tem may be appointed to include certain civil proceedings; declares meetings of the district attorneys general conference to be open meetings except for meetings related to certain matters; specifies that the executive director of the district attorneys general conference must provide legal counsel and advice to district attorneys general and their staff and that the legal counsel and advice may be provided by attorneys employed with the district attorneys general conference. - Amends TCA Title 8, Chapter 7, Part 1 and Title 8, Chapter 7, Part 3.",
+      "session": "114",
+      "action_count": 19,
+      "latest_action_date": "2025-05-13",
+      "latest_action_description": "Comp. became Pub. Ch. 312"
+    },
+    {
+      "id": "HB 0025",
+      "title": "Education - As enacted, generally provide that a middle school student or high school student who transfers from one member school to another is immediately eligible to participate in interscholastic athletics at the member school to which the student transfers if certain criteria is met. - Amends TCA Title 49.",
+      "session": "114",
+      "action_count": 20,
+      "latest_action_date": "2026-03-16",
+      "latest_action_description": "Comp. became Pub. Ch. 533"
+    },
+    {
+      "id": "HB 0022",
+      "title": "Open Meetings - As enacted, requires a local governing body subject to the open meetings laws to reserve a period of public comment to provide the public with the opportunity to comment on any matter germane to the jurisdiction of the governing body, regardless of whether the matter is listed on the agenda for the meeting. - Amends TCA Title 8, Chapter 44.",
+      "session": "114",
+      "action_count": 31,
+      "latest_action_date": "2026-03-30",
+      "latest_action_description": "Effective date(s) 03/26/2026"
+    },
+    {
+      "id": "HB 0014",
+      "title": "Abortion - As introduced, clarifies that the term \"abortion,\" as defined for the offense of criminal abortion, does not include the use of contraceptives, including any device, medication, biological product, or procedure that is generally intended for use in the prevention of pregnancy, whether specifically intended to prevent pregnancy or for other health needs, or the disposal of embryos resulting from fertility treatments, including healthcare services, procedures, testing, medications, treatments, or products. - Amends TCA Title 37; Title 39; Title 63 and Title 68.",
+      "session": "114",
+      "action_count": 9,
+      "latest_action_date": "2025-03-18",
+      "latest_action_description": "Failed in s/c Population Health Subcommittee of  Health Committee"
+    },
+    {
+      "id": "HB 0013",
+      "title": "Local Education Agencies - As introduced, requires LEAs and public charter schools to adopt a policy to prohibit students from using wireless communication devices during instructional time except in certain circumstances. - Amends TCA Title 49.",
+      "session": "114",
+      "action_count": 6,
+      "latest_action_date": "2025-02-03",
+      "latest_action_description": "Withdrawn."
+    },
+    {
+      "id": "HB 0048",
+      "title": "Veterans - As introduced, removes the market value cap used for calculating property tax relief on the primary residence for disabled veterans who are eligible for property tax relief and requires the state to fully reimburse such veterans for local property taxes paid for a given tax year on that property. - Amends TCA Title 67, Chapter 5, Part 7.",
+      "session": "114",
+      "action_count": 19,
+      "latest_action_date": "2025-04-15",
+      "latest_action_description": "Sponsor(s) Added."
+    },
+    {
+      "id": "HB 0041",
+      "title": "Education - As introduced, requires each local board of education and public charter school governing body to adopt a wireless communication policy that requires students to keep wireless communication devices turned off and stowed away during a classroom instructional day or during instructional time except in certain circumstances. - Amends TCA Title 49.",
+      "session": "114",
+      "action_count": 6,
+      "latest_action_date": "2025-02-06",
+      "latest_action_description": "Withdrawn."
+    },
+    {
+      "id": "HB 0046",
+      "title": "Children's Services, Dept. of - As introduced, requires that a reimbursement payment to a child advocacy center be completed within 30 days of receipt of a request for reimbursement; requires payment of a 10 percent late payment fee for failing to make a timely reimbursement to a child advocacy center; requires the department to submit to the general assembly an annual report on the timeliness of reimbursement payments to child advocacy centers. - Amends TCA Title 9 and Title 37.",
+      "session": "114",
+      "action_count": 18,
+      "latest_action_date": "2025-03-25",
+      "latest_action_description": "Returned to the Clerk's Desk."
+    },
+    {
+      "id": "HB 0012",
+      "title": "Local Education Agencies - As introduced, requires each local school board to establish a school lunch program and a school breakfast program that provide a free breakfast and lunch to each student enrolled in a school under the board's jurisdiction; requires the state to reimburse each LEA for the cost of providing a free breakfast and lunch to each student enrolled in the LEA after all available federal funds have been applied. - Amends TCA Title 49.",
+      "session": "114",
+      "action_count": 7,
+      "latest_action_date": "2025-03-11",
+      "latest_action_description": "Failed in s/c  Education Administration Subcommittee of  Education Committee"
+    },
+    {
+      "id": "HB 0015",
+      "title": "TennCare - As introduced, authorizes the governor to expand medicaid eligibility solely for the purpose of providing treatment for a patient with a diagnosis of sickle cell disease in accordance with the federal Patient Protection and Affordable Care Act and to negotiate with the centers for medicare and medicaid services with respect to the terms of such expansion. - Amends TCA Title 4 and Title 71, Chapter 5.",
+      "session": "114",
+      "action_count": 13,
+      "latest_action_date": "2025-03-19",
+      "latest_action_description": "Action def. in  Insurance Committee to 1/1/2026"
+    },
+    {
+      "id": "HB 0023",
+      "title": "Election Laws - As enacted, defines \"district,\" for purposes of municipal elections, to mean a district, region, precinct, sector, territory, ward, or other geographical area prescribed for the purposes of nominating and  electing candidates. - Amends TCA Title 2 and Title 6, Chapter 53.",
+      "session": "114",
+      "action_count": 27,
+      "latest_action_date": "2025-04-28",
+      "latest_action_description": "Effective date(s) 04/11/2025"
+    },
+    {
+      "id": "HB 0024",
+      "title": "Game and Fish Laws - As enacted, increases the criminal classification for hunting on the land of another without permission from a Class C misdemeanor to a Class B misdemeanor, punishable by a fine only, not to exceed $500 per violation.  - Amends TCA Title 70.",
+      "session": "114",
+      "action_count": 33,
+      "latest_action_date": "2025-05-15",
+      "latest_action_description": "Comp. became Pub. Ch. 407"
+    },
+    {
+      "id": "HB 0006",
+      "title": "Local Education Agencies - As enacted, authorizes LEAs to enroll LEAs' employees' children into the voluntary pre-kindergarten program if space is available after enrollment of at-risk children; authorizes LEAs to charge the employee tuition and fees for such enrollment. - Amends TCA Title 49, Chapter 6.",
+      "session": "114",
+      "action_count": 17,
+      "latest_action_date": "2025-04-29",
+      "latest_action_description": "Comp. became Pub. Ch. 225"
+    },
+    {
+      "id": "HB 0039",
+      "title": "Local Education Agencies - As introduced, enacts the \"Menstrual Hygiene Products Accessibility Act,\" which requires, instead of authorizes, LEAs and public charter schools to provide feminine hygiene products at no charge in all women's and girls' bathrooms, in all locker rooms, and with school nurses at each public senior high school for student use only. - Amends TCA Title 5; Title 6; Title 7; Title 49 and Title 67.",
+      "session": "114",
+      "action_count": 18,
+      "latest_action_date": "2025-04-09",
+      "latest_action_description": "Placed on s/c cal Finance, Ways, and Means Subcommittee for 4/14/2025"
+    },
+    {
+      "id": "HB 0001",
+      "title": "Education - As introduced, enacts the \"Education Freedom Act of 2025.\" - Amends TCA Title 4, Chapter 49 and Title 49.",
+      "session": "114",
+      "action_count": 8,
+      "latest_action_date": "2025-01-28",
+      "latest_action_description": "Assigned to s/c K-12 Subcommittee"
+    },
+    {
+      "id": "HB 0037",
+      "title": "Opioids - As enacted, authorizes an insurer, for purposes of group insurance plans offered to state employees, to adopt or amend a state preferred drug list (PDL); requires the insurer to ensure that a non-opioid drug approved by the U.S. food and drug administration for the treatment or management of pain is not disadvantaged or discouraged with respect to coverage relative to an opioid or narcotic drug for the treatment or management of pain on the PDL. - Amends TCA Title 8; Title 53; Title 56; Title 63; Title 68 and Title 71.",
+      "session": "114",
+      "action_count": 25,
+      "latest_action_date": "2025-04-28",
+      "latest_action_description": "Effective date(s) 01/01/2026"
+    },
+    {
+      "id": "HB 0008",
+      "title": "Law Enforcement - As introduced, requires an annual training pay bonus supplement for eligible campus police officers and public safety officers in the amount of $800. - Amends TCA Title 4; Title 38 and Section 49-7-118.",
+      "session": "114",
+      "action_count": 22,
+      "latest_action_date": "2026-04-15",
+      "latest_action_description": "Taken off notice for cal in s/c Finance, Ways and Means Subcommittee of Finance, Ways and Means Committee"
+    },
+    {
+      "id": "HB 0030",
+      "title": "Education - As enacted, empowers a student who is an English language learner and who received language assistance services in the classroom during the school year to receive the same language assistance services while taking a Tennessee comprehensive assessment program test or an end-of-course assessment, as long as the receipt of language assistance services does not invalidate the assessment. - Amends TCA Title 49.",
+      "session": "114",
+      "action_count": 25,
+      "latest_action_date": "2026-04-24",
+      "latest_action_description": "Comp. became Pub. Ch. 685"
+    },
+    {
+      "id": "HB 0055",
+      "title": "Criminal Offenses - As enacted, creates new misdemeanor offenses, including intentionally giving a false or fictitious name to a law enforcement officer who has lawfully detained or arrested such person. - Amends TCA Title 39; Title 40; Title 54 and Title 55.",
+      "session": "114",
+      "action_count": 29,
+      "latest_action_date": "2025-05-15",
+      "latest_action_description": "Comp. became Pub. Ch. 409"
+    },
+    {
+      "id": "HB 0052",
+      "title": "Veterans - As introduced, enacts the \"Veterans Assistance for Livelihood, Opportunity, and Relief (VALOR) Act,\" which exempts disabled veterans who have 100 percent permanent and total disability from a service-connected cause from the payment of certain taxes and fees. - Amends TCA Section 5-8-102; Title 55, Chapter 4; Title 67 and Title 70, Chapter 2.",
+      "session": "114",
+      "action_count": 18,
+      "latest_action_date": "2025-07-17",
+      "latest_action_description": "Sponsor(s) Added."
+    },
+    {
+      "id": "HB 0031",
+      "title": "County Government - As introduced, authorizes county governments to publish required public notices on the applicable county's website in lieu of publication in a newspaper of general circulation as long as such publication complies with all other requirements for publication, including the period for publication. - Amends TCA Section 1-3-120; Title 5; Title 8, Chapter 44 and Title 10, Chapter 7.",
+      "session": "114",
+      "action_count": 6,
+      "latest_action_date": "2025-02-06",
+      "latest_action_description": "Withdrawn."
+    },
+    {
+      "id": "HB 0036",
+      "title": "State Inmates - As enacted, requires by July 1, 2027, and each July 1 thereafter, the commissioner of correction to deliver to the chairs of legislative committees with jurisdiction over the department of correction a report containing data with regard to individuals who may be certified eligible for parole for being chronically debilitated or incapacitated. - Amends TCA Title 40 and Title 41.",
+      "session": "114",
+      "action_count": 15,
+      "latest_action_date": "2026-04-06",
+      "latest_action_description": "Comp. became Pub. Ch. 631"
+    },
+    {
+      "id": "HB 0009",
+      "title": "Tennessee Investment in Student Achievement (TISA) - As introduced, revises the weighted allocations generated by a student for purposes of the TISA based on the number of student members of the LEA in which the student resides; establishes a $50 direct allocation for each student member of each LEA to assist each LEA with maintenance and infrastructure. - Amends TCA Title 49, Chapter 3.",
+      "session": "114",
+      "action_count": 20,
+      "latest_action_date": "2025-03-25",
+      "latest_action_description": "Failed in s/c  K-12 Subcommittee of  Education Committee"
+    },
+    {
+      "id": "HB 0007",
+      "title": "Education, Higher - As introduced, establishes the hunger-free campus grant program; provides grants to higher education institutions to address student hunger. - Amends TCA Title 49.",
+      "session": "114",
+      "action_count": 24,
+      "latest_action_date": "2026-04-15",
+      "latest_action_description": "Taken off notice for cal in s/c Finance, Ways, and Means Subcommittee of Finance, Ways, and Means Committee"
+    },
+    {
+      "id": "HB 0038",
+      "title": "Juvenile Offenders - As introduced, requires a juvenile court, upon finding a child has committed a third or subsequent delinquent act, to enter an order of restitution against the parent, legal custodian, or guardian who had custody of the child at the time of the act for the expenses incurred by any law enforcement agency in responding to and investigating the delinquent act. - Amends TCA Title 37.",
+      "session": "114",
+      "action_count": 14,
+      "latest_action_date": "2025-03-20",
+      "latest_action_description": "Held on desk."
+    },
+    {
+      "id": "HB 0053",
+      "title": "Veterans - As introduced, declares certain actions by a person advising, assisting, or consulting on veterans' benefits matters for compensation to be an unfair or deceptive act or practice affecting trade or commerce and to be subject to the penalties and remedies as provided in the Tennessee Consumer Protection Act of 1977. - Amends TCA Title 47, Chapter 18 and Title 58, Chapter 3.",
+      "session": "114",
+      "action_count": 6,
+      "latest_action_date": "2025-01-27",
+      "latest_action_description": "Withdrawn."
+    },
+    {
+      "id": "HB 0054",
+      "title": "Unclaimed Property - As introduced, allows the treasurer to file the annual report regarding the total amount and value of abandoned or unclaimed property with executive and legislative branch officials electronically. - Amends TCA Title 43; Title 44; Title 47; Title 48 and Title 66.",
+      "session": "114",
+      "action_count": 4,
+      "latest_action_date": "2025-01-15",
+      "latest_action_description": "caption bill, held on desk - pending amdt."
+    },
+    {
+      "id": "HB 0021",
+      "title": "Taxes, Sales - As introduced, exempts from the state sales and use tax the retail sale of food and food ingredients. - Amends TCA Title 57, Chapter 3 and Title 67.",
+      "session": "114",
+      "action_count": 16,
+      "latest_action_date": "2025-04-09",
+      "latest_action_description": "Placed on s/c cal Finance, Ways, and Means Subcommittee for 4/14/2025"
+    },
+    {
+      "id": "HB 0019",
+      "title": "Insurance, Health, Accident - As introduced, enacts the \"Tennessee State Healthcare Cost Savings Incentive Program.\" - Amends TCA Title 8, Chapter 27 and Title 56, Chapter 7, Part 6.",
+      "session": "114",
+      "action_count": 6,
+      "latest_action_date": "2025-01-27",
+      "latest_action_description": "Withdrawn."
+    },
+    {
+      "id": "HB 0026",
+      "title": "Abortion - As introduced, enacts the \"Unborn Child Protection Act of 2025.\" - Amends TCA Title 29; Title 39, Chapter 15, Part 2; Title 53; Title 63 and Title 68.",
+      "session": "114",
+      "action_count": 13,
+      "latest_action_date": "2025-03-04",
+      "latest_action_description": "Taken off notice for cal in s/c Population Health Subcommittee of  Health Committee"
+    },
+    {
+      "id": "HB 0010",
+      "title": "Immigration - As introduced, requires a law enforcement agency in custody of an individual unlawfully present in the United States to request an immigration detainer and detain such individual for the maximum period as specified in the detainer; requires such agency to transport such individuals not taken into federal custody to a sanctuary city; requires department of revenue to request reimbursement for costs of detention and transportation of illegal aliens and to withhold federal petroleum taxes collected in this state if such reimbursement is not received.  - Amends TCA Title 4; Title 7; Title 38; Title 39; Title 55 and Title 67.",
+      "session": "114",
+      "action_count": 10,
+      "latest_action_date": "2025-03-18",
+      "latest_action_description": "Failed in s/c  Departments & Agencies Subcommittee of  State & Local Government Committee"
+    },
+    {
+      "id": "HB 0028",
+      "title": "Insurance, Motor Vehicles - As introduced, prohibits an insurance company from requiring a visually impaired owner of a motor vehicle to obtain a commercial motor vehicle liability policy in lieu of a standard owner's policy of liability insurance if the covered motor vehicle is not used for commercial purposes. - Amends TCA Title 55, Chapter 12.",
+      "session": "114",
+      "action_count": 9,
+      "latest_action_date": "2025-03-11",
+      "latest_action_description": "Taken off notice for cal. in  Transportation Committee"
+    },
+    {
+      "id": "HB 0017",
+      "title": "Pensions and Retirement Benefits - As introduced, enacts the \"Tennessee Retirement Savings Plan Act.\" - Amends TCA Title 4; Title 8; Title 9 and Title 50.",
+      "session": "114",
+      "action_count": 6,
+      "latest_action_date": "2025-01-27",
+      "latest_action_description": "Withdrawn."
+    },
+    {
+      "id": "HB 0043",
+      "title": "State Symbols - As introduced, designates \"Tennessee\" by Arrested Development as an official state song. - Amends TCA Title 4, Chapter 1, Part 3.",
+      "session": "114",
+      "action_count": 8,
+      "latest_action_date": "2025-02-19",
+      "latest_action_description": "Failed in  State & Local Government Committee"
+    },
+    {
+      "id": "HB 0044",
+      "title": "Drugs, Prescription - As introduced, allows a student to possess and self-administer rescue seizure medication at school or at a school-related activity or event.  - Amends TCA Title 49, Chapter 50, Part 16.",
+      "session": "114",
+      "action_count": 5,
+      "latest_action_date": "2025-01-28",
+      "latest_action_description": "Assigned to s/c Education Administration Subcommittee"
+    },
+    {
+      "id": "HB 0029",
+      "title": "Chiropractors - As enacted, requires certain insurers to reimburse chiropractic physicians at the same rate as physicians for the same services.  - Amends TCA Title 56, Chapter 7 and Title 63.",
+      "session": "114",
+      "action_count": 50,
+      "latest_action_date": "2026-05-14",
+      "latest_action_description": "Effective date(s) 01/01/2027"
+    },
+    {
+      "id": "HB 0016",
+      "title": "Traffic Safety - As introduced, requires the department of transportation to establish and administer a student pedestrian protection grant program; under certain conditions, authorizes grants to be awarded to local governments for designing, constructing, and repairing sidewalk infrastructure around public schools. - Amends TCA Title 4; Title 49; Title 54 and Title 55.",
+      "session": "114",
+      "action_count": 19,
+      "latest_action_date": "2025-04-09",
+      "latest_action_description": "Placed on s/c cal Finance, Ways, and Means Subcommittee for 4/14/2025"
+    },
+    {
+      "id": "HB 0011",
+      "title": "Driver Licenses - As introduced, requires the department of safety to redesign driver licenses, instruction permits, intermediate driver licenses, and photo identification cards issued to lawful permanent residents of the United States, and temporary driver licenses and permits and temporary photo identification licenses issued to qualified noncitizens, so that the licenses and permits may be easily distinguished from driver and photo identification licenses issued to residents of this state who are United States citizens. - Amends TCA Title 55, Chapter 50.",
+      "session": "114",
+      "action_count": 6,
+      "latest_action_date": "2025-01-27",
+      "latest_action_description": "Withdrawn."
+    },
+    {
+      "id": "HB 0018",
+      "title": "TennCare - As introduced, directs the bureau to establish a temporary TennCare benefits program to provide medical assistance on a temporary basis to certain individuals who do not qualify for enrollment in TennCare, CoverKids, or a successor program; requires the bureau to submit a waiver to the federal centers for medicare and medicaid services by December 31, 2025. - Amends TCA Title 71, Chapter 5.",
+      "session": "114",
+      "action_count": 13,
+      "latest_action_date": "2025-03-05",
+      "latest_action_description": "Failed in  Insurance Committee"
+    },
+    {
+      "id": "HB 0027",
+      "title": "Abortion - As introduced, enacts the \"Reproductive Freedom Act.\" - Amends TCA Title 4; Title 5; Title 6; Title 7; Title 20; Title 29; Title 37; Title 39; Title 49; Title 53; Title 56; Title 63; Title 68 and Title 71.",
+      "session": "114",
+      "action_count": 9,
+      "latest_action_date": "2025-03-11",
+      "latest_action_description": "Failed in s/c Population Health Subcommittee of  Health Committee"
+    },
+    {
+      "id": "HB 0020",
+      "title": "Military - As enacted, specifies that the state guard is a separate entity within the military department for budgetary purposes. - Amends TCA Title 9, Chapter 4 and Title 58.",
+      "session": "114",
+      "action_count": 30,
+      "latest_action_date": "2025-05-08",
+      "latest_action_description": "Effective date(s) 05/02/2025"
+    },
+    {
+      "id": "HB 0045",
+      "title": "Criminal Offenses - As enacted, increases the penalty from a Class A misdemeanor to a Class E felony for a person who commits child abuse by knowingly treating a child between 9 and 17 in such a manner as to inflict injury.  - Amends TCA Title 36; Title 37; Title 39 and Title 40.",
+      "session": "114",
+      "action_count": 32,
+      "latest_action_date": "2025-05-27",
+      "latest_action_description": "Effective date(s) 07/01/2025"
+    },
+    {
+      "id": "HB 0042",
+      "title": "Education, Dept. of - As introduced, changes the date, from July 1 to August 1, that the department must annually report to the general assembly on receipts and expenditures for the school safety alert grant pilot fund. - Amends TCA Title 49.",
+      "session": "114",
+      "action_count": 5,
+      "latest_action_date": "2025-01-27",
+      "latest_action_description": "Withdrawn."
+    },
+    {
+      "id": "HB 0060",
+      "title": "Highway Signs - As enacted, requires the department of transportation to install signs or markers displaying language or an appropriate symbol indicating to motorists that a rest area or welcome center has a family restroom; requires the department to post on its website rest areas and welcome centers that have family restrooms. - Amends TCA Title 4, Chapter 3; Title 12 and Title 54.",
+      "session": "114",
+      "action_count": 27,
+      "latest_action_date": "2025-05-15",
+      "latest_action_description": "Comp. became Pub. Ch. 412"
+    },
+    {
+      "id": "HB 0058",
+      "title": "Law Enforcement - As introduced, requires an employing law enforcement agency to contact any prior law enforcement agency that employed the agency's officer or special deputy as part of the thorough investigation into the person's good moral character. - Amends TCA Title 38, Chapter 8.",
+      "session": "114",
+      "action_count": 9,
+      "latest_action_date": "2025-02-12",
+      "latest_action_description": "Withdrawn."
+    },
+    {
+      "id": "HB 0051",
+      "title": "Lottery,  Corporation - As introduced, requires each county to levy a tax at the rate of 5 percent of the sales price of lottery tickets or shares when sold at retail within the jurisdiction of the county; requires the state to administer the collection of the tax.   - Amends TCA Title 4; Title 5; Title 6; Title 7; Title 9; Title 49 and Title 67.",
+      "session": "114",
+      "action_count": 5,
+      "latest_action_date": "2025-01-28",
+      "latest_action_description": "Assigned to s/c Departments & Agencies Subcommittee"
+    },
+    {
+      "id": "HB 0056",
+      "title": "County Government - As enacted, authorizes certain county legislative bodies, by a two-thirds vote, to remove any member of an appointed board or commission, if such removal is recommended by the appointing authority and the member of the board or commission is given at least five business days' notice of the meeting when the vote on removal will occur. - Amends TCA Title 5.",
+      "session": "114",
+      "action_count": 28,
+      "latest_action_date": "2025-04-04",
+      "latest_action_description": "Effective date(s) 04/03/2025"
+    },
+    {
+      "id": "HB 0002",
+      "title": "Taxes - As introduced, enacts the \"End the Grocery Tax by Closing Corporate Loopholes Act.\" - Amends TCA Title 57 and Title 67.",
+      "session": "114",
+      "action_count": 11,
+      "latest_action_date": "2025-03-19",
+      "latest_action_description": "Def. to Summer Study in Finance, Ways, and Means Subcommittee"
+    },
+    {
+      "id": "HB 0005",
+      "title": "Remedies and Special Proceedings - As introduced, increases the amount of compensation an injured plaintiff in a civil action may receive for noneconomic damages from $750,000 to $1.5 million; increases the amount of compensation an injured plaintiff in a civil action may receive for noneconomic damages, if the injury or loss is catastrophic in nature, from $1 million to $2 million. - Amends TCA Section 29-39-102.",
+      "session": "114",
+      "action_count": 40,
+      "latest_action_date": "2026-03-26",
+      "latest_action_description": "Sponsor(s) Added."
+    },
+    {
+      "id": "HB 0033",
+      "title": "Bail, Bail Bonds - As enacted, establishes a presumption that a defendant should not be released on the defendant\u2019s personal recognizance if the defendant is charged with a felony offense that involved the use or display of a firearm or resulted in the serious bodily injury or death of the victim; requires a magistrate who determines that the presumption has been rebutted to include in the bail order written findings for each factor considered in making such a determination. - Amends TCA Title 40.",
+      "session": "114",
+      "action_count": 30,
+      "latest_action_date": "2026-03-30",
+      "latest_action_description": "Comp. became Pub. Ch. 604"
+    },
+    {
+      "id": "HB 0034",
+      "title": "Juvenile Offenders - As enacted, permits a court to use juvenile court records, including the disposition and evidence, in pretrial reports used to set bond for certain criminal offenses; requires the magistrate to consider the defendant's prior juvenile record in determining the defendant's risk of danger to the community. - Amends TCA Title 37 and Title 40.",
+      "session": "114",
+      "action_count": 27,
+      "latest_action_date": "2025-05-15",
+      "latest_action_description": "Comp. became Pub. Ch. 414"
+    },
+    {
+      "id": "HB 0057",
+      "title": "Municipal Government - As enacted, specifies penalties for a municipality that fails to timely provide the comptroller of the treasury with copies of audits of the accounts and records of all departments, boards, and agencies under the municipality's jurisdiction that receive and disburse funds. - Amends TCA Title 6, Chapter 56, Part 1.",
+      "session": "114",
+      "action_count": 19,
+      "latest_action_date": "2025-03-21",
+      "latest_action_description": "Comp. became Pub. Ch. 18"
+    },
+    {
+      "id": "HB 0050",
+      "title": "Celina - Subject to local approval, increases the number of aldermen from three to five. - Amends Chapter 90 of the Private Acts of 1991; as amended.",
+      "session": "114",
+      "action_count": 12,
+      "latest_action_date": "2025-03-21",
+      "latest_action_description": "Comp. became Pr. Ch. 1"
+    },
+    {
+      "id": "HB 0059",
+      "title": "Insurance, Life - As introduced, for life insurance policies issued, amended, or renewed on or after July 1, 2025, prohibits the issuer of the policy from collecting premiums from the policy holder once the policy holder has made premium payments, in the aggregate, equal to the amount of coverage under the life insurance policy. - Amends TCA Title 56.",
+      "session": "114",
+      "action_count": 6,
+      "latest_action_date": "2025-01-27",
+      "latest_action_description": "Withdrawn."
+    },
+    {
+      "id": "HB 0035",
+      "title": "Regional Authorities and Special Districts - As enacted, adds the MidSouth development district to the list of development districts to which this state intends to assist financially; specifies an overall state funding level for the nine development districts; changes the calculation for how much funding each development district will receive.  - Amends TCA Title 13, Chapter 14, Part 1.",
+      "session": "114",
+      "action_count": 33,
+      "latest_action_date": "2025-05-08",
+      "latest_action_description": "Effective date(s) 05/02/2025"
+    },
+    {
+      "id": "HB 0032",
+      "title": "Hospitals and Health Care Facilities - As introduced, removes the restriction on the direct employment of radiologists, pathologists, anesthesiologists, and emergency physicians by hospitals and certain healthcare facilities. - Amends TCA Title 47; Title 63 and Title 68.",
+      "session": "114",
+      "action_count": 9,
+      "latest_action_date": "2025-03-19",
+      "latest_action_description": "Taken off notice for cal in s/c  Health Subcommittee of  Health Committee"
+    },
+    {
+      "id": "HB 0004",
+      "title": "Tort Liability and Reform - As introduced, increases the amount that a person may recover in an action brought against a local governmental entity under the Tennessee Governmental Tort Liability Act for claims brought on or after July 1, 2025, to $750,000 for the bodily injury or death of a person, $1.5 million for the bodily injury or death of all persons in an accident, occurrence, or act, and $250,000 for the injury or destruction of property of others. - Amends TCA Title 29.",
+      "session": "114",
+      "action_count": 21,
+      "latest_action_date": "2025-04-09",
+      "latest_action_description": "No Action Taken"
+    },
+    {
+      "id": "HB 0003",
+      "title": "Courts, Supreme Court of Tennessee - As introduced, requires the expenses of the Tennessee supreme court to include each year an amount sufficient to provide the chief justice with a security detail to transport and accompany the chief justice on all official state business. - Amends TCA Title 16 and Title 17.",
+      "session": "114",
+      "action_count": 4,
+      "latest_action_date": "2025-01-16",
+      "latest_action_description": "Withdrawn."
+    }
+  ]
+}
