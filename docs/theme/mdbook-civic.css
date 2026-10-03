@@ -364,7 +364,8 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
   background: var(--cc); color: #0B1119; font-size: 14px; font-weight: 600; line-height: 1.3; white-space: nowrap;
   box-shadow: 0 6px 16px rgba(0,0,0,.28); opacity: 0; transform: translateY(-4px); transition: opacity .25s ease, transform .25s ease; }
 .gl-cur-chat.is-on { opacity: 1; transform: none; }
-.gl-cur.is-saying { z-index: 2; }
+.gl-cur.is-lead { z-index: 3; }
+.gl-cur.is-saying { z-index: 4; }
 .gl-cur.flip .gl-cur-chat { left: auto; right: 14px; border-radius: 14px 4px 14px 14px; }
 .gl-cur-chat::after { content: ""; display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -2px;
   background: currentColor; animation: gl-blink 1s steps(1) infinite; }

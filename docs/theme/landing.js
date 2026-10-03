@@ -659,12 +659,22 @@
       return x + lw > keep.x0 && x - 20 < keep.x1 && y + lh > keep.y0 && y < keep.y1;
     }
     // A spot clear of the copy, preferably one reached without gliding across it.
-    function pick(fx0, fy0, big) {
+    // Would a name tag parked at x,y sit on another cursor's tag (where it is, or where it's heading)?
+    function crowded(x, y, me) {
+      var lw = phone ? 150 : 180;
+      for (var i = 0; i < cur.length; i++) {
+        var o = cur[i];
+        if (o === me) continue;
+        if ((Math.abs(x - o.tx) < lw && Math.abs(y - o.ty) < 42) || (Math.abs(x - o.x) < lw && Math.abs(y - o.y) < 42)) return true;
+      }
+      return false;
+    }
+    function pick(fx0, fy0, big, me) {
       var best = null;
       for (var t = 0; t < 40; t++) {
         var x = 12 + Math.random() * Math.max(40, W - (big ? (phone ? 220 : 260) : (phone ? 150 : 190)));
         var y = 12 + Math.random() * Math.max(40, H - (big ? 92 : 44));
-        if (overCopy(x, y, big)) continue;
+        if (overCopy(x, y, big) || (t < 30 && crowded(x, y, me))) continue;
         best = best || { x: x, y: y };
         if (fx0 == null) return best;
         var crosses = false;
@@ -711,7 +721,7 @@
       cur = [];
       for (var i = 0; i < slots; i++) {
         var el = document.createElement("div");
-        el.className = "gl-cur";
+        el.className = i === 0 ? "gl-cur is-lead" : "gl-cur";   // @sartaj draws on top
         el.innerHTML = '<span class="gl-cur-ring"></span>' + ARROW + '<span class="gl-cur-label"></span>' +
           (i === 0 ? '<span class="gl-cur-chat"></span>' : "");
         layer.appendChild(el);
@@ -763,7 +773,7 @@
       if (k === "marq") busy.marq = false;
       c.task = null;
       c.pause = 0.4 + Math.random();
-      var n = pick(c.x, c.y, c.big); c.tx = n.x; c.ty = n.y;
+      var n = pick(c.x, c.y, c.big, c); c.tx = n.x; c.ty = n.y;
     }
     // One frame of a task's work; the cursor keeps its spring toward t.at() while it works.
     function work(c, t, dt) {
@@ -836,6 +846,17 @@
         var idle = cur.filter(function (o) { return !o.task && o.say < 0; });
         if (idle.length) startTask(idle[Math.floor(Math.random() * idle.length)]);
       }
+      // Gentle separation: two cursors whose name tags overlap drift apart vertically.
+      for (var a = 0; a < cur.length; a++) {
+        for (var b = a + 1; b < cur.length; b++) {
+          var p = cur[a], q = cur[b], ddx = q.x - p.x, ddy = q.y - p.y, lw = phone ? 140 : 165;
+          if (Math.abs(ddx) < lw && Math.abs(ddy) < 36) {
+            var sgn = ddy >= 0 ? 1 : -1, f = (36 - Math.abs(ddy)) * 26 * dt;
+            if (!(p.task && p.task.phase === "work")) p.vy -= sgn * f;
+            if (!(q.task && q.task.phase === "work")) q.vy += sgn * f;
+          }
+        }
+      }
       cur.forEach(function (c, i) {
         if (c.rv > 0) c.rv = Math.max(0, c.rv - dt * 1.6);
         if (c.chat && c.say >= 0) {                      // typing, then holding the line
@@ -846,7 +867,11 @@
         }
         var t = c.task;
         if (t) { var p = t.at(); c.tx = p.x; c.ty = p.y; }
-        else if (c.pause > 0) { c.pause -= dt; place(c); return; }
+        else if (c.pause > 0) {                            // parked — but still let a nudge settle it
+          c.pause -= dt;
+          if (Math.abs(c.vy) > 1) { c.y = Math.max(8, Math.min(H - 40, c.y + c.vy * dt)); c.vy *= 0.85; }
+          place(c); return;
+        }
         // A soft spring toward the next spot: quick start, gentle arrival, a hint of overshoot.
         var dx = c.tx - c.x, dy = c.ty - c.y;
         var k = t && t.kind === "marq" && t.el ? 2.4 : 5.2;    // dragging a box is slower
@@ -870,7 +895,7 @@
             while (shown.indexOf(w) !== -1) { next++; w = next % PEOPLE.length; }
             setPerson(c, w); next++;
           }
-          var nn = pick(c.x, c.y, c.big); c.tx = nn.x; c.ty = nn.y;
+          var nn = pick(c.x, c.y, c.big, c); c.tx = nn.x; c.ty = nn.y;
         }
         place(c);
       });
@@ -893,8 +918,8 @@
       measure();
       cur.forEach(function (c) {
         if (c.task) return;
-        if (overCopy(c.x, c.y, c.big)) { var a = pick(null, null, c.big); c.x = a.x; c.y = a.y; }
-        var n = pick(c.x, c.y, c.big); c.tx = n.x; c.ty = n.y; place(c);
+        if (overCopy(c.x, c.y, c.big)) { var a = pick(null, null, c.big, c); c.x = a.x; c.y = a.y; }
+        var n = pick(c.x, c.y, c.big, c); c.tx = n.x; c.ty = n.y; place(c);
       });
     });
     if (typed) typed.textContent = "";                // the live prompt starts empty; cursors type into it
@@ -917,7 +942,7 @@
           fx.innerHTML = ""; busy = { term: false, yml: false, note: 0, marq: false };
           if (typed) typed.textContent = "";
           build();
-        } else if (Math.abs(space.clientWidth - lastW) > 40) cur.forEach(function (c) { if (!c.task) { var n = pick(c.x, c.y, c.big); c.tx = n.x; c.ty = n.y; } });
+        } else if (Math.abs(space.clientWidth - lastW) > 40) cur.forEach(function (c) { if (!c.task) { var n = pick(c.x, c.y, c.big, c); c.tx = n.x; c.ty = n.y; } });
         lastW = space.clientWidth;
       }, 150);
     });
