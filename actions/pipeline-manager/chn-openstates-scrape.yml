@@ -484,5 +484,13 @@ locales:
     scrape_timeout_minutes: "720"
     scrape_cron: "0 4 * * *"  # Eastern
     runner: self-hosted
+    # Temporary custom image carrying a fix for an unhandled KeyError on
+    # Senate votes with result text "Concurrent Resolution Rejected" (crashed
+    # the whole usa scrape on 2026-10-02, see fix branch
+    # fix/usa-senate-vote-concurrent-resolution-rejected on
+    # tamara-builds/openstates-scrapers). Fix not yet merged upstream.
+    # Revert to the config default (by deleting this line) once it merges
+    # and openstates/scrapers:latest is rebuilt with the fix.
+    docker_image: "ghcr.io/tamara-builds/openstates-scrapers:usa-fix-test"
     labels:
     - working
