@@ -110,7 +110,7 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 /* mdbook's `.content a:link` colours every link blue and out-ranks plain class
    rules — pin the landing's button/card/timeline text colours. */
 .gb-landing a.gl-btn-primary, .gb-landing a.gl-btn-primary:hover { color: var(--gb-on-primary) !important; }
-.gb-landing a.gl-btn-ghost, .gb-landing a.gl-feed, .gb-landing a.gl-bot,
+.gb-landing a.gl-btn-ghost,
 .gb-landing a.activity-row, .gb-landing .gl-timeline a { color: var(--gb-text) !important; }
 .gb-landing .gl-timeline a:hover { color: var(--gb-gold-hi) !important; }
 .gb-landing p { line-height: 1.55; margin: 0; }
@@ -238,18 +238,6 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-pill[hidden] { display: none; }
 .gl-elect-then { padding-top: 12px; border-top: 1px solid var(--gb-border); font-size: 14px; color: var(--gb-text-2); }
 .gl-elect-then[hidden] { display: none; }
-.gb-landing .gl-feed { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 12px;
-  border-bottom: 1px solid var(--gb-border); border-radius: 12px; color: var(--gb-text); text-decoration: none; }
-.gb-landing .gl-feed:last-child { border-bottom: 0; }
-.gb-landing .gl-feed:hover { background: var(--gb-hover); }
-.gl-feed > span:first-child { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.gl-feed-t, .gl-bot-t { font-size: 16px; font-weight: 600; color: var(--gb-text); }
-.gl-feed-p { font-size: 13.5px; color: var(--gb-text-muted); overflow-wrap: anywhere; }
-.gl-feed-go { flex: none; font-size: 14.5px; font-weight: 600; color: var(--pc); }
-.gl-bots { gap: 12px; }
-.gb-landing .gl-bot { display: flex; flex-direction: column; gap: 4px; padding: 18px; border: 1px solid var(--gb-border);
-  border-radius: 16px; text-decoration: none; color: var(--gb-text); }
-.gb-landing .gl-bot:hover { border-color: var(--pc); background: var(--gb-hover); }
 /* Social bots slide: topics, platform buttons and a live auto-scrolling feed of the bots' real posts
    (filled by landing.js). --gl-fgold is a true gold (the brand --gb-gold is green now) for the
    feed's posted date, action chip, topic and "View post" — 4.5:1+ on the card in both themes. */
