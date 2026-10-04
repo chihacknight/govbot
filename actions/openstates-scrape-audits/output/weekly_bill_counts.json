@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-10-02",
+  "as_of": "2026-10-04",
   "states": {
     "ak": {
       "count": 0,
@@ -30,8 +30,8 @@
       "days_with_data": 0
     },
     "dc": {
-      "count": 11,
-      "days_with_data": 1
+      "count": 33,
+      "days_with_data": 2
     },
     "de": {
       "count": 0,
@@ -190,8 +190,8 @@
       "days_with_data": 0
     },
     "usa": {
-      "count": 0,
-      "days_with_data": 0
+      "count": 345,
+      "days_with_data": 1
     },
     "ut": {
       "count": 0,
