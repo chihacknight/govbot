@@ -547,6 +547,8 @@
     letter-spacing: 0.04em; color: var(--text-muted);
   }
   .m-plain { color: var(--text-primary); line-height: 1.5; }
+  .m-plain.is-lines { white-space: pre-line; }   /* official summaries keep their bullet lines */
+  .m-plain-src { margin-top: 8px; }
   .m-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
   .m-list li { font-size: 13px; color: var(--text-secondary); }
   .m-list li b { color: var(--text-primary); font-weight: 600; }
@@ -2150,6 +2152,9 @@
     //    and it carries no abstract).
     const il = ilSummaries && ilSummaries[billKey(b)];
     if (il && il.trim()) return il.trim();
+    // 1b) The official summary document's prose (MI/TN/ID/LA), from summaries/<state>.json.
+    const ss = stateSummaryFor(b);
+    if (ss) return ss[0];
     // 2) The official abstract, when the record has one.
     const abs = meta && meta.abstracts && meta.abstracts[0] && meta.abstracts[0].abstract;
     if (abs && abs.trim()) return abs.trim();
@@ -2173,6 +2178,43 @@
   // billKey() — IL's stored title is a cryptic short-code and govbot carries no
   // abstract, so this is the plain-language summary for IL bills. Fetched fail-soft
   // (absent in local dev / before the first backfill → the modal falls back).
+  // Official summaries for states whose record links a nonpartisan summary document
+  // (Michigan HFA/SFA analyses, Tennessee fiscal notes, Idaho statements of purpose,
+  // Louisiana digests), extracted at deploy by scripts/build_bill_summaries.py into
+  // summaries/<state>.json = {billKey: [summary, source URL]}. Keep this list in sync
+  // with that script's STATES. Loaded per state on first open, fail-soft ({}).
+  const SUMMARY_STATES = ["mi", "tn", "id", "la"];
+  const stateSummaries = {};   // state -> {data} once loaded
+  function loadStateSummaries(st) {
+    if (SUMMARY_STATES.indexOf(st) < 0) return Promise.resolve(null);
+    if (!stateSummaries[st]) {
+      stateSummaries[st] = { data: null };
+      stateSummaries[st].p = fetch("summaries/" + st + ".json")
+        .then((r) => (r.ok ? r.json() : null)).catch(() => null)
+        .then((d) => { stateSummaries[st].data = d || {}; });
+    }
+    return stateSummaries[st].p;
+  }
+  function stateSummaryFor(b) {
+    const e = stateSummaries[b.state], v = e && e.data && e.data[billKey(b)];
+    return v && v[0] ? v : null;
+  }
+  // The bill's own linked summary-type document (many states publish one: analyses,
+  // digests, bill reports, statements of purpose), HTML preferred — linked from
+  // "What is this bill about" so a reader can always reach the official summary.
+  function summaryDocUrl(meta) {
+    const docs = (meta && meta.documents) || [];
+    const d = docs.find((x) => /summar|digest|analys|statement of purpose|bill report|synops/i.test((x && x.note) || "") &&
+                                !/fiscal|amendment/i.test(x.note));
+    if (!d || !d.links || !d.links.length) return "";
+    const h = d.links.find((l) => /html/.test(l.media_type || ""));
+    return ((h || d.links[0]).url) || "";
+  }
+  function fullTextUrl(meta) {
+    const v = ((meta && meta.versions) || []).find((x) => x && x.links && x.links.length);
+    return v ? (v.links[0].url || "") : "";
+  }
+
   let ilSummaries = null;
   fetch("il_summaries.json")
     .then((r) => (r.ok ? r.json() : null))
@@ -2708,10 +2750,10 @@
       } else { modalPushed = false; }  // opened from the deep link itself — no entry of ours
     } catch (e) { /* history unavailable — the modal still works */ }
 
-    fetch(govbotMetaUrl(b))
-      .then((r) => (r.ok ? r.json() : null))
-      .catch(() => null)
-      .then((meta) => { if (myKey === modalKey) renderDetailsBody(body, b, meta); });
+    Promise.all([
+      fetch(govbotMetaUrl(b)).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      loadStateSummaries(b.state),
+    ]).then(([meta]) => { if (myKey === modalKey) renderDetailsBody(body, b, meta); });
   }
 
   function closeDetails(fromPop) {
@@ -2743,7 +2785,30 @@
       body.append(mkel("p", "m-muted",
         "The full govbot record couldn’t be loaded for this bill — showing the basics; use the links below for the official source."));
     }
-    addSection(body, "What is this bill about", mkel("p", "m-plain", plainSummary(b, meta)));
+    { // "What is this bill about": the best summary we have, never just the title again.
+      const wrap = mkel("div");
+      const sum = plainSummary(b, meta);
+      const norm = (x) => String(x || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+      // Only claim "no summary published" when the record actually loaded; a failed
+      // fetch (meta null) just means we couldn't check.
+      const restates = !!meta && (norm(sum) === norm(b.title) || norm(sum) === norm(prettyTitle(b.title || "")));
+      const ss = stateSummaryFor(b);
+      const docUrl = (ss && ss[1]) || summaryDocUrl(meta);
+      if (restates) {
+        wrap.append(mkel("p", "m-plain m-muted",
+          "The legislature hasn’t published a plain-language summary for this bill yet. Its title above is the official description."));
+      } else {
+        wrap.append(mkel("p", "m-plain" + (ss && sum === ss[0] ? " is-lines" : ""), sum));
+      }
+      const link = docUrl ? ["Read the official summary ↗", docUrl]
+                 : (restates && fullTextUrl(meta)) ? ["Read the full bill text ↗", fullTextUrl(meta)] : null;
+      if (link) {
+        const row = mkel("div", "m-links m-plain-src");
+        const a = mkel("a", null, link[0]); a.href = link[1]; a.target = "_blank"; a.rel = "noopener";
+        row.append(a); wrap.append(row);
+      }
+      addSection(body, "What is this bill about", wrap);
+    }
 
     // Share this bill — a real link (copy-link / middle-click work) whose left-click
     // copies the deep link. Placed prominently above the Status timeline.
@@ -2854,7 +2919,12 @@
     }
     const links = mkel("div", "m-links");
     // ("Share this bill" now sits above the Status section, not here.)
-    if (officialUrl) links.append(mlink("Official source ↗", officialUrl));
+    // Name whose site it is: "Official Michigan Legislature site", "Official U.S. Congress site".
+    if (officialUrl) {
+      const body2 = b.state === "usa" ? "U.S. Congress" : b.state === "dc" ? "D.C. Council"
+        : (state.stateNames[b.state] || (b.state || "").toUpperCase()) + " Legislature";
+      links.append(mlink("Official " + body2 + " site ↗", officialUrl));
+    }
     links.append(mlink("govbot record ↗", govbotRecordUrl(b)));
     links.append(mlink("Open States ↗",
       "https://openstates.org/" + b.state + "/bills/" + encodeURIComponent(b.session) + "/" + encodeURIComponent(billDirId(b.id)) + "/"));

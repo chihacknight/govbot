@@ -138,3 +138,8 @@ docs/src/dashboard/legislator_images.json
 # from official ILGA full text during the Pages deploy (scripts/build_il_summaries.py),
 # carried between runs by actions/cache and published with the site — not committed.
 docs/src/dashboard/il_summaries.json
+
+# Official bill summaries for MI/TN/ID/LA ("What this bill is about"): build artifacts
+# extracted during the Pages deploy (scripts/build_bill_summaries.py), cached between
+# runs by actions/cache and published with the site — not committed.
+docs/src/dashboard/summaries/

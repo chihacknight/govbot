@@ -160,7 +160,7 @@
         (b.sponsors || []).forEach(function (name) {
           var m = matchLeg(b.state, name, people);
           var full = m ? m[1] : name;
-          var photo = photoPath(b.state, full);
+          var photo = photoPath(b.state, full) || photoPath(b.state, name);
           if (!m && !photo) return;
           pics.push({ full: full, pm: partyMeta(m ? (m[2] || "") : ""), photo: photo });
         });

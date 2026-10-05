@@ -103,7 +103,23 @@ def _area(role):
     return f"{chamber} · {district}".strip(" ·")
 
 
-def load_person(path):
+def _federal_area(role):
+    """Seat label for a member of Congress: "U.S. House · NY-7", "U.S. House · ND
+    at-large" (Open States' "ND-AL"), or "U.S. Senate · Indiana"."""
+    if not role:
+        return ""
+    district = str(role.get("district") or "").strip()
+    kind = (role.get("type") or "").strip().lower()
+    if kind == "upper":
+        return ("U.S. Senate · " + district) if district else "U.S. Senate"
+    if kind == "lower":
+        if district.upper().endswith("-AL"):
+            district = district[:-3] + " at-large"
+        return ("U.S. House · " + district) if district else "U.S. House"
+    return ""
+
+
+def load_person(path, federal=False):
     """Return (given, family, full, party, area) for one legislator YAML, or
     None to skip.
 
@@ -128,25 +144,27 @@ def load_person(path):
     # Only legislative roles describe a seat; _area() ignores anything else.
     roles = [r for r in (doc.get("roles") or [])
              if isinstance(r, dict) and (r.get("type") or "").strip().lower() in _CHAMBER]
-    area = _area(_current(roles))
+    area = (_federal_area if federal else _area)(_current(roles))
     return given, family, full, party, area
 
 
 def build_roster(people_dir):
-    """Walk data/<state>/legislature/*.yml into {state: {family_lower: [[given, full]]}}."""
+    """Walk data/<state>/legislature/*.yml into {state: {family_lower: [[given, full, party, area]]}}.
+
+    Congress (data/us) is included under "usa" — data.json's federal state code —
+    so federal bill sponsors get their party and seat ("U.S. House · NY-7") too."""
     data_dir = Path(people_dir) / "data"
     roster = {}
     count = 0
-    # Federal (data/us) sponsors already arrive with full names, so there is
-    # nothing to enrich there; skip it to keep the file lean and collision-free.
-    for state_dir in sorted(p for p in data_dir.glob("*") if p.is_dir() and p.name != "us"):
-        state = state_dir.name
+    for state_dir in sorted(p for p in data_dir.glob("*") if p.is_dir()):
+        federal = state_dir.name == "us"
+        state = "usa" if federal else state_dir.name
         leg_dir = state_dir / "legislature"
         if not leg_dir.is_dir():
             continue
         by_family = {}
         for yml in sorted(leg_dir.glob("*.yml")):
-            person = load_person(yml)
+            person = load_person(yml, federal=federal)
             if not person:
                 continue
             given, family, full, party, area = person

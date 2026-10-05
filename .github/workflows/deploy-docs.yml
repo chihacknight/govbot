@@ -53,7 +53,7 @@ jobs:
       #      rebuilds and publishes with the committed data.)
       #
       # Everything except data.json + the two .gitignore'd artifacts
-      # (il_summaries.json, legislator_images.json + assets/legislators/) is
+      # (il_summaries.json, summaries/, legislator_images.json + assets/legislators/) is
       # committed with real data, so the only thing the fast path must restore is
       # those. If the cache is missing (or holds only the tiny sample data.json),
       # a push to main falls back to a full refresh so we never publish stale/
@@ -111,7 +111,7 @@ jobs:
           fi
 
       # On the fast path, restore the last full build's data.json + gitignored
-      # artifacts (IL synopses, sponsor-photo manifest + images) so the deploy
+      # artifacts (IL synopses, state summaries, sponsor-photo manifest + images) so the deploy
       # carries the same real data the scheduled build produced.
       - name: Restore last full build's data
         id: builtdata
@@ -121,6 +121,7 @@ jobs:
           path: |
             docs/src/dashboard/data.json
             docs/src/dashboard/il_summaries.json
+            docs/src/dashboard/summaries
             docs/src/dashboard/legislator_images.json
             docs/src/dashboard/assets/legislators
           key: govbot-built-data-${{ github.run_id }}
@@ -319,6 +320,33 @@ jobs:
             --cap 1500 \
             || echo "::warning::IL synopsis build reported errors; bills stay unsummarized"
           ls -lh docs/src/dashboard/il_summaries.json 2>/dev/null || true
+
+      # Official bill summaries for states whose bills otherwise just repeat their
+      # title under "What this bill is about": the summary document each legislature
+      # publishes and Open States links in the bill's record (MI House/Senate fiscal
+      # agency analyses, TN fiscal notes, ID statements of purpose, LA digests). A
+      # summary is kept only when the document names that bill. Same model as the IL
+      # synopses: cached between runs, capped per run (newest activity first,
+      # round-robin across states) so the backlog fills over successive deploys,
+      # fully fail-soft. Writes summaries/<state>.json (gitignored).
+      - name: Cache official bill summaries
+        if: steps.gate.outputs.refresh == 'true'
+        uses: actions/cache@v4
+        with:
+          path: docs/src/dashboard/summaries
+          key: bill-summaries-${{ github.run_id }}
+          restore-keys: |
+            bill-summaries-
+      - name: Build official bill summaries
+        if: steps.gate.outputs.refresh == 'true'
+        run: |
+          set -uo pipefail
+          python3 scripts/build_bill_summaries.py \
+            --data docs/src/dashboard/data.json \
+            --out-dir docs/src/dashboard/summaries \
+            --cap 2500 \
+            || echo "::warning::bill summary build reported errors; bills stay unsummarized"
+          ls -lh docs/src/dashboard/summaries 2>/dev/null || true
 
       # Live committee hearings + witness-slip windows (IL: ilga.gov, WA:
       # leg.wa.gov, MA: malegislature.gov, AK: akleg.gov). This is a rolling near-future window, separate from the
@@ -566,6 +594,7 @@ jobs:
           path: |
             docs/src/dashboard/data.json
             docs/src/dashboard/il_summaries.json
+            docs/src/dashboard/summaries
             docs/src/dashboard/legislator_images.json
             docs/src/dashboard/assets/legislators
           key: govbot-built-data-${{ github.run_id }}

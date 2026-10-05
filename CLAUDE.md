@@ -199,8 +199,9 @@ ambiguous surname). **Photos are vendored at deploy, never committed** by
 `scripts/fetch_sponsor_photos.py` (deploy-docs.yml, "Vendor sponsor photos for on-screen bills",
 after `data.json` is built) — only for the sponsors of the on-screen bills (newest 1/state, small
 cap), **including federal**: the `data/us` Congress roster is aliased to `usa` (data.json's federal
-state code) and those entries are keyed in the manifest by the **raw sponsor name** (the frontend has
-no `us` people-roster, so its `photoFor` looks them up by raw name); the Wikipedia guard, which needs a
+state code) and those entries are keyed in the manifest by the **raw sponsor name** and aliased to the
+roster full name (people.json now carries Congress under `usa`, so the landing's `photoPath` tries the
+resolved full name, then the raw name); the Wikipedia guard, which needs a
 state for state bills, instead requires a distinctly-federal congressional role phrase for `usa`. Into
 `docs/src/dashboard/assets/legislators/` + a manifest `legislator_images.json`
 (`{"<state>:<full name lower>": "assets/legislators/<file>"}` — the frontend's lookup key). Both the
@@ -269,6 +270,30 @@ left verbatim rather than risk corrupting subsection case), and a synopsis line 
 (`.ilrc-syn`) and Springfield (`.sf-syn`) cards. All fetched fail-soft (absent before the first backfill
 → the pages fall back). Offline-tested against real extracted IL bill text in
 `scripts/__snapshots__/il_fulltext/`: `python3 scripts/test_build_il_summaries.py`.
+
+**Official summaries for MI / TN / ID / LA.** In many states govbot's metadata has no abstract, so
+"What this bill is about" used to just restate the title. Four of those legislatures publish a
+nonpartisan summary of each bill that Open States already links in the bill's `documents`:
+Michigan's House/Senate Fiscal Agency analyses (`SUMMARY:` / `CONTENT`), Tennessee's fiscal note
+(`SUMMARY OF BILL:`), Idaho's Statement of Purpose, and Louisiana's digest (its `Abstract:` unless it
+only restates the title, else the "Proposed/New law" paragraphs). `scripts/build_bill_summaries.py`
+reads them (HTML preferred, PDFs via `pdftotext`) into **`docs/src/dashboard/summaries/<state>.json`**
+= `{billKey: [summary, source document URL]}` — a **`.gitignore`d build artifact** carried between runs
+by `actions/cache` (deploy-docs.yml, "Cache/Build official bill summaries", and in the fast-path
+built-data cache). **Never the wrong bill:** a summary is kept only when the document's header names
+that bill's number (`mentions_bill`) — Open States sometimes links another bill's document (a TN HB
+linked to a different SB's fiscal note). Same bounded/incremental/fail-soft model as the IL synopses
+(cap per run, newest activity first, round-robin across states; a definitive miss is cached
+`["",""]`, a transient failure retries). Its User-Agent is `chihacknight-civic-data/1.0`: Michigan's
+site returns 403 for any UA containing "bot" or a URL. The legislation modal loads only the opened
+bill's state file (`SUMMARY_STATES` in legislation.html — keep in sync with the script's `STATES`),
+shows the summary (bullet lines kept, `.m-plain.is-lines`) with a **"Read the official summary ↗"**
+link (the shard's source URL, else any summary-type document in the record — analyses, digests,
+bill reports — so CA/FL/OH get the link too). When the only text left would repeat the title, the
+modal says instead that the legislature hasn't published a plain-language summary and links the
+full bill text — only when the record loaded (a failed fetch never claims that). Offline-tested
+against real documents in `scripts/__snapshots__/bill_summaries/`:
+`python3 scripts/test_build_bill_summaries.py`.
 
 The **"Next hearings open to comment"** card renders each date as a little
 **calendar figure** (`.mini-date`: a gold month band with two binding rings, a big day numeral, and
@@ -756,7 +781,9 @@ feeds stay one item per race. All feed dates (both pipelines) are published in *
 (CST/CDT)** via a shared `America/Chicago` `FEED_TZ` + `_to_822`/`_date_822` helpers.
 The page has an "On this page" table of contents; every RSS control reads "Follow this
 race (RSS)" in red; each major section carries a thick colored top border; the Legislation
-Dashboard's Bill column is plain text (the official-source link lives in the details card). Each
+Dashboard's Bill column is plain text (the official-source link lives in the details card, labelled
+by whose site it is — "Official Michigan Legislature site ↗", "Official U.S. Congress site ↗",
+"Official D.C. Council site ↗"). Each
 bill row also has a **"Share"** button beside "Details" (and a **"Share this bill"** pill in the bill
 modal, placed **above the Status section** — `.m-sharerow`, not in Sources) that copies the **exact-bill deep link** `legislation.html#bill=<state~session~id>`
 (`billShareUrl` → `billKey`); opening it lands straight on that bill's modal (`applyDeepLink`'s
@@ -768,7 +795,10 @@ of the party color fills the pill) — and seat** (chamber + district, e.g. "Sen
 resolved from the `people.json` roster: `scripts/build_people_roster.py` emits `[given, full, party, area]`
 per legislator (from the Open States people repo — the current party role and current legislative seat;
 name fields keep their positions so resolution is unchanged, party/area degrade to "" when
-unknown). Offline-tested in `scripts/test_build_people_roster.py`. The frontend matcher (`matchLegislator`)
+unknown). **Congress is included** (Open States `data/us` → the `usa` key, data.json's federal code)
+with federal seat labels from `_federal_area` — "U.S. House · NY-7", "U.S. House · ND at-large" (from
+"ND-AL"), "U.S. Senate · Indiana" — so federal sponsors show party + seat too. Offline-tested in
+`scripts/test_build_people_roster.py`. The frontend matcher (`matchLegislator`)
 resolves a sponsor to that roster entry robustly: it strips a trailing generational **suffix**
 ("Marcus C. Evans, Jr.", "Joseph P. Addabbo Jr.", "Emil Jones, III") so the surname isn't read as the
 suffix, and falls back to a **two-word surname** key ("Ochoa Bogh", "Avila Farias") when the last word
@@ -781,10 +811,13 @@ shown on the page as context *beside* the races (never mixed into candidate list
 `springfield.xml` feed. The section is **always shown** when there's any Illinois content
 (`revealSpringfield`, ungated like the calendar) and carries **three filter tabs — Elections & voting
 / Education / Other** (the old "All" tab was removed; default is Elections & voting). Elections & voting
-and Education come from the curated `springfield` list (`springfieldBills()` filters by tag); **Other**
+and Education merge the curated `springfield` list (which carries ILGA hearing info) with the IL bills
+from data.json tagged with that topic (deduped by id, so the tabs stay filled even when the curated list
+is empty); **Other**
 is the general recent IL activity merged in from the retired standalone section — `state.ilBills` (all
 tracked IL bills) minus anything already tagged elections/education, newest recorded action first. **Every
-tab is capped at `SF_MAX_PER_TAB` (9)** to stay scannable. The one `#sf-search` box (its own full-width
+tab shows only bills with activity in the last 6 months (`SF_RECENT_DAYS`, newest first) and is capped
+at `SF_MAX_PER_TAB` (9)** to stay scannable. The one `#sf-search` box (its own full-width
 row so its placeholder isn't clipped) filters within the active tab (id/title/sponsor/action/tags). Each
 Springfield bill card (`renderSpringfieldBill`) leads with an **"IL" badge before the bill id**, its
 **topic tags as colored-dot chips** (`sfTagColor` → the shared `ilTagColor`, so a topic reads the same

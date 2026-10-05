@@ -85,14 +85,32 @@ class Roster(unittest.TestCase):
             roster, _ = r.build_roster(d)
         self.assertEqual(roster["wy"]["doe"], [["Jane", "Jane Doe", "", ""]])
 
-    def test_skips_us_and_nameless(self):
+    def test_skips_nameless(self):
         with tempfile.TemporaryDirectory() as d:
-            _write(d, "us", "rep.yml",
-                   "name: Fed Person\ngiven_name: Fed\nfamily_name: Person\n")
             _write(d, "ak", "bad.yml", "given_name: NoFamily\n")
             roster, count = r.build_roster(d)
-        self.assertNotIn("us", roster)
+        self.assertEqual(roster, {})
         self.assertEqual(count, 0)
+
+    def test_congress_is_usa_with_federal_seats(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(d, "us", "rep.yml",
+                   "name: Nydia Velazquez\ngiven_name: Nydia\nfamily_name: Velazquez\n"
+                   "party:\n- name: Democratic\nroles:\n"
+                   "- {type: lower, district: NY-12, start_date: 2011-01-05, end_date: 2013-01-03}\n"
+                   "- {type: lower, district: NY-7, start_date: 2025-01-03, end_date: 2027-01-03}\n")
+            _write(d, "us", "al.yml",
+                   "name: Julie Fedorchak\ngiven_name: Julie\nfamily_name: Fedorchak\n"
+                   "party:\n- name: Republican\nroles:\n- {type: lower, district: ND-AL, start_date: 2025-01-03}\n")
+            _write(d, "us", "sen.yml",
+                   "name: Todd Young\ngiven_name: Todd\nfamily_name: Young\n"
+                   "party:\n- name: Republican\nroles:\n- {type: upper, district: Indiana, start_date: 2023-01-03}\n")
+            roster, count = r.build_roster(d)
+        self.assertNotIn("us", roster)
+        self.assertEqual(count, 3)
+        self.assertEqual(roster["usa"]["velazquez"], [["Nydia", "Nydia Velazquez", "Democratic", "U.S. House · NY-7"]])
+        self.assertEqual(roster["usa"]["fedorchak"][0][3], "U.S. House · ND at-large")
+        self.assertEqual(roster["usa"]["young"][0][3], "U.S. Senate · Indiana")
 
 
 if __name__ == "__main__":
