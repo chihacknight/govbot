@@ -804,7 +804,10 @@ resolves a sponsor to that roster entry robustly: it strips a trailing generatio
 suffix, and falls back to a **two-word surname** key ("Ochoa Bogh", "Avila Farias") when the last word
 alone doesn't resolve — both were dropping the party on a lot of sponsors across states — while still
 refusing to guess an ambiguous bare surname (several "Smith"s → no party rather than a wrong one). It also attaches a top-level
-`springfield` list — the **"rules of the game"**: IL bills from the legislation
+`springfield` list — the **"rules of the game"** (the section is now headed **"The laws that shape your
+ballot — from Springfield"**, sub-copy "The Illinois laws and bills that shape how elections work, from
+campaign finance and voting rules to ward boundaries and school governance." + "Other is Govbot's general
+recent Illinois legislative activity."): IL bills from the legislation
 `data.json` tagged `elections & voting` or `education` (the elected CPS board, ward/runoff
 rules, campaign finance), cross-referenced with `hearings.json` for upcoming ILGA hearings,
 shown on the page as context *beside* the races (never mixed into candidate lists) plus a
@@ -1028,6 +1031,9 @@ cycle, so the first race's `timeline` is used), plus a "View full details and ca
 Each office card carries a **full 4-sided border in its office colour** (`.office-card` `border: 2px
 solid var(--gc)`, not just a top stripe) so it's distinguishable by more than a thin line
 (accessibility).
+The hero copy (tagline, "Next election" line, the "Live now" coverage note, the "Data as of" pill — via
+`header.top p`), the "What's on your ballot?" date cards (`.bc-label`/`.bc-count`) and the office cards'
+race/candidate counts (`.oc-count`) are all full-contrast `--text-primary`, not dimmed.
 A **legibility rule at the end of the stylesheet** (so it wins by source order) sets these to full
 contrast (`--text-primary`), not dimmed: the office-card descriptions (`.oc-blurb`), the Chicago-map
 "Click a ward…" hint (`.cm-empty`), the election-calendar card copy (`.calendar` `.cal-*`/`.tl-*`), and

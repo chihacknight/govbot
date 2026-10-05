@@ -24,13 +24,13 @@
     flex-wrap: wrap; margin: 0 0 4px;
   }
   header.top h1 { font-size: 22px; font-weight: 650; margin: 0; }
-  header.top p  { margin: 0; color: var(--text-secondary); max-width: 76ch; }
+  header.top p  { margin: 0; color: var(--text-primary); max-width: 76ch; }
   header.top .docs-link { font-size: 13px; }
   .asof {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 3px 10px;
     border: 1px solid var(--border); border-radius: 999px;
-    font-size: 12.5px; color: var(--text-secondary);
+    font-size: 12.5px; color: var(--text-primary);
   }
   .asof .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--series-2); flex: none; }
   .asof b { color: var(--text-primary); font-weight: 600; }
@@ -209,7 +209,7 @@
   @media (prefers-reduced-motion: reduce) { .office-card:hover { transform: none; } }
   .oc-ico { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 22px; background: color-mix(in srgb, var(--gc) 15%, transparent); }
   .oc-name { font-size: 17px; font-weight: 700; }
-  .oc-count { font-size: 12.5px; color: var(--text-secondary); }
+  .oc-count { font-size: 12.5px; color: var(--text-primary); }
   .oc-blurb { margin: 0; font-size: 12.5px; color: var(--text-secondary); line-height: 1.45; }
   .oc-tl-lbl { font-size: 11px; font-weight: 650; color: var(--gc, var(--series-2)); margin-bottom: 8px; }
   .oc-tl .tl { padding-left: 2px; }
@@ -563,11 +563,11 @@
   .el-hero { display: flex; align-items: center; gap: 26px; margin-top: 8px; }
   .el-hero-copy { flex: 1 1 auto; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
   .el-hero h1 { margin: 2px 0 0; font-size: 48px; line-height: 1.02; }
-  .el-tagline { margin: 0; font-family: var(--gb-font-display); font-size: 20px; color: var(--text-secondary); }
-  .el-next { margin: 4px 0 0; font-size: 14px; color: var(--series-2); font-weight: 600; }
+  .el-tagline { margin: 0; font-family: var(--gb-font-display); font-size: 20px; color: var(--text-primary); }
+  .el-next { margin: 4px 0 0; font-size: 14px; color: var(--text-primary); font-weight: 600; }
   .el-cta-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
   /* Tiny hero chip: makes the current coverage scope clear up top. */
-  .el-cov { display: flex; align-items: flex-start; gap: 8px; font-size: 13.5px; line-height: 1.5; color: var(--text-secondary); max-width: 62ch; }
+  .el-cov { display: flex; align-items: flex-start; gap: 8px; font-size: 13.5px; line-height: 1.5; color: var(--text-primary); max-width: 62ch; }
   .el-cov strong { color: var(--text-primary); font-weight: 700; }
   .el-cov-dot { width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--gb-green); box-shadow: 0 0 8px var(--gb-green); flex: none; }
   .el-docs { margin: 8px 0 0; font-size: 13px; }
@@ -605,9 +605,9 @@
   .ballot-card { text-align: left; font: inherit; color: var(--text-primary);
     border: 1px solid var(--border); border-top: 3px solid var(--series-2); border-radius: 14px;
     background: var(--surface-1); padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
-  .bc-label { font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--series-2); font-weight: 600; }
+  .bc-label { font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-primary); font-weight: 600; }
   .bc-date { font-family: var(--gb-font-display); font-size: 24px; line-height: 1.1; }
-  .bc-count { font-size: 13.5px; color: var(--text-secondary); }
+  .bc-count { font-size: 13.5px; color: var(--text-primary); }
 
   /* ===== Find your ballot — Illinois county map + place picker ===== */
   .bfinder { margin: 6px 0 24px; }
@@ -1032,9 +1032,9 @@
 
   <section class="springfield" id="springfield" hidden>
     <div class="sf-head">
-      <h2>🏛️ The rules of the game — from Springfield</h2>
+      <h2>🏛️ The laws that shape your ballot — from Springfield</h2>
     </div>
-    <p class="sf-sub">What the General Assembly in Springfield is doing — context beside the races, not a candidate list. Elections &amp; voting and Education are the bills that set <em>how</em> these elections work (the elected CPS board, ward &amp; runoff rules, campaign finance), cross-referenced with upcoming ILGA committee hearings; Other is Govbot's general recent Illinois legislative activity. Each card opens the full bill in Explore Legislation (new tab ↗).</p>
+    <p class="sf-sub">The Illinois laws and bills that shape how elections work, from campaign finance and voting rules to ward boundaries and school governance.<br>Other is Govbot's general recent Illinois legislative activity.</p>
     <div class="sf-tools" id="sf-tools">
       <button type="button" class="sf-filter" data-sf="elections &amp; voting" aria-pressed="true">Elections &amp; voting</button>
       <button type="button" class="sf-filter" data-sf="education" aria-pressed="false">Education</button>
