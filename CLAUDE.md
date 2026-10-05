@@ -270,6 +270,30 @@ left verbatim rather than risk corrupting subsection case), and a synopsis line 
 → the pages fall back). Offline-tested against real extracted IL bill text in
 `scripts/__snapshots__/il_fulltext/`: `python3 scripts/test_build_il_summaries.py`.
 
+**Official summaries for MI / TN / ID / LA.** In many states govbot's metadata has no abstract, so
+"What this bill is about" used to just restate the title. Four of those legislatures publish a
+nonpartisan summary of each bill that Open States already links in the bill's `documents`:
+Michigan's House/Senate Fiscal Agency analyses (`SUMMARY:` / `CONTENT`), Tennessee's fiscal note
+(`SUMMARY OF BILL:`), Idaho's Statement of Purpose, and Louisiana's digest (its `Abstract:` unless it
+only restates the title, else the "Proposed/New law" paragraphs). `scripts/build_bill_summaries.py`
+reads them (HTML preferred, PDFs via `pdftotext`) into **`docs/src/dashboard/summaries/<state>.json`**
+= `{billKey: [summary, source document URL]}` — a **`.gitignore`d build artifact** carried between runs
+by `actions/cache` (deploy-docs.yml, "Cache/Build official bill summaries", and in the fast-path
+built-data cache). **Never the wrong bill:** a summary is kept only when the document's header names
+that bill's number (`mentions_bill`) — Open States sometimes links another bill's document (a TN HB
+linked to a different SB's fiscal note). Same bounded/incremental/fail-soft model as the IL synopses
+(cap per run, newest activity first, round-robin across states; a definitive miss is cached
+`["",""]`, a transient failure retries). Its User-Agent is `chihacknight-civic-data/1.0`: Michigan's
+site returns 403 for any UA containing "bot" or a URL. The legislation modal loads only the opened
+bill's state file (`SUMMARY_STATES` in legislation.html — keep in sync with the script's `STATES`),
+shows the summary (bullet lines kept, `.m-plain.is-lines`) with a **"Read the official summary ↗"**
+link (the shard's source URL, else any summary-type document in the record — analyses, digests,
+bill reports — so CA/FL/OH get the link too). When the only text left would repeat the title, the
+modal says instead that the legislature hasn't published a plain-language summary and links the
+full bill text — only when the record loaded (a failed fetch never claims that). Offline-tested
+against real documents in `scripts/__snapshots__/bill_summaries/`:
+`python3 scripts/test_build_bill_summaries.py`.
+
 The **"Next hearings open to comment"** card renders each date as a little
 **calendar figure** (`.mini-date`: a gold month band with two binding rings, a big day numeral, and
 the weekday + year, e.g. "Sun · 2026") and labels each hearing's jurisdiction with its **full

@@ -1,0 +1,97 @@
+# Education, Curriculum - As enacted, establishes a pilot program that provides grants to local education agencies to advance substance abuse and violence prevention programs. - Amends TCA Title 49. | Fiscal Note | https://capitol.tn.gov/Bills/114/Fiscal/SB0821.pdf
+ SB 821 - HB 902                                                                      Fiscal Review Committee
+                                                                                      Tennessee General Assembly
+ FISCAL NOTE                                                                          March 9, 2025
+
+         Fiscal Analyst: Alan Hampton | Email: alan.hampton@capitol.tn.gov | Phone: 615-741-2564
+
+
+
+SUMMARY OF BILL: Requires each local education agency (LEA) and public charter
+school to annually implement an evidence-based substance abuse and violence prevention program
+in each school that serves students in any of the grades three through twelve (3-12) to reduce
+tobacco, alcohol, and illicit drug use by students.
+
+
+FISCAL IMPACT:
+
+                                             OTHER FISCAL IMPACT
+
+ Requiring state special schools, local education agencies, and public charter schools to implement
+ an evidence-based substance abuse and violence prevention program will result in a mandatory
+ increase in state and local expenditures. However, due to multiple unknown factors, including the
+ selection of a vendor and the cost of providing instructional materials or programs, a fiscal impact
+ cannot be precisely quantified.
+
+ *Article II, Section 24 of the Tennessee Constitution provides that: no law of general application shall impose increased expenditure
+ requirements on cities or counties unless the General Assembly shall provide that the state share in the cost.
+
+       Assumptions:
+
+       • The proposed legislation requires each LEA and public charter school to implement an
+         evidence-based substance abuse and violence prevention program in each school that serves
+         students in any of the grades 3-12 and each program must:
+              o Include drug-prevention-related education that promotes anti-drug norms and
+                  teaches drug-refusal skills and life skills training that fosters the development of
+                  personal self-management skills and general social skills;
+              o Be provided to students throughout the school year; and
+              o Supplement, not supplant, any other drug abuse or life skills education provided
+                  such as the Drug Abuse Resistance Education (D.A.R.E.) program, character
+                  education required in Tenn. Code Ann. § 49-6-1007, any instruction required as part
+                  of a coordinated school health program, and the family life instruction.
+       • The state special schools, LEAs, and public charter schools will be required to purchase, or
+         reproduce, instructional materials or programs that align with providing the instruction or
+         evidence that the proposed program curriculum requires.
+       • It is assumed that, at a minimum, curriculum and instructional materials will be required to
+         be purchased for grades 3-8. Resources already in use to meet Lifetime Wellness standards
+         could be utilized for high school students.
+
+
+
+                                                   SB 821 - HB 902
+   • Based on the Office of Coordinated School Health data, many districts utilize the Michigan
+     Model for a health education curriculum.
+   • The Michigan Model is not the only curricula available, but for the purposes of this analysis,
+     it is used to estimate a potential cost.
+   • The cost to provide each school building for the respective grade level with a digital license
+     and lesson kit is estimated as follows:
+
+        Grade         # of
+        Level       Buildings          Description            One-Time Cost      Recurring Cost
+                                    $348 per lesson kit;
+      3rd             1033        $44.50 per year/license        $359,484            $45,969
+                                    $298 per lesson kit;
+      4th             1036        $44.50 per year/license        $308,728            $46,102
+                                    $298 per lesson kit;
+      5th             1023        $44.50 per year/license        $304,854            $45,524
+                                    $328 per lesson kit;
+      6th              656        $44.50 per year/license        $215,168            $29,192
+                                    $498 per lesson kit;
+      7th & 8th        626        $44.50 per year/license        $311,748             $27,857
+                                                                $1,499,982           $194,644
+
+   • Based on utilizing the Michigan Model for students in grades 3-8 the increase in
+     expenditures is estimated as follows:
+         o $1,694,626 ($1,499,982 + $194,644) in FY25-26; and
+         o $194,644 in FY26-27 and subsequent years.
+   • Requiring state special schools, LEAs, and public charter schools to implement an
+     evidence-based substance abuse and violence prevention program will increase state and
+     local expenditures. However, due to multiple unknown factors, including the selection of a
+     vendor and the cost of providing instructional materials or programs, a fiscal impact cannot
+     be precisely quantified.
+
+
+CERTIFICATION:
+
+   The information contained herein is true and correct to the best of my knowledge.
+
+
+
+
+                                                                  Bojan Savic, Executive Director
+
+
+
+
+                                   SB 821 - HB 902                                                2
+
