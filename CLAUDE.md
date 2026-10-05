@@ -177,8 +177,10 @@ CONCERNING…" read as "An Act Concerning…", minor words kept lowercase, exist
 in mixed-case titles), with the latest recorded action demoted to a secondary muted `.desc` line
 beneath (falling back to the action as the title when a bill has no title), and each is an
 **alternating card**
-(consecutive rows swap tint + a blue/gold
-left-accent, `:nth-of-type(even)`, so bills read as distinct blocks) that **links to that exact
+(on the root landing, consecutive rows alternate a full 4-sided **green / gold** border — green
+`--gb-primary`, gold the landing-only true-gold `--gl-fgold` (the brand `--gb-gold` is green) — via a
+per-row `--ar-c` set on `:nth-of-type(even)`, with a faint matching tint and a 16px gap between
+rows, so bills read as distinct blocks) that **links to that exact
 bill's card** via `legislation.html#bill=<state~session~id>` (a plain `#q=<id>` would surface every
 state's same-numbered bill; the unique key opens just the one — `billKey` here matches `billKey` +
 the `#bill=` branch of `applyDeepLink` in legislation.html, which calls `openDetails` on the
@@ -299,7 +301,11 @@ are retired as each page is migrated. `legislation.html` opens with an **"Explor
 `assets/us-states.json` (50 states + DC, Alaska/Hawaii insets; committed, fetched fail-soft), each
 state **shaded by its real bill count** from `countBillsByState()` bucketed into gold tiers by
 quantile, gold outlines, the selected state **pulsing** (`.ee-st.is-sel` / `@keyframes ee-pulse`),
-and a **diagonal-hatch** `<pattern>` for jurisdictions not in the current dataset. It has **zoom + pan**
+and a **diagonal-hatch** `<pattern>` for jurisdictions not in the current dataset — those
+untracked states (e.g. Texas) are **clickable too**: their detail card shows just the state name
+(`eeNameFor` falls back to the map's own name, since `stateNames` only holds tracked states), the
+"Not yet tracked" pill and a **"Coming soon..."** block (`#ee-d-soon`), hiding the count, recent
+activity and "Open bills" button. It has **zoom + pan**
 (± / reset buttons, wheel-zoom, drag-to-pan with clamping; the zoom controls sit inside the pan
 surface so their `pointerdown` is skipped by the pan handler) and a live zoom-%. **Federal (USA) and
 the four territories** (Guam, PR, USVI, N. Mariana) ride as clickable heat chips below the map (the
