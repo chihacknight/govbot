@@ -591,9 +591,9 @@ def vendor(bills, index, out_dir, manifest_path, fetch=default_fetch,
                 continue  # unresolved (e.g. a committee) — no photo, not pictured
             _given, full, image = m
             # The manifest key must equal what the frontend's photoFor() looks up:
-            # state bills resolve the sponsor to the people.json roster full name,
-            # but federal ("usa") has no people.json roster, so the frontend keys by
-            # the RAW sponsor name — mirror that so the lookup hits.
+            # state bills resolve the sponsor to the people.json roster full name;
+            # federal ("usa") is keyed by the RAW sponsor name (and aliased to the
+            # roster full name below), so the lookup hits either way.
             key_name = name if is_federal(st) else full
             wanted.setdefault(img_key(st, key_name), (st, full, image or ""))
 
@@ -606,6 +606,11 @@ def vendor(bills, index, out_dir, manifest_path, fetch=default_fetch,
         fname = f"{st.lower()}-{_slug(full)}{_ext_for(src)}"
         (out_dir / fname).write_bytes(data)
         manifest[key] = f"assets/legislators/{fname}"
+        if is_federal(st):
+            # people.json now carries Congress ("usa"), so the frontend may resolve a
+            # federal sponsor to the roster full name — key that too (setdefault, so
+            # a real state entry is never overwritten).
+            manifest.setdefault(img_key(st, full), manifest[key])
         got += 1
 
     Path(manifest_path).write_text(

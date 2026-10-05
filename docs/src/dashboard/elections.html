@@ -2923,14 +2923,27 @@
   // the curated `springfield` list (cross-referenced with ILGA hearings); "Other"
   // is the general recent IL activity from data.json, minus anything already
   // covered by those two tabs, newest recorded action first.
+  // Every tab shows only bills with recorded activity in the last SF_RECENT_DAYS
+  // (6 months), newest first. Elections & voting / Education merge the curated list
+  // (which carries ILGA hearing info) with the IL bills from data.json tagged with
+  // that topic, so the tabs stay filled even when the curated list is empty.
+  const SF_RECENT_DAYS = 183;
   function springfieldBills() {
     const f = sfState.filter;
+    const since = new Date(Date.now() - SF_RECENT_DAYS * 86400000).toISOString().slice(0, 10);
+    const recent = (b) => (b.latest_action || "").slice(0, 10) >= since;
+    const newest = (a, b) => ((a.latest_action || "") < (b.latest_action || "") ? 1 : (a.latest_action || "") > (b.latest_action || "") ? -1 : 0);
+    let out;
     if (f === "other") {
       const covered = (b) => (b.tags || []).some((t) =>
         t.indexOf("election") !== -1 || t.indexOf("voting") !== -1 || t.indexOf("education") !== -1);
-      return (state.ilBills || []).filter((b) => !covered(b));
+      out = (state.ilBills || []).filter((b) => !covered(b));
+    } else {
+      const curated = (sfState.bills || []).filter((b) => (b.tags || []).includes(f));
+      const seen = new Set(curated.map((b) => b.id));
+      out = curated.concat((state.ilBills || []).filter((b) => (b.tags || []).includes(f) && !seen.has(b.id)));
     }
-    return (sfState.bills || []).filter((b) => (b.tags || []).includes(f));
+    return out.filter(recent).sort(newest);
   }
 
   function renderSpringfield() {
@@ -2952,7 +2965,7 @@
       const e = document.createElement("p"); e.className = "sf-action";
       e.textContent = q
         ? "No bills match that search."
-        : "No bills in this category right now.";
+        : "No bills in this category in the last 6 months.";
       list.append(e);
       return;
     }

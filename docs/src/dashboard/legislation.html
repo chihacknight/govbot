@@ -2919,7 +2919,12 @@
     }
     const links = mkel("div", "m-links");
     // ("Share this bill" now sits above the Status section, not here.)
-    if (officialUrl) links.append(mlink("Official source ↗", officialUrl));
+    // Name whose site it is: "Official Michigan Legislature site", "Official U.S. Congress site".
+    if (officialUrl) {
+      const body2 = b.state === "usa" ? "U.S. Congress" : b.state === "dc" ? "D.C. Council"
+        : (state.stateNames[b.state] || (b.state || "").toUpperCase()) + " Legislature";
+      links.append(mlink("Official " + body2 + " site ↗", officialUrl));
+    }
     links.append(mlink("govbot record ↗", govbotRecordUrl(b)));
     links.append(mlink("Open States ↗",
       "https://openstates.org/" + b.state + "/bills/" + encodeURIComponent(b.session) + "/" + encodeURIComponent(billDirId(b.id)) + "/"));
