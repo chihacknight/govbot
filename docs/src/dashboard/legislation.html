@@ -752,6 +752,10 @@
   .ee-mrow-title { font-size: 13px; font-weight: 600; line-height: 1.25; color: var(--gb-text); }
   .ee-mrow-act { font-size: 12px; color: var(--gb-text-2); }
   .ee-d-empty { font-size: 13px; color: var(--gb-text-2); }
+  .ee-d-soon { margin-top: 16px; border-top: 1px solid var(--gb-border); padding-top: 16px; }
+  .ee-d-soon[hidden] { display: none; }
+  .ee-d-soon-h { font-family: var(--gb-font-display, inherit); font-size: 26px; font-weight: 600; color: var(--gb-primary); }
+  .ee-d-soon p { margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: var(--gb-text); }
   .ee-d-actions { margin-top: 14px; padding-top: 8px; }
   .ee-d-open { width: 100%; height: 44px; border-radius: 12px; border: none; background: #3DDC84; color: #04140B; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
   :root[data-theme="light"] .ee-d-open { background: #0B7D45; color: #fff; }
@@ -936,12 +940,16 @@
             <h3 id="ee-d-name">—</h3>
             <span class="ee-d-pill"><span class="ee-d-dot" id="ee-d-dot"></span><span id="ee-d-label"></span></span>
           </div>
-          <div class="ee-d-countrow"><span class="ee-d-count" id="ee-d-count">0</span><span>bills</span></div>
-          <div class="ee-d-recent">
+          <div class="ee-d-soon" id="ee-d-soon" hidden>
+            <div class="ee-d-soon-h">Coming soon</div>
+            <p id="ee-d-soon-msg"></p>
+          </div>
+          <div class="ee-d-countrow" id="ee-d-countrow"><span class="ee-d-count" id="ee-d-count">0</span><span>bills</span></div>
+          <div class="ee-d-recent" id="ee-d-recent">
             <div class="ee-d-recent-lbl">Recent legislative activity</div>
             <div id="ee-d-recent-list"></div>
           </div>
-          <div class="ee-d-actions">
+          <div class="ee-d-actions" id="ee-d-actions">
             <button type="button" class="ee-d-open" id="ee-d-open">Open bills</button>
           </div>
         </aside>
@@ -2293,7 +2301,8 @@
   function eeNameFor(code) {
     if (code === "usa") return "United States (Federal)";
     const t = EE_TERR.find((x) => x[0] === code); if (t) return t[1];
-    return state.stateNames[code] || (code || "").toUpperCase();
+    const g = eeGeo && eeGeo.states.find((x) => x.id.toLowerCase() === code);   // untracked states aren't in stateNames
+    return state.stateNames[code] || (g && g.name) || (code || "").toUpperCase();
   }
   function eeFlagSrc(code) { return "flags/" + (code === "usa" ? "us" : code) + ".png"; }
 
@@ -2350,12 +2359,11 @@
       const code = g.id.toLowerCase(), lv = eeLevel[code], on = code === eeSel;
       const p = mkSvg("path", { d: g.d, fill: EE_FILL[lv], stroke: on ? "#7CEBB0" : "#2F8F5B",
         "stroke-width": on ? 2.6 : 1.4, class: "ee-st" + (on ? " is-sel" : "") });
-      p.setAttribute("aria-label", g.name + (lv === -1 ? ", not yet tracked" : ", " + (eeCounts[code] || 0) + " bills") + (on ? " (selected)" : ""));
-      if (lv !== -1) {
-        p.setAttribute("role", "button"); p.setAttribute("tabindex", "0");
-        p.addEventListener("click", () => { if (eeDidDrag) return; eeSelect(code); });
-        p.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); eeSelect(code); } });
-      }
+      p.setAttribute("aria-label", g.name + (lv === -1 ? ", not yet tracked (coming soon)" : ", " + (eeCounts[code] || 0) + " bills") + (on ? " (selected)" : ""));
+      // Untracked (hatched) states are clickable too — their detail card says "Coming soon".
+      p.setAttribute("role", "button"); p.setAttribute("tabindex", "0");
+      p.addEventListener("click", () => { if (eeDidDrag) return; eeSelect(code); });
+      p.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); eeSelect(code); } });
       svg.append(p);
     });
     zoom.append(svg);
@@ -2418,6 +2426,12 @@
     $("ee-d-count").textContent = n.toLocaleString("en-US");
     $("ee-d-dot").style.background = EE_DOT[String(lv)];
     $("ee-d-label").textContent = EE_LBL[String(lv)];
+    // A jurisdiction Govbot doesn't track yet: just its name + "Coming soon" (no count, bills or button).
+    const soon = lv === -1;
+    $("ee-d-soon").hidden = !soon;
+    if (soon) $("ee-d-soon-msg").textContent = "Govbot doesn't track " + name + "'s legislature yet. It's on the way.";
+    ["ee-d-countrow", "ee-d-recent", "ee-d-actions"].forEach((id) => { $(id).style.display = soon ? "none" : ""; });
+    if (soon) return;
     const host = $("ee-d-recent-list"); host.textContent = "";
     const rows = state.data.bills.filter((b) => b.state === code && b.latest_action)
       .sort((a, b) => (a.latest_action < b.latest_action ? 1 : a.latest_action > b.latest_action ? -1 : 0)).slice(0, 3);
