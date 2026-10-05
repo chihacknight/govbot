@@ -177,8 +177,10 @@ CONCERNING…" read as "An Act Concerning…", minor words kept lowercase, exist
 in mixed-case titles), with the latest recorded action demoted to a secondary muted `.desc` line
 beneath (falling back to the action as the title when a bill has no title), and each is an
 **alternating card**
-(consecutive rows swap tint + a blue/gold
-left-accent, `:nth-of-type(even)`, so bills read as distinct blocks) that **links to that exact
+(on the root landing, consecutive rows alternate a full 4-sided **green / gold** border — green
+`--gb-primary`, gold the landing-only true-gold `--gl-fgold` (the brand `--gb-gold` is green) — via a
+per-row `--ar-c` set on `:nth-of-type(even)`, with a faint matching tint and a 16px gap between
+rows, so bills read as distinct blocks) that **links to that exact
 bill's card** via `legislation.html#bill=<state~session~id>` (a plain `#q=<id>` would surface every
 state's same-numbered bill; the unique key opens just the one — `billKey` here matches `billKey` +
 the `#bill=` branch of `applyDeepLink` in legislation.html, which calls `openDetails` on the
