@@ -805,7 +805,7 @@ suffix, and falls back to a **two-word surname** key ("Ochoa Bogh", "Avila Faria
 alone doesn't resolve — both were dropping the party on a lot of sponsors across states — while still
 refusing to guess an ambiguous bare surname (several "Smith"s → no party rather than a wrong one). It also attaches a top-level
 `springfield` list — the **"rules of the game"** (the section is now headed **"The laws that shape your
-ballot — from Springfield"**, sub-copy "The Illinois laws and bills that shape how elections work, from
+ballot - from Springfield"** (a plain hyphen, per request), sub-copy "The Illinois laws and bills that shape how elections work, from
 campaign finance and voting rules to ward boundaries and school governance." + "Other is Govbot's general
 recent Illinois legislative activity."): IL bills from the legislation
 `data.json` tagged `elections & voting` or `education` (the elected CPS board, ward/runoff
