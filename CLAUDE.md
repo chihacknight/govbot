@@ -304,7 +304,7 @@ quantile, gold outlines, the selected state **pulsing** (`.ee-st.is-sel` / `@key
 and a **diagonal-hatch** `<pattern>` for jurisdictions not in the current dataset — those
 untracked states (e.g. Texas) are **clickable too**: their detail card shows just the state name
 (`eeNameFor` falls back to the map's own name, since `stateNames` only holds tracked states), the
-"Not yet tracked" pill and a **"Coming soon"** block (`#ee-d-soon`), hiding the count, recent
+"Not yet tracked" pill and a **"Coming soon..."** block (`#ee-d-soon`), hiding the count, recent
 activity and "Open bills" button. It has **zoom + pan**
 (± / reset buttons, wheel-zoom, drag-to-pan with clamping; the zoom controls sit inside the pan
 surface so their `pointerdown` is skipped by the pan handler) and a live zoom-%. **Federal (USA) and
