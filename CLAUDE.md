@@ -559,7 +559,7 @@ ballots ahead" intro paragraph were all removed, leaving a clean stack: Hero →
 date cards → the revealed races → the sources cabinet (now collapsed). The **election calendar**
 (`#calendar`) is now **always shown** (ungated — visible whenever `#cal-grid` has cards; **no
 "≈ expected" tags** on any timeline date — removed per request; the calendar legend just says to confirm
-exact days with the official source, and the per-race RSS feeds still mark statutory dates "(expected)") with the
+exact days with the official source; the RSS feeds dropped their "(expected)" / "~" markers too) with the
 **current/next timeline milestone pulsing** (`.tl-item.next .tl-dot` → `@keyframes tl-pulse`, a **big** scale-1.32 + wide-ring pulse for low-vision readers).
 The standalone **"Recent Illinois legislative activity"** section was **removed and merged into the
 Springfield "rules of the game" section** (see below): the general recent-activity feed now rides that
@@ -781,7 +781,8 @@ confirmed candidate keeps an empty list + a source link. It also writes a whole-
 Feed-item titles are **self-describing** (`Mayor · on the Feb 23, 2027 ballot · 3 candidates`)
 so a title-only reader/widget conveys the facts; the **per-race** feeds additionally expand into
 **one item per official candidate**, the `[UNOFFICIAL]` potential-candidate items, and **one item
-per dated election-calendar milestone** (`🗓 Filing deadline — Mayor · Nov 23, 2026 (expected)`,
+per dated election-calendar milestone** (`🗓 Filing deadline — Mayor · Nov 23, 2026` — no "(expected)" or "~"
+marker on statutory dates, removed per request to match the site,
 date in the title, pubDate kept at build time so readers don't hide the future date) — aggregate
 feeds stay one item per race. All feed dates (both pipelines) are published in **Central time
 (CST/CDT)** via a shared `America/Chicago` `FEED_TZ` + `_to_822`/`_date_822` helpers.
