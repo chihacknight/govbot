@@ -184,7 +184,9 @@ rows, so bills read as distinct blocks) that **links to that exact
 bill's card** via `legislation.html#bill=<state~session~id>` (a plain `#q=<id>` would surface every
 state's same-numbered bill; the unique key opens just the one — `billKey` here matches `billKey` +
 the `#bill=` branch of `applyDeepLink` in legislation.html, which calls `openDetails` on the
-matching bill). Each row carries the bill's topic tags (`.ar-topic` chips) plus its sponsors as
+matching bill — and the `#bill=` branch first opens that bill's **state catalog** (`eeApplyFilter`) underneath,
+so closing the bill leaves the reader in that state's bills; this applies to every `#bill=` link —
+homepage rows, Springfield cards, search results, shared links). Each row carries the bill's topic tags (`.ar-topic` chips) plus its sponsors as
 **sponsor avatar chips** (`.ar-av`, name + party letter, first 3 then
 "+N more"). Every sponsor that resolves to a real legislator (or that has a vendored photo) is
 pictured: a **vendored headshot** when we have one, otherwise a **party-tinted initials monogram**
@@ -531,7 +533,9 @@ the WebKit black-square bug. Clicking a region fills a **detail card** (`.cm-det
 legislation's `.ee-detail`): a **ward** shows "Ward N", the neighborhoods it covers, then the **actual races on that ballot as
 expandable rectangle bars** (`cmRaceItem`): the ward's Alderperson race (`cmWardRace`, `r.district ===
 "Ward "+N`) plus every race that's the same for all Chicago voters (`cmCommonRaces` — citywide offices,
-CPS Board President, the Illinois statewide `il_exec` offices and the U.S. Senate seat). Clicking a bar
+CPS Board President, the Illinois statewide `il_exec` offices and the U.S. Senate seat), **grouped into one
+bucket per election date** (`cmAppendBuckets`: "Nov 3, 2026 races", "Feb 23, 2027 races", soonest first,
+each with a count — `.cm-bucket-h`). Clicking a bar
 expands it in place to the full details (`cmRaceDetails` — each candidate with party, petition status,
 money and an official-source link), and a single boxed `cmDistrictNote` (`.cm-more`) warns
 **"⚠️ Address-specific races — CPS subdistrict, police district council, Illinois Senate & House, and
@@ -553,7 +557,9 @@ duplicate "Coming up" list, the **"Build your view" section-picker UI** (`#picke
 ballots ahead" intro paragraph were all removed, leaving a clean stack: Hero → **Find your ballot**
 (map + place picker, vertically centered) → midterm callout → the two **"What's on your ballot?"**
 date cards → the revealed races → the sources cabinet (now collapsed). The **election calendar**
-(`#calendar`) is now **always shown** (ungated — visible whenever `#cal-grid` has cards) with the
+(`#calendar`) is now **always shown** (ungated — visible whenever `#cal-grid` has cards; **no
+"≈ expected" tags** on any timeline date — removed per request; the calendar legend just says to confirm
+exact days with the official source; the RSS feeds dropped their "(expected)" / "~" markers too) with the
 **current/next timeline milestone pulsing** (`.tl-item.next .tl-dot` → `@keyframes tl-pulse`, a **big** scale-1.32 + wide-ring pulse for low-vision readers).
 The standalone **"Recent Illinois legislative activity"** section was **removed and merged into the
 Springfield "rules of the game" section** (see below): the general recent-activity feed now rides that
@@ -775,7 +781,8 @@ confirmed candidate keeps an empty list + a source link. It also writes a whole-
 Feed-item titles are **self-describing** (`Mayor · on the Feb 23, 2027 ballot · 3 candidates`)
 so a title-only reader/widget conveys the facts; the **per-race** feeds additionally expand into
 **one item per official candidate**, the `[UNOFFICIAL]` potential-candidate items, and **one item
-per dated election-calendar milestone** (`🗓 Filing deadline — Mayor · Nov 23, 2026 (expected)`,
+per dated election-calendar milestone** (`🗓 Filing deadline — Mayor · Nov 23, 2026` — no "(expected)" or "~"
+marker on statutory dates, removed per request to match the site,
 date in the title, pubDate kept at build time so readers don't hide the future date) — aggregate
 feeds stay one item per race. All feed dates (both pipelines) are published in **Central time
 (CST/CDT)** via a shared `America/Chicago` `FEED_TZ` + `_to_822`/`_date_822` helpers.

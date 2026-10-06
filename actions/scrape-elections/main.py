@@ -2544,15 +2544,14 @@ def _race_description(r):
 
 
 def _timeline_summary(timeline):
-    """Compact 'Filing deadline ~Nov 23, 2026 · Election Day Feb 23, 2027' line for
-    a feed item, so subscribers see the whole election calendar. '~' marks an
-    expected (statutory) date."""
+    """Compact 'Filing deadline Nov 23, 2026 · Election Day Feb 23, 2027' line for
+    a feed item, so subscribers see the whole election calendar. (Statutory dates
+    are no longer marked as approximate, per request — the site doesn't either.)"""
     bits = []
     for m in timeline or []:
         if not m.get("date"):
             continue
-        pre = "~" if m.get("confirmed") is False else ""
-        bits.append(f"{m['label']} {pre}{_pretty_date(m['date'])}")
+        bits.append(f"{m['label']} {_pretty_date(m['date'])}")
     return " · ".join(bits)
 
 
@@ -2616,18 +2615,17 @@ def _add_candidate_item(ch, r, c, built_822):
 
 def _add_timeline_item(ch, r, m, built_822):
     """One item per dated election-calendar milestone (per-race feeds), e.g.
-    'Filing deadline — Mayor · Nov 23, 2026 (expected)'. The date is in the title
+    'Filing deadline — Mayor · Nov 23, 2026'. The date is in the title
     so a title-only reader sees it; pubDate stays the build time (not the future
     milestone date) so readers don't hide the item until then."""
     if not m.get("date"):
         return
     head = _race_headline(r)
     when = _pretty_date(m["date"])
-    approx = " (expected)" if m.get("confirmed") is False else ""
     item = ET.SubElement(ch, "item")
-    ET.SubElement(item, "title").text = f"🗓 {m['label']} — {head} · {when}{approx}"
+    ET.SubElement(item, "title").text = f"🗓 {m['label']} — {head} · {when}"
     ET.SubElement(item, "link").text = r.get("official_list_url") or DASHBOARD_URL + "elections.html"
-    desc = f"{m['label']} for {head}: {when}{approx}."
+    desc = f"{m['label']} for {head}: {when}."
     if m.get("note"):
         desc += " " + m["note"]
     ET.SubElement(item, "description").text = desc

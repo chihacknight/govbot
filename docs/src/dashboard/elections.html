@@ -492,7 +492,6 @@
   .tl-item.next .tl-date { color: var(--tl-accent, var(--series-1)); }
   .tl-label { font-size: 12.5px; color: var(--text-secondary); }
   .tl-note { font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
-  .tl-approx { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--series-3); border: 1px solid var(--series-3); border-radius: 999px; padding: 0 5px; margin-left: 5px; }
   .cal-legend { margin-top: 10px; font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
   /* per-race expandable timeline */
@@ -760,6 +759,9 @@
   .cm-chip.plain { cursor: default; }
   .cm-chip.plain:hover { border-color: var(--border); }
   .cm-races { display: flex; flex-direction: column; gap: 8px; }
+  /* One bucket per election date in the "On this ballot" list. */
+  .cm-bucket-h { display: flex; align-items: center; gap: 8px; margin: 14px 0 8px; font-family: var(--gb-font-display); font-size: 17px; font-weight: 600; color: var(--text-primary); }
+  .cm-bucket-n { font-family: var(--gb-font-sans, inherit); font-size: 11.5px; font-weight: 700; color: var(--text-primary); border: 1px solid var(--border); border-radius: 999px; padding: 1px 8px; }
   /* Each race is a rectangle bar that expands to full details when clicked. */
   .cm-raceitem { background: var(--gb-elevated); border: 1px solid var(--border); border-left: 3px solid var(--gc, var(--series-5)); border-radius: 10px; overflow: hidden; }
   .cm-race { display: flex; gap: 10px; align-items: baseline; width: 100%; text-align: left; font: inherit; cursor: pointer; background: none; border: none; padding: 10px 12px; color: var(--text-primary); }
@@ -1007,7 +1009,7 @@
     <h2>🗓️ Election calendar</h2>
     <p class="cal-sub">The full timeline for each upcoming ballot — from candidate filing to Election Day. Each race below also has its own timeline.</p>
     <div class="cal-grid" id="cal-grid"></div>
-    <p class="cal-legend"><span class="tl-approx">≈ expected</span> dates follow the statutory election calendar — confirm the exact day with the official source; fixed dates (like Election Day) are shown without the tag.</p>
+    <p class="cal-legend">Dates follow the Illinois election calendar — confirm the exact day with the official source.</p>
   </section>
 
   <div class="filters" id="filters" hidden>
@@ -1721,11 +1723,8 @@
       // The actual races on this ballot as expandable bars (alderperson for this
       // ward + everything that's the same for every Chicago voter).
       box.append(mkLbl("On this ballot — tap a race for details"));
-      const races = document.createElement("div"); races.className = "cm-races";
       const ald = cmWardRace(ward);
-      if (ald) races.append(cmRaceItem(ald));
-      cmCommonRaces().forEach((r) => races.append(cmRaceItem(r)));
-      box.append(races);
+      cmAppendBuckets(box, (ald ? [ald] : []).concat(cmCommonRaces()));
       box.append(cmDistrictNote());
     } else {
       const name = cmSel;
@@ -1750,9 +1749,7 @@
       // The races that are the same for everyone in this neighborhood (the
       // alderperson varies by ward, so it's shown via the chips above, not here).
       box.append(mkLbl("On this ballot — tap a race for details"));
-      const races = document.createElement("div"); races.className = "cm-races";
-      cmCommonRaces().forEach((r) => races.append(cmRaceItem(r)));
-      box.append(races);
+      cmAppendBuckets(box, cmCommonRaces());
       box.append(cmDistrictNote());
     }
   }
@@ -1768,6 +1765,27 @@
       pick("cps_board", (r) => !r.district),   // President only; subdistricts vary by address
       pick("il_exec"),
       pick("us_senate"));
+  }
+
+  // The ballot list grouped into one bucket per election date, soonest first
+  // ("Nov 3, 2026 races", then "Feb 23, 2027 races"), each its own list of bars.
+  function cmAppendBuckets(box, list) {
+    const byDate = new Map();
+    list.forEach((r) => {
+      const d = r.ballot_date || "";
+      if (!byDate.has(d)) byDate.set(d, []);
+      byDate.get(d).push(r);
+    });
+    [...byDate.keys()].sort().forEach((d) => {
+      const rs = byDate.get(d);
+      const h = document.createElement("div"); h.className = "cm-bucket-h";
+      const t = document.createElement("span"); t.textContent = d ? prettyDate(d) + " races" : "Other races";
+      const n = document.createElement("span"); n.className = "cm-bucket-n"; n.textContent = rs.length;
+      h.append(t, n);
+      const races = document.createElement("div"); races.className = "cm-races";
+      rs.forEach((r) => races.append(cmRaceItem(r)));
+      box.append(h, races);
+    });
   }
 
   function cmDistrictNote() {
@@ -3071,10 +3089,6 @@
       const date = document.createElement("span"); date.className = "tl-date";
       date.textContent = m.date ? prettyDate(m.date) : "—";
       dline.append(date);
-      if (m.date && m.confirmed === false) {
-        const a = document.createElement("span"); a.className = "tl-approx"; a.textContent = "≈ expected";
-        dline.append(a);
-      }
       li.append(dline);
       const lbl = document.createElement("div"); lbl.className = "tl-label"; lbl.textContent = m.label;
       li.append(lbl);
