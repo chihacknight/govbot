@@ -1276,7 +1276,14 @@
     if (billDeep) {
       const key = billDeep[1];
       const b = ((state.data && state.data.bills) || []).find((x) => billKey(x) === key);
-      if (b) { openDetails(b); return false; }   // opened the exact bill; no filtering
+      if (b) {
+        // Open that state's catalog first, then the bill on top of it — so closing
+        // the bill lands right in the state's catalog (links from the homepage,
+        // Springfield cards, search results and shared links all arrive this way).
+        if (!(state.filters.states.size === 1 && state.filters.states.has(b.state))) eeApplyFilter(b.state);
+        openDetails(b);
+        return false;
+      }
     }
     // #state=<code> (e.g. the elections page's "Explore entire catalog of IL bills")
     // opens that jurisdiction's whole catalog — the same as clicking it on the map.
