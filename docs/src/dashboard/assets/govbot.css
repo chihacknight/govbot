@@ -173,6 +173,13 @@ h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spaci
 .gb-brand { display: flex; align-items: center; gap: 10px; color: var(--gb-text); }
 .gb-brand:hover { color: var(--gb-text); }
 .gb-brand .gb-brand-name { font-family: var(--gb-font-display); font-size: 21px; font-weight: 600; letter-spacing: -0.01em; }
+/* The global header's logo + wordmark, a bit bigger; the wordmark is true gold in dark
+   mode (the brand --gb-gold is green) and the normal text colour in light mode. */
+.gb-header .gb-brand { gap: 12px; --gb-brand-word: #E5B94E; }
+.gb-header .gb-brand-mark { width: 46px; height: 46px; }
+.gb-header .gb-brand .gb-brand-name { font-size: 28px; color: var(--gb-brand-word); }
+:root[data-theme="light"] .gb-header .gb-brand { --gb-brand-word: var(--gb-text); }
+@media (prefers-color-scheme: light) { :root:not([data-theme]) .gb-header .gb-brand { --gb-brand-word: var(--gb-text); } }
 .gb-nav { display: flex; align-items: center; gap: 26px; font-size: 15px; font-weight: 500; }
 .gb-nav a { color: var(--gb-text-2); }
 .gb-nav a:hover, .gb-nav a[aria-current="page"] { color: var(--gb-text); }

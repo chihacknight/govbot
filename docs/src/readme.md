@@ -165,7 +165,7 @@
 <div class="stream-bot" aria-hidden="true"><img class="stream-bot-img" src="dashboard/assets/govbot-bot.png" alt="" width="124" height="124"><span class="stream-bot-name">Govbot</span></div>
 <figcaption class="stream-cap"><span class="stream-cap-l">Raw government activity</span><span class="stream-cap-r">Understandable topics</span></figcaption>
 </figure>
-<div class="gl-btns gl-center"><a class="gl-btn gl-btn-primary" href="#projects">Explore the projects</a><a class="gl-btn gl-btn-ghost" href="dashboard/architecture.html">How Govbot works</a><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">Contribute on GitHub ↗</a></div>
+<div class="gl-btns gl-center"><a class="gl-btn gl-btn-ghost" href="#projects">Explore the projects</a><a class="gl-btn gl-btn-ghost" href="dashboard/architecture.html">How Govbot works</a><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">Contribute on GitHub ↗</a></div>
 </div>
 </section>
 

@@ -147,7 +147,8 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
   text-decoration: none; box-sizing: border-box; transition: background .15s, border-color .15s; }
 .gb-landing .gl-btn-primary { background: var(--gb-gold); border: 1px solid var(--gb-gold); color: var(--gb-on-primary); }
 .gb-landing .gl-btn-primary:hover { background: var(--gb-gold-hi); border-color: var(--gb-gold-hi); color: var(--gb-on-primary); }
-.gb-landing .gl-btn-ghost { background: transparent; border: 1px solid var(--gb-border-strong); color: var(--gb-text); }
+/* Outline buttons: a 2px full-contrast border so they clearly read as buttons. */
+.gb-landing .gl-btn-ghost { background: transparent; border: 2px solid var(--gb-text); color: var(--gb-text); }
 .gb-landing .gl-btn-ghost:hover { border-color: var(--gb-gold); background: var(--gb-hover); color: var(--gb-text); }
 .gb-landing :focus-visible { outline: 3px solid var(--gb-gold-hi); outline-offset: 3px; }
 
