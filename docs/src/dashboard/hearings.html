@@ -7,6 +7,12 @@
 <title>Govbot — Hearings &amp; Public Comment</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22t%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23161E2C%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23090D15%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%237CEBB0%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2331BE73%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22b%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23C8F7DD%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%235FE09F%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2261%22%20height%3D%2261%22%20rx%3D%2215%22%20fill%3D%22url(%23t)%22%2F%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2261%22%20height%3D%2261%22%20rx%3D%2215%22%20fill%3D%22none%22%20stroke%3D%22%232B3446%22%20stroke-width%3D%221%22%2F%3E%3Crect%20x%3D%2218%22%20y%3D%2248%22%20width%3D%2228%22%20height%3D%224.6%22%20rx%3D%222.3%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%2214.5%22%20y%3D%2253.4%22%20width%3D%2235%22%20height%3D%223.2%22%20rx%3D%221.6%22%20fill%3D%22%231E9E5C%22%2F%3E%3Cg%20transform%3D%22translate(31%2024)%20rotate(70)%22%3E%3Cpath%20d%3D%22M0%20-3.4%20L20%20-2.6%20Q26%20-2.2%2026.5%200%20Q26%202.2%2020%202.6%20L0%203.4%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Ccircle%20cx%3D%2227%22%20cy%3D%220%22%20r%3D%223%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%22-4.2%22%20width%3D%223%22%20height%3D%228.4%22%20rx%3D%221.2%22%20fill%3D%22%232BB56C%22%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(31%2024)%20rotate(-14)%22%3E%3Cpath%20d%3D%22M-5%20-7%20L-15%20-10.5%20A3.2%2010.5%200%200%200%20-15%2010.5%20L-5%207%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Cpath%20d%3D%22M5%20-7%20L15%20-10.5%20A3.2%2010.5%200%200%201%2015%2010.5%20L5%207%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%22-5.5%22%20y%3D%22-9%22%20width%3D%2211%22%20height%3D%2218%22%20rx%3D%222%22%20fill%3D%22url(%23b)%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <style>
+  /* Hearings page accents: the design system's green and a true gold (the brand --gb-gold is
+     green), each tuned per theme so the borders, badges and pills read in light and dark mode. */
+  :root { --hh-green: #3DDC84; --hh-gold: #E5B94E; --hh-on-accent: #0A0E16; }
+  :root[data-theme="light"] { --hh-green: #0B7D45; --hh-gold: #8A6100; --hh-on-accent: #FFFFFF; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme]) { --hh-green: #0B7D45; --hh-gold: #8A6100; --hh-on-accent: #FFFFFF; } }
+
   /* Dark palette. Applied when the OS prefers dark AND the user hasn't
      forced a choice, OR when the user explicitly picks dark via the toggle.
      The two selectors carry identical values on purpose (plain CSS can't
@@ -367,7 +373,7 @@
   .hgroup-rows::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--hg-accent, var(--series-1)) 45%, transparent); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
   .hgroup-name { font-weight: 650; font-size: 15px; }
   .hgroup-count { color: var(--text-muted); font-size: 12.5px; }
-  .hgroup-portal { margin-left: auto; font-size: 13px; white-space: nowrap; }
+  .hgroup-portal { margin-left: auto; }
   .hearing-row {
     display: grid; grid-template-columns: 190px 1fr; gap: 4px 18px;
     padding: 10px 0; border-bottom: 1px solid var(--gridline);
@@ -377,17 +383,16 @@
   .h-when { color: var(--text-secondary); font-size: 13px; }
   .h-when b { color: var(--text-primary); font-weight: 600; }
   /* Says what the date means: a scheduled hearing time vs. a submission deadline. */
-  .h-kind {
-    display: inline-block; margin-bottom: 3px; padding: 1px 6px; border-radius: 4px;
-    font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
-    color: var(--series-1); border: 1px solid var(--series-1);
+  /* Status pills: full-contrast text on a light tint of the pill's colour, with a
+     firm 1.5px border in that colour — readable in both themes. */
+  .h-kind, .h-badge, .h-open, .pstate-live {
+    display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 11.5px; font-weight: 700;
+    color: var(--text-primary); border: 1.5px solid var(--pc);
+    background: color-mix(in srgb, var(--pc) 20%, var(--surface-1));
   }
-  .h-kind.is-due { color: var(--series-3); border-color: var(--series-3); }
-  .h-badge {
-    display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 999px;
-    font-size: 11px; font-weight: 600; color: var(--series-6);
-    border: 1px solid var(--series-6);
-  }
+  .h-kind { --pc: var(--gb-blue-hi); margin-bottom: 4px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .h-kind.is-due { --pc: var(--hh-gold); }
+  .h-badge { --pc: var(--series-6); margin-left: 8px; }
   .h-committee { font-weight: 550; }
   .h-loc { color: var(--text-muted); font-size: 12.5px; margin-top: 1px; }
   .h-bills { display: flex; flex-direction: column; gap: 6px; margin-top: 7px; }
@@ -469,16 +474,20 @@
     width: 28px; height: auto; flex: none; border-radius: 3px;
     border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.12);
   }
-  .pstate-live { font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
-    color: var(--series-2); border: 1px solid var(--series-2); border-radius: 999px; padding: 1px 7px; }
+  .pstate-live { --pc: var(--hh-green); letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; flex: none; }
   .pstate-kind {
     display: inline-block; align-self: flex-start; font-size: 12px; font-weight: 550;
     color: var(--text-secondary); background: var(--hover-wash);
     border-radius: 6px; padding: 2px 8px;
   }
   .pstate-how { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
-  .pstate-link { font-size: 12.5px; font-weight: 550; margin-top: auto; }
-  .pstate-link.is-offline { color: var(--series-1); }
+  /* "Go to portal" / "How to participate" and each section's top-right portal link read
+     as outline buttons: a 2px full-contrast border, like the homepage's outline buttons. */
+  .pstate-link, .hgroup-portal { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+    font-size: 13px; font-weight: 650; color: var(--text-primary) !important; text-decoration: none;
+    border: 2px solid var(--text-primary); border-radius: 999px; padding: 5px 13px; white-space: nowrap; }
+  .pstate-link:hover, .hgroup-portal:hover { background: var(--hover-wash); border-color: var(--hh-green); }
+  .pstate-link { margin-top: auto; }
   .pstate-sub { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--gridline); }
 
   /* theme toggle (top-right controls) */
@@ -520,14 +529,15 @@
      coloured text + a matching border over a faint tint of the same colour, so a
      reader can recognise a state by colour and the pill matches the section it
      jumps to. Reads in both themes (the tint is a low-alpha mix over the surface). */
-  .hh-jump a { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13px;
-    font-weight: 600; text-decoration: none; color: var(--jc, var(--text-primary));
-    background: color-mix(in srgb, var(--jc, var(--series-1)) 12%, var(--surface-1));
-    border: 1px solid color-mix(in srgb, var(--jc, var(--border)) 55%, var(--border));
-    border-radius: 999px; padding: 6px 12px; }
-  .hh-jump a:hover { border-color: var(--jc, var(--baseline));
-    background: color-mix(in srgb, var(--jc, var(--series-1)) 22%, var(--surface-1)); }
-  .hh-jump a .jn-count { color: inherit; opacity: 1; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .hh-jump a { display: inline-flex; align-items: center; gap: 8px; font: inherit; font-size: 14px;
+    font-weight: 650; text-decoration: none; color: var(--text-primary);
+    background: var(--surface-1); border: 2px solid var(--jc, var(--text-primary));
+    border-radius: 999px; padding: 6px 8px 6px 14px; }
+  .hh-jump a:hover { background: color-mix(in srgb, var(--jc, var(--series-1)) 16%, var(--surface-1)); color: var(--text-primary); }
+  /* The count sits in a small filled badge in the section's colour. */
+  .hh-jump a .jn-count { min-width: 24px; text-align: center; padding: 1px 7px; border-radius: 999px;
+    background: var(--jc, var(--text-primary)); color: var(--hh-on-accent); font-size: 12.5px;
+    font-weight: 700; font-variant-numeric: tabular-nums; }
   .hgroup { scroll-margin-top: 84px; }
   .hh-docs { margin: 8px 0 0; font-size: 13px; }
   .hh-hero-art { flex: 0 0 auto; width: 340px; max-width: 46%; filter: drop-shadow(0 0 22px rgba(61,220,132,0.22)); }
@@ -543,9 +553,7 @@
   }
 
   /* participation status made obvious on each hearing */
-  .h-open { display: inline-block; margin-top: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
-    color: var(--series-2); background: color-mix(in srgb, var(--series-2) 15%, transparent);
-    border: 1px solid color-mix(in srgb, var(--series-2) 45%, transparent); border-radius: 999px; padding: 2px 9px; }
+  .h-open { --pc: var(--hh-green); margin-top: 6px; letter-spacing: 0.02em; }
   .file-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 650;
     color: #06210a; background: var(--series-2); border-radius: 999px; padding: 7px 14px; }
   .file-link:hover { background: color-mix(in srgb, var(--series-2) 85%, #ffffff); color: #06210a; }
@@ -823,9 +831,9 @@
     return n;
   }
 
-  // Per-state accent colors for the hearings section cards, cycled by group order.
-  const HG_ACCENTS = ["--series-1", "--series-3", "--series-2", "--series-5",
-                      "--series-6", "--series-8", "--series-7", "--series-4"];
+  // Per-state accent colors for the hearings section cards, alternating by group order.
+  // Alternates the design system's green and gold (both tuned per theme in --hh-green/--hh-gold).
+  const HG_ACCENTS = ["--hh-green", "--hh-gold"];
 
   function renderHearings(data) {
     const ld = $("hearings-loading"); if (ld) ld.remove();
