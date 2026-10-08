@@ -1148,7 +1148,9 @@
     limit: PAGE_SIZE,
   };
 
-  fetch("data.json")
+  // The small index (jurisdictions, counts, topics, newest bills per state) — not the 75 MB
+  // all-bills data.json. A state's full bill list loads only when its catalog opens (loadState).
+  fetch("bills/index.json")
     .then((r) => { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.json(); })
     .then(init)
     .catch((err) => {
@@ -1174,6 +1176,7 @@
   function init(data) {
     $("loading").remove();
     state.data = data;
+    data.bills = [];   // the open state's bills (see loadState / eeApplyFilter)
     data.states.forEach((s) => { state.stateNames[s.code] = s.name; });
     // Fixed slot per tag from the full dataset order — filtering never repaints.
     data.tags.forEach((t, i) => { state.tagColor[t.name] = SERIES[i % SERIES.length]; });
@@ -1181,14 +1184,7 @@
     // Jurisdiction is chosen via the map / list entry above, so there is no
     // State multiselect here — but state.filters.states is still the underlying
     // filter that the map, the "By state" chart, and Clear filters drive.
-    buildMultiSelect($("f-tags"), "All topics",
-      data.tags.map((t) => ({ value: t.name, label: t.name, title: t.description })),
-      state.filters.tags, countBillsByTag());
-    buildSelect($("f-session"), "All sessions",
-      uniqueSorted(data.bills.map((b) => b.session)), (v) => { state.filters.session = v; render(); });
-    buildSelect($("f-chamber"), "All chambers",
-      uniqueSorted(data.bills.map((b) => b.chamber).filter(Boolean)),
-      (v) => { state.filters.chamber = v; render(); }, capitalize);
+    rebuildFilterOptions();
 
     initDateRange();
 
@@ -1302,13 +1298,19 @@
     const billDeep = location.hash.match(/[#&]bill=([^&]+)/);
     if (billDeep) {
       const key = billDeep[1];
-      const b = ((state.data && state.data.bills) || []).find((x) => billKey(x) === key);
-      if (b) {
-        // Open that state's catalog first, then the bill on top of it — so closing
-        // the bill lands right in the state's catalog (links from the homepage,
-        // Springfield cards, search results and shared links all arrive this way).
-        if (!(state.filters.states.size === 1 && state.filters.states.has(b.state))) eeApplyFilter(b.state);
-        openDetails(b);
+      // Open that state's catalog first, then the bill on top of it — so closing
+      // the bill lands right in the state's catalog (links from the homepage,
+      // Springfield cards, search results and shared links all arrive this way).
+      // The state is the key's first part, so only that state's bills load.
+      let code = "";
+      try { code = decodeURIComponent(key.split("~")[0] || "").toLowerCase(); } catch (e) { /* malformed */ }
+      if (code) {
+        loadState(code).then((bills) => {
+          const b = bills.find((x) => billKey(x) === key);
+          if (!b) return;
+          const open = state.filters.states.size === 1 && state.filters.states.has(code);
+          (open ? Promise.resolve() : eeApplyFilter(code)).then(() => openDetails(b));
+        });
         return false;
       }
     }
@@ -1317,31 +1319,59 @@
     const stateDeep = location.hash.match(/[#&]state=([a-z]{2,3})/i);
     if (stateDeep) {
       const code = stateDeep[1].toLowerCase();
-      if (((state.data && state.data.bills) || []).some((b) => b.state === code)) {
-        eeApplyFilter(code);   // opens the results popup for that state; it re-renders
+      if ((state.data && state.data.counts || {})[code]) {
+        // Opens the results popup for that state; an accompanying &q= (hearings bill chips,
+        // search "Legislators" results) filters within it.
+        const qm = location.hash.match(/[#&]q=([^&]+)/);
+        eeApplyFilter(code).then(() => {
+          if (!qm) return;
+          try { state.filters.search = decodeURIComponent(qm[1]).trim().toLowerCase(); } catch (e) { return; }
+          reflectSearch(); render();
+        });
         return false;
       }
     }
     const deep = (location.hash.match(/[#&]q=([^&]+)/) || location.search.match(/[?&]q=([^&]+)/));
     if (!deep) return false;
-    try {
-      const q = decodeURIComponent(deep[1]).trim();
-      if (q) {
-        state.filters.search = q.toLowerCase();
-        const el = $("f-search"); if (el) el.value = q;
-        return true;
-      }
-    } catch (e) { /* ignore malformed */ }
+    // A search across every state now lives on the site-wide search page (this page only
+    // loads one state's bills at a time), so an old #q= link without a state goes there.
+    location.replace("search.html#q=" + deep[1]);
     return false;
   }
   window.addEventListener("hashchange", () => { if (applyDeepLink()) render(); });
 
   /* ---------- filtering ---------- */
 
-  function countBillsByState() {
-    const m = {};
-    state.data.bills.forEach((b) => { m[b.state] = (m[b.state] || 0) + 1; });
-    return m;
+  function countBillsByState() { return Object.assign({}, state.data.counts || {}); }
+
+  // The newest bills of every jurisdiction (from the index), for the Recent strip.
+  function recentPool() {
+    const r = state.data.recent || {};
+    return [].concat(...Object.keys(r).map((k) => r[k]));
+  }
+
+  // One jurisdiction's full bill list, fetched once per visit and cached.
+  const stateBills = {};
+  function loadState(code) {
+    if (!stateBills[code]) {
+      stateBills[code] = fetch("bills/" + encodeURIComponent(code) + ".json")
+        .then((r) => (r.ok ? r.json() : null)).catch(() => null)
+        .then((d) => (d && d.bills) || []);
+    }
+    return stateBills[code];
+  }
+
+  // Topic / session / chamber choices for the open state's bills (rebuilt per state).
+  function rebuildFilterOptions() {
+    const data = state.data;
+    buildMultiSelect($("f-tags"), "All topics",
+      data.tags.map((t) => ({ value: t.name, label: t.name, title: t.description })),
+      state.filters.tags, countBillsByTag());
+    buildSelect($("f-session"), "All sessions",
+      uniqueSorted(data.bills.map((b) => b.session)), (v) => { state.filters.session = v; render(); });
+    buildSelect($("f-chamber"), "All chambers",
+      uniqueSorted(data.bills.map((b) => b.chamber).filter(Boolean)),
+      (v) => { state.filters.chamber = v; render(); }, capitalize);
   }
   function countBillsByTag() {
     const m = {};
@@ -1821,7 +1851,7 @@
       o.textContent = labelFn ? labelFn(v) : v;
       el.append(o);
     });
-    el.addEventListener("change", () => onChange(el.value));
+    el.onchange = () => onChange(el.value);   // re-buildable per state without stacking listeners
   }
 
   function buildMultiSelect(root, allLabel, options, selectedSet, counts) {
@@ -2509,7 +2539,7 @@
     ["ee-d-countrow", "ee-d-recent", "ee-d-actions"].forEach((id) => { $(id).style.display = soon ? "none" : ""; });
     if (soon) return;
     const host = $("ee-d-recent-list"); host.textContent = "";
-    const rows = state.data.bills.filter((b) => b.state === code && b.latest_action)
+    const rows = ((state.data.recent || {})[code] || []).filter((b) => b.latest_action)
       .sort((a, b) => (a.latest_action < b.latest_action ? 1 : a.latest_action > b.latest_action ? -1 : 0)).slice(0, 3);
     if (!rows.length) { host.append(mkel("div", "ee-d-empty", "No recent recorded activity yet.")); }
     rows.forEach((b) => {
@@ -2529,6 +2559,16 @@
   function eeSelect(code) { eeSel = code; eeBuildMap(); eeBuildTerr(); eeRenderDetail(); }
 
   function eeApplyFilter(code) {
+    const btn = $("ee-d-open"), first = !stateBills[code];
+    if (btn && first) { btn.dataset.label = btn.textContent; btn.textContent = "Loading bills…"; btn.disabled = true; }
+    return loadState(code).then((bills) => {
+      if (btn && first) { btn.textContent = btn.dataset.label; btn.disabled = false; }
+      state.data.bills = bills;
+      rebuildFilterOptions();   // this state's sessions / chambers / topic counts
+      eeOpenCatalog(code);
+    });
+  }
+  function eeOpenCatalog(code) {
     state.filters.states.clear(); state.filters.states.add(code);
     // Open each state's catalog fresh: drop any leftover topic/session/chamber/date/search.
     state.filters.search = ""; reflectSearch();
@@ -2613,7 +2653,7 @@
   const RECENT_MAX = 12, RECENT_PER_STATE = 2;
   function renderRecent() {
     const host = $("recent-list"); if (!host || !state.data) return;
-    const sorted = state.data.bills.slice()
+    const sorted = recentPool()
       .filter((b) => b.latest_action)
       .sort((a, b) => (a.latest_action < b.latest_action ? 1 : a.latest_action > b.latest_action ? -1 : 0));
     // Cap each jurisdiction to RECENT_PER_STATE so one busy state can't

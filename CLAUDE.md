@@ -135,6 +135,23 @@ names must stay in sync with the keyword fallback in `scripts/dashboard_tags.jso
 `docs/src/dashboard-guide.md` for the data flow; tagging in CI is incremental via
 `scripts/filter_new_bills.py` + `scripts/tag_dashboard_repo.sh`.
 
+**No page downloads every bill (performance).** `data.json` holds all ~180k bills (~75 MB raw / ~10 MB
+gzipped) and is still built + published, but **no page fetches it**. `scripts/build_site_slices.py`
+(deploy-docs.yml "Build per-page bill slices", every deploy incl. the fast path, ~5 s; offline test
+`scripts/test_build_site_slices.py`) splits it into `docs/src/dashboard/bills/`: **`index.json`** (~16 KB gz:
+jurisdictions, `counts`, topics, `recent` = newest 3 full records per jurisdiction) — read by the homepage's
+recent bills, the legislation map/list/detail card/Recent strip and search's name lookup; **`<state>.json`**
+— one jurisdiction's full records, fetched by legislation's `loadState(code)` only when that state's catalog
+opens (cached; `eeApplyFilter` now returns a promise and rebuilds the topic/session/chamber options per state
+via `rebuildFilterOptions`), including `#bill=<key>` deep links (state parsed from the key) and
+`#state=<code>&q=<text>` (used by hearings' bill chips and search's legislator results); a bare `#q=` with no
+state redirects to `search.html#q=`; **`il_recent.json`** — IL bills active in the last 200 days, for the
+elections page's Springfield tabs; **`search.json`** — a lean `[state, session, id, title, sponsors, tag ids]`
+index that `search.html` loads in the background after people/races/hearings render (bill search text is
+built once per row). Small samples built from the committed sample `data.json` are committed for local dev.
+Measured with real data: homepage 9 s → ~1 s, legislation 4.7 s → <1 s, elections 7 s → ~1 s, JS memory
+~110 MB → under 10 MB.
+
 **Civic redesign (in progress).** The dashboard is being revamped into a dark-mode-first
 "civic institution" per the design brief in `tamara-notes/`. **Brand colour = a lively green ("Spring"),
 not gold** (chosen on the "Govbot Green" Design canvas): `govbot.css` defines `--gb-primary` (dark

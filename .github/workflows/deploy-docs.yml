@@ -599,6 +599,13 @@ jobs:
             docs/src/dashboard/assets/legislators
           key: govbot-built-data-${{ github.run_id }}
 
+      # Split the all-bills data.json into the small files each page reads (bills/index.json,
+      # bills/<state>.json, bills/il_recent.json, bills/search.json) so no page downloads all
+      # ~180k bills. Runs on every deploy, fast path included (data.json is restored there), and
+      # takes seconds — so the slices always match the data.json being published.
+      - name: Build per-page bill slices
+        run: python3 scripts/build_site_slices.py --data docs/src/dashboard/data.json --out-dir docs/src/dashboard/bills
+
       - name: Build docs
         run: mdbook build docs
 

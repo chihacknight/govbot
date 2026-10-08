@@ -975,7 +975,9 @@
         }
         if (b.govbot_title || (b.govbot_tags && b.govbot_tags.length)) {
           const g = eln("a", "gov-link", "via govbot");
-          g.href = "legislation.html#q=" + encodeURIComponent(b.id);
+          // Federal hearings are "us" here but "usa" in the legislation data.
+          const jcode = h.jurisdiction === "us" ? "usa" : h.jurisdiction;
+          g.href = "legislation.html#state=" + encodeURIComponent(jcode) + "&q=" + encodeURIComponent(b.id);
           g.title = "View " + b.id + " in the govbot Legislation Dashboard";
           row.append(g);
         }

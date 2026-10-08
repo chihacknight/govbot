@@ -1542,11 +1542,12 @@
   // and supplies the shared topic colors. Merged in from the retired standalone
   // "Recent Illinois legislative activity" section.
   function loadIlRecent() {
-    fetch("data.json")
+    // Only Illinois bills with recent activity (built at deploy), not the 75 MB all-bills data.json.
+    fetch("bills/il_recent.json")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!d) return;
-        const bills = (d.bills || []).filter((b) => (b.state || "").toLowerCase() === "il");
+        const bills = d.bills || [];
         if (!bills.length) return;   // fail-soft: no IL bills locally (mock) → "Other" tab just stays empty
         bills.sort((a, b) => (a.latest_action < b.latest_action ? 1 : a.latest_action > b.latest_action ? -1 : 0));
         // Map each topic to a stable series color (same scheme as the legislation site).

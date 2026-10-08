@@ -109,7 +109,8 @@
   var activityEl = document.getElementById("activity-list");
   if (activityEl) {
     Promise.all([
-      getJSON("data.json").catch(function () { return null; }),
+      // The small per-page index (newest bills per state), not the 75 MB all-bills data.json.
+      getJSON("bills/index.json").catch(function () { return null; }),
       getJSON("people.json").catch(function () { return null; }),
       // Vendored sponsor headshots (built at deploy). Absent in local dev / before
       // the first deploy — everyone just gets monograms. Fail-soft.
@@ -120,7 +121,8 @@
         return;
       }
       var people = res[1] || {}, photos = res[2] || {};
-      var bills = res[0].bills || [];
+      var recent = res[0].recent || {};
+      var bills = [].concat.apply([], Object.keys(recent).map(function (k) { return recent[k]; }));
       var dated = bills.filter(function (b) { return b.latest_action; })
         .sort(function (a, b) { return String(b.latest_action).localeCompare(String(a.latest_action)); });
       var pool = dated.length ? dated : bills;
