@@ -17,6 +17,27 @@ repo's own `data.json`); the README's "Read it from an AI assistant" section lin
 
 Use these meta-prompts to guide architectural decisions and code quality.
 
+### Ask on every change (before you call it done)
+
+Run every change — feature, fix or redesign — through these five questions, and say what you
+found when you report back:
+
+1. **Is it built in the most secure way?** No secrets in the repo or the browser; user/feed text
+   escaped before it hits the DOM (`textContent`, never raw `innerHTML` with outside data); external
+   links `rel="noopener"`; only documented public APIs (never scraped search pages); scripts and
+   workflows get the least access they need.
+2. **Is it built in the most efficient way?** A page downloads only what it shows (see "No page
+   downloads every bill"); work happens once at build time, not on every visit; animations stop when
+   unseen and animate only `transform`/`opacity`; nothing large loads before it's needed.
+3. **What regressions could it introduce?** Check the other pages and links that touch the same
+   data or helper (deep links, RSS, search, the shared shell), both themes, phone + desktop, and
+   reduced motion. Prove it: run the offline tests and click through in a browser.
+4. **Is there dead code, duplicate logic or an unused component?** Delete leftovers from retired
+   features (functions, CSS, markup, comments) instead of hiding them; keep one copy of shared
+   helpers (`docs/src/dashboard/assets/govbot-utils.js`, the shell templates) instead of page copies.
+5. **Is anything more complicated than it needs to be?** Prefer the smallest, plainest change that
+   works; remove options, flags and branches nothing uses.
+
 ### Architecture & Design
 
 - **"What are the second-order effects of this change?"** - Before implementing, consider how changes propagate through the system. Changes to schemas affect downstream consumers. Changes to data formats affect all pipelines.
