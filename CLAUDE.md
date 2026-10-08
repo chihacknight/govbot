@@ -150,7 +150,13 @@ elections page's Springfield tabs; **`search.json`** — a lean `[state, session
 index that `search.html` loads in the background after people/races/hearings render (bill search text is
 built once per row). Small samples built from the committed sample `data.json` are committed for local dev.
 Measured with real data: homepage 9 s → ~1 s, legislation 4.7 s → <1 s, elections 7 s → ~1 s, JS memory
-~110 MB → under 10 MB.
+~110 MB → under 10 MB. **Homepage runtime:** the Social-bots feed fetches its posts (~3 MB + Bluesky calls) only once its slide is
+the active one *and* the carousel is on screen, and its scroll loop fully stops whenever it can't be seen
+(off-screen, tab hidden, other slide, hover) — `kick()` restarts it — and measures the loop length once, not
+per frame. The firehose robot's glow and the timeline's "now" dot animate only `transform`/`opacity` (they
+used to animate `filter`/`box-shadow`, a repaint every frame), and the cursor-chat caret blinks only while
+its bubble shows. mdbook's docs-search scripts + ~600 KB `searchindex.json` load only on doc pages, not the
+homepage (`index.hbs` loader skips `.gb-landing`).
 
 **Civic redesign (in progress).** The dashboard is being revamped into a dark-mode-first
 "civic institution" per the design brief in `tamara-notes/`. **Brand colour = a lively green ("Spring"),

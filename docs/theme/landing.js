@@ -543,24 +543,32 @@
       return out;
     }
 
-    var paused = false, raf = 0, last = 0, pos = 0, looping = false;
+    var paused = false, raf = 0, last = 0, pos = 0, looping = false, onScreen = false, period = 0;
     var slide = win.closest(".gl-slide");
-    function canRun() {
-      return looping && !paused && !document.hidden && (!slide || slide.classList.contains("is-active"));
+    function slideActive() { return !slide || slide.classList.contains("is-active"); }
+    function canRun() { return looping && !paused && onScreen && !document.hidden && slideActive(); }
+    // One loop = the distance from the first post to the first post of the hidden copy. Measured once
+    // (and on resize), not every frame — reading layout inside the loop forced a reflow per frame.
+    function measure() {
+      var clone = list.lastElementChild;
+      period = clone && list.firstElementChild ? clone.offsetTop - list.firstElementChild.offsetTop : 0;
     }
+    // The loop only runs while the feed can actually be seen; otherwise it fully stops (no idle
+    // frames) and kick() restarts it when that changes.
     function frame(ts) {
-      raf = requestAnimationFrame(frame);
+      if (!canRun()) { raf = 0; return; }
       var dt = last ? Math.min(ts - last, 64) : 16;
       last = ts;
-      if (!canRun()) { pos = win.scrollTop; return; }
       pos += dt * 0.025;                                   // ~25px a second
-      // One loop = the distance from the first post to the first post of the hidden copy.
-      var clone = list.lastElementChild, period = clone ? clone.offsetTop - list.firstElementChild.offsetTop : 0;
       if (period > 0 && pos >= period) pos -= period;
       win.scrollTop = pos;
+      raf = requestAnimationFrame(frame);
     }
+    function kick() { if (!raf && canRun()) { last = 0; pos = win.scrollTop; raf = requestAnimationFrame(frame); } }
     function pause() { paused = true; }
-    function resume() { paused = false; pos = win.scrollTop; }
+    function resume() { paused = false; kick(); }
+    document.addEventListener("visibilitychange", kick);
+    window.addEventListener("resize", function () { if (looping) measure(); });
     win.addEventListener("mouseenter", pause);
     win.addEventListener("mouseleave", resume);
     win.addEventListener("focusin", pause);
@@ -591,16 +599,22 @@
         list.innerHTML = looping
           ? html + '<div class="gl-bf-list" aria-hidden="true">' + posts.map(function (p) { return postHtml(p, true); }).join("") + "</div>"
           : html;
-        if (looping) raf = requestAnimationFrame(frame);
+        if (looping) { measure(); kick(); }
       });
     }
+    // Fetch the posts (~3 MB of bot data + 18 Bluesky calls) only once the Social bots slide is
+    // actually the one showing and the carousel is on screen — not just because the page loaded.
+    function maybeStart() { if (onScreen && slideActive()) start(); kick(); }
+    if (slide && "MutationObserver" in window) {
+      new MutationObserver(maybeStart).observe(slide, { attributes: true, attributeFilter: ["class"] });
+    }
     if ("IntersectionObserver" in window) {
-      var io = new IntersectionObserver(function (es) {
-        if (es.some(function (e) { return e.isIntersecting; })) { io.disconnect(); start(); }
-      }, { rootMargin: "600px 0px" });
-      io.observe(car || win);
+      new IntersectionObserver(function (es) {
+        onScreen = es.some(function (e) { return e.isIntersecting; });
+        maybeStart();
+      }).observe(car || win);
     } else {
-      start();
+      onScreen = true; maybeStart();
     }
   })();
 

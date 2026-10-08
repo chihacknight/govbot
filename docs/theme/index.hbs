@@ -438,9 +438,20 @@
         {{/if}}
 
         {{#if search_js}}
-        <script src="{{ path_to_root }}elasticlunr.min.js"></script>
-        <script src="{{ path_to_root }}mark.min.js"></script>
-        <script src="{{ path_to_root }}searcher.js"></script>
+        <!-- The docs search box only exists on the docs pages, so its scripts (and the ~600 KB
+             search index they fetch) load only there — not on the homepage (.gb-landing). In order. -->
+        <script>
+        (function () {
+            if (document.querySelector(".gb-landing")) return;
+            var root = "{{ path_to_root }}", files = ["elasticlunr.min.js", "mark.min.js", "searcher.js"];
+            (function next(i) {
+                if (i >= files.length) return;
+                var s = document.createElement("script");
+                s.src = root + files[i]; s.onload = function () { next(i + 1); };
+                document.body.appendChild(s);
+            })(0);
+        })();
+        </script>
         {{/if}}
 
         <script src="{{ path_to_root }}clipboard.min.js"></script>
