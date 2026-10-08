@@ -590,10 +590,15 @@ are both upcoming and comment-open) and "N jurisdictions"), and a **jump-to-juri
 (`.hh-jump`, `#hh-jump`) — a "Jump to" label plus one pill chip per jurisdiction (its full name +
 a `.jn-count` count) linking to that section's `#hg-<code>` anchor (each `.hgroup` gets
 `id="hg-<code>"` in `renderHearings`, ordered federal-first like the groups; `.hgroup` has
-`scroll-margin-top` so the sticky header doesn't cover the target). **Each pill is a coloured chip**
-wearing its jurisdiction's section accent (`--jc`, set per pill in JS from the same `HG_ACCENTS`
-palette + group order the section borders use) — coloured text + matching border over a faint tint —
-so a reader recognises a state by colour and the pill matches the section it jumps to. The nav is hidden with fewer
+`scroll-margin-top` so the sticky header doesn't cover the target). **The pills are uniform**: full-contrast
+text, a 2px border in the section's accent (`--jc`) and the count in a small filled badge of that colour.
+The jurisdiction sections' 4-sided borders (and the pills that jump to them) **alternate green / gold**
+(`HG_ACCENTS = ["--hh-green", "--hh-gold"]`, page tokens tuned per theme: green `#3DDC84`/`#0B7D45`, true
+gold `#E5B94E`/`#8A6100`, since the brand `--gb-gold` is green). Every status pill — "Hearing", "Comment
+due", "Public comment open", "Canceled", the directory's "Live hearings" — shares one readable style
+(full-contrast text, a 1.5px border in the pill's colour `--pc`, a light tint of it), and the "Go to portal" /
+"How to participate" links and each section's top-right portal link are **outline buttons** (2px
+full-contrast border, like the homepage's). The nav is hidden with fewer
 than two jurisdictions. Each hearing still makes participation obvious: a green **"Public comment open"**
 badge on the date column and the witness-slip/comment action elevated into a filled green
 `.file-link` pill. The `<title>` was also corrected (it had been a stray "Legislation Dashboard").
