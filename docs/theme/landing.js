@@ -107,22 +107,20 @@
         return;
       }
       var people = res[1] || {}, photos = res[2] || {};
+      // One bill per state — each state's newest (bills/index.json lists them
+      // newest-first by date, then id) — states newest-first, ties by state code.
+      // scripts/fetch_sponsor_photos.py's onscreen_bills() picks the same bills, so
+      // the vendored headshots are for exactly these sponsors; keep them in step.
       var recent = res[0].recent || {};
-      var bills = [].concat.apply([], Object.keys(recent).map(function (k) { return recent[k]; }));
-      var dated = bills.filter(function (b) { return b.latest_action; })
-        .sort(function (a, b) { return String(b.latest_action).localeCompare(String(a.latest_action)); });
-      var pool = dated.length ? dated : bills;
+      var heads = Object.keys(recent).sort().map(function (k) {
+        return (recent[k] || []).filter(function (b) { return b.latest_action; })[0];
+      }).filter(Boolean);
+      heads.sort(function (a, b) { return String(b.latest_action).localeCompare(String(a.latest_action)); });
+      var rows = heads.slice(0, 4);
       // The manifest stores paths relative to dashboard/ ("assets/legislators/…").
       function photoPath(state, full) {
         var p = photos[(state || "").toLowerCase() + ":" + String(full).trim().toLowerCase()];
         return p ? BASE + p : "";
-      }
-      // One bill per state (newest-first), up to 4 — no state monopolizes the list.
-      var seen = {}, rows = [];
-      for (var i = 0; i < pool.length && rows.length < 4; i++) {
-        var stk = pool[i].state || "";
-        if (seen[stk]) continue;
-        seen[stk] = 1; rows.push(pool[i]);
       }
       if (!rows.length) {
         activityEl.innerHTML = stateHtml("empty", "No recent bills yet", "New activity shows up after the next refresh.", BASE + "legislation.html", "Browse all bills");

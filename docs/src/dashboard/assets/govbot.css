@@ -35,6 +35,7 @@
   --gb-gold-hi:       var(--gb-primary-hi);
   --gb-blue:          #2F6BFF;
   --gb-blue-hi:       #4C7DFF;
+  --gb-link:          #8AB4FF;   /* blue for text/links: readable on the dark page (~9:1) */
   --gb-green:         #3FB37F;
   --gb-amber:         #E0A83C;
   --gb-amber-hi:      #F0C969;   /* amber text/accents (Illinois Elections) */
@@ -99,6 +100,7 @@
   --gb-gold-hi:       var(--gb-primary-hi);
   --gb-blue:          #2F6BFF;
   --gb-blue-hi:       #1E56E6;
+  --gb-link:          #1747C9;   /* blue for text/links on the light page (~7:1) */
   --gb-green:         #1F8F5F;
   --gb-amber:         #B87914;
   --gb-amber-hi:      #8A5F12;   /* 5.2:1 on the light page */
@@ -135,6 +137,7 @@
     --gb-amber:         #B87914;
     --gb-amber-hi:      #8A5F12;
     --gb-blue-hi:       #1E56E6;
+    --gb-link:          #1747C9;
     --gb-green:         #1F8F5F;
     --gb-red:           #C93B40;
     --gb-purple-hi:     #5A45B8;
@@ -156,8 +159,8 @@ body {
   font: 15px/1.55 var(--gb-font-sans);
   -webkit-font-smoothing: antialiased;
 }
-a { color: var(--gb-blue-hi); text-decoration: none; }
-a:hover { color: var(--gb-blue); }
+a { color: var(--gb-link); text-decoration: none; }
+a:hover { color: var(--gb-link); }
 h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spacing: -0.01em; }
 .gb-wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
 .gb-display { font-family: var(--gb-font-display); }
