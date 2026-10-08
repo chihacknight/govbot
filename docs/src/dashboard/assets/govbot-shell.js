@@ -11,9 +11,6 @@
   var STORE = "govbot-theme"; // "dark" | "light" | absent (follow OS)
 
   /* ---- theme -------------------------------------------------------- */
-  function stored() {
-    try { return localStorage.getItem(STORE); } catch (e) { return null; }
-  }
   function save(v) {
     try { v ? localStorage.setItem(STORE, v) : localStorage.removeItem(STORE); } catch (e) {}
   }

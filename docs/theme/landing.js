@@ -70,22 +70,12 @@
 
   // ---- Projects › Legislation: recent activity, one bill per state ----
   // Resolve a sponsor to a single roster legislator [given, full, party, area],
-  // or null when it can't be pinned to exactly one person (never guess). Mirrors
-  // legislation.html's matcher: surname-only, "Surname, F", or "First Last".
+  // or null when it can't be pinned to exactly one person (never guess) — the
+  // shared matcher in dashboard/assets/govbot-utils.js, same as legislation.html.
   function matchLeg(state, name, people) {
-    if (!name || !people) return null;
-    var roster = people[state]; if (!roster) return null;
-    var raw = String(name).trim(), family = raw, first = "", comma = raw.indexOf(",");
-    if (comma !== -1) { family = raw.slice(0, comma).trim(); first = raw.slice(comma + 1).replace(/[^A-Za-z]/g, ""); }
-    else if (/\s/.test(raw)) { var parts = raw.split(/\s+/); first = parts[0]; family = parts[parts.length - 1]; }
-    var cands = roster[family.toLowerCase()];
-    if (!cands || !cands.length) return null;
-    if (cands.length === 1) return cands[0];
-    if (first) { var fi = first.charAt(0).toLowerCase();
-      var hits = cands.filter(function (c) { return (c[0] || "").trim().toLowerCase().charAt(0) === fi; });
-      if (hits.length === 1) return hits[0]; }
-    return null;
+    return people ? GB.matchLegislator(people[state], name) : null;
   }
+
   function partyMeta(party) {
     var p = (party || "").toLowerCase();
     if (p.indexOf("democrat") === 0) return { letter: "D", cls: "is-dem" };
@@ -100,16 +90,13 @@
     if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
     return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   }
-  // A bill's unique key (state + session + id) so the link opens that exact
-  // bill's card on the legislation page. Must match legislation.html's billKey().
-  function billKey(b) {
-    return encodeURIComponent(b.state || "") + "~" +
-      encodeURIComponent(b.session || "") + "~" + encodeURIComponent(b.id || "");
-  }
+  var billKey = GB.billKey;   // shared (dashboard/assets/govbot-utils.js)
+
   var activityEl = document.getElementById("activity-list");
   if (activityEl) {
     Promise.all([
-      getJSON("data.json").catch(function () { return null; }),
+      // The small per-page index (newest bills per state), not the 75 MB all-bills data.json.
+      getJSON("bills/index.json").catch(function () { return null; }),
       getJSON("people.json").catch(function () { return null; }),
       // Vendored sponsor headshots (built at deploy). Absent in local dev / before
       // the first deploy — everyone just gets monograms. Fail-soft.
@@ -120,7 +107,8 @@
         return;
       }
       var people = res[1] || {}, photos = res[2] || {};
-      var bills = res[0].bills || [];
+      var recent = res[0].recent || {};
+      var bills = [].concat.apply([], Object.keys(recent).map(function (k) { return recent[k]; }));
       var dated = bills.filter(function (b) { return b.latest_action; })
         .sort(function (a, b) { return String(b.latest_action).localeCompare(String(a.latest_action)); });
       var pool = dated.length ? dated : bills;
@@ -541,24 +529,32 @@
       return out;
     }
 
-    var paused = false, raf = 0, last = 0, pos = 0, looping = false;
+    var paused = false, raf = 0, last = 0, pos = 0, looping = false, onScreen = false, period = 0;
     var slide = win.closest(".gl-slide");
-    function canRun() {
-      return looping && !paused && !document.hidden && (!slide || slide.classList.contains("is-active"));
+    function slideActive() { return !slide || slide.classList.contains("is-active"); }
+    function canRun() { return looping && !paused && onScreen && !document.hidden && slideActive(); }
+    // One loop = the distance from the first post to the first post of the hidden copy. Measured once
+    // (and on resize), not every frame — reading layout inside the loop forced a reflow per frame.
+    function measure() {
+      var clone = list.lastElementChild;
+      period = clone && list.firstElementChild ? clone.offsetTop - list.firstElementChild.offsetTop : 0;
     }
+    // The loop only runs while the feed can actually be seen; otherwise it fully stops (no idle
+    // frames) and kick() restarts it when that changes.
     function frame(ts) {
-      raf = requestAnimationFrame(frame);
+      if (!canRun()) { raf = 0; return; }
       var dt = last ? Math.min(ts - last, 64) : 16;
       last = ts;
-      if (!canRun()) { pos = win.scrollTop; return; }
       pos += dt * 0.025;                                   // ~25px a second
-      // One loop = the distance from the first post to the first post of the hidden copy.
-      var clone = list.lastElementChild, period = clone ? clone.offsetTop - list.firstElementChild.offsetTop : 0;
       if (period > 0 && pos >= period) pos -= period;
       win.scrollTop = pos;
+      raf = requestAnimationFrame(frame);
     }
+    function kick() { if (!raf && canRun()) { last = 0; pos = win.scrollTop; raf = requestAnimationFrame(frame); } }
     function pause() { paused = true; }
-    function resume() { paused = false; pos = win.scrollTop; }
+    function resume() { paused = false; kick(); }
+    document.addEventListener("visibilitychange", kick);
+    window.addEventListener("resize", function () { if (looping) measure(); });
     win.addEventListener("mouseenter", pause);
     win.addEventListener("mouseleave", resume);
     win.addEventListener("focusin", pause);
@@ -589,16 +585,22 @@
         list.innerHTML = looping
           ? html + '<div class="gl-bf-list" aria-hidden="true">' + posts.map(function (p) { return postHtml(p, true); }).join("") + "</div>"
           : html;
-        if (looping) raf = requestAnimationFrame(frame);
+        if (looping) { measure(); kick(); }
       });
     }
+    // Fetch the posts (~3 MB of bot data + 18 Bluesky calls) only once the Social bots slide is
+    // actually the one showing and the carousel is on screen — not just because the page loaded.
+    function maybeStart() { if (onScreen && slideActive()) start(); kick(); }
+    if (slide && "MutationObserver" in window) {
+      new MutationObserver(maybeStart).observe(slide, { attributes: true, attributeFilter: ["class"] });
+    }
     if ("IntersectionObserver" in window) {
-      var io = new IntersectionObserver(function (es) {
-        if (es.some(function (e) { return e.isIntersecting; })) { io.disconnect(); start(); }
-      }, { rootMargin: "600px 0px" });
-      io.observe(car || win);
+      new IntersectionObserver(function (es) {
+        onScreen = es.some(function (e) { return e.isIntersecting; });
+        maybeStart();
+      }).observe(car || win);
     } else {
-      start();
+      onScreen = true; maybeStart();
     }
   })();
 

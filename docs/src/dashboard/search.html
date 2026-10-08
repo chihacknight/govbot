@@ -235,6 +235,7 @@
   <span aria-hidden="true">↑</span> Back to Top
 </button>
 
+<script src="assets/govbot-utils.js"></script>
 <script>
 /* Govbot global search — one box across every dataset the site publishes:
    bills + their sponsors (data.json), election candidates + races
@@ -244,6 +245,7 @@
 (function () {
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
+  var billKey = GB.billKey;   // shared helper (assets/govbot-utils.js)
   var state = { bills: [], races: [], hearings: [], people: {}, names: {}, ready: false };
 
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -258,9 +260,6 @@
     return MONTHS[(+m[2]) - 1] + " " + (+m[3]) + ", " + m[1];
   }
   function stateName(code) { return state.names[low(code)] || (code ? String(code).toUpperCase() : ""); }
-  function billKey(b) {
-    return encodeURIComponent(b.state || "") + "~" + encodeURIComponent(b.session || "") + "~" + encodeURIComponent(b.id || "");
-  }
   function partyClass(p) { p = low(p); if (/democrat/.test(p)) return "dem"; if (/republican/.test(p)) return "rep"; return "oth"; }
 
   function buildNames(d, e, h) {
@@ -287,8 +286,7 @@
   function searchBills(t) {
     var out = [];
     state.bills.forEach(function (b) {
-      var h = hay([b.id, b.title, (b.sponsors || []).join(" "), (b.tags || []).join(" "), stateName(b.state)]);
-      if (matchAll(h, t)) out.push({
+      if (matchAll(b._h, t)) out.push({
         title: b.title || b.id,
         sub: (b.sponsors || []).slice(0, 3).join(", ") + ((b.tags && b.tags.length) ? "  ·  " + b.tags.slice(0, 3).join(", ") : ""),
         badge: (b.state ? String(b.state).toUpperCase() + " · " : "") + b.id,
@@ -312,7 +310,8 @@
             title: full,
             sub: [party, area, stateName(code)].filter(Boolean).join("  ·  "),
             badge: "Legislator", party: party,
-            href: "legislation.html#q=" + encodeURIComponent(full)
+            // Opens that legislator's state catalog, filtered to their name.
+            href: "legislation.html#state=" + encodeURIComponent(code) + "&q=" + encodeURIComponent(full)
           });
         });
       });
@@ -438,13 +437,18 @@
       jumpFrag.appendChild(chip);
     });
 
+    if (!total && !state.billsReady) {   // bills are still loading in the background
+      summary.textContent = "Searching bills…";
+      return;
+    }
     if (!total) {
       summary.textContent = "";
       results.appendChild(stateBlock("empty", "No matches for “" + q + "”",
         "Nothing across bills, legislators, candidates, races, or hearings matched. Check spelling, or try a shorter or different term."));
       return;
     }
-    summary.innerHTML = "<b>" + total + "</b> result" + (total === 1 ? "" : "s") + " for “" + escapeHtml(q) + "”";
+    summary.innerHTML = "<b>" + total + "</b> result" + (total === 1 ? "" : "s") + " for “" + escapeHtml(q) + "”" +
+      (state.billsReady ? "" : " · still loading bills…");
     jump.appendChild(jumpFrag); jump.hidden = false;
   }
 
@@ -489,10 +493,12 @@
   if (initial) { input.value = initial; $("s-summary").textContent = "Loading Govbot data…"; }
 
   function getJSON(url) { return fetch(url).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
-  Promise.all([getJSON("data.json"), getJSON("elections.json"), getJSON("hearings.json"), getJSON("people.json")])
+  // People, races and hearings (small files) render first; the bill search index — the big
+  // one, built at deploy as bills/search.json — loads in the background and re-renders.
+  state.bills = []; state.billsReady = false;
+  Promise.all([getJSON("bills/index.json"), getJSON("elections.json"), getJSON("hearings.json"), getJSON("people.json")])
     .then(function (res) {
       var d = res[0], e = res[1], h = res[2], p = res[3];
-      state.bills = (d && d.bills) || [];
       state.races = (e && e.races) || [];
       state.hearings = (h && h.hearings) || [];
       state.people = p || {};
@@ -500,6 +506,19 @@
       state.ready = true;
       render(input.value || initial || "");
       lastRendered = input.value || initial || "";
+      return getJSON("bills/search.json");
+    })
+    .then(function (idx) {
+      var tags = (idx && idx.tags) || [];
+      // Rows are [state, session, id, title, sponsors, [tag ids]]; the search text is built once.
+      state.bills = ((idx && idx.bills) || []).map(function (r) {
+        var b = { state: r[0], session: r[1], id: r[2], title: r[3],
+                  sponsors: r[4] ? r[4].split(", ") : [], tags: (r[5] || []).map(function (i) { return tags[i]; }) };
+        b._h = hay([b.id, b.title, r[4], b.tags.join(" "), stateName(b.state)]);
+        return b;
+      });
+      state.billsReady = true;
+      render(input.value || "");
     });
 })();
 </script>

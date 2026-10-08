@@ -17,6 +17,27 @@ repo's own `data.json`); the README's "Read it from an AI assistant" section lin
 
 Use these meta-prompts to guide architectural decisions and code quality.
 
+### Ask on every change (before you call it done)
+
+Run every change — feature, fix or redesign — through these five questions, and say what you
+found when you report back:
+
+1. **Is it built in the most secure way?** No secrets in the repo or the browser; user/feed text
+   escaped before it hits the DOM (`textContent`, never raw `innerHTML` with outside data); external
+   links `rel="noopener"`; only documented public APIs (never scraped search pages); scripts and
+   workflows get the least access they need.
+2. **Is it built in the most efficient way?** A page downloads only what it shows (see "No page
+   downloads every bill"); work happens once at build time, not on every visit; animations stop when
+   unseen and animate only `transform`/`opacity`; nothing large loads before it's needed.
+3. **What regressions could it introduce?** Check the other pages and links that touch the same
+   data or helper (deep links, RSS, search, the shared shell), both themes, phone + desktop, and
+   reduced motion. Prove it: run the offline tests and click through in a browser.
+4. **Is there dead code, duplicate logic or an unused component?** Delete leftovers from retired
+   features (functions, CSS, markup, comments) instead of hiding them; keep one copy of shared
+   helpers (`docs/src/dashboard/assets/govbot-utils.js`, the shell templates) instead of page copies.
+5. **Is anything more complicated than it needs to be?** Prefer the smallest, plainest change that
+   works; remove options, flags and branches nothing uses.
+
 ### Architecture & Design
 
 - **"What are the second-order effects of this change?"** - Before implementing, consider how changes propagate through the system. Changes to schemas affect downstream consumers. Changes to data formats affect all pipelines.
@@ -134,6 +155,38 @@ The GitHub Pages dashboard's topic taxonomy lives in `scripts/govbot-dashboard.y
 names must stay in sync with the keyword fallback in `scripts/dashboard_tags.json`. See
 `docs/src/dashboard-guide.md` for the data flow; tagging in CI is incremental via
 `scripts/filter_new_bills.py` + `scripts/tag_dashboard_repo.sh`.
+
+**No page downloads every bill (performance).** `data.json` holds all ~180k bills (~75 MB raw / ~10 MB
+gzipped) and is still built + published, but **no page fetches it**. `scripts/build_site_slices.py`
+(deploy-docs.yml "Build per-page bill slices", every deploy incl. the fast path, ~5 s; offline test
+`scripts/test_build_site_slices.py`) splits it into `docs/src/dashboard/bills/`: **`index.json`** (~16 KB gz:
+jurisdictions, `counts`, topics, `recent` = newest 3 full records per jurisdiction) — read by the homepage's
+recent bills, the legislation map/list/detail card/Recent strip and search's name lookup; **`<state>.json`**
+— one jurisdiction's full records, fetched by legislation's `loadState(code)` only when that state's catalog
+opens (cached; `eeApplyFilter` now returns a promise and rebuilds the topic/session/chamber options per state
+via `rebuildFilterOptions`), including `#bill=<key>` deep links (state parsed from the key) and
+`#state=<code>&q=<text>` (used by hearings' bill chips and search's legislator results); a bare `#q=` with no
+state redirects to `search.html#q=`; **`il_recent.json`** — IL bills active in the last 200 days, for the
+elections page's Springfield tabs; **`search.json`** — a lean `[state, session, id, title, sponsors, tag ids]`
+index that `search.html` loads in the background after people/races/hearings render (bill search text is
+built once per row). Small samples built from the committed sample `data.json` are committed for local dev.
+Measured with real data: homepage 9 s → ~1 s, legislation 4.7 s → <1 s, elections 7 s → ~1 s, JS memory
+~110 MB → under 10 MB. **Homepage runtime:** the Social-bots feed fetches its posts (~3 MB + Bluesky calls) only once its slide is
+the active one *and* the carousel is on screen, and its scroll loop fully stops whenever it can't be seen
+(off-screen, tab hidden, other slide, hover) — `kick()` restarts it — and measures the loop length once, not
+per frame. The firehose robot's glow and the timeline's "now" dot animate only `transform`/`opacity` (they
+used to animate `filter`/`box-shadow`, a repaint every frame), and the cursor-chat caret blinks only while
+its bubble shows. mdbook's docs-search scripts + ~600 KB `searchindex.json` load only on doc pages, not the
+homepage (`index.hbs` loader skips `.gb-landing`).
+
+**Shared helpers, one copy.** `docs/src/dashboard/assets/govbot-utils.js` (plain ES5, `window.GB`) holds
+the small functions several pages used to copy-paste: `GB.billKey` (the `state~session~id` key behind every
+`legislation.html#bill=` link), `GB.matchLegislator(roster, name)` (sponsor → one `people.json` legislator,
+Jr./Sr. suffix stripping + two-word-surname fallback, never guesses) and `GB.formatAsOf` (the "Data as of …
+UTC (… CDT)" label). Each dashboard loads it right before its own inline script; `docs/theme/index.hbs` loads
+it before `landing.js`. Change these there, not in a page. The retired features' code (legislation's charts /
+tooltip / "pending jurisdictions" note, elections' old Illinois county finder, ballot/ward filters and corner
+flag, and the old tab-bar / brandbar / theme-pill CSS on every page) was deleted — don't look for it.
 
 **Civic redesign (in progress).** The dashboard is being revamped into a dark-mode-first
 "civic institution" per the design brief in `tamara-notes/`. **Brand colour = a lively green ("Spring"),
@@ -478,14 +531,12 @@ Springfield, picker) is unchanged. The office-card area's **stat scorecards (`#t
 `renderTiles`) and the ballot-date / "Only races with candidates" / Clear / "Follow every race"
 controls were removed** — the `#filters` bar now holds **only the search box** (`#f-search`,
 placeholder "Search races & candidates…", widened to fill its row so the placeholder isn't
-clipped). The ballot-date filter is still driven by the hero ballot cards + calendar (its removed
-`#f-ballot`/`#f-hascands`/`#f-clear`/`#rss-all` refs are null-guarded; `#rss-pop`/`openRss` stay for
-the per-race and Springfield feeds), and the empty-state "Clear filters" button calls a null-safe
-`clearFilters()`. **The standalone Illinois county finder (`#bfinder`,
+clipped). Search is now the only race filter (`state.filters = { search }`; the old ballot-date /
+has-candidates / ward filters and their code were deleted); `#rss-pop`/`openRss` stay for the per-race
+and Springfield feeds, and the empty-state "Clear filters" button calls `clearFilters()`. **The standalone Illinois county finder (`#bfinder`,
 `renderBallotFinder`) was removed** — the Explore Chicago map below (retitled "Find your ballot")
-is the single ballot entry now, so the redundant second IL map + county/ward picker are gone. The
-`renderBallotFinder`/`resolveBallot` functions and the `#bf-*` guards remain defined but uncalled
-(and `cmOpenWardBallot` still guards `#bf-ward-sel`/`#bf-chips`), so nothing throws. What that finder
+is the single ballot entry now, so the redundant second IL map + county/ward picker are gone, and its
+code and CSS (`renderBallotFinder`, `resolveBallot`, `cmOpenWardBallot`, the `.bf-*` rules) were deleted. What that finder
 used to be (kept here for context): a **"Find your ballot"** map-first
 entry (`#bfinder`, `renderBallotFinder`): a geographic **Illinois county choropleth** — all 102
 county paths + the state outline from the committed `assets/il-counties.json` (generated from US
@@ -548,7 +599,7 @@ expands it in place to the full details (`cmRaceDetails` — each candidate with
 money and an official-source link), and a single boxed `cmDistrictNote` (`.cm-more`) warns
 **"⚠️ Address-specific races — CPS subdistrict, police district council, Illinois Senate & House, and
 U.S. House. Open the other ballots below to see them."** (the earlier "See Ward N's full ballot →"
-button was removed; `cmOpenWardBallot` remains defined but uncalled, so nothing throws); a
+button and its `cmOpenWardBallot` were removed); a
 **neighborhood** shows its name (`cmNiceName`
 title-cases, fixes O'Hare/Lakeview/McKinley Park), how many wards it spans, the same expandable common-race bars, and **tappable ward chips** (→ switch to ward view, select +
 `cmFocusRegion` zooms to it, since the alderperson varies by ward). Below Explore Chicago sits a
