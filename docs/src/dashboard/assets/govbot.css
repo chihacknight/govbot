@@ -20,8 +20,12 @@
   --gb-border:        #273042;
   --gb-border-strong: #3A455C;
   --gb-text:          #F4F5F7;
-  --gb-text-2:        #A5ADBC;
-  --gb-text-muted:    #6E7688;
+  /* No dimmed text anywhere on the site (per request): the "secondary" and "muted"
+     text tokens are the full text colour. Only input placeholders stay lighter
+     (--gb-placeholder) so a hint never looks like typed text. */
+  --gb-text-2:        #F4F5F7;
+  --gb-text-muted:    #F4F5F7;
+  --gb-placeholder:   #A5ADBC;
   /* Brand primary: a lively green (was gold). --gb-gold / --gb-gold-hi / --gb-glow-gold stay as
      aliases of the primary so every older rule follows; use --gb-on-primary for text on it. */
   --gb-primary:       #3DDC84;
@@ -85,8 +89,9 @@
   --gb-border:        rgba(11,17,26,0.12);
   --gb-border-strong: rgba(11,17,26,0.24);
   --gb-text:          #0B1119;
-  --gb-text-2:        #4A5468;
-  --gb-text-muted:    #6E7688;
+  --gb-text-2:        #0B1119;
+  --gb-text-muted:    #0B1119;
+  --gb-placeholder:   #5B6577;
   --gb-primary:       #0B7D45;
   --gb-primary-hi:    #075C33;
   --gb-on-primary:    #FFFFFF;
@@ -119,8 +124,9 @@
     --gb-border:        rgba(11,17,26,0.12);
     --gb-border-strong: rgba(11,17,26,0.24);
     --gb-text:          #0B1119;
-    --gb-text-2:        #4A5468;
-    --gb-text-muted:    #6E7688;
+    --gb-text-2:        #0B1119;
+    --gb-text-muted:    #0B1119;
+    --gb-placeholder:   #5B6577;
     --gb-primary:       #0B7D45;
     --gb-primary-hi:    #075C33;
     --gb-on-primary:    #FFFFFF;
@@ -173,9 +179,19 @@ h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spaci
 .gb-brand { display: flex; align-items: center; gap: 10px; color: var(--gb-text); }
 .gb-brand:hover { color: var(--gb-text); }
 .gb-brand .gb-brand-name { font-family: var(--gb-font-display); font-size: 21px; font-weight: 600; letter-spacing: -0.01em; }
+/* The global header's logo + wordmark, a bit bigger; the wordmark is true gold in dark
+   mode (the brand --gb-gold is green) and the normal text colour in light mode. */
+.gb-header .gb-brand { gap: 12px; --gb-brand-word: #E5B94E; }
+.gb-header .gb-brand-mark { width: 46px; height: 46px; }
+.gb-header .gb-brand .gb-brand-name { font-size: 28px; color: var(--gb-brand-word); }
+:root[data-theme="light"] .gb-header .gb-brand { --gb-brand-word: var(--gb-text); }
+@media (prefers-color-scheme: light) { :root:not([data-theme]) .gb-header .gb-brand { --gb-brand-word: var(--gb-text); } }
 .gb-nav { display: flex; align-items: center; gap: 26px; font-size: 15px; font-weight: 500; }
 .gb-nav a { color: var(--gb-text-2); }
 .gb-nav a:hover, .gb-nav a[aria-current="page"] { color: var(--gb-text); }
+/* Nav text is all full contrast now, so hover / current page show as a green underline. */
+.gb-nav > a:hover, .gb-nav > a[aria-current="page"], .gb-nav > .gb-nav-item:hover > button
+  { text-decoration: underline 2px var(--gb-primary); text-underline-offset: 7px; }
 .gb-header-utils { display: flex; align-items: center; gap: 10px; }
 .gb-search {
   display: flex; align-items: center; gap: 9px;
@@ -186,7 +202,9 @@ h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spaci
   font: inherit; font-size: 14px; color: var(--gb-text);
   background: transparent; border: none; outline: none; width: 100%;
 }
-.gb-search input::placeholder { color: var(--gb-text-2); }
+.gb-search input::placeholder { color: var(--gb-placeholder); }
+/* Every search/filter box on every page: placeholder hints stay lighter than real text. */
+input::placeholder, textarea::placeholder { color: var(--gb-placeholder) !important; opacity: 1; }
 .gb-icon-btn {
   width: 42px; height: 42px; flex: none;
   display: inline-flex; align-items: center; justify-content: center;
@@ -218,7 +236,21 @@ h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spaci
     transition: opacity .18s ease, transform .18s ease; overflow-y: auto;
   }
   .gb-drawer.open { opacity: 1; transform: none; pointer-events: auto; }
-  .gb-drawer a { display: block; padding: 14px 4px; font-size: 18px; color: var(--gb-text); border-bottom: 1px solid var(--gb-border); }
+  /* The drawer mirrors the desktop nav: Projects / Data groups (tap to expand, same items as the
+     dropdowns, with their icons + descriptions), then the plain links. */
+  .gb-drawer .gb-dplain, .gb-drawer .gb-dgroup > summary { display: flex; align-items: center; gap: 8px; padding: 14px 4px;
+    font-size: 18px; font-weight: 500; color: var(--gb-text); border-bottom: 1px solid var(--gb-border); }
+  .gb-drawer .gb-dgroup > summary { cursor: pointer; list-style: none; }
+  .gb-drawer .gb-dgroup > summary::-webkit-details-marker { display: none; }
+  .gb-drawer .gb-dgroup > summary .gb-caret { width: 16px; height: 16px; transition: transform .15s ease; }
+  .gb-drawer .gb-dgroup[open] > summary .gb-caret { transform: rotate(180deg); }
+  .gb-drawer .gb-dgroup-items { padding: 6px 0 10px; border-bottom: 1px solid var(--gb-border); }
+  .gb-drawer .gb-dgroup-items a { display: flex; gap: 12px; align-items: flex-start; padding: 10px 8px; border-radius: 10px; color: var(--gb-text); }
+  .gb-drawer .gb-dgroup-items a:hover { background: var(--gb-hover); }
+  .gb-drawer .gb-dgroup-items a svg { width: 20px; height: 20px; flex: none; margin-top: 2px; color: var(--accent, var(--gb-blue-hi)); }
+  .gb-drawer .mega-t { font-size: 16px; font-weight: 600; display: block; }
+  .gb-drawer .mega-d { font-size: 13.5px; color: var(--gb-text-2); display: block; margin-top: 1px; }
+  .gb-drawer a[aria-current="page"] { text-decoration: underline 2px var(--gb-primary); text-underline-offset: 6px; }
   .gb-drawer .gb-search { display: flex; width: auto; margin-bottom: 12px; }
 }
 
