@@ -458,6 +458,9 @@
         <script src="{{ path_to_root }}highlight.js"></script>
         <script src="{{ path_to_root }}book.js"></script>
 
+        <!-- Shared helpers (window.GB), needed by landing.js -->
+        <script src="{{ path_to_root }}dashboard/assets/govbot-utils.js"></script>
+
         <!-- Custom JS scripts -->
         {{#each additional_js}}
         <script src="{{ ../path_to_root }}{{this}}"></script>

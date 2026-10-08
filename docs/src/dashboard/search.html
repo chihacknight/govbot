@@ -235,6 +235,7 @@
   <span aria-hidden="true">↑</span> Back to Top
 </button>
 
+<script src="assets/govbot-utils.js"></script>
 <script>
 /* Govbot global search — one box across every dataset the site publishes:
    bills + their sponsors (data.json), election candidates + races
@@ -244,6 +245,7 @@
 (function () {
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
+  var billKey = GB.billKey;   // shared helper (assets/govbot-utils.js)
   var state = { bills: [], races: [], hearings: [], people: {}, names: {}, ready: false };
 
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -258,9 +260,6 @@
     return MONTHS[(+m[2]) - 1] + " " + (+m[3]) + ", " + m[1];
   }
   function stateName(code) { return state.names[low(code)] || (code ? String(code).toUpperCase() : ""); }
-  function billKey(b) {
-    return encodeURIComponent(b.state || "") + "~" + encodeURIComponent(b.session || "") + "~" + encodeURIComponent(b.id || "");
-  }
   function partyClass(p) { p = low(p); if (/democrat/.test(p)) return "dem"; if (/republican/.test(p)) return "rep"; return "oth"; }
 
   function buildNames(d, e, h) {

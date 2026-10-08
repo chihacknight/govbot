@@ -158,6 +158,15 @@ used to animate `filter`/`box-shadow`, a repaint every frame), and the cursor-ch
 its bubble shows. mdbook's docs-search scripts + ~600 KB `searchindex.json` load only on doc pages, not the
 homepage (`index.hbs` loader skips `.gb-landing`).
 
+**Shared helpers, one copy.** `docs/src/dashboard/assets/govbot-utils.js` (plain ES5, `window.GB`) holds
+the small functions several pages used to copy-paste: `GB.billKey` (the `state~session~id` key behind every
+`legislation.html#bill=` link), `GB.matchLegislator(roster, name)` (sponsor → one `people.json` legislator,
+Jr./Sr. suffix stripping + two-word-surname fallback, never guesses) and `GB.formatAsOf` (the "Data as of …
+UTC (… CDT)" label). Each dashboard loads it right before its own inline script; `docs/theme/index.hbs` loads
+it before `landing.js`. Change these there, not in a page. The retired features' code (legislation's charts /
+tooltip / "pending jurisdictions" note, elections' old Illinois county finder, ballot/ward filters and corner
+flag, and the old tab-bar / brandbar / theme-pill CSS on every page) was deleted — don't look for it.
+
 **Civic redesign (in progress).** The dashboard is being revamped into a dark-mode-first
 "civic institution" per the design brief in `tamara-notes/`. **Brand colour = a lively green ("Spring"),
 not gold** (chosen on the "Govbot Green" Design canvas): `govbot.css` defines `--gb-primary` (dark
@@ -501,14 +510,12 @@ Springfield, picker) is unchanged. The office-card area's **stat scorecards (`#t
 `renderTiles`) and the ballot-date / "Only races with candidates" / Clear / "Follow every race"
 controls were removed** — the `#filters` bar now holds **only the search box** (`#f-search`,
 placeholder "Search races & candidates…", widened to fill its row so the placeholder isn't
-clipped). The ballot-date filter is still driven by the hero ballot cards + calendar (its removed
-`#f-ballot`/`#f-hascands`/`#f-clear`/`#rss-all` refs are null-guarded; `#rss-pop`/`openRss` stay for
-the per-race and Springfield feeds), and the empty-state "Clear filters" button calls a null-safe
-`clearFilters()`. **The standalone Illinois county finder (`#bfinder`,
+clipped). Search is now the only race filter (`state.filters = { search }`; the old ballot-date /
+has-candidates / ward filters and their code were deleted); `#rss-pop`/`openRss` stay for the per-race
+and Springfield feeds, and the empty-state "Clear filters" button calls `clearFilters()`. **The standalone Illinois county finder (`#bfinder`,
 `renderBallotFinder`) was removed** — the Explore Chicago map below (retitled "Find your ballot")
-is the single ballot entry now, so the redundant second IL map + county/ward picker are gone. The
-`renderBallotFinder`/`resolveBallot` functions and the `#bf-*` guards remain defined but uncalled
-(and `cmOpenWardBallot` still guards `#bf-ward-sel`/`#bf-chips`), so nothing throws. What that finder
+is the single ballot entry now, so the redundant second IL map + county/ward picker are gone, and its
+code and CSS (`renderBallotFinder`, `resolveBallot`, `cmOpenWardBallot`, the `.bf-*` rules) were deleted. What that finder
 used to be (kept here for context): a **"Find your ballot"** map-first
 entry (`#bfinder`, `renderBallotFinder`): a geographic **Illinois county choropleth** — all 102
 county paths + the state outline from the committed `assets/il-counties.json` (generated from US
@@ -571,7 +578,7 @@ expands it in place to the full details (`cmRaceDetails` — each candidate with
 money and an official-source link), and a single boxed `cmDistrictNote` (`.cm-more`) warns
 **"⚠️ Address-specific races — CPS subdistrict, police district council, Illinois Senate & House, and
 U.S. House. Open the other ballots below to see them."** (the earlier "See Ward N's full ballot →"
-button was removed; `cmOpenWardBallot` remains defined but uncalled, so nothing throws); a
+button and its `cmOpenWardBallot` were removed); a
 **neighborhood** shows its name (`cmNiceName`
 title-cases, fixes O'Hare/Lakeview/McKinley Park), how many wards it spans, the same expandable common-race bars, and **tappable ward chips** (→ switch to ward view, select +
 `cmFocusRegion` zooms to it, since the alderperson varies by ward). Below Explore Chicago sits a

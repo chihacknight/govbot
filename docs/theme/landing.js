@@ -70,22 +70,12 @@
 
   // ---- Projects › Legislation: recent activity, one bill per state ----
   // Resolve a sponsor to a single roster legislator [given, full, party, area],
-  // or null when it can't be pinned to exactly one person (never guess). Mirrors
-  // legislation.html's matcher: surname-only, "Surname, F", or "First Last".
+  // or null when it can't be pinned to exactly one person (never guess) — the
+  // shared matcher in dashboard/assets/govbot-utils.js, same as legislation.html.
   function matchLeg(state, name, people) {
-    if (!name || !people) return null;
-    var roster = people[state]; if (!roster) return null;
-    var raw = String(name).trim(), family = raw, first = "", comma = raw.indexOf(",");
-    if (comma !== -1) { family = raw.slice(0, comma).trim(); first = raw.slice(comma + 1).replace(/[^A-Za-z]/g, ""); }
-    else if (/\s/.test(raw)) { var parts = raw.split(/\s+/); first = parts[0]; family = parts[parts.length - 1]; }
-    var cands = roster[family.toLowerCase()];
-    if (!cands || !cands.length) return null;
-    if (cands.length === 1) return cands[0];
-    if (first) { var fi = first.charAt(0).toLowerCase();
-      var hits = cands.filter(function (c) { return (c[0] || "").trim().toLowerCase().charAt(0) === fi; });
-      if (hits.length === 1) return hits[0]; }
-    return null;
+    return people ? GB.matchLegislator(people[state], name) : null;
   }
+
   function partyMeta(party) {
     var p = (party || "").toLowerCase();
     if (p.indexOf("democrat") === 0) return { letter: "D", cls: "is-dem" };
@@ -100,12 +90,8 @@
     if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
     return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   }
-  // A bill's unique key (state + session + id) so the link opens that exact
-  // bill's card on the legislation page. Must match legislation.html's billKey().
-  function billKey(b) {
-    return encodeURIComponent(b.state || "") + "~" +
-      encodeURIComponent(b.session || "") + "~" + encodeURIComponent(b.id || "");
-  }
+  var billKey = GB.billKey;   // shared (dashboard/assets/govbot-utils.js)
+
   var activityEl = document.getElementById("activity-list");
   if (activityEl) {
     Promise.all([
