@@ -14,7 +14,7 @@
   /* map mdbook vars -> civic tokens (civic tokens auto-switch light/dark) */
   --bg: var(--gb-bg) !important;
   --fg: var(--gb-text) !important;
-  --links: var(--gb-blue-hi) !important;
+  --links: var(--gb-link) !important;
   --inline-code-color: var(--gb-gold-hi) !important;
   --icons: var(--gb-text-muted) !important;
   --icons-hover: var(--gb-text) !important;
@@ -52,7 +52,7 @@
 html, body { font-family: var(--gb-font-sans); background: var(--gb-bg); }
 .content main h1, .content main h2, .content main h3,
 .menu-title { font-family: var(--gb-font-display); letter-spacing: -0.01em; }
-.content main a { color: var(--gb-blue-hi); }
+.content main a { color: var(--gb-link); }
 .content main h1, .content main h2 { border: 0; }
 
 /* mdbook's own theme picker is replaced by the civic toggle in .gb-header */
@@ -223,7 +223,7 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-slide-yours { background: transparent; border: 2px dashed var(--gb-border-strong); }
 .gl-slide-head { display: flex; flex-direction: column; gap: 12px; }
 .gl-slide-cta { align-self: flex-start; margin-top: auto; }
-.gl-kick { display: flex; align-items: center; gap: 12px; font-size: 12.5px; font-weight: 700;
+.gl-kick { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 800;
   letter-spacing: .08em; text-transform: uppercase; color: var(--pc); }
 .gl-ico { width: 44px; height: 44px; border-radius: 12px; flex: none; display: flex; align-items: center;
   justify-content: center; color: var(--pc); background: color-mix(in srgb, var(--pc) 14%, transparent); }
@@ -408,7 +408,7 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 /* recent activity rows (ported) */
 #activity-list { display: flex; flex-direction: column; gap: 16px; }
 .gb-landing .activity-row { display: flex; gap: 14px; align-items: baseline; text-decoration: none; color: inherit; }
-.gb-landing .activity-row .tag { font-size: 12px; font-weight: 600; color: var(--gb-blue-hi); }
+.gb-landing .activity-row .tag { font-size: 12px; font-weight: 600; color: var(--gb-link); }
 .gb-landing .activity-row .when { font-size: 12px; color: var(--gb-text-2); white-space: nowrap; }
 .gb-landing .activity-row.rich { flex-direction: column; align-items: stretch; gap: 9px; padding: 12px 14px; border-radius: 10px;
   --ar-c: var(--gb-primary); border: 2px solid var(--ar-c); background: color-mix(in srgb, var(--ar-c) 6%, var(--gb-surface));
@@ -440,7 +440,7 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gb-landing .ar-av-img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; display: block; }
 .ar-spon-name { font-size: 12.5px; color: var(--gb-text); font-weight: 500; }
 .ar-party { font-size: 10px; font-weight: 700; margin-left: 3px; }
-.ar-party.is-dem { color: var(--gb-blue-hi); }
+.ar-party.is-dem { color: var(--gb-link); }
 .ar-party.is-rep { color: var(--gb-red); }
 .ar-party.is-oth { color: var(--gb-gold); }
 .ar-more { font-size: 12px; color: var(--gb-text-2); font-weight: 600; align-self: center; }

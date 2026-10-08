@@ -71,6 +71,19 @@ def run():
         picked = fsp.onscreen_bills(bills, per_state=1, max_bills=6)
         assert [b["latest_action"] for b in picked] == \
             ["2026-02-10", "2026-02-09", "2026-02-08"], f"one-per-state newest-first failed: {picked}"
+        # Ties (many bills share a date) break exactly like the homepage: a state's
+        # bill with the higher id wins, and tied states list by state code.
+        tied = [
+            {"state": "nj", "id": "S1", "latest_action": "2026-03-01"},
+            {"state": "nj", "id": "S9", "latest_action": "2026-03-01"},
+            {"state": "mi", "id": "HB2", "latest_action": "2026-03-01"},
+        ]
+        assert [(b["state"], b["id"]) for b in fsp.onscreen_bills(tied)] == [("mi", "HB2"), ("nj", "S9")]
+        # Same matcher as the frontend: Jr./Sr. suffix and two-word surnames.
+        sfx = {"il": {"evans": [("Marcus", "Marcus C. Evans, Jr.", "")],
+                      "ochoa bogh": [("Rosilicie", "Rosilicie Ochoa Bogh", "")]}}
+        assert fsp.match("il", "Marcus C. Evans, Jr.", sfx)[1] == "Marcus C. Evans, Jr."
+        assert fsp.match("il", "Rosilicie Ochoa Bogh", sfx)[1] == "Rosilicie Ochoa Bogh"
 
         # --- injected sources ----------------------------------------------
         def fake_fetch(url):

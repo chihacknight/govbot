@@ -62,6 +62,8 @@ import html
 import json
 import re
 import sys
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -108,24 +110,27 @@ _FED_WORDS = (
 
 
 # ----------------------------------------------------------------------------
-# Which bills are "on screen": mirror the homepage's Recent-activity selection
-# (newest recorded action first, one bill per state), so we only fetch photos
-# for the sponsors the card can actually show, never the whole set.
+# Which bills are "on screen": exactly the homepage's Recent-activity selection
+# (docs/theme/landing.js), so we only fetch photos for the sponsors the card
+# actually shows, never the whole set. Each state's newest bill is the one with
+# the latest (latest_action, id) — the same order scripts/build_site_slices.py
+# writes into bills/index.json — and states are listed newest-first, ties broken
+# by state code. Many bills share a date, so both sides must break ties the same
+# way; when they didn't, photos were fetched for bills the homepage never showed.
 # ----------------------------------------------------------------------------
 def onscreen_bills(bills, per_state=1, max_bills=6):
-    dated = [b for b in bills if b.get("latest_action")]
-    pool = sorted(dated or bills,
-                  key=lambda b: str(b.get("latest_action") or ""), reverse=True)
-    seen, out = {}, []
-    for b in pool:
-        st = b.get("state") or ""
-        if seen.get(st, 0) >= per_state:
-            continue
-        seen[st] = seen.get(st, 0) + 1
-        out.append(b)
-        if len(out) >= max_bills:
-            break
-    return out
+    dated = [b for b in bills if b.get("latest_action")] or list(bills)
+    by_state = {}
+    for b in sorted(dated, key=lambda b: (str(b.get("latest_action") or ""), str(b.get("id") or "")),
+                    reverse=True):
+        by_state.setdefault(b.get("state") or "", []).append(b)
+    # Two stable sorts: by state code, then newest head bill first.
+    heads = sorted(sorted(by_state), key=lambda st: str(by_state[st][0].get("latest_action") or ""),
+                   reverse=True)
+    out = []
+    for st in heads:
+        out.extend(by_state[st][:per_state])
+    return out[:max_bills]
 
 
 # ----------------------------------------------------------------------------
@@ -169,32 +174,41 @@ def is_federal(state):
 
 
 # Resolve a sponsor to exactly one legislator, or None — the same rules as
-# legislation.html's matchLeg (surname-only, "Surname, F", or "First Last",
-# disambiguated by first initial). We never guess an ambiguous surname, so the
+# GB.matchLegislator in docs/src/dashboard/assets/govbot-utils.js (surname-only,
+# "Surname, F" or "First Last", disambiguated by first initial; Jr./Sr. stripped;
+# two-word surnames). We never guess an ambiguous surname, so the
 # keys stay in lockstep with what the frontend resolves.
 def match(state, name, index):
     roster = index.get(state)
     if not name or not roster:
         return None
-    raw = str(name).strip()
-    family, first = raw, ""
-    if "," in raw:
+    # Strip a trailing generational suffix ("Evans, Jr.", "Addabbo Jr.", "Jones, III")
+    # so the surname isn't misread as the suffix.
+    raw = re.sub(r",?\s*(?:jr|sr|ii|iii|iv|v)\.?\s*$", "", str(name).strip(), flags=re.I).strip()
+    family, first, parts = raw, "", raw.split()
+    comma = "," in raw
+    if comma:
         family, _, rest = raw.partition(",")
         family = family.strip()
         first = re.sub(r"[^A-Za-z]", "", rest)
-    elif re.search(r"\s", raw):
-        parts = raw.split()
+    elif len(parts) > 1:
         first, family = parts[0], parts[-1]
-    cands = roster.get(family.lower())
-    if not cands:
-        return None
-    if len(cands) == 1:
-        return cands[0]
-    if first:
-        fi = first[0].lower()
-        hits = [c for c in cands if (c[0] or "").strip()[:1].lower() == fi]
-        if len(hits) == 1:
-            return hits[0]
+    # The last word as the surname, then — for two-word surnames keyed whole
+    # ("Ochoa Bogh") — the last two words.
+    keys = [family.lower()]
+    if not comma and len(parts) >= 2:
+        keys.append((parts[-2] + " " + parts[-1]).lower())
+    for key in keys:
+        cands = roster.get(key)
+        if not cands:
+            continue
+        if len(cands) == 1:
+            return cands[0]
+        if first:
+            fi = first[0].lower()
+            hits = [c for c in cands if (c[0] or "").strip()[:1].lower() == fi]
+            if len(hits) == 1:
+                return hits[0]
     return None  # several share the surname — don't guess
 
 
@@ -262,10 +276,23 @@ def default_fetch(url, timeout=15, retries=2):
     raise last if last else RuntimeError("fetch failed")
 
 
-def _default_get_json(url, timeout=15):
+def _default_get_json(url, timeout=15, retries=3, sleep=time.sleep):
+    """GET a Wikimedia API JSON response. A 429/503 (rate limit / busy) is retried
+    politely — honouring Retry-After, capped at 10 s — since a skipped lookup means a
+    sponsor shows initials instead of their photo."""
     req = urllib.request.Request(url, headers={"User-Agent": _UA, "Accept": "application/json"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:  # noqa: S310 - Wikipedia REST API
-        return json.loads(r.read().decode("utf-8"))
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:  # noqa: S310 - Wikipedia REST API
+                return json.loads(r.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            if exc.code not in (429, 503) or attempt == retries:
+                raise
+            try:
+                wait = float(exc.headers.get("Retry-After") or 0)
+            except (TypeError, ValueError):
+                wait = 0
+            sleep(min(10.0, wait or 2.0 * (attempt + 1)))
 
 
 def _wiki_summary(get_json, title, timeout):

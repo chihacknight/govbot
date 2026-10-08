@@ -19,7 +19,7 @@
     color: var(--text-primary);
     font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
   }
-  a { color: var(--series-1); }
+  a { color: var(--gb-link); }
   .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 20px 48px; }
 
   header.top { margin-bottom: 20px; }
@@ -420,14 +420,15 @@
   .m-act { display: flex; gap: 10px; font-size: 12.5px; padding: 3px 0; border-bottom: 1px solid var(--gridline); }
   .m-act .d { color: var(--text-muted); white-space: nowrap; min-width: 88px; font-variant-numeric: tabular-nums; }
   .m-links { display: flex; flex-wrap: wrap; gap: 8px 14px; }
-  .m-links a { font-size: 13px; font-weight: 550; }
+  /* Modal links read as links: bright link-blue, bolder, underlined (they were dim blue on near-black). */
+  .m-links a { font-size: 14px; font-weight: 650; color: var(--gb-link); text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
   /* De-emphasized source link: a bare directory/index URL that doesn't point
      straight at the bill. */
-  .m-links a.m-src-weak { color: var(--series-1); font-weight: 450; }
+  .m-links a.m-src-weak { color: var(--gb-link); font-weight: 600; }
   /* Share link reads as an action: filled pill, cursor pointer, no visited color. */
-  .m-links a.m-share { cursor: pointer; font-weight: 600; padding: 2px 10px;
-    border: 1px solid var(--border); border-radius: 999px; }
-  .m-links a.m-share:hover { background: var(--hover-wash); border-color: var(--series-1); }
+  .m-links a.m-share { cursor: pointer; font-weight: 650; padding: 4px 12px; color: var(--gb-text);
+    text-decoration: none; border: 2px solid var(--gb-text); border-radius: 999px; }
+  .m-links a.m-share:hover { background: var(--hover-wash); border-color: var(--gb-link); }
   /* Standalone Share row sits above the Status section. */
   .m-sharerow { margin: 4px 0 16px; }
   .m-muted { color: var(--text-muted); font-size: 13px; }
@@ -1102,8 +1103,7 @@
         loadState(code).then((bills) => {
           const b = bills.find((x) => billKey(x) === key);
           if (!b) return;
-          const open = state.filters.states.size === 1 && state.filters.states.has(code);
-          (open ? Promise.resolve() : eeApplyFilter(code)).then(() => openDetails(b));
+          openBillInCatalog(b);
         });
         return false;
       }
@@ -2032,7 +2032,7 @@
       top.append(mkel("span", "ee-mrow-tag", code.toUpperCase() + " · " + b.id), mkel("span", "ee-mrow-when", relDate(b.latest_action)));
       row.append(top, mkel("div", "ee-mrow-title", b.title || b.id));
       if (b.latest_action_desc) row.append(mkel("div", "ee-mrow-act", b.latest_action_desc));
-      row.addEventListener("click", () => openDetails(b));
+      row.addEventListener("click", () => openBillInCatalog(b));
       host.append(row);
     });
     const btn = $("ee-d-open");
@@ -2051,6 +2051,14 @@
       rebuildFilterOptions();   // this state's sessions / chambers / topic counts
       eeOpenCatalog(code);
     });
+  }
+  // Open a bill's card with its state's catalog already open underneath, so closing
+  // the card leaves the reader in that state's bills (map detail rows, the Recent
+  // strip and #bill= deep links all go through here).
+  function openBillInCatalog(b) {
+    const code = String(b.state || "").toLowerCase();
+    const open = state.filters.states.size === 1 && state.filters.states.has(code);
+    (open || !code ? Promise.resolve() : eeApplyFilter(code)).then(() => openDetails(b));
   }
   function eeOpenCatalog(code) {
     state.filters.states.clear(); state.filters.states.add(code);
@@ -2171,7 +2179,7 @@
         });
         card.append(trow);
       }
-      card.addEventListener("click", () => openDetails(b));
+      card.addEventListener("click", () => openBillInCatalog(b));
       host.append(card);
     });
   }

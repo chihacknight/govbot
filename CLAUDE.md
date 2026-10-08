@@ -179,6 +179,14 @@ used to animate `filter`/`box-shadow`, a repaint every frame), and the cursor-ch
 its bubble shows. mdbook's docs-search scripts + ~600 KB `searchindex.json` load only on doc pages, not the
 homepage (`index.hbs` loader skips `.gb-landing`).
 
+**Link colour.** Blue text and links use `--gb-link` (`govbot.css`: `#8AB4FF` dark, `#1747C9` light —
+~9:1 / ~7:1), not `--gb-blue-hi`, which is too dim on the dark page; the legislation bill modal's links
+(`.m-links a`) are also bolder and underlined, and its "Share this bill" pill has a 2px full-contrast
+border. The homepage Legislation slide's accent (`--pc`) uses `--gb-link` too.
+**Opening a bill opens its state's catalog underneath** (`openBillInCatalog` in legislation.html — used by
+the map detail rows, the Recent strip and `#bill=` deep links), so closing the bill leaves the reader in
+that state's bills; a second Escape / ✕ closes the catalog.
+
 **Shared helpers, one copy.** `docs/src/dashboard/assets/govbot-utils.js` (plain ES5, `window.GB`) holds
 the small functions several pages used to copy-paste: `GB.billKey` (the `state~session~id` key behind every
 `legislation.html#bill=` link), `GB.matchLegislator(roster, name)` (sponsor → one `people.json` legislator,
@@ -256,7 +264,11 @@ the initials, so a runtime image error just drops the `<img>` and reveals the in
 (the sponsor chip stays). An unresolved non-person string (e.g. a committee) with no photo is skipped
 (still counted in "+N more", which counts resolved sponsors beyond the 3 shown). The card just shows
 the newest bill per state (no photographed-bill preference); a state whose sponsors have no photo
-shows their initials monograms + name + party. Party + full name are resolved from `people.json` with the same matcher
+shows their initials monograms + name + party. **The photo step and the card must pick the same
+bills:** each state's newest bill by (`latest_action`, `id`) — the order `bills/index.json` stores — with
+states listed newest-first and ties broken by state code (`onscreen_bills` in the script, the `heads` sort
+in `landing.js`). Many bills share a date; when the two broke ties differently, photos were fetched for
+bills the homepage never showed. Wikimedia lookups retry a 429/503 politely (Retry-After, ≤10 s). Party + full name are resolved from `people.json` with the same matcher
 legislation.html uses (`matchLeg`, surname-only / "Surname, F" / "First Last", never guessing an
 ambiguous surname). **Photos are vendored at deploy, never committed** by
 `scripts/fetch_sponsor_photos.py` (deploy-docs.yml, "Vendor sponsor photos for on-screen bills",

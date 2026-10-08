@@ -43,7 +43,7 @@
 </div>
 <div class="gl-chips" role="group" aria-label="Choose a project"><button type="button" class="gl-chip" data-slide="0" aria-pressed="true">Legislation</button><button type="button" class="gl-chip" data-slide="1" aria-pressed="false">Hearings</button><button type="button" class="gl-chip" data-slide="2" aria-pressed="false">Elections</button><button type="button" class="gl-chip" data-slide="3" aria-pressed="false">Social bots</button><button type="button" class="gl-chip" data-slide="4" aria-pressed="false">Your project</button></div>
 <div class="gl-car" id="gl-car" tabindex="0" aria-roledescription="carousel" aria-label="Projects built on Govbot">
-<article class="gl-slide" style="--pc: var(--gb-blue-hi)" aria-roledescription="slide" aria-label="1 of 5: Legislation">
+<article class="gl-slide" style="--pc: var(--gb-link)" aria-roledescription="slide" aria-label="1 of 5: Legislation">
 <div class="gl-slide-head">
 <div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg></span>Legislation</div>
 <h3 class="gl-h3">What is government doing?</h3>
@@ -122,7 +122,7 @@
 </ol>
 <div class="gl-build-side">
 <div class="gl-card">
-<span class="gl-label" style="color: var(--gb-blue-hi)">No install? Ask an AI.</span>
+<span class="gl-label" style="color: var(--gb-link)">No install? Ask an AI.</span>
 <p class="gl-p">Paste this into Claude or ChatGPT — even on your phone:</p>
 <div class="gl-prompt"><span class="gl-code-t">Read this guide, then follow it to answer my question:<br>https://raw.githubusercontent.com/chihacknight/govbot/main/llms.txt<br><br>Question: What's the status of Wyoming HB0001 in the 2025 session, who sponsored it, and what's the official source link?</span><button type="button" class="gl-copy" aria-label="Copy AI prompt">Copy</button></div>
 </div>
