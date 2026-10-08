@@ -236,7 +236,21 @@ input::placeholder, textarea::placeholder { color: var(--gb-placeholder) !import
     transition: opacity .18s ease, transform .18s ease; overflow-y: auto;
   }
   .gb-drawer.open { opacity: 1; transform: none; pointer-events: auto; }
-  .gb-drawer a { display: block; padding: 14px 4px; font-size: 18px; color: var(--gb-text); border-bottom: 1px solid var(--gb-border); }
+  /* The drawer mirrors the desktop nav: Projects / Data groups (tap to expand, same items as the
+     dropdowns, with their icons + descriptions), then the plain links. */
+  .gb-drawer .gb-dplain, .gb-drawer .gb-dgroup > summary { display: flex; align-items: center; gap: 8px; padding: 14px 4px;
+    font-size: 18px; font-weight: 500; color: var(--gb-text); border-bottom: 1px solid var(--gb-border); }
+  .gb-drawer .gb-dgroup > summary { cursor: pointer; list-style: none; }
+  .gb-drawer .gb-dgroup > summary::-webkit-details-marker { display: none; }
+  .gb-drawer .gb-dgroup > summary .gb-caret { width: 16px; height: 16px; transition: transform .15s ease; }
+  .gb-drawer .gb-dgroup[open] > summary .gb-caret { transform: rotate(180deg); }
+  .gb-drawer .gb-dgroup-items { padding: 6px 0 10px; border-bottom: 1px solid var(--gb-border); }
+  .gb-drawer .gb-dgroup-items a { display: flex; gap: 12px; align-items: flex-start; padding: 10px 8px; border-radius: 10px; color: var(--gb-text); }
+  .gb-drawer .gb-dgroup-items a:hover { background: var(--gb-hover); }
+  .gb-drawer .gb-dgroup-items a svg { width: 20px; height: 20px; flex: none; margin-top: 2px; color: var(--accent, var(--gb-blue-hi)); }
+  .gb-drawer .mega-t { font-size: 16px; font-weight: 600; display: block; }
+  .gb-drawer .mega-d { font-size: 13.5px; color: var(--gb-text-2); display: block; margin-top: 1px; }
+  .gb-drawer a[aria-current="page"] { text-decoration: underline 2px var(--gb-primary); text-underline-offset: 6px; }
   .gb-drawer .gb-search { display: flex; width: auto; margin-bottom: 12px; }
 }
 

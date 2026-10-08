@@ -56,7 +56,8 @@
     };
     menuBtn.setAttribute("aria-expanded", "false");
     menuBtn.addEventListener("click", function () { setOpen(!drawer.classList.contains("open")); });
-    drawer.addEventListener("click", function (e) { if (e.target.tagName === "A") setOpen(false); });
+    // Close on any link tap — including the icon/description spans inside a group item.
+    drawer.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("a")) setOpen(false); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") setOpen(false); });
   }
 
