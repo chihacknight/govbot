@@ -153,7 +153,15 @@ art stays crisp; the waving flag overlay is unchanged) heroes were recoloured to
 (a hue remap of their gold pixels, keeping value + alpha; the gold originals are in git history), the
 legislation US heat-map ramp is green, and the gavel favicon (now also on the mdbook docs pages) is green.
 On the light-mode homepage the statue stands in a deep-green "night" panel (`.gl-art`) because her pale
-line-art highlights wash out on a light page. Shared design system lives in
+line-art highlights wash out on a light page. **No dimmed text anywhere (per request):** in `govbot.css` the secondary/muted text tokens
+(`--gb-text-2`, `--gb-text-muted`, and the legacy `--text-secondary`/`--text-muted` aliases) equal
+`--gb-text` in both themes, so every page's "secondary" copy — header nav, the homepage's 4 metric cards,
+captions, labels — reads at full contrast; only input placeholders keep a lighter `--gb-placeholder`
+(a global `::placeholder` rule) so a hint never looks like typed text. Page-level dimming was removed too
+(the hearings tagline's alpha, canceled-hearing row opacity, jump-pill counts, the architecture diagram's
+`--node-sub`, the map zoom-% labels, the homepage sticky-note signatures). Header nav hover / current page
+now show a green underline (they used to brighten from grey). The one deliberate exception is the
+homepage carousel's peeking neighbour slides, faded so the active slide reads as active. Shared design system lives in
 `docs/src/dashboard/assets/govbot.css` (dark-first tokens + components; legacy token names like
 `--page`/`--series-N` are aliased to the civic palette so unmigrated inline page CSS reskins
 automatically) and `docs/src/dashboard/assets/govbot-shell.js` (theme toggle with dark default,
