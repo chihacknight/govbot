@@ -1,13 +1,13 @@
 ---
 name: il
-description: IL's scraper was paused 2026-09-30 as "out of session" but Illinois files bills year-round, so every bill filed after 2026-09-24 was missing (found by a volunteer's ilga.gov scan). Unpaused and pinned on with keep_active. One of the per-state files indexed in tamara-notes/state-specific/README.md.
+description: IL is out of session and its scraper is paused on purpose while the team migrates scraping to a new system, so bills filed after 2026-09-24 are expected to be missing for now. A volunteer's ilga.gov scan led to a field audit. One of the per-state files indexed in tamara-notes/state-specific/README.md.
 metadata:
   type: project
 ---
 
 # Illinois
 
-## Status: 🟢 Fix in flight: scraper unpaused and pinned on (`keep_active`)
+## Status: ⏸️ Paused on purpose (out of session; scrapers paused during the migration to a new system)
 
 ## What was found (volunteer ilga.gov scan, 2026-10)
 
@@ -21,31 +21,16 @@ Findings:
 2. **Two document types we don't have at all:** Executive Orders (16) and Joint Session
    Resolutions (3). See "Scope" below.
 
-## Root cause of the missing bills
+## Why those bills are missing
 
-- **When it stopped:** the scraper's last run that saved new data was around 2026-09-25 (the fleet monitor showed the scraper repo's last data commit ~159h before 2026-10-02).
-- **The pause:** on **2026-09-30**, PR #180 paused scraping for 46 jurisdictions that LegiScan's calendar listed as out of session. Illinois was one of them, because its spring session adjourned 2026-05-31.
-- **Why that's wrong for Illinois:** the General Assembly is a two-year body (104th: Jan 2025 – Jan 2027). It **files bills year-round** and holds a fall veto session.
-- **Why it would have stayed paused:**
-  - The daily `check-sessions.py` reads OpenStates' session dates, and OpenStates lists the 104th as ending **2025-05-31** (a known data error; see `tamara-notes/session-dates/session-dates-comparison.md`). So it would have kept Illinois paused indefinitely.
-  - The weekly flatline audit only watches in-session states, and the session calendar had Illinois as out of session. So no alarm fired.
-- **Timeline gap:** what happened between ~09-25 and the 09-30 pause (no new data saved) wasn't checked; the scraper repo's run logs weren't reachable from the session that found this.
+Expected, not a bug. Illinois is out of session, and on 2026-09-30 (PR #180) the team paused the
+scrapers on purpose while everything moves to a new system. Our newest Illinois bill is from
+2026-09-24; the bills filed since will come in once scraping runs on the new system.
 
-## Fix
-
-- `chn-openstates-scrape.yml` / `chn-openstates-files.yml`: `il` switched back to the active templates (`openstates-scrape`, `openstates-to-ocd-files`).
-- New per-locale `keep_active: "<reason>"` setting (in `config.schema.json`). `check-sessions.py` never pauses a `keep_active` locale and makes no API call for it. Offline check: `python3 check-sessions.py --self-test`.
-- `session-calendar-2026.md`: `il` marked ✅, so the weekly flatline audit now watches Illinois.
-- **Going live:** the config change reaches the scraper repos via the Sunday full reconcile in `check-sessions.yml`, or right away via the "Apply Templates to State Repos" workflow (`config: both`, `states: il`).
-- **Verify after the first run:** HB5817–HB5819 and HR1037–HR1044 appear in `govbot-data/il-legislation`, and the dashboard's newest IL bill moves past 2026-09-24.
-
-## Keeping it from happening again (every state)
-
-- `check-sessions.py` now also keeps a locale on when OpenStates shows a bill action in the last 14
-  days, whatever its session dates say (`RECENT_ACTIVITY_DAYS`).
-- The weekly audit's new "Behind the legislature" check flags any state, paused or active, whose
-  legislature acted in the last 14 days while our newest action is 7+ days older.
-- Details: `actions/openstates-scrape-audits/README.md`.
+(A first reading treated this as a bug and pinned Illinois "on" (PR #214) plus added a keep-on rule
+and a "behind the legislature" alarm (PR #215). Both were undone once the migration pause was
+confirmed. None of it reached the live scrapers: the session-check workflow that applies config has
+been disabled since July.)
 
 ## Scope: what the Illinois scraper collects
 

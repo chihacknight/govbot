@@ -126,12 +126,7 @@ locales:
     scrape_timeout_minutes: "720"
     scrape_cron: "0 6 * * *"  # Mountain
   il:
-    template: openstates-scrape
-    # Illinois' General Assembly runs two years (104th: Jan 2025 - Jan 2027) and files bills
-    # year-round, incl. the fall veto session; OpenStates lists the 104th as ending 2025-05-31,
-    # so the session check would pause it. It was paused 2026-09-30 (PR #180) and missed every
-    # bill filed after 2026-09-24 (HB5817+, HR1037+), found by a volunteer's ilga.gov scan.
-    keep_active: "Illinois files bills year-round - the OpenStates 104th session end date (2025-05-31) is wrong"
+    template: openstates-scrape-paused
     name: Illinois
     toolkit_branch: main
     scrape_timeout_minutes: "720"

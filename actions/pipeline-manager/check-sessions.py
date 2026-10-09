@@ -6,20 +6,9 @@ Reads chn-openstates-scrape.yml, queries the OpenStates v3 API for each locale,
 and flips the template between 'openstates-scrape' (in session) and
 'openstates-scrape-paused' (out of session) based on today's date.
 
-A locale is also kept on when its legislature shows real bill activity: OpenStates' most
-recent bill action within RECENT_ACTIVITY_DAYS. Session dates alone can be wrong
-(Illinois' were a year off), and a legislature still filing bills must not be paused.
-
-A locale with `keep_active: "<reason>"` in the config is never paused: some
-legislatures file bills year-round even when OpenStates' session dates say the
-session is over (Illinois' General Assembly is a two-year body; OpenStates lists
-its 104th session as ending 2025-05-31). Those locales are left on the active
-template without an API call.
-
 Usage:
     OPENSTATES_API_KEY=your_key python3 check-sessions.py
     OPENSTATES_API_KEY=your_key python3 check-sessions.py --dry-run
-    python3 check-sessions.py --self-test     # offline checks, no API key needed
 """
 
 import argparse
@@ -28,7 +17,6 @@ import os
 import re
 import sys
 import time
-import urllib.parse
 import urllib.request
 import urllib.error
 from datetime import date
@@ -38,8 +26,6 @@ import yaml
 
 SCRIPT_DIR = Path(__file__).parent
 CONFIG_FILE = SCRIPT_DIR / "chn-openstates-scrape.yml"
-
-RECENT_ACTIVITY_DAYS = 14   # a bill action this recent keeps a locale on, whatever its session dates say
 
 ACTIVE_TEMPLATE = "openstates-scrape"
 PAUSED_TEMPLATE = "openstates-scrape-paused"
@@ -86,36 +72,6 @@ def fetch_sessions(ocd_id: str, api_key: str, max_retries: int = 5) -> list:
 
 
 YEAR_RANGE_RE = re.compile(r"(20\d{2})\D{0,3}(20\d{2})")
-
-
-def fetch_latest_action(ocd_id: str, api_key: str, max_retries: int = 3):
-    """The date of the jurisdiction's most recent bill action per OpenStates, or None
-    (no bills, or the API failed -- the caller then falls back to session dates alone).
-    Also used by actions/openstates-scrape-audits/weekly-scraper-audit.py."""
-    query = urllib.parse.urlencode({"jurisdiction": ocd_id, "sort": "latest_action_desc",
-                                    "per_page": 1, "apikey": api_key})
-    url = f"https://v3.openstates.org/bills?{query}"
-    for attempt in range(max_retries):
-        try:
-            with urllib.request.urlopen(url, timeout=20) as resp:
-                results = json.loads(resp.read()).get("results") or []
-            raw = (results[0].get("latest_action_date") or "")[:10] if results else ""
-            return date.fromisoformat(raw) if raw else None
-        except urllib.error.HTTPError as e:
-            if e.code == 429 and attempt < max_retries - 1:
-                time.sleep(max(int(e.headers.get("Retry-After", 15)), 2 ** (attempt + 3)))
-                continue
-            print(f"    ⚠️  latest-action lookup failed for {ocd_id}: HTTP {e.code}", file=sys.stderr)
-            return None
-        except Exception as e:  # noqa: BLE001 - fall back to session dates
-            print(f"    ⚠️  latest-action lookup failed for {ocd_id}: {e}", file=sys.stderr)
-            return None
-    return None
-
-
-def recently_active(latest, today: date) -> bool:
-    """A bill action within RECENT_ACTIVITY_DAYS (a future-dated scheduled action doesn't count)."""
-    return latest is not None and 0 <= (today - latest).days <= RECENT_ACTIVITY_DAYS
 
 
 def corrected_end_date(session: dict, end_date: date) -> date:
@@ -171,52 +127,11 @@ def is_in_session(sessions: list, today: date) -> tuple[bool, str]:
     return False, ""
 
 
-def run_self_test() -> int:
-    """Offline checks for the session logic and the keep_active override."""
-    failures = []
-
-    def check(label, actual, expected):
-        if actual != expected:
-            failures.append(f"{label}: expected {expected!r}, got {actual!r}")
-
-    today = date(2026, 10, 9)
-    il_sessions = [{"identifier": "104th", "name": "104th Regular Session",
-                    "start_date": "2025-01-08", "end_date": "2025-05-31"}]
-    check("IL per OpenStates is out of session", is_in_session(il_sessions, today)[0], False)
-    biennium = [{"identifier": "2025-2026", "name": "2025-2026 Regular Session",
-                 "start_date": "2025-01-08", "end_date": "2025-12-31"}]
-    check("biennium end date is corrected", is_in_session(biennium, today)[0], True)
-    check("keep_active locale is never paused", kept_active({"keep_active": "files year-round"}), True)
-    check("blank keep_active does nothing", kept_active({"keep_active": ""}), False)
-    check("no keep_active does nothing", kept_active({}), False)
-    check("action 3 days ago keeps a locale on", recently_active(date(2026, 10, 6), today), True)
-    check("action 20 days ago does not", recently_active(date(2026, 9, 19), today), False)
-    check("future-dated action does not", recently_active(date(2026, 11, 1), today), False)
-    check("no action data does not", recently_active(None, today), False)
-
-    if failures:
-        print(f"❌ {len(failures)} self-test failure(s):", file=sys.stderr)
-        for f in failures:
-            print(f"   {f}", file=sys.stderr)
-        return 1
-    print("✅ all self-tests passed")
-    return 0
-
-
-def kept_active(locale_cfg: dict) -> bool:
-    """True when the config pins this locale to the active template (see module docstring)."""
-    return bool(str(locale_cfg.get("keep_active") or "").strip())
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="Show changes without writing them")
     parser.add_argument("--only", help="Comma-separated locale codes to check (e.g. ia,mt,or,wv,mp)")
-    parser.add_argument("--self-test", action="store_true", help="Run offline checks and exit (no API key needed)")
     args = parser.parse_args()
-
-    if args.self_test:
-        sys.exit(run_self_test())
 
     api_key = os.environ.get("OPENSTATES_API_KEY")
     if not api_key:
@@ -242,15 +157,6 @@ def main():
 
     for code, locale_cfg in locales.items():
         current_template = locale_cfg.get("template", ACTIVE_TEMPLATE)
-        if kept_active(locale_cfg):
-            # Pinned on: no API call, never paused (see module docstring).
-            changed = current_template != ACTIVE_TEMPLATE
-            print(f"  {code:4s}  📌  {ACTIVE_TEMPLATE}{' ← CHANGED' if changed else ''}  (kept active: {locale_cfg['keep_active']})")
-            if changed:
-                changes.append((code, current_template, ACTIVE_TEMPLATE))
-                if not args.dry_run:
-                    locale_cfg["template"] = ACTIVE_TEMPLATE
-            continue
         ocd_id = ocd_id_for(code)
 
         sessions = fetch_sessions(ocd_id, api_key)
@@ -265,12 +171,6 @@ def main():
             continue
 
         in_session, session_name = is_in_session(sessions, today)
-        if not in_session:
-            # Session dates say "over" -- but is the legislature actually still acting?
-            time.sleep(1.2)
-            latest = fetch_latest_action(ocd_id, api_key)
-            if recently_active(latest, today):
-                in_session, session_name = True, f"recent bill activity, latest action {latest}"
         new_template = ACTIVE_TEMPLATE if in_session else PAUSED_TEMPLATE
         changed = current_template != new_template
 

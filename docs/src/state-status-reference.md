@@ -64,7 +64,7 @@ histogram accumulates, not because nothing is happening.
 | HI | ❌ | ❌ | — | ✅ | 2026-10-03 | — |
 | IA | ❌ | ❌ | — | ✅ | 2026-10-03 | — |
 | ID | ❌ | ❌ | — | ✅ | 2026-10-03 | — |
-| IL | ✅ | ✅ | — | ✅ | 2026-10-09 | [`il.md`](../../tamara-notes/state-specific/il.md) — files bills year-round; scraper pinned on (`keep_active`). Executive Orders and Joint Session Resolutions are not collected, by design. |
+| IL | ❌ | ❌ | — | ✅ | 2026-10-03 | [`il.md`](../../tamara-notes/state-specific/il.md) — Executive Orders and Joint Session Resolutions are not collected, by design. |
 | IN | ❌ | ❌ | — | ✅ | 2026-10-03 | — |
 | KS | ❌ | ❌ | — | ✅ | 2026-10-03 | — |
 | KY | ❌ | ❌ | — | ✅ | 2026-10-03 | — |

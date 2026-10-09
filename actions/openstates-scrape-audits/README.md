@@ -25,7 +25,6 @@ what it does without first untangling it from template provisioning.
 
 ```
 weekly-scraper-audit.py          the production checks (this README documents both)
-test_weekly_scraper_audit.py     offline test for the weekly audit's "behind the legislature" check
 daily-scraper-error-digest.py
 output/
   audit_tracking.json            live state the weekly audit commits back each run --
@@ -87,27 +86,6 @@ score it.
 A small tracking file (`output/audit_tracking.json`) remembers what's
 already been flagged, so a known, still-unresolved issue shows as "STILL OPEN" rather than
 re-alarming as "NEW" every week.
-
-### Weekly Scraper Audit — behind the legislature (check 3)
-
-The flatline check only watches in-session states, so a state paused as "out of session" while
-its legislature kept filing bills went unseen (Illinois, Sept–Oct 2026: see
-`tamara-notes/state-specific/il.md`). This check closes that gap for **every** state, paused or
-active:
-
-- **Ours:** each state's newest bill action on the published site (`bills/index.json`, one fetch).
-- **Theirs:** the newest bill action OpenStates has for that legislature (one v3 API call per
-  state, the same call `check-sessions.py` uses).
-- **Flag:** their newest action is in the last 14 days **and** 7+ days newer than ours — bills
-  are happening and we aren't collecting them. Shown first in the report, as
-  "Behind the legislature", tracked as `behind:<code>` in `audit_tracking.json`.
-- **Fail-soft:** no `OPENSTATES_API_KEY` or the site is unreachable → the check is skipped, the
-  report says so, and its open flags are kept (a skipped run never marks them resolved).
-
-The daily `check-sessions.py` uses the same signal to prevent the problem: a state with a bill
-action in the last 14 days stays on, whatever its session dates say.
-
-Offline test: `python3 actions/openstates-scrape-audits/test_weekly_scraper_audit.py`.
 
 ### Daily Scraper Error Digest — per-run failures
 
