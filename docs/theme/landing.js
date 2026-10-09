@@ -83,14 +83,27 @@
     if (!party) return { letter: "", cls: "is-unk" };
     return { letter: party.charAt(0).toUpperCase(), cls: "is-oth" };
   }
-  // Initials for the monogram fallback: first + last initial (or a single letter).
+  // Initials for the monogram fallback: first + last initial (or a single letter),
+  // ignoring a generational suffix ("Angel L. Bolques Jr" -> "AB").
   function initialsOf(full) {
-    var parts = String(full || "").trim().split(/\s+/).filter(Boolean);
+    var parts = String(full || "").trim().replace(/,?\s*(?:jr|sr|ii|iii|iv|v)\.?$/i, "")
+      .split(/\s+/).filter(Boolean);
     if (!parts.length) return "?";
     if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
     return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   }
   var billKey = GB.billKey;   // shared (dashboard/assets/govbot-utils.js)
+  // A sponsor that isn't in our legislator list (the territories — Northern Mariana
+  // Islands, Guam, Virgin Islands — have no Open States roster) is still pictured with
+  // initials when the name reads like a person; a committee or chamber is left out.
+  var NOT_A_PERSON = /\b(committee|senate|house|assembly|council|caucus|delegation|judiciary|rules|affairs|finance|appropriations|ways and means|commission|department|office|governor|legislature|by request|members?)\b/i;
+  function personName(name) {
+    var raw = String(name || "").replace(/\s+/g, " ").trim();
+    if (!raw || NOT_A_PERSON.test(raw) || !/[a-z]/i.test(raw)) return "";
+    var c = raw.split(",");            // "Sablan, JP" -> "JP Sablan"
+    return c.length === 2 && c[1].trim() && !/^(jr|sr|ii|iii|iv|v)\.?$/i.test(c[1].trim())
+      ? c[1].trim() + " " + c[0].trim() : raw;
+  }
 
   var activityEl = document.getElementById("activity-list");
   if (activityEl) {
@@ -145,9 +158,9 @@
         var pics = [];
         (b.sponsors || []).forEach(function (name) {
           var m = matchLeg(b.state, name, people);
-          var full = m ? m[1] : name;
+          var full = m ? m[1] : (personName(name) || name);
           var photo = photoPath(b.state, full) || photoPath(b.state, name);
-          if (!m && !photo) return;
+          if (!m && !photo && !personName(name)) return;
           pics.push({ full: full, pm: partyMeta(m ? (m[2] || "") : ""), photo: photo });
         });
         var shown = pics.slice(0, MAX_SPON);

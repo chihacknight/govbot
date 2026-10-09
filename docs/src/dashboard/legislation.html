@@ -143,7 +143,10 @@
   td .bill-title { color: var(--text-primary); }
   td .action-desc { color: var(--text-primary); font-size: 12px; }
   .empty { color: var(--text-muted); padding: 24px; text-align: center; }
-  .show-more { margin: 12px auto 0; display: block; }
+  /* "Show 10 more" reads as a button: an outline pill like the site's other buttons. */
+  .show-more { margin: 14px auto 4px; display: block; padding: 8px 20px; border-radius: 999px;
+    border: 2px solid var(--gb-text); background: transparent; color: var(--gb-text); font-weight: 650; font-size: 14px; }
+  .show-more:hover { background: var(--hover-wash); }
   /* The `hidden` attribute must win over the display:block above (author CSS
      otherwise overrides the UA stylesheet's [hidden]{display:none}), or the
      "Show more" button stays visible with stale text once a filter narrows
@@ -959,7 +962,7 @@
   const { billKey, formatAsOf } = GB;   // shared helpers (assets/govbot-utils.js)
   const SERIES = ["--series-1","--series-2","--series-3","--series-4",
                   "--series-5","--series-6","--series-7","--series-8"];
-  const PAGE_SIZE = 100;
+  const PAGE_SIZE = 10;   // catalog rows shown at first and per "Show 10 more" click (keeps big states fast)
 
   // color theme handled by shared assets/govbot-shell.js
 
@@ -1359,7 +1362,9 @@
     // active — an empty result with no filters would be a data problem, not a
     // too-narrow search, so we don't tell the user to "broaden" then.
     $("empty").hidden = sorted.length > 0 || !anyFilterActive();
-    sorted.slice(0, state.limit).forEach((b) => {
+    // Rows are built PAGE_SIZE at a time: "Show 10 more" appends the next page
+    // instead of rebuilding (and re-sorting) the whole table.
+    const appendRows = (rows) => rows.forEach((b) => {
       const tr = document.createElement("tr");
 
       const tdId = document.createElement("td");
@@ -1431,16 +1436,22 @@
       tr.append(tdId, tdState, tdSession, tdTitle, tdTags, tdDate);
       tbody.append(tr);
     });
+    appendRows(sorted.slice(0, state.limit));
 
     const more = $("show-more");
-    if (sorted.length > state.limit) {
-      more.hidden = false;
-      more.textContent = "Show " + fmt(Math.min(PAGE_SIZE, sorted.length - state.limit)) +
-        " more of " + fmt(sorted.length - state.limit) + " remaining";
-      more.onclick = () => { state.limit += PAGE_SIZE; renderTable(filteredBills()); };
-    } else {
-      more.hidden = true;
-    }
+    const syncMore = () => {
+      const left = sorted.length - state.limit;
+      more.hidden = left <= 0;
+      more.textContent = "Show " + fmt(Math.min(PAGE_SIZE, left)) + " more";
+      more.title = fmt(Math.max(0, left)) + " more bills in this list";
+    };
+    more.onclick = () => {
+      const from = state.limit;
+      state.limit += PAGE_SIZE;
+      appendRows(sorted.slice(from, state.limit));
+      syncMore();
+    };
+    syncMore();
   }
 
   /* ---------- controls ---------- */

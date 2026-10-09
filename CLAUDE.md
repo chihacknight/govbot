@@ -185,7 +185,13 @@ homepage (`index.hbs` loader skips `.gb-landing`).
 border. The homepage Legislation slide's accent (`--pc`) uses `--gb-link` too.
 **Opening a bill opens its state's catalog underneath** (`openBillInCatalog` in legislation.html — used by
 the map detail rows, the Recent strip and `#bill=` deep links), so closing the bill leaves the reader in
-that state's bills; a second Escape / ✕ closes the catalog.
+that state's bills; a second Escape / ✕ closes the catalog. **The catalog shows 10 bills at a time**
+(`PAGE_SIZE = 10`): a "Show 10 more" outline button appends the next 10 rows without rebuilding or
+re-sorting the table (`appendRows` / `syncMore` in `renderTable`), so a 25k-bill state stays quick.
+**Unlisted sponsors on the homepage:** the territories (Northern Mariana Islands, Guam, Virgin Islands)
+have no Open States roster, so their sponsors never resolve; `landing.js` still pictures a sponsor with
+neutral initials when the name reads like a person (`personName`: "Sablan, JP" → "JP Sablan"; anything
+matching `NOT_A_PERSON` — committee, Senate, House, Rules… — is left out). No photo is guessed for them.
 
 **Shared helpers, one copy.** `docs/src/dashboard/assets/govbot-utils.js` (plain ES5, `window.GB`) holds
 the small functions several pages used to copy-paste: `GB.billKey` (the `state~session~id` key behind every
@@ -268,7 +274,18 @@ shows their initials monograms + name + party. **The photo step and the card mus
 bills:** each state's newest bill by (`latest_action`, `id`) — the order `bills/index.json` stores — with
 states listed newest-first and ties broken by state code (`onscreen_bills` in the script, the `heads` sort
 in `landing.js`). Many bills share a date; when the two broke ties differently, photos were fetched for
-bills the homepage never showed. Wikimedia lookups retry a 429/503 politely (Retry-After, ≤10 s). Party + full name are resolved from `people.json` with the same matcher
+bills the homepage never showed. Wikimedia lookups retry a 429/503 politely (Retry-After, ≤10 s).
+**Incomplete certificate chains:** some legislature sites (Michigan House, Ohio, Utah, Mississippi,
+Connecticut as of 2026) send their certificate without the intermediate that links it to a trusted root;
+browsers fetch it from the certificate's "CA Issuers" address, Python refused the site. `default_fetch` now
+does what the browser does, only after an "unable to get local issuer certificate" error (`_open_image` →
+`_aia_context`): it reads (never trusts) the site's certificate to get that address (`ca_issuers_url`, a
+byte search for the AIA field — no new dependency), downloads the intermediate, and retries with Python's
+default verified context plus that one certificate and **partial-chain trust off** (`verified_context_with`),
+so the chain must still reach a system root and the hostname is checked — a forged intermediate fails.
+Cached per host, fail-soft. This unlocked ~350 Open States photo URLs; Illinois' `cdn.ilga.gov` still
+returns 403 to non-browser clients and is left alone (no browser impersonation). Tested offline against the
+real Michigan + DigiCert certificates in `scripts/__snapshots__/certs/`. Party + full name are resolved from `people.json` with the same matcher
 legislation.html uses (`matchLeg`, surname-only / "Surname, F" / "First Last", never guessing an
 ambiguous surname). **Photos are vendored at deploy, never committed** by
 `scripts/fetch_sponsor_photos.py` (deploy-docs.yml, "Vendor sponsor photos for on-screen bills",
