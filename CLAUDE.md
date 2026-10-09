@@ -185,7 +185,13 @@ homepage (`index.hbs` loader skips `.gb-landing`).
 border. The homepage Legislation slide's accent (`--pc`) uses `--gb-link` too.
 **Opening a bill opens its state's catalog underneath** (`openBillInCatalog` in legislation.html — used by
 the map detail rows, the Recent strip and `#bill=` deep links), so closing the bill leaves the reader in
-that state's bills; a second Escape / ✕ closes the catalog.
+that state's bills; a second Escape / ✕ closes the catalog. **The catalog shows 10 bills at a time**
+(`PAGE_SIZE = 10`): a "Show 10 more" outline button appends the next 10 rows without rebuilding or
+re-sorting the table (`appendRows` / `syncMore` in `renderTable`), so a 25k-bill state stays quick.
+**Unlisted sponsors on the homepage:** the territories (Northern Mariana Islands, Guam, Virgin Islands)
+have no Open States roster, so their sponsors never resolve; `landing.js` still pictures a sponsor with
+neutral initials when the name reads like a person (`personName`: "Sablan, JP" → "JP Sablan"; anything
+matching `NOT_A_PERSON` — committee, Senate, House, Rules… — is left out). No photo is guessed for them.
 
 **Shared helpers, one copy.** `docs/src/dashboard/assets/govbot-utils.js` (plain ES5, `window.GB`) holds
 the small functions several pages used to copy-paste: `GB.billKey` (the `state~session~id` key behind every
