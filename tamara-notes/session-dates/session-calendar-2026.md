@@ -28,7 +28,7 @@ Red dates in source = estimated. "No Regular Session" states may hold special se
 | hi | Hawaii | 2026 Regular Session | 2026-01-21 | 2026-05-08 | ⏸️ | |
 | ia | Iowa | 91st General Assembly | 2026-01-12 | 2026-04-21 | ⏸️ | |
 | id | Idaho | 2026 Regular Session | 2026-01-12 | 2026-04-02 | ⏸️ | |
-| il | Illinois | 104th General Assembly | 2026-01-14 | 2026-05-31 | ⏸️ | |
+| il | Illinois | 104th General Assembly | 2026-01-14 | 2026-05-31 | ✅ | Spring session adjourns May 31, but the two-year General Assembly (Jan 2025 - Jan 2027) files bills year-round and holds a fall veto session, so it is tracked as in session; its scraper is pinned on (`keep_active` in `actions/pipeline-manager/chn-openstates-scrape.yml`). Paused 2026-09-30 by PR #180 until a volunteer ilga.gov scan found the missed bills. |
 | in | Indiana | 2026 Regular Session | 2025-12-01 | 2026-02-27 | ⏸️ | |
 | ks | Kansas | 2025-2026 Biennium | 2026-01-12 | 2026-04-10 | ⏸️ | |
 | ky | Kentucky | 2026 Regular Session | 2026-01-06 | 2026-04-15 | ⏸️ | |
