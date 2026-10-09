@@ -39,6 +39,10 @@ jobs:
         run: pip install pyyaml
 
       - name: Run audit
+        env:
+          # Check 3 ("behind the legislature") asks OpenStates for each state's newest bill
+          # action. Without the key that check is skipped and the report says so.
+          OPENSTATES_API_KEY: ${{ secrets.OPENSTATES_API_KEY }}
         run: |
           python3 actions/openstates-scrape-audits/weekly-scraper-audit.py \
             --report-file "${RUNNER_TEMP}/weekly-audit-report.md"
