@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Offline tests for fetch_sponsor_photos.py — no network, no real photos.
 
-Runs with a synthetic Open States people checkout, a synthetic data.json, and
+Runs with a synthetic Open States people checkout, a synthetic data.json, saved
+real certificates (scripts/__snapshots__/certs/) and
 injected fetch/wiki functions, so it exercises selection, name resolution, the
 two-source photo fallback, manifest keying, and every fail-soft path
 deterministically.
@@ -378,6 +379,17 @@ def run():
                                    wikidata=no_commons)  # tom OS fails, no other source
         assert wanted3 == 1 and got3 == 0, "a sponsor with no source must not be manifested"
         assert json.loads((root / "m3.json").read_text()) == {}, "no entry when every source fails"
+
+    # --- incomplete certificate chains (real Michigan House + DigiCert certs) --
+    certs = Path(__file__).resolve().parent / "__snapshots__" / "certs"
+    leaf = (certs / "house-mi-gov-leaf.der").read_bytes()
+    assert fsp.ca_issuers_url(leaf) == \
+        "http://cacerts.digicert.com/DigiCertGlobalG3TLSECCSHA3842020CA1-2.crt", "CA Issuers address"
+    assert fsp.ca_issuers_url(b"not a certificate") is None
+    ctx = fsp.verified_context_with((certs / "digicert-g3-ecc-2020-ca1.der").read_bytes())
+    assert ctx.verify_mode == fsp.ssl.CERT_REQUIRED and ctx.check_hostname, "still a fully verified context"
+    assert not (ctx.verify_flags & getattr(fsp.ssl, "VERIFY_X509_PARTIAL_CHAIN", 0)), \
+        "the downloaded intermediate must never act as a root of trust"
 
     print("ok - fetch_sponsor_photos: all assertions passed")
 
