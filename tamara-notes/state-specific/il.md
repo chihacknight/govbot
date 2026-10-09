@@ -39,6 +39,14 @@ Findings:
 - **Going live:** the config change reaches the scraper repos via the Sunday full reconcile in `check-sessions.yml`, or right away via the "Apply Templates to State Repos" workflow (`config: both`, `states: il`).
 - **Verify after the first run:** HB5817–HB5819 and HR1037–HR1044 appear in `govbot-data/il-legislation`, and the dashboard's newest IL bill moves past 2026-09-24.
 
+## Keeping it from happening again (every state)
+
+- `check-sessions.py` now also keeps a locale on when OpenStates shows a bill action in the last 14
+  days, whatever its session dates say (`RECENT_ACTIVITY_DAYS`).
+- The weekly audit's new "Behind the legislature" check flags any state, paused or active, whose
+  legislature acted in the last 14 days while our newest action is 7+ days older.
+- Details: `actions/openstates-scrape-audits/README.md`.
+
 ## Scope: what the Illinois scraper collects
 
 The OpenStates `il` scraper (`scrapers/il/bills.py`, `DOC_TYPES`) collects bills (HB/SB),

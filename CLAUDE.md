@@ -199,7 +199,12 @@ plus the daily `check-sessions.py` left it off — nothing after 2026-09-24 was 
 volunteer's ilga.gov scan caught it. `chn-openstates-scrape.yml` now gives `il` a `keep_active: "<reason>"`
 (a per-locale setting in `config.schema.json`) that `check-sessions.py` honours by never pausing it
 (`--self-test` covers this); `session-calendar-2026.md` marks it in session so the weekly flatline audit
-watches it. Executive Orders and Joint Session Resolutions are not collected by design (the OpenStates
+watches it. **Every state is now covered the same way:** `check-sessions.py` keeps any locale on that
+OpenStates shows a bill action for in the last 14 days (`RECENT_ACTIVITY_DAYS`, whatever its session
+dates say), and the weekly audit's third check, **"Behind the legislature"**, flags any state (paused or
+active) whose legislature acted in the last 14 days while the site's newest action for it is 7+ days older
+(needs `OPENSTATES_API_KEY`; skipped and said so without it; offline test
+`actions/openstates-scrape-audits/test_weekly_scraper_audit.py`). Executive Orders and Joint Session Resolutions are not collected by design (the OpenStates
 `il` scraper doesn't scrape them). Full story: `tamara-notes/state-specific/il.md`; field-completeness /
 accuracy audit vs ilga.gov: `actions/openstates-scrape-audits/internal/il_field_audit.py`.
 
