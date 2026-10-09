@@ -391,6 +391,33 @@ def run():
     assert not (ctx.verify_flags & getattr(fsp.ssl, "VERIFY_X509_PARTIAL_CHAIN", 0)), \
         "the downloaded intermediate must never act as a root of trust"
 
+    # --- User-Agent: plain project name for legislature hosts, contact UA for Wikimedia --
+    seen = {}
+
+    class _Resp:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def read(self):
+            return b"\xff\xd8\xff fake jpeg"
+
+    def fake_open(req, host, timeout):
+        seen[host] = req.get_header("User-agent")
+        return _Resp()
+
+    real_open = fsp._open_image
+    fsp._open_image = fake_open
+    try:
+        fsp.default_fetch("https://cdn.ilga.gov/assets/img/members/x.jpg", retries=0)
+        fsp.default_fetch("https://upload.wikimedia.org/x.jpg", retries=0)
+    finally:
+        fsp._open_image = real_open
+    assert "bot" not in seen["cdn.ilga.gov"].lower(), "legislature hosts 403 a UA containing 'bot'"
+    assert "github.com" in seen["upload.wikimedia.org"], "Wikimedia gets the contact UA"
+
     print("ok - fetch_sponsor_photos: all assertions passed")
 
 

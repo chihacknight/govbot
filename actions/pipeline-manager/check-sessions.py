@@ -6,9 +6,16 @@ Reads chn-openstates-scrape.yml, queries the OpenStates v3 API for each locale,
 and flips the template between 'openstates-scrape' (in session) and
 'openstates-scrape-paused' (out of session) based on today's date.
 
+A locale with `keep_active: "<reason>"` in the config is never paused: some
+legislatures file bills year-round even when OpenStates' session dates say the
+session is over (Illinois' General Assembly is a two-year body; OpenStates lists
+its 104th session as ending 2025-05-31). Those locales are left on the active
+template without an API call.
+
 Usage:
     OPENSTATES_API_KEY=your_key python3 check-sessions.py
     OPENSTATES_API_KEY=your_key python3 check-sessions.py --dry-run
+    python3 check-sessions.py --self-test     # offline checks, no API key needed
 """
 
 import argparse
@@ -127,11 +134,48 @@ def is_in_session(sessions: list, today: date) -> tuple[bool, str]:
     return False, ""
 
 
+def run_self_test() -> int:
+    """Offline checks for the session logic and the keep_active override."""
+    failures = []
+
+    def check(label, actual, expected):
+        if actual != expected:
+            failures.append(f"{label}: expected {expected!r}, got {actual!r}")
+
+    today = date(2026, 10, 9)
+    il_sessions = [{"identifier": "104th", "name": "104th Regular Session",
+                    "start_date": "2025-01-08", "end_date": "2025-05-31"}]
+    check("IL per OpenStates is out of session", is_in_session(il_sessions, today)[0], False)
+    biennium = [{"identifier": "2025-2026", "name": "2025-2026 Regular Session",
+                 "start_date": "2025-01-08", "end_date": "2025-12-31"}]
+    check("biennium end date is corrected", is_in_session(biennium, today)[0], True)
+    check("keep_active locale is never paused", kept_active({"keep_active": "files year-round"}), True)
+    check("blank keep_active does nothing", kept_active({"keep_active": ""}), False)
+    check("no keep_active does nothing", kept_active({}), False)
+
+    if failures:
+        print(f"❌ {len(failures)} self-test failure(s):", file=sys.stderr)
+        for f in failures:
+            print(f"   {f}", file=sys.stderr)
+        return 1
+    print("✅ all self-tests passed")
+    return 0
+
+
+def kept_active(locale_cfg: dict) -> bool:
+    """True when the config pins this locale to the active template (see module docstring)."""
+    return bool(str(locale_cfg.get("keep_active") or "").strip())
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="Show changes without writing them")
     parser.add_argument("--only", help="Comma-separated locale codes to check (e.g. ia,mt,or,wv,mp)")
+    parser.add_argument("--self-test", action="store_true", help="Run offline checks and exit (no API key needed)")
     args = parser.parse_args()
+
+    if args.self_test:
+        sys.exit(run_self_test())
 
     api_key = os.environ.get("OPENSTATES_API_KEY")
     if not api_key:
@@ -157,6 +201,15 @@ def main():
 
     for code, locale_cfg in locales.items():
         current_template = locale_cfg.get("template", ACTIVE_TEMPLATE)
+        if kept_active(locale_cfg):
+            # Pinned on: no API call, never paused (see module docstring).
+            changed = current_template != ACTIVE_TEMPLATE
+            print(f"  {code:4s}  📌  {ACTIVE_TEMPLATE}{' ← CHANGED' if changed else ''}  (kept active: {locale_cfg['keep_active']})")
+            if changed:
+                changes.append((code, current_template, ACTIVE_TEMPLATE))
+                if not args.dry_run:
+                    locale_cfg["template"] = ACTIVE_TEMPLATE
+            continue
         ocd_id = ocd_id_for(code)
 
         sessions = fetch_sessions(ocd_id, api_key)

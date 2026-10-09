@@ -1,0 +1,148 @@
+{
+  "generated_at": "2026-10-09T19:32:14+00:00",
+  "bills": 12809,
+  "newest_action": "2026-09-24",
+  "types": {
+    "AM": 707,
+    "HB": 5816,
+    "HJR": 68,
+    "HJRCA": 28,
+    "HR": 1036,
+    "SB": 4212,
+    "SJR": 67,
+    "SJRCA": 11,
+    "SR": 864
+  },
+  "empty_by_field": {
+    "title": {
+      "total": 0
+    },
+    "abstracts": {
+      "total": 12809,
+      "AM": 707,
+      "HB": 5816,
+      "HJR": 68,
+      "HJRCA": 28,
+      "HR": 1036,
+      "SB": 4212,
+      "SJR": 67,
+      "SJRCA": 11,
+      "SR": 864
+    },
+    "citations": {
+      "total": 12809,
+      "AM": 707,
+      "HB": 5816,
+      "HJR": 68,
+      "HJRCA": 28,
+      "HR": 1036,
+      "SB": 4212,
+      "SJR": 67,
+      "SJRCA": 11,
+      "SR": 864
+    },
+    "sponsorships": {
+      "total": 0
+    },
+    "actions": {
+      "total": 0
+    },
+    "versions": {
+      "total": 709,
+      "AM": 707,
+      "SR": 2
+    },
+    "documents": {
+      "total": 11956,
+      "AM": 707,
+      "HB": 5342,
+      "HJR": 68,
+      "HJRCA": 28,
+      "HR": 1036,
+      "SB": 3833,
+      "SJR": 67,
+      "SJRCA": 11,
+      "SR": 864
+    },
+    "subject": {
+      "total": 12809,
+      "AM": 707,
+      "HB": 5816,
+      "HJR": 68,
+      "HJRCA": 28,
+      "HR": 1036,
+      "SB": 4212,
+      "SJR": 67,
+      "SJRCA": 11,
+      "SR": 864
+    },
+    "other_titles": {
+      "total": 12809,
+      "AM": 707,
+      "HB": 5816,
+      "HJR": 68,
+      "HJRCA": 28,
+      "HR": 1036,
+      "SB": 4212,
+      "SJR": 67,
+      "SJRCA": 11,
+      "SR": 864
+    },
+    "related_bills": {
+      "total": 12809,
+      "AM": 707,
+      "HB": 5816,
+      "HJR": 68,
+      "HJRCA": 28,
+      "HR": 1036,
+      "SB": 4212,
+      "SJR": 67,
+      "SJRCA": 11,
+      "SR": 864
+    },
+    "sources": {
+      "total": 0
+    }
+  },
+  "bills_with_vote_files": 4651,
+  "sample_size": 217,
+  "sample_checked": 217,
+  "unreachable": [],
+  "comparison": {
+    "title": {
+      "match": 217
+    },
+    "synopsis (abstracts)": {
+      "ours_missing": 217
+    },
+    "statutes (citations)": {
+      "both_missing": 102,
+      "ours_missing": 115
+    },
+    "sponsors": {
+      "match": 211,
+      "differs": 6
+    },
+    "chief sponsor": {
+      "match": 216,
+      "differs": 1
+    },
+    "action count": {
+      "match": 216,
+      "differs": 1
+    },
+    "latest action": {
+      "match": 215,
+      "differs": 2
+    },
+    "public act number": {
+      "match": 13
+    }
+  },
+  "site_fields_seen_in_sample": {
+    "synopsis": 217,
+    "statutes": 115,
+    "amendment_synopses": 16,
+    "public_act": 13
+  }
+}

@@ -100,7 +100,7 @@ locales:
     labels:
       - working
   il:
-    template: openstates-to-ocd-files-paused
+    template: openstates-to-ocd-files   # active year-round, like its scraper (see chn-openstates-scrape.yml)
     toolkit_branch: main
     name: Illinois
     labels:
