@@ -73,6 +73,11 @@ from pathlib import Path
 import yaml
 
 _UA = "govbot-photo-vendor (+https://github.com/chihacknight/govbot)"
+# Legislature/CMS image hosts (Illinois' cdn.ilga.gov, Michigan's site, …) answer 403 to any
+# User-Agent containing "bot" or a URL, so image downloads from them use the project's plain
+# name instead (the same one build_bill_summaries.py uses). Wikimedia asks for contact info in
+# the User-Agent, so its hosts keep _UA.
+_IMAGE_UA = "chihacknight-civic-data/1.0"
 
 # State/territory code -> full name, for the Wikipedia correctness guard.
 _STATE_NAMES = {
@@ -323,6 +328,9 @@ def _aia_context(host, timeout=15):
                 data = ssl.PEM_cert_to_DER_cert(data.decode("ascii", "replace"))
             if data[:1] == b"\x30":                 # a DER certificate (PKCS#7 bundles aren't handled)
                 ctx = verified_context_with(data)
+    except OSError as exc:  # a network blip: don't remember it, so the next request retries
+        print(f"warning: could not complete the certificate chain for {host}: {exc}", file=sys.stderr)
+        return None
     except Exception as exc:  # noqa: BLE001 - fail-soft: the photo is just skipped
         print(f"warning: could not complete the certificate chain for {host}: {exc}", file=sys.stderr)
     _aia_contexts[host] = ctx
@@ -357,7 +365,7 @@ def default_fetch(url, timeout=15, retries=2):
     parts = urllib.parse.urlsplit(url)
     referer = "{}://{}/".format(parts.scheme, parts.netloc) if parts.netloc else None
     headers = {
-        "User-Agent": _UA,
+        "User-Agent": _UA if (parts.hostname or "").endswith("wikimedia.org") else _IMAGE_UA,
         "Accept": "image/avif,image/webp,image/png,image/jpeg,image/*,*/*;q=0.8",
     }
     if referer:

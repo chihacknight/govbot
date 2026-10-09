@@ -193,6 +193,16 @@ have no Open States roster, so their sponsors never resolve; `landing.js` still 
 neutral initials when the name reads like a person (`personName`: "Sablan, JP" → "JP Sablan"; anything
 matching `NOT_A_PERSON` — committee, Senate, House, Rules… — is left out). No photo is guessed for them.
 
+**Illinois scraper is pinned on.** Illinois' two-year General Assembly files bills year-round, but
+OpenStates lists its 104th session as ending 2025-05-31, so PR #180's out-of-session pause (2026-09-30)
+plus the daily `check-sessions.py` left it off — nothing after 2026-09-24 was collected until a
+volunteer's ilga.gov scan caught it. `chn-openstates-scrape.yml` now gives `il` a `keep_active: "<reason>"`
+(a per-locale setting in `config.schema.json`) that `check-sessions.py` honours by never pausing it
+(`--self-test` covers this); `session-calendar-2026.md` marks it in session so the weekly flatline audit
+watches it. Executive Orders and Joint Session Resolutions are not collected by design (the OpenStates
+`il` scraper doesn't scrape them). Full story: `tamara-notes/state-specific/il.md`; field-completeness /
+accuracy audit vs ilga.gov: `actions/openstates-scrape-audits/internal/il_field_audit.py`.
+
 **Shared helpers, one copy.** `docs/src/dashboard/assets/govbot-utils.js` (plain ES5, `window.GB`) holds
 the small functions several pages used to copy-paste: `GB.billKey` (the `state~session~id` key behind every
 `legislation.html#bill=` link), `GB.matchLegislator(roster, name)` (sponsor → one `people.json` legislator,
@@ -283,8 +293,11 @@ does what the browser does, only after an "unable to get local issuer certificat
 byte search for the AIA field — no new dependency), downloads the intermediate, and retries with Python's
 default verified context plus that one certificate and **partial-chain trust off** (`verified_context_with`),
 so the chain must still reach a system root and the hostname is checked — a forged intermediate fails.
-Cached per host, fail-soft. This unlocked ~350 Open States photo URLs; Illinois' `cdn.ilga.gov` still
-returns 403 to non-browser clients and is left alone (no browser impersonation). Tested offline against the
+Cached per host (a network blip isn't cached, so the next request retries), fail-soft. This unlocked
+~350 Open States photo URLs. Image downloads from non-Wikimedia hosts send the plain project name
+`chihacknight-civic-data/1.0` (`_IMAGE_UA`): Illinois' `cdn.ilga.gov` (~175 legislator photos) and
+Michigan's site answer 403 to any User-Agent containing "bot" or a URL; Wikimedia hosts keep the contact
+UA `_UA` its policy asks for. Tested offline against the
 real Michigan + DigiCert certificates in `scripts/__snapshots__/certs/`. Party + full name are resolved from `people.json` with the same matcher
 legislation.html uses (`matchLeg`, surname-only / "Surname, F" / "First Last", never guessing an
 ambiguous surname). **Photos are vendored at deploy, never committed** by
