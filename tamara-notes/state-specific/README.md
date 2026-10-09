@@ -15,7 +15,7 @@ other files before being consolidated).
 
 | State | Status | Summary | File |
 |---|---|---|---|
-| 🟢 IL | Fix in flight | Paused 2026-09-30 as "out of session", but Illinois files bills year-round — every bill after 2026-09-24 was missing (volunteer ilga.gov scan). Unpaused and pinned on with `keep_active`; EO/JSR documented as out of scope. | [`il.md`](il.md) |
+| ⏸️ IL | Paused on purpose | Out of session, and scrapers are paused during the migration to a new system, so bills filed after 2026-09-24 are expected to be missing for now. A volunteer's ilga.gov scan led to a field audit (synopsis and statutes amended are never stored); EO/JSR documented as out of scope. | [`il.md`](il.md) |
 | 🔴 PA | Broken, ongoing | 100% failure rate for 19+ days — confirmed IP-reputation block on the proxy's egress IP. Needs a new egress path; not fixed. | [`pa.md`](pa.md) |
 | 🔴 VI | Broken, ongoing | Same symptom as PA, but confirmed as a likely genuine destination-side outage, not a block. Probably self-resolves; nothing to fix on our end. | [`vi.md`](vi.md) |
 | 🟡 GU | Broken, not fixed | Real scraper bug — a bill version's empty `note` field fails schema validation and crashes the whole scrape. Root cause not yet traced into source. | [`gu.md`](gu.md) |

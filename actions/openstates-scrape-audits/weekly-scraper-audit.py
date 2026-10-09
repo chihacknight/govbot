@@ -15,7 +15,7 @@ health only -- not text extraction, not field completeness (sponsors,
 abstracts), not orphan tracking. Those are separate tools with their own
 cadence.
 
-Three checks:
+Two checks:
   1. New-bill flatline: in-session states with 7+ consecutive days of zero
      new distinct bills. Hard-flagged -- zero is unambiguous (confirmed a
      low-but-nonzero trickle late in a session is normal, no per-state
@@ -27,14 +27,6 @@ Three checks:
      was almost entirely one benign fallback message; DE's 459 was real
      vote-fetch failures). Severity needs reading actual message content,
      which this script doesn't attempt -- it just makes the trend visible.
-  3. Behind the legislature (added 2026-10-09 after Illinois): for EVERY state,
-     paused or running, compare OpenStates' most recent bill action with the
-     newest action on our site (the published bills/index.json). Hard-flagged
-     when OpenStates shows an action in the last 14 days that is 7+ days newer
-     than ours -- the legislature is acting and we aren't collecting it. This is
-     the blind spot checks 1-2 can't see: a paused state has no histogram to
-     flatline (Illinois was paused 2026-09-30 while still filing bills). Needs
-     OPENSTATES_API_KEY; without it the check is skipped and the report says so.
 
 Also writes output/weekly_bill_counts.json -- for all 56 states (not just
 flagged ones), the sum of new_bills_seen over the last 7 recorded days.
@@ -68,15 +60,12 @@ ownership of any file here.
 Usage: python3 weekly-scraper-audit.py [--report-file path.md]
 """
 import argparse
-import importlib.util
 import json
-import os
 import re
 import sys
-import time
 import urllib.request
 import urllib.error
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
 
 import yaml
@@ -91,9 +80,6 @@ WEEKLY_BILL_COUNTS_FILE = SCRIPT_DIR / "output" / "weekly_bill_counts.json"
 DATA_ORG = "govbot-data"
 SCRAPER_ORG = "govbot-openstates-scrapers"
 FLATLINE_THRESHOLD_DAYS = 7
-BEHIND_DAYS = 7          # OpenStates' latest action this much newer than ours -> we're missing bills
-# The site's per-state newest bills (scripts/build_site_slices.py), rebuilt with every deploy.
-SITE_INDEX = "https://chihacknight.github.io/govbot/dashboard/bills/index.json"
 
 EXCEPTIONS = {
     "gu": "year-round legislature, 0 action logs ever -- this signal doesn't apply",
@@ -174,42 +160,6 @@ def session_line(info: dict | None) -> str:
     return f"Session: no regular-session dates tracked (status: {info['status']})"
 
 
-def _check_sessions():
-    """The OpenStates helpers live in pipeline-manager's check-sessions.py (one copy);
-    loaded by path since the filename has a hyphen."""
-    spec = importlib.util.spec_from_file_location("check_sessions", PIPELINE_MANAGER / "check-sessions.py")
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
-
-
-def our_newest_actions() -> dict[str, date]:
-    """{state code: newest action date on our site}, from the published bills/index.json."""
-    try:
-        with urllib.request.urlopen(SITE_INDEX, timeout=30) as resp:
-            recent = json.loads(resp.read().decode()).get("recent") or {}
-    except Exception as e:  # noqa: BLE001 - the check is skipped, the report says so
-        print(f"  fetch error {SITE_INDEX}: {e}", file=sys.stderr)
-        return {}
-    out = {}
-    for code, bills in recent.items():
-        dates = [b.get("latest_action", "")[:10] for b in bills or [] if b.get("latest_action")]
-        if dates:
-            out[code] = date.fromisoformat(max(dates))
-    return out
-
-
-def behind_legislature(ours, theirs, today: date) -> int | None:
-    """Days our newest action trails OpenStates' when the legislature acted in the last
-    14 days and we're BEHIND_DAYS+ behind (or have nothing); else None."""
-    if theirs is None or not (0 <= (today - theirs).days <= 14):
-        return None
-    if ours is None:
-        return (theirs - date(1900, 1, 1)).days
-    lag = (theirs - ours).days
-    return lag if lag >= BEHIND_DAYS else None
-
-
 def load_tracking() -> dict:
     if TRACKING_FILE.exists():
         return json.loads(TRACKING_FILE.read_text())
@@ -235,14 +185,6 @@ def main():
     warning_trends = {}
     weekly_bill_counts = {}
 
-    # Check 3 setup: OpenStates' latest action vs ours, for every state.
-    api_key = os.environ.get("OPENSTATES_API_KEY")
-    ours = our_newest_actions() if api_key else {}
-    cs = _check_sessions() if api_key and ours else None
-    behind_note = ("" if cs else "Skipped: " + ("no OPENSTATES_API_KEY in this run." if not api_key
-                                               else f"couldn't read {SITE_INDEX}."))
-    flagged_behind = {}
-
     for i, code in enumerate(sorted(scraper_status.keys()), 1):
         print(f"[{i}/{len(scraper_status)}] {code}...", file=sys.stderr)
 
@@ -265,15 +207,6 @@ def main():
         if code not in EXCEPTIONS and zero_days is not None and in_session and zero_days >= FLATLINE_THRESHOLD_DAYS:
             flagged_now[code] = {"zero_days": zero_days, "session": session_line(info)}
 
-        if cs:
-            theirs = cs.fetch_latest_action(cs.ocd_id_for(code), api_key)
-            lag = behind_legislature(ours.get(code), theirs, now.date())
-            if lag is not None:
-                flagged_behind[f"behind:{code}"] = {
-                    "status": scraper_status[code], "theirs": str(theirs),
-                    "ours": str(ours.get(code) or "none"), "lag": lag}
-            time.sleep(1.2)  # OpenStates rate limit
-
         wh_data = fetch_raw(SCRAPER_ORG, f"{code}-legislation", ".windycivi/warning_history.json")
         if wh_data:
             recent_days = sorted(wh_data.keys())[-7:]
@@ -283,7 +216,6 @@ def main():
 
     new_flags = []
     still_open = []
-    flagged_now.update(flagged_behind)   # one tracking file; "behind:<code>" keys for check 3
     for code, details in flagged_now.items():
         if code in tracking:
             first_seen = tracking[code]["first_flagged"]
@@ -293,8 +225,7 @@ def main():
             tracking[code] = {"first_flagged": today_str}
             new_flags.append((code, details))
 
-    # A skipped check 3 (no key / site down) resolves nothing: keep its open flags as they were.
-    resolved = [c for c in tracking if c not in flagged_now and (cs or not c.startswith("behind:"))]
+    resolved = [c for c in tracking if c not in flagged_now]
     for c in resolved:
         del tracking[c]
 
@@ -303,29 +234,7 @@ def main():
         {"as_of": today_str, "states": weekly_bill_counts}, indent=2, sort_keys=True
     ))
 
-    behind_new = [(c, d) for c, d in new_flags if c.startswith("behind:")]
-    behind_open = [x for x in still_open if x[0].startswith("behind:")]
-    new_flags = [(c, d) for c, d in new_flags if not c.startswith("behind:")]
-    still_open = [x for x in still_open if not x[0].startswith("behind:")]
-
     lines = [f"# Weekly scraper-health audit -- {today_str}", ""]
-    lines.append(f"## Behind the legislature ({len(behind_new) + len(behind_open)})")
-    lines.append("")
-    lines.append("OpenStates shows recent bill activity we haven't collected -- for a paused state, "
-                 "the legislature is still acting (the daily session check will switch it back on); "
-                 "for a running one, the scraper has fallen behind.")
-    lines.append("")
-    if behind_note:
-        lines.append(behind_note)
-    elif behind_new or behind_open:
-        for code, d in behind_new:
-            lines.append(f"- 🆕 **{code[7:]}** ({d['status']}): OpenStates' latest action {d['theirs']}, ours {d['ours']}")
-        for code, d, first_seen, days_known in behind_open:
-            lines.append(f"- ⚠️ **{code[7:]}** ({d['status']}): known since {first_seen} ({days_known}d) -- "
-                         f"OpenStates {d['theirs']}, ours {d['ours']}")
-    else:
-        lines.append("None -- every state with recent legislative activity is up to date.")
-    lines.append("")
     lines.append(f"## NEW flatline flags ({len(new_flags)})")
     lines.append("")
     if new_flags:

@@ -9,7 +9,7 @@ three next steps.
 
 ## Headline
 
-- **Recent bills missing:** the cause was the paused scraper, not a data bug. Our newest Illinois action is **2026-09-24**. Fixed by pinning the scraper on (`keep_active`).
+- **Recent bills missing:** expected, not a data bug. Illinois is out of session and the scrapers are paused on purpose during the migration to a new system. Our newest Illinois action is **2026-09-24**; newer bills come in once scraping resumes.
 - **Basic facts are accurate:**
   - **Titles:** 217 of 217 match ilga.gov.
   - **Sponsors:** 211 of 217 match. The 6 that differ are a name variant (5) or the pause (1).
@@ -69,7 +69,7 @@ The dashboard already fills in the synopsis for its own pages (`scripts/build_il
 
 ## Recommendations
 
-1. **Done in this change:** the Illinois scraper is unpaused and pinned on. The first run should bring in HB5817–5819, HR1037–1044 and HB5786's newer actions.
+1. **Nothing to do for the missing recent bills.** HB5817–5819, HR1037–1044 and HB5786's newer actions should arrive when scraping resumes on the new system; re-check then.
 2. **Capture the synopsis and statutes upstream.** Open States' `scrapers/il/bills.py` would need to read "Synopsis As Introduced" into `abstracts` and "Statutes Amended" into `citations`. An upstream PR (like the one filed for the USA scraper) benefits every Open States user. Until then, the dashboard's PDF-based synopsis covers the website.
 3. **Look at HB2783's missing July 1 action** as a one-off (re-check after the next run). If more bills show it, it points at how the scraper refreshes already-seen bills.
 4. **Leave the name variants alone.** "Dan" vs "Daniel J." Ugaste is the same legislator. The site resolves sponsors by surname, so nothing on the website is affected.

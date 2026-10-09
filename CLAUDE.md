@@ -193,20 +193,14 @@ have no Open States roster, so their sponsors never resolve; `landing.js` still 
 neutral initials when the name reads like a person (`personName`: "Sablan, JP" → "JP Sablan"; anything
 matching `NOT_A_PERSON` — committee, Senate, House, Rules… — is left out). No photo is guessed for them.
 
-**Illinois scraper is pinned on.** Illinois' two-year General Assembly files bills year-round, but
-OpenStates lists its 104th session as ending 2025-05-31, so PR #180's out-of-session pause (2026-09-30)
-plus the daily `check-sessions.py` left it off — nothing after 2026-09-24 was collected until a
-volunteer's ilga.gov scan caught it. `chn-openstates-scrape.yml` now gives `il` a `keep_active: "<reason>"`
-(a per-locale setting in `config.schema.json`) that `check-sessions.py` honours by never pausing it
-(`--self-test` covers this); `session-calendar-2026.md` marks it in session so the weekly flatline audit
-watches it. **Every state is now covered the same way:** `check-sessions.py` keeps any locale on that
-OpenStates shows a bill action for in the last 14 days (`RECENT_ACTIVITY_DAYS`, whatever its session
-dates say), and the weekly audit's third check, **"Behind the legislature"**, flags any state (paused or
-active) whose legislature acted in the last 14 days while the site's newest action for it is 7+ days older
-(needs `OPENSTATES_API_KEY`; skipped and said so without it; offline test
-`actions/openstates-scrape-audits/test_weekly_scraper_audit.py`). Executive Orders and Joint Session Resolutions are not collected by design (the OpenStates
-`il` scraper doesn't scrape them). Full story: `tamara-notes/state-specific/il.md`; field-completeness /
-accuracy audit vs ilga.gov: `actions/openstates-scrape-audits/internal/il_field_audit.py`.
+**Scrapers are paused on purpose (migration).** Since 2026-09-30 (PR #180) the OpenStates scrapers are
+paused while the team moves scraping to a new system, and the `check-sessions.yml` workflow is disabled —
+so bills filed after that are expected to be missing (e.g. Illinois, out of session, newest bill
+2026-09-24). Don't "fix" a paused state by unpausing it. A volunteer's ilga.gov comparison produced an
+Illinois field-completeness / accuracy audit: `actions/openstates-scrape-audits/internal/il_field_audit.py`
+(report in `internal/audit_output/`; values match ilga.gov, but the synopsis and statutes amended are never
+stored). Illinois Executive Orders and Joint Session Resolutions are not collected by design (the OpenStates
+`il` scraper doesn't scrape them). Notes: `tamara-notes/state-specific/il.md`.
 
 **Shared helpers, one copy.** `docs/src/dashboard/assets/govbot-utils.js` (plain ES5, `window.GB`) holds
 the small functions several pages used to copy-paste: `GB.billKey` (the `state~session~id` key behind every
