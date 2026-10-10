@@ -41,6 +41,7 @@ Usage:
 
 import argparse
 import json
+import math
 import re
 import sys
 import urllib.parse
@@ -774,6 +775,28 @@ def parse_fr_documents(json_text):
     return out
 
 
+# The page shows only the soonest-closing share of the open rules (~200 at a time),
+# plus a button to the full official list.
+FEDERAL_SHOW_SHARE = 0.12
+
+
+def fr_full_list_url(today):
+    """The Federal Register's own search page for the same set: proposed rules +
+    rules whose comment period is still open (its HTML search takes the API's
+    conditions, with the date as MM/DD/YYYY)."""
+    q = [("conditions[comment_date][gte]", f"{today:%m/%d/%Y}"),
+         ("conditions[type][]", "PRORULE"), ("conditions[type][]", "RULE")]
+    return "https://www.federalregister.gov/documents/search?" + urllib.parse.urlencode(q)
+
+
+def federal_preview(recs, today):
+    """Pure: keep the soonest-closing FEDERAL_SHOW_SHARE of the open rules (at
+    least one) and describe the whole list for the "See all" button."""
+    recs = sorted(recs, key=lambda h: (h["scheduled_iso"] or "9999", h["id"]))
+    shown = recs[:max(1, math.ceil(len(recs) * FEDERAL_SHOW_SHARE))] if recs else []
+    return shown, {"open_total": len(recs), "full_list_url": fr_full_list_url(today)}
+
+
 def fetch_us(today):
     text = fetch_text(fr_open_for_comment_url(today))
     return parse_fr_documents(text) if text else []
@@ -828,6 +851,13 @@ def assemble(hearings, jurisdictions, source, now):
     today = now.strftime("%Y-%m-%d")
     hearings = [h for h in hearings
                 if not h.get("scheduled_iso") or h["scheduled_iso"][:10] >= today]
+    # Federal: only the soonest-closing share is kept; the rest is one click away
+    # (open_total + full_list_url ride on the federal jurisdiction entry).
+    extra = {}
+    fed = [h for h in hearings if h["jurisdiction"] == "us"]
+    if fed:
+        shown, extra["us"] = federal_preview(fed, now.date())
+        hearings = [h for h in hearings if h["jurisdiction"] != "us"] + shown
     # USA (Federal) leads, then the rest alphabetically — the dashboard shows the
     # federal comment periods above the state hearings.
     rank = lambda code: (0 if code == "us" else 1, code)
@@ -843,7 +873,8 @@ def assemble(hearings, jurisdictions, source, now):
         "generated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "source": source,
         "jurisdictions": [
-            {k: JURISDICTIONS[j][k] for k in ("code", "name", "participation", "portal_url")}
+            {**{k: JURISDICTIONS[j][k] for k in ("code", "name", "participation", "portal_url")},
+             **extra.get(j, {})}
             for j in used if j in JURISDICTIONS
         ],
         "counts": counts,

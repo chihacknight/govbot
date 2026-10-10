@@ -378,6 +378,22 @@ class Federal(unittest.TestCase):
     def test_bad_json_is_empty(self):
         self.assertEqual(main.parse_fr_documents("<html>down</html>"), [])
 
+    def test_preview_shows_soonest_twelve_percent(self):
+        from datetime import date
+        # 208 open rules (today's real count) -> the 25 closing soonest.
+        many = [dict(self.recs[0], id=f"us-{i:03d}", scheduled_iso=f"2026-{10 + i % 3}-{1 + i % 28:02d}")
+                for i in range(208)]
+        shown, meta = main.federal_preview(many, date(2026, 10, 10))
+        self.assertEqual(len(shown), 25)
+        self.assertEqual(shown, sorted(many, key=lambda h: (h["scheduled_iso"], h["id"]))[:25])
+        self.assertEqual(meta["open_total"], 208)
+        self.assertEqual(meta["full_list_url"],
+                         "https://www.federalregister.gov/documents/search?"
+                         "conditions%5Bcomment_date%5D%5Bgte%5D=10%2F10%2F2026"
+                         "&conditions%5Btype%5D%5B%5D=PRORULE&conditions%5Btype%5D%5B%5D=RULE")
+        # A short list still shows at least one.
+        self.assertEqual(len(main.federal_preview(self.recs[:2], date(2026, 10, 10))[0]), 1)
+
     def test_us_sorts_first(self):
         from datetime import datetime, timezone
         hearings = main.build_from_fixtures(RAW)

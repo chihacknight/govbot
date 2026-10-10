@@ -31,7 +31,9 @@
             "description": "How the public weighs in on a hearing in this jurisdiction.",
             "enum": ["witness_slip", "committee_sign_in", "written_testimony", "public_comment"]
           },
-          "portal_url": { "type": "string", "format": "uri", "description": "Official portal where a resident files a slip / signs in / comments." }
+          "portal_url": { "type": "string", "format": "uri", "description": "Official portal where a resident files a slip / signs in / comments." },
+          "open_total": { "type": "integer", "minimum": 0, "description": "Federal only: how many rules are open for comment in all; the document carries just the soonest-closing share of them." },
+          "full_list_url": { "type": "string", "format": "uri", "description": "Federal only: the official Federal Register list of every rule open for comment (the page's \"See all\" button)." }
         }
       }
     },

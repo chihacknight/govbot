@@ -840,7 +840,11 @@ from" cabinet is **expanded by default** (`<details open>`). The hearings
 page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov, leg.wa.gov,
 malegislature.gov, and akleg.gov directly (not OpenStates), plus **USA (Federal)**: every proposed rule /
 rule whose public comment period is open, from the keyless **Federal Register API** (`parse_fr_documents`,
-one request, ~200 rules, each linked to its own Regulations.gov comment form; the old Regulations.gov
+one request, ~200 rules, each linked to its own Regulations.gov comment form; **only the soonest-closing
+12%** (`FEDERAL_SHOW_SHARE`, applied in `assemble`) ships in `hearings.json`, and the federal group ends with
+"Showing the N closing soonest" + a **"See all N open for comment ↗"** button (`.hgroup-more`) to the
+Federal Register's own search for the same set (`open_total` / `full_list_url` on the `us` jurisdiction
+entry); the ~800 open *notices* — mostly paperwork "information collection" requests — are left out; the old Regulations.gov
 `DEMO_KEY` path was rate-limited and its placeholder seed had expired, so both were removed) — federal
 leads the list, above the states. It writes `docs/src/dashboard/hearings.json` + a whole-calendar
 RSS `hearings.xml` + granular RSS feeds under `docs/src/dashboard/hearings/` — per bill

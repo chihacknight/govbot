@@ -10,7 +10,7 @@ sources directly:
 
 | Jurisdiction | Source | Notes |
 |---|---|---|
-| USA (`us`) | `federalregister.gov` API (documents open for comment) | every published proposed rule / rule whose comment period is still open, soonest-closing first; keyless, one request; leads the list. Notices (mostly paperwork-burden notices) are left out |
+| USA (`us`) | `federalregister.gov` API (documents open for comment) | every published proposed rule / rule whose comment period is still open (~200), keyless, one request; leads the list. Only the soonest-closing 12% (`FEDERAL_SHOW_SHARE`, in `assemble`) is kept — the federal jurisdiction entry carries `open_total` + `full_list_url` (the Federal Register's own search for the same set) for the page's "See all N" button. Notices (~800, mostly agencies' paperwork-burden "information collection" requests) are left out |
 | Illinois (`il`) | `ilga.gov` Hearings JSON API | per chamber, date range; bills parsed from the subject line |
 | Washington (`wa`) | `leg.wa.gov` CommitteeMeetingService (SOAP/XML) | agenda items fetched per meeting for bill ids |
 | Massachusetts (`ma`) | `malegislature.gov` Hearings JSON API | list of events + per-hearing detail; committee, location, and agenda bills; keyless |

@@ -283,6 +283,9 @@
     border: 2px solid var(--text-primary); border-radius: 999px; padding: 5px 13px; white-space: nowrap; }
   .pstate-link:hover, .hgroup-portal:hover, .details-link:hover { background: var(--hover-wash); border-color: var(--hh-green); }
   .pstate-link { margin-top: auto; }
+  .hgroup-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 8px 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gridline); font-size: 14px; }
+  .hgroup-more .hgroup-portal { margin-left: 0; }
   .pstate-sub { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--gridline); }
 
   /* ===== Hearings — "Have your say" participation hero ===== */
@@ -646,7 +649,10 @@
       group.style.setProperty("--hg-accent", "var(" + HG_ACCENTS[gi % HG_ACCENTS.length] + ")");
       const head = eln("div", "hgroup-head");
       head.append(eln("span", "hgroup-name", juris.name));
-      head.append(eln("span", "hgroup-count", byJur[code].length + " scheduled"));
+      // Federal carries only the soonest-closing share of the open rules.
+      const total = juris.open_total;
+      head.append(eln("span", "hgroup-count", total > byJur[code].length
+        ? byJur[code].length + " of " + total + " open" : byJur[code].length + " scheduled"));
       head.append(jurisdictionRssTrigger(code, juris.name));
       if (juris.portal_url) {
         const p = eln("a", "hgroup-portal", PARTICIPATION[juris.participation] || "Official portal ↗");
@@ -658,6 +664,14 @@
       const rows = eln("div", "hgroup-rows");
       byJur[code].forEach((h) => rows.append(hearingRow(h)));
       group.append(rows);
+      if (juris.full_list_url && total > byJur[code].length) {
+        const more = eln("div", "hgroup-more");
+        more.append(eln("span", null, "Showing the " + byJur[code].length + " closing soonest."));
+        const all = eln("a", "hgroup-portal", "See all " + total + " open for comment ↗");
+        all.href = juris.full_list_url; all.target = "_blank"; all.rel = "noopener";
+        more.append(all);
+        group.append(more);
+      }
       body.append(group);
     });
 
