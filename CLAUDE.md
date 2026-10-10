@@ -485,9 +485,12 @@ keeps working. The
 Clicking **"Open all N bills"** (or a list-card) **pops the filtered bills up as a card** over the
 current screen rather than switching the page inline: `setMode()` (called from `render()`) toggles a
 body-level **`#results-overlay`** (a `.results-overlay` mirroring the bill modal — `position:fixed`,
-dimmed + `backdrop-filter` blur, `z-index:90`, `.results-overlay[hidden]{display:none}`) whenever a
-filter/search is active, and adds `body.results-open` to lock scroll; the map entry + Recent activity
-stay on screen as the dimmed backdrop. The popped `#results-card` (`.results-modal`) animates in with
+a solid dim — **no `backdrop-filter` blur**, which re-rendered the page behind on every scroll frame and
+made a big state's catalog scroll at ~18 fps — `z-index:90`, `.results-overlay[hidden]{display:none}`)
+whenever a filter/search is active, and adds `body.results-open` to lock scroll; the map entry + Recent
+activity stay on screen as the dimmed backdrop, and the map's selected-state pulse (it animates a
+`filter`, a repaint every frame) is paused while the catalog or a bill card covers it. The catalog
+search text is built once per bill (`b._hay` / `b._hayN`), not on every keystroke. The popped `#results-card` (`.results-modal`) animates in with
 `@keyframes results-pop`, carries an **X close button** (`#results-x`, top-right) and a
 jurisdiction-named title (`resultsTitle` → "Wyoming bills (N)"). **Every sortable column header
 carries a persistent sort arrow** — a muted up/down glyph (`.arrow.is-idle`, "⇅") when idle so the
@@ -521,7 +524,9 @@ beats the UA `[hidden]{display:none}`, so the shared `govbot.css` now carries a
 state components everywhere — without it the legislation empty state showed under a full table, the
 **elections** page kept a *forever* "Loading Illinois & Chicago races…" spinner (its
 `$("loading").hidden = true` never took) and a stray "No races match" box, and the hearings empty
-state was a bare dashed box. **Opening a bill plays a book-open flourish** (`playBookOpen`): an open book
+state was a bare dashed box. **Opening the first bill of a visit plays a book-open flourish** (`playBookOpen`, once per visit via
+`bookPlayed` — it holds the card back ~2.4s, so repeating it on every bill made moving between bills
+slow; later bills open at once): an open book
 drawn **entirely in CSS** (no raster — so no stray grey box, and the wordmark never clips) — a navy
 gold-trimmed cover, two splayed cream page-faces around a spine valley, **colourful fore-edges down BOTH
 sides** (`.side-l`/`.side-r`, the seven-colour blocks tilted with `rotateY(±30deg)`), **big colourful
@@ -860,11 +865,11 @@ reviews, Permits/licenses/approvals, Meetings, Privacy & government records, For
 (~70%), Other — paperwork is matched first), and only the **3 closing soonest per kind**
 (`NOTICES_PER_CATEGORY`) ship, each record carrying its `category`; the `us` entry adds `notice_total`,
 `notice_categories` (key/label/full count) and `notice_list_url`. The page draws the federal group with
-`federalSections`: a **"Jump to" pill row** (`.fnav-pill`, one per section with its count, each in its
-own colour from `FED_COLORS`) that scrolls to that section (`.fsec#fed-<key>`, no hash change), then the
+`federalSections`: a **"Jump to" pill row** (`.fnav-pill`, one per section with its count — plain and
+uniform on purpose: full-contrast text, border and count badge in both themes) that scrolls to that section (`.fsec#fed-<key>`, no hash change), then the
 rules section and, under "Other federal notices open for comment", one section per notice kind in a
 two-column grid (`.fsec-grid`, one column on phones) ending in "See all N notices ↗". **Every section is
-its own short scroll box** (`.fsec-rows`, 360px rules / 250px notices) **with a scrollbar in that
+its own short scroll box**, coloured by `FED_COLORS` (`.fsec-rows`, 360px rules / 250px notices) **with a scrollbar in that
 section's colour** (the states' `.hgroup-rows` scrollbars use their green/gold accent too); the old
 Regulations.gov
 `DEMO_KEY` path was rate-limited and its placeholder seed had expired, so both were removed) — federal

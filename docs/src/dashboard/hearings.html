@@ -291,14 +291,15 @@
   /* Federal: pill nav + short sections, each with its own colourful scrollbar */
   .fnav { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 4px 0 6px; }
   .fnav-l { font-size: 13px; font-weight: 700; margin-right: 2px; }
+  /* The jump pills are deliberately plain: one full-contrast style in both themes. */
   .fnav-pill { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; font: inherit;
     font-size: 13px; font-weight: 700; padding: 5px 6px 5px 12px; border-radius: 999px;
-    color: var(--text-primary); border: 2px solid var(--sc);
-    background: color-mix(in srgb, var(--sc) 15%, var(--surface-1)); transition: transform .12s ease; }
-  .fnav-pill:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--sc) 28%, var(--surface-1)); }
-  .fnav-pill:focus-visible { outline: 2px solid var(--sc); outline-offset: 2px; }
+    color: var(--gb-text); border: 2px solid var(--gb-text); background: var(--gb-surface); text-align: left;
+    transition: transform .12s ease; }
+  .fnav-pill:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--gb-text) 10%, var(--gb-surface)); }
+  .fnav-pill:focus-visible { outline: 2px solid var(--gb-text); outline-offset: 2px; }
   .fnav-n { min-width: 22px; padding: 0 7px; border-radius: 999px; text-align: center; font-size: 12px;
-    font-weight: 800; background: var(--sc); color: var(--hh-on-accent); }
+    font-weight: 800; background: var(--gb-text); color: var(--gb-surface); }
   .fsec { margin-top: 16px; scroll-margin-top: 84px; }
   .fsec-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 6px;
     padding-left: 10px; border-left: 4px solid var(--sc); font-size: 15.5px; }
@@ -791,7 +792,6 @@
 
       const pill = eln("button", "fnav-pill");
       pill.type = "button";
-      pill.style.setProperty("--sc", "var(" + (FED_COLORS[sec.key] || "--hh-green") + ")");
       pill.append(document.createTextNode(sec.label));
       pill.append(eln("span", "fnav-n", String(sec.rows.length)));
       pill.addEventListener("click", () => {
