@@ -33,7 +33,17 @@
           },
           "portal_url": { "type": "string", "format": "uri", "description": "Official portal where a resident files a slip / signs in / comments." },
           "open_total": { "type": "integer", "minimum": 0, "description": "Federal only: how many rules are open for comment in all; the document carries just the soonest-closing share of them." },
-          "full_list_url": { "type": "string", "format": "uri", "description": "Federal only: the official Federal Register list of every rule open for comment (the page's \"See all\" button)." }
+          "full_list_url": { "type": "string", "format": "uri", "description": "Federal only: the official Federal Register list of every rule open for comment (the page's \"See all\" button)." },
+          "notice_total": { "type": "integer", "minimum": 0, "description": "Federal only: how many notices (non-rule announcements) are open for comment in all." },
+          "notice_list_url": { "type": "string", "format": "uri", "description": "Federal only: the official Federal Register list of every notice open for comment." },
+          "notice_categories": {
+            "type": "array",
+            "description": "Federal only: the notice kinds present, in display order, each with its full count (the document carries only a few of each).",
+            "items": {
+              "type": "object", "required": ["key", "label", "total"], "additionalProperties": false,
+              "properties": { "key": { "type": "string" }, "label": { "type": "string" }, "total": { "type": "integer", "minimum": 0 } }
+            }
+          }
         }
       }
     },
@@ -101,6 +111,7 @@
           }
         },
         "details_url": { "type": "string", "description": "Official hearing/agenda detail page." },
+        "category": { "type": "string", "enum": ["rfi", "environment", "permits", "meetings", "privacy", "paperwork", "other"], "description": "Federal notices only: the plain-language kind of notice (see NOTICE_CATEGORIES in actions/scrape-hearings/main.py). Rules carry none." },
         "witness_slip_url": { "type": ["string", "null"], "description": "Where to take part in this exact hearing: IL the first bill's Bill Status page (its Witness Slips button), else the hearing page; WA Committee Sign-In opened on this meeting; MA the hearing page (its testimony form); federal the rule's Regulations.gov comment form, else its Federal Register page. Null when there is no per-hearing way to take part (a WA interim work session; Alaska, whose only tool is its general POMS form) — the dashboard then links details_url." },
         "source": { "type": "string", "description": "Origin host, e.g. ilga.gov or leg.wa.gov." }
       }

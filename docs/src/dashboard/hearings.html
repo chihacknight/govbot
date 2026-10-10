@@ -286,6 +286,13 @@
   .hgroup-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
     gap: 8px 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gridline); font-size: 14px; }
   .hgroup-more .hgroup-portal { margin-left: 0; }
+  .hnotices { margin-top: 22px; padding-top: 16px; border-top: 2px solid var(--gridline); }
+  .hnotices-h { margin: 0 0 4px; font-size: 18px; }
+  .hnotices-sub { margin: 0 0 8px; font-size: 14px; }
+  .hnotice-cat { margin-top: 14px; }
+  .hnotice-cat-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 2px; font-size: 15px; }
+  .hnotice-n { font-size: 12px; font-weight: 800; padding: 1px 9px; border-radius: 999px;
+    border: 1.5px solid var(--hg-accent, var(--hh-green)); background: color-mix(in srgb, var(--hg-accent, var(--hh-green)) 16%, transparent); }
   .pstate-sub { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--gridline); }
 
   /* ===== Hearings — "Have your say" participation hero ===== */
@@ -649,10 +656,13 @@
       group.style.setProperty("--hg-accent", "var(" + HG_ACCENTS[gi % HG_ACCENTS.length] + ")");
       const head = eln("div", "hgroup-head");
       head.append(eln("span", "hgroup-name", juris.name));
-      // Federal carries only the soonest-closing share of the open rules.
+      // Federal carries only the soonest-closing share of the open rules, plus a few
+      // notices of each kind (records with a category) shown separately below.
+      const listed = byJur[code].filter((h) => !h.category);
+      const notices = byJur[code].filter((h) => h.category);
       const total = juris.open_total;
-      head.append(eln("span", "hgroup-count", total > byJur[code].length
-        ? byJur[code].length + " of " + total + " open" : byJur[code].length + " scheduled"));
+      head.append(eln("span", "hgroup-count", total > listed.length
+        ? listed.length + " of " + total + " open" : listed.length + " scheduled"));
       head.append(jurisdictionRssTrigger(code, juris.name));
       if (juris.portal_url) {
         const p = eln("a", "hgroup-portal", PARTICIPATION[juris.participation] || "Official portal ↗");
@@ -662,16 +672,17 @@
       group.append(head);
       // Rows live in their own wrapper so zebra :nth-child counts rows, not head.
       const rows = eln("div", "hgroup-rows");
-      byJur[code].forEach((h) => rows.append(hearingRow(h)));
+      listed.forEach((h) => rows.append(hearingRow(h)));
       group.append(rows);
-      if (juris.full_list_url && total > byJur[code].length) {
+      if (juris.full_list_url && total > listed.length) {
         const more = eln("div", "hgroup-more");
-        more.append(eln("span", null, "Showing the " + byJur[code].length + " closing soonest."));
+        more.append(eln("span", null, "Showing the " + listed.length + " closing soonest."));
         const all = eln("a", "hgroup-portal", "See all " + total + " open for comment ↗");
         all.href = juris.full_list_url; all.target = "_blank"; all.rel = "noopener";
         more.append(all);
         group.append(more);
       }
+      if (notices.length) group.append(noticeBlock(notices, juris));
       body.append(group);
     });
 
@@ -698,6 +709,35 @@
     card.hidden = false;
     const f = $("footer");
     if (f) f.textContent = "Committee hearings from " + (data.source || "official sources") + ", refreshed twice daily.";
+  }
+
+  // Federal notices: announcements that ask for comments without being a rule (forms,
+  // permits, records, ideas…). A few closing soonest of each kind, grouped under a
+  // plain heading with that kind's full count, then one button to the whole list.
+  function noticeBlock(notices, juris) {
+    const box = eln("div", "hnotices");
+    box.append(eln("h3", "hnotices-h", "Other federal notices open for comment"));
+    box.append(eln("p", "hnotices-sub", "Agencies also ask for comments on requests for ideas, permits, " +
+      "privacy records, forms and more. A few closing soonest of each kind:"));
+    (juris.notice_categories || []).forEach((c) => {
+      const these = notices.filter((h) => h.category === c.key);
+      if (!these.length) return;
+      const cat = eln("div", "hnotice-cat");
+      const h = eln("h4", "hnotice-cat-h", c.label);
+      h.append(eln("span", "hnotice-n", c.total + " open"));
+      cat.append(h);
+      these.forEach((n) => cat.append(hearingRow(n)));
+      box.append(cat);
+    });
+    if (juris.notice_list_url && juris.notice_total) {
+      const more = eln("div", "hgroup-more");
+      more.append(eln("span", null, juris.notice_total + " notices are open for comment in all."));
+      const all = eln("a", "hgroup-portal", "See all " + juris.notice_total + " notices ↗");
+      all.href = juris.notice_list_url; all.target = "_blank"; all.rel = "noopener";
+      more.append(all);
+      box.append(more);
+    }
+    return box;
   }
 
   const PARTICIPATION = {

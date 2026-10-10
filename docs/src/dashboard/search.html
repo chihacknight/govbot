@@ -26,38 +26,69 @@
   #s-summary { margin-top: 12px; font-size: 13px; color: var(--text-secondary); min-height: 18px; }
   #s-summary b { color: var(--text-primary); }
 
-  /* category jump chips */
-  .s-jump { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
-  .s-jump a { text-decoration: none; font-size: 12.5px; font-weight: 600; padding: 4px 11px;
-    border: 1px solid var(--border); border-radius: 999px; color: var(--text-secondary); background: var(--surface-1); }
-  .s-jump a:hover { color: var(--text-primary); border-color: var(--baseline); }
-  .s-jump .jc { color: var(--text-muted); font-weight: 700; }
+  /* category jump chips: one colour per category (matching its section), filled count badge */
+  .s-jump { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+  .s-jump button { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font: inherit;
+    font-size: 14px; font-weight: 700; padding: 7px 8px 7px 13px; border-radius: 999px;
+    color: var(--text-primary); border: 2px solid var(--gc);
+    background: color-mix(in srgb, var(--gc) 16%, var(--surface-1)); transition: transform .12s ease; }
+  .s-jump button:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--gc) 28%, var(--surface-1)); }
+  .s-jump button:focus-visible { outline: 2px solid var(--gc); outline-offset: 2px; }
+  .s-jump svg { width: 16px; height: 16px; color: var(--gc); flex: none; }
+  .s-jump .jc { min-width: 24px; padding: 1px 8px; border-radius: 999px; text-align: center;
+    background: var(--gc); color: var(--gb-on-primary); font-size: 12.5px; font-weight: 800; }
 
   /* result sections */
-  .s-cat { margin: 26px 0 0; scroll-margin-top: 74px; }
-  .s-cat-head { display: flex; align-items: baseline; gap: 9px; margin: 0 0 10px;
-    padding-bottom: 7px; border-bottom: 1px solid var(--border); }
-  .s-cat-head h2 { font-size: 16px; font-weight: 650; margin: 0; }
-  .s-cat-head .cnt { font-size: 12.5px; color: var(--text-muted); font-weight: 600; }
-  .s-cat-head .ico { width: 17px; height: 17px; flex: none; color: var(--gc, var(--series-1)); }
-  .s-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+  .s-cat { margin: 30px 0 0; scroll-margin-top: 80px; }
+  .s-cat-head { display: flex; align-items: center; gap: 10px; margin: 0 0 12px;
+    padding-bottom: 9px; border-bottom: 2px solid color-mix(in srgb, var(--gc) 55%, transparent); }
+  .s-cat-head h2 { font-size: 19px; font-weight: 700; margin: 0; }
+  .s-cat-head .cnt { font-size: 12.5px; font-weight: 800; padding: 1px 9px; border-radius: 999px;
+    background: var(--gc); color: var(--gb-on-primary); }
+  .s-cat-head .ico { width: 20px; height: 20px; flex: none; color: var(--gc, var(--series-1)); }
+  .s-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
 
-  .s-card { display: flex; align-items: flex-start; gap: 10px; text-decoration: none;
-    padding: 10px 12px; border: 1px solid var(--border); border-left: 3px solid var(--gc, var(--series-1));
-    border-radius: 9px; background: var(--surface-1); color: var(--text-primary); }
-  .s-card:hover { border-color: var(--baseline); background: var(--hover-wash); }
-  .s-card .sc-body { min-width: 0; flex: 1; }
-  .s-card .sc-title { font-weight: 600; font-size: 13.5px; line-height: 1.3; }
-  .s-card .sc-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; overflow-wrap: anywhere; }
-  .s-badge { flex: none; font-size: 9.5px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase;
-    padding: 2px 7px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; }
-  .s-badge.official { color: var(--series-2); border-color: color-mix(in srgb, var(--series-2) 55%, transparent); }
-  .s-badge.potential { color: var(--series-3); border-color: color-mix(in srgb, var(--series-3) 55%, transparent); }
-  .s-party { font-size: 11px; font-weight: 700; margin-left: 4px; }
-  .s-party.dem { color: var(--series-1); }
-  .s-party.rep { color: var(--series-6); }
-  .s-party.oth { color: var(--text-muted); }
-  .s-more { margin-top: 9px; font-size: 12.5px; color: var(--text-muted); }
+  /* jurisdiction filter (bills): one chip per state/jurisdiction that has matching bills */
+  .s-juris { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 14px; }
+  .s-juris-l { font-size: 13px; font-weight: 700; margin-right: 4px; }
+  .s-juris button { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font: inherit;
+    font-size: 13px; font-weight: 650; padding: 4px 10px; border-radius: 999px;
+    border: 1.5px solid var(--border); background: var(--surface-1); color: var(--text-primary); }
+  .s-juris button:hover { border-color: var(--gc); }
+  .s-juris button[aria-pressed="true"] { border-color: var(--gc); background: color-mix(in srgb, var(--gc) 22%, var(--surface-1)); }
+  .s-juris button:focus-visible { outline: 2px solid var(--gc); outline-offset: 2px; }
+  .s-juris .n { font-weight: 800; }
+  .s-juris img { width: 18px; height: 12px; object-fit: cover; border-radius: 2px; }
+
+  /* result card: jurisdiction + id on top, then the title, then people and topics */
+  .s-card { display: flex; flex-direction: column; gap: 7px; text-decoration: none; min-width: 0;
+    padding: 13px 14px 14px; border: 1px solid var(--border); border-top: 3px solid var(--gc, var(--series-1));
+    border-radius: 12px; background: var(--surface-1); color: var(--text-primary); transition: transform .12s ease; }
+  .s-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--gc) 60%, var(--border));
+    border-top-color: var(--gc); }
+  .s-card:focus-visible { outline: 2px solid var(--gc); outline-offset: 2px; }
+  .sc-top { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 12.5px; font-weight: 700; }
+  .sc-flag { width: 22px; height: 15px; object-fit: cover; border-radius: 2px; flex: none;
+    box-shadow: 0 0 0 1px var(--border); }
+  .sc-juris { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sc-id { flex: none; padding: 1px 8px; border-radius: 6px; font-weight: 800; letter-spacing: 0.02em;
+    background: color-mix(in srgb, var(--gc) 18%, transparent); border: 1px solid color-mix(in srgb, var(--gc) 55%, transparent); }
+  .sc-title { font-weight: 650; font-size: 15px; line-height: 1.35;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .sc-sub { font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
+  .sc-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .sc-tag { font-size: 11.5px; font-weight: 650; padding: 1px 8px; border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--gc) 50%, transparent); }
+  .s-badge { margin-left: auto; flex: none; font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 999px; border: 1.5px solid var(--border); white-space: nowrap; }
+  .s-badge.official { border-color: var(--gb-green); background: color-mix(in srgb, var(--gb-green) 16%, transparent); }
+  .s-badge.potential { border-color: var(--gb-amber); background: color-mix(in srgb, var(--gb-amber) 16%, transparent); }
+  .s-party { display: inline-block; margin-left: 6px; font-size: 11px; font-weight: 800; padding: 0 7px; border-radius: 999px;
+    border: 1.5px solid var(--border); vertical-align: 2px; }
+  .s-party.dem { border-color: #3B82F6; background: color-mix(in srgb, #3B82F6 16%, transparent); }
+  .s-party.rep { border-color: #E5484D; background: color-mix(in srgb, #E5484D 16%, transparent); }
+  .s-more { margin-top: 12px; font-size: 13px; }
+  @media (prefers-reduced-motion: reduce) { .s-card, .s-jump button { transition: none; } .s-card:hover, .s-jump button:hover { transform: none; } }
 
   /* prompt / empty / loading states reuse the shared .gb-state look */
   .s-state { text-align: center; padding: 40px 16px; color: var(--text-secondary); }
@@ -276,20 +307,34 @@
         });
       }
     }
-    addAny(d && d.states); addAny(e && e.jurisdictions); addAny(h && h.jurisdictions);
-    if (!m.us) m.us = "USA (Federal)";
-    if (!m.usa) m.usa = "USA (Federal)";
+    // Later sources win: the bill index's state names last, so a bill's jurisdiction
+    // reads as on the legislation pages (the elections file calls "usa" "United States
+    // (Illinois seats)"); federal is always "USA (Federal)".
+    addAny(e && e.jurisdictions); addAny(h && h.jurisdictions); addAny(d && d.states);
+    m.us = m.usa = "USA (Federal)";
     return m;
   }
 
-  /* ---- category searchers: each returns [{title, sub, badge, badgeClass, party, href}] ---- */
+  /* Jurisdiction code -> its committed flag (flags/<code>.png; DC is an SVG). The elections
+     data uses place names ("illinois", "chicago", "cps"); federal is "usa"/"us". */
+  var FLAG_ALIAS = { usa: "us", illinois: "il", chicago: "il", cps: "il" };
+  function flagSrc(code) {
+    var c = FLAG_ALIAS[low(code)] || low(code);
+    if (!/^[a-z]{2}$/.test(c)) return "";
+    return "flags/" + c + (c === "dc" ? ".svg" : ".png");
+  }
+
+  /* ---- category searchers: each returns
+     [{title, sub, juris, id, tags, badge, badgeClass, party, href}] ---- */
   function searchBills(t) {
     var out = [];
     state.bills.forEach(function (b) {
       if (matchAll(b._h, t)) out.push({
         title: b.title || b.id,
-        sub: (b.sponsors || []).slice(0, 3).join(", ") + ((b.tags && b.tags.length) ? "  ·  " + b.tags.slice(0, 3).join(", ") : ""),
-        badge: (b.state ? String(b.state).toUpperCase() + " · " : "") + b.id,
+        sub: (b.sponsors || []).length
+          ? (b.sponsors.slice(0, 3).join(", ") + (b.sponsors.length > 3 ? " +" + (b.sponsors.length - 3) + " more" : ""))
+          : "",
+        juris: b.state, id: b.id, tags: (b.tags || []).slice(0, 3),
         href: "legislation.html#bill=" + billKey(b)
       });
     });
@@ -308,8 +353,8 @@
           var key = code + "|" + low(full); if (seen[key]) return; seen[key] = 1;
           out.push({
             title: full,
-            sub: [party, area, stateName(code)].filter(Boolean).join("  ·  "),
-            badge: "Legislator", party: party,
+            sub: area || "",
+            juris: code, badge: "Legislator", party: party,
             // Opens that legislator's state catalog, filtered to their name.
             href: "legislation.html#state=" + encodeURIComponent(code) + "&q=" + encodeURIComponent(full)
           });
@@ -324,13 +369,13 @@
       var office = r.office + (r.district ? " · " + r.district : "");
       (r.candidates || []).forEach(function (c) {
         if (matchAll(hay([c.name, r.office, r.district, c.party]), t)) out.push({
-          title: c.name, sub: office, badge: "On ballot", badgeClass: "official", party: c.party,
+          title: c.name, sub: office, juris: r.jurisdiction, badge: "On ballot", badgeClass: "official", party: c.party,
           href: "elections.html#race=" + encodeURIComponent(r.id)
         });
       });
       (r.potential_candidates || []).forEach(function (c) {
         if (matchAll(hay([c.name, r.office, r.district]), t)) out.push({
-          title: c.name, sub: office + "  ·  reported, unofficial", badge: "Potential", badgeClass: "potential",
+          title: c.name, sub: office + "  ·  reported, unofficial", juris: r.jurisdiction, badge: "Potential", badgeClass: "potential",
           href: "elections.html#race=" + encodeURIComponent(r.id)
         });
       });
@@ -345,7 +390,7 @@
       out.push({
         title: r.office + (r.district ? " · " + r.district : ""),
         sub: [r.ballot_date ? prettyDate(r.ballot_date) + " ballot" : "", nc + " candidate" + (nc === 1 ? "" : "s")].filter(Boolean).join("  ·  "),
-        badge: "Race",
+        juris: r.jurisdiction, badge: "Race",
         href: "elections.html#race=" + encodeURIComponent(r.id)
       });
     });
@@ -358,7 +403,10 @@
       if (!matchAll(hay([h.title, h.committee, stateName(h.jurisdiction), billstr, h.location]), t)) return;
       out.push({
         title: h.title || h.committee || "Hearing",
-        sub: [h.committee, h.scheduled_display, stateName(h.jurisdiction)].filter(Boolean).join("  ·  "),
+        // Some sources' display time is raw ISO ("2026-10-14T13:00:00"): show the date.
+        sub: [h.committee, /^\d{4}-\d{2}-\d{2}/.test(h.scheduled_display || "") ? prettyDate(h.scheduled_display)
+              : h.scheduled_display].filter(Boolean).join("  ·  "),
+        juris: h.jurisdiction,
         badge: (h.status === "open" ? "Comment open" : "Hearing"),
         badgeClass: (h.status === "open" ? "official" : ""),
         href: "hearings.html#hg-" + encodeURIComponent(h.jurisdiction)
@@ -388,16 +436,51 @@
 
   function resultCard(r, color) {
     var a = el("a", "s-card"); a.href = r.href; a.style.setProperty("--gc", "var(" + color + ")");
-    var body = el("div", "sc-body");
-    var title = el("div", "sc-title"); title.textContent = r.title;
-    if (r.party) { var pt = el("span", "s-party " + partyClass(r.party)); pt.textContent = " " + r.party; title.appendChild(pt); }
-    body.appendChild(title);
-    if (r.sub) body.appendChild(el("div", "sc-sub", r.sub));
-    a.appendChild(body);
-    if (r.badge) { var bg = el("span", "s-badge" + (r.badgeClass ? " " + r.badgeClass : "")); bg.textContent = r.badge; a.appendChild(bg); }
+    var top = el("div", "sc-top");
+    var fs = r.juris ? flagSrc(r.juris) : "";
+    if (fs) {
+      var img = el("img", "sc-flag"); img.src = fs; img.alt = ""; img.loading = "lazy"; img.decoding = "async";
+      img.addEventListener("error", function () { img.remove(); });
+      top.appendChild(img);
+    }
+    if (r.juris) top.appendChild(el("span", "sc-juris", stateName(r.juris)));
+    if (r.id) top.appendChild(el("span", "sc-id", r.id));
+    if (r.badge) top.appendChild(el("span", "s-badge" + (r.badgeClass ? " " + r.badgeClass : ""), r.badge));
+    a.appendChild(top);
+    var title = el("div", "sc-title", r.title);
+    if (r.party) title.appendChild(el("span", "s-party " + partyClass(r.party), r.party));
+    a.appendChild(title);
+    if (r.sub) a.appendChild(el("div", "sc-sub", r.sub));
+    if (r.tags && r.tags.length) {
+      var tg = el("div", "sc-tags");
+      r.tags.forEach(function (x) { tg.appendChild(el("span", "sc-tag", x)); });
+      a.appendChild(tg);
+    }
     return a;
   }
-
+  // Bills can be narrowed to one jurisdiction; the choice resets when the query changes.
+  var billJuris = "", billJurisFor = null;
+  function jurisFilter(found, color, onPick) {
+    var counts = {};
+    found.forEach(function (r) { counts[low(r.juris)] = (counts[low(r.juris)] || 0) + 1; });
+    var codes = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a] || stateName(a).localeCompare(stateName(b)); });
+    if (codes.length < 2) return null;
+    var box = el("div", "s-juris"); box.setAttribute("role", "group"); box.setAttribute("aria-label", "Filter bills by jurisdiction");
+    box.style.setProperty("--gc", "var(" + color + ")");
+    box.appendChild(el("span", "s-juris-l", "Jurisdiction:"));
+    [""].concat(codes).forEach(function (c) {
+      var b = el("button"); b.type = "button";
+      b.setAttribute("aria-pressed", String(c === billJuris));
+      var fs = c ? flagSrc(c) : "";
+      if (fs) { var img = el("img"); img.src = fs; img.alt = ""; img.loading = "lazy";
+        img.addEventListener("error", function () { img.remove(); }); b.appendChild(img); }
+      b.appendChild(document.createTextNode((c ? stateName(c) : "All") + " "));
+      b.appendChild(el("span", "n", String(c ? counts[c] : found.length)));
+      b.addEventListener("click", function () { onPick(c === billJuris ? "" : c); });
+      box.appendChild(b);
+    });
+    return box;
+  }
   function render(q) {
     var results = $("s-results");
     var summary = $("s-summary");
@@ -413,17 +496,27 @@
       return;
     }
     var t = toks(q), total = 0, jumpFrag = document.createDocumentFragment();
+    if (billJurisFor !== q) { billJuris = ""; billJurisFor = q; }
     CATS.forEach(function (cat) {
       var found = cat.run(t);
       total += found.length;
       if (!found.length) return;
+      var all = found.length, filter = null;
+      if (cat.key === "bills") {
+        filter = jurisFilter(found, cat.color, function (c) {
+          billJuris = c;
+          var y = window.scrollY; render(q); window.scrollTo(0, y);   // keep the reader's place
+        });
+        if (billJuris) found = found.filter(function (r) { return low(r.juris) === billJuris; });
+      }
 
       var sec = el("section", "s-cat"); sec.id = "cat-" + cat.key; sec.style.setProperty("--gc", "var(" + cat.color + ")");
       var head = el("div", "s-cat-head");
       head.innerHTML = icoSvg("ico", cat.ico);
       var h2 = el("h2", null, cat.label); head.appendChild(h2);
-      head.appendChild(el("span", "cnt", String(found.length)));
+      head.appendChild(el("span", "cnt", found.length === all ? String(all) : found.length + " of " + all));
       sec.appendChild(head);
+      if (filter) sec.appendChild(filter);
 
       var list = el("div", "s-list");
       found.slice(0, SHOW_CAP).forEach(function (r) { list.appendChild(resultCard(r, cat.color)); });
@@ -431,9 +524,17 @@
       if (found.length > SHOW_CAP) sec.appendChild(el("div", "s-more", "Showing the first " + SHOW_CAP + " of " + found.length + " — refine your search to narrow this."));
       results.appendChild(sec);
 
-      var chip = el("a", null); chip.href = "#cat-" + cat.key;
-      chip.appendChild(document.createTextNode(cat.label + " "));
-      chip.appendChild(el("span", "jc", String(found.length)));
+      // Scroll to the section without touching the address bar: the hash carries the
+      // query (#q=…), so an #cat-… link used to clear the search.
+      var chip = el("button"); chip.type = "button";
+      chip.style.setProperty("--gc", "var(" + cat.color + ")");
+      chip.innerHTML = icoSvg("", cat.ico);
+      chip.appendChild(document.createTextNode(cat.label));
+      chip.appendChild(el("span", "jc", String(all)));
+      chip.addEventListener("click", function () {
+        var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        sec.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+      });
       jumpFrag.appendChild(chip);
     });
 
@@ -482,6 +583,7 @@
   input.addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(runFromInput, 130); });
   $("s-form").addEventListener("submit", function (e) { e.preventDefault(); clearTimeout(timer); runFromInput(); input.blur(); });
   window.addEventListener("hashchange", function () {
+    if (!/[#&]q=/.test(location.hash) && location.hash.length > 1) return;   // an in-page anchor, not a search
     var q = readQuery();
     if (q === lastRendered) return;      // our own replaceState, ignore
     input.value = q; render(q); lastRendered = q;

@@ -353,7 +353,7 @@ class Federal(unittest.TestCase):
         self.recs = main.parse_fr_documents((RAW / "fr_documents.json").read_text())
 
     def test_open_comment_periods_parsed(self):
-        self.assertEqual(len(self.recs), 6)
+        self.assertEqual(len(self.recs), 20)   # 6 rules + 2 notices of each of 7 kinds
         for h in self.recs:
             self.assertEqual(h["jurisdiction"], "us")
             self.assertTrue(REQUIRED.issubset(h), f"{h.get('id')} missing fields")
@@ -365,13 +365,14 @@ class Federal(unittest.TestCase):
         self.assertEqual(closes, sorted(closes))  # soonest-closing first
 
     def test_link_is_the_rules_own_comment_form(self):
-        census = next(h for h in self.recs if h["committee"] == "Census Bureau")
+        census = next(h for h in self.recs if h["committee"] == "Census Bureau" and not h.get("category"))
         self.assertTrue(census["witness_slip_url"].startswith("https://www.regulations.gov/commenton/"))
         self.assertEqual(census["bills"][0]["id"], census["witness_slip_url"].rsplit("/", 1)[-1])
         self.assertTrue(census["details_url"].startswith("https://www.federalregister.gov/documents/"))
 
     def test_no_online_form_links_the_federal_register_page(self):
-        fdic = next(h for h in self.recs if h["committee"] == "Federal Deposit Insurance Corporation")
+        fdic = next(h for h in self.recs if h["committee"] == "Federal Deposit Insurance Corporation"
+                    and not h.get("category"))
         self.assertEqual(fdic["witness_slip_url"], fdic["details_url"])
         self.assertEqual(fdic["location"], "Online · Federal Register")
 
@@ -381,7 +382,8 @@ class Federal(unittest.TestCase):
     def test_preview_shows_soonest_twelve_percent(self):
         from datetime import date
         # 208 open rules (today's real count) -> the 25 closing soonest.
-        many = [dict(self.recs[0], id=f"us-{i:03d}", scheduled_iso=f"2026-{10 + i % 3}-{1 + i % 28:02d}")
+        rule = next(h for h in self.recs if not h.get("category"))
+        many = [dict(rule, id=f"us-{i:03d}", scheduled_iso=f"2026-{10 + i % 3}-{1 + i % 28:02d}")
                 for i in range(208)]
         shown, meta = main.federal_preview(many, date(2026, 10, 10))
         self.assertEqual(len(shown), 25)
@@ -392,7 +394,31 @@ class Federal(unittest.TestCase):
                          "conditions%5Bcomment_date%5D%5Bgte%5D=10%2F10%2F2026"
                          "&conditions%5Btype%5D%5B%5D=PRORULE&conditions%5Btype%5D%5B%5D=RULE")
         # A short list still shows at least one.
-        self.assertEqual(len(main.federal_preview(self.recs[:2], date(2026, 10, 10))[0]), 1)
+        rules = [h for h in self.recs if not h.get("category")]
+        self.assertEqual(len(main.federal_preview(rules[:2], date(2026, 10, 10))[0]), 1)
+
+    def test_notice_categories(self):
+        cat = main.fr_notice_category
+        self.assertEqual(cat("Agency Information Collection Activities; Comment Request"), "paperwork")
+        self.assertEqual(cat("Request for Information: Nationwide Implementation of Prehospital Blood Transfusion"), "rfi")
+        self.assertEqual(cat("Privacy Act of 1974; System of Records"), "privacy")
+        self.assertEqual(cat("Draft Environmental Impact Statement for the Ambler Road"), "environment")
+        self.assertEqual(cat("Sunshine Act Meetings"), "meetings")
+        self.assertEqual(cat("Application for Permit To Drill"), "permits")
+        self.assertEqual(cat("New Postal Products"), "other")
+        # The fixture's 6 rules carry no category; its 14 notices all do.
+        self.assertEqual(sum(1 for h in self.recs if not h.get("category")), 6)
+
+    def test_preview_keeps_a_few_notices_per_kind(self):
+        from datetime import date
+        shown, meta = main.federal_preview(self.recs, date(2026, 10, 10))
+        notices = [h for h in shown if h.get("category")]
+        self.assertEqual(meta["notice_total"], 14)
+        self.assertEqual([c["key"] for c in meta["notice_categories"]],
+                         ["rfi", "environment", "permits", "meetings", "privacy", "paperwork", "other"])
+        self.assertTrue(all(c["total"] == 2 for c in meta["notice_categories"]))
+        self.assertEqual(len(notices), 14)   # every kind has <= NOTICES_PER_CATEGORY here
+        self.assertIn("conditions%5Btype%5D%5B%5D=NOTICE", meta["notice_list_url"])
 
     def test_us_sorts_first(self):
         from datetime import datetime, timezone

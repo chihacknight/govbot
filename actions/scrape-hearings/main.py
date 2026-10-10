@@ -715,15 +715,51 @@ FR_FIELDS = ("title", "comments_close_on", "comment_url", "agency_names",
              "html_url", "document_number", "type")
 
 
-def fr_open_for_comment_url(today):
-    """Proposed rules + rules published by `today` (a date) whose comment period
-    hasn't closed. Notices (mostly paperwork-burden notices) are left out."""
+RULE_TYPES = ("PRORULE", "RULE")
+NOTICE_TYPES = ("NOTICE",)
+
+
+def fr_open_for_comment_url(today, types):
+    """Documents of `types` published by `today` (a date) whose comment period
+    hasn't closed: proposed rules + rules, or notices (~800, fetched separately)."""
     q = [("per_page", "1000"), ("order", "newest"),
          ("conditions[comment_date][gte]", f"{today:%Y-%m-%d}"),
-         ("conditions[publication_date][lte]", f"{today:%Y-%m-%d}"),
-         ("conditions[type][]", "PRORULE"), ("conditions[type][]", "RULE")]
+         ("conditions[publication_date][lte]", f"{today:%Y-%m-%d}")]
+    q += [("conditions[type][]", t) for t in types]
     q += [("fields[]", f) for f in FR_FIELDS]
     return FR_API + "?" + urllib.parse.urlencode(q)
+
+
+# Notices are announcements that ask for comments without being a rule. Each is put in
+# one plain-language kind by its title (first match wins, so "…Information Collection…;
+# Comment Request" is paperwork, not a request for ideas). Order = display order.
+NOTICE_CATEGORIES = [
+    ("rfi", "Requests for ideas & information",
+     r"request for (information|comments?|input|public comment|nominations)|requests? for comment"
+     r"|\bRFI\b|advance notice|petition for rulemaking|solicitation of (comments|input)"),
+    ("environment", "Environment & wildlife reviews",
+     r"environmental (impact|assessment)|\bNEPA\b|endangered|threatened species|habitat"
+     r"|resource management plan|land use plan|wild(life|erness)"),
+    ("permits", "Permits, licenses & approvals",
+     r"permit|licens|application|approval|exemption|waiver|authoriz|certificat|registration|petition"),
+    ("meetings", "Meetings & listening sessions",
+     r"\bmeetings?\b|public hearing|listening session|webinar|workshop"),
+    ("privacy", "Privacy & government records", r"privacy act|systems? of records"),
+    ("paperwork", "Forms & paperwork reviews",
+     r"information collection|paperwork reduction|submission for (omb|office of management)"
+     r"|omb review|proposed (data )?collection|previously approved collection"),
+]
+NOTICE_OTHER = ("other", "Other notices")
+# Checked in this order (paperwork first: its titles often also say "comment request").
+_NOTICE_MATCH_ORDER = ["paperwork", "privacy", "rfi", "environment", "meetings", "permits"]
+
+
+def fr_notice_category(title):
+    pats = {k: p for k, _, p in NOTICE_CATEGORIES}
+    for key in _NOTICE_MATCH_ORDER:
+        if re.search(pats[key], title or "", re.I):
+            return key
+    return NOTICE_OTHER[0]
 
 
 def _fed_pretty_date(iso):
@@ -755,7 +791,7 @@ def parse_fr_documents(json_text):
         doc_id = comment.rsplit("/", 1)[-1] if "/commenton/" in comment else num
         agencies = d.get("agency_names") or []
         title = (d.get("title") or "").strip()
-        out.append({
+        rec = {
             "id": f"us-{num}",
             "jurisdiction": "us",
             "chamber": "federal",
@@ -770,36 +806,70 @@ def parse_fr_documents(json_text):
             "details_url": page,
             "witness_slip_url": comment or page,
             "source": "federalregister.gov",
-        })
+        }
+        if d.get("type") == "Notice":
+            rec["category"] = fr_notice_category(title)
+        out.append(rec)
     out.sort(key=lambda h: (h["scheduled_iso"], h["id"]))
     return out
 
 
 # The page shows only the soonest-closing share of the open rules (~200 at a time),
-# plus a button to the full official list.
+# a few notices of each kind, and buttons to the full official lists.
 FEDERAL_SHOW_SHARE = 0.12
+NOTICES_PER_CATEGORY = 3
 
 
-def fr_full_list_url(today):
-    """The Federal Register's own search page for the same set: proposed rules +
-    rules whose comment period is still open (its HTML search takes the API's
-    conditions, with the date as MM/DD/YYYY)."""
-    q = [("conditions[comment_date][gte]", f"{today:%m/%d/%Y}"),
-         ("conditions[type][]", "PRORULE"), ("conditions[type][]", "RULE")]
+def fr_full_list_url(today, types=RULE_TYPES):
+    """The Federal Register's own search page for the same set: documents of `types`
+    whose comment period is still open (its HTML search takes the API's conditions,
+    with the date as MM/DD/YYYY)."""
+    q = [("conditions[comment_date][gte]", f"{today:%m/%d/%Y}")]
+    q += [("conditions[type][]", t) for t in types]
     return "https://www.federalregister.gov/documents/search?" + urllib.parse.urlencode(q)
 
 
 def federal_preview(recs, today):
-    """Pure: keep the soonest-closing FEDERAL_SHOW_SHARE of the open rules (at
-    least one) and describe the whole list for the "See all" button."""
-    recs = sorted(recs, key=lambda h: (h["scheduled_iso"] or "9999", h["id"]))
-    shown = recs[:max(1, math.ceil(len(recs) * FEDERAL_SHOW_SHARE))] if recs else []
-    return shown, {"open_total": len(recs), "full_list_url": fr_full_list_url(today)}
+    """Pure: keep the soonest-closing FEDERAL_SHOW_SHARE of the open rules (at least
+    one) and NOTICES_PER_CATEGORY notices of each kind, and describe the full lists
+    for the page's "See all" buttons."""
+    order = lambda h: (h["scheduled_iso"] or "9999", h["id"])
+    rules = sorted((h for h in recs if not h.get("category")), key=order)
+    notices = sorted((h for h in recs if h.get("category")), key=order)
+    shown = rules[:max(1, math.ceil(len(rules) * FEDERAL_SHOW_SHARE))] if rules else []
+    meta = {"open_total": len(rules), "full_list_url": fr_full_list_url(today)}
+    if notices:
+        cats = []
+        for key, label in [(k, l) for k, l, _ in NOTICE_CATEGORIES] + [NOTICE_OTHER]:
+            these = [h for h in notices if h["category"] == key]
+            if these:
+                shown += these[:NOTICES_PER_CATEGORY]
+                cats.append({"key": key, "label": label, "total": len(these)})
+        meta.update({"notice_total": len(notices), "notice_categories": cats,
+                     "notice_list_url": fr_full_list_url(today, NOTICE_TYPES)})
+    return shown, meta
+
+
+def fetch_fr(url, max_pages=3):
+    """All pages of one Federal Register query (the API pages at 1,000)."""
+    docs = []
+    for _ in range(max_pages):
+        text = fetch_text(url) if url else None
+        try:
+            data = json.loads(text) if text else {}
+        except json.JSONDecodeError:
+            break
+        docs += data.get("results") or []
+        url = data.get("next_page_url")
+        if not url:
+            break
+    return docs
 
 
 def fetch_us(today):
-    text = fetch_text(fr_open_for_comment_url(today))
-    return parse_fr_documents(text) if text else []
+    docs = (fetch_fr(fr_open_for_comment_url(today, RULE_TYPES))
+            + fetch_fr(fr_open_for_comment_url(today, NOTICE_TYPES)))
+    return parse_fr_documents(json.dumps({"results": docs}))
 
 
 # --------------------------------------------------------------------------- #

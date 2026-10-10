@@ -560,10 +560,9 @@ separate **waving Illinois flag** SVG (`.cap-flag`/`.ilwave`, a CSS `@keyframes 
 earlier flag-on-a-pole SVG and its JS ripple; the old mouse-following "flag cursor" flourish is also
 gone. Copy: "Illinois Elections" / "Know who's on
 your ballot before you vote." / a dynamic "Next election" line (the earlier "Explore races" CTA
-button was removed)) and an **"Important Dates"** panel
-(`#ballot-picker` / `#ballot-cards`, one card per distinct `ballot_date` with its stage label +
-office/candidate counts, `renderElectionHero`). These cards are **informational only** — plain
-`<div>`s, not buttons, with no click/hover/focus and **no ballot filtering** (all races are shown by
+button was removed)). The **"Important Dates" panel and its two ballot cards were removed** (per
+request — the election calendar below already shows both ballots, with their dates and timelines);
+`renderElectionHero` now only draws the Capitol hero and the "Next election" line. All races are shown by
 default — `init()` calls `revealAllSections()` unconditionally at the end of load, so the bottom
 "Browse by office" grid shows on **every** load including a first-time direct visit with no `#race=`
 deep link and no saved view, not only when a deep link or the map/finder reveals sections); the
@@ -655,9 +654,10 @@ duplicate "Coming up" list, the **"Build your view" section-picker UI** (`#picke
 — the `state.view` / `applyView` machinery and its `picker-all` button stay in the DOM, hidden, so
 `revealAllSections()` and the ballot cards still reveal the right sections) and the big "Two big
 ballots ahead" intro paragraph were all removed, leaving a clean stack: Hero → **Find your ballot**
-(map + place picker, vertically centered) → midterm callout → the two **"What's on your ballot?"**
-date cards → the revealed races → the sources cabinet (now collapsed). The **election calendar**
-(`#calendar`) is now **always shown** (ungated — visible whenever `#cal-grid` has cards; **no
+(map + place picker, vertically centered) → midterm callout → the revealed races → the sources
+cabinet (now collapsed). The **election calendar**
+(`#calendar`) is now **always shown** (each card's **"Election Day · <date>"** is a full-contrast pill tinted
+with the card's accent, `.cal-card .cal-when` — the old 13px accent-coloured text was unreadable; ungated — visible whenever `#cal-grid` has cards; **no
 "≈ expected" tags** on any timeline date — removed per request; the calendar legend just says to confirm
 exact days with the official source; the RSS feeds dropped their "(expected)" / "~" markers too) with the
 **current/next timeline milestone pulsing** (`.tl-item.next .tl-dot` → `@keyframes tl-pulse`, a **big** scale-1.32 + wide-ring pulse for low-vision readers).
@@ -784,7 +784,16 @@ categorized result groups** — **Bills** (id/title/sponsors/tags → `legislati
 `legislation.html#q=<name>`, which filters bills by that sponsor), **Election candidates** (official
 + potential, each tagged → the race, see below), **Races & offices** (office/district/ballot →
 the race), and **Hearings** (title/committee/bill → `hearings.html#hg-<code>`). Each group shows a
-count, caps the list at 60 with a "refine" note, and there are jump chips + a live result total.
+count, caps the list at 60 with a "refine" note, and there is a live result total. **Jump chips** are
+coloured `<button>`s (category icon + label + a filled count badge, in the section's colour) that
+`scrollIntoView` the section — they used to be `#cat-…` links, and since the hash carries the query a
+click cleared the search (the `hashchange` handler now also ignores hashes without `q=`). **Bills** get a
+**jurisdiction filter** (`jurisFilter`: "All" + one flagged chip per state with matching bills, by count;
+one pick at a time, reset when the query changes; the head shows "N of M"). **Result cards** show the
+jurisdiction's flag + name, the bill/doc id chip and a type badge on top, then the title (3-line clamp),
+then sponsors/details and topic chips (`resultCard`; flags via `flagSrc`, the elections file's
+`illinois`/`chicago`/`cps` → `il`, `usa` → `us`). Jurisdiction names: the bill index's names win over the
+elections file's ("usa" there is "United States (Illinois seats)"), and federal is always "USA (Federal)".
 The page is `search.html` is authored by assembling the shared shell (favicon, header, drawer,
 footer) with the page's own hero + `#s-results`; input is debounced and mirrored into the hash.
 Candidate/race results deep-link as **`elections.html#race=<id>`** (or `#office=<group>`): the
@@ -844,7 +853,15 @@ one request, ~200 rules, each linked to its own Regulations.gov comment form; **
 12%** (`FEDERAL_SHOW_SHARE`, applied in `assemble`) ships in `hearings.json`, and the federal group ends with
 "Showing the N closing soonest" + a **"See all N open for comment ↗"** button (`.hgroup-more`) to the
 Federal Register's own search for the same set (`open_total` / `full_list_url` on the `us` jurisdiction
-entry); the ~800 open *notices* — mostly paperwork "information collection" requests — are left out; the old Regulations.gov
+entry). The ~800 open **notices** (announcements that ask for comments without being a rule) are fetched too
+(a second query, `fetch_fr` follows the API's 1,000-per-page `next_page_url`), sorted into plain kinds by
+title (`fr_notice_category` / `NOTICE_CATEGORIES`: Requests for ideas & information, Environment & wildlife
+reviews, Permits/licenses/approvals, Meetings, Privacy & government records, Forms & paperwork reviews
+(~70%), Other — paperwork is matched first), and only the **3 closing soonest per kind**
+(`NOTICES_PER_CATEGORY`) ship, each record carrying its `category`; the `us` entry adds `notice_total`,
+`notice_categories` (key/label/full count) and `notice_list_url`. The page shows them after the rules in an
+"Other federal notices open for comment" block (`noticeBlock`), one heading per kind with its "N open"
+count, then "See all N notices ↗"; the old Regulations.gov
 `DEMO_KEY` path was rate-limited and its placeholder seed had expired, so both were removed) — federal
 leads the list, above the states. It writes `docs/src/dashboard/hearings.json` + a whole-calendar
 RSS `hearings.xml` + granular RSS feeds under `docs/src/dashboard/hearings/` — per bill
@@ -1164,7 +1181,7 @@ Each office card carries a **full 4-sided border in its office colour** (`.offic
 solid var(--gc)`, not just a top stripe) so it's distinguishable by more than a thin line
 (accessibility).
 The hero copy (tagline, "Next election" line, the "Live now" coverage note, the "Data as of" pill — via
-`header.top p`), the "What's on your ballot?" date cards (`.bc-label`/`.bc-count`) and the office cards'
+`header.top p`) and the office cards'
 race/candidate counts (`.oc-count`) are all full-contrast `--text-primary`, not dimmed.
 A **legibility rule at the end of the stylesheet** (so it wins by source order) sets these to full
 contrast (`--text-primary`), not dimmed: the office-card descriptions (`.oc-blurb`), the Chicago-map
