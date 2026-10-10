@@ -31,7 +31,19 @@
             "description": "How the public weighs in on a hearing in this jurisdiction.",
             "enum": ["witness_slip", "committee_sign_in", "written_testimony", "public_comment"]
           },
-          "portal_url": { "type": "string", "format": "uri", "description": "Official portal where a resident files a slip / signs in / comments." }
+          "portal_url": { "type": "string", "format": "uri", "description": "Official portal where a resident files a slip / signs in / comments." },
+          "open_total": { "type": "integer", "minimum": 0, "description": "Federal only: how many rules are open for comment in all; the document carries just the soonest-closing share of them." },
+          "full_list_url": { "type": "string", "format": "uri", "description": "Federal only: the official Federal Register list of every rule open for comment (the page's \"See all\" button)." },
+          "notice_total": { "type": "integer", "minimum": 0, "description": "Federal only: how many notices (non-rule announcements) are open for comment in all." },
+          "notice_list_url": { "type": "string", "format": "uri", "description": "Federal only: the official Federal Register list of every notice open for comment." },
+          "notice_categories": {
+            "type": "array",
+            "description": "Federal only: the notice kinds present, in display order, each with its full count (the document carries only a few of each).",
+            "items": {
+              "type": "object", "required": ["key", "label", "total"], "additionalProperties": false,
+              "properties": { "key": { "type": "string" }, "label": { "type": "string" }, "total": { "type": "integer", "minimum": 0 } }
+            }
+          }
         }
       }
     },
@@ -80,7 +92,7 @@
             "additionalProperties": false,
             "properties": {
               "id": { "type": "string", "description": "Compact bill id, e.g. HB1643, SB25." },
-              "url": { "type": "string", "description": "Official page for this bill (IL: Bill Status; WA: bill summary)." },
+              "url": { "type": ["string", "null"], "description": "Official page for this bill (IL: Bill Status; WA: bill summary). Null when none resolves; the page then links the hearing's details_url." },
               "title": { "type": "string", "description": "Bill/measure name from the hearing source itself, shown beside the number when the bill isn't in govbot's dataset (e.g. the MA agenda title, the federal docket title)." },
               "govbot_title": { "type": "string", "description": "Bill title from govbot's own dataset, when govbot tracks this bill (build-time enrichment)." },
               "govbot_tags": { "type": "array", "items": { "type": "string" }, "description": "govbot topic tags for this bill, when tracked." },
@@ -99,8 +111,8 @@
           }
         },
         "details_url": { "type": "string", "description": "Official hearing/agenda detail page." },
-        "committee_url": { "type": ["string", "null"], "description": "Official page for the committee itself (IL: committee roster; WA: leg.wa.gov committee 'about' page). Null when no reliable page resolves." },
-        "witness_slip_url": { "type": "string", "description": "Deep link to the official portal to file a slip / sign in for this hearing or bill." },
+        "category": { "type": "string", "enum": ["rfi", "environment", "permits", "meetings", "privacy", "paperwork", "other"], "description": "Federal notices only: the plain-language kind of notice (see NOTICE_CATEGORIES in actions/scrape-hearings/main.py). Rules carry none." },
+        "witness_slip_url": { "type": ["string", "null"], "description": "Where to take part in this exact hearing: IL the first bill's Bill Status page (its Witness Slips button), else the hearing page; WA Committee Sign-In opened on this meeting; MA the hearing page (its testimony form); federal the rule's Regulations.gov comment form, else its Federal Register page. Null when there is no per-hearing way to take part (a WA interim work session; Alaska, whose only tool is its general POMS form) — the dashboard then links details_url." },
         "source": { "type": "string", "description": "Origin host, e.g. ilga.gov or leg.wa.gov." }
       }
     }

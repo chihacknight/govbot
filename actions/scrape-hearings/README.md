@@ -10,17 +10,18 @@ sources directly:
 
 | Jurisdiction | Source | Notes |
 |---|---|---|
-| USA (`us`) | `api.regulations.gov` v4 (open comment periods) | federal dockets open for public comment, soonest-closing first; leads the list |
+| USA (`us`) | `federalregister.gov` API (documents open for comment) | every published proposed rule / rule whose comment period is still open (~200), keyless, one request; leads the list. Only the soonest-closing 12% (`FEDERAL_SHOW_SHARE`, in `assemble`) is kept — the federal jurisdiction entry carries `open_total` + `full_list_url` (the Federal Register's own search for the same set) for the page's "See all N" button. Notices (~800 announcements that ask for comments without being a rule) come from a second query; each is sorted into a plain kind by title (`NOTICE_CATEGORIES`: requests for ideas, environment, permits, meetings, privacy, forms & paperwork (~70%), other) and only the 3 closing soonest per kind (`NOTICES_PER_CATEGORY`) ship, with `notice_total` / `notice_categories` / `notice_list_url` on the federal entry |
 | Illinois (`il`) | `ilga.gov` Hearings JSON API | per chamber, date range; bills parsed from the subject line |
 | Washington (`wa`) | `leg.wa.gov` CommitteeMeetingService (SOAP/XML) | agenda items fetched per meeting for bill ids |
 | Massachusetts (`ma`) | `malegislature.gov` Hearings JSON API | list of events + per-hearing detail; committee, location, and agenda bills; keyless |
 | Alaska (`ak`) | `akleg.gov` BASIS meetings JSON API | one document per legislature; committee, date, room, chamber, status; keyless. No bill agenda in the feed, so Alaska hearings carry no bills. Bump `AK_SESSION` each biennium |
 
-**Federal (`us`) needs an API key.** Set `REGULATIONS_GOV_API_KEY` (free from
-[api.data.gov](https://api.data.gov/signup/)) for live data; the shared `DEMO_KEY`
-is too rate-limited to rely on. When the key is missing or the API is unreachable,
-the build falls back to `federal_seed.json` — a small committed set of current
-comment periods — so the federal section is never empty.
+**Federal (`us`) is keyless.** It used the Regulations.gov API, whose shared
+`DEMO_KEY` is rate-limited (it answered 429), so the page fell back to a placeholder
+seed that had expired. The Federal Register's public API lists the same open comment
+periods without a key, each with its Regulations.gov comment link. A failed fetch
+yields no federal rows (never placeholders); the offline snapshot uses a trimmed real
+response, `__snapshots__/raw/fr_documents.json`.
 
 ## Why not the dashboard's bill pipeline?
 
@@ -36,6 +37,20 @@ hearing's slip page returns an error page. So `bills[].slips` is optional per th
 schema and is usually `null`; the reliable, always-useful signal is the hearing
 itself plus `witness_slip_url`, a deep link to the official portal to file. Count
 enrichment is bounded and parallel, and any failure simply leaves `slips` null.
+
+## One link per hearing, straight to it
+
+Each hearing row has a single link. `witness_slip_url` is where to take part in
+**that** hearing; when there's none, the row links the hearing's own page
+(`details_url`, labelled "Hearing details").
+
+| Source | `witness_slip_url` |
+|---|---|
+| IL | the first bill's Bill Status page (its Witness Slips button); a hearing with no bills → its hearing page |
+| WA | Committee Sign-In opened on this meeting (`/csi/<Senate\|House\|Joint>?selectedCommittee=<Committee Id>&selectedMeeting=<AgendaId>` — CSI preselects both and lists the bills). Only meetings with a public hearing on bills; interim work sessions aren't in CSI, so `null` |
+| MA | the hearing page (written testimony is submitted there) |
+| AK | `null` — Alaska's only comment tool is its general POMS form, so the row links the meeting page |
+| Federal | the rule's Regulations.gov "comment on" form, else its Federal Register page |
 
 ## Usage
 

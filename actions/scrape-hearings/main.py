@@ -11,6 +11,7 @@ sources directly:
 * Washington   -> leg.wa.gov CommitteeMeetingService SOAP/XML
 * Massachusetts -> malegislature.gov Hearings JSON API (list + per-hearing detail)
 * Alaska        -> akleg.gov BASIS meetings JSON API (one document per legislature)
+* USA (Federal) -> federalregister.gov API: rules whose public comment period is open
 
 The output is one document matching schemas/govbot.hearings.schema.json, written
 next to the dashboard's data.json. The Pages deploy runs this twice a day, so the
@@ -40,9 +41,10 @@ Usage:
 
 import argparse
 import json
-import os
+import math
 import re
 import sys
+import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
@@ -174,12 +176,6 @@ def il_details_url(chamber, committee_id, hearing_id):
     return f"https://ilga.gov/{seg}/hearings/details/{committee_id}/{hearing_id}"
 
 
-def il_committee_url(chamber, committee_id):
-    """The official ILGA committee page (members/roster) for a committee id."""
-    seg = "House" if chamber == "house" else "Senate"
-    return f"https://ilga.gov/{seg}/committees/members/{committee_id}"
-
-
 def _il_time_to_iso(raw):
     """'8/31/2026 10:00 AM' -> '2026-08-31T10:00:00' (naive local), else None."""
     for fmt in ("%m/%d/%Y %I:%M %p", "%m/%d/%Y %I:%M:%S %p", "%m/%d/%Y"):
@@ -228,8 +224,8 @@ def parse_il_hearings(json_text, chamber):
             "status": "canceled" if canceled else "scheduled",
             "bills": bills,
             "details_url": il_details_url(chamber, committee_id, hearing_id),
-            "committee_url": il_committee_url(chamber, committee_id),
-            "witness_slip_url": (bills[0]["url"] if bills else "https://my.ilga.gov/"),
+            "witness_slip_url": (bills[0]["url"] if bills
+                                 else il_details_url(chamber, committee_id, hearing_id)),
             "source": "ilga.gov",
         })
     return out
@@ -280,37 +276,6 @@ def enrich_il_slips(hearings):
         list(pool.map(one, targets[:60]))  # cap: be polite to ilga.gov
 
 
-# Markers of a "soft 404": leg.wa.gov serves an unknown committee slug as
-# HTTP 200 with a "Page not found" body, and ilga.gov has its own error page, so
-# a status-code check alone is not enough — we inspect the returned page too.
-_NOT_FOUND_MARKERS = ("page not found", "general assembly - error")
-
-
-def committee_url_ok(url):
-    html = fetch_text(url)
-    if not html:
-        return False
-    low = html.lower()
-    return not any(m in low for m in _NOT_FOUND_MARKERS)
-
-
-def verify_committee_urls(hearings):
-    """Live check: null out any committee_url that doesn't resolve to a real
-    committee page (guards against guessed slugs and soft-404s), so a broken
-    link never ships. One request per distinct URL, cached, run in parallel."""
-    urls = {h["committee_url"] for h in hearings if h.get("committee_url")}
-    if not urls:
-        return
-    status = {}
-    def probe(u):
-        status[u] = committee_url_ok(u)
-    with ThreadPoolExecutor(max_workers=6) as pool:
-        list(pool.map(probe, urls))
-    for h in hearings:
-        if h.get("committee_url") and not status.get(h["committee_url"]):
-            h["committee_url"] = None
-
-
 # --------------------------------------------------------------------------- #
 # Washington — leg.wa.gov CommitteeMeetingService (SOAP/XML)
 # --------------------------------------------------------------------------- #
@@ -341,64 +306,6 @@ def wa_chamber(agency):
     return "other"
 
 
-# leg.wa.gov committee URLs use acronym slugs (scpp, jlarc, tran) that can't be
-# derived from the committee name, so we resolve them from leg.wa.gov's own
-# committee index instead of guessing. Fetched once per run and cached.
-WA_COMMITTEE_INDEX_URL = "https://leg.wa.gov/about-the-legislature/committees/"
-_wa_index_cache = {"loaded": False, "entries": []}
-
-
-def _cmte_tokens(name):
-    return set(re.findall(r"[a-z0-9]+", (name or "").lower()))
-
-
-def wa_committee_index():
-    """[(token_set, absolute_url), ...] parsed from leg.wa.gov's committee list."""
-    if _wa_index_cache["loaded"]:
-        return _wa_index_cache["entries"]
-    _wa_index_cache["loaded"] = True
-    html = fetch_text(WA_COMMITTEE_INDEX_URL)
-    if not html:
-        return []
-    entries = []
-    seen = set()
-    pattern = (r'<a[^>]+href="([^"]*committees/(?:joint|senate|house)/[a-z0-9-]+/[^"]*)"'
-               r'[^>]*>(.*?)</a>')
-    for href, text in re.findall(pattern, html, re.S | re.I):
-        name = re.sub(r"<[^>]+>", "", text)
-        name = re.sub(r"\s+", " ", name).strip()
-        if not name or href in seen:
-            continue
-        seen.add(href)
-        url = href if href.startswith("http") else "https://leg.wa.gov" + href
-        entries.append((_cmte_tokens(name), url))
-    _wa_index_cache["entries"] = entries
-    return entries
-
-
-def wa_committee_url(name):
-    """Match a committee name to its leg.wa.gov page via the index, tolerating
-    reordering and an acronym in parentheses (token-subset match). None if no
-    confident match — better no link than a wrong one."""
-    want = _cmte_tokens(name)
-    if len(want) < 3:
-        return None
-    best, best_diff = None, 99
-    for tokens, url in wa_committee_index():
-        if want <= tokens or tokens <= want:
-            diff = len(tokens ^ want)
-            if diff < best_diff:
-                best, best_diff = url, diff
-    return best
-
-
-def resolve_wa_committee_urls(hearings):
-    """Fill committee_url for WA hearings from the leg.wa.gov index (live)."""
-    for h in hearings:
-        if h["jurisdiction"] == "wa" and not h.get("committee_url"):
-            h["committee_url"] = wa_committee_url(h.get("committee"))
-
-
 def parse_wa_meetings(xml_text):
     """Pure: normalize a GetCommitteeMeetings XML body into records (no bills)."""
     try:
@@ -411,12 +318,13 @@ def parse_wa_meetings(xml_text):
         if not agenda_id:
             continue
         agency = _wa_text(m, "Agency")
-        committee = "Committee"
+        committee, committee_id = "Committee", ""
         committees = m.find(WA_NS + "Committees")
         if committees is not None:
             first = committees.find(WA_NS + "Committee")
             if first is not None:
                 committee = _wa_text(first, "Name") or committee
+                committee_id = _wa_text(first, "Id")
         when = _wa_text(m, "Date")  # already ISO-naive local
         canceled = _wa_text(m, "Cancelled").lower() == "true"
         location = join_location(_wa_text(m, "Room"), _wa_text(m, "Building"),
@@ -436,12 +344,36 @@ def parse_wa_meetings(xml_text):
             "status": "canceled" if canceled else "scheduled",
             "bills": [],
             "details_url": f"https://app.leg.wa.gov/committeeschedules/Home/Agenda/{agenda_id}",
-            "committee_url": None,  # filled live from the leg.wa.gov index (pure parse stays offline)
-            "witness_slip_url": "https://app.leg.wa.gov/csi/",
+            "witness_slip_url": None,  # set by wa_attach_bills once the agenda is known
             "source": "leg.wa.gov",
             "_agenda_id": agenda_id,
+            "_signin": (agency, committee_id),
         })
     return out
+
+
+def wa_signin_url(agency, committee_id, agenda_id):
+    """Committee Sign-In (CSI) opened on this exact meeting: CSI preselects the
+    committee + meeting from these query parameters and lists its bills to sign in
+    on. Its meeting ids are the web service's AgendaId and its committee ids the
+    web service's Committee Id (checked against live CSI, 2026-10). None when CSI
+    has no tab for the agency (CSI has Senate / House / Joint)."""
+    if agency not in ("Senate", "House", "Joint") or not committee_id or not agenda_id:
+        return None
+    return (f"https://app.leg.wa.gov/csi/{agency}"
+            f"?selectedCommittee={committee_id}&selectedMeeting={agenda_id}")
+
+
+def wa_attach_bills(m, bill_ids):
+    """Attach the agenda's bills and the sign-in link. Only a meeting with a public
+    hearing on bills takes sign-in testimony; interim work sessions aren't listed in
+    CSI at all, so they get no sign-in link (the agenda page stays linked)."""
+    m["bills"] = wa_bills(bill_ids, m)
+    if m["bills"]:
+        m["witness_slip_url"] = wa_signin_url(*m["_signin"], m["_agenda_id"])
+    m.pop("_agenda_id", None)
+    m.pop("_signin", None)
+    return m
 
 
 def parse_wa_items(xml_text):
@@ -467,7 +399,7 @@ def wa_bill_url(bill_id, year):
     """Official Washington bill-summary page for a bill id (e.g. HB1234)."""
     m = re.match(r"([A-Z]+)(\d+)", bill_id)
     if not m:
-        return "https://app.leg.wa.gov/csi/"
+        return None  # the page falls back to the meeting's agenda
     return (f"https://app.leg.wa.gov/billsummary?BillNumber={m.group(2)}"
             f"&Year={year}&Initiative=false")
 
@@ -489,8 +421,7 @@ def fetch_wa(begin, end):
     meetings = parse_wa_meetings(text)  # keep canceled too; flagged in status
     def items(m):
         xml = fetch_text(wa_items_url(m["_agenda_id"]))
-        m["bills"] = wa_bills(parse_wa_items(xml), m) if xml else []
-        m.pop("_agenda_id", None)
+        wa_attach_bills(m, parse_wa_items(xml) if xml else [])
     with ThreadPoolExecutor(max_workers=6) as pool:
         list(pool.map(items, meetings))
     return meetings
@@ -522,10 +453,6 @@ def ma_bill_url(bill_number, general_court):
     return f"https://malegislature.gov/Bills/{general_court}/{bill_number}"
 
 
-def ma_committee_page_url(code, general_court):
-    return f"https://malegislature.gov/Committees/Detail/{code}/{general_court}"
-
-
 def _ma_chamber(name, code):
     """House / Senate / Joint from the committee name, falling back to the
     committee-code prefix (H/S/J), else 'other'."""
@@ -537,13 +464,6 @@ def _ma_chamber(name, code):
     if "senate" in text:
         return "senate"
     return {"J": "joint", "H": "house", "S": "senate"}.get((code or "")[:1].upper(), "other")
-
-
-def _ma_real_committee_code(code):
-    """MA tags conference/special hearings with a placeholder code (Hxx/Sxx/Jxx)
-    that has no committee page. Return the code only when it is a real one
-    (letter + digits, e.g. J17), else None so no bogus committee link is built."""
-    return code if re.match(r"^[HSJ]\d+$", code or "") else None
 
 
 def _ma_location(loc):
@@ -590,7 +510,6 @@ def parse_ma_hearing(json_text):
     general_court = host.get("GeneralCourtNumber")
     name = d.get("Name") or ""
     chamber = _ma_chamber(name, code)
-    real_code = _ma_real_committee_code(code)
     when = d.get("StartTime") or d.get("EventDate") or ""
     when = when.strip() if isinstance(when, str) else ""
     location = _ma_location(d.get("Location"))
@@ -624,8 +543,9 @@ def parse_ma_hearing(json_text):
         "status": "canceled" if canceled else "scheduled",
         "bills": bills,
         "details_url": ma_hearing_page_url(d["EventId"]),
-        "committee_url": ma_committee_page_url(real_code, general_court) if real_code and general_court else None,
-        "witness_slip_url": "https://malegislature.gov/",
+        # Written testimony is submitted on the hearing's own page (its "Submit
+        # testimony" form), so that page is the participation link.
+        "witness_slip_url": ma_hearing_page_url(d["EventId"]),
         "source": "malegislature.gov",
     }
 
@@ -761,8 +681,9 @@ def parse_ak_meetings(json_text):
             "status": "canceled" if m.get("MeetingCanceled") else "scheduled",
             "bills": [],
             "details_url": ak_meeting_detail_url(m.get("Url")),
-            "committee_url": None,
-            "witness_slip_url": "https://www.akleg.gov/poms/",
+            # Alaska's only comment tool is its general POMS form (no per-meeting
+            # form), so the row's one link is the meeting's own page instead.
+            "witness_slip_url": None,
             "source": "akleg.gov",
         })
     return out
@@ -781,35 +702,64 @@ def fetch_ak(begin, end):
 
 
 # --------------------------------------------------------------------------- #
-# USA (Federal) — open comment periods from Regulations.gov
+# USA (Federal) — rules open for public comment, from the Federal Register
 # --------------------------------------------------------------------------- #
-# Federal "hearings" are open public-comment periods (agencies also post public
-# hearings on the same dockets). The Regulations.gov API needs a key; supply one
-# via REGULATIONS_GOV_API_KEY (free from api.data.gov). Without a key it uses the
-# shared DEMO_KEY, which is heavily rate-limited, so any failure falls back to a
-# small committed seed (federal_seed.json) — federal is thus never empty.
-REGS_API = "https://api.regulations.gov/v4/documents"
-REGS_DOC_URL = "https://www.regulations.gov/document/"
-REGS_COMMENT_URL = "https://www.regulations.gov/commenton/"
-FEDERAL_SEED = Path(__file__).with_name("federal_seed.json")
+# Federal "hearings" are open public-comment periods on proposed (and some final)
+# rules. The Federal Register's public API (federalregister.gov/developers) is
+# keyless and lists every published document whose comment period is still open;
+# most carry a Regulations.gov "comment on" link straight to that rule's comment
+# form. One request per run. Fail-soft: no data yields no federal rows, never
+# placeholders.
+FR_API = "https://www.federalregister.gov/api/v1/documents.json"
+FR_FIELDS = ("title", "comments_close_on", "comment_url", "agency_names",
+             "html_url", "document_number", "type")
 
-# A handful of agency codes → readable names; unknown codes fall back to the code.
-AGENCY_NAMES = {
-    "CMS": "Centers for Medicare & Medicaid Services",
-    "USCIS": "U.S. Citizenship and Immigration Services",
-    "BLM": "Bureau of Land Management",
-    "HHS": "Department of Health and Human Services",
-    "FAA": "Federal Aviation Administration",
-    "EPA": "Environmental Protection Agency",
-    "FDA": "Food and Drug Administration",
-    "DOL": "Department of Labor",
-    "ED": "Department of Education",
-    "IRS": "Internal Revenue Service",
-    "DHS": "Department of Homeland Security",
-    "DOE": "Department of Energy",
-    "FWS": "U.S. Fish and Wildlife Service",
-    "OSHA": "Occupational Safety and Health Administration",
-}
+
+RULE_TYPES = ("PRORULE", "RULE")
+NOTICE_TYPES = ("NOTICE",)
+
+
+def fr_open_for_comment_url(today, types):
+    """Documents of `types` published by `today` (a date) whose comment period
+    hasn't closed: proposed rules + rules, or notices (~800, fetched separately)."""
+    q = [("per_page", "1000"), ("order", "newest"),
+         ("conditions[comment_date][gte]", f"{today:%Y-%m-%d}"),
+         ("conditions[publication_date][lte]", f"{today:%Y-%m-%d}")]
+    q += [("conditions[type][]", t) for t in types]
+    q += [("fields[]", f) for f in FR_FIELDS]
+    return FR_API + "?" + urllib.parse.urlencode(q)
+
+
+# Notices are announcements that ask for comments without being a rule. Each is put in
+# one plain-language kind by its title (first match wins, so "…Information Collection…;
+# Comment Request" is paperwork, not a request for ideas). Order = display order.
+NOTICE_CATEGORIES = [
+    ("rfi", "Requests for ideas & information",
+     r"request for (information|comments?|input|public comment|nominations)|requests? for comment"
+     r"|\bRFI\b|advance notice|petition for rulemaking|solicitation of (comments|input)"),
+    ("environment", "Environment & wildlife reviews",
+     r"environmental (impact|assessment)|\bNEPA\b|endangered|threatened species|habitat"
+     r"|resource management plan|land use plan|wild(life|erness)"),
+    ("permits", "Permits, licenses & approvals",
+     r"permit|licens|application|approval|exemption|waiver|authoriz|certificat|registration|petition"),
+    ("meetings", "Meetings & listening sessions",
+     r"\bmeetings?\b|public hearing|listening session|webinar|workshop"),
+    ("privacy", "Privacy & government records", r"privacy act|systems? of records"),
+    ("paperwork", "Forms & paperwork reviews",
+     r"information collection|paperwork reduction|submission for (omb|office of management)"
+     r"|omb review|proposed (data )?collection|previously approved collection"),
+]
+NOTICE_OTHER = ("other", "Other notices")
+# Checked in this order (paperwork first: its titles often also say "comment request").
+_NOTICE_MATCH_ORDER = ["paperwork", "privacy", "rfi", "environment", "meetings", "permits"]
+
+
+def fr_notice_category(title):
+    pats = {k: p for k, _, p in NOTICE_CATEGORIES}
+    for key in _NOTICE_MATCH_ORDER:
+        if re.search(pats[key], title or "", re.I):
+            return key
+    return NOTICE_OTHER[0]
 
 
 def _fed_pretty_date(iso):
@@ -821,67 +771,105 @@ def _fed_pretty_date(iso):
     return f"{months[int(m.group(2)) - 1]} {int(m.group(3))}, {m.group(1)}"
 
 
-def _fed_record(doc_id, agency_id, title, comment_end, url=None, comment_url=None):
-    """Map one open federal comment period into a hearing record."""
-    agency = AGENCY_NAMES.get((agency_id or "").upper(), agency_id or "Federal agency")
-    disp = _fed_pretty_date(comment_end)
-    details = url or (REGS_DOC_URL + doc_id)
-    return {
-        "id": f"us-{doc_id}",
-        "jurisdiction": "us",
-        "chamber": "federal",
-        "committee": agency,
-        "title": title,
-        "scheduled_iso": comment_end or None,
-        "scheduled_display": ("Comments due " + disp) if disp else "Open for comment",
-        "timezone": None,
-        "location": "Online · Regulations.gov",
-        "status": "open",
-        "bills": [{"id": doc_id, "title": title, "url": details, "slips": None}],
-        "details_url": details,
-        "committee_url": None,
-        "witness_slip_url": comment_url or url or (REGS_COMMENT_URL + doc_id),
-        "source": "regulations.gov",
-    }
-
-
-def federal_from_seed():
-    """Committed placeholder comment periods, used offline and whenever the live
-    Regulations.gov fetch is unavailable. Each seed row carries its own links so
-    it never points at a fabricated document id."""
+def parse_fr_documents(json_text):
+    """Pure: Federal Register documents JSON -> hearing records, soonest-closing
+    first. The one link is the rule's Regulations.gov comment form when it has one,
+    else its Federal Register page (which says how to comment by mail/email)."""
     try:
-        rows = json.loads(FEDERAL_SEED.read_text())
-    except (OSError, json.JSONDecodeError):
+        docs = (json.loads(json_text) or {}).get("results") or []
+    except (json.JSONDecodeError, TypeError, AttributeError):
         return []
-    return [_fed_record(r["doc_id"], r.get("agency_id"), r.get("title", ""),
-                        r.get("comment_end"), url=r.get("url"),
-                        comment_url=r.get("comment_url")) for r in rows]
+    out = []
+    for d in docs if isinstance(docs, list) else []:
+        num, close = d.get("document_number"), d.get("comments_close_on")
+        page = d.get("html_url")
+        if not (num and close and page):
+            continue
+        comment = (d.get("comment_url") or "").replace("http://", "https://", 1)
+        # A Regulations.gov comment link names the rule's docket document
+        # (e.g. EPA-HQ-OAR-2026-0123-0001); that id is what people search for.
+        doc_id = comment.rsplit("/", 1)[-1] if "/commenton/" in comment else num
+        agencies = d.get("agency_names") or []
+        title = (d.get("title") or "").strip()
+        rec = {
+            "id": f"us-{num}",
+            "jurisdiction": "us",
+            "chamber": "federal",
+            "committee": agencies[-1] if agencies else "Federal agency",  # most specific
+            "title": title,
+            "scheduled_iso": close,
+            "scheduled_display": "Comments due " + _fed_pretty_date(close),
+            "timezone": None,
+            "location": "Online · " + ("Regulations.gov" if comment else "Federal Register"),
+            "status": "open",
+            "bills": [{"id": doc_id, "title": title, "url": page, "slips": None}],
+            "details_url": page,
+            "witness_slip_url": comment or page,
+            "source": "federalregister.gov",
+        }
+        if d.get("type") == "Notice":
+            rec["category"] = fr_notice_category(title)
+        out.append(rec)
+    out.sort(key=lambda h: (h["scheduled_iso"], h["id"]))
+    return out
 
 
-def fetch_us(use_api=True, limit=12):
-    """Open federal comment periods, soonest-closing first. Live from the
-    Regulations.gov API when reachable, else the committed seed."""
-    if use_api:
-        key = os.environ.get("REGULATIONS_GOV_API_KEY") or "DEMO_KEY"
-        url = (f"{REGS_API}?filter[openForComment]=true&sort=commentEndDate"
-               f"&page[size]={limit}&api_key={key}")
-        text = fetch_text(url)
-        if text:
-            try:
-                data = json.loads(text)
-                recs = []
-                for it in data.get("data", []):
-                    a = it.get("attributes", {})
-                    doc_id = it.get("id", "")
-                    if not doc_id:
-                        continue
-                    recs.append(_fed_record(doc_id, a.get("agencyId"),
-                                            a.get("title", ""), a.get("commentEndDate")))
-                if recs:
-                    return recs
-            except (json.JSONDecodeError, TypeError):
-                pass
-    return federal_from_seed()
+# The page shows only the soonest-closing share of the open rules (~200 at a time),
+# a few notices of each kind, and buttons to the full official lists.
+FEDERAL_SHOW_SHARE = 0.12
+NOTICES_PER_CATEGORY = 3
+
+
+def fr_full_list_url(today, types=RULE_TYPES):
+    """The Federal Register's own search page for the same set: documents of `types`
+    whose comment period is still open (its HTML search takes the API's conditions,
+    with the date as MM/DD/YYYY)."""
+    q = [("conditions[comment_date][gte]", f"{today:%m/%d/%Y}")]
+    q += [("conditions[type][]", t) for t in types]
+    return "https://www.federalregister.gov/documents/search?" + urllib.parse.urlencode(q)
+
+
+def federal_preview(recs, today):
+    """Pure: keep the soonest-closing FEDERAL_SHOW_SHARE of the open rules (at least
+    one) and NOTICES_PER_CATEGORY notices of each kind, and describe the full lists
+    for the page's "See all" buttons."""
+    order = lambda h: (h["scheduled_iso"] or "9999", h["id"])
+    rules = sorted((h for h in recs if not h.get("category")), key=order)
+    notices = sorted((h for h in recs if h.get("category")), key=order)
+    shown = rules[:max(1, math.ceil(len(rules) * FEDERAL_SHOW_SHARE))] if rules else []
+    meta = {"open_total": len(rules), "full_list_url": fr_full_list_url(today)}
+    if notices:
+        cats = []
+        for key, label in [(k, l) for k, l, _ in NOTICE_CATEGORIES] + [NOTICE_OTHER]:
+            these = [h for h in notices if h["category"] == key]
+            if these:
+                shown += these[:NOTICES_PER_CATEGORY]
+                cats.append({"key": key, "label": label, "total": len(these)})
+        meta.update({"notice_total": len(notices), "notice_categories": cats,
+                     "notice_list_url": fr_full_list_url(today, NOTICE_TYPES)})
+    return shown, meta
+
+
+def fetch_fr(url, max_pages=3):
+    """All pages of one Federal Register query (the API pages at 1,000)."""
+    docs = []
+    for _ in range(max_pages):
+        text = fetch_text(url) if url else None
+        try:
+            data = json.loads(text) if text else {}
+        except json.JSONDecodeError:
+            break
+        docs += data.get("results") or []
+        url = data.get("next_page_url")
+        if not url:
+            break
+    return docs
+
+
+def fetch_us(today):
+    docs = (fetch_fr(fr_open_for_comment_url(today, RULE_TYPES))
+            + fetch_fr(fr_open_for_comment_url(today, NOTICE_TYPES)))
+    return parse_fr_documents(json.dumps({"results": docs}))
 
 
 # --------------------------------------------------------------------------- #
@@ -901,10 +889,8 @@ def build_from_fixtures(fixtures_dir):
     if wa_path.exists():
         for m in parse_wa_meetings(wa_path.read_text()):
             items_file = d / f"wa_items_{m['_agenda_id']}.xml"
-            if items_file.exists():
-                m["bills"] = wa_bills(parse_wa_items(items_file.read_text()), m)
-            m.pop("_agenda_id", None)
-            hearings.append(m)
+            ids = parse_wa_items(items_file.read_text()) if items_file.exists() else []
+            hearings.append(wa_attach_bills(m, ids))
     # Massachusetts: a list stub file names the detail fixtures to parse.
     ma_list = d / "ma_hearings.json"
     if ma_list.exists():
@@ -918,8 +904,10 @@ def build_from_fixtures(fixtures_dir):
     ak_path = d / "ak_meetings.json"
     if ak_path.exists():
         hearings.extend(parse_ak_meetings(ak_path.read_text()))
-    # Federal comment periods come from the committed seed offline (deterministic).
-    hearings.extend(federal_from_seed())
+    # Federal: a trimmed real Federal Register response (deterministic).
+    fr_path = d / "fr_documents.json"
+    if fr_path.exists():
+        hearings.extend(parse_fr_documents(fr_path.read_text()))
     return hearings
 
 
@@ -933,6 +921,13 @@ def assemble(hearings, jurisdictions, source, now):
     today = now.strftime("%Y-%m-%d")
     hearings = [h for h in hearings
                 if not h.get("scheduled_iso") or h["scheduled_iso"][:10] >= today]
+    # Federal: only the soonest-closing share is kept; the rest is one click away
+    # (open_total + full_list_url ride on the federal jurisdiction entry).
+    extra = {}
+    fed = [h for h in hearings if h["jurisdiction"] == "us"]
+    if fed:
+        shown, extra["us"] = federal_preview(fed, now.date())
+        hearings = [h for h in hearings if h["jurisdiction"] != "us"] + shown
     # USA (Federal) leads, then the rest alphabetically — the dashboard shows the
     # federal comment periods above the state hearings.
     rank = lambda code: (0 if code == "us" else 1, code)
@@ -948,7 +943,8 @@ def assemble(hearings, jurisdictions, source, now):
         "generated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "source": source,
         "jurisdictions": [
-            {k: JURISDICTIONS[j][k] for k in ("code", "name", "participation", "portal_url")}
+            {**{k: JURISDICTIONS[j][k] for k in ("code", "name", "participation", "portal_url")},
+             **extra.get(j, {})}
             for j in used if j in JURISDICTIONS
         ],
         "counts": counts,
@@ -1291,12 +1287,10 @@ def main():
             hearings.extend(fetch_ma(begin, end))
         if "ak" in codes:
             hearings.extend(fetch_ak(begin, end))
-        resolve_wa_committee_urls(hearings)  # WA committee pages from the index
-        verify_committee_urls(hearings)      # drop any link that 404s / soft-404s
-        if "us" in codes:                    # federal comment periods (Regulations.gov)
-            hearings.extend(fetch_us())
+        if "us" in codes:                    # federal rules open for comment
+            hearings.extend(fetch_us(now.date()))
         source = ("ilga.gov + leg.wa.gov + malegislature.gov + akleg.gov + "
-                  "regulations.gov (govbot scrape-hearings)")
+                  "federalregister.gov (govbot scrape-hearings)")
 
     if args.dashboard_data:
         n = enrich_from_govbot(hearings, args.dashboard_data)

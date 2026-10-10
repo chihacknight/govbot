@@ -672,7 +672,7 @@
     </p>
 
     <div class="diagram" role="img"
-      aria-label="Hearings pipeline: scrape Illinois, Washington, Massachusetts, Alaska legislatures and federal Regulations.gov, then write hearings.json, a whole-calendar RSS feed, and granular per-bill, per-jurisdiction, and per-hearing RSS feeds, plus a participation directory.">
+      aria-label="Hearings pipeline: scrape Illinois, Washington, Massachusetts, Alaska legislatures and the Federal Register's rules open for comment, then write hearings.json, a whole-calendar RSS feed, and granular per-bill, per-jurisdiction, and per-hearing RSS feeds, plus a participation directory.">
       <div class="flow">
 
         <div class="flow-job" style="--c: var(--series-3)">
@@ -680,7 +680,7 @@
 
           <div class="fan-label">tapped directly — federal leads, then states</div>
           <div class="sources">
-            <span class="src" style="--c: var(--series-6)"><span class="src-dot"></span> 🇺🇸 USA Federal <span class="src-sub">Regulations.gov</span></span>
+            <span class="src" style="--c: var(--series-6)"><span class="src-dot"></span> 🇺🇸 USA Federal <span class="src-sub">Federal Register</span></span>
             <span class="src" style="--c: var(--series-1)"><span class="src-dot"></span> Illinois <span class="src-sub">ilga.gov</span></span>
             <span class="src" style="--c: var(--series-2)"><span class="src-dot"></span> Washington <span class="src-sub">leg.wa.gov</span></span>
             <span class="src" style="--c: var(--series-5)"><span class="src-dot"></span> Massachusetts <span class="src-sub">malegislature.gov</span></span>
@@ -693,7 +693,7 @@
             <span class="n-ico" aria-hidden="true">🧾</span>
             <div class="n-body">
               <div class="n-title">Parse &amp; normalize</div>
-              <div class="n-sub">one shared schema (<code>govbot.hearings.schema.json</code>); federal falls back to <code>federal_seed.json</code> without an API key</div>
+              <div class="n-sub">one shared schema (<code>govbot.hearings.schema.json</code>); federal comes from the keyless Federal Register API</div>
             </div>
           </div>
         </div>
@@ -722,7 +722,7 @@
     </div>
 
     <ol class="steps" style="--c: var(--series-3)">
-      <li><b>Go straight to the source.</b> Instead of a third-party aggregator, the scraper reads each legislature's own site plus the federal Regulations.gov API.</li>
+      <li><b>Go straight to the source.</b> Instead of a third-party aggregator, the scraper reads each legislature's own site plus the Federal Register's public API for federal rules open to comment.</li>
       <li><b>Normalize to one shape.</b> Every source is mapped onto a shared hearings schema so the page treats them all the same.</li>
       <li><b>Fan out to feeds.</b> Beyond the dashboard's <code>hearings.json</code>, it emits a whole-calendar RSS and granular per-bill / per-jurisdiction / per-hearing feeds you can subscribe to.</li>
       <li><b>Keep the last good copy.</b> If a source is down and zero hearings come back, the previous committed data stays — the panel never blanks out.</li>

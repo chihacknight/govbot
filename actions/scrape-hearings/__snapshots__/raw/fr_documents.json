@@ -1,0 +1,236 @@
+{
+  "description": "Documents published on or before 10/10/2026, with a comment closing date on or after 10/10/2026, and of type Proposed Rule or Rule (trimmed fixture: 6 rules + 14 notices (2 per kind) of 208 real results, fetched 2026-10-10)",
+  "count": 20,
+  "results": [
+    {
+      "title": "Decennial Census of the Population of Americans; Proposed Residence Criteria and Proposed Regulations for Demographic Questions; Extension of Comment Period",
+      "comments_close_on": "2026-11-02",
+      "comment_url": "http://www.regulations.gov/commenton/USBC_FRDOC_0001-0076",
+      "agency_names": [
+        "Commerce Department",
+        "Census Bureau"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/05/2026-20328/decennial-census-of-the-population-of-americans-proposed-residence-criteria-and-proposed-regulations",
+      "document_number": "2026-20328",
+      "type": "Proposed Rule"
+    },
+    {
+      "title": "Air Quality Plan; Arizona; Maricopa County Air Quality Department; New Source Review; Emission Reduction Credits-Rule 204",
+      "comments_close_on": "2026-11-09",
+      "comment_url": "http://www.regulations.gov/commenton/EPA-R09-OAR-2026-4654-0001",
+      "agency_names": [
+        "Environmental Protection Agency"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/08/2026-20612/air-quality-plan-arizona-maricopa-county-air-quality-department-new-source-review-emission-reduction",
+      "document_number": "2026-20612",
+      "type": "Proposed Rule"
+    },
+    {
+      "title": "Requirements for Additional Traceability Records for Certain Foods: Enforcement Policy for Certain Retail Food Establishments and Restaurants; Draft Guidance for Industry; Availability",
+      "comments_close_on": "2026-11-23",
+      "comment_url": "http://www.regulations.gov/commenton/FDA-2025-D-6952-0001",
+      "agency_names": [
+        "Health and Human Services Department",
+        "Food and Drug Administration"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20721/requirements-for-additional-traceability-records-for-certain-foods-enforcement-policy-for-certain",
+      "document_number": "2026-20721",
+      "type": "Proposed Rule"
+    },
+    {
+      "title": "Request for Comment on the Listing of Compute Derivatives Contracts",
+      "comments_close_on": "2026-10-20",
+      "comment_url": "http://www.regulations.gov/commenton/CFTC-2026-1850-0001",
+      "agency_names": [
+        "Commodity Futures Trading Commission"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/08/21/2026-17163/request-for-comment-on-the-listing-of-compute-derivatives-contracts",
+      "document_number": "2026-17163",
+      "type": "Proposed Rule"
+    },
+    {
+      "title": "Extensions of Credit to Insiders",
+      "comments_close_on": "2026-11-04",
+      "comment_url": null,
+      "agency_names": [
+        "Federal Deposit Insurance Corporation"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20735/extensions-of-credit-to-insiders",
+      "document_number": "2026-20735",
+      "type": "Proposed Rule"
+    },
+    {
+      "title": "Airworthiness Directives; Airbus Helicopters Deutschland GmbH (AHD) Helicopters",
+      "comments_close_on": "2026-11-23",
+      "comment_url": "http://www.regulations.gov/commenton/FAA-2026-11805-0001",
+      "agency_names": [
+        "Transportation Department",
+        "Federal Aviation Administration"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20722/airworthiness-directives-airbus-helicopters-deutschland-gmbh-ahd-helicopters",
+      "document_number": "2026-20722",
+      "type": "Rule"
+    },
+    {
+      "title": "Notice of Submission Deadline for Schedule Information for Chicago O'Hare International Airport, John F. Kennedy International Airport, Los Angeles International Airport, Newark Liberty International Airport, and San Francisco International Airport for the Summer 2027 Scheduling Season",
+      "comments_close_on": "2026-10-16",
+      "comment_url": "http://www.regulations.gov/commenton/FAA-2013-0259-5405",
+      "agency_names": [
+        "Transportation Department",
+        "Federal Aviation Administration"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20784/notice-of-submission-deadline-for-schedule-information-for-chicago-ohare-international-airport-john",
+      "document_number": "2026-20784",
+      "type": "Notice"
+    },
+    {
+      "title": "First Student, Inc.-Acquisition of Control-Autumn Transportation Inc. and Ambassador Wheelchair Services, Inc.",
+      "comments_close_on": "2026-11-23",
+      "comment_url": null,
+      "agency_names": [
+        "Surface Transportation Board"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20783/first-student-inc-acquisition-of-control-autumn-transportation-inc-and-ambassador-wheelchair",
+      "document_number": "2026-20783",
+      "type": "Notice"
+    },
+    {
+      "title": "Agency Information Collection Activities; Submission for Office of Management and Budget Review; Comment Request; Biologics License Applications, Procedures and Requirements",
+      "comments_close_on": "2026-11-09",
+      "comment_url": "http://www.regulations.gov/commenton/FDA-2026-N-6667-0002",
+      "agency_names": [
+        "Health and Human Services Department",
+        "Food and Drug Administration"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20768/agency-information-collection-activities-submission-for-office-of-management-and-budget-review",
+      "document_number": "2026-20768",
+      "type": "Notice"
+    },
+    {
+      "title": "Agency Information Collection Activities; Submission for Office of Management and Budget Review; Comment Request; Expanded Access to Investigational Drugs for Treatment Use",
+      "comments_close_on": "2026-11-09",
+      "comment_url": "http://www.regulations.gov/commenton/FDA-2026-N-7426-0003",
+      "agency_names": [
+        "Health and Human Services Department",
+        "Food and Drug Administration"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20765/agency-information-collection-activities-submission-for-office-of-management-and-budget-review",
+      "document_number": "2026-20765",
+      "type": "Notice"
+    },
+    {
+      "title": "Fermi America LLC (dba Fermi America); Project Matador Advanced Energy and Intelligence Campus AP1000 Units 1-4; Project Matador Nuclear Units 1-4; Draft Environmental Impact Statement",
+      "comments_close_on": "2026-11-23",
+      "comment_url": "http://www.regulations.gov/commenton/NRC-2026-0100-0014",
+      "agency_names": [
+        "Nuclear Regulatory Commission"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20742/fermi-america-llc-dba-fermi-america-project-matador-advanced-energy-and-intelligence-campus-ap1000",
+      "document_number": "2026-20742",
+      "type": "Notice"
+    },
+    {
+      "title": "Proposed Memorandum of Understanding (MOU) Assigning Certain Federal Environmental Responsibilities to the State of Georgia, Including National Environmental Policy Act (NEPA) Authority for Certain Categorical Exclusions (CEs)",
+      "comments_close_on": "2026-11-02",
+      "comment_url": "http://www.regulations.gov/commenton/FHWA-2026-0958-0001",
+      "agency_names": [
+        "Transportation Department",
+        "Federal Highway Administration"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/02/2026-20209/proposed-memorandum-of-understanding-mou-assigning-certain-federal-environmental-responsibilities-to",
+      "document_number": "2026-20209",
+      "type": "Notice"
+    },
+    {
+      "title": "Challenges and Solutions in Lot-Level Food Traceability; Public Meeting",
+      "comments_close_on": "2026-12-06",
+      "comment_url": "http://www.regulations.gov/commenton/FDA-2014-N-0053-1398",
+      "agency_names": [
+        "Health and Human Services Department",
+        "Food and Drug Administration"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20720/challenges-and-solutions-in-lot-level-food-traceability-public-meeting",
+      "document_number": "2026-20720",
+      "type": "Notice"
+    },
+    {
+      "title": "Public Hearing",
+      "comments_close_on": "2026-11-09",
+      "comment_url": null,
+      "agency_names": [
+        "Susquehanna River Basin Commission"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/05/2026-20333/public-hearing",
+      "document_number": "2026-20333",
+      "type": "Notice"
+    },
+    {
+      "title": "Prospective Grant of Exclusive License, Inter-Institutional Agreement-Institution Lead: Antibody Specifically Binding to Severe Fever With Thrombocytopenia Syndrome Virus Antigen and Use Thereof",
+      "comments_close_on": "2026-10-26",
+      "comment_url": null,
+      "agency_names": [
+        "Health and Human Services Department",
+        "National Institutes of Health"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20705/prospective-grant-of-exclusive-license-inter-institutional-agreement-institution-lead-antibody",
+      "document_number": "2026-20705",
+      "type": "Notice"
+    },
+    {
+      "title": "Notice of Permit Applications Received Under the Antarctic Conservation Act of 1978",
+      "comments_close_on": "2026-11-09",
+      "comment_url": "http://www.regulations.gov/commenton/NSF_FRDOC_0001-3640",
+      "agency_names": [
+        "National Science Foundation"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/08/2026-20623/notice-of-permit-applications-received-under-the-antarctic-conservation-act-of-1978",
+      "document_number": "2026-20623",
+      "type": "Notice"
+    },
+    {
+      "title": "Notice of Intent To Establish a Negotiated Rulemaking Advisory Committee for Vehicle Lighting; Request for Comments and Solicitation of Nominations for Membership",
+      "comments_close_on": "2026-11-09",
+      "comment_url": "http://www.regulations.gov/commenton/NHTSA-2026-1981-0001",
+      "agency_names": [
+        "Transportation Department",
+        "National Highway Traffic Safety Administration"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/08/2026-20648/notice-of-intent-to-establish-a-negotiated-rulemaking-advisory-committee-for-vehicle-lighting",
+      "document_number": "2026-20648",
+      "type": "Notice"
+    },
+    {
+      "title": "Request for Comments on the Effect of the European Union's Carbon Border Adjustment Mechanism and the Proposals To Expand Coverage on U.S. Trade",
+      "comments_close_on": "2026-11-09",
+      "comment_url": "http://www.regulations.gov/commenton/USTR-2026-0661-0001",
+      "agency_names": [
+        "Trade Representative, Office of United States"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/08/2026-20615/request-for-comments-on-the-effect-of-the-european-unions-carbon-border-adjustment-mechanism-and-the",
+      "document_number": "2026-20615",
+      "type": "Notice"
+    },
+    {
+      "title": "Privacy Act of 1974; System of Records",
+      "comments_close_on": "2026-11-06",
+      "comment_url": null,
+      "agency_names": [
+        "Treasury Department"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/07/2026-20494/privacy-act-of-1974-system-of-records",
+      "document_number": "2026-20494",
+      "type": "Notice"
+    },
+    {
+      "title": "Privacy Act of 1974; Systems of Records",
+      "comments_close_on": "2026-11-05",
+      "comment_url": "http://www.regulations.gov/commenton/NRC-2026-2311-0001",
+      "agency_names": [
+        "Nuclear Regulatory Commission"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/06/2026-20438/privacy-act-of-1974-systems-of-records",
+      "document_number": "2026-20438",
+      "type": "Notice"
+    }
+  ]
+}

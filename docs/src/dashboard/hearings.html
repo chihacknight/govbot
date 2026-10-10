@@ -218,8 +218,6 @@
   .slip-count { color: var(--text-muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
   .h-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 7px; }
   .file-link { font-size: 13px; font-weight: 550; }
-  .committee-link { font-size: 13px; font-weight: 500; color: var(--series-1); text-decoration: none; }
-  .committee-link:hover { color: var(--series-1); text-decoration: underline; }
   @media (max-width: 620px) {
     .hearing-row { grid-template-columns: 1fr; }
     .hgroup-portal { margin-left: 0; }
@@ -236,6 +234,19 @@
   }
   .p-search::placeholder { color: var(--text-muted); }
   .p-search:focus { outline: none; border-color: var(--series-1); box-shadow: 0 0 0 3px color-mix(in srgb, var(--series-1) 22%, transparent); }
+  /* Search box + A–Z letter buttons: a letter shows only the states starting with it. */
+  .p-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 12px; }
+  .p-letters { display: flex; flex-wrap: wrap; gap: 4px; }
+  .p-letter {
+    min-width: 30px; height: 30px; padding: 0 6px; border-radius: 6px; cursor: pointer;
+    border: 1.5px solid var(--text-primary); background: transparent; color: var(--text-primary);
+    font: inherit; font-size: 13px; font-weight: 700;
+  }
+  .p-letter:hover:not(:disabled) { border-color: var(--hh-green); background: var(--hover-wash); }
+  .p-letter:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
+  .p-letter[aria-pressed="true"] { background: var(--gb-primary); border-color: var(--gb-primary); color: var(--gb-on-primary); }
+  .p-letter:disabled { border-style: dashed; opacity: 0.45; cursor: default; }
+  .p-none { margin: 12px 0 0; }
   .participation-grid {
     margin-top: 14px; display: grid; gap: 10px;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -267,11 +278,21 @@
   .pstate-how { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
   /* "Go to portal" / "How to participate" and each section's top-right portal link read
      as outline buttons: a 2px full-contrast border, like the homepage's outline buttons. */
-  .pstate-link, .hgroup-portal { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  .pstate-link, .hgroup-portal, .details-link { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
     font-size: 13px; font-weight: 650; color: var(--text-primary) !important; text-decoration: none;
     border: 2px solid var(--text-primary); border-radius: 999px; padding: 5px 13px; white-space: nowrap; }
-  .pstate-link:hover, .hgroup-portal:hover { background: var(--hover-wash); border-color: var(--hh-green); }
+  .pstate-link:hover, .hgroup-portal:hover, .details-link:hover { background: var(--hover-wash); border-color: var(--hh-green); }
   .pstate-link { margin-top: auto; }
+  .hgroup-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 8px 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gridline); font-size: 14px; }
+  .hgroup-more .hgroup-portal { margin-left: 0; }
+  .hnotices { margin-top: 22px; padding-top: 16px; border-top: 2px solid var(--gridline); }
+  .hnotices-h { margin: 0 0 4px; font-size: 18px; }
+  .hnotices-sub { margin: 0 0 8px; font-size: 14px; }
+  .hnotice-cat { margin-top: 14px; }
+  .hnotice-cat-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 2px; font-size: 15px; }
+  .hnotice-n { font-size: 12px; font-weight: 800; padding: 1px 9px; border-radius: 999px;
+    border: 1.5px solid var(--hg-accent, var(--hh-green)); background: color-mix(in srgb, var(--hg-accent, var(--hh-green)) 16%, transparent); }
   .pstate-sub { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--gridline); }
 
   /* ===== Hearings — "Have your say" participation hero ===== */
@@ -505,11 +526,15 @@
         <h2>Weigh in — by state</h2>
         <p class="sub">How the public participates in legislation in each state, with a link to the official portal. States with a machine-readable hearing feed also show their upcoming hearings above.</p>
       </div>
+    </div>
+    <div class="p-tools">
       <span class="p-search-wrap">
         <svg class="p-search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
         <input type="search" id="p-search" class="p-search" placeholder="Filter states…" aria-label="Filter states">
       </span>
+      <div class="p-letters" id="p-letters" role="group" aria-label="Show states starting with a letter"></div>
     </div>
+    <p class="p-none" id="p-none" hidden>No states match.</p>
     <div id="participation-grid" class="participation-grid"></div>
   </section>
 
@@ -631,7 +656,13 @@
       group.style.setProperty("--hg-accent", "var(" + HG_ACCENTS[gi % HG_ACCENTS.length] + ")");
       const head = eln("div", "hgroup-head");
       head.append(eln("span", "hgroup-name", juris.name));
-      head.append(eln("span", "hgroup-count", byJur[code].length + " scheduled"));
+      // Federal carries only the soonest-closing share of the open rules, plus a few
+      // notices of each kind (records with a category) shown separately below.
+      const listed = byJur[code].filter((h) => !h.category);
+      const notices = byJur[code].filter((h) => h.category);
+      const total = juris.open_total;
+      head.append(eln("span", "hgroup-count", total > listed.length
+        ? listed.length + " of " + total + " open" : listed.length + " scheduled"));
       head.append(jurisdictionRssTrigger(code, juris.name));
       if (juris.portal_url) {
         const p = eln("a", "hgroup-portal", PARTICIPATION[juris.participation] || "Official portal ↗");
@@ -641,8 +672,17 @@
       group.append(head);
       // Rows live in their own wrapper so zebra :nth-child counts rows, not head.
       const rows = eln("div", "hgroup-rows");
-      byJur[code].forEach((h) => rows.append(hearingRow(h)));
+      listed.forEach((h) => rows.append(hearingRow(h)));
       group.append(rows);
+      if (juris.full_list_url && total > listed.length) {
+        const more = eln("div", "hgroup-more");
+        more.append(eln("span", null, "Showing the " + listed.length + " closing soonest."));
+        const all = eln("a", "hgroup-portal", "See all " + total + " open for comment ↗");
+        all.href = juris.full_list_url; all.target = "_blank"; all.rel = "noopener";
+        more.append(all);
+        group.append(more);
+      }
+      if (notices.length) group.append(noticeBlock(notices, juris));
       body.append(group);
     });
 
@@ -669,6 +709,35 @@
     card.hidden = false;
     const f = $("footer");
     if (f) f.textContent = "Committee hearings from " + (data.source || "official sources") + ", refreshed twice daily.";
+  }
+
+  // Federal notices: announcements that ask for comments without being a rule (forms,
+  // permits, records, ideas…). A few closing soonest of each kind, grouped under a
+  // plain heading with that kind's full count, then one button to the whole list.
+  function noticeBlock(notices, juris) {
+    const box = eln("div", "hnotices");
+    box.append(eln("h3", "hnotices-h", "Other federal notices open for comment"));
+    box.append(eln("p", "hnotices-sub", "Agencies also ask for comments on requests for ideas, permits, " +
+      "privacy records, forms and more. A few closing soonest of each kind:"));
+    (juris.notice_categories || []).forEach((c) => {
+      const these = notices.filter((h) => h.category === c.key);
+      if (!these.length) return;
+      const cat = eln("div", "hnotice-cat");
+      const h = eln("h4", "hnotice-cat-h", c.label);
+      h.append(eln("span", "hnotice-n", c.total + " open"));
+      cat.append(h);
+      these.forEach((n) => cat.append(hearingRow(n)));
+      box.append(cat);
+    });
+    if (juris.notice_list_url && juris.notice_total) {
+      const more = eln("div", "hgroup-more");
+      more.append(eln("span", null, juris.notice_total + " notices are open for comment in all."));
+      const all = eln("a", "hgroup-portal", "See all " + juris.notice_total + " notices ↗");
+      all.href = juris.notice_list_url; all.target = "_blank"; all.rel = "noopener";
+      more.append(all);
+      box.append(more);
+    }
+    return box;
   }
 
   const PARTICIPATION = {
@@ -725,17 +794,17 @@
       main.append(list);
     }
 
+    // One link per hearing, straight to it: where to take part in this hearing
+    // (witness slip / sign-in / testimony / comment form), else its own page.
     const actions = eln("div", "h-actions");
-    if (h.status !== "canceled" && h.witness_slip_url) {
-      const file = eln("a", "file-link",
-        PARTICIPATION[participationFor(h)] || "File a slip ↗");
-      file.href = h.witness_slip_url; file.target = "_blank"; file.rel = "noopener";
-      actions.append(file);
-    }
-    if (h.committee_url) {
-      const cmte = eln("a", "committee-link", "About the committee ↗");
-      cmte.href = h.committee_url; cmte.target = "_blank"; cmte.rel = "noopener";
-      actions.append(cmte);
+    const takePart = h.status !== "canceled" && h.witness_slip_url;
+    const href = takePart ? h.witness_slip_url : h.details_url;
+    if (href) {
+      const a = takePart
+        ? eln("a", "file-link", PARTICIPATION[participationFor(h)] || "File a slip ↗")
+        : eln("a", "details-link", "Hearing details ↗");
+      a.href = href; a.target = "_blank"; a.rel = "noopener";
+      actions.append(a);
     }
     actions.append(hearingRssTrigger(h));
     if (actions.childNodes.length) main.append(actions);
@@ -826,6 +895,7 @@
   let liveCodes = new Set();
   let participation = [];
   let pFilter = "";
+  let pLetter = "";   // "" = all letters
   // code -> how the public weighs in there (from the feed's jurisdictions list),
   // so each hearing's "how to participate" link is labeled per its own state
   // rather than assumed. renderHearings fills this.
@@ -846,7 +916,11 @@
   function loadParticipation() {
     fetch("participation.json")
       .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then((data) => { participation = (data && data.jurisdictions) || []; renderParticipation(""); })
+      .then((data) => {
+        participation = (data && data.jurisdictions) || [];
+        buildLetters();
+        renderParticipation("");
+      })
       .catch(() => {});
   }
 
@@ -857,10 +931,11 @@
     pFilter = filter || "";
     const q = pFilter.trim().toLowerCase();
     const rows = participation.filter((j) =>
-      !q || j.name.toLowerCase().includes(q) ||
-      (KIND_LABEL[j.participation] || "").toLowerCase().includes(q));
-    // Pin USA (Federal) to the front — Regulations.gov carries live federal
-    // comment periods & hearings — keeping the rest of the list in place.
+      (!pLetter || firstLetter(j) === pLetter) &&
+      (!q || j.name.toLowerCase().includes(q) ||
+       (KIND_LABEL[j.participation] || "").toLowerCase().includes(q)));
+    // Pin USA (Federal) to the front — it carries the live federal rules open
+    // for comment — keeping the rest of the list in place.
     rows.sort((a, b) => (b.code === "us") - (a.code === "us"));
     rows.forEach((j) => {
       const card = eln("div", "pstate");
@@ -887,7 +962,39 @@
       card.append(sub);
       grid.append(card);
     });
-    $("participation-card").hidden = rows.length === 0 && !q ? true : false;
+    $("p-none").hidden = rows.length > 0;
+    $("participation-card").hidden = rows.length === 0 && !q && !pLetter;
+  }
+
+  function firstLetter(j) { return (j.name || "").trim().charAt(0).toUpperCase(); }
+
+  // "All" + A–Z. A letter no state starts with is shown but disabled, so the row
+  // reads as a full alphabet; clicking the active letter again shows all states.
+  function buildLetters() {
+    const box = $("p-letters");
+    if (!box) return;
+    box.textContent = "";
+    const have = new Set(participation.map(firstLetter));
+    ["", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"].forEach((L) => {
+      const b = eln("button", "p-letter", L || "All");
+      b.type = "button";
+      b.dataset.letter = L;
+      if (L) b.setAttribute("aria-label", "States starting with " + L);
+      b.disabled = !!L && !have.has(L);
+      box.append(b);
+    });
+    box.addEventListener("click", (e) => {
+      const b = e.target.closest(".p-letter");
+      if (!b || b.disabled) return;
+      pLetter = pLetter === b.dataset.letter ? "" : b.dataset.letter;
+      syncLetters();
+      renderParticipation(pFilter);
+    });
+    syncLetters();
+  }
+  function syncLetters() {
+    $("p-letters").querySelectorAll(".p-letter").forEach((b) =>
+      b.setAttribute("aria-pressed", String(b.dataset.letter === pLetter)));
   }
 
   {

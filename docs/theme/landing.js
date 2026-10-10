@@ -221,7 +221,9 @@
         var day = bad ? "—" : d.getDate();
         var mon = bad ? "" : d.toLocaleString("en-US", { month: "short" });
         var sub = bad ? "soon" : (d.toLocaleString("en-US", { weekday: "short" }) + " · " + d.getFullYear());
-        var label = x.committee || x.title || "Hearing";
+        // A federal row is a rule open for comment: its title says what it is,
+        // the agency name alone doesn't.
+        var label = (x.jurisdiction === "us" ? x.title || x.committee : x.committee || x.title) || "Hearing";
         if (label.length > 70) label = label.slice(0, 68) + "…";
         var url = x.witness_slip_url || x.details_url || (BASE + "hearings.html");
         var ext = /^https?:/.test(url);

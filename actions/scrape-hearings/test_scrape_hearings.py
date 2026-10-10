@@ -37,6 +37,13 @@ class IllinoisParser(unittest.TestCase):
     def test_bad_json_is_empty_not_crash(self):
         self.assertEqual(main.parse_il_hearings("<html>nope</html>", "house"), [])
 
+    def test_hearing_without_bills_links_its_own_page(self):
+        row = json.loads((RAW / "il_active.json").read_text())[0]
+        row = dict(row, subjectMatter="Subject matter only", longDescription="Revenue")
+        h = main.parse_il_hearings(json.dumps([row]), "house")[0]
+        self.assertEqual(h["bills"], [])
+        self.assertEqual(h["witness_slip_url"], h["details_url"])
+
     def test_bill_links_use_reliable_bill_status_page(self):
         # Regression: the direct WitnessSlips endpoint returns an error page, so
         # user-facing links must point at the always-200 Bill Status page.
@@ -71,35 +78,29 @@ class WashingtonParser(unittest.TestCase):
     def test_bad_xml_is_empty(self):
         self.assertEqual(main.parse_wa_meetings("not xml"), [])
 
+    def test_public_hearing_links_sign_in_on_that_meeting(self):
+        # A meeting with bills up for public hearing opens Committee Sign-In on that
+        # exact meeting (committee + meeting preselected), not CSI's front page.
+        m = next(m for m in main.parse_wa_meetings((RAW / "wa_meetings.xml").read_text())
+                 if m["_signin"][0] == "Joint")
+        agency, cid = m["_signin"]
+        agenda = m["_agenda_id"]
+        main.wa_attach_bills(m, ["HB1234"])
+        self.assertEqual(m["witness_slip_url"],
+                         f"https://app.leg.wa.gov/csi/Joint?selectedCommittee={cid}&selectedMeeting={agenda}")
+        self.assertNotIn("_signin", m)
+        self.assertNotIn("_agenda_id", m)
 
-class WashingtonCommittee(unittest.TestCase):
-    def setUp(self):
-        # Inject a fake leg.wa.gov index so matching is tested without network.
-        main._wa_index_cache["loaded"] = True
-        main._wa_index_cache["entries"] = [
-            (main._cmte_tokens("Select Committee on Pension Policy (SCPP)"),
-             "https://leg.wa.gov/.../joint/scpp/"),
-            (main._cmte_tokens("Joint Legislative Audit & Review Committee (JLARC)"),
-             "https://leg.wa.gov/.../joint/jlarc/"),
-            (main._cmte_tokens("Senate Transportation Committee"),
-             "https://leg.wa.gov/.../senate/tran/"),
-        ]
+    def test_work_session_has_no_sign_in(self):
+        # Interim work sessions take no sign-in testimony (CSI doesn't list them).
+        m = main.parse_wa_meetings((RAW / "wa_meetings.xml").read_text())[0]
+        main.wa_attach_bills(m, [])
+        self.assertIsNone(m["witness_slip_url"])
+        self.assertTrue(m["details_url"].startswith("https://app.leg.wa.gov/committeeschedules/Home/Agenda/"))
 
-    def tearDown(self):
-        main._wa_index_cache["loaded"] = False
-        main._wa_index_cache["entries"] = []
-
-    def test_matches_despite_reordered_acronym(self):
-        # SOAP name has the acronym in front; index has it in parentheses.
-        self.assertIn("jlarc", main.wa_committee_url(
-            "JLARC - Joint Legislative Audit & Review Committee"))
-
-    def test_matches_subset_with_parenthetical_acronym(self):
-        self.assertIn("scpp", main.wa_committee_url("Select Committee on Pension Policy"))
-
-    def test_no_false_match(self):
-        # "Joint Transportation" must not match "Senate Transportation".
-        self.assertIsNone(main.wa_committee_url("Joint Transportation Committee"))
+    def test_sign_in_needs_a_csi_chamber(self):
+        self.assertIsNone(main.wa_signin_url("Other", "21488", "33497"))
+        self.assertIsNone(main.wa_signin_url("Senate", "", "33497"))
 
 
 class MassachusettsParser(unittest.TestCase):
@@ -121,7 +122,9 @@ class MassachusettsParser(unittest.TestCase):
         self.assertTrue(bills["H5516"]["url"].startswith("https://malegislature.gov/Bills/194/"))
         # The bill name is carried from MA's own feed (MA isn't in govbot data).
         self.assertIn("condominium", bills["H5516"]["title"].lower())
-        self.assertEqual(h["committee_url"], "https://malegislature.gov/Committees/Detail/J17/194")
+        # Written testimony is submitted on the hearing's own page.
+        self.assertEqual(h["witness_slip_url"], "https://malegislature.gov/Events/Hearings/Detail/5769")
+        self.assertEqual(h["witness_slip_url"], h["details_url"])
 
     def test_location_has_room_and_address(self):
         # "437" alone is context-free; the room is labeled and the State House
@@ -132,16 +135,11 @@ class MassachusettsParser(unittest.TestCase):
     def test_canceled_status(self):
         self.assertEqual(self._hearing(5675)["status"], "canceled")
 
-    def test_placeholder_committee_code_yields_no_link(self):
-        # 5697's committee code is the placeholder "Hxx" — no real committee page.
-        self.assertIsNone(self._hearing(5697)["committee_url"])
-
     def test_null_heavy_record_is_tolerated(self):
         # 5768 has null Name/CommitteeCode/GeneralCourtNumber; must not crash and
         # falls back to the Description for its title.
         h = self._hearing(5768)
         self.assertEqual(h["committee"], "Committee")
-        self.assertIsNone(h["committee_url"])
         self.assertTrue(h["title"])
 
     def test_bad_json_is_none_not_crash(self):
@@ -162,6 +160,8 @@ class AlaskaParser(unittest.TestCase):
         self.assertEqual(h["bills"], [])
         self.assertTrue(h["details_url"].startswith("https://www.akleg.gov/"))
         self.assertNotIn(" ", h["details_url"])  # spaces encoded
+        # Alaska has no per-meeting comment form, so the row links the meeting page.
+        self.assertIsNone(h["witness_slip_url"])
 
     def test_all_caps_committee_titlecased(self):
         self.assertTrue(any(h["committee"] == "Legislative Council" for h in self.hearings))
@@ -349,15 +349,76 @@ class JurisdictionAndHearingFeeds(unittest.TestCase):
 
 
 class Federal(unittest.TestCase):
-    def test_seed_records_are_wellformed(self):
-        recs = main.fetch_us(use_api=False)
-        self.assertTrue(recs, "federal seed should not be empty")
-        for h in recs:
+    def setUp(self):
+        self.recs = main.parse_fr_documents((RAW / "fr_documents.json").read_text())
+
+    def test_open_comment_periods_parsed(self):
+        self.assertEqual(len(self.recs), 20)   # 6 rules + 2 notices of each of 7 kinds
+        for h in self.recs:
             self.assertEqual(h["jurisdiction"], "us")
             self.assertTrue(REQUIRED.issubset(h), f"{h.get('id')} missing fields")
-            self.assertEqual(h["source"], "regulations.gov")
-            # the docket title rides along on the single bill so the UI shows it
+            self.assertEqual(h["source"], "federalregister.gov")
+            self.assertTrue(h["scheduled_display"].startswith("Comments due "))
+            # the rule's title rides along on the single "bill" so the UI shows it
             self.assertTrue(h["bills"][0].get("title"))
+        closes = [h["scheduled_iso"] for h in self.recs]
+        self.assertEqual(closes, sorted(closes))  # soonest-closing first
+
+    def test_link_is_the_rules_own_comment_form(self):
+        census = next(h for h in self.recs if h["committee"] == "Census Bureau" and not h.get("category"))
+        self.assertTrue(census["witness_slip_url"].startswith("https://www.regulations.gov/commenton/"))
+        self.assertEqual(census["bills"][0]["id"], census["witness_slip_url"].rsplit("/", 1)[-1])
+        self.assertTrue(census["details_url"].startswith("https://www.federalregister.gov/documents/"))
+
+    def test_no_online_form_links_the_federal_register_page(self):
+        fdic = next(h for h in self.recs if h["committee"] == "Federal Deposit Insurance Corporation"
+                    and not h.get("category"))
+        self.assertEqual(fdic["witness_slip_url"], fdic["details_url"])
+        self.assertEqual(fdic["location"], "Online · Federal Register")
+
+    def test_bad_json_is_empty(self):
+        self.assertEqual(main.parse_fr_documents("<html>down</html>"), [])
+
+    def test_preview_shows_soonest_twelve_percent(self):
+        from datetime import date
+        # 208 open rules (today's real count) -> the 25 closing soonest.
+        rule = next(h for h in self.recs if not h.get("category"))
+        many = [dict(rule, id=f"us-{i:03d}", scheduled_iso=f"2026-{10 + i % 3}-{1 + i % 28:02d}")
+                for i in range(208)]
+        shown, meta = main.federal_preview(many, date(2026, 10, 10))
+        self.assertEqual(len(shown), 25)
+        self.assertEqual(shown, sorted(many, key=lambda h: (h["scheduled_iso"], h["id"]))[:25])
+        self.assertEqual(meta["open_total"], 208)
+        self.assertEqual(meta["full_list_url"],
+                         "https://www.federalregister.gov/documents/search?"
+                         "conditions%5Bcomment_date%5D%5Bgte%5D=10%2F10%2F2026"
+                         "&conditions%5Btype%5D%5B%5D=PRORULE&conditions%5Btype%5D%5B%5D=RULE")
+        # A short list still shows at least one.
+        rules = [h for h in self.recs if not h.get("category")]
+        self.assertEqual(len(main.federal_preview(rules[:2], date(2026, 10, 10))[0]), 1)
+
+    def test_notice_categories(self):
+        cat = main.fr_notice_category
+        self.assertEqual(cat("Agency Information Collection Activities; Comment Request"), "paperwork")
+        self.assertEqual(cat("Request for Information: Nationwide Implementation of Prehospital Blood Transfusion"), "rfi")
+        self.assertEqual(cat("Privacy Act of 1974; System of Records"), "privacy")
+        self.assertEqual(cat("Draft Environmental Impact Statement for the Ambler Road"), "environment")
+        self.assertEqual(cat("Sunshine Act Meetings"), "meetings")
+        self.assertEqual(cat("Application for Permit To Drill"), "permits")
+        self.assertEqual(cat("New Postal Products"), "other")
+        # The fixture's 6 rules carry no category; its 14 notices all do.
+        self.assertEqual(sum(1 for h in self.recs if not h.get("category")), 6)
+
+    def test_preview_keeps_a_few_notices_per_kind(self):
+        from datetime import date
+        shown, meta = main.federal_preview(self.recs, date(2026, 10, 10))
+        notices = [h for h in shown if h.get("category")]
+        self.assertEqual(meta["notice_total"], 14)
+        self.assertEqual([c["key"] for c in meta["notice_categories"]],
+                         ["rfi", "environment", "permits", "meetings", "privacy", "paperwork", "other"])
+        self.assertTrue(all(c["total"] == 2 for c in meta["notice_categories"]))
+        self.assertEqual(len(notices), 14)   # every kind has <= NOTICES_PER_CATEGORY here
+        self.assertIn("conditions%5Btype%5D%5B%5D=NOTICE", meta["notice_list_url"])
 
     def test_us_sorts_first(self):
         from datetime import datetime, timezone
