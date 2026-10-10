@@ -859,9 +859,14 @@ title (`fr_notice_category` / `NOTICE_CATEGORIES`: Requests for ideas & informat
 reviews, Permits/licenses/approvals, Meetings, Privacy & government records, Forms & paperwork reviews
 (~70%), Other — paperwork is matched first), and only the **3 closing soonest per kind**
 (`NOTICES_PER_CATEGORY`) ship, each record carrying its `category`; the `us` entry adds `notice_total`,
-`notice_categories` (key/label/full count) and `notice_list_url`. The page shows them after the rules in an
-"Other federal notices open for comment" block (`noticeBlock`), one heading per kind with its "N open"
-count, then "See all N notices ↗"; the old Regulations.gov
+`notice_categories` (key/label/full count) and `notice_list_url`. The page draws the federal group with
+`federalSections`: a **"Jump to" pill row** (`.fnav-pill`, one per section with its count, each in its
+own colour from `FED_COLORS`) that scrolls to that section (`.fsec#fed-<key>`, no hash change), then the
+rules section and, under "Other federal notices open for comment", one section per notice kind in a
+two-column grid (`.fsec-grid`, one column on phones) ending in "See all N notices ↗". **Every section is
+its own short scroll box** (`.fsec-rows`, 360px rules / 250px notices) **with a scrollbar in that
+section's colour** (the states' `.hgroup-rows` scrollbars use their green/gold accent too); the old
+Regulations.gov
 `DEMO_KEY` path was rate-limited and its placeholder seed had expired, so both were removed) — federal
 leads the list, above the states. It writes `docs/src/dashboard/hearings.json` + a whole-calendar
 RSS `hearings.xml` + granular RSS feeds under `docs/src/dashboard/hearings/` — per bill
