@@ -319,7 +319,9 @@
   .results-overlay {
     position: fixed; inset: 0; z-index: 90; display: flex; justify-content: center;
     align-items: flex-start; padding: 5vh 16px; overflow-y: auto;
-    background: rgba(4,7,14,0.62); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+    /* A solid dim, no backdrop blur: the blur re-rendered the whole page behind the
+       card on every scroll frame, which made scrolling a big state's bills choppy. */
+    background: rgba(4,7,14,0.78);
   }
   .results-overlay[hidden] { display: none; }  /* author display:flex would otherwise beat [hidden] */
   body.results-open { overflow: hidden; }
@@ -550,6 +552,9 @@
   .ee-st.is-sel { animation: ee-pulse 1.4s ease-in-out infinite; }
   @keyframes ee-pulse { 0%, 100% { stroke-width: 2.4px; filter: drop-shadow(0 0 2px rgba(124,235,176,.55)); } 50% { stroke-width: 4px; filter: drop-shadow(0 0 10px rgba(124,235,176,.98)); } }
   @media (prefers-reduced-motion: reduce) { .ee-st.is-sel { animation: none; } }
+  /* The pulse repaints the map every frame; stop it while a state's bills or a bill
+     card covers the map, so scrolling them stays smooth. */
+  body.results-open .ee-st.is-sel, body:has(#bill-modal:not([hidden])) .ee-st.is-sel { animation: none; }
   .ee-zoomctl { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 6px; }
   .ee-zoomctl button { width: 34px; height: 34px; border-radius: 9px; border: 1px solid #273042; background: rgba(16,21,31,.92); color: #F4F5F7; font-size: 19px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .ee-zoomctl button svg { width: 15px; height: 15px; }
@@ -1178,6 +1183,7 @@
 
   function filteredBills() {
     const f = state.filters;
+    const searchN = (f.search || "").replace(/[^a-z0-9]/g, "");
     return state.data.bills.filter((b) => {
       if (f.states.size && !f.states.has(b.state)) return false;
       if (f.session && b.session !== f.session) return false;
@@ -1192,12 +1198,16 @@
         if (f.dateTo && b.latest_action > f.dateTo) return false;
       }
       if (f.search) {
-        const hay = (b.id + " " + b.title + " " + b.sponsors.join(" ")).toLowerCase();
-        if (!hay.includes(f.search)) {
+        // The search text is built once per bill (not on every keystroke) — a big
+        // state has 25k+ bills.
+        if (b._hay === undefined) {
+          b._hay = (b.id + " " + b.title + " " + b.sponsors.join(" ")).toLowerCase();
+          b._hayN = b._hay.replace(/[^a-z0-9]/g, "");
+        }
+        if (!b._hay.includes(f.search)) {
           // Also match ignoring spaces/punctuation, so a shared/deep link like
           // "#q=sb813" finds the bill whose id is displayed as "SB 813".
-          const nq = f.search.replace(/[^a-z0-9]/g, "");
-          if (!nq || !hay.replace(/[^a-z0-9]/g, "").includes(nq)) return false;
+          if (!searchN || !b._hayN.includes(searchN)) return false;
         }
       }
       return true;
@@ -2227,10 +2237,14 @@
   // Book-open flourish: a little book whose pages flip, then the details card
   // swings open like a cover. Decorative only — skipped under reduced-motion, and
   // guarded by modalKey so a superseding open doesn't disturb the new card.
+  // It plays once per visit: it holds the card back ~2.4s, so repeating it on
+  // every bill made moving between bills feel slow.
+  let bookPlayed = false;
   function playBookOpen(card, myKey) {
     let reduce = false;
     try { reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { /* assume motion ok */ }
-    if (reduce) return;   // no flourish; the card just fades in
+    if (reduce || bookPlayed) return;   // no flourish; the card just fades in
+    bookPlayed = true;
     card.classList.add("is-booking");
     const fx = mkel("div", "book-fx");
     fx.setAttribute("aria-hidden", "true");

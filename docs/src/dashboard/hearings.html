@@ -152,9 +152,11 @@
   .hgroup-rows .hearing-row:nth-child(even) { background: var(--row-alt); }
   /* Keep the homepage from getting enormous: each state's hearings scroll inside
      a capped box (the state header stays put above it). */
-  .hgroup-rows { max-height: 520px; overflow-y: auto; scrollbar-width: thin; scrollbar-gutter: stable; }
+  .hgroup-rows { max-height: 520px; overflow-y: auto; scrollbar-width: thin; scrollbar-gutter: stable;
+    scrollbar-color: var(--hg-accent, var(--series-1)) color-mix(in srgb, var(--hg-accent, var(--series-1)) 12%, transparent); }
   .hgroup-rows::-webkit-scrollbar { width: 9px; }
-  .hgroup-rows::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--hg-accent, var(--series-1)) 45%, transparent); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+  .hgroup-rows::-webkit-scrollbar-track { background: color-mix(in srgb, var(--hg-accent, var(--series-1)) 10%, transparent); border-radius: 999px; }
+  .hgroup-rows::-webkit-scrollbar-thumb { background: var(--hg-accent, var(--series-1)); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
   .hgroup-name { font-weight: 650; font-size: 15px; }
   .hgroup-count { color: var(--text-muted); font-size: 12.5px; }
   .hgroup-portal { margin-left: auto; }
@@ -286,13 +288,39 @@
   .hgroup-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
     gap: 8px 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gridline); font-size: 14px; }
   .hgroup-more .hgroup-portal { margin-left: 0; }
-  .hnotices { margin-top: 22px; padding-top: 16px; border-top: 2px solid var(--gridline); }
-  .hnotices-h { margin: 0 0 4px; font-size: 18px; }
-  .hnotices-sub { margin: 0 0 8px; font-size: 14px; }
-  .hnotice-cat { margin-top: 14px; }
-  .hnotice-cat-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 2px; font-size: 15px; }
-  .hnotice-n { font-size: 12px; font-weight: 800; padding: 1px 9px; border-radius: 999px;
-    border: 1.5px solid var(--hg-accent, var(--hh-green)); background: color-mix(in srgb, var(--hg-accent, var(--hh-green)) 16%, transparent); }
+  /* Federal: pill nav + short sections, each with its own colourful scrollbar */
+  .fnav { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 4px 0 6px; }
+  .fnav-l { font-size: 13px; font-weight: 700; margin-right: 2px; }
+  /* The jump pills are deliberately plain: one full-contrast style in both themes. */
+  .fnav-pill { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; font: inherit;
+    font-size: 13px; font-weight: 700; padding: 5px 6px 5px 12px; border-radius: 999px;
+    color: var(--gb-text); border: 2px solid var(--gb-text); background: var(--gb-surface); text-align: left;
+    transition: transform .12s ease; }
+  .fnav-pill:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--gb-text) 10%, var(--gb-surface)); }
+  .fnav-pill:focus-visible { outline: 2px solid var(--gb-text); outline-offset: 2px; }
+  .fnav-n { min-width: 22px; padding: 0 7px; border-radius: 999px; text-align: center; font-size: 12px;
+    font-weight: 800; background: var(--gb-text); color: var(--gb-surface); }
+  .fsec { margin-top: 16px; scroll-margin-top: 84px; }
+  .fsec-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 6px;
+    padding-left: 10px; border-left: 4px solid var(--sc); font-size: 15.5px; }
+  .fsec-n { font-size: 12px; font-weight: 800; padding: 1px 9px; border-radius: 999px;
+    border: 1.5px solid var(--sc); background: color-mix(in srgb, var(--sc) 16%, transparent); }
+  .fsec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr)); gap: 0 18px; }
+  /* In the notice columns a row stacks its date above its details, to stay compact. */
+  .fsec-grid .hearing-row { grid-template-columns: 1fr; gap: 2px; }
+  .fsec-grid .h-when { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+  .fsec-grid .h-open { margin-top: 0; }
+  .fsec-grid .fsec-rows { max-height: 250px; }
+  .fsec-rows { max-height: 360px; border: 1px solid color-mix(in srgb, var(--sc) 35%, var(--gridline));
+    border-radius: 10px; padding: 0 4px; scrollbar-color: var(--sc) color-mix(in srgb, var(--sc) 14%, transparent); }
+  .hgroup-rows.fsec-rows::-webkit-scrollbar { width: 11px; }
+  .hgroup-rows.fsec-rows::-webkit-scrollbar-track { background: color-mix(in srgb, var(--sc) 12%, transparent); border-radius: 999px; }
+  .hgroup-rows.fsec-rows::-webkit-scrollbar-thumb { background: linear-gradient(var(--sc), color-mix(in srgb, var(--sc) 65%, #ffffff));
+    border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+  @media (max-width: 620px) { .fsec-rows { max-height: 300px; } .fsec-grid .fsec-rows { max-height: 200px; } }
+  .hnotices-h { margin: 22px 0 4px; padding-top: 16px; border-top: 2px solid var(--gridline); font-size: 18px; }
+  .hnotices-sub { margin: 0; font-size: 14px; }
+  @media (prefers-reduced-motion: reduce) { .fnav-pill { transition: none; } .fnav-pill:hover { transform: none; } }
   .pstate-sub { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--gridline); }
 
   /* ===== Hearings — "Have your say" participation hero ===== */
@@ -670,19 +698,14 @@
         head.append(p);
       }
       group.append(head);
-      // Rows live in their own wrapper so zebra :nth-child counts rows, not head.
-      const rows = eln("div", "hgroup-rows");
-      listed.forEach((h) => rows.append(hearingRow(h)));
-      group.append(rows);
-      if (juris.full_list_url && total > listed.length) {
-        const more = eln("div", "hgroup-more");
-        more.append(eln("span", null, "Showing the " + listed.length + " closing soonest."));
-        const all = eln("a", "hgroup-portal", "See all " + total + " open for comment ↗");
-        all.href = juris.full_list_url; all.target = "_blank"; all.rel = "noopener";
-        more.append(all);
-        group.append(more);
+      if (code === "us") {
+        federalSections(group, listed, notices, juris);
+      } else {
+        // Rows live in their own wrapper so zebra :nth-child counts rows, not head.
+        const rows = eln("div", "hgroup-rows");
+        listed.forEach((h) => rows.append(hearingRow(h)));
+        group.append(rows);
       }
-      if (notices.length) group.append(noticeBlock(notices, juris));
       body.append(group);
     });
 
@@ -711,33 +734,81 @@
     if (f) f.textContent = "Committee hearings from " + (data.source || "official sources") + ", refreshed twice daily.";
   }
 
-  // Federal notices: announcements that ask for comments without being a rule (forms,
-  // permits, records, ideas…). A few closing soonest of each kind, grouped under a
-  // plain heading with that kind's full count, then one button to the whole list.
-  function noticeBlock(notices, juris) {
-    const box = eln("div", "hnotices");
-    box.append(eln("h3", "hnotices-h", "Other federal notices open for comment"));
-    box.append(eln("p", "hnotices-sub", "Agencies also ask for comments on requests for ideas, permits, " +
-      "privacy records, forms and more. A few closing soonest of each kind:"));
+  // USA (Federal) is long (rules + a few notices of each kind), so it is split into
+  // short sections, each scrolling on its own with a scrollbar in its own colour, and
+  // a row of matching pills at the top jumps to any of them.
+  const FED_COLORS = {
+    rules: "--hh-green", rfi: "--series-1", environment: "--series-4", permits: "--hh-gold",
+    meetings: "--series-5", privacy: "--series-7", paperwork: "--series-8", other: "--series-6",
+  };
+  function federalSections(group, rules, notices, juris) {
+    const sections = [];
+    if (rules.length) {
+      sections.push({ key: "rules", label: "Proposed & final rules", rows: rules,
+        count: juris.open_total > rules.length ? rules.length + " of " + juris.open_total : String(rules.length),
+        moreText: juris.open_total > rules.length ? "Showing the " + rules.length + " closing soonest." : "",
+        moreLabel: "See all " + juris.open_total + " open for comment ↗", moreUrl: juris.full_list_url });
+    }
     (juris.notice_categories || []).forEach((c) => {
-      const these = notices.filter((h) => h.category === c.key);
-      if (!these.length) return;
-      const cat = eln("div", "hnotice-cat");
-      const h = eln("h4", "hnotice-cat-h", c.label);
-      h.append(eln("span", "hnotice-n", c.total + " open"));
-      cat.append(h);
-      these.forEach((n) => cat.append(hearingRow(n)));
-      box.append(cat);
+      const rows = notices.filter((h) => h.category === c.key);
+      if (rows.length) sections.push({ key: c.key, label: c.label, rows: rows,
+        count: rows.length + " of " + c.total, note: true });
     });
+    if (!sections.length) return;
+
+    const nav = eln("div", "fnav");
+    nav.setAttribute("role", "group"); nav.setAttribute("aria-label", "Jump to a federal section");
+    nav.append(eln("span", "fnav-l", "Jump to"));
+    group.append(nav);
+
+    // Notice kinds sit side by side (two columns on wide screens) under one heading.
+    let noteGrid = null;
+    sections.forEach((sec) => {
+      if (sec.note && !noteGrid) {
+        group.append(eln("h3", "hnotices-h", "Other federal notices open for comment"));
+        group.append(eln("p", "hnotices-sub", "Agencies also ask for comments on requests for ideas, permits, " +
+          "privacy records, forms and more. A few closing soonest of each kind:"));
+        noteGrid = eln("div", "fsec-grid");
+        group.append(noteGrid);
+      }
+      const box = eln("section", "fsec");
+      box.id = "fed-" + sec.key;
+      box.style.setProperty("--sc", "var(" + (FED_COLORS[sec.key] || "--hh-green") + ")");
+      const h = eln("h4", "fsec-h", sec.label);
+      h.append(eln("span", "fsec-n", sec.count + " open"));
+      box.append(h);
+      const rows = eln("div", "hgroup-rows fsec-rows");
+      sec.rows.forEach((r) => rows.append(hearingRow(r)));
+      box.append(rows);
+      if (sec.moreUrl && sec.moreText) {
+        const more = eln("div", "hgroup-more");
+        more.append(eln("span", null, sec.moreText));
+        const all = eln("a", "hgroup-portal", sec.moreLabel);
+        all.href = sec.moreUrl; all.target = "_blank"; all.rel = "noopener";
+        more.append(all);
+        box.append(more);
+      }
+      (sec.note ? noteGrid : group).append(box);
+
+      const pill = eln("button", "fnav-pill");
+      pill.type = "button";
+      pill.append(document.createTextNode(sec.label));
+      pill.append(eln("span", "fnav-n", String(sec.rows.length)));
+      pill.addEventListener("click", () => {
+        const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        box.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+      });
+      nav.append(pill);
+    });
+
     if (juris.notice_list_url && juris.notice_total) {
       const more = eln("div", "hgroup-more");
       more.append(eln("span", null, juris.notice_total + " notices are open for comment in all."));
       const all = eln("a", "hgroup-portal", "See all " + juris.notice_total + " notices ↗");
       all.href = juris.notice_list_url; all.target = "_blank"; all.rel = "noopener";
       more.append(all);
-      box.append(more);
+      group.append(more);
     }
-    return box;
   }
 
   const PARTICIPATION = {
