@@ -103,36 +103,6 @@ class WashingtonParser(unittest.TestCase):
         self.assertIsNone(main.wa_signin_url("Senate", "", "33497"))
 
 
-class WashingtonCommittee(unittest.TestCase):
-    def setUp(self):
-        # Inject a fake leg.wa.gov index so matching is tested without network.
-        main._wa_index_cache["loaded"] = True
-        main._wa_index_cache["entries"] = [
-            (main._cmte_tokens("Select Committee on Pension Policy (SCPP)"),
-             "https://leg.wa.gov/.../joint/scpp/"),
-            (main._cmte_tokens("Joint Legislative Audit & Review Committee (JLARC)"),
-             "https://leg.wa.gov/.../joint/jlarc/"),
-            (main._cmte_tokens("Senate Transportation Committee"),
-             "https://leg.wa.gov/.../senate/tran/"),
-        ]
-
-    def tearDown(self):
-        main._wa_index_cache["loaded"] = False
-        main._wa_index_cache["entries"] = []
-
-    def test_matches_despite_reordered_acronym(self):
-        # SOAP name has the acronym in front; index has it in parentheses.
-        self.assertIn("jlarc", main.wa_committee_url(
-            "JLARC - Joint Legislative Audit & Review Committee"))
-
-    def test_matches_subset_with_parenthetical_acronym(self):
-        self.assertIn("scpp", main.wa_committee_url("Select Committee on Pension Policy"))
-
-    def test_no_false_match(self):
-        # "Joint Transportation" must not match "Senate Transportation".
-        self.assertIsNone(main.wa_committee_url("Joint Transportation Committee"))
-
-
 class MassachusettsParser(unittest.TestCase):
     def _hearing(self, eid):
         return main.parse_ma_hearing((RAW / f"ma_hearing_{eid}.json").read_text())
@@ -152,7 +122,9 @@ class MassachusettsParser(unittest.TestCase):
         self.assertTrue(bills["H5516"]["url"].startswith("https://malegislature.gov/Bills/194/"))
         # The bill name is carried from MA's own feed (MA isn't in govbot data).
         self.assertIn("condominium", bills["H5516"]["title"].lower())
-        self.assertEqual(h["committee_url"], "https://malegislature.gov/Committees/Detail/J17/194")
+        # Written testimony is submitted on the hearing's own page.
+        self.assertEqual(h["witness_slip_url"], "https://malegislature.gov/Events/Hearings/Detail/5769")
+        self.assertEqual(h["witness_slip_url"], h["details_url"])
 
     def test_location_has_room_and_address(self):
         # "437" alone is context-free; the room is labeled and the State House
@@ -163,16 +135,11 @@ class MassachusettsParser(unittest.TestCase):
     def test_canceled_status(self):
         self.assertEqual(self._hearing(5675)["status"], "canceled")
 
-    def test_placeholder_committee_code_yields_no_link(self):
-        # 5697's committee code is the placeholder "Hxx" — no real committee page.
-        self.assertIsNone(self._hearing(5697)["committee_url"])
-
     def test_null_heavy_record_is_tolerated(self):
         # 5768 has null Name/CommitteeCode/GeneralCourtNumber; must not crash and
         # falls back to the Description for its title.
         h = self._hearing(5768)
         self.assertEqual(h["committee"], "Committee")
-        self.assertIsNone(h["committee_url"])
         self.assertTrue(h["title"])
 
     def test_bad_json_is_none_not_crash(self):
@@ -193,6 +160,8 @@ class AlaskaParser(unittest.TestCase):
         self.assertEqual(h["bills"], [])
         self.assertTrue(h["details_url"].startswith("https://www.akleg.gov/"))
         self.assertNotIn(" ", h["details_url"])  # spaces encoded
+        # Alaska has no per-meeting comment form, so the row links the meeting page.
+        self.assertIsNone(h["witness_slip_url"])
 
     def test_all_caps_committee_titlecased(self):
         self.assertTrue(any(h["committee"] == "Legislative Council" for h in self.hearings))
@@ -380,15 +349,34 @@ class JurisdictionAndHearingFeeds(unittest.TestCase):
 
 
 class Federal(unittest.TestCase):
-    def test_seed_records_are_wellformed(self):
-        recs = main.fetch_us(use_api=False)
-        self.assertTrue(recs, "federal seed should not be empty")
-        for h in recs:
+    def setUp(self):
+        self.recs = main.parse_fr_documents((RAW / "fr_documents.json").read_text())
+
+    def test_open_comment_periods_parsed(self):
+        self.assertEqual(len(self.recs), 6)
+        for h in self.recs:
             self.assertEqual(h["jurisdiction"], "us")
             self.assertTrue(REQUIRED.issubset(h), f"{h.get('id')} missing fields")
-            self.assertEqual(h["source"], "regulations.gov")
-            # the docket title rides along on the single bill so the UI shows it
+            self.assertEqual(h["source"], "federalregister.gov")
+            self.assertTrue(h["scheduled_display"].startswith("Comments due "))
+            # the rule's title rides along on the single "bill" so the UI shows it
             self.assertTrue(h["bills"][0].get("title"))
+        closes = [h["scheduled_iso"] for h in self.recs]
+        self.assertEqual(closes, sorted(closes))  # soonest-closing first
+
+    def test_link_is_the_rules_own_comment_form(self):
+        census = next(h for h in self.recs if h["committee"] == "Census Bureau")
+        self.assertTrue(census["witness_slip_url"].startswith("https://www.regulations.gov/commenton/"))
+        self.assertEqual(census["bills"][0]["id"], census["witness_slip_url"].rsplit("/", 1)[-1])
+        self.assertTrue(census["details_url"].startswith("https://www.federalregister.gov/documents/"))
+
+    def test_no_online_form_links_the_federal_register_page(self):
+        fdic = next(h for h in self.recs if h["committee"] == "Federal Deposit Insurance Corporation")
+        self.assertEqual(fdic["witness_slip_url"], fdic["details_url"])
+        self.assertEqual(fdic["location"], "Online · Federal Register")
+
+    def test_bad_json_is_empty(self):
+        self.assertEqual(main.parse_fr_documents("<html>down</html>"), [])
 
     def test_us_sorts_first(self):
         from datetime import datetime, timezone

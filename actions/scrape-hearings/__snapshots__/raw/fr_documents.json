@@ -1,0 +1,75 @@
+{
+  "description": "Documents published on or before 10/10/2026, with a comment closing date on or after 10/10/2026, and of type Proposed Rule or Rule (trimmed fixture: 6 of 208 real results, fetched 2026-10-10)",
+  "count": 6,
+  "results": [
+    {
+      "title": "Decennial Census of the Population of Americans; Proposed Residence Criteria and Proposed Regulations for Demographic Questions; Extension of Comment Period",
+      "comments_close_on": "2026-11-02",
+      "comment_url": "http://www.regulations.gov/commenton/USBC_FRDOC_0001-0076",
+      "agency_names": [
+        "Commerce Department",
+        "Census Bureau"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/05/2026-20328/decennial-census-of-the-population-of-americans-proposed-residence-criteria-and-proposed-regulations",
+      "document_number": "2026-20328",
+      "type": "Proposed Rule"
+    },
+    {
+      "title": "Air Quality Plan; Arizona; Maricopa County Air Quality Department; New Source Review; Emission Reduction Credits-Rule 204",
+      "comments_close_on": "2026-11-09",
+      "comment_url": "http://www.regulations.gov/commenton/EPA-R09-OAR-2026-4654-0001",
+      "agency_names": [
+        "Environmental Protection Agency"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/08/2026-20612/air-quality-plan-arizona-maricopa-county-air-quality-department-new-source-review-emission-reduction",
+      "document_number": "2026-20612",
+      "type": "Proposed Rule"
+    },
+    {
+      "title": "Requirements for Additional Traceability Records for Certain Foods: Enforcement Policy for Certain Retail Food Establishments and Restaurants; Draft Guidance for Industry; Availability",
+      "comments_close_on": "2026-11-23",
+      "comment_url": "http://www.regulations.gov/commenton/FDA-2025-D-6952-0001",
+      "agency_names": [
+        "Health and Human Services Department",
+        "Food and Drug Administration"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20721/requirements-for-additional-traceability-records-for-certain-foods-enforcement-policy-for-certain",
+      "document_number": "2026-20721",
+      "type": "Proposed Rule"
+    },
+    {
+      "title": "Request for Comment on the Listing of Compute Derivatives Contracts",
+      "comments_close_on": "2026-10-20",
+      "comment_url": "http://www.regulations.gov/commenton/CFTC-2026-1850-0001",
+      "agency_names": [
+        "Commodity Futures Trading Commission"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/08/21/2026-17163/request-for-comment-on-the-listing-of-compute-derivatives-contracts",
+      "document_number": "2026-17163",
+      "type": "Proposed Rule"
+    },
+    {
+      "title": "Extensions of Credit to Insiders",
+      "comments_close_on": "2026-11-04",
+      "comment_url": null,
+      "agency_names": [
+        "Federal Deposit Insurance Corporation"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20735/extensions-of-credit-to-insiders",
+      "document_number": "2026-20735",
+      "type": "Proposed Rule"
+    },
+    {
+      "title": "Airworthiness Directives; Airbus Helicopters Deutschland GmbH (AHD) Helicopters",
+      "comments_close_on": "2026-11-23",
+      "comment_url": "http://www.regulations.gov/commenton/FAA-2026-11805-0001",
+      "agency_names": [
+        "Transportation Department",
+        "Federal Aviation Administration"
+      ],
+      "html_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20722/airworthiness-directives-airbus-helicopters-deutschland-gmbh-ahd-helicopters",
+      "document_number": "2026-20722",
+      "type": "Rule"
+    }
+  ]
+}

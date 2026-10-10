@@ -693,13 +693,16 @@ due", "Public comment open", "Canceled", the directory's "Live hearings" — sha
 full-contrast border, like the homepage's). The nav is hidden with fewer
 than two jurisdictions. Each hearing still makes participation obvious: a green **"Public comment open"**
 badge on the date column and the witness-slip/comment action elevated into a filled green
-`.file-link` pill. **Every link goes to that hearing, never a portal's front page:** the pill is
-the source's per-hearing `witness_slip_url` (IL bill's Bill Status page, WA Committee Sign-In opened
-on that meeting, MA the hearing page with its testimony form, federal the docket's comment page; AK
-has only its general POMS form) and an outline **"Hearing details ↗"** (`.details-link`) links the
-hearing's own agenda page (`details_url`), unless the pill already goes there (MA). WA interim work
-sessions take no sign-in, so they carry no pill/badge, only the details link — see the table in
-`actions/scrape-hearings/README.md`. The `<title>` was also corrected (it had been a stray "Legislation Dashboard").
+`.file-link` pill. **One link per hearing, straight to it** (per request — the old "About the
+committee" link and its committee-page lookups/probes were removed): the pill is the source's
+per-hearing `witness_slip_url` (IL bill's Bill Status page, WA Committee Sign-In opened on that
+meeting, MA the hearing page with its testimony form, federal the rule's comment form); when there's
+none (a WA interim work session, Alaska — only a general POMS form) the one link is an outline
+**"Hearing details ↗"** (`.details-link`) to the hearing's own page (`details_url`), with no "comment
+open" badge — see the table in `actions/scrape-hearings/README.md`. **"Weigh in — by state"** has an
+**A–Z letter row** next to its filter box (`buildLetters` / `pLetter`): a letter shows only states
+starting with it (letters no state starts with are disabled; clicking the active one, or "All",
+shows every state), combined with the typed filter; "No states match." when both exclude everything. The `<title>` was also corrected (it had been a stray "Legislation Dashboard").
 The hearing/participation render engine is otherwise unchanged.
 `architecture.html` is retitled **"How Govbot Works"** and now opens with a nontechnical layer: a
 plain-English six-stage overview pipeline (`.gw-pipeline`: Government sources → Govbot pipelines →
@@ -835,10 +838,11 @@ sections scroll inside capped-height boxes (`.group .races`, `.sf-list`, `.hgrou
 `.participation-grid`) so the homepage isn't enormous; the elections "Where the data comes
 from" cabinet is **expanded by default** (`<details open>`). The hearings
 page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov, leg.wa.gov,
-malegislature.gov, and akleg.gov directly (not OpenStates), plus **USA (Federal)** open comment periods from the
-Regulations.gov API (needs `REGULATIONS_GOV_API_KEY`; falls back to the committed
-`actions/scrape-hearings/federal_seed.json` when unset/unreachable) — federal leads the
-list, above the states. It writes `docs/src/dashboard/hearings.json` + a whole-calendar
+malegislature.gov, and akleg.gov directly (not OpenStates), plus **USA (Federal)**: every proposed rule /
+rule whose public comment period is open, from the keyless **Federal Register API** (`parse_fr_documents`,
+one request, ~200 rules, each linked to its own Regulations.gov comment form; the old Regulations.gov
+`DEMO_KEY` path was rate-limited and its placeholder seed had expired, so both were removed) — federal
+leads the list, above the states. It writes `docs/src/dashboard/hearings.json` + a whole-calendar
 RSS `hearings.xml` + granular RSS feeds under `docs/src/dashboard/hearings/` — per bill
 (`<jurisdiction>-<NORMALIZED_ID>.xml`), per jurisdiction (`<code>.xml`), and per hearing
 (`hearing-<id>.xml`) — so a reader can follow one bill, a whole state, or a single hearing

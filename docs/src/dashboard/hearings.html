@@ -218,8 +218,6 @@
   .slip-count { color: var(--text-muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
   .h-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 7px; }
   .file-link { font-size: 13px; font-weight: 550; }
-  .committee-link { font-size: 13px; font-weight: 500; color: var(--series-1); text-decoration: none; }
-  .committee-link:hover { color: var(--series-1); text-decoration: underline; }
   @media (max-width: 620px) {
     .hearing-row { grid-template-columns: 1fr; }
     .hgroup-portal { margin-left: 0; }
@@ -236,6 +234,19 @@
   }
   .p-search::placeholder { color: var(--text-muted); }
   .p-search:focus { outline: none; border-color: var(--series-1); box-shadow: 0 0 0 3px color-mix(in srgb, var(--series-1) 22%, transparent); }
+  /* Search box + A–Z letter buttons: a letter shows only the states starting with it. */
+  .p-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 12px; }
+  .p-letters { display: flex; flex-wrap: wrap; gap: 4px; }
+  .p-letter {
+    min-width: 30px; height: 30px; padding: 0 6px; border-radius: 6px; cursor: pointer;
+    border: 1.5px solid var(--text-primary); background: transparent; color: var(--text-primary);
+    font: inherit; font-size: 13px; font-weight: 700;
+  }
+  .p-letter:hover:not(:disabled) { border-color: var(--hh-green); background: var(--hover-wash); }
+  .p-letter:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
+  .p-letter[aria-pressed="true"] { background: var(--gb-primary); border-color: var(--gb-primary); color: var(--gb-on-primary); }
+  .p-letter:disabled { border-style: dashed; opacity: 0.45; cursor: default; }
+  .p-none { margin: 12px 0 0; }
   .participation-grid {
     margin-top: 14px; display: grid; gap: 10px;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -505,11 +516,15 @@
         <h2>Weigh in — by state</h2>
         <p class="sub">How the public participates in legislation in each state, with a link to the official portal. States with a machine-readable hearing feed also show their upcoming hearings above.</p>
       </div>
+    </div>
+    <div class="p-tools">
       <span class="p-search-wrap">
         <svg class="p-search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
         <input type="search" id="p-search" class="p-search" placeholder="Filter states…" aria-label="Filter states">
       </span>
+      <div class="p-letters" id="p-letters" role="group" aria-label="Show states starting with a letter"></div>
     </div>
+    <p class="p-none" id="p-none" hidden>No states match.</p>
     <div id="participation-grid" class="participation-grid"></div>
   </section>
 
@@ -725,24 +740,17 @@
       main.append(list);
     }
 
+    // One link per hearing, straight to it: where to take part in this hearing
+    // (witness slip / sign-in / testimony / comment form), else its own page.
     const actions = eln("div", "h-actions");
-    if (h.status !== "canceled" && h.witness_slip_url) {
-      const file = eln("a", "file-link",
-        PARTICIPATION[participationFor(h)] || "File a slip ↗");
-      file.href = h.witness_slip_url; file.target = "_blank"; file.rel = "noopener";
-      actions.append(file);
-    }
-    // The hearing's own official page (agenda, bills, how to take part), unless the
-    // participation link above already goes there (Massachusetts).
-    if (h.details_url && h.details_url !== h.witness_slip_url) {
-      const det = eln("a", "details-link", "Hearing details ↗");
-      det.href = h.details_url; det.target = "_blank"; det.rel = "noopener";
-      actions.append(det);
-    }
-    if (h.committee_url) {
-      const cmte = eln("a", "committee-link", "About the committee ↗");
-      cmte.href = h.committee_url; cmte.target = "_blank"; cmte.rel = "noopener";
-      actions.append(cmte);
+    const takePart = h.status !== "canceled" && h.witness_slip_url;
+    const href = takePart ? h.witness_slip_url : h.details_url;
+    if (href) {
+      const a = takePart
+        ? eln("a", "file-link", PARTICIPATION[participationFor(h)] || "File a slip ↗")
+        : eln("a", "details-link", "Hearing details ↗");
+      a.href = href; a.target = "_blank"; a.rel = "noopener";
+      actions.append(a);
     }
     actions.append(hearingRssTrigger(h));
     if (actions.childNodes.length) main.append(actions);
@@ -833,6 +841,7 @@
   let liveCodes = new Set();
   let participation = [];
   let pFilter = "";
+  let pLetter = "";   // "" = all letters
   // code -> how the public weighs in there (from the feed's jurisdictions list),
   // so each hearing's "how to participate" link is labeled per its own state
   // rather than assumed. renderHearings fills this.
@@ -853,7 +862,11 @@
   function loadParticipation() {
     fetch("participation.json")
       .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then((data) => { participation = (data && data.jurisdictions) || []; renderParticipation(""); })
+      .then((data) => {
+        participation = (data && data.jurisdictions) || [];
+        buildLetters();
+        renderParticipation("");
+      })
       .catch(() => {});
   }
 
@@ -864,10 +877,11 @@
     pFilter = filter || "";
     const q = pFilter.trim().toLowerCase();
     const rows = participation.filter((j) =>
-      !q || j.name.toLowerCase().includes(q) ||
-      (KIND_LABEL[j.participation] || "").toLowerCase().includes(q));
-    // Pin USA (Federal) to the front — Regulations.gov carries live federal
-    // comment periods & hearings — keeping the rest of the list in place.
+      (!pLetter || firstLetter(j) === pLetter) &&
+      (!q || j.name.toLowerCase().includes(q) ||
+       (KIND_LABEL[j.participation] || "").toLowerCase().includes(q)));
+    // Pin USA (Federal) to the front — it carries the live federal rules open
+    // for comment — keeping the rest of the list in place.
     rows.sort((a, b) => (b.code === "us") - (a.code === "us"));
     rows.forEach((j) => {
       const card = eln("div", "pstate");
@@ -894,7 +908,39 @@
       card.append(sub);
       grid.append(card);
     });
-    $("participation-card").hidden = rows.length === 0 && !q ? true : false;
+    $("p-none").hidden = rows.length > 0;
+    $("participation-card").hidden = rows.length === 0 && !q && !pLetter;
+  }
+
+  function firstLetter(j) { return (j.name || "").trim().charAt(0).toUpperCase(); }
+
+  // "All" + A–Z. A letter no state starts with is shown but disabled, so the row
+  // reads as a full alphabet; clicking the active letter again shows all states.
+  function buildLetters() {
+    const box = $("p-letters");
+    if (!box) return;
+    box.textContent = "";
+    const have = new Set(participation.map(firstLetter));
+    ["", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"].forEach((L) => {
+      const b = eln("button", "p-letter", L || "All");
+      b.type = "button";
+      b.dataset.letter = L;
+      if (L) b.setAttribute("aria-label", "States starting with " + L);
+      b.disabled = !!L && !have.has(L);
+      box.append(b);
+    });
+    box.addEventListener("click", (e) => {
+      const b = e.target.closest(".p-letter");
+      if (!b || b.disabled) return;
+      pLetter = pLetter === b.dataset.letter ? "" : b.dataset.letter;
+      syncLetters();
+      renderParticipation(pFilter);
+    });
+    syncLetters();
+  }
+  function syncLetters() {
+    $("p-letters").querySelectorAll(".p-letter").forEach((b) =>
+      b.setAttribute("aria-pressed", String(b.dataset.letter === pLetter)));
   }
 
   {

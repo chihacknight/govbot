@@ -34,7 +34,7 @@
     }
   ],
   "counts": {
-    "us": 4,
+    "us": 6,
     "ak": 2,
     "il": 2,
     "ma": 3,
@@ -42,100 +42,142 @@
   },
   "hearings": [
     {
-      "id": "us-USCIS-2025-H1B-FEE",
+      "id": "us-2026-17163",
       "jurisdiction": "us",
       "chamber": "federal",
-      "committee": "U.S. Citizenship and Immigration Services",
-      "title": "Fee for Certain H-1B Petitions",
-      "scheduled_iso": "2026-09-14T23:59:59Z",
-      "scheduled_display": "Comments due Sep 14, 2026",
+      "committee": "Commodity Futures Trading Commission",
+      "title": "Request for Comment on the Listing of Compute Derivatives Contracts",
+      "scheduled_iso": "2026-10-20",
+      "scheduled_display": "Comments due Oct 20, 2026",
       "timezone": null,
       "location": "Online · Regulations.gov",
       "status": "open",
       "bills": [
         {
-          "id": "USCIS-2025-H1B-FEE",
-          "title": "Fee for Certain H-1B Petitions",
-          "url": "https://www.regulations.gov/search?filter=Fee%20for%20Certain%20H-1B%20Petitions",
+          "id": "CFTC-2026-1850-0001",
+          "title": "Request for Comment on the Listing of Compute Derivatives Contracts",
+          "url": "https://www.federalregister.gov/documents/2026/08/21/2026-17163/request-for-comment-on-the-listing-of-compute-derivatives-contracts",
           "slips": null
         }
       ],
-      "details_url": "https://www.regulations.gov/search?filter=Fee%20for%20Certain%20H-1B%20Petitions",
-      "committee_url": null,
-      "witness_slip_url": "https://www.regulations.gov/search?filter=Fee%20for%20Certain%20H-1B%20Petitions",
-      "source": "regulations.gov"
+      "details_url": "https://www.federalregister.gov/documents/2026/08/21/2026-17163/request-for-comment-on-the-listing-of-compute-derivatives-contracts",
+      "witness_slip_url": "https://www.regulations.gov/commenton/CFTC-2026-1850-0001",
+      "source": "federalregister.gov"
     },
     {
-      "id": "us-HHS-2025-VACCINE-RFI",
+      "id": "us-2026-20328",
       "jurisdiction": "us",
       "chamber": "federal",
-      "committee": "Department of Health and Human Services",
-      "title": "Request for Information: Categories Used in Federal Vaccine Recommendations and the Role of Shared Clinical Decision-Making",
-      "scheduled_iso": "2026-09-20T23:59:59Z",
-      "scheduled_display": "Comments due Sep 20, 2026",
+      "committee": "Census Bureau",
+      "title": "Decennial Census of the Population of Americans; Proposed Residence Criteria and Proposed Regulations for Demographic Questions; Extension of Comment Period",
+      "scheduled_iso": "2026-11-02",
+      "scheduled_display": "Comments due Nov 2, 2026",
       "timezone": null,
       "location": "Online · Regulations.gov",
       "status": "open",
       "bills": [
         {
-          "id": "HHS-2025-VACCINE-RFI",
-          "title": "Request for Information: Categories Used in Federal Vaccine Recommendations and the Role of Shared Clinical Decision-Making",
-          "url": "https://www.regulations.gov/search?filter=Vaccine%20Recommendations%20Shared%20Clinical%20Decision-Making",
+          "id": "USBC_FRDOC_0001-0076",
+          "title": "Decennial Census of the Population of Americans; Proposed Residence Criteria and Proposed Regulations for Demographic Questions; Extension of Comment Period",
+          "url": "https://www.federalregister.gov/documents/2026/10/05/2026-20328/decennial-census-of-the-population-of-americans-proposed-residence-criteria-and-proposed-regulations",
           "slips": null
         }
       ],
-      "details_url": "https://www.regulations.gov/search?filter=Vaccine%20Recommendations%20Shared%20Clinical%20Decision-Making",
-      "committee_url": null,
-      "witness_slip_url": "https://www.regulations.gov/search?filter=Vaccine%20Recommendations%20Shared%20Clinical%20Decision-Making",
-      "source": "regulations.gov"
+      "details_url": "https://www.federalregister.gov/documents/2026/10/05/2026-20328/decennial-census-of-the-population-of-americans-proposed-residence-criteria-and-proposed-regulations",
+      "witness_slip_url": "https://www.regulations.gov/commenton/USBC_FRDOC_0001-0076",
+      "source": "federalregister.gov"
     },
     {
-      "id": "us-CMS-1832-P",
+      "id": "us-2026-20735",
       "jurisdiction": "us",
       "chamber": "federal",
-      "committee": "Centers for Medicare & Medicaid Services",
-      "title": "Medicare and Medicaid Programs: CY 2027 Payment Policies Under the Physician Fee Schedule and Other Changes to Part B Payment and Coverage Policies; Medicare Shared Savings Program Requirements; and Medicare Prescription Drug Inflation Rebate Program",
-      "scheduled_iso": "2026-09-21T23:59:59Z",
-      "scheduled_display": "Comments due Sep 21, 2026",
+      "committee": "Federal Deposit Insurance Corporation",
+      "title": "Extensions of Credit to Insiders",
+      "scheduled_iso": "2026-11-04",
+      "scheduled_display": "Comments due Nov 4, 2026",
       "timezone": null,
-      "location": "Online · Regulations.gov",
+      "location": "Online · Federal Register",
       "status": "open",
       "bills": [
         {
-          "id": "CMS-1832-P",
-          "title": "Medicare and Medicaid Programs: CY 2027 Payment Policies Under the Physician Fee Schedule and Other Changes to Part B Payment and Coverage Policies; Medicare Shared Savings Program Requirements; and Medicare Prescription Drug Inflation Rebate Program",
-          "url": "https://www.regulations.gov/search?filter=Physician%20Fee%20Schedule%20CY%202027",
+          "id": "2026-20735",
+          "title": "Extensions of Credit to Insiders",
+          "url": "https://www.federalregister.gov/documents/2026/10/09/2026-20735/extensions-of-credit-to-insiders",
           "slips": null
         }
       ],
-      "details_url": "https://www.regulations.gov/search?filter=Physician%20Fee%20Schedule%20CY%202027",
-      "committee_url": null,
-      "witness_slip_url": "https://www.regulations.gov/search?filter=Physician%20Fee%20Schedule%20CY%202027",
-      "source": "regulations.gov"
+      "details_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20735/extensions-of-credit-to-insiders",
+      "witness_slip_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20735/extensions-of-credit-to-insiders",
+      "source": "federalregister.gov"
     },
     {
-      "id": "us-BLM-2025-OIL-GAS",
+      "id": "us-2026-20612",
       "jurisdiction": "us",
       "chamber": "federal",
-      "committee": "Bureau of Land Management",
-      "title": "Oil and Gas Leasing",
-      "scheduled_iso": "2026-09-24T23:59:59Z",
-      "scheduled_display": "Comments due Sep 24, 2026",
+      "committee": "Environmental Protection Agency",
+      "title": "Air Quality Plan; Arizona; Maricopa County Air Quality Department; New Source Review; Emission Reduction Credits-Rule 204",
+      "scheduled_iso": "2026-11-09",
+      "scheduled_display": "Comments due Nov 9, 2026",
       "timezone": null,
       "location": "Online · Regulations.gov",
       "status": "open",
       "bills": [
         {
-          "id": "BLM-2025-OIL-GAS",
-          "title": "Oil and Gas Leasing",
-          "url": "https://www.regulations.gov/search?filter=Oil%20and%20Gas%20Leasing",
+          "id": "EPA-R09-OAR-2026-4654-0001",
+          "title": "Air Quality Plan; Arizona; Maricopa County Air Quality Department; New Source Review; Emission Reduction Credits-Rule 204",
+          "url": "https://www.federalregister.gov/documents/2026/10/08/2026-20612/air-quality-plan-arizona-maricopa-county-air-quality-department-new-source-review-emission-reduction",
           "slips": null
         }
       ],
-      "details_url": "https://www.regulations.gov/search?filter=Oil%20and%20Gas%20Leasing",
-      "committee_url": null,
-      "witness_slip_url": "https://www.regulations.gov/search?filter=Oil%20and%20Gas%20Leasing",
-      "source": "regulations.gov"
+      "details_url": "https://www.federalregister.gov/documents/2026/10/08/2026-20612/air-quality-plan-arizona-maricopa-county-air-quality-department-new-source-review-emission-reduction",
+      "witness_slip_url": "https://www.regulations.gov/commenton/EPA-R09-OAR-2026-4654-0001",
+      "source": "federalregister.gov"
+    },
+    {
+      "id": "us-2026-20721",
+      "jurisdiction": "us",
+      "chamber": "federal",
+      "committee": "Food and Drug Administration",
+      "title": "Requirements for Additional Traceability Records for Certain Foods: Enforcement Policy for Certain Retail Food Establishments and Restaurants; Draft Guidance for Industry; Availability",
+      "scheduled_iso": "2026-11-23",
+      "scheduled_display": "Comments due Nov 23, 2026",
+      "timezone": null,
+      "location": "Online · Regulations.gov",
+      "status": "open",
+      "bills": [
+        {
+          "id": "FDA-2025-D-6952-0001",
+          "title": "Requirements for Additional Traceability Records for Certain Foods: Enforcement Policy for Certain Retail Food Establishments and Restaurants; Draft Guidance for Industry; Availability",
+          "url": "https://www.federalregister.gov/documents/2026/10/09/2026-20721/requirements-for-additional-traceability-records-for-certain-foods-enforcement-policy-for-certain",
+          "slips": null
+        }
+      ],
+      "details_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20721/requirements-for-additional-traceability-records-for-certain-foods-enforcement-policy-for-certain",
+      "witness_slip_url": "https://www.regulations.gov/commenton/FDA-2025-D-6952-0001",
+      "source": "federalregister.gov"
+    },
+    {
+      "id": "us-2026-20722",
+      "jurisdiction": "us",
+      "chamber": "federal",
+      "committee": "Federal Aviation Administration",
+      "title": "Airworthiness Directives; Airbus Helicopters Deutschland GmbH (AHD) Helicopters",
+      "scheduled_iso": "2026-11-23",
+      "scheduled_display": "Comments due Nov 23, 2026",
+      "timezone": null,
+      "location": "Online · Regulations.gov",
+      "status": "open",
+      "bills": [
+        {
+          "id": "FAA-2026-11805-0001",
+          "title": "Airworthiness Directives; Airbus Helicopters Deutschland GmbH (AHD) Helicopters",
+          "url": "https://www.federalregister.gov/documents/2026/10/09/2026-20722/airworthiness-directives-airbus-helicopters-deutschland-gmbh-ahd-helicopters",
+          "slips": null
+        }
+      ],
+      "details_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20722/airworthiness-directives-airbus-helicopters-deutschland-gmbh-ahd-helicopters",
+      "witness_slip_url": "https://www.regulations.gov/commenton/FAA-2026-11805-0001",
+      "source": "federalregister.gov"
     },
     {
       "id": "ak-house-RES-2026-09-10-130000",
@@ -150,8 +192,7 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://www.akleg.gov/basis/Meeting/Detail?Meeting=HRES%202026-09-10%2013:00:00",
-      "committee_url": null,
-      "witness_slip_url": "https://www.akleg.gov/poms/",
+      "witness_slip_url": null,
       "source": "akleg.gov"
     },
     {
@@ -167,8 +208,7 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://www.akleg.gov/basis/Meeting/Detail?Meeting=SRES%202026-09-10%2013:00:00",
-      "committee_url": null,
-      "witness_slip_url": "https://www.akleg.gov/poms/",
+      "witness_slip_url": null,
       "source": "akleg.gov"
     },
     {
@@ -190,7 +230,6 @@
         }
       ],
       "details_url": "https://ilga.gov/House/hearings/details/3114/23224",
-      "committee_url": "https://ilga.gov/House/committees/members/3114",
       "witness_slip_url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=1643&GAID=18&SessionID=114",
       "source": "ilga.gov"
     },
@@ -223,7 +262,6 @@
         }
       ],
       "details_url": "https://ilga.gov/House/hearings/details/3201/24010",
-      "committee_url": "https://ilga.gov/House/committees/members/3201",
       "witness_slip_url": "https://ilga.gov/legislation/BillStatus?DocTypeID=HB&DocNum=25&GAID=18&SessionID=114",
       "source": "ilga.gov"
     },
@@ -240,7 +278,6 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://malegislature.gov/Events/Hearings/Detail/5774",
-      "committee_url": null,
       "witness_slip_url": "https://malegislature.gov/Events/Hearings/Detail/5774",
       "source": "malegislature.gov"
     },
@@ -300,7 +337,6 @@
         }
       ],
       "details_url": "https://malegislature.gov/Events/Hearings/Detail/5769",
-      "committee_url": "https://malegislature.gov/Committees/Detail/J17/194",
       "witness_slip_url": "https://malegislature.gov/Events/Hearings/Detail/5769",
       "source": "malegislature.gov"
     },
@@ -317,7 +353,6 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://malegislature.gov/Events/Hearings/Detail/5697",
-      "committee_url": null,
       "witness_slip_url": "https://malegislature.gov/Events/Hearings/Detail/5697",
       "source": "malegislature.gov"
     },
@@ -334,7 +369,6 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33551",
-      "committee_url": null,
       "witness_slip_url": null,
       "source": "leg.wa.gov"
     },
@@ -351,7 +385,6 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/34139",
-      "committee_url": null,
       "witness_slip_url": null,
       "source": "leg.wa.gov"
     },
@@ -368,7 +401,6 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/34140",
-      "committee_url": null,
       "witness_slip_url": null,
       "source": "leg.wa.gov"
     },
@@ -385,7 +417,6 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33488",
-      "committee_url": null,
       "witness_slip_url": null,
       "source": "leg.wa.gov"
     },
@@ -402,7 +433,6 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33497",
-      "committee_url": null,
       "witness_slip_url": null,
       "source": "leg.wa.gov"
     },
@@ -419,7 +449,6 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33498",
-      "committee_url": null,
       "witness_slip_url": null,
       "source": "leg.wa.gov"
     },
@@ -436,7 +465,6 @@
       "status": "scheduled",
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33820",
-      "committee_url": null,
       "witness_slip_url": null,
       "source": "leg.wa.gov"
     }

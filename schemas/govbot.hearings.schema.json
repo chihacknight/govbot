@@ -99,8 +99,7 @@
           }
         },
         "details_url": { "type": "string", "description": "Official hearing/agenda detail page." },
-        "committee_url": { "type": ["string", "null"], "description": "Official page for the committee itself (IL: committee roster; WA: leg.wa.gov committee 'about' page). Null when no reliable page resolves." },
-        "witness_slip_url": { "type": ["string", "null"], "description": "Where to take part in this exact hearing: IL the first bill's Bill Status page (its Witness Slips button), else the hearing page; WA Committee Sign-In opened on this meeting; MA the hearing page (its testimony form); AK the POMS comment form (no per-meeting form exists); federal the docket's Regulations.gov comment page. Null when the meeting takes no public sign-in (a WA interim work session)." },
+        "witness_slip_url": { "type": ["string", "null"], "description": "Where to take part in this exact hearing: IL the first bill's Bill Status page (its Witness Slips button), else the hearing page; WA Committee Sign-In opened on this meeting; MA the hearing page (its testimony form); federal the rule's Regulations.gov comment form, else its Federal Register page. Null when there is no per-hearing way to take part (a WA interim work session; Alaska, whose only tool is its general POMS form) — the dashboard then links details_url." },
         "source": { "type": "string", "description": "Origin host, e.g. ilga.gov or leg.wa.gov." }
       }
     }
