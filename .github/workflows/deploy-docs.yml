@@ -111,8 +111,10 @@ jobs:
           fi
 
       # On the fast path, restore the last full build's data.json + gitignored
-      # artifacts (IL synopses, state summaries, sponsor-photo manifest + images) so the deploy
-      # carries the same real data the scheduled build produced.
+      # artifacts (IL synopses, state summaries, sponsor-photo manifest + images) and the
+      # other pipeline-built files (roster, maps, hearings + elections data and RSS feeds),
+      # so the deploy carries the same real data the scheduled build produced — the
+      # committed copies of those are old samples.
       - name: Restore last full build's data
         id: builtdata
         if: steps.scope.outputs.refresh != 'true'
@@ -124,6 +126,14 @@ jobs:
             docs/src/dashboard/summaries
             docs/src/dashboard/legislator_images.json
             docs/src/dashboard/assets/legislators
+            docs/src/dashboard/people.json
+            docs/src/dashboard/maps.json
+            docs/src/dashboard/hearings.json
+            docs/src/dashboard/hearings.xml
+            docs/src/dashboard/hearings
+            docs/src/dashboard/elections.json
+            docs/src/dashboard/elections.xml
+            docs/src/dashboard/elections
           key: govbot-built-data-${{ github.run_id }}
           restore-keys: |
             govbot-built-data-
@@ -593,6 +603,14 @@ jobs:
             docs/src/dashboard/summaries
             docs/src/dashboard/legislator_images.json
             docs/src/dashboard/assets/legislators
+            docs/src/dashboard/people.json
+            docs/src/dashboard/maps.json
+            docs/src/dashboard/hearings.json
+            docs/src/dashboard/hearings.xml
+            docs/src/dashboard/hearings
+            docs/src/dashboard/elections.json
+            docs/src/dashboard/elections.xml
+            docs/src/dashboard/elections
           key: govbot-built-data-${{ github.run_id }}
 
       # Split the all-bills data.json into the small files each page reads (bills/index.json,

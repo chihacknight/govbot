@@ -898,10 +898,14 @@ those paths, and full-refreshes only if anything else remains; PRs always skip) 
 pipeline steps are all guarded `if: steps.gate.outputs.refresh == 'true'`, so they're skipped and mdbook
 builds + deploys with the committed data. Markdown docs never feed the data pipeline, so a docs-only
 change (updating this file included) stays fast; mdbook still rebuilds so any published `.md` page
-updates. Everything is committed with real data **except** `data.json` (a tiny sample) and the
-two `.gitignore`d artifacts (`il_summaries.json`, `legislator_images.json` + `assets/legislators/`), so a
-full build snapshots those four into a rolling `actions/cache` (`govbot-built-data-<run_id>`, restore-key
-`govbot-built-data-`) and the fast path **restores** them. Safety valve: on a push to main, if that cache
+updates. The committed `data.json` is a tiny sample, the `.gitignore`d artifacts (`il_summaries.json`,
+`summaries/`, `legislator_images.json` + `assets/legislators/`) aren't committed at all, and the committed
+`people.json`, `maps.json`, `hearings.json`/`hearings.xml`/`hearings/` and
+`elections.json`/`elections.xml`/`elections/` are **old samples** the pipeline never writes back — so a full
+build snapshots **all** of them into a rolling `actions/cache` (`govbot-built-data-<run_id>`, restore-key
+`govbot-built-data-`) and the fast path **restores** them. (Before Oct 2026 only the bills + gitignored
+files were cached, so every site-only deploy put the August hearings and September elections samples back
+live — the federal notices vanished — until the next scheduled build.) Safety valve: on a push to main, if that cache
 is missing or holds only the sample `data.json` (< 100 KB), the run **falls back to a full refresh** —
 so a frontend deploy never publishes stale/sample bills. PRs never deploy, so they just build-check.
 
