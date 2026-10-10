@@ -37,6 +37,20 @@ schema and is usually `null`; the reliable, always-useful signal is the hearing
 itself plus `witness_slip_url`, a deep link to the official portal to file. Count
 enrichment is bounded and parallel, and any failure simply leaves `slips` null.
 
+## Links go to the hearing itself, not a portal's front page
+
+`witness_slip_url` is where to take part in **that** hearing; `details_url` is the
+hearing's own agenda page (the dashboard shows both, as "File a witness slip" /
+"Sign in to testify" / … and "Hearing details").
+
+| Source | `witness_slip_url` |
+|---|---|
+| IL | the first bill's Bill Status page (its Witness Slips button); a hearing with no bills → its hearing page |
+| WA | Committee Sign-In opened on this meeting (`/csi/<Senate\|House\|Joint>?selectedCommittee=<Committee Id>&selectedMeeting=<AgendaId>` — CSI preselects both and lists the bills). Only meetings with a public hearing on bills; interim work sessions aren't in CSI, so `null` |
+| MA | the hearing page (written testimony is submitted there) |
+| AK | the POMS comment form — Alaska has no per-meeting form; "Hearing details" links the meeting |
+| Federal | the docket's Regulations.gov "comment on" page (the offline seed uses search links) |
+
 ## Usage
 
 ```bash

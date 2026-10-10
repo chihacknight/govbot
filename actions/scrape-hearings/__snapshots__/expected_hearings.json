@@ -241,7 +241,7 @@
       "bills": [],
       "details_url": "https://malegislature.gov/Events/Hearings/Detail/5774",
       "committee_url": null,
-      "witness_slip_url": "https://malegislature.gov/",
+      "witness_slip_url": "https://malegislature.gov/Events/Hearings/Detail/5774",
       "source": "malegislature.gov"
     },
     {
@@ -301,7 +301,7 @@
       ],
       "details_url": "https://malegislature.gov/Events/Hearings/Detail/5769",
       "committee_url": "https://malegislature.gov/Committees/Detail/J17/194",
-      "witness_slip_url": "https://malegislature.gov/",
+      "witness_slip_url": "https://malegislature.gov/Events/Hearings/Detail/5769",
       "source": "malegislature.gov"
     },
     {
@@ -318,7 +318,7 @@
       "bills": [],
       "details_url": "https://malegislature.gov/Events/Hearings/Detail/5697",
       "committee_url": null,
-      "witness_slip_url": "https://malegislature.gov/",
+      "witness_slip_url": "https://malegislature.gov/Events/Hearings/Detail/5697",
       "source": "malegislature.gov"
     },
     {
@@ -335,7 +335,7 @@
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33551",
       "committee_url": null,
-      "witness_slip_url": "https://app.leg.wa.gov/csi/",
+      "witness_slip_url": null,
       "source": "leg.wa.gov"
     },
     {
@@ -352,7 +352,7 @@
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/34139",
       "committee_url": null,
-      "witness_slip_url": "https://app.leg.wa.gov/csi/",
+      "witness_slip_url": null,
       "source": "leg.wa.gov"
     },
     {
@@ -369,7 +369,7 @@
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/34140",
       "committee_url": null,
-      "witness_slip_url": "https://app.leg.wa.gov/csi/",
+      "witness_slip_url": null,
       "source": "leg.wa.gov"
     },
     {
@@ -386,7 +386,7 @@
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33488",
       "committee_url": null,
-      "witness_slip_url": "https://app.leg.wa.gov/csi/",
+      "witness_slip_url": null,
       "source": "leg.wa.gov"
     },
     {
@@ -403,7 +403,7 @@
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33497",
       "committee_url": null,
-      "witness_slip_url": "https://app.leg.wa.gov/csi/",
+      "witness_slip_url": null,
       "source": "leg.wa.gov"
     },
     {
@@ -420,7 +420,7 @@
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33498",
       "committee_url": null,
-      "witness_slip_url": "https://app.leg.wa.gov/csi/",
+      "witness_slip_url": null,
       "source": "leg.wa.gov"
     },
     {
@@ -437,7 +437,7 @@
       "bills": [],
       "details_url": "https://app.leg.wa.gov/committeeschedules/Home/Agenda/33820",
       "committee_url": null,
-      "witness_slip_url": "https://app.leg.wa.gov/csi/",
+      "witness_slip_url": null,
       "source": "leg.wa.gov"
     }
   ]

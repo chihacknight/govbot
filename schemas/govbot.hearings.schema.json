@@ -80,7 +80,7 @@
             "additionalProperties": false,
             "properties": {
               "id": { "type": "string", "description": "Compact bill id, e.g. HB1643, SB25." },
-              "url": { "type": "string", "description": "Official page for this bill (IL: Bill Status; WA: bill summary)." },
+              "url": { "type": ["string", "null"], "description": "Official page for this bill (IL: Bill Status; WA: bill summary). Null when none resolves; the page then links the hearing's details_url." },
               "title": { "type": "string", "description": "Bill/measure name from the hearing source itself, shown beside the number when the bill isn't in govbot's dataset (e.g. the MA agenda title, the federal docket title)." },
               "govbot_title": { "type": "string", "description": "Bill title from govbot's own dataset, when govbot tracks this bill (build-time enrichment)." },
               "govbot_tags": { "type": "array", "items": { "type": "string" }, "description": "govbot topic tags for this bill, when tracked." },
@@ -100,7 +100,7 @@
         },
         "details_url": { "type": "string", "description": "Official hearing/agenda detail page." },
         "committee_url": { "type": ["string", "null"], "description": "Official page for the committee itself (IL: committee roster; WA: leg.wa.gov committee 'about' page). Null when no reliable page resolves." },
-        "witness_slip_url": { "type": "string", "description": "Deep link to the official portal to file a slip / sign in for this hearing or bill." },
+        "witness_slip_url": { "type": ["string", "null"], "description": "Where to take part in this exact hearing: IL the first bill's Bill Status page (its Witness Slips button), else the hearing page; WA Committee Sign-In opened on this meeting; MA the hearing page (its testimony form); AK the POMS comment form (no per-meeting form exists); federal the docket's Regulations.gov comment page. Null when the meeting takes no public sign-in (a WA interim work session)." },
         "source": { "type": "string", "description": "Origin host, e.g. ilga.gov or leg.wa.gov." }
       }
     }

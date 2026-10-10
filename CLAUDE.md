@@ -693,7 +693,13 @@ due", "Public comment open", "Canceled", the directory's "Live hearings" — sha
 full-contrast border, like the homepage's). The nav is hidden with fewer
 than two jurisdictions. Each hearing still makes participation obvious: a green **"Public comment open"**
 badge on the date column and the witness-slip/comment action elevated into a filled green
-`.file-link` pill. The `<title>` was also corrected (it had been a stray "Legislation Dashboard").
+`.file-link` pill. **Every link goes to that hearing, never a portal's front page:** the pill is
+the source's per-hearing `witness_slip_url` (IL bill's Bill Status page, WA Committee Sign-In opened
+on that meeting, MA the hearing page with its testimony form, federal the docket's comment page; AK
+has only its general POMS form) and an outline **"Hearing details ↗"** (`.details-link`) links the
+hearing's own agenda page (`details_url`), unless the pill already goes there (MA). WA interim work
+sessions take no sign-in, so they carry no pill/badge, only the details link — see the table in
+`actions/scrape-hearings/README.md`. The `<title>` was also corrected (it had been a stray "Legislation Dashboard").
 The hearing/participation render engine is otherwise unchanged.
 `architecture.html` is retitled **"How Govbot Works"** and now opens with a nontechnical layer: a
 plain-English six-stage overview pipeline (`.gw-pipeline`: Government sources → Govbot pipelines →

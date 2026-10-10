@@ -229,7 +229,8 @@ def parse_il_hearings(json_text, chamber):
             "bills": bills,
             "details_url": il_details_url(chamber, committee_id, hearing_id),
             "committee_url": il_committee_url(chamber, committee_id),
-            "witness_slip_url": (bills[0]["url"] if bills else "https://my.ilga.gov/"),
+            "witness_slip_url": (bills[0]["url"] if bills
+                                 else il_details_url(chamber, committee_id, hearing_id)),
             "source": "ilga.gov",
         })
     return out
@@ -411,12 +412,13 @@ def parse_wa_meetings(xml_text):
         if not agenda_id:
             continue
         agency = _wa_text(m, "Agency")
-        committee = "Committee"
+        committee, committee_id = "Committee", ""
         committees = m.find(WA_NS + "Committees")
         if committees is not None:
             first = committees.find(WA_NS + "Committee")
             if first is not None:
                 committee = _wa_text(first, "Name") or committee
+                committee_id = _wa_text(first, "Id")
         when = _wa_text(m, "Date")  # already ISO-naive local
         canceled = _wa_text(m, "Cancelled").lower() == "true"
         location = join_location(_wa_text(m, "Room"), _wa_text(m, "Building"),
@@ -437,11 +439,36 @@ def parse_wa_meetings(xml_text):
             "bills": [],
             "details_url": f"https://app.leg.wa.gov/committeeschedules/Home/Agenda/{agenda_id}",
             "committee_url": None,  # filled live from the leg.wa.gov index (pure parse stays offline)
-            "witness_slip_url": "https://app.leg.wa.gov/csi/",
+            "witness_slip_url": None,  # set by wa_attach_bills once the agenda is known
             "source": "leg.wa.gov",
             "_agenda_id": agenda_id,
+            "_signin": (agency, committee_id),
         })
     return out
+
+
+def wa_signin_url(agency, committee_id, agenda_id):
+    """Committee Sign-In (CSI) opened on this exact meeting: CSI preselects the
+    committee + meeting from these query parameters and lists its bills to sign in
+    on. Its meeting ids are the web service's AgendaId and its committee ids the
+    web service's Committee Id (checked against live CSI, 2026-10). None when CSI
+    has no tab for the agency (CSI has Senate / House / Joint)."""
+    if agency not in ("Senate", "House", "Joint") or not committee_id or not agenda_id:
+        return None
+    return (f"https://app.leg.wa.gov/csi/{agency}"
+            f"?selectedCommittee={committee_id}&selectedMeeting={agenda_id}")
+
+
+def wa_attach_bills(m, bill_ids):
+    """Attach the agenda's bills and the sign-in link. Only a meeting with a public
+    hearing on bills takes sign-in testimony; interim work sessions aren't listed in
+    CSI at all, so they get no sign-in link (the agenda page stays linked)."""
+    m["bills"] = wa_bills(bill_ids, m)
+    if m["bills"]:
+        m["witness_slip_url"] = wa_signin_url(*m["_signin"], m["_agenda_id"])
+    m.pop("_agenda_id", None)
+    m.pop("_signin", None)
+    return m
 
 
 def parse_wa_items(xml_text):
@@ -467,7 +494,7 @@ def wa_bill_url(bill_id, year):
     """Official Washington bill-summary page for a bill id (e.g. HB1234)."""
     m = re.match(r"([A-Z]+)(\d+)", bill_id)
     if not m:
-        return "https://app.leg.wa.gov/csi/"
+        return None  # the page falls back to the meeting's agenda
     return (f"https://app.leg.wa.gov/billsummary?BillNumber={m.group(2)}"
             f"&Year={year}&Initiative=false")
 
@@ -489,8 +516,7 @@ def fetch_wa(begin, end):
     meetings = parse_wa_meetings(text)  # keep canceled too; flagged in status
     def items(m):
         xml = fetch_text(wa_items_url(m["_agenda_id"]))
-        m["bills"] = wa_bills(parse_wa_items(xml), m) if xml else []
-        m.pop("_agenda_id", None)
+        wa_attach_bills(m, parse_wa_items(xml) if xml else [])
     with ThreadPoolExecutor(max_workers=6) as pool:
         list(pool.map(items, meetings))
     return meetings
@@ -625,7 +651,9 @@ def parse_ma_hearing(json_text):
         "bills": bills,
         "details_url": ma_hearing_page_url(d["EventId"]),
         "committee_url": ma_committee_page_url(real_code, general_court) if real_code and general_court else None,
-        "witness_slip_url": "https://malegislature.gov/",
+        # Written testimony is submitted on the hearing's own page (its "Submit
+        # testimony" form), so that page is the participation link.
+        "witness_slip_url": ma_hearing_page_url(d["EventId"]),
         "source": "malegislature.gov",
     }
 
@@ -901,10 +929,8 @@ def build_from_fixtures(fixtures_dir):
     if wa_path.exists():
         for m in parse_wa_meetings(wa_path.read_text()):
             items_file = d / f"wa_items_{m['_agenda_id']}.xml"
-            if items_file.exists():
-                m["bills"] = wa_bills(parse_wa_items(items_file.read_text()), m)
-            m.pop("_agenda_id", None)
-            hearings.append(m)
+            ids = parse_wa_items(items_file.read_text()) if items_file.exists() else []
+            hearings.append(wa_attach_bills(m, ids))
     # Massachusetts: a list stub file names the detail fixtures to parse.
     ma_list = d / "ma_hearings.json"
     if ma_list.exists():

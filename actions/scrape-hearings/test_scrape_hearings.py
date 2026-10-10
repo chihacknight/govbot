@@ -37,6 +37,13 @@ class IllinoisParser(unittest.TestCase):
     def test_bad_json_is_empty_not_crash(self):
         self.assertEqual(main.parse_il_hearings("<html>nope</html>", "house"), [])
 
+    def test_hearing_without_bills_links_its_own_page(self):
+        row = json.loads((RAW / "il_active.json").read_text())[0]
+        row = dict(row, subjectMatter="Subject matter only", longDescription="Revenue")
+        h = main.parse_il_hearings(json.dumps([row]), "house")[0]
+        self.assertEqual(h["bills"], [])
+        self.assertEqual(h["witness_slip_url"], h["details_url"])
+
     def test_bill_links_use_reliable_bill_status_page(self):
         # Regression: the direct WitnessSlips endpoint returns an error page, so
         # user-facing links must point at the always-200 Bill Status page.
@@ -70,6 +77,30 @@ class WashingtonParser(unittest.TestCase):
 
     def test_bad_xml_is_empty(self):
         self.assertEqual(main.parse_wa_meetings("not xml"), [])
+
+    def test_public_hearing_links_sign_in_on_that_meeting(self):
+        # A meeting with bills up for public hearing opens Committee Sign-In on that
+        # exact meeting (committee + meeting preselected), not CSI's front page.
+        m = next(m for m in main.parse_wa_meetings((RAW / "wa_meetings.xml").read_text())
+                 if m["_signin"][0] == "Joint")
+        agency, cid = m["_signin"]
+        agenda = m["_agenda_id"]
+        main.wa_attach_bills(m, ["HB1234"])
+        self.assertEqual(m["witness_slip_url"],
+                         f"https://app.leg.wa.gov/csi/Joint?selectedCommittee={cid}&selectedMeeting={agenda}")
+        self.assertNotIn("_signin", m)
+        self.assertNotIn("_agenda_id", m)
+
+    def test_work_session_has_no_sign_in(self):
+        # Interim work sessions take no sign-in testimony (CSI doesn't list them).
+        m = main.parse_wa_meetings((RAW / "wa_meetings.xml").read_text())[0]
+        main.wa_attach_bills(m, [])
+        self.assertIsNone(m["witness_slip_url"])
+        self.assertTrue(m["details_url"].startswith("https://app.leg.wa.gov/committeeschedules/Home/Agenda/"))
+
+    def test_sign_in_needs_a_csi_chamber(self):
+        self.assertIsNone(main.wa_signin_url("Other", "21488", "33497"))
+        self.assertIsNone(main.wa_signin_url("Senate", "", "33497"))
 
 
 class WashingtonCommittee(unittest.TestCase):

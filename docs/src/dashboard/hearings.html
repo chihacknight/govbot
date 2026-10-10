@@ -267,10 +267,10 @@
   .pstate-how { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
   /* "Go to portal" / "How to participate" and each section's top-right portal link read
      as outline buttons: a 2px full-contrast border, like the homepage's outline buttons. */
-  .pstate-link, .hgroup-portal { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  .pstate-link, .hgroup-portal, .details-link { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
     font-size: 13px; font-weight: 650; color: var(--text-primary) !important; text-decoration: none;
     border: 2px solid var(--text-primary); border-radius: 999px; padding: 5px 13px; white-space: nowrap; }
-  .pstate-link:hover, .hgroup-portal:hover { background: var(--hover-wash); border-color: var(--hh-green); }
+  .pstate-link:hover, .hgroup-portal:hover, .details-link:hover { background: var(--hover-wash); border-color: var(--hh-green); }
   .pstate-link { margin-top: auto; }
   .pstate-sub { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--gridline); }
 
@@ -731,6 +731,13 @@
         PARTICIPATION[participationFor(h)] || "File a slip ↗");
       file.href = h.witness_slip_url; file.target = "_blank"; file.rel = "noopener";
       actions.append(file);
+    }
+    // The hearing's own official page (agenda, bills, how to take part), unless the
+    // participation link above already goes there (Massachusetts).
+    if (h.details_url && h.details_url !== h.witness_slip_url) {
+      const det = eln("a", "details-link", "Hearing details ↗");
+      det.href = h.details_url; det.target = "_blank"; det.rel = "noopener";
+      actions.append(det);
     }
     if (h.committee_url) {
       const cmte = eln("a", "committee-link", "About the committee ↗");
