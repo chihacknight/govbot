@@ -490,7 +490,10 @@ made a big state's catalog scroll at ~18 fps — `z-index:90`, `.results-overlay
 whenever a filter/search is active, and adds `body.results-open` to lock scroll; the map entry + Recent
 activity stay on screen as the dimmed backdrop, and the map's selected-state pulse (it animates a
 `filter`, a repaint every frame) is paused while the catalog or a bill card covers it. The catalog
-search text is built once per bill (`b._hay` / `b._hayN`), not on every keystroke. The popped `#results-card` (`.results-modal`) animates in with
+search text is built once per bill (`b._hay` / `b._hayN`), not on every keystroke, and **includes each
+sponsor's full roster name** (`fullSponsorName`) — some states (SD, AK, WY…) store sponsors by surname
+only ("Aylward"), so a first-name search like "john" found nothing; the text is rebuilt once if
+`people.json` arrives after the first search (`b._hayFull`). The popped `#results-card` (`.results-modal`) animates in with
 `@keyframes results-pop`, carries an **X close button** (`#results-x`, top-right) and a
 jurisdiction-named title (`resultsTitle` → "Wyoming bills (N)"). **Every sortable column header
 carries a persistent sort arrow** — a muted up/down glyph (`.arrow.is-idle`, "⇅") when idle so the
@@ -731,7 +734,8 @@ in dark mode, a deep-green rounded "night" panel in light mode so she stays prom
 per state up to 4, with the **sponsor avatar chips**: vendored headshot over a party-tinted initials
 monogram, first 3 then "+N more", non-person sponsors skipped), Hearings (live calendar-figure rows),
 Illinois elections (next ballot date + countdown + what's on it + the ballot after, from
-`elections.json`), **Social bots** ("Track legislation wherever you scroll.": the 13 topics, four green platform buttons — Bluesky → `@govboteducation.bsky.social`, Twitter (X logo), Threads, Instagram — and a **live auto-scrolling feed of the bots' real posts**, designed on the "Govbot Bots Feed" Design canvas: `landing.js` fetches, fail-soft and only once the carousel nears the screen, the bot repo's own dashboard data `frankies2727.github.io/CHN-SocialMedia-Govbot-Main/data.json` (its `feed`: exact post text + URL + `posted_at` for Twitter/Threads/Instagram, the chip from the record's `date` + `action`) and Bluesky's public AppView API (`getAuthorFeed` for the 13 topic accounts; each shown post's dated action line is read from the bot's own reply via `getPostThread` — none → no chip, never guessed); the newest 5 per platform are interleaved (20 posts), each showing "Posted: <date>" (Central time), a **gold** action chip / topic / "View post ↗" via the landing-only true-gold `--gl-fgold` (the brand `--gb-gold` is green), the list rendered twice so the rAF scroll wraps (copy `aria-hidden`, untabbable), paused on hover/focus/touch and while the slide isn't active, static under reduced motion), and a dashed
+`elections.json`), **Social media trackers** (the chip / slide label — formerly "Social bots"; the header's
+"All projects" blurb says "Social media trackers & build your own" too; "Track legislation wherever you scroll.": the 13 topics, four green platform buttons — Bluesky → `@govboteducation.bsky.social`, Twitter (X logo), Threads, Instagram — and a **live auto-scrolling feed of the bots' real posts**, designed on the "Govbot Bots Feed" Design canvas: `landing.js` fetches, fail-soft and only once the carousel nears the screen, the bot repo's own dashboard data `frankies2727.github.io/CHN-SocialMedia-Govbot-Main/data.json` (its `feed`: exact post text + URL + `posted_at` for Twitter/Threads/Instagram, the chip from the record's `date` + `action`) and Bluesky's public AppView API (`getAuthorFeed` for the 13 topic accounts; each shown post's dated action line is read from the bot's own reply via `getPostThread` — none → no chip, never guessed); the newest 5 per platform are interleaved (20 posts), each showing "Posted: <date>" (Central time), with its coloured text (posted date, action chip, topic, "View post ↗") and border **alternating green / gold post by post** (`--pf`: brand green, or `.is-gold` → the landing-only true-gold `--gl-fgold`, since the brand `--gb-gold` is green; `postHtml(p, clone, n)` sets it from the post's place in the whole scrolling run, so the looping copy keeps alternating), the list rendered twice so the rAF scroll wraps (copy `aria-hidden`, untabbable), paused on hover/focus/touch and while the slide isn't active, static under reduced motion), and a dashed
 "Your project" slide; **"Build your own"** (install / run / clone steps with copy buttons + the
 "ask an AI" `llms.txt` prompt; the landing's outline buttons (`.gl-btn-ghost` — "Get the data", "How Govbot
 works", "Contribute on GitHub", the build links, and the closing "Explore the projects", which is now an
@@ -1216,7 +1220,9 @@ race/candidate counts (`.oc-count`) are all full-contrast `--text-primary`, not 
 A **legibility rule at the end of the stylesheet** (so it wins by source order) sets these to full
 contrast (`--text-primary`), not dimmed: the office-card descriptions (`.oc-blurb`), the Chicago-map
 "Click a ward…" hint (`.cm-empty`), the election-calendar card copy (`.calendar` `.cal-*`/`.tl-*`), and
-all body text in the Springfield ("rules of the game") and "Where the data comes from" cabinet sections. The card/popup
+all body text in the Springfield ("rules of the game") and "Where the data comes from" cabinet sections. Every link in that **"Where the data comes from"** cabinet (`.cabinet a`) uses the readable
+`--gb-link` colour, bold and underlined, in both themes (they were small default-blue text); its intro
+says "a cabinet" in plain text (no bold). The card/popup
 title comes from `GROUP_CARD_LABEL[g]` when set, else `GROUP_META[g].label`: the CPS card is titled
 **"CPS Board — Subdistrict Members"** because it holds only the 20 district seats — the board
 **president** is a separate citywide (at-large) race shown in the ballot side panel, not a subdistrict

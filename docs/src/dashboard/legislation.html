@@ -659,7 +659,7 @@
           <span><span class="mega-t">Illinois Elections</span><span class="mega-d">What&#39;s on your ballot, race by race</span></span></a>
         <a href="../#projects" role="menuitem" style="--accent:var(--gb-text-2)">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg>
-          <span><span class="mega-t">All projects</span><span class="mega-d">Social bots &amp; build your own</span></span></a>
+          <span><span class="mega-t">All projects</span><span class="mega-d">Social media trackers &amp; build your own</span></span></a>
       </div>
     </div>
     <div class="gb-nav-item" data-gb-dropdown>
@@ -720,7 +720,7 @@
       <span><span class="mega-t">Illinois Elections</span><span class="mega-d">What&#39;s on your ballot, race by race</span></span></a>
     <a href="../#projects" style="--accent:var(--gb-text-2)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg>
-      <span><span class="mega-t">All projects</span><span class="mega-d">Social bots &amp; build your own</span></span></a>
+      <span><span class="mega-t">All projects</span><span class="mega-d">Social media trackers &amp; build your own</span></span></a>
     </div>
   </details>
   <details class="gb-dgroup">
@@ -1199,10 +1199,14 @@
       }
       if (f.search) {
         // The search text is built once per bill (not on every keystroke) — a big
-        // state has 25k+ bills.
-        if (b._hay === undefined) {
-          b._hay = (b.id + " " + b.title + " " + b.sponsors.join(" ")).toLowerCase();
+        // state has 25k+ bills. Some states (SD, AK, WY…) list sponsors by surname
+        // only, so each sponsor's full roster name is added too, letting "john" find
+        // Sen. John Doe's bills; it's rebuilt once if the roster arrives later.
+        if (b._hay === undefined || (peopleIndex && !b._hayFull)) {
+          const full = b.sponsors.map((s) => fullSponsorName(b.state, s)).join(" ");
+          b._hay = (b.id + " " + b.title + " " + b.sponsors.join(" ") + " " + full).toLowerCase();
           b._hayN = b._hay.replace(/[^a-z0-9]/g, "");
+          b._hayFull = !!peopleIndex;
         }
         if (!b._hay.includes(f.search)) {
           // Also match ignoring spaces/punctuation, so a shared/deep link like

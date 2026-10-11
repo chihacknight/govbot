@@ -394,7 +394,11 @@
   .cab-item { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
   .cab-item h4 { margin: 0 0 3px; font-size: 12.5px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
   .cab-item p { margin: 0; font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
-  .cab-item a { font-size: 11.5px; }
+  /* Source links: the site's readable link colour (--gb-link, ~9:1 dark / ~7:1 light),
+     bolder and underlined so they read as links in both themes. */
+  .cabinet a { font-weight: 650; color: var(--gb-link); text-decoration: underline; text-underline-offset: 2px; }
+  .cabinet a:hover { text-decoration-thickness: 2px; }
+  .cab-item a { font-size: 12.5px; }
   .cab-status { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 1px 6px; border-radius: 999px; }
   .cab-status.live { color: var(--series-4); border: 1px solid var(--series-4); }
   .cab-status.planned { color: var(--text-muted); border: 1px solid var(--border); }
@@ -688,7 +692,7 @@
           <span><span class="mega-t">Illinois Elections</span><span class="mega-d">What&#39;s on your ballot, race by race</span></span></a>
         <a href="../#projects" role="menuitem" style="--accent:var(--gb-text-2)">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg>
-          <span><span class="mega-t">All projects</span><span class="mega-d">Social bots &amp; build your own</span></span></a>
+          <span><span class="mega-t">All projects</span><span class="mega-d">Social media trackers &amp; build your own</span></span></a>
       </div>
     </div>
     <div class="gb-nav-item" data-gb-dropdown>
@@ -749,7 +753,7 @@
       <span><span class="mega-t">Illinois Elections</span><span class="mega-d">What&#39;s on your ballot, race by race</span></span></a>
     <a href="../#projects" style="--accent:var(--gb-text-2)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg>
-      <span><span class="mega-t">All projects</span><span class="mega-d">Social bots &amp; build your own</span></span></a>
+      <span><span class="mega-t">All projects</span><span class="mega-d">Social media trackers &amp; build your own</span></span></a>
     </div>
   </details>
   <details class="gb-dgroup">
@@ -898,7 +902,7 @@
 
   <details class="cabinet" id="cabinet" open>
     <summary>📂 Where the data comes from</summary>
-    <p class="cab-intro">This site isn't the official clerk — it's a <b>cabinet</b> that puts the sources in one place so a Chicagoan can ask "who's running in my CPS subdistrict and my ward, and when do I vote?" A fully assembled race draws on up to five drawers: <b>map · candidates · money · results · context</b>. Here's what each source owns and what's live today.</p>
+    <p class="cab-intro">This site isn't the official clerk — it's a cabinet that puts the sources in one place so a Chicagoan can ask "who's running in my CPS subdistrict and my ward, and when do I vote?" A fully assembled race draws on up to five drawers: <b>map · candidates · money · results · context</b>. Here's what each source owns and what's live today.</p>
     <div class="cab-grid">
       <div class="cab-item">
         <h4>🗳️ Candidates &amp; city results <span class="cab-status live">live · candidates · results ready</span></h4>

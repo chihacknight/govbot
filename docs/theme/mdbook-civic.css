@@ -239,9 +239,10 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-pill[hidden] { display: none; }
 .gl-elect-then { padding-top: 12px; border-top: 1px solid var(--gb-border); font-size: 14px; color: var(--gb-text-2); }
 .gl-elect-then[hidden] { display: none; }
-/* Social bots slide: topics, platform buttons and a live auto-scrolling feed of the bots' real posts
-   (filled by landing.js). --gl-fgold is a true gold (the brand --gb-gold is green now) for the
-   feed's posted date, action chip, topic and "View post" — 4.5:1+ on the card in both themes. */
+/* Social media trackers slide: topics, platform buttons and a live auto-scrolling feed of the bots'
+   real posts (filled by landing.js). Each post's coloured text (posted date, action chip, topic,
+   "View post") and border use --pf: brand green, or on every other post (.is-gold) --gl-fgold, a true
+   gold (the brand --gb-gold is green now) — both 4.5:1+ on the card in both themes. */
 .gl-bt-group { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; }
 .gl-follow { margin-top: auto; padding-top: 6px; }
 .gl-bt-h { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gb-text-muted); }
@@ -266,15 +267,16 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-bf-win::-webkit-scrollbar { display: none; }
 .gl-bf-win:focus-visible { outline: 2px solid var(--gb-gold); outline-offset: -2px; }
 .gl-bf-list { display: flex; flex-direction: column; gap: 10px; }
-.gl-post { display: flex; gap: 12px; padding: 14px; border-radius: 14px; border: 1px solid var(--gb-border); background: var(--gb-surface);
-  transition: border-color .2s ease; }
-.gl-post:hover { border-color: var(--gb-border-strong); }
+.gl-post { --pf: var(--gb-primary); display: flex; gap: 12px; padding: 14px; border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--pf) 45%, var(--gb-border)); background: var(--gb-surface); transition: border-color .2s ease; }
+.gl-post.is-gold { --pf: var(--gl-fgold); }
+.gl-post:hover { border-color: var(--pf); }
 .gl-post-av { width: 40px; height: 40px; border-radius: 50%; flex: none; object-fit: cover; border: 2px solid var(--tc); box-sizing: border-box; }
 .gl-post-main { display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1; }
 .gl-post-top { display: flex; align-items: baseline; gap: 8px; min-width: 0; font-size: 13px; }
 .gl-post-name { font-size: 14px; font-weight: 700; color: var(--gb-text); white-space: nowrap; }
 .gl-post-handle { color: var(--gb-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.gl-post-when { font-weight: 600; color: var(--gl-fgold); white-space: nowrap; flex: none; }
+.gl-post-when { font-weight: 600; color: var(--pf); white-space: nowrap; flex: none; }
 .gl-post-plat { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; flex: none; font-size: 12px; font-weight: 600; color: var(--gb-text-2); }
 .gl-post-plat i { width: 8px; height: 8px; border-radius: 2px; background: var(--plc); }
 .gl-post-h { font-size: 14.5px; font-weight: 700; line-height: 1.35; color: var(--gb-text); }
@@ -287,10 +289,10 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-igcard-h { font-size: 10.5px; font-weight: 700; line-height: 1.25; color: #F4F5F7; border-bottom: 2px solid var(--tc); padding-bottom: 4px; }
 .gl-post-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .gl-post-act { display: inline-flex; align-items: center; min-height: 24px; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 600;
-  color: var(--gl-fgold); background: color-mix(in srgb, var(--gl-fgold) 12%, transparent); border: 1px solid color-mix(in srgb, var(--gl-fgold) 40%, transparent); }
-.gl-post-topic { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--gl-fgold); }
+  color: var(--pf); background: color-mix(in srgb, var(--pf) 12%, transparent); border: 1px solid color-mix(in srgb, var(--pf) 40%, transparent); }
+.gl-post-topic { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--pf); }
 .gl-post-topic i { width: 7px; height: 7px; border-radius: 50%; background: var(--tc); }
-.gb-landing a.gl-post-link { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--gl-fgold) !important; text-decoration: none; }
+.gb-landing a.gl-post-link { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--pf) !important; text-decoration: none; }
 .gb-landing a.gl-post-link:hover { text-decoration: underline; }
 /* "Built together" band (right above Projects): the copy over a dotted workspace of real Govbot pieces,
    with the project's contributors moving around it as live multiplayer cursors (landing.js). */

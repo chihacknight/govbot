@@ -41,7 +41,7 @@
 <div><h2 class="gl-h2">Projects built on Govbot</h2><p class="gl-sub">Each one runs on the same open data. Yours could be next.</p></div>
 <div class="gl-car-nav"><span class="gl-count" id="gl-count" aria-live="polite">1 / 5</span><button type="button" class="gl-navbtn" data-car="prev" aria-label="Previous project" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><button type="button" class="gl-navbtn" data-car="next" aria-label="Next project"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div>
 </div>
-<div class="gl-chips" role="group" aria-label="Choose a project"><button type="button" class="gl-chip" data-slide="0" aria-pressed="true">Legislation</button><button type="button" class="gl-chip" data-slide="1" aria-pressed="false">Hearings</button><button type="button" class="gl-chip" data-slide="2" aria-pressed="false">Elections</button><button type="button" class="gl-chip" data-slide="3" aria-pressed="false">Social bots</button><button type="button" class="gl-chip" data-slide="4" aria-pressed="false">Your project</button></div>
+<div class="gl-chips" role="group" aria-label="Choose a project"><button type="button" class="gl-chip" data-slide="0" aria-pressed="true">Legislation</button><button type="button" class="gl-chip" data-slide="1" aria-pressed="false">Hearings</button><button type="button" class="gl-chip" data-slide="2" aria-pressed="false">Elections</button><button type="button" class="gl-chip" data-slide="3" aria-pressed="false">Social media trackers</button><button type="button" class="gl-chip" data-slide="4" aria-pressed="false">Your project</button></div>
 <div class="gl-car" id="gl-car" tabindex="0" aria-roledescription="carousel" aria-label="Projects built on Govbot">
 <article class="gl-slide" style="--pc: var(--gb-link)" aria-roledescription="slide" aria-label="1 of 5: Legislation">
 <div class="gl-slide-head">
@@ -82,7 +82,7 @@
 <div class="gl-elect-then" id="election-then">Then: Chicago municipal · February 23, 2027</div>
 </div>
 </article>
-<article class="gl-slide gl-slide-bots" style="--pc: var(--gl-teal)" aria-roledescription="slide" aria-label="4 of 5: Social bots">
+<article class="gl-slide gl-slide-bots" style="--pc: var(--gl-teal)" aria-roledescription="slide" aria-label="4 of 5: Social media trackers">
 <div class="gl-slide-head">
 <div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg></span>Legislation tracker · 13 topics · 4 platforms</div>
 <h3 class="gl-h3">Track legislation wherever you scroll.</h3>
