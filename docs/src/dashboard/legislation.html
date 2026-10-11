@@ -569,11 +569,17 @@
   .recent-toggleable .section-head-lite:hover { background: var(--hover-wash); }
   .recent-toggleable .section-head-lite:hover .recent-toggle { background: var(--hover-wash); }
   .recent-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(278px, 1fr)); gap: 12px; }
-  .recent-card { text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 7px;
-    background: var(--surface-1); border: 1px solid var(--border); border-left: 3px solid var(--series-1);
+  /* Each card wears a full 2px border that alternates blue / gold from one state to the
+     next (renderRecent sets .is-gold); gold is the true gold, since the brand gold is green. */
+  :root { --rc-gold: #E5B94E; }
+  :root[data-theme="light"] { --rc-gold: #8A6100; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme]) { --rc-gold: #8A6100; } }
+  .recent-card { --rc: var(--series-1); text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 7px;
+    background: var(--surface-1); border: 2px solid var(--rc);
     border-radius: 12px; padding: 14px 16px; font: inherit; color: var(--text-primary); }
-  .recent-card:hover { border-color: var(--baseline); transform: translateY(-2px); transition: transform .12s ease; }
-  .recent-card:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
+  .recent-card.is-gold { --rc: var(--rc-gold); }
+  .recent-card:hover { background: color-mix(in srgb, var(--rc) 8%, var(--surface-1)); transform: translateY(-2px); transition: transform .12s ease; }
+  .recent-card:focus-visible { outline: 2px solid var(--rc); outline-offset: 2px; }
   .rc-top { display: flex; align-items: center; gap: 8px; }
   .rc-top .m-chip { text-align: center; }   /* center multi-line state names in the chip */
   .rc-id { font-size: 12px; font-weight: 600; color: var(--series-1); }
@@ -2471,8 +2477,11 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     }
     host.textContent = "";
     if (!bills.length) { const sec = $("recent"); if (sec) sec.hidden = true; return; }
+    // The border colour flips each time the state changes, so neighbouring states differ.
+    let gold = true, prev = null;
     bills.forEach((b) => {
-      const card = mkel("button", "recent-card"); card.type = "button";
+      if (b.state !== prev) { gold = !gold; prev = b.state; }
+      const card = mkel("button", "recent-card" + (gold ? " is-gold" : "")); card.type = "button";
       const top = mkel("div", "rc-top");
       const stName = state.stateNames[b.state] || (b.state || "").toUpperCase();
       top.append(mchip(stName, "is-state"), mkel("span", "rc-id", b.id), mkel("span", "rc-when", relDate(b.latest_action)));

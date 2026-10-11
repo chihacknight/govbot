@@ -288,22 +288,8 @@
   .hgroup-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start;
     gap: 8px 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gridline); font-size: 14px; }
   .hgroup-more .hgroup-portal { margin-left: 0; }
-  /* A notice kind's "See all" is a button (it loads the list here), styled like the links. */
-  button.hgroup-portal { background: transparent; font-family: inherit; cursor: pointer; }
-  button.hgroup-portal:disabled { cursor: progress; }
-  /* Federal: pill nav + short sections, each with its own colourful scrollbar */
-  .fnav { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 4px 0 6px; }
-  .fnav-l { font-size: 13px; font-weight: 700; margin-right: 2px; }
-  /* The jump pills are deliberately plain: one full-contrast style in both themes. */
-  .fnav-pill { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; font: inherit;
-    font-size: 13px; font-weight: 700; padding: 5px 6px 5px 12px; border-radius: 999px;
-    color: var(--gb-text); border: 2px solid var(--gb-text); background: var(--gb-surface); text-align: left;
-    transition: transform .12s ease; }
-  .fnav-pill:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--gb-text) 10%, var(--gb-surface)); }
-  .fnav-pill:focus-visible { outline: 2px solid var(--gb-text); outline-offset: 2px; }
-  .fnav-n { min-width: 22px; padding: 0 7px; border-radius: 999px; text-align: center; font-size: 12px;
-    font-weight: 800; background: var(--gb-text); color: var(--gb-surface); }
-  .fsec { margin-top: 16px; scroll-margin-top: 84px; }
+  /* Federal: short sections, each in its own colour; the rules scroll in their own box. */
+  .fsec { margin-top: 16px; }
   .fsec-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 6px;
     padding-left: 10px; border-left: 4px solid var(--sc); font-size: 15.5px; }
   .fsec-n { font-size: 12px; font-weight: 800; padding: 1px 9px; border-radius: 999px;
@@ -317,7 +303,6 @@
   @media (max-width: 620px) { .fsec-rows { max-height: 300px; } }
   .hnotices-h { margin: 22px 0 4px; padding-top: 16px; border-top: 2px solid var(--gridline); font-size: 18px; }
   .hnotices-sub { margin: 0; font-size: 14px; }
-  @media (prefers-reduced-motion: reduce) { .fnav-pill { transition: none; } .fnav-pill:hover { transform: none; } }
   .pstate-sub { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--gridline); }
 
   /* ===== Hearings — "Have your say" participation hero ===== */
@@ -347,23 +332,6 @@
   .hh-stat-num { font-family: var(--gb-font-display); font-weight: 600; font-size: 34px; line-height: 1;
     color: var(--series-3); font-variant-numeric: tabular-nums; }
   .hh-stat-lbl { font-size: 12.5px; font-weight: 500; letter-spacing: .03em; color: var(--text-secondary); max-width: 20ch; }
-  /* Quick-nav: jump straight to a jurisdiction's hearings. */
-  .hh-jump { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .hh-jump .hh-jump-lbl { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
-    color: var(--text-muted); margin-right: 2px; }
-  /* Each pill wears its jurisdiction's section accent (--jc, set per pill in JS):
-     coloured text + a matching border over a faint tint of the same colour, so a
-     reader can recognise a state by colour and the pill matches the section it
-     jumps to. Reads in both themes (the tint is a low-alpha mix over the surface). */
-  .hh-jump a { display: inline-flex; align-items: center; gap: 8px; font: inherit; font-size: 14px;
-    font-weight: 650; text-decoration: none; color: var(--text-primary);
-    background: var(--surface-1); border: 2px solid var(--jc, var(--text-primary));
-    border-radius: 999px; padding: 6px 8px 6px 14px; }
-  .hh-jump a:hover { background: color-mix(in srgb, var(--jc, var(--series-1)) 16%, var(--surface-1)); color: var(--text-primary); }
-  /* The count sits in a small filled badge in the section's colour. */
-  .hh-jump a .jn-count { min-width: 24px; text-align: center; padding: 1px 7px; border-radius: 999px;
-    background: var(--jc, var(--text-primary)); color: var(--hh-on-accent); font-size: 12.5px;
-    font-weight: 700; font-variant-numeric: tabular-nums; }
   .hgroup { scroll-margin-top: 84px; }
 
   .hh-hero-art { flex: 0 0 auto; width: 340px; max-width: 46%; filter: drop-shadow(0 0 22px rgba(61,220,132,0.22)); }
@@ -523,10 +491,9 @@
     </div>
   </header>
 
-  <!-- Live metrics + jump-to-jurisdiction, below the hero -->
+  <!-- Live metrics, below the hero -->
   <div class="hh-below">
     <div class="hh-stats" id="hh-stats" role="group" aria-label="Live hearing activity"></div>
-    <nav class="hh-jump" id="hh-jump" aria-label="Jump to a jurisdiction" hidden></nav>
   </div>
 
   <section class="card card--accent card--hearings" id="hearings-card" hidden>
@@ -690,8 +657,9 @@
       // Federal carries only the soonest-closing open rules, plus a few notices of each
       // kind (records with a category) shown in their own sections below.
       const listed = byJur[code].filter((h) => !h.category);
-      const notices = byJur[code].filter((h) => h.category);
-      const shownHere = code === "us" ? listed.length + notices.length : Math.min(listed.length, SHOW_MAX);
+      const notices = noticePreview(byJur[code].filter((h) => h.category));
+      const shownHere = code === "us" ? Math.min(listed.length, SHOW_MAX) + notices.length
+        : Math.min(listed.length, SHOW_MAX);
       const totalHere = code === "us"
         ? (juris.open_total || listed.length) + (juris.notice_total || notices.length) : listed.length;
       head.append(eln("span", "hgroup-count", showing(shownHere, totalHere)));
@@ -717,146 +685,76 @@
       body.append(group);
     });
 
-    // Jump-to-jurisdiction nav (mirrors the group order), so a reader can scroll
-    // straight to the state/jurisdiction they care about.
-    const jump = $("hh-jump");
-    if (jump) {
-      jump.textContent = "";
-      jump.append(eln("span", "hh-jump-lbl", "Jump to"));
-      orderedCodes.forEach((code, gi) => {
-        const juris = portals[code] || { name: code.toUpperCase() };
-        const a = eln("a", null);
-        a.href = "#hg-" + code;
-        // Same accent colour as that jurisdiction's section below (matching group
-        // order), so each pill reads as a coloured chip tied to its section.
-        a.style.setProperty("--jc", "var(" + HG_ACCENTS[gi % HG_ACCENTS.length] + ")");
-        a.append(document.createTextNode(juris.name));
-        a.append(eln("span", "jn-count", String(byJur[code].length)));
-        jump.append(a);
-      });
-      jump.hidden = orderedCodes.length < 2;
-    }
-
     card.hidden = false;
     const f = $("footer");
     if (f) f.textContent = "Committee hearings from " + (data.source || "official sources") + ", refreshed twice daily.";
   }
 
-  // Every list shows at most SHOW_MAX rows ("x of y showing") with a "See all" button
-  // to the official site for the rest.
+  // Every list shows at most SHOW_MAX rows ("x of y showing") with a "See all ↗" link
+  // to the official site for the rest; federal notices show NOTICE_SHOW of each kind.
   const SHOW_MAX = 7;
+  const NOTICE_SHOW = 2;
   function showing(shown, total) { return shown + " of " + total + " showing"; }
-  // target is an official-site URL (opens in a new tab) or a click handler (loads the
-  // rest of the list on the page; it gets the button and the note).
-  function seeAllRow(text, label, target) {
+  function seeAllRow(text, label, url) {
     const more = eln("div", "hgroup-more");
-    const note = eln("span", null, text);
-    more.append(note);
-    let all;
-    if (typeof target === "function") {
-      all = eln("button", "hgroup-portal", label);
-      all.type = "button";
-      all.addEventListener("click", () => target(all, note));
-    } else {
-      all = eln("a", "hgroup-portal", label);
-      all.href = target; all.target = "_blank"; all.rel = "noopener";
-    }
+    more.append(eln("span", null, text));
+    const all = eln("a", "hgroup-portal", label);
+    all.href = url; all.target = "_blank"; all.rel = "noopener";
     more.append(all);
     return more;
   }
-  // Every open notice of one kind (hearings/notices-<kind>.json, written by the
-  // scraper), fetched only when a reader asks for that kind's whole list; cached.
-  const noticeLists = {};
-  function loadNoticeList(key) {
-    if (!noticeLists[key]) {
-      noticeLists[key] = fetch("hearings/notices-" + encodeURIComponent(key) + ".json")
-        .then((r) => (r.ok ? r.json() : null)).catch(() => null)
-        .then((d) => { if (!d || !Array.isArray(d.hearings)) delete noticeLists[key]; return d; });
-    }
-    return noticeLists[key];
+  // The NOTICE_SHOW soonest-closing notices of each kind (the feed is already soonest first).
+  function noticePreview(notices) {
+    const seen = {};
+    return notices.filter((h) => (seen[h.category] = (seen[h.category] || 0) + 1) <= NOTICE_SHOW);
   }
 
-  // USA (Federal) is long (rules + notices of each kind), so it is split into short
-  // sections, each scrolling on its own with a scrollbar in its own colour, and a row
-  // of pills at the top jumps to any of them.
+  // USA (Federal): the rules in their own scrolling section, then "Other federal notices"
+  // with a short, labelled block per kind and one "See all" link to the Federal Register's
+  // list of every open notice.
   const FED_COLORS = {
     rules: "--hh-green", rfi: "--series-1", environment: "--series-4", permits: "--hh-gold",
     meetings: "--series-5", privacy: "--series-7", paperwork: "--series-8", other: "--series-6",
   };
+  function fedSection(key, label, rows, total) {
+    const box = eln("section", "fsec");
+    box.style.setProperty("--sc", "var(" + (FED_COLORS[key] || "--hh-green") + ")");
+    const h = eln("h4", "fsec-h", label);
+    h.append(eln("span", "fsec-n", showing(rows.length, total)));
+    box.append(h);
+    const list = eln("div", "hgroup-rows fsec-rows");
+    rows.forEach((r) => list.append(hearingRow(r)));
+    box.append(list);
+    return box;
+  }
   function federalSections(group, rules, notices, juris) {
-    const sections = [];
     if (rules.length) {
+      const shown = rules.slice(0, SHOW_MAX);
       const total = juris.open_total || rules.length;
-      sections.push({ key: "rules", label: "Proposed & final rules", rows: rules.slice(0, SHOW_MAX), total: total,
-        // The rules link is the Federal Register's list of exactly these, so it can say the count.
-        moreLabel: "See all " + total + " ↗", moreUrl: juris.full_list_url });
-    }
-    (juris.notice_categories || []).forEach((c) => {
-      const rows = notices.filter((h) => h.category === c.key);
-      // The Federal Register has no list of Govbot's notice kinds, so "See all" loads the
-      // kind's whole list right here; each row still links to its official page.
-      if (rows.length) sections.push({ key: c.key, label: c.label, rows: rows.slice(0, SHOW_MAX),
-        total: c.total, note: true, moreLabel: "See all " + c.total });
-    });
-    if (!sections.length) return;
-
-    const nav = eln("div", "fnav");
-    nav.setAttribute("role", "group"); nav.setAttribute("aria-label", "Jump to a federal section");
-    nav.append(eln("span", "fnav-l", "Jump to"));
-    group.append(nav);
-
-    let noticesHead = false;
-    sections.forEach((sec) => {
-      if (sec.note && !noticesHead) {
-        noticesHead = true;
-        group.append(eln("h3", "hnotices-h", "Other federal notices open for comment"));
-        group.append(eln("p", "hnotices-sub", "Agencies also ask for comments on requests for ideas, permits, " +
-          "privacy records, forms and more. The " + SHOW_MAX + " closing soonest of each kind:"));
-      }
-      const box = eln("section", "fsec");
-      box.id = "fed-" + sec.key;
-      box.style.setProperty("--sc", "var(" + (FED_COLORS[sec.key] || "--hh-green") + ")");
-      const h = eln("h4", "fsec-h", sec.label);
-      const count = eln("span", "fsec-n", showing(sec.rows.length, sec.total));
-      h.append(count);
-      box.append(h);
-      const rows = eln("div", "hgroup-rows fsec-rows");
-      sec.rows.forEach((r) => rows.append(hearingRow(r)));
-      box.append(rows);
-
-      const pill = eln("button", "fnav-pill");
-      pill.type = "button";
-      pill.append(document.createTextNode(sec.label));
-      const pillN = eln("span", "fnav-n", String(sec.rows.length));
-      pill.append(pillN);
-
-      if (sec.total > sec.rows.length) {
-        const text = "Showing the " + sec.rows.length + " closing soonest.";
-        box.append(seeAllRow(text, sec.moreLabel, sec.moreUrl || ((btn, note) => {
-          btn.disabled = true; btn.textContent = "Loading…";
-          loadNoticeList(sec.key).then((list) => {
-            if (!list) { btn.disabled = false; btn.textContent = "Couldn't load the list. Try again"; return; }
-            // Same order as the rows already shown, so only the rest is added. Rows past
-            // the first few have no RSS feeds of their own, so they carry no RSS links.
-            list.hearings.slice(sec.rows.length).forEach((r) => rows.append(hearingRow(r, { noFeeds: true })));
-            count.textContent = showing(list.hearings.length, list.total);
-            pillN.textContent = String(list.hearings.length);
-            note.textContent = "Showing all " + list.total + ", closing soonest first.";
-            btn.remove();
-          });
-        })));
+      const box = fedSection("rules", "Proposed & final rules", shown, total);
+      // The rules link is the Federal Register's list of exactly these, so it can say the count.
+      if (total > shown.length && juris.full_list_url) {
+        box.append(seeAllRow("Showing the " + shown.length + " closing soonest.",
+          "See all " + total + " ↗", juris.full_list_url));
       }
       group.append(box);
-      pill.addEventListener("click", () => {
-        const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        box.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-      });
-      nav.append(pill);
+    }
+    const kinds = (juris.notice_categories || [])
+      .map((c) => ({ c: c, rows: notices.filter((h) => h.category === c.key) }))
+      .filter((k) => k.rows.length);
+    if (!kinds.length) return;
+    group.append(eln("h3", "hnotices-h", "Other federal notices open for comment"));
+    group.append(eln("p", "hnotices-sub", "Agencies also ask for comments on requests for ideas, permits, " +
+      "privacy records, forms and more. The " + NOTICE_SHOW + " closing soonest of each kind:"));
+    let shown = 0;
+    kinds.forEach((k) => {
+      shown += k.rows.length;
+      group.append(fedSection(k.c.key, k.c.label, k.rows, k.c.total));
     });
-
-    if (juris.notice_list_url && juris.notice_total) {
-      group.append(seeAllRow(juris.notice_total + " notices are open for comment in all.",
-        "See all " + juris.notice_total + " notices ↗", juris.notice_list_url));
+    const total = juris.notice_total || shown;
+    if (juris.notice_list_url) {
+      group.append(seeAllRow("Showing the " + shown + " closing soonest.",
+        "See all " + total + " ↗", juris.notice_list_url));
     }
   }
 
@@ -867,8 +765,7 @@
     public_comment: "Comment ↗",
   };
 
-  function hearingRow(h, opts) {
-    const feeds = !(opts && opts.noFeeds);
+  function hearingRow(h) {
     const row = eln("div", "hearing-row" + (h.status === "canceled" ? " is-canceled" : ""));
 
     const when = eln("div", "h-when");
@@ -909,7 +806,7 @@
           g.title = "View " + b.id + " in the govbot Legislation Dashboard";
           row.append(g);
         }
-        if (feeds) row.append(billRssTrigger(h, b));
+        row.append(billRssTrigger(h, b));
         list.append(row);
       });
       main.append(list);
@@ -927,7 +824,7 @@
       a.href = href; a.target = "_blank"; a.rel = "noopener";
       actions.append(a);
     }
-    if (feeds) actions.append(hearingRssTrigger(h));
+    actions.append(hearingRssTrigger(h));
     if (actions.childNodes.length) main.append(actions);
     row.append(main);
     return row;
