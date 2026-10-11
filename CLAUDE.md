@@ -180,13 +180,17 @@ its bubble shows. mdbook's docs-search scripts + ~600 KB `searchindex.json` load
 homepage (`index.hbs` loader skips `.gb-landing`).
 
 **Download the data (Explore Legislation, CC BY 4.0).** Anyone can take the bill data: a **"Download the
-data"** outline button in legislation.html's hero (`#dl-open`) opens a panel (`#dl-overlay`, a
+data"** pill in legislation.html's hero (`#dl-open`, `.is-rainbow`: a 3px border in six colours —
+`--dl-rainbow`: #5EBD3E, #FFB900, #F78200, #E23838, #973999, #009CDF — that travels around it, a spinning
+conic gradient behind a page-coloured inner layer, transform-only, paused while a panel is open, still
+under reduced motion) opens a panel (`#dl-overlay`, a
 `.modal-overlay`; `#download` deep-links to it — the header's **Data ▾ → "Download bill data"** item in
 `docs/theme/header.html` points there; closing strips the hash; Escape closes it before the catalog).
 **For spreadsheets:** all bills as one zipped CSV and a state picker for one state's CSV (counts and sizes
 from `downloads/manifest.json`, fetched only when the panel opens). **For developers:** `data.json`,
 `bills/<code>.json`, the manifest, the `govbot-data` repos (full per-bill records via `govbot clone` /
-DuckDB), `catalog.json` / `llms.txt`, and a copyable curl + pandas snippet. A column guide, the source
+DuckDB), `catalog.json` / `llms.txt`, and a copyable curl + pandas snippet. A column guide (expanded by
+default), a six-colour divider (`.dl-rule`, the same six hues), the source
 and the **CC BY 4.0** notice ("credit Govbot (Chi Hack Night)"; `LICENSE-DATA` at the repo root) close the
 panel. In a state's catalog popup, `#dl-state-csv` links that state's pre-built CSV and `#dl-view`
 ("Download these N bills", shown once a search/filter narrows it) builds the same CSV in the browser
@@ -481,7 +485,9 @@ load the entry stays hidden and the rest of the page is unaffected. Below it, th
 "Recent activity" card strip remains
 (`#recent-list`, newest recorded actions, unfiltered, click → bill modal — capped at
 `RECENT_PER_STATE` (2) per jurisdiction so one busy state can't monopolize the strip, up to
-`RECENT_MAX` (12) cards; each card shows the state badge · bill id · relative date · title · latest
+`RECENT_MAX` (12) cards; each card wears a full 2px border that **alternates blue (`--series-1`) / true
+gold (`--rc-gold`, `#E5B94E` dark / `#8A6100` light) each time the state changes** (`renderRecent` sets
+`.is-gold`, so neighbouring states differ and a state's two cards match when adjacent) and shows the state badge · bill id · relative date · title · latest
 action · the bill's **topic chips** (`.rc-tags`, colored dots from `state.tagColor`, omitted when a
 bill has no tags); a gold `.recent-toggle` "Show / Hide recent activity" pill in the section
 head **is always visible and toggles the strip open/closed at any time** (`toggleRecent()` flips a
@@ -711,23 +717,18 @@ participate."), and a
 detailed gold White House line-art (`assets/whitehouse-hero.png`, a transparent-background raster
 so it drops onto the dark hero in both themes); the America-250 `250th` fireworks
 brandbar is kept. (The earlier "See upcoming hearings" CTA button was removed.) **Below** the hero
-sits a `.hh-below` strip carrying two things: the live metrics as a row of **gold civic stat tiles**
+sits a `.hh-below` strip with the live metrics as a row of **gold civic stat tiles**
 (`.hh-stats` / `.hh-stat` — theme-aware, gold display numerals on `--surface-1` glass with a
 gold-tinted border: **two** tiles, "N upcoming hearings and open to public comment" (the count that
-are both upcoming and comment-open) and "N jurisdictions"), and a **jump-to-jurisdiction nav**
-(`.hh-jump`, `#hh-jump`) — a "Jump to" label plus one pill chip per jurisdiction (its full name +
-a `.jn-count` count) linking to that section's `#hg-<code>` anchor (each `.hgroup` gets
-`id="hg-<code>"` in `renderHearings`, ordered federal-first like the groups; `.hgroup` has
-`scroll-margin-top` so the sticky header doesn't cover the target). **The pills are uniform**: full-contrast
-text, a 2px border in the section's accent (`--jc`) and the count in a small filled badge of that colour.
-The jurisdiction sections' 4-sided borders (and the pills that jump to them) **alternate green / gold**
+are both upcoming and comment-open) and "N jurisdictions"). **The "Jump to" pill rows were removed**
+(per request — both the jurisdiction row under the hero and the federal one); `.hgroup` keeps
+`id="hg-<code>"` + `scroll-margin-top` for search's `#hg-<code>` links. The jurisdiction sections' 4-sided borders **alternate green / gold**
 (`HG_ACCENTS = ["--hh-green", "--hh-gold"]`, page tokens tuned per theme: green `#3DDC84`/`#0B7D45`, true
 gold `#E5B94E`/`#8A6100`, since the brand `--gb-gold` is green). Every status pill — "Hearing", "Comment
 due", "Public comment open", "Canceled", the directory's "Live hearings" — shares one readable style
 (full-contrast text, a 1.5px border in the pill's colour `--pc`, a light tint of it), and the "Go to portal" /
 "How to participate" links and each section's top-right portal link are **outline buttons** (2px
-full-contrast border, like the homepage's). The nav is hidden with fewer
-than two jurisdictions. Each hearing still makes participation obvious: a green **"Public comment open"**
+full-contrast border, like the homepage's). Each hearing still makes participation obvious: a green **"Public comment open"**
 badge on the date column and the witness-slip/comment action elevated into a filled green
 `.file-link` pill. **One link per hearing, straight to it** (per request — the old "About the
 committee" link and its committee-page lookups/probes were removed): the pill is the source's
@@ -894,34 +895,23 @@ entry). The ~800 open **notices** (announcements that ask for comments without b
 (a second query, `fetch_fr` follows the API's 1,000-per-page `next_page_url`), sorted into plain kinds by
 title (`fr_notice_category` / `NOTICE_CATEGORIES`: Requests for ideas & information, Environment & wildlife
 reviews, Permits/licenses/approvals, Meetings, Privacy & government records, Forms & paperwork reviews
-(~70%), Other — paperwork is matched first), and only the **7 closing soonest per kind** (`SHOW_MAX`)
+(~70%), Other — paperwork is matched first), and only the **2 closing soonest per kind** (`NOTICE_SHOW`)
 ship, each record carrying its `category`; the `us` entry adds `notice_total`, `notice_categories`
-(key/label/full count) and `notice_list_url`. **A kind's whole list lives in its own file**,
-`hearings/notices-<kind>.json` = `{key, label, total, hearings}` (`notice_lists`, written by
-`--notices-dir`, which deploy-docs.yml points at the granular-feed dir so it ships and is cached with
-it; paperwork, the biggest, is ~600 KB raw / ~50 KB gzipped). The Federal Register has **no list of
-Govbot's kinds** (its search matches whole documents — "request for information" finds ~400, not our 25 —
-and a filter by exact document numbers can't hold 555 numbers in a link: the site answers 414), so a
-kind's **"See all N"** (a `<button>`, no ↗) **loads that file on the page** (`loadNoticeList`, fetched
-only on click, cached) and appends the rest of the rows to the section's scroll box; those extra rows
-have no RSS feeds of their own, so `hearingRow(h, {noFeeds:true})` leaves the RSS links off, and each
-still links to its own Regulations.gov comment form / Federal Register page. A failed load says
-"Couldn't load the list. Try again". The page draws the federal group with
-`federalSections`: a **"Jump to" pill row** (`.fnav-pill`, one per section with its count — plain and
-uniform on purpose: full-contrast text, border and count badge in both themes) that scrolls to that section (`.fsec#fed-<key>`, no hash change), then the
-rules section and, under "Other federal notices open for comment", one **full-width** section per notice
-kind, stacked (long horizontal rows like the rules — the old two-column grid was removed), ending in
-"See all N notices ↗". **Every section is its own short scroll box**, coloured by `FED_COLORS`
-(`.fsec-rows`, 360px; 300px on phones) **with a scrollbar in that section's colour**. **Every list on the
-page shows at most 7** (`SHOW_MAX` in hearings.html too): each federal section and each state reads
-**"x of y showing"** (`showing()`; the federal header totals rules + notices), and a list with more gets a
-`seeAllRow` button **right next to its "Showing the 7 …" text** (`.hgroup-more`, `justify-content:
-flex-start`) — rules → "See all N ↗" (the Federal Register's own list), notice kinds → "See all N" (loads
-the kind's whole list on the page, above), a state → "See all N ↗" to its `portal_url` (search's `#hg-<code>` links land on the state's
-section, which may not show a hearing past the 7th) (the states' `.hgroup-rows` scrollbars use their green/gold accent too); the old
-Regulations.gov
-`DEMO_KEY` path was rate-limited and its placeholder seed had expired, so both were removed) — federal
-leads the list, above the states. It writes `docs/src/dashboard/hearings.json` + a whole-calendar
+(key/label/full count) and `notice_list_url` (the Federal Register's search for every open notice — it
+has no list of Govbot's kinds). The page draws the federal group with `federalSections`: the rules in
+their own colour-bordered scroll box (`.fsec-rows`, 360px; 300px on phones, scrollbar in the section's
+colour, `FED_COLORS`) reading "7 of N showing" with "Showing the 7 closing soonest. **See all N ↗**" (the
+Federal Register's list), then **"Other federal notices open for comment"**: one short block per kind,
+each clearly labelled with its kind and "2 of N showing" (`fedSection`; `noticePreview` keeps 2 per kind
+even from an older file), and **one** line at the bottom — "Showing the X closing soonest. **See all Y ↗**"
+→ `notice_list_url`. (The per-kind "See all" buttons, the `notices-<kind>.json` lists and the scraper's
+`--notices-dir`/`notice_lists` were removed with this.) **Every state list shows at most 7**
+(`SHOW_MAX`), reads **"x of y showing"** (`showing()`; the federal header totals rules + notices), and a
+longer list gets "Showing the next 7. **See all N ↗**" to its `portal_url` (`seeAllRow`, `.hgroup-more`,
+the button right next to the text) — search's `#hg-<code>` links land on the state's section, which may
+not show a hearing past the 7th (the states' `.hgroup-rows` scrollbars use their green/gold accent too);
+the old Regulations.gov `DEMO_KEY` path was rate-limited and its placeholder seed had expired, so both
+were removed) — federal leads the list, above the states. It writes `docs/src/dashboard/hearings.json` + a whole-calendar
 RSS `hearings.xml` + granular RSS feeds under `docs/src/dashboard/hearings/` — per bill
 (`<jurisdiction>-<NORMALIZED_ID>.xml`), per jurisdiction (`<code>.xml`), and per hearing
 (`hearing-<id>.xml`) — so a reader can follow one bill, a whole state, or a single hearing

@@ -38,7 +38,7 @@
           "notice_list_url": { "type": "string", "format": "uri", "description": "Federal only: the official Federal Register list of every notice open for comment." },
           "notice_categories": {
             "type": "array",
-            "description": "Federal only: the notice kinds present, in display order, each with its full count (the document carries only the 7 closing soonest of each; the whole list of a kind is hearings/notices-<key>.json).",
+            "description": "Federal only: the notice kinds present, in display order, each with its full count (the document carries only the 2 closing soonest of each).",
             "items": {
               "type": "object", "required": ["key", "label", "total"], "additionalProperties": false,
               "properties": { "key": { "type": "string" }, "label": { "type": "string" }, "total": { "type": "integer", "minimum": 0 } }

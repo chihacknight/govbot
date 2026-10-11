@@ -409,7 +409,7 @@ class Federal(unittest.TestCase):
         # The fixture's 6 rules carry no category; its 14 notices all do.
         self.assertEqual(sum(1 for h in self.recs if not h.get("category")), 6)
 
-    def test_preview_keeps_up_to_seven_notices_per_kind(self):
+    def test_preview_keeps_two_notices_per_kind(self):
         from datetime import date
         shown, meta = main.federal_preview(self.recs, date(2026, 10, 10))
         notices = [h for h in shown if h.get("category")]
@@ -418,31 +418,15 @@ class Federal(unittest.TestCase):
         self.assertEqual([c["key"] for c in cats],
                          ["rfi", "environment", "permits", "meetings", "privacy", "paperwork", "other"])
         self.assertTrue(all(c["total"] == 2 for c in cats))
-        self.assertEqual(len(notices), 14)   # every kind has <= SHOW_MAX here
+        self.assertEqual(len(notices), 14)   # every kind has <= NOTICE_SHOW here
         self.assertIn("conditions%5Btype%5D%5B%5D=NOTICE", meta["notice_list_url"])
-        # A kind with more than SHOW_MAX open shows only the soonest SHOW_MAX.
+        # A kind with more than NOTICE_SHOW open shows only the soonest NOTICE_SHOW.
         note = next(h for h in self.recs if h.get("category") == "paperwork")
         many = [dict(note, id=f"us-n{i:02d}", scheduled_iso=f"2026-11-{1 + i:02d}") for i in range(12)]
         shown, meta = main.federal_preview(many, date(2026, 10, 10))
-        self.assertEqual([h["id"] for h in shown], [f"us-n{i:02d}" for i in range(7)])
+        self.assertEqual(main.NOTICE_SHOW, 2)
+        self.assertEqual([h["id"] for h in shown], ["us-n00", "us-n01"])
         self.assertEqual(meta["notice_categories"][0]["total"], 12)
-
-    def test_notice_lists_hold_every_notice_by_kind(self):
-        lists = main.notice_lists(self.recs)
-        self.assertEqual(list(lists), ["rfi", "environment", "permits", "meetings", "privacy", "paperwork", "other"])
-        self.assertTrue(all(l["total"] == len(l["hearings"]) == 2 for l in lists.values()))
-        self.assertEqual(lists["privacy"]["label"], "Privacy & government records")
-        # More than SHOW_MAX of a kind: the list keeps all of them, soonest-closing first,
-        # and its first SHOW_MAX are exactly the ones the page already shows.
-        from datetime import date
-        note = next(h for h in self.recs if h.get("category") == "paperwork")
-        many = [dict(note, id=f"us-n{i:02d}", scheduled_iso=f"2026-11-{12 - i:02d}") for i in range(12)]
-        full = main.notice_lists(many)["paperwork"]["hearings"]
-        self.assertEqual(len(full), 12)
-        self.assertEqual([h["scheduled_iso"] for h in full], sorted(h["scheduled_iso"] for h in many))
-        shown, _ = main.federal_preview(many, date(2026, 10, 10))
-        self.assertEqual(full[:main.SHOW_MAX], shown)
-        self.assertEqual(main.notice_lists([h for h in self.recs if not h.get("category")]), {})
 
     def test_us_sorts_first(self):
         from datetime import datetime, timezone

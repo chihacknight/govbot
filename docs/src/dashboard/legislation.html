@@ -184,6 +184,26 @@
   .dl-btn.is-primary { background: var(--gb-primary); border-color: var(--gb-primary); color: var(--gb-on-primary) !important; }
   .dl-btn.is-primary:hover { filter: brightness(1.08); }
   .dl-btn.is-sm { padding: 5px 12px; font-size: 13px; }
+  /* The hero's "Download the data" pill: a six-colour border that travels around it. A square
+     conic gradient spins behind the pill (transform only, so the GPU does it) and an inner
+     page-coloured layer leaves a 3px ring; the text sits on the page colour, readable in both
+     themes. Still under reduced motion, paused while a panel covers the page. */
+  :root { --dl-rainbow: #5EBD3E, #FFB900, #F78200, #E23838, #973999, #009CDF; }
+  .dl-btn.is-rainbow { position: relative; isolation: isolate; overflow: hidden; border: 0; padding: 9px 18px; }
+  .dl-btn.is-rainbow::before { content: ""; position: absolute; z-index: -2; left: 50%; top: 50%; width: 150%;
+    aspect-ratio: 1; background: conic-gradient(var(--dl-rainbow), #5EBD3E);
+    transform: translate(-50%, -50%); animation: dl-spin 4s linear infinite; }
+  .dl-btn.is-rainbow::after { content: ""; position: absolute; z-index: -1; inset: 3px; border-radius: inherit;
+    background: var(--page); }
+  .dl-btn.is-rainbow:hover { background: transparent; }
+  .dl-btn.is-rainbow:hover::after { background: linear-gradient(var(--hover-wash), var(--hover-wash)), var(--page); }
+  @keyframes dl-spin { to { transform: translate(-50%, -50%) rotate(1turn); } }
+  body.dl-open .dl-btn.is-rainbow::before, body.results-open .dl-btn.is-rainbow::before { animation-play-state: paused; }
+  @media (prefers-reduced-motion: reduce) { .dl-btn.is-rainbow::before { animation: none; } }
+  /* Six-colour divider between the column guide and the source/license note. */
+  .dl-rule { height: 5px; margin: 16px 0 0; border: 0; border-radius: 999px;
+    background: linear-gradient(90deg, #5EBD3E 0 16.67%, #FFB900 0 33.33%, #F78200 0 50%,
+      #E23838 0 66.67%, #973999 0 83.33%, #009CDF 0); }
   body.dl-open { overflow: hidden; }
   .dl-card { position: relative; max-width: 860px; padding: 22px 24px 20px; }
   .dl-card h2 { margin: 0 44px 6px 0; font-size: 22px; }
@@ -549,11 +569,17 @@
   .recent-toggleable .section-head-lite:hover { background: var(--hover-wash); }
   .recent-toggleable .section-head-lite:hover .recent-toggle { background: var(--hover-wash); }
   .recent-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(278px, 1fr)); gap: 12px; }
-  .recent-card { text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 7px;
-    background: var(--surface-1); border: 1px solid var(--border); border-left: 3px solid var(--series-1);
+  /* Each card wears a full 2px border that alternates blue / gold from one state to the
+     next (renderRecent sets .is-gold); gold is the true gold, since the brand gold is green. */
+  :root { --rc-gold: #E5B94E; }
+  :root[data-theme="light"] { --rc-gold: #8A6100; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme]) { --rc-gold: #8A6100; } }
+  .recent-card { --rc: var(--series-1); text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 7px;
+    background: var(--surface-1); border: 2px solid var(--rc);
     border-radius: 12px; padding: 14px 16px; font: inherit; color: var(--text-primary); }
-  .recent-card:hover { border-color: var(--baseline); transform: translateY(-2px); transition: transform .12s ease; }
-  .recent-card:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
+  .recent-card.is-gold { --rc: var(--rc-gold); }
+  .recent-card:hover { background: color-mix(in srgb, var(--rc) 8%, var(--surface-1)); transform: translateY(-2px); transition: transform .12s ease; }
+  .recent-card:focus-visible { outline: 2px solid var(--rc); outline-offset: 2px; }
   .rc-top { display: flex; align-items: center; gap: 8px; }
   .rc-top .m-chip { text-align: center; }   /* center multi-line state names in the chip */
   .rc-id { font-size: 12px; font-weight: 600; color: var(--series-1); }
@@ -796,7 +822,7 @@
     <div class="title-row">
       <h1>Explore Legislation</h1>
       <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
-      <button type="button" class="dl-btn" id="dl-open" aria-haspopup="dialog">
+      <button type="button" class="dl-btn is-rainbow" id="dl-open" aria-haspopup="dialog">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
         Download the data</button>
     </div>
@@ -996,7 +1022,7 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
         </div>
       </section>
     </div>
-    <details class="dl-dict">
+    <details class="dl-dict" open>
       <summary>What each column means</summary>
       <dl>
         <dt>Jurisdiction</dt><dd>Two/three-letter code (usa = U.S. Congress)</dd>
@@ -1013,6 +1039,7 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
         <dt>Govbot link</dt><dd>The bill on this page</dd>
       </dl>
     </details>
+    <hr class="dl-rule">
     <p class="dl-license">Source: public government records gathered by the Open States scrapers, tagged by Govbot
       and refreshed twice a day. License: <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0 ↗</a>
       — share and adapt it for any purpose, including commercially; please credit <b>“Govbot (Chi Hack Night)”</b>.
@@ -2450,8 +2477,11 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     }
     host.textContent = "";
     if (!bills.length) { const sec = $("recent"); if (sec) sec.hidden = true; return; }
+    // The border colour flips each time the state changes, so neighbouring states differ.
+    let gold = true, prev = null;
     bills.forEach((b) => {
-      const card = mkel("button", "recent-card"); card.type = "button";
+      if (b.state !== prev) { gold = !gold; prev = b.state; }
+      const card = mkel("button", "recent-card" + (gold ? " is-gold" : "")); card.type = "button";
       const top = mkel("div", "rc-top");
       const stName = state.stateNames[b.state] || (b.state || "").toUpperCase();
       top.append(mchip(stName, "is-state"), mkel("span", "rc-id", b.id), mkel("span", "rc-when", relDate(b.latest_action)));
