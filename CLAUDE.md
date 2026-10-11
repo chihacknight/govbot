@@ -864,10 +864,17 @@ title (`fr_notice_category` / `NOTICE_CATEGORIES`: Requests for ideas & informat
 reviews, Permits/licenses/approvals, Meetings, Privacy & government records, Forms & paperwork reviews
 (~70%), Other — paperwork is matched first), and only the **7 closing soonest per kind** (`SHOW_MAX`)
 ship, each record carrying its `category`; the `us` entry adds `notice_total`, `notice_categories`
-(key/label/full count + `list_url`, a Federal Register search matching that kind from `NOTICE_SEARCH_TERMS`
-— "a | b" OR terms; it searches whole documents while Govbot sorts by title, so it finds more and its
-button says **"See more on the Federal Register ↗"** with no count; "Other" links every open notice) and
-`notice_list_url`. The page draws the federal group with
+(key/label/full count) and `notice_list_url`. **A kind's whole list lives in its own file**,
+`hearings/notices-<kind>.json` = `{key, label, total, hearings}` (`notice_lists`, written by
+`--notices-dir`, which deploy-docs.yml points at the granular-feed dir so it ships and is cached with
+it; paperwork, the biggest, is ~600 KB raw / ~50 KB gzipped). The Federal Register has **no list of
+Govbot's kinds** (its search matches whole documents — "request for information" finds ~400, not our 25 —
+and a filter by exact document numbers can't hold 555 numbers in a link: the site answers 414), so a
+kind's **"See all N"** (a `<button>`, no ↗) **loads that file on the page** (`loadNoticeList`, fetched
+only on click, cached) and appends the rest of the rows to the section's scroll box; those extra rows
+have no RSS feeds of their own, so `hearingRow(h, {noFeeds:true})` leaves the RSS links off, and each
+still links to its own Regulations.gov comment form / Federal Register page. A failed load says
+"Couldn't load the list. Try again". The page draws the federal group with
 `federalSections`: a **"Jump to" pill row** (`.fnav-pill`, one per section with its count — plain and
 uniform on purpose: full-contrast text, border and count badge in both themes) that scrolls to that section (`.fsec#fed-<key>`, no hash change), then the
 rules section and, under "Other federal notices open for comment", one **full-width** section per notice
@@ -876,8 +883,9 @@ kind, stacked (long horizontal rows like the rules — the old two-column grid w
 (`.fsec-rows`, 360px; 300px on phones) **with a scrollbar in that section's colour**. **Every list on the
 page shows at most 7** (`SHOW_MAX` in hearings.html too): each federal section and each state reads
 **"x of y showing"** (`showing()`; the federal header totals rules + notices), and a list with more gets a
-`seeAllRow` button to the official site — rules → "See all N ↗", notice kinds → "See more on the Federal
-Register ↗", a state → "See all N ↗" to its `portal_url` (search's `#hg-<code>` links land on the state's
+`seeAllRow` button **right next to its "Showing the 7 …" text** (`.hgroup-more`, `justify-content:
+flex-start`) — rules → "See all N ↗" (the Federal Register's own list), notice kinds → "See all N" (loads
+the kind's whole list on the page, above), a state → "See all N ↗" to its `portal_url` (search's `#hg-<code>` links land on the state's
 section, which may not show a hearing past the 7th) (the states' `.hgroup-rows` scrollbars use their green/gold accent too); the old
 Regulations.gov
 `DEMO_KEY` path was rate-limited and its placeholder seed had expired, so both were removed) — federal

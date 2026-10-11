@@ -813,34 +813,16 @@ def parse_fr_documents(json_text):
     return out
 
 
-# The page shows at most SHOW_MAX of each list (the soonest-closing), with a button
-# to the full official list.
+# The page shows at most SHOW_MAX of each list (the soonest-closing), with a "See all"
+# button: the Federal Register's list for the rules, the notice_lists() file for a kind.
 SHOW_MAX = 7
 
-# A Federal Register search that matches each notice kind. Govbot sorts notices by
-# title and the Federal Register searches whole documents, so these lists are wider
-# than the kind (the page doesn't promise the same count). "Other" has no search of
-# its own and uses the list of every open notice.
-NOTICE_SEARCH_TERMS = {
-    "rfi": '"request for information" | "request for comments" | "request for input"'
-           ' | "advance notice" | "petition for rulemaking"',
-    "environment": '"environmental impact statement" | "environmental assessment"'
-                   ' | "endangered species" | "resource management plan"',
-    "permits": "permit | license | exemption | waiver | authorization",
-    "meetings": 'meeting | "public hearing" | "listening session" | webinar | workshop',
-    "privacy": '"privacy act" | "system of records"',
-    "paperwork": '"information collection" | "paperwork reduction act" | "omb review"',
-}
-
-
-def fr_full_list_url(today, types=RULE_TYPES, term=None):
+def fr_full_list_url(today, types=RULE_TYPES):
     """The Federal Register's own search page for documents of `types` whose comment
-    period is still open, optionally matching `term` (its HTML search takes the API's
-    conditions, with the date as MM/DD/YYYY)."""
+    period is still open (its HTML search takes the API's conditions, with the date
+    as MM/DD/YYYY)."""
     q = [("conditions[comment_date][gte]", f"{today:%m/%d/%Y}")]
     q += [("conditions[type][]", t) for t in types]
-    if term:
-        q.append(("conditions[term]", term))
     return "https://www.federalregister.gov/documents/search?" + urllib.parse.urlencode(q)
 
 
@@ -853,19 +835,29 @@ def federal_preview(recs, today):
     shown = rules[:SHOW_MAX]
     meta = {"open_total": len(rules), "full_list_url": fr_full_list_url(today)}
     if notices:
-        all_notices = fr_full_list_url(today, NOTICE_TYPES)
         cats = []
         for key, label in [(k, l) for k, l, _ in NOTICE_CATEGORIES] + [NOTICE_OTHER]:
             these = [h for h in notices if h["category"] == key]
             if these:
                 shown += these[:SHOW_MAX]
-                term = NOTICE_SEARCH_TERMS.get(key)
-                cats.append({"key": key, "label": label, "total": len(these),
-                             "list_url": fr_full_list_url(today, NOTICE_TYPES, term)
-                             if term else all_notices})
+                cats.append({"key": key, "label": label, "total": len(these)})
         meta.update({"notice_total": len(notices), "notice_categories": cats,
-                     "notice_list_url": all_notices})
+                     "notice_list_url": fr_full_list_url(today, NOTICE_TYPES)})
     return shown, meta
+
+
+def notice_lists(recs):
+    """Pure: every open federal notice, grouped by kind and soonest-closing first, for
+    the page's "See all N" buttons. One file per kind, {key, label, total, hearings},
+    fetched only when a reader asks for that kind's whole list — Govbot's kinds have
+    no matching list on the Federal Register itself."""
+    order = lambda h: (h["scheduled_iso"] or "9999", h["id"])
+    out = {}
+    for key, label in [(k, l) for k, l, _ in NOTICE_CATEGORIES] + [NOTICE_OTHER]:
+        these = sorted((h for h in recs if h.get("category") == key), key=order)
+        if these:
+            out[key] = {"key": key, "label": label, "total": len(these), "hearings": these}
+    return out
 
 
 def fetch_fr(url, max_pages=3):
@@ -1275,6 +1267,9 @@ def main():
                          "one per hearing (hearing-<id>.xml), so readers can follow a "
                          "single bill, a whole state, or one hearing instead of the "
                          "entire calendar")
+    ap.add_argument("--notices-dir", default=None,
+                    help="Also write every open federal notice, one file per kind "
+                         "(notices-<kind>.json), for the page's \"See all\" buttons")
     ap.add_argument("--dashboard-data", default="docs/src/dashboard/data.json",
                     help="govbot bill dataset (data.json) used to enrich hearing "
                          "bills with their govbot title + topic tags")
@@ -1315,6 +1310,11 @@ def main():
         if n:
             print(f"enriched {n} hearing bills from govbot data", file=sys.stderr)
 
+    # Every open notice by kind, taken before assemble() keeps only a few of each
+    # (same "not closed yet" rule as assemble(), so the totals match the page's).
+    today = now.strftime("%Y-%m-%d")
+    lists = notice_lists([h for h in hearings if h["jurisdiction"] == "us"
+                          and (not h.get("scheduled_iso") or h["scheduled_iso"][:10] >= today)])
     doc = assemble(hearings, codes, source, now)
     text = json.dumps(doc, indent=2, ensure_ascii=False) + "\n"
     if args.output == "-":
@@ -1336,6 +1336,14 @@ def main():
         for fname, xml in feeds.items():
             (outdir / fname).write_text(xml)
         print(f"wrote {len(feeds)} granular RSS feeds to {outdir}", file=sys.stderr)
+
+    if args.notices_dir and lists:
+        outdir = Path(args.notices_dir)
+        outdir.mkdir(parents=True, exist_ok=True)
+        for key, data in lists.items():
+            (outdir / f"notices-{key}.json").write_text(
+                json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n")
+        print(f"wrote {len(lists)} notice lists to {outdir}", file=sys.stderr)
     return 0
 
 

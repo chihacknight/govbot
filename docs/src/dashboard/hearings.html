@@ -285,9 +285,12 @@
     border: 2px solid var(--text-primary); border-radius: 999px; padding: 5px 13px; white-space: nowrap; }
   .pstate-link:hover, .hgroup-portal:hover, .details-link:hover { background: var(--hover-wash); border-color: var(--hh-green); }
   .pstate-link { margin-top: auto; }
-  .hgroup-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  .hgroup-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start;
     gap: 8px 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gridline); font-size: 14px; }
   .hgroup-more .hgroup-portal { margin-left: 0; }
+  /* A notice kind's "See all" is a button (it loads the list here), styled like the links. */
+  button.hgroup-portal { background: transparent; font-family: inherit; cursor: pointer; }
+  button.hgroup-portal:disabled { cursor: progress; }
   /* Federal: pill nav + short sections, each with its own colourful scrollbar */
   .fnav { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 4px 0 6px; }
   .fnav-l { font-size: 13px; font-weight: 700; margin-right: 2px; }
@@ -737,13 +740,34 @@
   // to the official site for the rest.
   const SHOW_MAX = 7;
   function showing(shown, total) { return shown + " of " + total + " showing"; }
-  function seeAllRow(text, label, url) {
+  // target is an official-site URL (opens in a new tab) or a click handler (loads the
+  // rest of the list on the page; it gets the button and the note).
+  function seeAllRow(text, label, target) {
     const more = eln("div", "hgroup-more");
-    more.append(eln("span", null, text));
-    const all = eln("a", "hgroup-portal", label);
-    all.href = url; all.target = "_blank"; all.rel = "noopener";
+    const note = eln("span", null, text);
+    more.append(note);
+    let all;
+    if (typeof target === "function") {
+      all = eln("button", "hgroup-portal", label);
+      all.type = "button";
+      all.addEventListener("click", () => target(all, note));
+    } else {
+      all = eln("a", "hgroup-portal", label);
+      all.href = target; all.target = "_blank"; all.rel = "noopener";
+    }
     more.append(all);
     return more;
+  }
+  // Every open notice of one kind (hearings/notices-<kind>.json, written by the
+  // scraper), fetched only when a reader asks for that kind's whole list; cached.
+  const noticeLists = {};
+  function loadNoticeList(key) {
+    if (!noticeLists[key]) {
+      noticeLists[key] = fetch("hearings/notices-" + encodeURIComponent(key) + ".json")
+        .then((r) => (r.ok ? r.json() : null)).catch(() => null)
+        .then((d) => { if (!d || !Array.isArray(d.hearings)) delete noticeLists[key]; return d; });
+    }
+    return noticeLists[key];
   }
 
   // USA (Federal) is long (rules + notices of each kind), so it is split into short
@@ -763,11 +787,10 @@
     }
     (juris.notice_categories || []).forEach((c) => {
       const rows = notices.filter((h) => h.category === c.key);
-      // Govbot sorts notices into kinds by title; the Federal Register's matching search
-      // looks at whole documents and finds more, so its button names no count.
+      // The Federal Register has no list of Govbot's notice kinds, so "See all" loads the
+      // kind's whole list right here; each row still links to its official page.
       if (rows.length) sections.push({ key: c.key, label: c.label, rows: rows.slice(0, SHOW_MAX),
-        total: c.total, note: true, moreLabel: "See more on the Federal Register ↗",
-        moreUrl: c.list_url || juris.notice_list_url });
+        total: c.total, note: true, moreLabel: "See all " + c.total });
     });
     if (!sections.length) return;
 
@@ -788,20 +811,36 @@
       box.id = "fed-" + sec.key;
       box.style.setProperty("--sc", "var(" + (FED_COLORS[sec.key] || "--hh-green") + ")");
       const h = eln("h4", "fsec-h", sec.label);
-      h.append(eln("span", "fsec-n", showing(sec.rows.length, sec.total)));
+      const count = eln("span", "fsec-n", showing(sec.rows.length, sec.total));
+      h.append(count);
       box.append(h);
       const rows = eln("div", "hgroup-rows fsec-rows");
       sec.rows.forEach((r) => rows.append(hearingRow(r)));
       box.append(rows);
-      if (sec.moreUrl && sec.total > sec.rows.length) {
-        box.append(seeAllRow("Showing the " + sec.rows.length + " closing soonest.", sec.moreLabel, sec.moreUrl));
-      }
-      group.append(box);
 
       const pill = eln("button", "fnav-pill");
       pill.type = "button";
       pill.append(document.createTextNode(sec.label));
-      pill.append(eln("span", "fnav-n", String(sec.rows.length)));
+      const pillN = eln("span", "fnav-n", String(sec.rows.length));
+      pill.append(pillN);
+
+      if (sec.total > sec.rows.length) {
+        const text = "Showing the " + sec.rows.length + " closing soonest.";
+        box.append(seeAllRow(text, sec.moreLabel, sec.moreUrl || ((btn, note) => {
+          btn.disabled = true; btn.textContent = "Loading…";
+          loadNoticeList(sec.key).then((list) => {
+            if (!list) { btn.disabled = false; btn.textContent = "Couldn't load the list. Try again"; return; }
+            // Same order as the rows already shown, so only the rest is added. Rows past
+            // the first few have no RSS feeds of their own, so they carry no RSS links.
+            list.hearings.slice(sec.rows.length).forEach((r) => rows.append(hearingRow(r, { noFeeds: true })));
+            count.textContent = showing(list.hearings.length, list.total);
+            pillN.textContent = String(list.hearings.length);
+            note.textContent = "Showing all " + list.total + ", closing soonest first.";
+            btn.remove();
+          });
+        })));
+      }
+      group.append(box);
       pill.addEventListener("click", () => {
         const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         box.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
@@ -822,7 +861,8 @@
     public_comment: "Comment ↗",
   };
 
-  function hearingRow(h) {
+  function hearingRow(h, opts) {
+    const feeds = !(opts && opts.noFeeds);
     const row = eln("div", "hearing-row" + (h.status === "canceled" ? " is-canceled" : ""));
 
     const when = eln("div", "h-when");
@@ -863,7 +903,7 @@
           g.title = "View " + b.id + " in the govbot Legislation Dashboard";
           row.append(g);
         }
-        row.append(billRssTrigger(h, b));
+        if (feeds) row.append(billRssTrigger(h, b));
         list.append(row);
       });
       main.append(list);
@@ -881,7 +921,7 @@
       a.href = href; a.target = "_blank"; a.rel = "noopener";
       actions.append(a);
     }
-    actions.append(hearingRssTrigger(h));
+    if (feeds) actions.append(hearingRssTrigger(h));
     if (actions.childNodes.length) main.append(actions);
     row.append(main);
     return row;

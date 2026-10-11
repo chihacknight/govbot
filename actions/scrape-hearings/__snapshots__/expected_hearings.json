@@ -14,44 +14,37 @@
         {
           "key": "rfi",
           "label": "Requests for ideas & information",
-          "total": 2,
-          "list_url": "https://www.federalregister.gov/documents/search?conditions%5Bcomment_date%5D%5Bgte%5D=08%2F28%2F2026&conditions%5Btype%5D%5B%5D=NOTICE&conditions%5Bterm%5D=%22request+for+information%22+%7C+%22request+for+comments%22+%7C+%22request+for+input%22+%7C+%22advance+notice%22+%7C+%22petition+for+rulemaking%22"
+          "total": 2
         },
         {
           "key": "environment",
           "label": "Environment & wildlife reviews",
-          "total": 2,
-          "list_url": "https://www.federalregister.gov/documents/search?conditions%5Bcomment_date%5D%5Bgte%5D=08%2F28%2F2026&conditions%5Btype%5D%5B%5D=NOTICE&conditions%5Bterm%5D=%22environmental+impact+statement%22+%7C+%22environmental+assessment%22+%7C+%22endangered+species%22+%7C+%22resource+management+plan%22"
+          "total": 2
         },
         {
           "key": "permits",
           "label": "Permits, licenses & approvals",
-          "total": 2,
-          "list_url": "https://www.federalregister.gov/documents/search?conditions%5Bcomment_date%5D%5Bgte%5D=08%2F28%2F2026&conditions%5Btype%5D%5B%5D=NOTICE&conditions%5Bterm%5D=permit+%7C+license+%7C+exemption+%7C+waiver+%7C+authorization"
+          "total": 2
         },
         {
           "key": "meetings",
           "label": "Meetings & listening sessions",
-          "total": 2,
-          "list_url": "https://www.federalregister.gov/documents/search?conditions%5Bcomment_date%5D%5Bgte%5D=08%2F28%2F2026&conditions%5Btype%5D%5B%5D=NOTICE&conditions%5Bterm%5D=meeting+%7C+%22public+hearing%22+%7C+%22listening+session%22+%7C+webinar+%7C+workshop"
+          "total": 2
         },
         {
           "key": "privacy",
           "label": "Privacy & government records",
-          "total": 2,
-          "list_url": "https://www.federalregister.gov/documents/search?conditions%5Bcomment_date%5D%5Bgte%5D=08%2F28%2F2026&conditions%5Btype%5D%5B%5D=NOTICE&conditions%5Bterm%5D=%22privacy+act%22+%7C+%22system+of+records%22"
+          "total": 2
         },
         {
           "key": "paperwork",
           "label": "Forms & paperwork reviews",
-          "total": 2,
-          "list_url": "https://www.federalregister.gov/documents/search?conditions%5Bcomment_date%5D%5Bgte%5D=08%2F28%2F2026&conditions%5Btype%5D%5B%5D=NOTICE&conditions%5Bterm%5D=%22information+collection%22+%7C+%22paperwork+reduction+act%22+%7C+%22omb+review%22"
+          "total": 2
         },
         {
           "key": "other",
           "label": "Other notices",
-          "total": 2,
-          "list_url": "https://www.federalregister.gov/documents/search?conditions%5Bcomment_date%5D%5Bgte%5D=08%2F28%2F2026&conditions%5Btype%5D%5B%5D=NOTICE"
+          "total": 2
         }
       ],
       "notice_list_url": "https://www.federalregister.gov/documents/search?conditions%5Bcomment_date%5D%5Bgte%5D=08%2F28%2F2026&conditions%5Btype%5D%5B%5D=NOTICE"

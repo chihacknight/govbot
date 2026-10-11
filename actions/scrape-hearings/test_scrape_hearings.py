@@ -420,18 +420,29 @@ class Federal(unittest.TestCase):
         self.assertTrue(all(c["total"] == 2 for c in cats))
         self.assertEqual(len(notices), 14)   # every kind has <= SHOW_MAX here
         self.assertIn("conditions%5Btype%5D%5B%5D=NOTICE", meta["notice_list_url"])
-        # Each kind links a matching Federal Register search; "Other" has none of its
-        # own and links every open notice.
-        by = {c["key"]: c["list_url"] for c in cats}
-        self.assertIn("conditions%5Bterm%5D=%22privacy+act%22", by["privacy"])
-        self.assertIn("conditions%5Btype%5D%5B%5D=NOTICE", by["privacy"])
-        self.assertEqual(by["other"], meta["notice_list_url"])
         # A kind with more than SHOW_MAX open shows only the soonest SHOW_MAX.
         note = next(h for h in self.recs if h.get("category") == "paperwork")
         many = [dict(note, id=f"us-n{i:02d}", scheduled_iso=f"2026-11-{1 + i:02d}") for i in range(12)]
         shown, meta = main.federal_preview(many, date(2026, 10, 10))
         self.assertEqual([h["id"] for h in shown], [f"us-n{i:02d}" for i in range(7)])
         self.assertEqual(meta["notice_categories"][0]["total"], 12)
+
+    def test_notice_lists_hold_every_notice_by_kind(self):
+        lists = main.notice_lists(self.recs)
+        self.assertEqual(list(lists), ["rfi", "environment", "permits", "meetings", "privacy", "paperwork", "other"])
+        self.assertTrue(all(l["total"] == len(l["hearings"]) == 2 for l in lists.values()))
+        self.assertEqual(lists["privacy"]["label"], "Privacy & government records")
+        # More than SHOW_MAX of a kind: the list keeps all of them, soonest-closing first,
+        # and its first SHOW_MAX are exactly the ones the page already shows.
+        from datetime import date
+        note = next(h for h in self.recs if h.get("category") == "paperwork")
+        many = [dict(note, id=f"us-n{i:02d}", scheduled_iso=f"2026-11-{12 - i:02d}") for i in range(12)]
+        full = main.notice_lists(many)["paperwork"]["hearings"]
+        self.assertEqual(len(full), 12)
+        self.assertEqual([h["scheduled_iso"] for h in full], sorted(h["scheduled_iso"] for h in many))
+        shown, _ = main.federal_preview(many, date(2026, 10, 10))
+        self.assertEqual(full[:main.SHOW_MAX], shown)
+        self.assertEqual(main.notice_lists([h for h in self.recs if not h.get("category")]), {})
 
     def test_us_sorts_first(self):
         from datetime import datetime, timezone
