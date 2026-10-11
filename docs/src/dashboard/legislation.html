@@ -1203,7 +1203,7 @@
         // only, so each sponsor's full roster name is added too, letting "john" find
         // Sen. John Doe's bills; it's rebuilt once if the roster arrives later.
         if (b._hay === undefined || (peopleIndex && !b._hayFull)) {
-          const full = b.sponsors.map((s) => fullSponsorName(b.state, s)).join(" ");
+          const full = b.sponsors.map((s) => rosterSearchName(b.state, s) + " " + flipName(s)).join(" ");
           b._hay = (b.id + " " + b.title + " " + b.sponsors.join(" ") + " " + full).toLowerCase();
           b._hayN = b._hay.replace(/[^a-z0-9]/g, "");
           b._hayFull = !!peopleIndex;
@@ -1865,6 +1865,29 @@
   // gives a surname. A name that already reads "First Last" is kept verbatim
   // (we don't rewrite a name the source already spelled out); a bare surname is
   // filled in only when it resolves to exactly one legislator.
+  // A "Last, First" sponsor as "First Last" (for search only), so "joshua hernandez" finds
+  // "Hernandez, Joshua N." even when the roster doesn't know them; "" when not that form.
+  // A trailing Jr./III and Missouri's district tag ("Gregory (21), Kurtis") are dropped.
+  function flipName(name) {
+    const s = String(name || "").replace(/,?\s*(?:jr|sr|ii|iii|iv|v)\.?\s*$/i, "").trim();
+    const i = s.indexOf(",");
+    return i < 0 ? "" : s.slice(i + 1).trim() + " " + s.slice(0, i).replace(/\(\d+\)/g, "").trim();
+  }
+
+  // The roster's full name for a sponsor, for search only ("K. Brown" → "Kyle Brown",
+  // "Rodric Bray" → "Rod Bray", "Aylward" → "Aaron Aylward"), or "". When the stored name
+  // carries a first name or initial, the roster person's must start with the same letter,
+  // so a former legislator is never mixed up with a current one of the same surname.
+  function rosterSearchName(state, name) {
+    const m = matchLegislator(state, name);
+    if (!m) return "";
+    const raw = String(name).replace(/,?\s*(?:jr|sr|ii|iii|iv|v)\.?\s*$/i, "").trim();  // drop "Jr."
+    const c = raw.indexOf(",");
+    const given = c >= 0 ? raw.slice(c + 1).trim() : (/\s/.test(raw) ? raw.split(/\s+/)[0] : "");
+    const g = given.replace(/[^A-Za-z]/g, "").charAt(0).toLowerCase();
+    return g && (m[0] || "").trim().charAt(0).toLowerCase() !== g ? "" : m[1];
+  }
+
   function fullSponsorName(state, name) {
     const raw = name ? String(name).trim() : name;
     if (!raw) return raw;

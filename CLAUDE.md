@@ -491,9 +491,14 @@ whenever a filter/search is active, and adds `body.results-open` to lock scroll;
 activity stay on screen as the dimmed backdrop, and the map's selected-state pulse (it animates a
 `filter`, a repaint every frame) is paused while the catalog or a bill card covers it. The catalog
 search text is built once per bill (`b._hay` / `b._hayN`), not on every keystroke, and **includes each
-sponsor's full roster name** (`fullSponsorName`) — some states (SD, AK, WY…) store sponsors by surname
-only ("Aylward"), so a first-name search like "john" found nothing; the text is rebuilt once if
-`people.json` arrives after the first search (`b._hayFull`). The popped `#results-card` (`.results-modal`) animates in with
+sponsor's roster full name** (`rosterSearchName`) plus a "First Last" flip of a "Last, First" name
+(`flipName`) — sponsors are stored as "Aylward" (SD…), "K. Brown" (CO), "Rodric Bray" (IN, roster "Rod"),
+"Hernandez, Joshua N." (NM), so a first- or full-name search used to miss them. When the stored name has a
+first name/initial, the roster person's must start with the same letter (a former legislator is never
+read as a current namesake); a surname shared by two legislators stays unresolved (never guessed). The text
+is rebuilt once if `people.json` arrives after the first search (`b._hayFull`). Checked against live data
+in every state: ~97% of person-sponsor mentions are findable by first name; the rest are shared surnames
+(MS/SC/TN…), legislators no longer in the current roster, and the territories' initials-only names (MP). The popped `#results-card` (`.results-modal`) animates in with
 `@keyframes results-pop`, carries an **X close button** (`#results-x`, top-right) and a
 jurisdiction-named title (`resultsTitle` → "Wyoming bills (N)"). **Every sortable column header
 carries a persistent sort arrow** — a muted up/down glyph (`.arrow.is-idle`, "⇅") when idle so the
