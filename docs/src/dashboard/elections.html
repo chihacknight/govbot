@@ -7,6 +7,10 @@
 <title>Govbot — Illinois Elections</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22t%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23161E2C%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23090D15%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%237CEBB0%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2331BE73%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22b%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23C8F7DD%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%235FE09F%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2261%22%20height%3D%2261%22%20rx%3D%2215%22%20fill%3D%22url(%23t)%22%2F%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2261%22%20height%3D%2261%22%20rx%3D%2215%22%20fill%3D%22none%22%20stroke%3D%22%232B3446%22%20stroke-width%3D%221%22%2F%3E%3Crect%20x%3D%2218%22%20y%3D%2248%22%20width%3D%2228%22%20height%3D%224.6%22%20rx%3D%222.3%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%2214.5%22%20y%3D%2253.4%22%20width%3D%2235%22%20height%3D%223.2%22%20rx%3D%221.6%22%20fill%3D%22%231E9E5C%22%2F%3E%3Cg%20transform%3D%22translate(31%2024)%20rotate(70)%22%3E%3Cpath%20d%3D%22M0%20-3.4%20L20%20-2.6%20Q26%20-2.2%2026.5%200%20Q26%202.2%2020%202.6%20L0%203.4%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Ccircle%20cx%3D%2227%22%20cy%3D%220%22%20r%3D%223%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%22-4.2%22%20width%3D%223%22%20height%3D%228.4%22%20rx%3D%221.2%22%20fill%3D%22%232BB56C%22%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(31%2024)%20rotate(-14)%22%3E%3Cpath%20d%3D%22M-5%20-7%20L-15%20-10.5%20A3.2%2010.5%200%200%200%20-15%2010.5%20L-5%207%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Cpath%20d%3D%22M5%20-7%20L15%20-10.5%20A3.2%2010.5%200%200%201%2015%2010.5%20L5%207%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%22-5.5%22%20y%3D%22-9%22%20width%3D%2211%22%20height%3D%2218%22%20rx%3D%222%22%20fill%3D%22url(%23b)%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <style>
+  /* The office cards' alternating accents: green and true gold (the brand --gb-gold is green). */
+  :root { --el-green: #3DDC84; --el-gold: #E5B94E; }
+  :root[data-theme="light"] { --el-green: #0B7D45; --el-gold: #8A6100; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme]) { --el-green: #0B7D45; --el-gold: #8A6100; } }
 
   * { box-sizing: border-box; }
   body {
@@ -189,6 +193,7 @@
   .gm-source-t { font-size: 13px; font-weight: 700; color: var(--gc, var(--series-2)); }
   .gm-source-d { font-size: 11.5px; line-height: 1.35; color: var(--text-secondary); }
   .gm-body { flex: 1; overflow-y: auto; padding: 16px 22px; display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 12px; align-content: start; }
+  .gm-body.gm-body--one { grid-template-columns: minmax(0, 1fr); }   /* one race, full width */
   /* Off-screen race cards (each with a Chicago SVG map) are skipped while scrolling. */
   .gm-body .race { content-visibility: auto; contain-intrinsic-size: 0 460px; }
   .gm-empty { grid-column: 1 / -1; color: var(--text-muted); font-size: 13px; padding: 8px 2px; }
@@ -197,9 +202,9 @@
   .gm-close:hover { border-color: var(--text-muted); color: var(--text-primary); }
   @media (max-width: 620px) { .gm-body { grid-template-columns: 1fr; } }
   .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; }
-  .badge.ballot { color: var(--series-1); border-color: color-mix(in srgb, var(--series-1) 55%, transparent); }
-  .badge.seats { color: var(--series-5); border-color: color-mix(in srgb, var(--series-5) 55%, transparent); }
-  .badge.first { color: #fff; background: var(--series-2); border-color: var(--series-2); }
+  .badge.ballot { color: var(--text-primary); border: 1.5px solid var(--series-1); background: color-mix(in srgb, var(--series-1) 14%, transparent); }
+  .badge.seats { color: var(--text-primary); border: 1.5px solid var(--series-5); background: color-mix(in srgb, var(--series-5) 14%, transparent); }
+  .badge.first { color: var(--gb-on-primary); background: var(--el-green); border-color: var(--el-green); }
   .badge.count { color: var(--text-primary); border-color: var(--baseline); font-weight: 700; }
   /* per-race locator map (inline SVG from maps.json) — a GOLD base map (state
      silhouette / city wards) with a GREEN pulsing highlight on the district, so
@@ -245,7 +250,7 @@
      a little extra gap separates the two categories so they read as distinct groups. */
   .race-map .map-hoods { margin-top: 6px; font-size: 10.8px; color: var(--text-secondary); line-height: 1.45; }
   .race-map .map-hoods + .map-hoods { margin-top: 10px; }
-  .race-map .map-hoods .mh-label { display: block; margin-bottom: 2px; color: var(--rm-gold);
+  .race-map .map-hoods .mh-label { display: block; margin-bottom: 2px; color: var(--el-gold);
     font-weight: 800; text-transform: uppercase; letter-spacing: .05em; font-size: 9.5px; }
 
   .why {
@@ -264,12 +269,12 @@
   .cand-name a { color: var(--text-primary); text-decoration: none; }
   .cand-name a:hover { color: var(--series-1); text-decoration: underline; }
   .cand-meta { display: flex; flex-wrap: wrap; gap: 5px 6px; margin-top: 4px; align-items: center; }
-  .pchip { font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); }
-  .pchip.on_ballot { color: var(--series-4); border-color: var(--series-4); }
-  .pchip.filed { color: var(--series-1); border-color: color-mix(in srgb, var(--series-1) 55%, transparent); }
-  .pchip.objected { color: var(--series-3); border-color: var(--series-3); }
-  .pchip.withdrawn { color: var(--text-muted); }
-  .pchip.removed { color: var(--series-6); border-color: var(--series-6); }
+  .pchip { --pc: var(--baseline); font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; padding: 1px 7px; border-radius: 999px;
+    border: 1.5px solid var(--pc); background: color-mix(in srgb, var(--pc) 14%, transparent); color: var(--text-primary); }
+  .pchip.on_ballot { --pc: var(--series-4); }
+  .pchip.filed { --pc: var(--series-1); }
+  .pchip.objected { --pc: var(--series-3); }
+  .pchip.removed { --pc: var(--series-6); }
   .mini { font-size: 11.5px; color: var(--text-muted); }
   .mini b { color: var(--text-secondary); font-weight: 600; }
   .cand-links { font-size: 11.5px; font-weight: 600; }
@@ -277,10 +282,11 @@
   .cand-money { margin-top: 5px; font-size: 11.5px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 10px; }
   .cand-money .m-fig { display: inline-flex; gap: 4px; }
   .cand-money .m-fig .m-lbl { color: var(--text-muted); }
+  .cand-money .m-head { font-weight: 700; }
   .cand-money .m-fig .m-val { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--series-4); }
   .cand-money .m-fig.spent .m-val { color: var(--text-secondary); }
   .cand-money .m-cmte { color: var(--text-muted); font-size: 10.5px; width: 100%; }
-  .cand-money .m-cmte a { font-weight: 600; }
+  .cand-money .m-cmte a, .src-link { font-weight: 650; color: var(--gb-link); }
   /* results (post-Election-Night) */
   .results { border: 1px solid color-mix(in srgb, var(--series-4) 45%, var(--border)); border-radius: 10px; padding: 9px 11px; background: color-mix(in srgb, var(--series-4) 7%, var(--surface-1)); display: flex; flex-direction: column; gap: 7px; }
   .results-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-size: 12px; }
@@ -308,16 +314,16 @@
   /* Color-coded party pill (the party name itself), used on candidates, incumbents
      and potential candidates — Democratic blue / Republican red / else neutral. */
   .party-pill { display: inline-block; font-size: 11px; font-weight: 700; margin-left: 6px;
-    padding: 1px 8px; border-radius: 999px; vertical-align: middle;
-    background: color-mix(in srgb, currentColor 13%, transparent); }
-  .party-pill.dem { color: var(--series-1); }
-  .party-pill.rep { color: var(--series-6); }
-  .party-pill.oth { color: var(--text-muted); }
+    padding: 1px 8px; border-radius: 999px; vertical-align: middle; color: var(--text-primary);
+    border: 1.5px solid var(--pc); background: color-mix(in srgb, var(--pc) 16%, transparent); }
+  .party-pill.dem { --pc: var(--series-1); }
+  .party-pill.rep { --pc: var(--series-6); }
+  .party-pill.oth { --pc: var(--baseline); }
 
   /* potential candidates — UNOFFICIAL, surfaced from news coverage. Dashed +
      amber so it never reads as the official (solid) candidate list above. */
   .potential { border: 1px dashed color-mix(in srgb, var(--series-3) 60%, var(--border)); border-radius: 10px; background: color-mix(in srgb, var(--series-3) 6%, var(--surface-1)); overflow: hidden; }
-  .potential > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; padding: 8px 10px; font-size: 12px; font-weight: 700; color: var(--series-3); }
+  .potential > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; padding: 8px 10px; font-size: 12px; font-weight: 700; color: var(--text-primary); }
   .potential > summary::-webkit-details-marker { display: none; }
   .potential > summary::before { content: "▸"; font-size: 10px; color: var(--text-muted); transition: transform .15s ease; }
   .potential[open] > summary::before { transform: rotate(90deg); }
@@ -325,15 +331,17 @@
   .pc { padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); }
   .pc-name { font-weight: 650; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .pc-sig { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; padding: 1px 6px; border-radius: 999px; }
-  .pc-sig.announced { color: #fff; background: var(--series-3); border: 1px solid var(--series-3); }
-  .pc-sig.exploring { color: var(--series-3); border: 1px solid var(--series-3); }
-  .pc-sig.reported { color: var(--text-muted); border: 1px solid var(--border); }
+  /* Status chips: full-contrast text, a border in the chip's colour (--pc) and a tint of it. */
+  .pc-sig { --pc: var(--baseline); color: var(--text-primary); border: 1.5px solid var(--pc);
+    background: color-mix(in srgb, var(--pc) 16%, transparent); }
+  .pc-sig.announced { --pc: var(--series-3); }
+  .pc-sig.exploring { --pc: var(--series-3); background: transparent; }
   /* Appointed incumbent — a firm, factual signal (holds the seat now), filled
      blue to read distinctly from the amber "announced". */
-  .pc-sig.incumbent { color: #fff; background: var(--series-1); border: 1px solid var(--series-1); }
+  .pc-sig.incumbent { --pc: var(--series-1); }
   .pc-when { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
   .pc-srcs { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 3px 12px; font-size: 11px; }
-  .pc-srcs a { font-weight: 600; color: var(--series-1); text-decoration: none; }
+  .pc-srcs a { font-weight: 650; color: var(--gb-link); text-decoration: none; }
   .pc-srcs a:hover { text-decoration: underline; }
   .pc-srcs .pc-more { color: var(--text-muted); }
   .race-foot { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 2px; padding-top: 7px; border-top: 1px solid var(--gridline); }
@@ -423,8 +431,8 @@
   .tl-item { position: relative; padding: 0 0 12px 26px; }
   .tl-item:last-child { padding-bottom: 0; }
   .tl-dot { position: absolute; left: 0; top: 1px; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--baseline); background: var(--surface-1); box-shadow: 0 0 0 3px var(--surface-1); display: flex; align-items: center; justify-content: center; font-size: 9px; }
-  .tl-item.done .tl-dot { border-color: var(--series-2); background: var(--series-2); color: #fff; }
-  .tl-item.next .tl-dot { border-color: var(--tl-accent, var(--series-1)); background: var(--tl-accent, var(--series-1)); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--tl-accent, var(--series-1)) 25%, var(--surface-1)); animation: tl-pulse 1.4s ease-in-out infinite; }
+  .tl-item.done .tl-dot { border-color: var(--el-green); background: var(--el-green); color: var(--gb-on-primary); font-weight: 800; }
+  .tl-item.next .tl-dot { border-color: var(--tl-accent, var(--series-1)); background: var(--tl-accent, var(--series-1)); color: var(--page); box-shadow: 0 0 0 3px color-mix(in srgb, var(--tl-accent, var(--series-1)) 25%, var(--surface-1)); animation: tl-pulse 1.4s ease-in-out infinite; }
   /* Big current-milestone pulse: the dot grows and throws a wide ring + glow so
      "where we are now" is obvious at a glance (accessibility for low vision). */
   @keyframes tl-pulse {
@@ -435,14 +443,14 @@
   .tl-item.future .tl-dot { border-color: var(--baseline); }
   .tl-date { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-primary); }
   .tl-item.future .tl-date, .tl-item.future .tl-label { color: var(--text-muted); }
-  .tl-item.next .tl-date { color: var(--tl-accent, var(--series-1)); }
+  .tl-item.next .tl-date { color: var(--text-primary); }
   .tl-label { font-size: 12.5px; color: var(--text-secondary); }
   .tl-note { font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
   .cal-legend { margin-top: 10px; font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
   /* per-race expandable timeline */
   details.tl-details { border-top: 1px solid var(--gridline); padding-top: 7px; }
-  details.tl-details > summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--series-2); list-style: none; display: inline-flex; align-items: center; gap: 5px; }
+  details.tl-details > summary { cursor: pointer; font-size: 12.5px; font-weight: 700; color: var(--text-primary); list-style: none; display: inline-flex; align-items: center; gap: 5px; }
   details.tl-details > summary::-webkit-details-marker { display: none; }
   details.tl-details > summary::before { content: "▸"; font-size: 10px; transition: transform 0.15s ease; }
   details.tl-details[open] > summary::before { transform: rotate(90deg); }
@@ -506,15 +514,12 @@
 
 
   /* 2026 federal midterm callout */
-  .midterm-banner { width: 100%; text-align: left; font: inherit; cursor: pointer; display: flex; align-items: center; gap: 16px; margin: 0 0 22px; padding: 15px 20px; border: 1px solid var(--border); border-left: 4px solid var(--gb-blue); border-radius: 14px; background: var(--surface-1); color: var(--text-primary); }
-  .midterm-banner:hover { border-color: var(--baseline); transform: translateY(-1px); transition: transform .12s ease; }
-  .midterm-banner:focus-visible { outline: 2px solid var(--gb-blue); outline-offset: 2px; }
+  .midterm-banner { display: flex; align-items: center; gap: 16px; margin: 0 0 22px; padding: 15px 20px; border: 1px solid var(--border); border-left: 4px solid var(--gb-blue); border-radius: 14px; background: var(--surface-1); color: var(--text-primary); }
   .mb-flag { font-size: 26px; line-height: 1; flex: none; }
-  .mb-copy { flex-grow: 1; font-size: 14px; line-height: 1.5; }
+  .mb-copy { flex-grow: 1; margin: 0; font-size: 14px; line-height: 1.5; }
   .mb-copy b { font-family: var(--gb-font-display); font-weight: 600; font-size: 16px; }
-  .mb-cta { flex: none; font-size: 13.5px; font-weight: 700; color: var(--gb-gold-hi); white-space: nowrap; }
-  @media (prefers-reduced-motion: reduce) { .midterm-banner:hover { transform: none; } }
-  @media (max-width: 640px) { .midterm-banner { flex-wrap: wrap; } .mb-cta { width: 100%; } }
+  /* The hero overline reads at full contrast (it was small green text). */
+  .el-overline { color: var(--text-primary); font-size: 13px; font-weight: 700; }
 
   /* Big "explore the whole catalog" button under the Springfield list (new tab). */
   .ilr-explore { display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -602,6 +607,13 @@
   .cm-race:hover { background: var(--hover-wash); }
   .cm-race:focus-visible { outline: 2px solid var(--gb-gold-hi); outline-offset: -2px; }
   .cm-race-o { font-size: 13.5px; font-weight: 600; flex-grow: 1; line-height: 1.35; }
+  /* Name search in the ballot panel: the box, who matched, and the empty note. */
+  .cm-race { flex-wrap: wrap; }
+  .cm-race-m { flex-basis: 100%; font-size: 12px; font-weight: 650; color: var(--text-primary); }
+  .cm-search { display: flex; max-width: none; margin: 0 0 12px; }
+  .cm-search .sec-search { width: 100%; }
+  .cm-nomatch { font-size: 13px; margin: 8px 0; color: var(--text-primary); }
+  .cm-raceitem[hidden], .cm-races[hidden], .cm-bucket-h[hidden], .cm-race-m[hidden], .cm-nomatch[hidden] { display: none; }
   .cm-race-n { font-size: 12px; color: var(--text-secondary); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
   .cm-race-car { display: inline-block; font-size: 10px; transition: transform .15s ease; }
   .cm-raceitem.is-open .cm-race-car { transform: rotate(90deg); }
@@ -785,7 +797,7 @@
   <header class="top">
     <div class="el-hero">
       <div class="el-hero-copy">
-        <div class="gb-overline" style="color:var(--series-2)">Chicago &amp; Illinois · 2026–2027</div>
+        <div class="gb-overline el-overline">Chicago &amp; Illinois · 2026–2027</div>
         <h1>Illinois Elections</h1>
         <p class="el-tagline">Know who’s on your ballot before you vote.</p>
         <p class="el-next" id="el-next"></p>
@@ -832,12 +844,11 @@
     </div>
   </section>
 
-  <!-- 2026 federal midterm callout: jumps to the U.S. Senate & House races already on the ballot -->
-  <button type="button" class="midterm-banner" id="midterm-banner" hidden>
+  <!-- 2026 federal midterm notice (information only) -->
+  <div class="midterm-banner" id="midterm-banner" hidden>
     <span class="mb-flag" aria-hidden="true">🇺🇸</span>
-    <span class="mb-copy"><b>The 2026 midterms decide control of Congress.</b> On Nov 3, Illinois votes for a U.S. Senate seat and all 17 U.S. House districts — part of the national midterm that sets the balance of power in Washington.</span>
-    <span class="mb-cta">See the federal races →</span>
-  </button>
+    <p class="mb-copy"><b>The 2026 midterms decide control of Congress.</b> On Nov 3, Illinois votes for a U.S. Senate seat and all 17 U.S. House districts — part of the national midterm that sets the balance of power in Washington.</p>
+  </div>
 
 
   <!-- Build-your-view picker: the major sections start hidden; pick what to see. -->
@@ -1128,12 +1139,9 @@
     renderChicagoMap(data);                     // "Find your ballot" — zoomable ward + neighborhood map of Chicago
     loadIlRecent();                             // recent IL activity (from data.json) → Springfield "Other" tab
 
-    // 2026 federal midterm callout — shown only when the federal races are present
+    // 2026 federal midterm notice — shown only when the federal races are present
     const mb = $("midterm-banner");
-    if (mb && data.races.some((r) => r.office_group === "us_senate" || r.office_group === "us_house")) {
-      mb.hidden = false;
-      mb.addEventListener("click", revealFederal);
-    }
+    if (mb && data.races.some((r) => r.office_group === "us_senate" || r.office_group === "us_house")) mb.hidden = false;
 
     // District locator maps (fail-soft; re-render when they arrive).
     fetch("maps.json")
@@ -1321,6 +1329,7 @@
       .then((geo) => {
         cmData = geo;
         cmBuild();
+        cmRenderDetail();      // the empty panel with its name search
         cmWire();
         sec.hidden = false;
         cmBuildLocator();      // small Illinois inset + callout lines (fail-soft)
@@ -1455,13 +1464,68 @@
     return (state.data.races || []).find((r) => r.office_group === "council" && r.district === "Ward " + ward);
   }
 
+  // Name search inside the ballot panel: with a ward/neighborhood picked it narrows
+  // that ballot's races; with nothing picked it searches every race on the page.
+  // Matching is every word anywhere in raceHaystack (office, district, candidates,
+  // potential candidates, incumbent, neighborhoods); each hit names who matched.
+  let cmQuery = "";
+  const cmWords = () => cmQuery.toLowerCase().split(/\s+/).filter(Boolean);
+  function cmSearchBox(onInput) {
+    const wrap = document.createElement("label"); wrap.className = "sec-search-wrap cm-search";
+    wrap.innerHTML = '<svg class="sec-search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>';
+    const inp = document.createElement("input"); inp.type = "search"; inp.className = "sec-search"; inp.id = "cm-search";
+    inp.placeholder = cmSel == null ? "Search any candidate or office…" : "Search names on this ballot…";
+    inp.setAttribute("aria-label", inp.placeholder.replace("…", ""));
+    inp.value = cmQuery;
+    inp.addEventListener("input", () => { cmQuery = inp.value.trim(); onInput(); });
+    wrap.append(inp);
+    return wrap;
+  }
+  // The people in a race whose names hold one of the search words.
+  function cmMatchedNames(r, words) {
+    const inc = (r.incumbent && r.incumbent.name) ? r.incumbent : (state.ilIncumbents || {})[r.district];
+    const names = [].concat((r.candidates || []).map((c) => c.name), (r.potential_candidates || []).map((c) => c.name),
+      inc && inc.name ? [inc.name] : []);
+    return [...new Set(names)].filter((n) => words.some((w) => (n || "").toLowerCase().includes(w)));
+  }
+  function cmFilterItems(box) {
+    const words = cmWords();
+    let shown = 0;
+    box.querySelectorAll(".cm-raceitem").forEach((it) => {
+      const hit = words.every((w) => it.dataset.hay.includes(w));
+      it.hidden = !hit; if (hit) shown++;
+      const m = it.querySelector(".cm-race-m");
+      const names = hit && words.length ? cmMatchedNames(it._race, words) : [];
+      m.hidden = !names.length; m.textContent = names.length ? "Matches: " + names.join(", ") : "";
+    });
+    box.querySelectorAll(".cm-races").forEach((list) => {
+      const any = [...list.children].some((c) => !c.hidden);
+      list.hidden = !any; list.previousElementSibling.hidden = !any;   // the date heading
+    });
+    const none = box.querySelector(".cm-nomatch"); if (none) none.hidden = shown > 0 || !words.length;
+  }
+
   function cmRenderDetail() {
     const box = $("cm-detail"); if (!box) return;
     box.textContent = "";
     if (cmSel == null) {
       const p = document.createElement("p"); p.className = "cm-empty";
       p.innerHTML = "Click a <b>ward</b> or <b>neighborhood</b> on the map to see the races on that ballot.";
-      box.append(p); return;
+      const res = document.createElement("div"); res.className = "cm-results";
+      const run = () => {
+        res.textContent = "";
+        const words = cmWords();
+        p.hidden = words.length > 0;
+        if (!words.length) return;
+        const hits = (state.data.races || []).filter((r) => { const h = raceHaystack(r); return words.every((w) => h.includes(w)); });
+        if (!hits.length) { const n = document.createElement("p"); n.className = "cm-nomatch"; n.textContent = "No race or candidate matches “" + cmQuery + "”."; res.append(n); return; }
+        cmAppendBuckets(res, hits.slice(0, CM_SEARCH_MAX));
+        if (hits.length > CM_SEARCH_MAX) { const more = document.createElement("p"); more.className = "cm-nomatch"; more.textContent = "Showing " + CM_SEARCH_MAX + " of " + hits.length + " — type more to narrow it."; res.append(more); }
+        cmFilterItems(res);
+      };
+      box.append(cmSearchBox(run), p, res);
+      run();
+      return;
     }
     const mkLbl = (t) => { const e = document.createElement("div"); e.className = "cm-d-lbl"; e.textContent = t; return e; };
 
@@ -1479,10 +1543,11 @@
       }
       // The actual races on this ballot as expandable bars (alderperson for this
       // ward + everything that's the same for every Chicago voter).
-      box.append(mkLbl("On this ballot — tap a race for details"));
+      box.append(mkLbl("On this ballot — tap a race for details"), cmSearchBox(() => cmFilterItems(box)));
       const ald = cmWardRace(ward);
       cmAppendBuckets(box, (ald ? [ald] : []).concat(cmCommonRaces()));
-      box.append(cmDistrictNote());
+      box.append(cmNoMatch(), cmDistrictNote());
+      cmFilterItems(box);
     } else {
       const name = cmSel;
       const rec = cmData.areas.find((a) => a.name === name) || { wards: [] };
@@ -1505,10 +1570,17 @@
       box.append(chips);
       // The races that are the same for everyone in this neighborhood (the
       // alderperson varies by ward, so it's shown via the chips above, not here).
-      box.append(mkLbl("On this ballot — tap a race for details"));
+      box.append(mkLbl("On this ballot — tap a race for details"), cmSearchBox(() => cmFilterItems(box)));
       cmAppendBuckets(box, cmCommonRaces());
-      box.append(cmDistrictNote());
+      box.append(cmNoMatch(), cmDistrictNote());
+      cmFilterItems(box);
     }
+  }
+  const CM_SEARCH_MAX = 30;
+  function cmNoMatch() {
+    const n = document.createElement("p"); n.className = "cm-nomatch"; n.hidden = true;
+    n.textContent = "No race on this ballot matches. The address-specific races below may hold the name.";
+    return n;
   }
 
   // Races every Chicago voter shares, regardless of ward: citywide offices, the
@@ -1571,7 +1643,9 @@
     n.append(document.createTextNode(nc ? nc + " candidate" + (nc === 1 ? "" : "s") : "No candidates yet"));
     const car = document.createElement("span"); car.className = "cm-race-car"; car.textContent = "▸";
     n.append(car);
-    btn.append(o, n);
+    const m = document.createElement("div"); m.className = "cm-race-m"; m.hidden = true;   // "Matches: …" while searching
+    btn.append(o, n, m);
+    wrap._race = r; wrap.dataset.hay = raceHaystack(r);
     const det = document.createElement("div"); det.className = "cm-race-det"; det.hidden = true;
     let built = false;
     btn.setAttribute("aria-expanded", "false");
@@ -1646,17 +1720,6 @@
   }
 
   function mkBf(tag, attrs) { const e = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
-
-  // The midterm callout reveals the federal (U.S. Senate + House) sections and
-  // scrolls to them, without disturbing whatever else the reader already has open.
-  function revealFederal() {
-    ["us_senate", "us_house"].filter((g) => state.data.races.some((r) => r.office_group === g))
-      .forEach((g) => state.view.add("grp:" + g));
-    syncPickerChecks();
-    applyView();
-    const t = document.getElementById("grp-us_senate") || document.getElementById("grp-us_house") || $("groups");
-    if (t) t.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
-  }
 
   /* ---------- "Build your view" section picker ---------- */
   function pickerOptions(data) {
@@ -1817,13 +1880,10 @@
       if (raceObj) g = raceObj.office_group;
     }
     // A race the side panel owns (citywide/statewide/U.S. Senate/CPS president/
-    // alderman) isn't an office card — send the reader to the "Find your ballot"
-    // map once so they can pick their ward and see it there.
+    // alderman) isn't on an office card — open that one race in the popup instead,
+    // so a search result lands straight on it.
     if (raceObj && inSidePanel(raceObj)) {
-      if (!state._deepMapScrolled) {
-        const map = document.getElementById("chimap");
-        if (map && !map.hidden) { state._deepMapScrolled = true; map.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" }); }
-      }
+      if (!state._deepModalOpened) { openRaceModal(raceObj.id); state._deepModalOpened = true; }
       return;
     }
     if (!g || !document.getElementById("grp-" + g)) return;   // office not in view yet
@@ -1859,6 +1919,10 @@
     const groups = GROUP_ORDER.filter((g) => byGroup[g] && state.view.has("grp:" + g));
     if (groups.length) {
       const grid = document.createElement("div"); grid.className = "office-cards";
+      // The office cards alternate green / gold borders (OFFICE_ACCENTS); the office's
+      // popup and its race cards use the same colour.
+      state._officeAccent = {};
+      groups.forEach((g, i) => { state._officeAccent[g] = OFFICE_ACCENTS[i % OFFICE_ACCENTS.length]; });
       groups.forEach((g) => grid.append(officeCard(g, byGroup[g])));
       wrap.append(grid);
     }
@@ -1872,11 +1936,20 @@
     if (state._gmGroup) {
       if (byGroup[state._gmGroup]) fillGroupModal(state._gmGroup);
       else closeGroupModal();
+    } else if (state._gmRace) {
+      fillRaceModal(state._gmRace);   // late maps/roster data reach the open race too
     }
   }
 
-  function officeCard(g, races_g) {
+  const OFFICE_ACCENTS = ["--el-green", "--el-gold"];
+  // An office's display meta, its colour swapped for its card's green/gold accent.
+  function officeMeta(g) {
     const meta = GROUP_META[g] || { label: g, emoji: "🗳️", color: "--series-2" };
+    const accent = state._officeAccent && state._officeAccent[g];
+    return accent ? Object.assign({}, meta, { color: accent }) : meta;
+  }
+  function officeCard(g, races_g) {
+    const meta = officeMeta(g);
     const card = document.createElement("button");
     card.type = "button"; card.className = "office-card"; card.id = "grp-" + g;
     card.dataset.group = g;
@@ -1930,7 +2003,7 @@
 
   function openGroupModal(g) {
     ensureGroupOverlay();
-    state._gmGroup = g;
+    state._gmGroup = g; state._gmRace = null;
     state._gmSearch = "";
     fillGroupModal(g);
     state._gmOverlay.hidden = false;
@@ -1938,11 +2011,53 @@
     const x = document.getElementById("gm-x"); if (x) x.focus();
   }
 
+  // One race on its own in the same popup — used for a #race= link to a race the
+  // ballot side panel owns (no office card to open).
+  function openRaceModal(id) {
+    ensureGroupOverlay();
+    state._gmGroup = null; state._gmRace = id;
+    if (!fillRaceModal(id)) { state._gmRace = null; return; }
+    state._gmOverlay.hidden = false;
+    document.body.classList.add("gm-open");
+    const x = document.getElementById("gm-x"); if (x) x.focus();
+  }
+
+  function fillRaceModal(id) {
+    const modal = state._gmModal;
+    const r = modal && (state.data.races || []).find((x) => x.id === id);
+    if (!r) return false;
+    if (_mapObserver) modal.querySelectorAll(".race-map-ph").forEach((el) => _mapObserver.unobserve(el));
+    const meta = GROUP_META[r.office_group] || { label: r.office, emoji: "🗳️", color: "--series-2" };
+    modal.textContent = "";
+    modal.style.setProperty("--gc", "var(" + meta.color + ")");
+    const head = document.createElement("div"); head.className = "gm-head";
+    const ic = document.createElement("span"); ic.className = "gm-ico"; ic.textContent = meta.emoji; ic.setAttribute("aria-hidden", "true");
+    const htxt = document.createElement("div"); htxt.className = "gm-htxt";
+    const h = document.createElement("h2"); h.id = "gm-title"; h.className = "gm-title";
+    h.textContent = r.office + (r.district ? " · " + r.district : "");
+    const sub = document.createElement("div"); sub.className = "gm-sub"; sub.textContent = meta.label;
+    htxt.append(h, sub);
+    const x = document.createElement("button"); x.type = "button"; x.id = "gm-x"; x.className = "gm-x"; x.setAttribute("aria-label", "Close");
+    x.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>';
+    x.addEventListener("click", closeGroupModal);
+    head.append(ic, htxt, x);
+    const body = document.createElement("div"); body.className = "gm-body gm-body--one"; body.id = "gm-body";
+    body.append(renderRace(r, meta, {}));
+    const foot = document.createElement("div"); foot.className = "gm-foot";
+    const sp = document.createElement("span"); sp.style.flexGrow = "1";
+    const close = document.createElement("button"); close.type = "button"; close.className = "gm-close"; close.textContent = "Close";
+    close.addEventListener("click", closeGroupModal);
+    foot.append(sp, close);
+    modal.append(head, body, foot);
+    return true;
+  }
+
   function closeGroupModal() {
     const ov = state._gmOverlay; if (!ov) return;
     if (_mapObserver) ov.querySelectorAll(".race-map-ph").forEach((el) => _mapObserver.unobserve(el));
     ov.hidden = true;
     document.body.classList.remove("gm-open");
+    state._gmRace = null;
     const g = state._gmGroup; state._gmGroup = null;
     const card = g && document.getElementById("grp-" + g); if (card) card.focus();   // return focus to the opener
   }
@@ -1950,7 +2065,7 @@
   function fillGroupModal(g) {
     const modal = state._gmModal; if (!modal) return;
     if (_mapObserver) modal.querySelectorAll(".race-map-ph").forEach((el) => _mapObserver.unobserve(el));
-    const meta = GROUP_META[g] || { label: g, emoji: "🗳️", color: "--series-2" };
+    const meta = officeMeta(g);
     const races_g = (state._byGroup && state._byGroup[g]) || [];
     modal.textContent = "";
     modal.style.setProperty("--gc", "var(" + meta.color + ")");
@@ -1975,7 +2090,8 @@
       const swrap = document.createElement("span"); swrap.className = "sec-search-wrap"; swrap.style.setProperty("--gc", "var(" + meta.color + ")");
       swrap.innerHTML = '<svg class="sec-search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>';
       const inp = document.createElement("input"); inp.type = "search"; inp.className = "sec-search"; inp.id = "gm-search";
-      inp.placeholder = "Filter " + meta.label + "…"; inp.setAttribute("aria-label", "Filter " + meta.label);
+      inp.placeholder = "Search candidates, districts, neighborhoods…";
+      inp.setAttribute("aria-label", "Search " + meta.label + " by candidate, district or neighborhood");
       inp.value = state._gmSearch || "";
       inp.addEventListener("input", (e) => { state._gmSearch = e.target.value.trim().toLowerCase(); gmApplyFilter(); });
       swrap.append(inp); row.append(swrap); modal.append(row);
@@ -2038,7 +2154,8 @@
     const parts = [r.office, r.district || "", r.ballot_stage || "", r.ballot_date || "", r.why_note || ""];
     (r.candidates || []).forEach((c) => parts.push(c.name, c.party || "", c.status || ""));
     (r.potential_candidates || []).forEach((c) => parts.push(c.name, c.party || "", c.status || ""));
-    if (r.incumbent) parts.push(r.incumbent.name || "", r.incumbent.party || "");
+    const inc = (r.incumbent && r.incumbent.name) ? r.incumbent : (state.ilIncumbents || {})[r.district];
+    if (inc) parts.push(inc.name || "", inc.party || "");
     const entry = state.maps && state.maps.districts && state.maps.districts[r.id];
     if (entry) {
       parts.push(entry.label || "");
@@ -2050,10 +2167,11 @@
 
   function gmApplyFilter() {
     const body = document.getElementById("gm-body"); if (!body) return;
-    const q = state._gmSearch || "";
+    const words = (state._gmSearch || "").split(/\s+/).filter(Boolean);
     let shown = 0;
     body.querySelectorAll(".race").forEach((card) => {
-      const hit = !q || (card.dataset.hay || "").includes(q);
+      const hay = card.dataset.hay || "";
+      const hit = words.every((w) => hay.includes(w));   // every word, in any order
       card.hidden = !hit; if (hit) shown++;
     });
     const none = document.getElementById("gm-empty"); if (none) none.hidden = shown > 0;
@@ -2212,13 +2330,17 @@
     const context = isIl ? maps.il_context : maps.context;
     if (!view || !context) return null;
 
+    // Statewide offices (Governor…Treasurer, U.S. Senate) are flagged citywide too —
+    // every Chicago voter has them — but they are voted on across all of Illinois.
+    const statewide = r.office_group === "il_exec" || r.office_group === "us_senate";
+    const areaName = statewide ? "Statewide & citywide" : "Citywide";
     const wrap = document.createElement("div"); wrap.className = "race-map" + (isIl ? " race-map--il" : "");
     wrap.style.setProperty("--gc", "var(" + meta.color + ")");
     const svg = document.createElementNS(SVGNS, "svg");
     svg.setAttribute("viewBox", "0 0 " + view.w + " " + view.h);
     svg.setAttribute("role", "img");
     svg.setAttribute("aria-label",
-      (r.is_citywide ? "Citywide" : (entry && entry.label) || "District")
+      (r.is_citywide ? areaName : (entry && entry.label) || "District")
       + " locator map of " + (isIl ? "Illinois" : "Chicago"));
     const mk = (d, cls) => { const p = document.createElementNS(SVGNS, "path"); p.setAttribute("d", d); p.setAttribute("class", cls); return p; };
     // base outline (whole city, or the state silhouette); a citywide office
@@ -2235,7 +2357,7 @@
 
     const cap = document.createElement("div"); cap.className = "map-cap";
     const b = document.createElement("b");
-    b.textContent = r.is_citywide ? "Citywide" : (entry && entry.label) || (r.district || "");
+    b.textContent = r.is_citywide ? areaName : (entry && entry.label) || (r.district || "");
     cap.append(b);
     // Places the district touches — Chicago neighborhoods (community areas) AND
     // the Illinois counties it covers (the non-Chicago "hoods"), each on its own
@@ -2254,7 +2376,7 @@
     if (counties.length) placeLine("Counties", counties);
     if (!hoods.length && !counties.length && r.is_citywide) {
       const mh = document.createElement("div"); mh.className = "map-hoods";
-      mh.textContent = "All of Chicago";
+      mh.textContent = statewide ? "All of Illinois, including all of Chicago" : "All of Chicago";
       cap.append(mh);
     }
     wrap.append(cap);
@@ -2353,18 +2475,26 @@
         const v = document.createElement("span"); v.className = "m-val"; v.textContent = fmtMoney(val);
         s.append(l, v); return s;
       };
-      if (m.funds_raised != null) mon.append(fig("💵 Raised", m.funds_raised));
+      // State/local races: the committee's latest SBE report, which covers one reporting
+      // period (raised/spent are that period's, cash is on hand at its end). Federal
+      // races: the FEC's totals for the whole 2025–26 cycle through its latest report.
+      const fec = m.source === "FEC";
+      mon.append(Object.assign(document.createElement("span"), { className: "m-lbl m-head",
+        textContent: fec ? "💵 This election cycle:" : "💵 Latest report:" }));
+      if (m.funds_raised != null) mon.append(fig("Raised", m.funds_raised));
       if (m.funds_spent != null) mon.append(fig("Spent", m.funds_spent, "spent"));
-      if (m.cash_on_hand != null) mon.append(fig("Cash", m.cash_on_hand));
+      if (m.cash_on_hand != null) mon.append(fig("Cash on hand", m.cash_on_hand));
       if (m.committee_name || m.source_url) {
         const cm = document.createElement("span"); cm.className = "m-cmte";
-        cm.append(document.createTextNode((m.committee_name || "Committee") +
+        if (m.committee_name) cm.append(document.createTextNode(m.committee_name +
           (m.committees > 1 ? " +" + (m.committees - 1) + " more" : "") + " · "));
         const a = document.createElement("a");
-        a.href = m.source_url || "https://www.elections.il.gov/"; a.target = "_blank"; a.rel = "noopener";
-        a.textContent = "SBE filing ↗";
+        a.href = m.source_url || (fec ? "https://www.fec.gov/" : "https://www.elections.il.gov/");
+        a.target = "_blank"; a.rel = "noopener";
+        a.textContent = fec ? "FEC filing ↗" : "SBE filing ↗";
         cm.append(a);
-        if (m.as_of) cm.append(document.createTextNode(" · as of " + prettyDate(m.as_of)));
+        if (fec && m.through) cm.append(document.createTextNode(" · through " + prettyDate(m.through)));
+        else if (m.as_of) cm.append(document.createTextNode(" · checked " + prettyDate(m.as_of)));
         mon.append(cm);
       }
       body.append(mon);

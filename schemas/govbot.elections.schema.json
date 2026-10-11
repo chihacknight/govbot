@@ -214,17 +214,19 @@
         "photo_url": { "type": ["string", "null"], "format": "uri", "description": "Official candidate photo URL, when published by the authority." },
         "money": {
           "type": ["object", "null"],
-          "description": "Campaign finance summary from the Illinois SBE, attached only when the candidate resolves unambiguously to an SBE candidate record and their committee(s). Dollar figures come straight from the committee's own D2 filings; null when no confident match.",
+          "description": "Campaign finance summary, attached only when the candidate resolves unambiguously (same office + district, surname + first initial or nickname) to one official record: the Illinois SBE for state/local races (the active candidate committees' latest D2 filings) or the FEC for U.S. House/Senate races (the candidate's two-year-cycle totals). Absent when there is no confident match.",
           "additionalProperties": false,
           "properties": {
             "committee_name": { "type": ["string", "null"], "description": "Primary political committee name." },
-            "committee_id": { "type": ["string", "null"], "description": "SBE committee ID." },
+            "committee_id": { "type": ["string", "null"], "description": "SBE committee ID, or the FEC candidate ID for a federal race." },
             "committees": { "type": "integer", "minimum": 1, "description": "Number of linked committees aggregated." },
-            "funds_raised": { "type": ["number", "null"], "description": "Total receipts across linked committees' latest D2 filings." },
-            "funds_spent": { "type": ["number", "null"], "description": "Total expenditures across linked committees' latest D2 filings." },
-            "cash_on_hand": { "type": ["number", "null"], "description": "End funds available across linked committees' latest D2 filings." },
+            "funds_raised": { "type": ["number", "null"], "description": "SBE: receipts in the linked committees' latest D2 reporting period. FEC: total receipts this cycle." },
+            "funds_spent": { "type": ["number", "null"], "description": "SBE: expenditures in the latest D2 reporting period. FEC: total disbursements this cycle." },
+            "cash_on_hand": { "type": ["number", "null"], "description": "Cash on hand at the end of the latest report (SBE D2 end funds / FEC ending cash)." },
             "as_of": { "type": ["string", "null"], "description": "When this snapshot was taken (build date), since D2Totals has no per-row date." },
-            "source_url": { "type": ["string", "null"], "description": "SBE committee-search page for verification." }
+            "source_url": { "type": ["string", "null"], "description": "The committee's own SBE page, or the candidate's FEC page, for verification." },
+            "source": { "type": ["string", "null"], "enum": ["SBE", "FEC", null], "description": "Which filing authority the figures come from." },
+            "through": { "type": ["string", "null"], "description": "FEC only: end date (YYYY-MM-DD) of the latest report the cycle totals run through." }
           }
         },
         "source": { "type": ["string", "null"], "description": "Where this candidate record was read (host or authority)." }

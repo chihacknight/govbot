@@ -528,12 +528,13 @@ jobs:
             || echo "::warning::potential-candidate enrichment reported errors"
           python3 -c 'import json;d=json.load(open("docs/src/dashboard/elections.json"));n=sum(len(r.get("potential_candidates") or []) for r in d["races"]);print(f"potential candidates surfaced: {n}")'
 
-      # Campaign money (Illinois SBE): attach each candidate's receipts / spending
-      # / cash-on-hand from their committee's latest D2 filing, via the SBE ID
-      # crosswalk. Gated on candidates actually being present — the SBE bulk files
-      # are large (~70MB), so we only download + enrich when there's something to
-      # enrich. Fully fail-soft: a download error just leaves money off.
-      - name: Enrich candidates with SBE campaign money
+      # Campaign money: Illinois SBE for state/local races (each candidate's active
+      # committees' latest D2 filing, via the SBE ID crosswalk) and the FEC's bulk
+      # candidate summary for U.S. House/Senate races. Gated on candidates actually
+      # being present — the SBE bulk files are large (~70MB), so we only download +
+      # enrich when there's something to enrich. Fully fail-soft: a download error
+      # just leaves money off.
+      - name: Enrich candidates with campaign money (SBE + FEC)
         if: steps.gate.outputs.refresh == 'true'
         run: |
           set -uo pipefail
@@ -545,7 +546,12 @@ jobs:
             for f in Candidates.txt CmteCandidateLinks.txt Committees.txt D2Totals.txt; do
               curl -fsSL --retry 3 -o "/tmp/sbe/$f" "$base/$f" || { echo "::warning::could not download $f"; ok=0; }
             done
-            if [ "$ok" = "1" ]; then
+            # U.S. House/Senate money: the FEC's keyless "All candidates" summary for the
+            # 2026 cycle (~200 KB zipped). Optional — without it federal races get none.
+            curl -fsSL --retry 3 -o /tmp/weball.zip https://www.fec.gov/files/bulk-downloads/2026/weball26.zip \
+              && unzip -o -q /tmp/weball.zip -d /tmp/sbe \
+              || echo "::warning::could not download the FEC candidate summary"
+            if [ "$ok" = "1" ] || ls /tmp/sbe/weball*.txt >/dev/null 2>&1; then
               python3 actions/scrape-elections/main.py \
                 --enrich-money docs/src/dashboard/elections.json --money-dir /tmp/sbe \
                 || echo "::warning::money enrichment reported errors"

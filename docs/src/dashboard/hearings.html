@@ -332,6 +332,19 @@
   .hh-stat-num { font-family: var(--gb-font-display); font-weight: 600; font-size: 34px; line-height: 1;
     color: var(--series-3); font-variant-numeric: tabular-nums; }
   .hh-stat-lbl { font-size: 12.5px; font-weight: 500; letter-spacing: .03em; color: var(--text-secondary); max-width: 20ch; }
+  /* Jump to a jurisdiction: one pill per state with live hearings, each with its own
+     colourful border (--jc, the six hues of the legislation page's download button,
+     set per pill in JS); the text stays full-contrast in both themes. */
+  .hh-jump { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .hh-jump-lbl { font-size: 13px; font-weight: 700; margin-right: 2px; }
+  .hh-jump a { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 650;
+    text-decoration: none; color: var(--text-primary); background: var(--surface-1);
+    border: 2.5px solid var(--jc); border-radius: 999px; padding: 5px 7px 5px 14px; }
+  .hh-jump a:hover { background: color-mix(in srgb, var(--jc) 16%, var(--surface-1)); }
+  .hh-jump a:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
+  .hh-jump .jn-count { min-width: 24px; text-align: center; padding: 1px 8px; border-radius: 999px;
+    border: 1.5px solid var(--jc); background: color-mix(in srgb, var(--jc) 22%, transparent);
+    font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
   .hgroup { scroll-margin-top: 84px; }
 
   .hh-hero-art { flex: 0 0 auto; width: 340px; max-width: 46%; filter: drop-shadow(0 0 22px rgba(61,220,132,0.22)); }
@@ -491,9 +504,10 @@
     </div>
   </header>
 
-  <!-- Live metrics, below the hero -->
+  <!-- Live metrics + jump to a jurisdiction, below the hero -->
   <div class="hh-below">
     <div class="hh-stats" id="hh-stats" role="group" aria-label="Live hearing activity"></div>
+    <nav class="hh-jump" id="hh-jump" aria-label="Jump to a jurisdiction" hidden></nav>
   </div>
 
   <section class="card card--accent card--hearings" id="hearings-card" hidden>
@@ -646,6 +660,7 @@
 
     // USA (Federal) leads, then states alphabetically.
     const orderedCodes = Object.keys(byJur).sort((a, b) => (b === "us") - (a === "us") || a.localeCompare(b));
+    const jumps = [];
     orderedCodes.forEach((code, gi) => {
       const juris = portals[code] || { name: code.toUpperCase() };
       const group = eln("div", "hgroup");
@@ -670,6 +685,7 @@
         head.append(p);
       }
       group.append(head);
+      jumps.push({ code: code, name: juris.name, total: totalHere });
       if (code === "us") {
         federalSections(group, listed, notices, juris);
       } else {
@@ -685,6 +701,19 @@
       body.append(group);
     });
 
+    // Jump-to pills at the top, in the same order as the sections, each with its count.
+    const jump = $("hh-jump");
+    jump.textContent = "";
+    jump.append(eln("span", "hh-jump-lbl", "Jump to"));
+    jumps.forEach((j, i) => {
+      const a = eln("a", null, j.name);
+      a.href = "#hg-" + j.code;
+      a.style.setProperty("--jc", JUMP_COLORS[i % JUMP_COLORS.length]);
+      a.append(eln("span", "jn-count", String(j.total)));
+      jump.append(a);
+    });
+    jump.hidden = jumps.length < 2;
+
     card.hidden = false;
     const f = $("footer");
     if (f) f.textContent = "Committee hearings from " + (data.source || "official sources") + ", refreshed twice daily.";
@@ -693,6 +722,7 @@
   // Every list shows at most SHOW_MAX rows ("x of y showing") with a "See all ↗" link
   // to the official site for the rest; federal notices show NOTICE_SHOW of each kind.
   const SHOW_MAX = 7;
+  const JUMP_COLORS = ["#5EBD3E", "#FFB900", "#F78200", "#E23838", "#973999", "#009CDF"];
   const NOTICE_SHOW = 2;
   function showing(shown, total) { return shown + " of " + total + " showing"; }
   function seeAllRow(text, label, url) {
