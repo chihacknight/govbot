@@ -197,8 +197,8 @@
   .gm-close:hover { border-color: var(--text-muted); color: var(--text-primary); }
   @media (max-width: 620px) { .gm-body { grid-template-columns: 1fr; } }
   .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap; }
-  .badge.ballot { color: var(--series-1); border-color: color-mix(in srgb, var(--series-1) 55%, transparent); }
-  .badge.seats { color: var(--series-5); border-color: color-mix(in srgb, var(--series-5) 55%, transparent); }
+  .badge.ballot { color: var(--text-primary); border: 1.5px solid var(--series-1); background: color-mix(in srgb, var(--series-1) 14%, transparent); }
+  .badge.seats { color: var(--text-primary); border: 1.5px solid var(--series-5); background: color-mix(in srgb, var(--series-5) 14%, transparent); }
   .badge.first { color: #fff; background: var(--series-2); border-color: var(--series-2); }
   .badge.count { color: var(--text-primary); border-color: var(--baseline); font-weight: 700; }
   /* per-race locator map (inline SVG from maps.json) — a GOLD base map (state
@@ -264,12 +264,12 @@
   .cand-name a { color: var(--text-primary); text-decoration: none; }
   .cand-name a:hover { color: var(--series-1); text-decoration: underline; }
   .cand-meta { display: flex; flex-wrap: wrap; gap: 5px 6px; margin-top: 4px; align-items: center; }
-  .pchip { font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); }
-  .pchip.on_ballot { color: var(--series-4); border-color: var(--series-4); }
-  .pchip.filed { color: var(--series-1); border-color: color-mix(in srgb, var(--series-1) 55%, transparent); }
-  .pchip.objected { color: var(--series-3); border-color: var(--series-3); }
-  .pchip.withdrawn { color: var(--text-muted); }
-  .pchip.removed { color: var(--series-6); border-color: var(--series-6); }
+  .pchip { --pc: var(--baseline); font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; padding: 1px 7px; border-radius: 999px;
+    border: 1.5px solid var(--pc); background: color-mix(in srgb, var(--pc) 14%, transparent); color: var(--text-primary); }
+  .pchip.on_ballot { --pc: var(--series-4); }
+  .pchip.filed { --pc: var(--series-1); }
+  .pchip.objected { --pc: var(--series-3); }
+  .pchip.removed { --pc: var(--series-6); }
   .mini { font-size: 11.5px; color: var(--text-muted); }
   .mini b { color: var(--text-secondary); font-weight: 600; }
   .cand-links { font-size: 11.5px; font-weight: 600; }
@@ -308,16 +308,16 @@
   /* Color-coded party pill (the party name itself), used on candidates, incumbents
      and potential candidates — Democratic blue / Republican red / else neutral. */
   .party-pill { display: inline-block; font-size: 11px; font-weight: 700; margin-left: 6px;
-    padding: 1px 8px; border-radius: 999px; vertical-align: middle;
-    background: color-mix(in srgb, currentColor 13%, transparent); }
-  .party-pill.dem { color: var(--series-1); }
-  .party-pill.rep { color: var(--series-6); }
-  .party-pill.oth { color: var(--text-muted); }
+    padding: 1px 8px; border-radius: 999px; vertical-align: middle; color: var(--text-primary);
+    border: 1.5px solid var(--pc); background: color-mix(in srgb, var(--pc) 16%, transparent); }
+  .party-pill.dem { --pc: var(--series-1); }
+  .party-pill.rep { --pc: var(--series-6); }
+  .party-pill.oth { --pc: var(--baseline); }
 
   /* potential candidates — UNOFFICIAL, surfaced from news coverage. Dashed +
      amber so it never reads as the official (solid) candidate list above. */
   .potential { border: 1px dashed color-mix(in srgb, var(--series-3) 60%, var(--border)); border-radius: 10px; background: color-mix(in srgb, var(--series-3) 6%, var(--surface-1)); overflow: hidden; }
-  .potential > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; padding: 8px 10px; font-size: 12px; font-weight: 700; color: var(--series-3); }
+  .potential > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; padding: 8px 10px; font-size: 12px; font-weight: 700; color: var(--text-primary); }
   .potential > summary::-webkit-details-marker { display: none; }
   .potential > summary::before { content: "▸"; font-size: 10px; color: var(--text-muted); transition: transform .15s ease; }
   .potential[open] > summary::before { transform: rotate(90deg); }
@@ -442,7 +442,7 @@
 
   /* per-race expandable timeline */
   details.tl-details { border-top: 1px solid var(--gridline); padding-top: 7px; }
-  details.tl-details > summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--series-2); list-style: none; display: inline-flex; align-items: center; gap: 5px; }
+  details.tl-details > summary { cursor: pointer; font-size: 12.5px; font-weight: 700; color: var(--text-primary); list-style: none; display: inline-flex; align-items: center; gap: 5px; }
   details.tl-details > summary::-webkit-details-marker { display: none; }
   details.tl-details > summary::before { content: "▸"; font-size: 10px; transition: transform 0.15s ease; }
   details.tl-details[open] > summary::before { transform: rotate(90deg); }
@@ -506,15 +506,12 @@
 
 
   /* 2026 federal midterm callout */
-  .midterm-banner { width: 100%; text-align: left; font: inherit; cursor: pointer; display: flex; align-items: center; gap: 16px; margin: 0 0 22px; padding: 15px 20px; border: 1px solid var(--border); border-left: 4px solid var(--gb-blue); border-radius: 14px; background: var(--surface-1); color: var(--text-primary); }
-  .midterm-banner:hover { border-color: var(--baseline); transform: translateY(-1px); transition: transform .12s ease; }
-  .midterm-banner:focus-visible { outline: 2px solid var(--gb-blue); outline-offset: 2px; }
+  .midterm-banner { display: flex; align-items: center; gap: 16px; margin: 0 0 22px; padding: 15px 20px; border: 1px solid var(--border); border-left: 4px solid var(--gb-blue); border-radius: 14px; background: var(--surface-1); color: var(--text-primary); }
   .mb-flag { font-size: 26px; line-height: 1; flex: none; }
-  .mb-copy { flex-grow: 1; font-size: 14px; line-height: 1.5; }
+  .mb-copy { flex-grow: 1; margin: 0; font-size: 14px; line-height: 1.5; }
   .mb-copy b { font-family: var(--gb-font-display); font-weight: 600; font-size: 16px; }
-  .mb-cta { flex: none; font-size: 13.5px; font-weight: 700; color: var(--gb-gold-hi); white-space: nowrap; }
-  @media (prefers-reduced-motion: reduce) { .midterm-banner:hover { transform: none; } }
-  @media (max-width: 640px) { .midterm-banner { flex-wrap: wrap; } .mb-cta { width: 100%; } }
+  /* The hero overline reads at full contrast (it was small green text). */
+  .el-overline { color: var(--text-primary); font-size: 13px; font-weight: 700; }
 
   /* Big "explore the whole catalog" button under the Springfield list (new tab). */
   .ilr-explore { display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -785,7 +782,7 @@
   <header class="top">
     <div class="el-hero">
       <div class="el-hero-copy">
-        <div class="gb-overline" style="color:var(--series-2)">Chicago &amp; Illinois · 2026–2027</div>
+        <div class="gb-overline el-overline">Chicago &amp; Illinois · 2026–2027</div>
         <h1>Illinois Elections</h1>
         <p class="el-tagline">Know who’s on your ballot before you vote.</p>
         <p class="el-next" id="el-next"></p>
@@ -832,12 +829,11 @@
     </div>
   </section>
 
-  <!-- 2026 federal midterm callout: jumps to the U.S. Senate & House races already on the ballot -->
-  <button type="button" class="midterm-banner" id="midterm-banner" hidden>
+  <!-- 2026 federal midterm notice (information only) -->
+  <div class="midterm-banner" id="midterm-banner" hidden>
     <span class="mb-flag" aria-hidden="true">🇺🇸</span>
-    <span class="mb-copy"><b>The 2026 midterms decide control of Congress.</b> On Nov 3, Illinois votes for a U.S. Senate seat and all 17 U.S. House districts — part of the national midterm that sets the balance of power in Washington.</span>
-    <span class="mb-cta">See the federal races →</span>
-  </button>
+    <p class="mb-copy"><b>The 2026 midterms decide control of Congress.</b> On Nov 3, Illinois votes for a U.S. Senate seat and all 17 U.S. House districts — part of the national midterm that sets the balance of power in Washington.</p>
+  </div>
 
 
   <!-- Build-your-view picker: the major sections start hidden; pick what to see. -->
@@ -1128,12 +1124,9 @@
     renderChicagoMap(data);                     // "Find your ballot" — zoomable ward + neighborhood map of Chicago
     loadIlRecent();                             // recent IL activity (from data.json) → Springfield "Other" tab
 
-    // 2026 federal midterm callout — shown only when the federal races are present
+    // 2026 federal midterm notice — shown only when the federal races are present
     const mb = $("midterm-banner");
-    if (mb && data.races.some((r) => r.office_group === "us_senate" || r.office_group === "us_house")) {
-      mb.hidden = false;
-      mb.addEventListener("click", revealFederal);
-    }
+    if (mb && data.races.some((r) => r.office_group === "us_senate" || r.office_group === "us_house")) mb.hidden = false;
 
     // District locator maps (fail-soft; re-render when they arrive).
     fetch("maps.json")
@@ -1646,17 +1639,6 @@
   }
 
   function mkBf(tag, attrs) { const e = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
-
-  // The midterm callout reveals the federal (U.S. Senate + House) sections and
-  // scrolls to them, without disturbing whatever else the reader already has open.
-  function revealFederal() {
-    ["us_senate", "us_house"].filter((g) => state.data.races.some((r) => r.office_group === g))
-      .forEach((g) => state.view.add("grp:" + g));
-    syncPickerChecks();
-    applyView();
-    const t = document.getElementById("grp-us_senate") || document.getElementById("grp-us_house") || $("groups");
-    if (t) t.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
-  }
 
   /* ---------- "Build your view" section picker ---------- */
   function pickerOptions(data) {

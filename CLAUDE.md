@@ -685,12 +685,14 @@ button and its `cmOpenWardBallot` were removed); a
 **neighborhood** shows its name (`cmNiceName`
 title-cases, fixes O'Hare/Lakeview/McKinley Park), how many wards it spans, the same expandable common-race bars, and **tappable ward chips** (→ switch to ward view, select +
 `cmFocusRegion` zooms to it, since the alderperson varies by ward). Below Explore Chicago sits a
-**2026 federal-midterm callout**
+**2026 federal-midterm notice**
 (`#midterm-banner`, "The 2026 midterms decide control of Congress") — shown only when the federal
-races are present; clicking it (`revealFederal`) adds the `us_senate` + `us_house` groups to the
-view and scrolls to the U.S. Senate section (each race `<section>` now carries an `id="grp-<group>"`
-anchor). The federal races themselves (Illinois's U.S. Senate seat + all 17 U.S. House districts on
-the Nov 3, 2026 ballot) were already in the data; the callout just surfaces them.
+races are present. It is **information only** (a plain `<div>`, per request — it used to be a button
+that revealed the federal sections, with a "See the federal races →" call to action; both were removed).
+The hero's "Chicago & Illinois · 2026–2027" overline (`.el-overline`) is full-contrast text, and the
+race-card pills — party (`.party-pill`), candidate status (`.pchip`, e.g. "On ballot") and the ballot-date
+badge (`.badge.ballot`) — share one readable style: full-contrast text, a 1.5px border in the pill's colour
+(`--pc`) and a light tint of it; the "Timeline" and "Potential candidates" toggles are full-contrast too.
 The default view was **decluttered** (it had too many overlapping entry points): the finder's
 duplicate "Coming up" list, the **"Build your view" section-picker UI** (`#picker` / `#picker-empty`
 — the `state.view` / `applyView` machinery and its `picker-all` button stay in the DOM, hidden, so
@@ -720,9 +722,12 @@ brandbar is kept. (The earlier "See upcoming hearings" CTA button was removed.) 
 sits a `.hh-below` strip with the live metrics as a row of **gold civic stat tiles**
 (`.hh-stats` / `.hh-stat` — theme-aware, gold display numerals on `--surface-1` glass with a
 gold-tinted border: **two** tiles, "N upcoming hearings and open to public comment" (the count that
-are both upcoming and comment-open) and "N jurisdictions"). **The "Jump to" pill rows were removed**
-(per request — both the jurisdiction row under the hero and the federal one); `.hgroup` keeps
-`id="hg-<code>"` + `scroll-margin-top` for search's `#hg-<code>` links. The jurisdiction sections' 4-sided borders **alternate green / gold**
+are both upcoming and comment-open) and "N jurisdictions"), then a **"Jump to" row** (`#hh-jump`, hidden
+with fewer than two jurisdictions): one pill per jurisdiction with live hearings, in section order, with its
+count (the section's full total — federal = open rules + notices) and its **own colourful 2.5px border**
+(`JUMP_COLORS`, the six hues of legislation's download button, `--jc` per pill; text full-contrast, the count
+in a small tinted badge), linking to `#hg-<code>` (`.hgroup` has `scroll-margin-top`, so the sticky header
+doesn't cover it; search's `#hg-<code>` links use the same ids). The federal section has no jump row. The jurisdiction sections' 4-sided borders **alternate green / gold**
 (`HG_ACCENTS = ["--hh-green", "--hh-gold"]`, page tokens tuned per theme: green `#3DDC84`/`#0B7D45`, true
 gold `#E5B94E`/`#8A6100`, since the brand `--gb-gold` is green). Every status pill — "Hearing", "Comment
 due", "Public comment open", "Canceled", the directory's "Live hearings" — shares one readable style
