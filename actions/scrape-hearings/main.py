@@ -41,7 +41,6 @@ Usage:
 
 import argparse
 import json
-import math
 import re
 import sys
 import urllib.parse
@@ -814,39 +813,58 @@ def parse_fr_documents(json_text):
     return out
 
 
-# The page shows only the soonest-closing share of the open rules (~200 at a time),
-# a few notices of each kind, and buttons to the full official lists.
-FEDERAL_SHOW_SHARE = 0.12
-NOTICES_PER_CATEGORY = 3
+# The page shows at most SHOW_MAX of each list (the soonest-closing), with a button
+# to the full official list.
+SHOW_MAX = 7
+
+# A Federal Register search that matches each notice kind. Govbot sorts notices by
+# title and the Federal Register searches whole documents, so these lists are wider
+# than the kind (the page doesn't promise the same count). "Other" has no search of
+# its own and uses the list of every open notice.
+NOTICE_SEARCH_TERMS = {
+    "rfi": '"request for information" | "request for comments" | "request for input"'
+           ' | "advance notice" | "petition for rulemaking"',
+    "environment": '"environmental impact statement" | "environmental assessment"'
+                   ' | "endangered species" | "resource management plan"',
+    "permits": "permit | license | exemption | waiver | authorization",
+    "meetings": 'meeting | "public hearing" | "listening session" | webinar | workshop',
+    "privacy": '"privacy act" | "system of records"',
+    "paperwork": '"information collection" | "paperwork reduction act" | "omb review"',
+}
 
 
-def fr_full_list_url(today, types=RULE_TYPES):
-    """The Federal Register's own search page for the same set: documents of `types`
-    whose comment period is still open (its HTML search takes the API's conditions,
-    with the date as MM/DD/YYYY)."""
+def fr_full_list_url(today, types=RULE_TYPES, term=None):
+    """The Federal Register's own search page for documents of `types` whose comment
+    period is still open, optionally matching `term` (its HTML search takes the API's
+    conditions, with the date as MM/DD/YYYY)."""
     q = [("conditions[comment_date][gte]", f"{today:%m/%d/%Y}")]
     q += [("conditions[type][]", t) for t in types]
+    if term:
+        q.append(("conditions[term]", term))
     return "https://www.federalregister.gov/documents/search?" + urllib.parse.urlencode(q)
 
 
 def federal_preview(recs, today):
-    """Pure: keep the soonest-closing FEDERAL_SHOW_SHARE of the open rules (at least
-    one) and NOTICES_PER_CATEGORY notices of each kind, and describe the full lists
-    for the page's "See all" buttons."""
+    """Pure: keep the SHOW_MAX soonest-closing open rules and SHOW_MAX notices of each
+    kind, and describe the full lists for the page's "See all" buttons."""
     order = lambda h: (h["scheduled_iso"] or "9999", h["id"])
     rules = sorted((h for h in recs if not h.get("category")), key=order)
     notices = sorted((h for h in recs if h.get("category")), key=order)
-    shown = rules[:max(1, math.ceil(len(rules) * FEDERAL_SHOW_SHARE))] if rules else []
+    shown = rules[:SHOW_MAX]
     meta = {"open_total": len(rules), "full_list_url": fr_full_list_url(today)}
     if notices:
+        all_notices = fr_full_list_url(today, NOTICE_TYPES)
         cats = []
         for key, label in [(k, l) for k, l, _ in NOTICE_CATEGORIES] + [NOTICE_OTHER]:
             these = [h for h in notices if h["category"] == key]
             if these:
-                shown += these[:NOTICES_PER_CATEGORY]
-                cats.append({"key": key, "label": label, "total": len(these)})
+                shown += these[:SHOW_MAX]
+                term = NOTICE_SEARCH_TERMS.get(key)
+                cats.append({"key": key, "label": label, "total": len(these),
+                             "list_url": fr_full_list_url(today, NOTICE_TYPES, term)
+                             if term else all_notices})
         meta.update({"notice_total": len(notices), "notice_categories": cats,
-                     "notice_list_url": fr_full_list_url(today, NOTICE_TYPES)})
+                     "notice_list_url": all_notices})
     return shown, meta
 
 

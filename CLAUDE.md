@@ -854,23 +854,31 @@ from" cabinet is **expanded by default** (`<details open>`). The hearings
 page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov, leg.wa.gov,
 malegislature.gov, and akleg.gov directly (not OpenStates), plus **USA (Federal)**: every proposed rule /
 rule whose public comment period is open, from the keyless **Federal Register API** (`parse_fr_documents`,
-one request, ~200 rules, each linked to its own Regulations.gov comment form; **only the soonest-closing
-12%** (`FEDERAL_SHOW_SHARE`, applied in `assemble`) ships in `hearings.json`, and the federal group ends with
-"Showing the N closing soonest" + a **"See all N open for comment ↗"** button (`.hgroup-more`) to the
+one request, ~200 rules, each linked to its own Regulations.gov comment form; **only the 7 closing
+soonest** (`SHOW_MAX`, applied in `assemble` via `federal_preview`) ship in `hearings.json`, and the rules
+section ends with "Showing the 7 closing soonest." + a **"See all N ↗"** button (`.hgroup-more`) to the
 Federal Register's own search for the same set (`open_total` / `full_list_url` on the `us` jurisdiction
 entry). The ~800 open **notices** (announcements that ask for comments without being a rule) are fetched too
 (a second query, `fetch_fr` follows the API's 1,000-per-page `next_page_url`), sorted into plain kinds by
 title (`fr_notice_category` / `NOTICE_CATEGORIES`: Requests for ideas & information, Environment & wildlife
 reviews, Permits/licenses/approvals, Meetings, Privacy & government records, Forms & paperwork reviews
-(~70%), Other — paperwork is matched first), and only the **3 closing soonest per kind**
-(`NOTICES_PER_CATEGORY`) ship, each record carrying its `category`; the `us` entry adds `notice_total`,
-`notice_categories` (key/label/full count) and `notice_list_url`. The page draws the federal group with
+(~70%), Other — paperwork is matched first), and only the **7 closing soonest per kind** (`SHOW_MAX`)
+ship, each record carrying its `category`; the `us` entry adds `notice_total`, `notice_categories`
+(key/label/full count + `list_url`, a Federal Register search matching that kind from `NOTICE_SEARCH_TERMS`
+— "a | b" OR terms; it searches whole documents while Govbot sorts by title, so it finds more and its
+button says **"See more on the Federal Register ↗"** with no count; "Other" links every open notice) and
+`notice_list_url`. The page draws the federal group with
 `federalSections`: a **"Jump to" pill row** (`.fnav-pill`, one per section with its count — plain and
 uniform on purpose: full-contrast text, border and count badge in both themes) that scrolls to that section (`.fsec#fed-<key>`, no hash change), then the
-rules section and, under "Other federal notices open for comment", one section per notice kind in a
-two-column grid (`.fsec-grid`, one column on phones) ending in "See all N notices ↗". **Every section is
-its own short scroll box**, coloured by `FED_COLORS` (`.fsec-rows`, 360px rules / 250px notices) **with a scrollbar in that
-section's colour** (the states' `.hgroup-rows` scrollbars use their green/gold accent too); the old
+rules section and, under "Other federal notices open for comment", one **full-width** section per notice
+kind, stacked (long horizontal rows like the rules — the old two-column grid was removed), ending in
+"See all N notices ↗". **Every section is its own short scroll box**, coloured by `FED_COLORS`
+(`.fsec-rows`, 360px; 300px on phones) **with a scrollbar in that section's colour**. **Every list on the
+page shows at most 7** (`SHOW_MAX` in hearings.html too): each federal section and each state reads
+**"x of y showing"** (`showing()`; the federal header totals rules + notices), and a list with more gets a
+`seeAllRow` button to the official site — rules → "See all N ↗", notice kinds → "See more on the Federal
+Register ↗", a state → "See all N ↗" to its `portal_url` (search's `#hg-<code>` links land on the state's
+section, which may not show a hearing past the 7th) (the states' `.hgroup-rows` scrollbars use their green/gold accent too); the old
 Regulations.gov
 `DEMO_KEY` path was rate-limited and its placeholder seed had expired, so both were removed) — federal
 leads the list, above the states. It writes `docs/src/dashboard/hearings.json` + a whole-calendar

@@ -305,19 +305,13 @@
     padding-left: 10px; border-left: 4px solid var(--sc); font-size: 15.5px; }
   .fsec-n { font-size: 12px; font-weight: 800; padding: 1px 9px; border-radius: 999px;
     border: 1.5px solid var(--sc); background: color-mix(in srgb, var(--sc) 16%, transparent); }
-  .fsec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr)); gap: 0 18px; }
-  /* In the notice columns a row stacks its date above its details, to stay compact. */
-  .fsec-grid .hearing-row { grid-template-columns: 1fr; gap: 2px; }
-  .fsec-grid .h-when { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
-  .fsec-grid .h-open { margin-top: 0; }
-  .fsec-grid .fsec-rows { max-height: 250px; }
   .fsec-rows { max-height: 360px; border: 1px solid color-mix(in srgb, var(--sc) 35%, var(--gridline));
     border-radius: 10px; padding: 0 4px; scrollbar-color: var(--sc) color-mix(in srgb, var(--sc) 14%, transparent); }
   .hgroup-rows.fsec-rows::-webkit-scrollbar { width: 11px; }
   .hgroup-rows.fsec-rows::-webkit-scrollbar-track { background: color-mix(in srgb, var(--sc) 12%, transparent); border-radius: 999px; }
   .hgroup-rows.fsec-rows::-webkit-scrollbar-thumb { background: linear-gradient(var(--sc), color-mix(in srgb, var(--sc) 65%, #ffffff));
     border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
-  @media (max-width: 620px) { .fsec-rows { max-height: 300px; } .fsec-grid .fsec-rows { max-height: 200px; } }
+  @media (max-width: 620px) { .fsec-rows { max-height: 300px; } }
   .hnotices-h { margin: 22px 0 4px; padding-top: 16px; border-top: 2px solid var(--gridline); font-size: 18px; }
   .hnotices-sub { margin: 0; font-size: 14px; }
   @media (prefers-reduced-motion: reduce) { .fnav-pill { transition: none; } .fnav-pill:hover { transform: none; } }
@@ -684,13 +678,14 @@
       group.style.setProperty("--hg-accent", "var(" + HG_ACCENTS[gi % HG_ACCENTS.length] + ")");
       const head = eln("div", "hgroup-head");
       head.append(eln("span", "hgroup-name", juris.name));
-      // Federal carries only the soonest-closing share of the open rules, plus a few
-      // notices of each kind (records with a category) shown separately below.
+      // Federal carries only the soonest-closing open rules, plus a few notices of each
+      // kind (records with a category) shown in their own sections below.
       const listed = byJur[code].filter((h) => !h.category);
       const notices = byJur[code].filter((h) => h.category);
-      const total = juris.open_total;
-      head.append(eln("span", "hgroup-count", total > listed.length
-        ? listed.length + " of " + total + " open" : listed.length + " scheduled"));
+      const shownHere = code === "us" ? listed.length + notices.length : Math.min(listed.length, SHOW_MAX);
+      const totalHere = code === "us"
+        ? (juris.open_total || listed.length) + (juris.notice_total || notices.length) : listed.length;
+      head.append(eln("span", "hgroup-count", showing(shownHere, totalHere)));
       head.append(jurisdictionRssTrigger(code, juris.name));
       if (juris.portal_url) {
         const p = eln("a", "hgroup-portal", PARTICIPATION[juris.participation] || "Official portal ↗");
@@ -703,8 +698,12 @@
       } else {
         // Rows live in their own wrapper so zebra :nth-child counts rows, not head.
         const rows = eln("div", "hgroup-rows");
-        listed.forEach((h) => rows.append(hearingRow(h)));
+        listed.slice(0, SHOW_MAX).forEach((h) => rows.append(hearingRow(h)));
         group.append(rows);
+        if (listed.length > SHOW_MAX && juris.portal_url) {
+          group.append(seeAllRow("Showing the next " + SHOW_MAX + ".",
+            "See all " + listed.length + " ↗", juris.portal_url));
+        }
       }
       body.append(group);
     });
@@ -734,9 +733,22 @@
     if (f) f.textContent = "Committee hearings from " + (data.source || "official sources") + ", refreshed twice daily.";
   }
 
-  // USA (Federal) is long (rules + a few notices of each kind), so it is split into
-  // short sections, each scrolling on its own with a scrollbar in its own colour, and
-  // a row of matching pills at the top jumps to any of them.
+  // Every list shows at most SHOW_MAX rows ("x of y showing") with a "See all" button
+  // to the official site for the rest.
+  const SHOW_MAX = 7;
+  function showing(shown, total) { return shown + " of " + total + " showing"; }
+  function seeAllRow(text, label, url) {
+    const more = eln("div", "hgroup-more");
+    more.append(eln("span", null, text));
+    const all = eln("a", "hgroup-portal", label);
+    all.href = url; all.target = "_blank"; all.rel = "noopener";
+    more.append(all);
+    return more;
+  }
+
+  // USA (Federal) is long (rules + notices of each kind), so it is split into short
+  // sections, each scrolling on its own with a scrollbar in its own colour, and a row
+  // of pills at the top jumps to any of them.
   const FED_COLORS = {
     rules: "--hh-green", rfi: "--series-1", environment: "--series-4", permits: "--hh-gold",
     meetings: "--series-5", privacy: "--series-7", paperwork: "--series-8", other: "--series-6",
@@ -744,15 +756,18 @@
   function federalSections(group, rules, notices, juris) {
     const sections = [];
     if (rules.length) {
-      sections.push({ key: "rules", label: "Proposed & final rules", rows: rules,
-        count: juris.open_total > rules.length ? rules.length + " of " + juris.open_total : String(rules.length),
-        moreText: juris.open_total > rules.length ? "Showing the " + rules.length + " closing soonest." : "",
-        moreLabel: "See all " + juris.open_total + " open for comment ↗", moreUrl: juris.full_list_url });
+      const total = juris.open_total || rules.length;
+      sections.push({ key: "rules", label: "Proposed & final rules", rows: rules.slice(0, SHOW_MAX), total: total,
+        // The rules link is the Federal Register's list of exactly these, so it can say the count.
+        moreLabel: "See all " + total + " ↗", moreUrl: juris.full_list_url });
     }
     (juris.notice_categories || []).forEach((c) => {
       const rows = notices.filter((h) => h.category === c.key);
-      if (rows.length) sections.push({ key: c.key, label: c.label, rows: rows,
-        count: rows.length + " of " + c.total, note: true });
+      // Govbot sorts notices into kinds by title; the Federal Register's matching search
+      // looks at whole documents and finds more, so its button names no count.
+      if (rows.length) sections.push({ key: c.key, label: c.label, rows: rows.slice(0, SHOW_MAX),
+        total: c.total, note: true, moreLabel: "See more on the Federal Register ↗",
+        moreUrl: c.list_url || juris.notice_list_url });
     });
     if (!sections.length) return;
 
@@ -761,34 +776,27 @@
     nav.append(eln("span", "fnav-l", "Jump to"));
     group.append(nav);
 
-    // Notice kinds sit side by side (two columns on wide screens) under one heading.
-    let noteGrid = null;
+    let noticesHead = false;
     sections.forEach((sec) => {
-      if (sec.note && !noteGrid) {
+      if (sec.note && !noticesHead) {
+        noticesHead = true;
         group.append(eln("h3", "hnotices-h", "Other federal notices open for comment"));
         group.append(eln("p", "hnotices-sub", "Agencies also ask for comments on requests for ideas, permits, " +
-          "privacy records, forms and more. A few closing soonest of each kind:"));
-        noteGrid = eln("div", "fsec-grid");
-        group.append(noteGrid);
+          "privacy records, forms and more. The " + SHOW_MAX + " closing soonest of each kind:"));
       }
       const box = eln("section", "fsec");
       box.id = "fed-" + sec.key;
       box.style.setProperty("--sc", "var(" + (FED_COLORS[sec.key] || "--hh-green") + ")");
       const h = eln("h4", "fsec-h", sec.label);
-      h.append(eln("span", "fsec-n", sec.count + " open"));
+      h.append(eln("span", "fsec-n", showing(sec.rows.length, sec.total)));
       box.append(h);
       const rows = eln("div", "hgroup-rows fsec-rows");
       sec.rows.forEach((r) => rows.append(hearingRow(r)));
       box.append(rows);
-      if (sec.moreUrl && sec.moreText) {
-        const more = eln("div", "hgroup-more");
-        more.append(eln("span", null, sec.moreText));
-        const all = eln("a", "hgroup-portal", sec.moreLabel);
-        all.href = sec.moreUrl; all.target = "_blank"; all.rel = "noopener";
-        more.append(all);
-        box.append(more);
+      if (sec.moreUrl && sec.total > sec.rows.length) {
+        box.append(seeAllRow("Showing the " + sec.rows.length + " closing soonest.", sec.moreLabel, sec.moreUrl));
       }
-      (sec.note ? noteGrid : group).append(box);
+      group.append(box);
 
       const pill = eln("button", "fnav-pill");
       pill.type = "button";
@@ -802,12 +810,8 @@
     });
 
     if (juris.notice_list_url && juris.notice_total) {
-      const more = eln("div", "hgroup-more");
-      more.append(eln("span", null, juris.notice_total + " notices are open for comment in all."));
-      const all = eln("a", "hgroup-portal", "See all " + juris.notice_total + " notices ↗");
-      all.href = juris.notice_list_url; all.target = "_blank"; all.rel = "noopener";
-      more.append(all);
-      group.append(more);
+      group.append(seeAllRow(juris.notice_total + " notices are open for comment in all.",
+        "See all " + juris.notice_total + " notices ↗", juris.notice_list_url));
     }
   }
 

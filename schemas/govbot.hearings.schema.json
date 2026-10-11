@@ -32,16 +32,19 @@
             "enum": ["witness_slip", "committee_sign_in", "written_testimony", "public_comment"]
           },
           "portal_url": { "type": "string", "format": "uri", "description": "Official portal where a resident files a slip / signs in / comments." },
-          "open_total": { "type": "integer", "minimum": 0, "description": "Federal only: how many rules are open for comment in all; the document carries just the soonest-closing share of them." },
+          "open_total": { "type": "integer", "minimum": 0, "description": "Federal only: how many rules are open for comment in all; the document carries just the 7 closing soonest." },
           "full_list_url": { "type": "string", "format": "uri", "description": "Federal only: the official Federal Register list of every rule open for comment (the page's \"See all\" button)." },
           "notice_total": { "type": "integer", "minimum": 0, "description": "Federal only: how many notices (non-rule announcements) are open for comment in all." },
           "notice_list_url": { "type": "string", "format": "uri", "description": "Federal only: the official Federal Register list of every notice open for comment." },
           "notice_categories": {
             "type": "array",
-            "description": "Federal only: the notice kinds present, in display order, each with its full count (the document carries only a few of each).",
+            "description": "Federal only: the notice kinds present, in display order, each with its full count (the document carries only the 7 closing soonest of each) and a matching official search.",
             "items": {
               "type": "object", "required": ["key", "label", "total"], "additionalProperties": false,
-              "properties": { "key": { "type": "string" }, "label": { "type": "string" }, "total": { "type": "integer", "minimum": 0 } }
+              "properties": {
+                "key": { "type": "string" }, "label": { "type": "string" }, "total": { "type": "integer", "minimum": 0 },
+                "list_url": { "type": "string", "format": "uri", "description": "A Federal Register search of open notices matching this kind (wider than the kind: it searches whole documents, Govbot sorts by title)." }
+              }
             }
           }
         }
@@ -68,7 +71,7 @@
           "description": "Stable identifier: <jurisdiction>-<chamber>-<committeeId>-<hearingId> (IL) or wa-<chamber>-<agendaId> (WA). Idempotent across runs."
         },
         "jurisdiction": { "type": "string", "pattern": "^[a-z]{2}$" },
-        "chamber": { "type": "string", "enum": ["house", "senate", "joint", "other"] },
+        "chamber": { "type": "string", "enum": ["house", "senate", "joint", "other", "federal"], "description": "\"federal\" for a Federal Register comment period." },
         "committee": { "type": "string", "description": "Committee name." },
         "title": { "type": "string", "description": "Subject matter / agenda line as published." },
         "scheduled_iso": {
@@ -76,12 +79,12 @@
           "description": "Local wall-clock start time as naive ISO 8601 (YYYY-MM-DDTHH:MM:SS), no offset applied. Pair with `timezone` for display. Null when the source time was unparseable. Sort within a jurisdiction lexicographically."
         },
         "scheduled_display": { "type": "string", "description": "Source-formatted start time string for direct display." },
-        "timezone": { "type": "string", "description": "IANA tz name the local time is in (e.g. America/Chicago)." },
+        "timezone": { "type": ["string", "null"], "description": "IANA tz name the local time is in (e.g. America/Chicago); null for a federal comment deadline, which is a date only." },
         "location": { "type": "string", "description": "Room · Building · City, as available." },
         "status": {
           "type": "string",
-          "enum": ["scheduled", "canceled"],
-          "description": "Canceled hearings are kept (they close a slip window) but flagged."
+          "enum": ["scheduled", "canceled", "open"],
+          "description": "Canceled hearings are kept (they close a slip window) but flagged; \"open\" is a federal comment period still taking comments."
         },
         "bills": {
           "type": "array",
