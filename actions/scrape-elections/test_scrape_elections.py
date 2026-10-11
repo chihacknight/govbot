@@ -424,11 +424,28 @@ class Money(unittest.TestCase):
         self.assertIsNone(main.sbe_office_for("us-senate-il"))
 
     def test_person_keys(self):
-        self.assertEqual(main._ballot_person_key("Casey R. Sample"), ("c", "sample"))
-        self.assertEqual(main._ballot_person_key('Michilla "Kyla" Blaise'), ("m", "blaise"))
-        self.assertEqual(main._ballot_person_key("Carlos A. Rivas Jr."), ("c", "rivas"))
-        self.assertEqual(main._person_key("Kambium E", "Buckner"), ("k", "buckner"))
-        self.assertEqual(main._person_key("Lauren", '"Young" Weber'), ("l", "weber"))
+        self.assertEqual(main._ballot_keys("Casey R. Sample"), {("c", "sample")})
+        self.assertEqual(main._ballot_keys('Michilla "Kyla" Blaise'), {("m", "blaise"), ("k", "blaise")})
+        self.assertEqual(main._ballot_keys("Carlos A. Rivas Jr."), {("c", "rivas")})
+        self.assertEqual(main._person_keys("Kambium E", "Buckner"), {("k", "buckner")})
+        self.assertEqual(main._person_keys("Lauren", '"Young" Weber'), {("l", "weber")})
+        self.assertEqual(main._person_keys(" G. WILLIAM (BILL)", "FOSTER"), {("g", "foster"), ("b", "foster")})
+
+    def test_fec_money_for_federal_races(self):
+        idx = main.build_fec_index(str(self.dir), {
+            ("us-house-il-05", "Casey Sample"), ("us-house-il-11", "Bill Foster"),
+            ("us-house-il-04", "Patty Garcia"), ("us-senate-il", "Don Tracy"),
+            (self.MAYOR, "Casey R. Sample")}, self.now)
+        m = idx[("us-house-il-05", "Casey Sample")]          # the IL-05 record, not Indiana's
+        self.assertEqual((m["source"], m["committee_id"]), ("FEC", "H6IL05001"))
+        self.assertEqual((m["funds_raised"], m["funds_spent"], m["cash_on_hand"]), (1200.5, 200.25, 1000.25))
+        self.assertEqual(m["through"], "2026-06-30")
+        self.assertEqual(m["source_url"], "https://www.fec.gov/data/candidate/H6IL05001/")
+        self.assertEqual(idx[("us-house-il-11", "Bill Foster")]["committee_id"], "H8IL11001")  # via (BILL)
+        self.assertEqual(idx[("us-senate-il", "Don Tracy")]["cash_on_hand"], 270.0)
+        # "Patty" and "Pat" Garcia both run in IL-04 -> two FEC ids, no guess.
+        self.assertNotIn(("us-house-il-04", "Patty Garcia"), idx)
+        self.assertNotIn((self.MAYOR, "Casey R. Sample"), idx)  # FEC covers federal races only
 
     def test_aggregates_active_candidate_committees_for_this_office(self):
         m = self.idx[(self.MAYOR, "Casey R. Sample")]
@@ -471,8 +488,27 @@ class Money(unittest.TestCase):
         n = main.enrich_money(doc, str(self.dir), self.now)
         self.assertEqual(n, 1)
         self.assertEqual(doc["races"][0]["candidates"][0]["money"]["committees"], 2)
+        self.assertEqual(doc["races"][0]["candidates"][0]["money"]["source"], "SBE")
         self.assertNotIn("money", doc["races"][0]["candidates"][1])
+        # A federal candidate gets no SBE money (a State Rep record exists) and no FEC record here.
         self.assertNotIn("money", doc["races"][1]["candidates"][0])
+
+
+class SamePerson(unittest.TestCase):
+    def test_same_person(self):
+        self.assertTrue(main.same_person("Sonya Harper", "Sonya Marie Harper"))
+        self.assertTrue(main.same_person("Diane Harris", "Diane M. Harris"))
+        self.assertTrue(main.same_person('Michael "Mike" Crawford', "Mike Crawford"))
+        self.assertTrue(main.same_person("Carlos A. Rivas Jr.", "Carlos Rivas"))
+        self.assertFalse(main.same_person("Patty Garcia", "Jesus Garcia"))
+        self.assertFalse(main.same_person("Jo Smith", "John Smith"))
+
+    def test_add_candidate_folds_duplicates(self):
+        race = {"candidates": [{"name": "Jonathan Jackson", "party": None, "source": "a"}]}
+        self.assertEqual(main.add_candidate(race, {"name": "Jonathan L. Jackson", "party": "Democratic"}), 0)
+        self.assertEqual(race["candidates"], [{"name": "Jonathan L. Jackson", "party": "Democratic", "source": "a"}])
+        self.assertEqual(main.add_candidate(race, {"name": "Christian Maxwell"}), 1)
+        self.assertEqual(len(race["candidates"]), 2)
 
 
 class Results(unittest.TestCase):

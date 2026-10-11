@@ -1137,12 +1137,23 @@ first initial via `_person_key`, so "Kam" finds "Kambium E") — a name-only mat
 Frerichs (Treasurer) his 2000 "for County Board" committee and Kam Buckner (IL House 26) his 2023
 mayoral one. Two different people for the same office are skipped, never guessed; only **active
 candidate committees** count (`TypeOfCommittee == "Candidate"`, `Status == "A"` — not closed
-committees from old races, nor party/ward organizations a candidate chairs); **federal races get no
-SBE money** (they file with the FEC). `source_url` links that committee's own SBE page
-(`CommitteeDetail.aspx?id=`). A D2 covers one reporting period, so the page labels the figures
-"💵 Latest report: Raised · Spent · Cash on hand" and "checked <date>". On the Oct 2026 data this
-gave 134 candidates money, with Frerichs → "Friends of Frerichs" and Buckner → "Friends of Kam
-Buckner". The locator caption for statewide offices (`il_exec`, U.S. Senate — flagged `is_citywide`
+committees from old races, nor party/ward organizations a candidate chairs). `source_url` links
+that committee's own SBE page (`CommitteeDetail.aspx?id=`). A D2 covers one reporting period, so the
+page labels SBE figures "💵 Latest report: Raised · Spent · Cash on hand" and "checked <date>".
+**U.S. House / Senate money comes from the FEC** (`build_fec_index`): the FEC's keyless bulk
+"All candidates" summary `weball26.txt` (fec.gov/files/bulk-downloads/2026/weball26.zip, ~200 KB,
+downloaded by the same deploy step into the money dir; pipe-delimited, columns `_FEC_*`) — two-year
+**cycle totals** (receipts, disbursements, ending cash) through the candidate's latest report. Matched
+the same strict way (`fec_office_for`: H/S + IL + district; surname + first initial **or nickname**, so
+"Bill Foster" finds "FOSTER, G. WILLIAM (BILL)"; two FEC ids for one person → skipped). Money records
+carry `source` ("SBE"/"FEC") and, for FEC, `through` (report end date); the page shows "💵 This
+election cycle: …" + "FEC filing ↗ · through <date>" (the candidate's fec.gov page). On the Oct 2026
+data: 170 candidates with money, 32 of them federal; Frerichs → "Friends of Frerichs", Buckner →
+"Friends of Kam Buckner". **One person written two ways is one candidate:** `same_person` (same
+surname + same first name or nickname: "Sonya Harper"/"Sonya Marie Harper", "Jonathan Jackson"/
+"Jonathan L. Jackson") and `add_candidate` (keeps the fuller name, fills missing fields) are used by
+`assemble`, `merge_candidates` (BOE) and the Wikipedia nominee step, and potential candidates graduate
+out by the same rule — the Oct 2026 data had 9 such duplicates. The locator caption for statewide offices (`il_exec`, U.S. Senate — flagged `is_citywide`
 because every Chicago voter has them) reads **"Statewide & citywide · All of Illinois, including
 all of Chicago"**, not "Citywide · All of Chicago". Because the SBE bulk files are ~70MB, `deploy-docs.yml`
 runs it as a **separate step gated on candidates being present** —
@@ -1247,9 +1258,14 @@ exists**: e.g. the elected CPS board's role over the schools, "22 police distric
 and the office's **full election timeline** (the shared
 `renderTimeline` `.tl` component with the pulsing current node — every race in a group shares its ballot
 cycle, so the first race's `timeline` is used), plus a "View full details and candidates →" affordance.
-Each office card carries a **full 4-sided border in its office colour** (`.office-card` `border: 2px
-solid var(--gc)`, not just a top stripe) so it's distinguishable by more than a thin line
-(accessibility).
+Each office card carries a **full 4-sided border** (`.office-card` `border: 2px solid var(--gc)`),
+**alternating green / gold** card by card (`OFFICE_ACCENTS` → `--el-green` `#3DDC84`/`#0B7D45`,
+`--el-gold` true gold `#E5B94E`/`#8A6100`; `officeMeta(g)` swaps the group colour for its card's
+accent, and the office's popup + race cards use the same colour). Every text element in the office
+cards, popups and the ballot side panel passes **4.5:1 contrast in both themes** (checked with an
+automated audit): status chips (`.pc-sig`, `.pchip`, party, ballot date) use full-contrast text on a
+coloured border + tint, money/source/news links use `--gb-link`, the "Chicago neighborhoods / Counties"
+labels use `--el-gold`, and timeline check-dots / "★ First elected" use `--gb-on-primary` on `--el-green`.
 The hero copy (tagline, "Next election" line, the "Live now" coverage note, the "Data as of" pill — via
 `header.top p`) and the office cards'
 race/candidate counts (`.oc-count`) are all full-contrast `--text-primary`, not dimmed.

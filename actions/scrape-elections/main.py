@@ -678,6 +678,48 @@ def fetch_boe_candidates(pdf_source=None):
     return parse_boe_candidate_list(text) if text else []
 
 
+def _name_parts(name):
+    """(given names, surname) of a ballot name, lowercase alphanumerics: a quoted or
+    parenthesized nickname counts as another given name ('Michael "Mike" Crawford'
+    -> {'michael', 'mike'}, 'crawford'); middle names/initials and Jr./III dropped."""
+    nick = re.findall(r'["(]([^")]+)[")]', name or "")
+    words = [re.sub(r"[^a-z0-9]", "", w.lower())
+             for w in re.split(r"[\s,]+", re.sub(r'["(][^")]*[")]', " ", name or ""))]
+    words = [w for w in words if w]
+    while words and words[-1] in _NAME_SUFFIXES:
+        words.pop()
+    if len(words) < 2:
+        return set(), (words[0] if words else "")
+    given = {words[0]} | {re.sub(r"[^a-z0-9]", "", n.lower().split()[0]) for n in nick if n.strip()}
+    return given, words[-1]
+
+
+def same_person(a, b):
+    """True when two ballot names in the same race are one person written two ways:
+    the same surname and the same first name (or nickname) — "Sonya Harper" /
+    "Sonya Marie Harper", "Diane Harris" / "Diane M. Harris". Different first names
+    stay different people."""
+    ga, la = _name_parts(a)
+    gb, lb = _name_parts(b)
+    return bool(la) and la == lb and bool(ga & gb)
+
+
+def add_candidate(race, cand):
+    """Add `cand` to a race unless it is someone already listed (same_person); a
+    duplicate only fills what the listed record lacks and keeps the fuller name.
+    Returns 1 when a new candidate was added, else 0."""
+    for x in race.setdefault("candidates", []):
+        if same_person(x.get("name"), cand.get("name")):
+            if len((cand.get("name") or "").split()) > len((x.get("name") or "").split()):
+                x["name"] = cand["name"]
+            for k, v in cand.items():
+                if v and not x.get(k):
+                    x[k] = v
+            return 0
+    race["candidates"].append(cand)
+    return 1
+
+
 def merge_candidates(doc, candidates):
     """Place scraped candidates into an assembled doc's races by resolved race id
     (dedupe by name; a populated race flips 'upcoming' -> 'on_ballot'). Returns the
@@ -690,12 +732,10 @@ def merge_candidates(doc, candidates):
         race = by_id.get(rid) if rid else None
         if not race:
             continue
-        race.setdefault("candidates", [])
-        if any(x["name"].lower() == c["name"].lower() for x in race["candidates"]):
+        if not add_candidate(race, c):
             continue
         if race.get("status") == "upcoming":
             race["status"] = "on_ballot"
-        race["candidates"].append(c)
         placed += 1
     for r in doc.get("races", []):
         r.get("candidates", []).sort(key=lambda c: c["name"].lower())
@@ -883,27 +923,18 @@ def sbe_office_for(race_id):
 _NAME_SUFFIXES = {"jr", "sr", "ii", "iii", "iv"}
 
 
-def _person_key(first, last):
-    """(first initial, surname) for matching a ballot name to an SBE record:
-    quoted nicknames and generational suffixes dropped, surname = its last word."""
-    def words(s):
-        s = re.sub(r'"[^"]*"', " ", s or "")
-        return [w for w in (re.sub(r"[^a-z0-9]", "", t.lower()) for t in s.split()) if w]
-    lw = [w for w in words(last) if w not in _NAME_SUFFIXES]
-    fw = words(first)
-    if not lw or not fw:
-        return None
-    return fw[0][0], lw[-1]
+def _person_keys(first, last):
+    """{(initial, surname)} for an official record's split name: the first given name
+    and any quoted/parenthesized nickname ('G. WILLIAM (BILL)' -> g and b), the
+    surname's last word without Jr./III (so '"Young" Weber' -> weber)."""
+    given, surname = _name_parts((first or "") + " " + re.sub(r'["(][^")]*[")]', " ", last or ""))
+    return {(g[0], surname) for g in given if g} if surname else set()
 
 
-def _ballot_person_key(name):
-    """_person_key for a ballot name ('First M. Last', 'First Last, Jr.')."""
-    parts = [w for w in re.split(r"[\s,]+", re.sub(r'"[^"]*"', " ", name or "")) if w]
-    while parts and re.sub(r"[^a-z]", "", parts[-1].lower()) in _NAME_SUFFIXES:
-        parts.pop()
-    if len(parts) < 2:
-        return None
-    return _person_key(parts[0], parts[-1])
+def _ballot_keys(name):
+    """_person_keys for a ballot name ('First M. Last', 'First "Nick" Last, Jr.')."""
+    given, surname = _name_parts(name)
+    return {(g[0], surname) for g in given if g} if surname else set()
 
 
 def _name_key(name):
@@ -955,25 +986,27 @@ def build_money_index(money_dir, wanted, now):
     # (person key, office spec) for every candidate the SBE covers
     targets = {}
     for rid, name in wanted:
-        spec, pk = sbe_office_for(rid), _ballot_person_key(name)
-        if spec and pk:
-            targets[(rid, name)] = (pk, spec)
+        spec, keys = sbe_office_for(rid), _ballot_keys(name)
+        if spec and keys:
+            targets[(rid, name)] = (keys, spec)
     if not targets:
         return {}
     by_person = {}
-    for want, (pk, _spec) in targets.items():
-        by_person.setdefault(pk, []).append(want)
+    for want, (keys, _spec) in targets.items():
+        for k in keys:
+            by_person.setdefault(k, []).append(want)
 
     # 1) SBE candidate records for the same person AND office. Several records of one
     #    person (re-runs) are kept together; two first names for one office -> skip.
     found = {}   # want -> {first name: set(candidate ids)}
     for row in read_tsv(d / "Candidates.txt"):
-        pk = _person_key(row.get("FirstName", ""), row.get("LastName", ""))
-        if pk not in by_person:
+        wants = {w for k in _person_keys(row.get("FirstName", ""), row.get("LastName", ""))
+                 for w in by_person.get(k, [])}
+        if not wants:
             continue
         office = (row.get("Office") or "").strip().lower()
         dtype = (row.get("DistrictType") or "").strip().lower()
-        for want in by_person[pk]:
+        for want in wants:
             offices, want_dtype, dist = targets[want][1]
             if office not in {o.lower() for o in offices} or dtype != want_dtype.lower():
                 continue
@@ -1040,7 +1073,84 @@ def build_money_index(money_dir, wanted, now):
             "funds_spent": round(sum(latest[c][2] for c in cids), 2),
             "cash_on_hand": round(sum(latest[c][3] for c in cids), 2),
             "as_of": now.strftime("%Y-%m-%d"),
+            "source": "SBE",
             "source_url": SBE_COMMITTEE_URL + primary,
+        }
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# Campaign money — federal races (FEC "All candidates" bulk summary)
+# --------------------------------------------------------------------------- #
+# U.S. House and Senate candidates file with the FEC, not the Illinois SBE. The FEC
+# publishes a keyless, pipe-delimited summary of every candidate's campaign for the
+# two-year cycle (fec.gov/files/bulk-downloads/<year>/weball<yy>.zip): totals from
+# the candidate's principal committee through its latest report. Matched the same
+# strict way: same office (H/S), state and district, surname + first initial (or
+# nickname); more than one FEC candidate ID for one person -> skipped, never guessed.
+FEC_CANDIDATE_URL = "https://www.fec.gov/data/candidate/"
+# weball column positions (FEC "All candidates" file description)
+_FEC_ID, _FEC_NAME, _FEC_RECEIPTS, _FEC_DISB, _FEC_COH = 0, 1, 5, 7, 10
+_FEC_STATE, _FEC_DIST, _FEC_THROUGH = 18, 19, 27
+
+
+def fec_office_for(race_id):
+    """(office letter, state, district) for a federal race, else None."""
+    if race_id == "us-senate-il":
+        return ("S", "IL", None)
+    m = re.fullmatch(r"us-house-il-0*(\d+)", race_id or "")
+    return ("H", "IL", "%02d" % int(m.group(1))) if m else None
+
+
+def _fec_date(s):
+    """'06/30/2026' -> '2026-06-30' ('' when not a date)."""
+    m = re.fullmatch(r"(\d\d)/(\d\d)/(\d{4})", (s or "").strip())
+    return f"{m.group(3)}-{m.group(1)}-{m.group(2)}" if m else ""
+
+
+def build_fec_index(money_dir, wanted, now):
+    """{(race_id, name): money} for federal candidates from the newest weball<yy>.txt
+    in `money_dir`. Fail-soft: no file -> {}."""
+    d = Path(money_dir)
+    files = sorted(d.glob("weball*.txt")) if d.exists() else []
+    if not files:
+        return {}
+    targets = {}
+    for rid, name in wanted:
+        spec, keys = fec_office_for(rid), _ballot_keys(name)
+        if spec and keys:
+            targets[(rid, name)] = (keys, spec)
+    if not targets:
+        return {}
+    found = {}   # want -> {candidate id: row}
+    with files[-1].open(encoding="latin-1") as fh:
+        for line in fh:
+            row = line.rstrip("\n").split("|")
+            if len(row) <= _FEC_THROUGH:
+                continue
+            cid = row[_FEC_ID].strip()
+            last, _, first = row[_FEC_NAME].partition(",")
+            keys = _person_keys(first, last)
+            for want, (wkeys, (office, state, dist)) in targets.items():
+                if (cid[:1] == office and row[_FEC_STATE] == state
+                        and (dist is None or row[_FEC_DIST] == dist) and keys & wkeys):
+                    found.setdefault(want, {})[cid] = row
+    out = {}
+    for want, rows in found.items():
+        if len(rows) != 1:
+            continue
+        cid, row = next(iter(rows.items()))
+        out[want] = {
+            "committee_name": None,
+            "committee_id": cid,
+            "committees": 1,
+            "funds_raised": _to_float(row[_FEC_RECEIPTS]),
+            "funds_spent": _to_float(row[_FEC_DISB]),
+            "cash_on_hand": _to_float(row[_FEC_COH]),
+            "through": _fec_date(row[_FEC_THROUGH]) or None,
+            "as_of": now.strftime("%Y-%m-%d"),
+            "source": "FEC",
+            "source_url": FEC_CANDIDATE_URL + cid + "/",
         }
     return out
 
@@ -1052,7 +1162,8 @@ def enrich_money(doc, money_dir, now):
     pairs = [(r.get("id"), c) for r in doc.get("races", []) for c in r.get("candidates", [])]
     if not pairs:
         return 0
-    index = build_money_index(money_dir, {(rid, c["name"]) for rid, c in pairs}, now)
+    wanted = {(rid, c["name"]) for rid, c in pairs}
+    index = {**build_money_index(money_dir, wanted, now), **build_fec_index(money_dir, wanted, now)}
     if not index:
         return 0
     n = 0
@@ -2077,7 +2188,7 @@ def build_potential(race, items, now, existing=None, bodies=None):
     once the authority confirms someone, they graduate out of the unofficial
     "potential/rumored" list rather than double-listing as both."""
     bodies = bodies or {}
-    official = {(c.get("name") or "").lower() for c in race.get("candidates", [])}
+    official = [c.get("name") or "" for c in race.get("candidates", [])]
     people = {}  # name_key -> record
 
     def _seed(name):
@@ -2150,7 +2261,7 @@ def build_potential(race, items, now, existing=None, bodies=None):
     for key, rec in people.items():
         if not rec["sources"]:
             continue
-        if key in official:      # now an official candidate — no longer "potential"
+        if any(same_person(rec["name"], o) for o in official):   # now official — no longer "potential"
             continue
         dates = sorted(rec["_dates"])
         rec["sources"].sort(key=lambda s: (s.get("date") or ""), reverse=True)
@@ -2427,12 +2538,11 @@ def enrich_candidates_wiki(doc, fetcher=fetch_wikitext, sleep=POTENTIAL_FETCH_SL
         race = by_id.get(race_id)
         if not race:
             return 0
-        if any((c.get("name") or "").lower() == name.lower() for c in race["candidates"]):
+        cand = make_candidate(name, office=race.get("office"), district=race.get("district"),
+                              party=party, petition_status="on_ballot", source=src)
+        cand.pop("_race_id", None)
+        if not add_candidate(race, cand):
             return 0
-        race["candidates"].append(make_candidate(
-            name, office=race.get("office"), district=race.get("district"),
-            party=party, petition_status="on_ballot", source=src))
-        race["candidates"][-1].pop("_race_id", None)
         if race.get("status") == "upcoming":
             race["status"] = "on_ballot"
         return 1
@@ -2497,13 +2607,12 @@ def assemble(candidates, seed, source, now, springfield=None):
         if not race:
             unplaced += 1
             continue
-        # De-dupe within a race by candidate name (case-insensitive).
-        if any(x["name"].lower() == c["name"].lower() for x in race["candidates"]):
+        # One person written two ways is one candidate (same_person).
+        if not add_candidate(race, c):
             continue
         # A populated race is on the ballot; reflect that in its status.
         if race.get("status") == "upcoming":
             race["status"] = "on_ballot"
-        race["candidates"].append(c)
         placed += 1
     if unplaced:
         print(f"warning: {unplaced} scraped candidate(s) did not resolve to a "
