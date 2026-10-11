@@ -3155,7 +3155,7 @@ def main():
             return 0
         n = enrich_money(doc, args.money_dir or "", now)
         Path(args.enrich_money).write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
-        print(f"enriched {n} candidate(s) with SBE campaign money", file=sys.stderr)
+        print(f"enriched {n} candidate(s) with campaign money (SBE + FEC)", file=sys.stderr)
         return 0
 
     if args.enrich_incumbents:

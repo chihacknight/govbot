@@ -1162,7 +1162,7 @@ because every Chicago voter has them) reads **"Statewide & citywide · All of Il
 all of Chicago"**, not "Citywide · All of Chicago". Because the SBE bulk files are ~70MB, `deploy-docs.yml`
 runs it as a **separate step gated on candidates being present** —
 `main.py --enrich-money docs/src/dashboard/elections.json --money-dir <sbe-files>` — so the
-committed sample (empty rosters) carries no money. Parsers/aggregation are offline-tested
+committed sample (empty rosters) carries no money. elections.il.gov sometimes answers **403 to GitHub's runners** (Oct 2026: 3 of 4 files blocked, so only FEC money shipped), so each SBE file is retried (curl's own `--retry` skips a 403) and a file that still fails falls back to the **last complete set**, kept in an `actions/cache` (`sbe-money-<run_id>`, saved only when all four downloaded fresh). Parsers/aggregation are offline-tested
 in `test_scrape_elections.py`.
 
 **Results** (post–Election Night) are scaffolded: each race can carry a `results` block
