@@ -179,6 +179,29 @@ used to animate `filter`/`box-shadow`, a repaint every frame), and the cursor-ch
 its bubble shows. mdbook's docs-search scripts + ~600 KB `searchindex.json` load only on doc pages, not the
 homepage (`index.hbs` loader skips `.gb-landing`).
 
+**Download the data (Explore Legislation, CC BY 4.0).** Anyone can take the bill data: a **"Download the
+data"** outline button in legislation.html's hero (`#dl-open`) opens a panel (`#dl-overlay`, a
+`.modal-overlay`; `#download` deep-links to it — the header's **Data ▾ → "Download bill data"** item in
+`docs/theme/header.html` points there; closing strips the hash; Escape closes it before the catalog).
+**For spreadsheets:** all bills as one zipped CSV and a state picker for one state's CSV (counts and sizes
+from `downloads/manifest.json`, fetched only when the panel opens). **For developers:** `data.json`,
+`bills/<code>.json`, the manifest, the `govbot-data` repos (full per-bill records via `govbot clone` /
+DuckDB), `catalog.json` / `llms.txt`, and a copyable curl + pandas snippet. A column guide, the source
+and the **CC BY 4.0** notice ("credit Govbot (Chi Hack Night)"; `LICENSE-DATA` at the repo root) close the
+panel. In a state's catalog popup, `#dl-state-csv` links that state's pre-built CSV and `#dl-view`
+("Download these N bills", shown once a search/filter narrows it) builds the same CSV in the browser
+from the rows on screen (`billsToCsv` / `csvCell`, a Blob — no extra fetch). The files are built every
+deploy by `scripts/build_site_slices.py --downloads-dir docs/src/dashboard/downloads` (`build_downloads`,
+pure; the "Build per-page bill slices and downloads" step): `bills-<code>.csv` per jurisdiction,
+`govbot-bills-all.csv.zip` (all ~182k bills, ~10 MB; 70 MB unzipped, well under Excel's row limit) with
+`README.txt`, `README.txt`, `manifest.json`. CSV rules (Python and JS must match): columns `CSV_COLUMNS`,
+UTF-8 **BOM** + CRLF, lists joined with "; ", a Govbot link per bill (`bill_key` mirrors `GB.billKey`),
+and a **formula guard** — a cell starting with = + - @ (e.g. NH's "==CANCELLED==" actions) gets a leading
+' so a spreadsheet can't run it; JSON stays exactly raw. The zip carries a fixed timestamp (same data →
+same bytes). `downloads/` is **gitignored** (the repo's root `.gitignore` already ignores `downloads/`) —
+a build artifact like the legislator photos, published by mdbook. Offline-tested in
+`scripts/test_build_site_slices.py`.
+
 **Link colour.** Blue text and links use `--gb-link` (`govbot.css`: `#8AB4FF` dark, `#1747C9` light —
 ~9:1 / ~7:1), not `--gb-blue-hi`, which is too dim on the dark page; the legislation bill modal's links
 (`.m-links a`) are also bolder and underlined, and its "Share this bill" pill has a 2px full-contrast

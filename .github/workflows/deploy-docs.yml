@@ -618,9 +618,11 @@ jobs:
       # Split the all-bills data.json into the small files each page reads (bills/index.json,
       # bills/<state>.json, bills/il_recent.json, bills/search.json) so no page downloads all
       # ~180k bills. Runs on every deploy, fast path included (data.json is restored there), and
-      # takes seconds — so the slices always match the data.json being published.
-      - name: Build per-page bill slices
-        run: python3 scripts/build_site_slices.py --data docs/src/dashboard/data.json --out-dir docs/src/dashboard/bills
+      # takes seconds — so the slices always match the data.json being published. It also writes
+      # the public downloads behind Explore Legislation's "Download the data" panel (per-state CSVs,
+      # all bills as a zipped CSV, README.txt, manifest.json) into dashboard/downloads/ (gitignored).
+      - name: Build per-page bill slices and downloads
+        run: python3 scripts/build_site_slices.py --data docs/src/dashboard/data.json --out-dir docs/src/dashboard/bills --downloads-dir docs/src/dashboard/downloads
 
       - name: Build docs
         run: mdbook build docs

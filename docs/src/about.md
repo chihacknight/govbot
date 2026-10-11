@@ -191,7 +191,9 @@ Each bill is a folder with its metadata, action logs and bill text — see [The 
 
 ## How do I get the data?
 
-Run `govbot clone il` (or `govbot clone all`), or browse and `git clone` any repo at [govbot-data](https://github.com/orgs/govbot-data/repositories).
+**No coding:** open [Explore Legislation → Download the data](dashboard/legislation.html#download) for every bill as a spreadsheet (CSV, opens in Excel or Google Sheets), one state at a time or all at once — or download exactly the bills you've searched for from a state's bills list. The same panel links the JSON files (`dashboard/data.json`, `dashboard/bills/<code>.json`) and a `manifest.json` for scripts. This data is licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) — please credit "Govbot (Chi Hack Night)".
+
+**Full records:** run `govbot clone il` (or `govbot clone all`), or browse and `git clone` any repo at [govbot-data](https://github.com/orgs/govbot-data/repositories).
 
 To add a **new** jurisdiction, each one is scraped by a GitHub Actions template explained in the [caller-repo README template](https://github.com/chihacknight/govbot/blob/main/actions/format/docs/for-caller-repos/README_TEMPLATE.md); to run many pipelines, see the [pipeline manager](https://github.com/chihacknight/govbot/tree/main/actions/pipeline-manager).
 

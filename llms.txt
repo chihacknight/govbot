@@ -13,6 +13,12 @@ Everything is plain JSON that you can fetch over HTTPS. There is nothing to down
 
 - Directory of all jurisdictions (machine-readable): https://raw.githubusercontent.com/chihacknight/govbot/main/catalog.json
 - Browse the data on GitHub: https://github.com/govbot-data
+- Ready-made bulk downloads (one row per bill — state, session, number, title, chamber, latest
+  action, sponsors, topics, links): https://chihacknight.github.io/govbot/dashboard/downloads/manifest.json
+  lists every file — all bills as one zipped CSV (`govbot-bills-all.csv.zip`), one CSV per
+  jurisdiction (`bills-<code>.csv`) — and https://chihacknight.github.io/govbot/dashboard/data.json is
+  every bill as JSON. Licensed CC BY 4.0: credit "Govbot (Chi Hack Night)". For a bill's full record
+  (actions, votes, versions) use the repositories below.
 
 ## How the data is organized (the filing rule)
 

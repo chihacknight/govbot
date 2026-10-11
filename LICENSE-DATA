@@ -1,0 +1,18 @@
+Govbot data license
+===================
+
+The bill data the Govbot site publishes for download — the files behind Explore Legislation's
+"Download the data" panel (https://chihacknight.github.io/govbot/dashboard/legislation.html#download):
+the CSV downloads and manifest under dashboard/downloads/, dashboard/data.json and
+dashboard/bills/<code>.json — is licensed under the Creative Commons Attribution 4.0
+International License (CC BY 4.0):
+
+    https://creativecommons.org/licenses/by/4.0/
+    (full legal code: https://creativecommons.org/licenses/by/4.0/legalcode)
+
+You may share and adapt it for any purpose, including commercially, as long as you give credit:
+
+    Govbot (Chi Hack Night), https://chihacknight.github.io/govbot/
+
+The underlying records are public government records, gathered by the Open States scrapers and
+tagged by Govbot. This file covers that published data, not this repository's source code.
