@@ -379,23 +379,23 @@ class Federal(unittest.TestCase):
     def test_bad_json_is_empty(self):
         self.assertEqual(main.parse_fr_documents("<html>down</html>"), [])
 
-    def test_preview_shows_soonest_twelve_percent(self):
+    def test_preview_shows_the_seven_closing_soonest(self):
         from datetime import date
-        # 208 open rules (today's real count) -> the 25 closing soonest.
+        # 208 open rules (a real day's count) -> the 7 closing soonest.
         rule = next(h for h in self.recs if not h.get("category"))
         many = [dict(rule, id=f"us-{i:03d}", scheduled_iso=f"2026-{10 + i % 3}-{1 + i % 28:02d}")
                 for i in range(208)]
         shown, meta = main.federal_preview(many, date(2026, 10, 10))
-        self.assertEqual(len(shown), 25)
-        self.assertEqual(shown, sorted(many, key=lambda h: (h["scheduled_iso"], h["id"]))[:25])
+        self.assertEqual(len(shown), main.SHOW_MAX)
+        self.assertEqual(shown, sorted(many, key=lambda h: (h["scheduled_iso"], h["id"]))[:7])
         self.assertEqual(meta["open_total"], 208)
         self.assertEqual(meta["full_list_url"],
                          "https://www.federalregister.gov/documents/search?"
                          "conditions%5Bcomment_date%5D%5Bgte%5D=10%2F10%2F2026"
                          "&conditions%5Btype%5D%5B%5D=PRORULE&conditions%5Btype%5D%5B%5D=RULE")
-        # A short list still shows at least one.
+        # A short list shows all of it.
         rules = [h for h in self.recs if not h.get("category")]
-        self.assertEqual(len(main.federal_preview(rules[:2], date(2026, 10, 10))[0]), 1)
+        self.assertEqual(len(main.federal_preview(rules[:2], date(2026, 10, 10))[0]), 2)
 
     def test_notice_categories(self):
         cat = main.fr_notice_category
@@ -409,16 +409,40 @@ class Federal(unittest.TestCase):
         # The fixture's 6 rules carry no category; its 14 notices all do.
         self.assertEqual(sum(1 for h in self.recs if not h.get("category")), 6)
 
-    def test_preview_keeps_a_few_notices_per_kind(self):
+    def test_preview_keeps_up_to_seven_notices_per_kind(self):
         from datetime import date
         shown, meta = main.federal_preview(self.recs, date(2026, 10, 10))
         notices = [h for h in shown if h.get("category")]
         self.assertEqual(meta["notice_total"], 14)
-        self.assertEqual([c["key"] for c in meta["notice_categories"]],
+        cats = meta["notice_categories"]
+        self.assertEqual([c["key"] for c in cats],
                          ["rfi", "environment", "permits", "meetings", "privacy", "paperwork", "other"])
-        self.assertTrue(all(c["total"] == 2 for c in meta["notice_categories"]))
-        self.assertEqual(len(notices), 14)   # every kind has <= NOTICES_PER_CATEGORY here
+        self.assertTrue(all(c["total"] == 2 for c in cats))
+        self.assertEqual(len(notices), 14)   # every kind has <= SHOW_MAX here
         self.assertIn("conditions%5Btype%5D%5B%5D=NOTICE", meta["notice_list_url"])
+        # A kind with more than SHOW_MAX open shows only the soonest SHOW_MAX.
+        note = next(h for h in self.recs if h.get("category") == "paperwork")
+        many = [dict(note, id=f"us-n{i:02d}", scheduled_iso=f"2026-11-{1 + i:02d}") for i in range(12)]
+        shown, meta = main.federal_preview(many, date(2026, 10, 10))
+        self.assertEqual([h["id"] for h in shown], [f"us-n{i:02d}" for i in range(7)])
+        self.assertEqual(meta["notice_categories"][0]["total"], 12)
+
+    def test_notice_lists_hold_every_notice_by_kind(self):
+        lists = main.notice_lists(self.recs)
+        self.assertEqual(list(lists), ["rfi", "environment", "permits", "meetings", "privacy", "paperwork", "other"])
+        self.assertTrue(all(l["total"] == len(l["hearings"]) == 2 for l in lists.values()))
+        self.assertEqual(lists["privacy"]["label"], "Privacy & government records")
+        # More than SHOW_MAX of a kind: the list keeps all of them, soonest-closing first,
+        # and its first SHOW_MAX are exactly the ones the page already shows.
+        from datetime import date
+        note = next(h for h in self.recs if h.get("category") == "paperwork")
+        many = [dict(note, id=f"us-n{i:02d}", scheduled_iso=f"2026-11-{12 - i:02d}") for i in range(12)]
+        full = main.notice_lists(many)["paperwork"]["hearings"]
+        self.assertEqual(len(full), 12)
+        self.assertEqual([h["scheduled_iso"] for h in full], sorted(h["scheduled_iso"] for h in many))
+        shown, _ = main.federal_preview(many, date(2026, 10, 10))
+        self.assertEqual(full[:main.SHOW_MAX], shown)
+        self.assertEqual(main.notice_lists([h for h in self.recs if not h.get("category")]), {})
 
     def test_us_sorts_first(self):
         from datetime import datetime, timezone

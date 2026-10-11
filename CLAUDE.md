@@ -179,6 +179,29 @@ used to animate `filter`/`box-shadow`, a repaint every frame), and the cursor-ch
 its bubble shows. mdbook's docs-search scripts + ~600 KB `searchindex.json` load only on doc pages, not the
 homepage (`index.hbs` loader skips `.gb-landing`).
 
+**Download the data (Explore Legislation, CC BY 4.0).** Anyone can take the bill data: a **"Download the
+data"** outline button in legislation.html's hero (`#dl-open`) opens a panel (`#dl-overlay`, a
+`.modal-overlay`; `#download` deep-links to it — the header's **Data ▾ → "Download bill data"** item in
+`docs/theme/header.html` points there; closing strips the hash; Escape closes it before the catalog).
+**For spreadsheets:** all bills as one zipped CSV and a state picker for one state's CSV (counts and sizes
+from `downloads/manifest.json`, fetched only when the panel opens). **For developers:** `data.json`,
+`bills/<code>.json`, the manifest, the `govbot-data` repos (full per-bill records via `govbot clone` /
+DuckDB), `catalog.json` / `llms.txt`, and a copyable curl + pandas snippet. A column guide, the source
+and the **CC BY 4.0** notice ("credit Govbot (Chi Hack Night)"; `LICENSE-DATA` at the repo root) close the
+panel. In a state's catalog popup, `#dl-state-csv` links that state's pre-built CSV and `#dl-view`
+("Download these N bills", shown once a search/filter narrows it) builds the same CSV in the browser
+from the rows on screen (`billsToCsv` / `csvCell`, a Blob — no extra fetch). The files are built every
+deploy by `scripts/build_site_slices.py --downloads-dir docs/src/dashboard/downloads` (`build_downloads`,
+pure; the "Build per-page bill slices and downloads" step): `bills-<code>.csv` per jurisdiction,
+`govbot-bills-all.csv.zip` (all ~182k bills, ~10 MB; 70 MB unzipped, well under Excel's row limit) with
+`README.txt`, `README.txt`, `manifest.json`. CSV rules (Python and JS must match): columns `CSV_COLUMNS`,
+UTF-8 **BOM** + CRLF, lists joined with "; ", a Govbot link per bill (`bill_key` mirrors `GB.billKey`),
+and a **formula guard** — a cell starting with = + - @ (e.g. NH's "==CANCELLED==" actions) gets a leading
+' so a spreadsheet can't run it; JSON stays exactly raw. The zip carries a fixed timestamp (same data →
+same bytes). `downloads/` is **gitignored** (the repo's root `.gitignore` already ignores `downloads/`) —
+a build artifact like the legislator photos, published by mdbook. Offline-tested in
+`scripts/test_build_site_slices.py`.
+
 **Link colour.** Blue text and links use `--gb-link` (`govbot.css`: `#8AB4FF` dark, `#1747C9` light —
 ~9:1 / ~7:1), not `--gb-blue-hi`, which is too dim on the dark page; the legislation bill modal's links
 (`.m-links a`) are also bolder and underlined, and its "Share this bill" pill has a 2px full-contrast
@@ -490,7 +513,15 @@ made a big state's catalog scroll at ~18 fps — `z-index:90`, `.results-overlay
 whenever a filter/search is active, and adds `body.results-open` to lock scroll; the map entry + Recent
 activity stay on screen as the dimmed backdrop, and the map's selected-state pulse (it animates a
 `filter`, a repaint every frame) is paused while the catalog or a bill card covers it. The catalog
-search text is built once per bill (`b._hay` / `b._hayN`), not on every keystroke. The popped `#results-card` (`.results-modal`) animates in with
+search text is built once per bill (`b._hay` / `b._hayN`), not on every keystroke, and **includes each
+sponsor's roster full name** (`rosterSearchName`) plus a "First Last" flip of a "Last, First" name
+(`flipName`) — sponsors are stored as "Aylward" (SD…), "K. Brown" (CO), "Rodric Bray" (IN, roster "Rod"),
+"Hernandez, Joshua N." (NM), so a first- or full-name search used to miss them. When the stored name has a
+first name/initial, the roster person's must start with the same letter (a former legislator is never
+read as a current namesake); a surname shared by two legislators stays unresolved (never guessed). The text
+is rebuilt once if `people.json` arrives after the first search (`b._hayFull`). Checked against live data
+in every state: ~97% of person-sponsor mentions are findable by first name; the rest are shared surnames
+(MS/SC/TN…), legislators no longer in the current roster, and the territories' initials-only names (MP). The popped `#results-card` (`.results-modal`) animates in with
 `@keyframes results-pop`, carries an **X close button** (`#results-x`, top-right) and a
 jurisdiction-named title (`resultsTitle` → "Wyoming bills (N)"). **Every sortable column header
 carries a persistent sort arrow** — a muted up/down glyph (`.arrow.is-idle`, "⇅") when idle so the
@@ -731,7 +762,8 @@ in dark mode, a deep-green rounded "night" panel in light mode so she stays prom
 per state up to 4, with the **sponsor avatar chips**: vendored headshot over a party-tinted initials
 monogram, first 3 then "+N more", non-person sponsors skipped), Hearings (live calendar-figure rows),
 Illinois elections (next ballot date + countdown + what's on it + the ballot after, from
-`elections.json`), **Social bots** ("Track legislation wherever you scroll.": the 13 topics, four green platform buttons — Bluesky → `@govboteducation.bsky.social`, Twitter (X logo), Threads, Instagram — and a **live auto-scrolling feed of the bots' real posts**, designed on the "Govbot Bots Feed" Design canvas: `landing.js` fetches, fail-soft and only once the carousel nears the screen, the bot repo's own dashboard data `frankies2727.github.io/CHN-SocialMedia-Govbot-Main/data.json` (its `feed`: exact post text + URL + `posted_at` for Twitter/Threads/Instagram, the chip from the record's `date` + `action`) and Bluesky's public AppView API (`getAuthorFeed` for the 13 topic accounts; each shown post's dated action line is read from the bot's own reply via `getPostThread` — none → no chip, never guessed); the newest 5 per platform are interleaved (20 posts), each showing "Posted: <date>" (Central time), a **gold** action chip / topic / "View post ↗" via the landing-only true-gold `--gl-fgold` (the brand `--gb-gold` is green), the list rendered twice so the rAF scroll wraps (copy `aria-hidden`, untabbable), paused on hover/focus/touch and while the slide isn't active, static under reduced motion), and a dashed
+`elections.json`), **Social media trackers** (the chip / slide label — formerly "Social bots"; the header's
+"All projects" blurb says "Social media trackers & build your own" too; "Track legislation wherever you scroll.": the 13 topics, four green platform buttons — Bluesky → `@govboteducation.bsky.social`, Twitter (X logo), Threads, Instagram — and a **live auto-scrolling feed of the bots' real posts**, designed on the "Govbot Bots Feed" Design canvas: `landing.js` fetches, fail-soft and only once the carousel nears the screen, the bot repo's own dashboard data `frankies2727.github.io/CHN-SocialMedia-Govbot-Main/data.json` (its `feed`: exact post text + URL + `posted_at` for Twitter/Threads/Instagram, the chip from the record's `date` + `action`) and Bluesky's public AppView API (`getAuthorFeed` for the 13 topic accounts; each shown post's dated action line is read from the bot's own reply via `getPostThread` — none → no chip, never guessed); the newest 5 per platform are interleaved (20 posts), each showing "Posted: <date>" (Central time), with its coloured text (posted date, action chip, topic, "View post ↗") and border **alternating green / gold post by post** (`--pf`: brand green, or `.is-gold` → the landing-only true-gold `--gl-fgold`, since the brand `--gb-gold` is green; `postHtml(p, clone, n)` sets it from the post's place in the whole scrolling run, so the looping copy keeps alternating), the list rendered twice so the rAF scroll wraps (copy `aria-hidden`, untabbable), paused on hover/focus/touch and while the slide isn't active, static under reduced motion), and a dashed
 "Your project" slide; **"Build your own"** (install / run / clone steps with copy buttons + the
 "ask an AI" `llms.txt` prompt; the landing's outline buttons (`.gl-btn-ghost` — "Get the data", "How Govbot
 works", "Contribute on GitHub", the build links, and the closing "Explore the projects", which is now an
@@ -854,23 +886,39 @@ from" cabinet is **expanded by default** (`<details open>`). The hearings
 page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov, leg.wa.gov,
 malegislature.gov, and akleg.gov directly (not OpenStates), plus **USA (Federal)**: every proposed rule /
 rule whose public comment period is open, from the keyless **Federal Register API** (`parse_fr_documents`,
-one request, ~200 rules, each linked to its own Regulations.gov comment form; **only the soonest-closing
-12%** (`FEDERAL_SHOW_SHARE`, applied in `assemble`) ships in `hearings.json`, and the federal group ends with
-"Showing the N closing soonest" + a **"See all N open for comment ↗"** button (`.hgroup-more`) to the
+one request, ~200 rules, each linked to its own Regulations.gov comment form; **only the 7 closing
+soonest** (`SHOW_MAX`, applied in `assemble` via `federal_preview`) ship in `hearings.json`, and the rules
+section ends with "Showing the 7 closing soonest." + a **"See all N ↗"** button (`.hgroup-more`) to the
 Federal Register's own search for the same set (`open_total` / `full_list_url` on the `us` jurisdiction
 entry). The ~800 open **notices** (announcements that ask for comments without being a rule) are fetched too
 (a second query, `fetch_fr` follows the API's 1,000-per-page `next_page_url`), sorted into plain kinds by
 title (`fr_notice_category` / `NOTICE_CATEGORIES`: Requests for ideas & information, Environment & wildlife
 reviews, Permits/licenses/approvals, Meetings, Privacy & government records, Forms & paperwork reviews
-(~70%), Other — paperwork is matched first), and only the **3 closing soonest per kind**
-(`NOTICES_PER_CATEGORY`) ship, each record carrying its `category`; the `us` entry adds `notice_total`,
-`notice_categories` (key/label/full count) and `notice_list_url`. The page draws the federal group with
+(~70%), Other — paperwork is matched first), and only the **7 closing soonest per kind** (`SHOW_MAX`)
+ship, each record carrying its `category`; the `us` entry adds `notice_total`, `notice_categories`
+(key/label/full count) and `notice_list_url`. **A kind's whole list lives in its own file**,
+`hearings/notices-<kind>.json` = `{key, label, total, hearings}` (`notice_lists`, written by
+`--notices-dir`, which deploy-docs.yml points at the granular-feed dir so it ships and is cached with
+it; paperwork, the biggest, is ~600 KB raw / ~50 KB gzipped). The Federal Register has **no list of
+Govbot's kinds** (its search matches whole documents — "request for information" finds ~400, not our 25 —
+and a filter by exact document numbers can't hold 555 numbers in a link: the site answers 414), so a
+kind's **"See all N"** (a `<button>`, no ↗) **loads that file on the page** (`loadNoticeList`, fetched
+only on click, cached) and appends the rest of the rows to the section's scroll box; those extra rows
+have no RSS feeds of their own, so `hearingRow(h, {noFeeds:true})` leaves the RSS links off, and each
+still links to its own Regulations.gov comment form / Federal Register page. A failed load says
+"Couldn't load the list. Try again". The page draws the federal group with
 `federalSections`: a **"Jump to" pill row** (`.fnav-pill`, one per section with its count — plain and
 uniform on purpose: full-contrast text, border and count badge in both themes) that scrolls to that section (`.fsec#fed-<key>`, no hash change), then the
-rules section and, under "Other federal notices open for comment", one section per notice kind in a
-two-column grid (`.fsec-grid`, one column on phones) ending in "See all N notices ↗". **Every section is
-its own short scroll box**, coloured by `FED_COLORS` (`.fsec-rows`, 360px rules / 250px notices) **with a scrollbar in that
-section's colour** (the states' `.hgroup-rows` scrollbars use their green/gold accent too); the old
+rules section and, under "Other federal notices open for comment", one **full-width** section per notice
+kind, stacked (long horizontal rows like the rules — the old two-column grid was removed), ending in
+"See all N notices ↗". **Every section is its own short scroll box**, coloured by `FED_COLORS`
+(`.fsec-rows`, 360px; 300px on phones) **with a scrollbar in that section's colour**. **Every list on the
+page shows at most 7** (`SHOW_MAX` in hearings.html too): each federal section and each state reads
+**"x of y showing"** (`showing()`; the federal header totals rules + notices), and a list with more gets a
+`seeAllRow` button **right next to its "Showing the 7 …" text** (`.hgroup-more`, `justify-content:
+flex-start`) — rules → "See all N ↗" (the Federal Register's own list), notice kinds → "See all N" (loads
+the kind's whole list on the page, above), a state → "See all N ↗" to its `portal_url` (search's `#hg-<code>` links land on the state's
+section, which may not show a hearing past the 7th) (the states' `.hgroup-rows` scrollbars use their green/gold accent too); the old
 Regulations.gov
 `DEMO_KEY` path was rate-limited and its placeholder seed had expired, so both were removed) — federal
 leads the list, above the states. It writes `docs/src/dashboard/hearings.json` + a whole-calendar
@@ -1200,7 +1248,9 @@ race/candidate counts (`.oc-count`) are all full-contrast `--text-primary`, not 
 A **legibility rule at the end of the stylesheet** (so it wins by source order) sets these to full
 contrast (`--text-primary`), not dimmed: the office-card descriptions (`.oc-blurb`), the Chicago-map
 "Click a ward…" hint (`.cm-empty`), the election-calendar card copy (`.calendar` `.cal-*`/`.tl-*`), and
-all body text in the Springfield ("rules of the game") and "Where the data comes from" cabinet sections. The card/popup
+all body text in the Springfield ("rules of the game") and "Where the data comes from" cabinet sections. Every link in that **"Where the data comes from"** cabinet (`.cabinet a`) uses the readable
+`--gb-link` colour, bold and underlined, in both themes (they were small default-blue text); its intro
+says "a cabinet" in plain text (no bold). The card/popup
 title comes from `GROUP_CARD_LABEL[g]` when set, else `GROUP_META[g].label`: the CPS card is titled
 **"CPS Board — Subdistrict Members"** because it holds only the 20 district seats — the board
 **president** is a separate citywide (at-large) race shown in the ballot side panel, not a subdistrict

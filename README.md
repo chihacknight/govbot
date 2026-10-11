@@ -90,6 +90,8 @@ Formatted legislation data for all 56 jurisdictions is available at [github.com/
 - Federal (USA)
 - DC, Puerto Rico, Guam, US Virgin Islands, Northern Mariana Islands
 
+**Just want a spreadsheet?** [Explore Legislation → Download the data](https://chihacknight.github.io/govbot/dashboard/legislation.html#download) has every bill as CSV (all at once or one state at a time) plus JSON and a `manifest.json` for scripts — licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), see [LICENSE-DATA](LICENSE-DATA).
+
 ### Data Structure
 
 Each jurisdiction has its own repo. The root of that repo IS the dataset — no wrapper folders:

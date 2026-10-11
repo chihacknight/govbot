@@ -375,6 +375,7 @@ jobs:
             --output /tmp/hearings.json \
             --rss /tmp/hearings.xml \
             --rss-feeds-dir /tmp/hearings_feeds \
+            --notices-dir /tmp/hearings_feeds \
             --dashboard-data docs/src/dashboard/data.json \
             --participation docs/src/dashboard/participation.json \
             || echo "::warning::hearings scrape reported errors"
@@ -382,8 +383,9 @@ jobs:
              [ "$(python3 -c 'import json,sys; print(len(json.load(open("/tmp/hearings.json"))["hearings"]))' 2>/dev/null || echo 0)" -gt 0 ]; then
             mv /tmp/hearings.json docs/src/dashboard/hearings.json
             [ -s /tmp/hearings.xml ] && mv /tmp/hearings.xml docs/src/dashboard/hearings.xml
-            # Replace the whole granular-feed directory so feeds for bills/hearings
-            # that dropped out of the window don't linger as stale files.
+            # Replace the whole granular-feed directory (it also holds the per-kind
+            # notices-<kind>.json lists) so feeds for bills/hearings that dropped out of
+            # the window don't linger as stale files.
             rm -rf docs/src/dashboard/hearings
             [ -d /tmp/hearings_feeds ] && mv /tmp/hearings_feeds docs/src/dashboard/hearings
             echo "hearings.json + hearings.xml + granular feeds refreshed"
@@ -616,9 +618,11 @@ jobs:
       # Split the all-bills data.json into the small files each page reads (bills/index.json,
       # bills/<state>.json, bills/il_recent.json, bills/search.json) so no page downloads all
       # ~180k bills. Runs on every deploy, fast path included (data.json is restored there), and
-      # takes seconds — so the slices always match the data.json being published.
-      - name: Build per-page bill slices
-        run: python3 scripts/build_site_slices.py --data docs/src/dashboard/data.json --out-dir docs/src/dashboard/bills
+      # takes seconds — so the slices always match the data.json being published. It also writes
+      # the public downloads behind Explore Legislation's "Download the data" panel (per-state CSVs,
+      # all bills as a zipped CSV, README.txt, manifest.json) into dashboard/downloads/ (gitignored).
+      - name: Build per-page bill slices and downloads
+        run: python3 scripts/build_site_slices.py --data docs/src/dashboard/data.json --out-dir docs/src/dashboard/bills --downloads-dir docs/src/dashboard/downloads
 
       - name: Build docs
         run: mdbook build docs

@@ -174,6 +174,49 @@
   .details-btn:hover { background: var(--hover-wash); border-color: var(--series-1); }
   .share-btn { margin-left: 6px; }
 
+  /* ---------- "Download the data" (hero button + panel + catalog buttons) ---------- */
+  .dl-btn { display: inline-flex; align-items: center; gap: 8px; padding: 7px 16px; border-radius: 999px;
+    border: 2px solid var(--gb-text); background: transparent; color: var(--gb-text) !important; font: inherit;
+    font-size: 14px; font-weight: 650; line-height: 1.2; cursor: pointer; text-decoration: none; }
+  .dl-btn:hover { background: var(--hover-wash); }
+  .dl-btn:focus-visible { outline: 2px solid var(--gb-link); outline-offset: 2px; }
+  .dl-btn svg { width: 16px; height: 16px; flex: none; }
+  .dl-btn.is-primary { background: var(--gb-primary); border-color: var(--gb-primary); color: var(--gb-on-primary) !important; }
+  .dl-btn.is-primary:hover { filter: brightness(1.08); }
+  .dl-btn.is-sm { padding: 5px 12px; font-size: 13px; }
+  body.dl-open { overflow: hidden; }
+  .dl-card { position: relative; max-width: 860px; padding: 22px 24px 20px; }
+  .dl-card h2 { margin: 0 44px 6px 0; font-size: 22px; }
+  .dl-lede { margin: 0 0 16px; font-size: 15px; }
+  .dl-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 14px; }
+  .dl-box { border: 1px solid var(--gb-border); border-radius: 12px; padding: 14px 16px; background: var(--surface-1); }
+  .dl-box h3 { margin: 0 0 4px; font-size: 16px; }
+  .dl-box > p { margin: 0 0 12px; font-size: 13.5px; }
+  .dl-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 12px; }
+  .dl-meta { font-size: 13px; }
+  .dl-pick { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; }
+  .dl-pick select { font: inherit; font-weight: 500; padding: 6px 8px; border-radius: 8px; max-width: 220px;
+    border: 1px solid var(--gb-border-strong); background: var(--gb-surface); color: var(--gb-text); }
+  .dl-tip { margin: 4px 0 0; font-size: 13px; }
+  .dl-links { margin: 0 0 10px; padding-left: 18px; font-size: 13.5px; line-height: 1.5; }
+  .dl-links li { margin: 3px 0; }
+  .dl-links a { font-weight: 650; }
+  .dl-links code, .dl-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .dl-codebox { position: relative; }
+  .dl-code { margin: 0; padding: 10px 12px; padding-right: 64px; border-radius: 8px; font-size: 12px; line-height: 1.5;
+    background: var(--gb-bg); border: 1px solid var(--gb-border); overflow-x: auto; white-space: pre; }
+  .dl-copy { position: absolute; top: 6px; right: 6px; }
+  .dl-dict { margin: 14px 0 0; border-top: 1px solid var(--gb-border); padding-top: 10px; }
+  .dl-dict summary { cursor: pointer; font-weight: 650; font-size: 14px; }
+  .dl-dict dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 10px 0 0; font-size: 13px; }
+  .dl-dict dt { font-weight: 650; }
+  .dl-dict dd { margin: 0; }
+  .dl-license { margin: 14px 0 0; font-size: 13px; line-height: 1.5; }
+  .dl-license a { font-weight: 650; }
+  /* In a state's catalog popup: download that state, or exactly the bills on screen. */
+  .results-dl { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+  @media (max-width: 620px) { .dl-card { padding: 18px 16px; } .dl-dict dl { grid-template-columns: 1fr; } }
+
   /* ---------- bill details modal ---------- */
   .modal-overlay {
     position: fixed; inset: 0; z-index: 100; display: flex; justify-content: center;
@@ -659,7 +702,7 @@
           <span><span class="mega-t">Illinois Elections</span><span class="mega-d">What&#39;s on your ballot, race by race</span></span></a>
         <a href="../#projects" role="menuitem" style="--accent:var(--gb-text-2)">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg>
-          <span><span class="mega-t">All projects</span><span class="mega-d">Social bots &amp; build your own</span></span></a>
+          <span><span class="mega-t">All projects</span><span class="mega-d">Social media trackers &amp; build your own</span></span></a>
       </div>
     </div>
     <div class="gb-nav-item" data-gb-dropdown>
@@ -667,6 +710,9 @@
         <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
       </button>
       <div class="gb-mega" role="menu" aria-label="Data">
+        <a href="legislation.html#download" role="menuitem" style="--accent:var(--gb-primary-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+          <span><span class="mega-t">Download bill data</span><span class="mega-d">Spreadsheet (CSV) &amp; JSON, free to reuse</span></span></a>
         <a href="https://github.com/chihacknight/govbot/blob/main/catalog.json" role="menuitem" style="--accent:var(--gb-blue-hi)" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
           <span><span class="mega-t">Data catalog ↗</span><span class="mega-d">Every jurisdiction repo &amp; path pattern</span></span></a>
@@ -720,12 +766,15 @@
       <span><span class="mega-t">Illinois Elections</span><span class="mega-d">What&#39;s on your ballot, race by race</span></span></a>
     <a href="../#projects" style="--accent:var(--gb-text-2)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg>
-      <span><span class="mega-t">All projects</span><span class="mega-d">Social bots &amp; build your own</span></span></a>
+      <span><span class="mega-t">All projects</span><span class="mega-d">Social media trackers &amp; build your own</span></span></a>
     </div>
   </details>
   <details class="gb-dgroup">
     <summary>Data <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
     <div class="gb-dgroup-items">
+    <a href="legislation.html#download" style="--accent:var(--gb-primary-hi)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+      <span><span class="mega-t">Download bill data</span><span class="mega-d">Spreadsheet (CSV) &amp; JSON, free to reuse</span></span></a>
     <a href="https://github.com/chihacknight/govbot/blob/main/catalog.json" style="--accent:var(--gb-blue-hi)" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
       <span><span class="mega-t">Data catalog ↗</span><span class="mega-d">Every jurisdiction repo &amp; path pattern</span></span></a>
@@ -747,6 +796,9 @@
     <div class="title-row">
       <h1>Explore Legislation</h1>
       <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
+      <button type="button" class="dl-btn" id="dl-open" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+        Download the data</button>
     </div>
     <p>Bills across states and territories, filterable by jurisdiction, session, chamber, and topic tags.
        <a class="docs-link" href="../about.html" target="_blank" rel="noopener">govbot docs ↗</a> ·
@@ -898,6 +950,77 @@
 
 <div class="modal-overlay" id="bill-modal" hidden role="dialog" aria-modal="true" aria-labelledby="bill-modal-title"></div>
 
+<!-- "Download the data": every bill, free to reuse (files built at deploy by
+     scripts/build_site_slices.py --downloads-dir). Opens from the hero button or #download. -->
+<div class="modal-overlay" id="dl-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="dl-title">
+  <div class="modal-card dl-card">
+    <button type="button" class="results-x" id="dl-x" aria-label="Close download panel">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <h2 id="dl-title">Download the data</h2>
+    <p class="dl-lede">Every bill Govbot tracks is free to download, reuse and analyze. <span id="dl-asof"></span></p>
+    <div class="dl-cols">
+      <section class="dl-box" aria-labelledby="dl-h-sheet">
+        <h3 id="dl-h-sheet">For spreadsheets</h3>
+        <p>Opens in Excel, Google Sheets or Numbers. No coding needed.</p>
+        <div class="dl-row">
+          <a class="dl-btn is-primary" id="dl-all" href="downloads/govbot-bills-all.csv.zip" download>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+            All bills, every state</a>
+          <span class="dl-meta" id="dl-all-meta">CSV in a zip file</span>
+        </div>
+        <div class="dl-row">
+          <label class="dl-pick" for="dl-state">One state <select id="dl-state"></select></label>
+          <a class="dl-btn" id="dl-state-go" download>Download CSV</a>
+        </div>
+        <p class="dl-tip">Tip: unzip the file first, then open the <b>.csv</b>. In Google Sheets use <b>File → Import</b>.
+          Each state's bills list also has a button to download just the bills you've searched or filtered.</p>
+      </section>
+      <section class="dl-box" aria-labelledby="dl-h-dev">
+        <h3 id="dl-h-dev">For developers</h3>
+        <ul class="dl-links">
+          <li><a href="data.json" download="govbot-bills.json">data.json</a> — every bill as JSON (~10 MB compressed)</li>
+          <li><a href="bills/il.json" download>bills/il.json</a> — one jurisdiction (<code>bills/&lt;code&gt;.json</code>)</li>
+          <li><a href="downloads/manifest.json">downloads/manifest.json</a> — every file with its rows and size</li>
+          <li><a href="https://github.com/govbot-data" target="_blank" rel="noopener">govbot-data repos ↗</a> — the full record for each bill (every action, vote and version): <code>govbot clone all</code>, then <code>govbot load</code> for DuckDB</li>
+          <li><a href="https://github.com/chihacknight/govbot/blob/main/catalog.json" target="_blank" rel="noopener">catalog.json ↗</a> · <a href="https://github.com/chihacknight/govbot/blob/main/llms.txt" target="_blank" rel="noopener">llms.txt ↗</a> — read the catalogs from code or an AI assistant</li>
+        </ul>
+        <div class="dl-codebox">
+<pre class="dl-code" id="dl-code"># Every bill as JSON
+curl -L https://chihacknight.github.io/govbot/dashboard/data.json -o govbot-bills.json
+
+# One state in Python (pandas)
+import pandas as pd
+bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/bills-il.csv")</pre>
+          <button type="button" class="dl-btn is-sm dl-copy" id="dl-copy">Copy</button>
+        </div>
+      </section>
+    </div>
+    <details class="dl-dict">
+      <summary>What each column means</summary>
+      <dl>
+        <dt>Jurisdiction</dt><dd>Two/three-letter code (usa = U.S. Congress)</dd>
+        <dt>Jurisdiction name</dt><dd>The state, territory or federal government</dd>
+        <dt>Session</dt><dd>The legislative session the bill belongs to</dd>
+        <dt>Bill</dt><dd>The bill's number as the legislature writes it</dd>
+        <dt>Title</dt><dd>The bill's official title</dd>
+        <dt>Chamber</dt><dd>lower (House/Assembly), upper (Senate) or legislature (one chamber)</dd>
+        <dt>Last action date</dt><dd>Date of the latest recorded action (YYYY-MM-DD)</dd>
+        <dt>Last action</dt><dd>What that action was</dd>
+        <dt>Sponsors</dt><dd>Sponsors and co-sponsors as the legislature lists them, separated by "; "</dd>
+        <dt>Topics</dt><dd>Govbot's topic tags (AI-assigned), separated by "; "</dd>
+        <dt>Official link</dt><dd>The bill on the legislature's own site</dd>
+        <dt>Govbot link</dt><dd>The bill on this page</dd>
+      </dl>
+    </details>
+    <p class="dl-license">Source: public government records gathered by the Open States scrapers, tagged by Govbot
+      and refreshed twice a day. License: <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0 ↗</a>
+      — share and adapt it for any purpose, including commercially; please credit <b>“Govbot (Chi Hack Night)”</b>.
+      In the spreadsheet files a cell that starts with = + - or @ gets a ' in front, so a spreadsheet shows it
+      instead of running it as a formula; the JSON files are unchanged.</p>
+  </div>
+</div>
+
 <!-- Results popup: "Open all N bills" pops this card up over the current screen. -->
 <div class="results-overlay" id="results-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="table-title">
   <div class="card card--accent card--bills results-modal" id="results-card">
@@ -906,6 +1029,10 @@
     </button>
     <div class="results-head">
       <h2 id="table-title">Bills</h2>
+      <div class="results-dl" id="results-dl">
+        <a class="dl-btn is-sm" id="dl-state-csv" download hidden>Download all bills (CSV)</a>
+        <button type="button" class="dl-btn is-sm" id="dl-view" hidden>Download these bills (CSV)</button>
+      </div>
     </div>
     <div class="results-search">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
@@ -1098,6 +1225,7 @@
   // filter. Returns true only when it changed the filter (so the caller
   // re-renders). Runs on first load and on every hashchange.
   function applyDeepLink() {
+    if (location.hash === "#download") { openDownloads(); return false; }
     const billDeep = location.hash.match(/[#&]bill=([^&]+)/);
     if (billDeep) {
       const key = billDeep[1];
@@ -1199,10 +1327,14 @@
       }
       if (f.search) {
         // The search text is built once per bill (not on every keystroke) — a big
-        // state has 25k+ bills.
-        if (b._hay === undefined) {
-          b._hay = (b.id + " " + b.title + " " + b.sponsors.join(" ")).toLowerCase();
+        // state has 25k+ bills. Some states (SD, AK, WY…) list sponsors by surname
+        // only, so each sponsor's full roster name is added too, letting "john" find
+        // Sen. John Doe's bills; it's rebuilt once if the roster arrives later.
+        if (b._hay === undefined || (peopleIndex && !b._hayFull)) {
+          const full = b.sponsors.map((s) => rosterSearchName(b.state, s) + " " + flipName(s)).join(" ");
+          b._hay = (b.id + " " + b.title + " " + b.sponsors.join(" ") + " " + full).toLowerCase();
           b._hayN = b._hay.replace(/[^a-z0-9]/g, "");
+          b._hayFull = !!peopleIndex;
         }
         if (!b._hay.includes(f.search)) {
           // Also match ignoring spaces/punctuation, so a shared/deep link like
@@ -1329,6 +1461,7 @@
   }
   function renderTable(bills) {
     $("table-title").textContent = resultsTitle(bills.length);
+    syncCatalogDownloads(bills);
     const thead = $("thead-row");
     thead.textContent = "";
     COLS.forEach((c) => {
@@ -1861,6 +1994,29 @@
   // gives a surname. A name that already reads "First Last" is kept verbatim
   // (we don't rewrite a name the source already spelled out); a bare surname is
   // filled in only when it resolves to exactly one legislator.
+  // A "Last, First" sponsor as "First Last" (for search only), so "joshua hernandez" finds
+  // "Hernandez, Joshua N." even when the roster doesn't know them; "" when not that form.
+  // A trailing Jr./III and Missouri's district tag ("Gregory (21), Kurtis") are dropped.
+  function flipName(name) {
+    const s = String(name || "").replace(/,?\s*(?:jr|sr|ii|iii|iv|v)\.?\s*$/i, "").trim();
+    const i = s.indexOf(",");
+    return i < 0 ? "" : s.slice(i + 1).trim() + " " + s.slice(0, i).replace(/\(\d+\)/g, "").trim();
+  }
+
+  // The roster's full name for a sponsor, for search only ("K. Brown" → "Kyle Brown",
+  // "Rodric Bray" → "Rod Bray", "Aylward" → "Aaron Aylward"), or "". When the stored name
+  // carries a first name or initial, the roster person's must start with the same letter,
+  // so a former legislator is never mixed up with a current one of the same surname.
+  function rosterSearchName(state, name) {
+    const m = matchLegislator(state, name);
+    if (!m) return "";
+    const raw = String(name).replace(/,?\s*(?:jr|sr|ii|iii|iv|v)\.?\s*$/i, "").trim();  // drop "Jr."
+    const c = raw.indexOf(",");
+    const given = c >= 0 ? raw.slice(c + 1).trim() : (/\s/.test(raw) ? raw.split(/\s+/)[0] : "");
+    const g = given.replace(/[^A-Za-z]/g, "").charAt(0).toLowerCase();
+    return g && (m[0] || "").trim().charAt(0).toLowerCase() !== g ? "" : m[1];
+  }
+
   function fullSponsorName(state, name) {
     const raw = name ? String(name).trim() : name;
     if (!raw) return raw;
@@ -2159,9 +2315,122 @@
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
       const bm = $("bill-modal"); if (bm && !bm.hidden) return;
+      const dl = $("dl-overlay"); if (dl && !dl.hidden) return;
       const ov = $("results-overlay"); if (ov && !ov.hidden) eeBackToMap();
     });
   }
+
+  /* ---------- "Download the data" ----------
+     The files are built at deploy (scripts/build_site_slices.py --downloads-dir): one CSV per
+     jurisdiction, every bill in one zipped CSV, and manifest.json. "Download these N bills" in a
+     state's catalog builds the same CSV in the browser from the rows already on hand. */
+  const DL_COLUMNS = ["Jurisdiction", "Jurisdiction name", "Session", "Bill", "Title", "Chamber",
+    "Last action date", "Last action", "Sponsors", "Topics", "Official link", "Govbot link"];
+  // One CSV cell, same rules as the deploy's files: a formula-like start gets a leading ' (so a
+  // spreadsheet shows it instead of running it), then quoted when it holds , " or a line break.
+  function csvCell(v) {
+    let t = v == null ? "" : String(v);
+    if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
+    return /[",\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  }
+  function billsToCsv(bills) {
+    const page = location.origin + location.pathname;
+    const lines = [DL_COLUMNS.map(csvCell).join(",")];
+    bills.forEach((b) => lines.push([
+      b.state, state.stateNames[b.state] || (b.state || "").toUpperCase(), b.session, b.id, b.title, b.chamber,
+      b.latest_action, b.latest_action_desc, (b.sponsors || []).join("; "), (b.tags || []).join("; "),
+      b.url, page + "#bill=" + billKey(b),
+    ].map(csvCell).join(",")));
+    return "﻿" + lines.join("\r\n") + "\r\n";   // BOM: Excel then reads the accents right
+  }
+  function saveFile(name, text) {
+    const url = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  // The catalog popup's two buttons: the whole state (pre-built file) and, once a search or
+  // filter narrows it, exactly the bills on screen.
+  let catalogRows = [];
+  function syncCatalogDownloads(bills) {
+    catalogRows = bills;
+    const one = state.filters.states.size === 1 ? Array.from(state.filters.states)[0] : "";
+    const all = $("dl-state-csv"), view = $("dl-view");
+    if (!all || !view) return;
+    all.hidden = !one;
+    if (one) {
+      all.href = "downloads/bills-" + encodeURIComponent(one) + ".csv";
+      all.textContent = "Download all " + (state.stateNames[one] || one.toUpperCase()) + " bills (CSV)";
+    }
+    view.hidden = !(one && catalogFiltersActive() && bills.length);
+    view.textContent = "Download these " + fmt(bills.length) + " bills (CSV)";
+  }
+  function downloadView() {
+    const one = Array.from(state.filters.states)[0] || "bills";
+    saveFile("govbot-" + one + "-bills-" + isoToday() + ".csv", billsToCsv(catalogRows));
+  }
+
+  let dlOpener = null, dlManifest = null;
+  function openDownloads() {
+    const ov = $("dl-overlay"); if (!ov || !ov.hidden) return;
+    dlOpener = document.activeElement;
+    fillDownloadPicker();
+    ov.hidden = false;
+    requestAnimationFrame(() => ov.classList.add("open"));
+    document.body.classList.add("dl-open");
+    if (location.hash !== "#download") history.replaceState(null, "", "#download");
+    $("dl-x").focus();
+    // Counts and sizes come from the deploy's manifest (fetched once, fail-soft).
+    if (!dlManifest) {
+      dlManifest = fetch("downloads/manifest.json").then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    }
+    dlManifest.then((m) => {
+      if (!m || !m.all) return;
+      $("dl-all-meta").textContent = "CSV in a zip · " + fmt(m.all.rows) + " bills · " + (m.all.bytes / 1e6).toFixed(1) + " MB";
+    });
+  }
+  function closeDownloads() {
+    const ov = $("dl-overlay"); if (!ov || ov.hidden) return;
+    ov.classList.remove("open");
+    ov.hidden = true;
+    document.body.classList.remove("dl-open");
+    if (location.hash === "#download") history.replaceState(null, "", location.pathname + location.search);
+    if (dlOpener && dlOpener.focus) dlOpener.focus();
+  }
+  function fillDownloadPicker() {
+    const sel = $("dl-state"), go = $("dl-state-go");
+    if (!sel || !state.data) return;
+    const counts = state.data.counts || {};
+    if (!sel.options.length) {
+      Object.keys(counts).filter((c) => counts[c])
+        .sort((a, b) => (state.stateNames[a] || a).localeCompare(state.stateNames[b] || b))
+        .forEach((c) => {
+          const o = document.createElement("option");
+          o.value = c; o.textContent = (state.stateNames[c] || c.toUpperCase()) + " (" + fmt(counts[c]) + ")";
+          sel.append(o);
+        });
+      // Start on the state the reader is looking at, if any.
+      const open = Array.from(state.filters.states)[0] || eeSel;
+      if (open && counts[open]) sel.value = open;
+    }
+    const sync = () => { go.href = "downloads/bills-" + encodeURIComponent(sel.value) + ".csv"; };
+    sel.onchange = sync; sync();
+  }
+  function dlWire() {
+    $("dl-open").addEventListener("click", openDownloads);
+    $("dl-x").addEventListener("click", closeDownloads);
+    const ov = $("dl-overlay");
+    ov.addEventListener("click", (e) => { if (e.target === ov) closeDownloads(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDownloads(); });
+    $("dl-view").addEventListener("click", downloadView);
+    $("dl-copy").addEventListener("click", () => {
+      const b = $("dl-copy");
+      const done = (msg) => { b.textContent = msg; setTimeout(() => { b.textContent = "Copy"; }, 1400); };
+      if (navigator.clipboard) navigator.clipboard.writeText($("dl-code").textContent).then(() => done("Copied"), () => done("Select & copy"));
+      else done("Select & copy");
+    });
+  }
+  dlWire();
 
   const RECENT_MAX = 12, RECENT_PER_STATE = 2;
   function renderRecent() {

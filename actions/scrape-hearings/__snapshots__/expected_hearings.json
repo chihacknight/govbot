@@ -75,7 +75,7 @@
     }
   ],
   "counts": {
-    "us": 15,
+    "us": 20,
     "ak": 2,
     "il": 2,
     "ma": 3,
@@ -178,6 +178,52 @@
       "category": "environment"
     },
     {
+      "id": "us-2026-20328",
+      "jurisdiction": "us",
+      "chamber": "federal",
+      "committee": "Census Bureau",
+      "title": "Decennial Census of the Population of Americans; Proposed Residence Criteria and Proposed Regulations for Demographic Questions; Extension of Comment Period",
+      "scheduled_iso": "2026-11-02",
+      "scheduled_display": "Comments due Nov 2, 2026",
+      "timezone": null,
+      "location": "Online · Regulations.gov",
+      "status": "open",
+      "bills": [
+        {
+          "id": "USBC_FRDOC_0001-0076",
+          "title": "Decennial Census of the Population of Americans; Proposed Residence Criteria and Proposed Regulations for Demographic Questions; Extension of Comment Period",
+          "url": "https://www.federalregister.gov/documents/2026/10/05/2026-20328/decennial-census-of-the-population-of-americans-proposed-residence-criteria-and-proposed-regulations",
+          "slips": null
+        }
+      ],
+      "details_url": "https://www.federalregister.gov/documents/2026/10/05/2026-20328/decennial-census-of-the-population-of-americans-proposed-residence-criteria-and-proposed-regulations",
+      "witness_slip_url": "https://www.regulations.gov/commenton/USBC_FRDOC_0001-0076",
+      "source": "federalregister.gov"
+    },
+    {
+      "id": "us-2026-20735",
+      "jurisdiction": "us",
+      "chamber": "federal",
+      "committee": "Federal Deposit Insurance Corporation",
+      "title": "Extensions of Credit to Insiders",
+      "scheduled_iso": "2026-11-04",
+      "scheduled_display": "Comments due Nov 4, 2026",
+      "timezone": null,
+      "location": "Online · Federal Register",
+      "status": "open",
+      "bills": [
+        {
+          "id": "2026-20735",
+          "title": "Extensions of Credit to Insiders",
+          "url": "https://www.federalregister.gov/documents/2026/10/09/2026-20735/extensions-of-credit-to-insiders",
+          "slips": null
+        }
+      ],
+      "details_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20735/extensions-of-credit-to-insiders",
+      "witness_slip_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20735/extensions-of-credit-to-insiders",
+      "source": "federalregister.gov"
+    },
+    {
       "id": "us-2026-20438",
       "jurisdiction": "us",
       "chamber": "federal",
@@ -248,6 +294,29 @@
       "witness_slip_url": "https://www.federalregister.gov/documents/2026/10/05/2026-20333/public-hearing",
       "source": "federalregister.gov",
       "category": "meetings"
+    },
+    {
+      "id": "us-2026-20612",
+      "jurisdiction": "us",
+      "chamber": "federal",
+      "committee": "Environmental Protection Agency",
+      "title": "Air Quality Plan; Arizona; Maricopa County Air Quality Department; New Source Review; Emission Reduction Credits-Rule 204",
+      "scheduled_iso": "2026-11-09",
+      "scheduled_display": "Comments due Nov 9, 2026",
+      "timezone": null,
+      "location": "Online · Regulations.gov",
+      "status": "open",
+      "bills": [
+        {
+          "id": "EPA-R09-OAR-2026-4654-0001",
+          "title": "Air Quality Plan; Arizona; Maricopa County Air Quality Department; New Source Review; Emission Reduction Credits-Rule 204",
+          "url": "https://www.federalregister.gov/documents/2026/10/08/2026-20612/air-quality-plan-arizona-maricopa-county-air-quality-department-new-source-review-emission-reduction",
+          "slips": null
+        }
+      ],
+      "details_url": "https://www.federalregister.gov/documents/2026/10/08/2026-20612/air-quality-plan-arizona-maricopa-county-air-quality-department-new-source-review-emission-reduction",
+      "witness_slip_url": "https://www.regulations.gov/commenton/EPA-R09-OAR-2026-4654-0001",
+      "source": "federalregister.gov"
     },
     {
       "id": "us-2026-20615",
@@ -368,6 +437,52 @@
       "witness_slip_url": "https://www.regulations.gov/commenton/FDA-2026-N-6667-0002",
       "source": "federalregister.gov",
       "category": "paperwork"
+    },
+    {
+      "id": "us-2026-20721",
+      "jurisdiction": "us",
+      "chamber": "federal",
+      "committee": "Food and Drug Administration",
+      "title": "Requirements for Additional Traceability Records for Certain Foods: Enforcement Policy for Certain Retail Food Establishments and Restaurants; Draft Guidance for Industry; Availability",
+      "scheduled_iso": "2026-11-23",
+      "scheduled_display": "Comments due Nov 23, 2026",
+      "timezone": null,
+      "location": "Online · Regulations.gov",
+      "status": "open",
+      "bills": [
+        {
+          "id": "FDA-2025-D-6952-0001",
+          "title": "Requirements for Additional Traceability Records for Certain Foods: Enforcement Policy for Certain Retail Food Establishments and Restaurants; Draft Guidance for Industry; Availability",
+          "url": "https://www.federalregister.gov/documents/2026/10/09/2026-20721/requirements-for-additional-traceability-records-for-certain-foods-enforcement-policy-for-certain",
+          "slips": null
+        }
+      ],
+      "details_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20721/requirements-for-additional-traceability-records-for-certain-foods-enforcement-policy-for-certain",
+      "witness_slip_url": "https://www.regulations.gov/commenton/FDA-2025-D-6952-0001",
+      "source": "federalregister.gov"
+    },
+    {
+      "id": "us-2026-20722",
+      "jurisdiction": "us",
+      "chamber": "federal",
+      "committee": "Federal Aviation Administration",
+      "title": "Airworthiness Directives; Airbus Helicopters Deutschland GmbH (AHD) Helicopters",
+      "scheduled_iso": "2026-11-23",
+      "scheduled_display": "Comments due Nov 23, 2026",
+      "timezone": null,
+      "location": "Online · Regulations.gov",
+      "status": "open",
+      "bills": [
+        {
+          "id": "FAA-2026-11805-0001",
+          "title": "Airworthiness Directives; Airbus Helicopters Deutschland GmbH (AHD) Helicopters",
+          "url": "https://www.federalregister.gov/documents/2026/10/09/2026-20722/airworthiness-directives-airbus-helicopters-deutschland-gmbh-ahd-helicopters",
+          "slips": null
+        }
+      ],
+      "details_url": "https://www.federalregister.gov/documents/2026/10/09/2026-20722/airworthiness-directives-airbus-helicopters-deutschland-gmbh-ahd-helicopters",
+      "witness_slip_url": "https://www.regulations.gov/commenton/FAA-2026-11805-0001",
+      "source": "federalregister.gov"
     },
     {
       "id": "us-2026-20742",

@@ -285,9 +285,12 @@
     border: 2px solid var(--text-primary); border-radius: 999px; padding: 5px 13px; white-space: nowrap; }
   .pstate-link:hover, .hgroup-portal:hover, .details-link:hover { background: var(--hover-wash); border-color: var(--hh-green); }
   .pstate-link { margin-top: auto; }
-  .hgroup-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  .hgroup-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start;
     gap: 8px 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gridline); font-size: 14px; }
   .hgroup-more .hgroup-portal { margin-left: 0; }
+  /* A notice kind's "See all" is a button (it loads the list here), styled like the links. */
+  button.hgroup-portal { background: transparent; font-family: inherit; cursor: pointer; }
+  button.hgroup-portal:disabled { cursor: progress; }
   /* Federal: pill nav + short sections, each with its own colourful scrollbar */
   .fnav { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 4px 0 6px; }
   .fnav-l { font-size: 13px; font-weight: 700; margin-right: 2px; }
@@ -305,19 +308,13 @@
     padding-left: 10px; border-left: 4px solid var(--sc); font-size: 15.5px; }
   .fsec-n { font-size: 12px; font-weight: 800; padding: 1px 9px; border-radius: 999px;
     border: 1.5px solid var(--sc); background: color-mix(in srgb, var(--sc) 16%, transparent); }
-  .fsec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr)); gap: 0 18px; }
-  /* In the notice columns a row stacks its date above its details, to stay compact. */
-  .fsec-grid .hearing-row { grid-template-columns: 1fr; gap: 2px; }
-  .fsec-grid .h-when { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
-  .fsec-grid .h-open { margin-top: 0; }
-  .fsec-grid .fsec-rows { max-height: 250px; }
   .fsec-rows { max-height: 360px; border: 1px solid color-mix(in srgb, var(--sc) 35%, var(--gridline));
     border-radius: 10px; padding: 0 4px; scrollbar-color: var(--sc) color-mix(in srgb, var(--sc) 14%, transparent); }
   .hgroup-rows.fsec-rows::-webkit-scrollbar { width: 11px; }
   .hgroup-rows.fsec-rows::-webkit-scrollbar-track { background: color-mix(in srgb, var(--sc) 12%, transparent); border-radius: 999px; }
   .hgroup-rows.fsec-rows::-webkit-scrollbar-thumb { background: linear-gradient(var(--sc), color-mix(in srgb, var(--sc) 65%, #ffffff));
     border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
-  @media (max-width: 620px) { .fsec-rows { max-height: 300px; } .fsec-grid .fsec-rows { max-height: 200px; } }
+  @media (max-width: 620px) { .fsec-rows { max-height: 300px; } }
   .hnotices-h { margin: 22px 0 4px; padding-top: 16px; border-top: 2px solid var(--gridline); font-size: 18px; }
   .hnotices-sub { margin: 0; font-size: 14px; }
   @media (prefers-reduced-motion: reduce) { .fnav-pill { transition: none; } .fnav-pill:hover { transform: none; } }
@@ -422,7 +419,7 @@
           <span><span class="mega-t">Illinois Elections</span><span class="mega-d">What&#39;s on your ballot, race by race</span></span></a>
         <a href="../#projects" role="menuitem" style="--accent:var(--gb-text-2)">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg>
-          <span><span class="mega-t">All projects</span><span class="mega-d">Social bots &amp; build your own</span></span></a>
+          <span><span class="mega-t">All projects</span><span class="mega-d">Social media trackers &amp; build your own</span></span></a>
       </div>
     </div>
     <div class="gb-nav-item" data-gb-dropdown>
@@ -430,6 +427,9 @@
         <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
       </button>
       <div class="gb-mega" role="menu" aria-label="Data">
+        <a href="legislation.html#download" role="menuitem" style="--accent:var(--gb-primary-hi)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+          <span><span class="mega-t">Download bill data</span><span class="mega-d">Spreadsheet (CSV) &amp; JSON, free to reuse</span></span></a>
         <a href="https://github.com/chihacknight/govbot/blob/main/catalog.json" role="menuitem" style="--accent:var(--gb-blue-hi)" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
           <span><span class="mega-t">Data catalog ↗</span><span class="mega-d">Every jurisdiction repo &amp; path pattern</span></span></a>
@@ -483,12 +483,15 @@
       <span><span class="mega-t">Illinois Elections</span><span class="mega-d">What&#39;s on your ballot, race by race</span></span></a>
     <a href="../#projects" style="--accent:var(--gb-text-2)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg>
-      <span><span class="mega-t">All projects</span><span class="mega-d">Social bots &amp; build your own</span></span></a>
+      <span><span class="mega-t">All projects</span><span class="mega-d">Social media trackers &amp; build your own</span></span></a>
     </div>
   </details>
   <details class="gb-dgroup">
     <summary>Data <svg class="gb-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
     <div class="gb-dgroup-items">
+    <a href="legislation.html#download" style="--accent:var(--gb-primary-hi)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+      <span><span class="mega-t">Download bill data</span><span class="mega-d">Spreadsheet (CSV) &amp; JSON, free to reuse</span></span></a>
     <a href="https://github.com/chihacknight/govbot/blob/main/catalog.json" style="--accent:var(--gb-blue-hi)" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
       <span><span class="mega-t">Data catalog ↗</span><span class="mega-d">Every jurisdiction repo &amp; path pattern</span></span></a>
@@ -684,13 +687,14 @@
       group.style.setProperty("--hg-accent", "var(" + HG_ACCENTS[gi % HG_ACCENTS.length] + ")");
       const head = eln("div", "hgroup-head");
       head.append(eln("span", "hgroup-name", juris.name));
-      // Federal carries only the soonest-closing share of the open rules, plus a few
-      // notices of each kind (records with a category) shown separately below.
+      // Federal carries only the soonest-closing open rules, plus a few notices of each
+      // kind (records with a category) shown in their own sections below.
       const listed = byJur[code].filter((h) => !h.category);
       const notices = byJur[code].filter((h) => h.category);
-      const total = juris.open_total;
-      head.append(eln("span", "hgroup-count", total > listed.length
-        ? listed.length + " of " + total + " open" : listed.length + " scheduled"));
+      const shownHere = code === "us" ? listed.length + notices.length : Math.min(listed.length, SHOW_MAX);
+      const totalHere = code === "us"
+        ? (juris.open_total || listed.length) + (juris.notice_total || notices.length) : listed.length;
+      head.append(eln("span", "hgroup-count", showing(shownHere, totalHere)));
       head.append(jurisdictionRssTrigger(code, juris.name));
       if (juris.portal_url) {
         const p = eln("a", "hgroup-portal", PARTICIPATION[juris.participation] || "Official portal ↗");
@@ -703,8 +707,12 @@
       } else {
         // Rows live in their own wrapper so zebra :nth-child counts rows, not head.
         const rows = eln("div", "hgroup-rows");
-        listed.forEach((h) => rows.append(hearingRow(h)));
+        listed.slice(0, SHOW_MAX).forEach((h) => rows.append(hearingRow(h)));
         group.append(rows);
+        if (listed.length > SHOW_MAX && juris.portal_url) {
+          group.append(seeAllRow("Showing the next " + SHOW_MAX + ".",
+            "See all " + listed.length + " ↗", juris.portal_url));
+        }
       }
       body.append(group);
     });
@@ -734,9 +742,43 @@
     if (f) f.textContent = "Committee hearings from " + (data.source || "official sources") + ", refreshed twice daily.";
   }
 
-  // USA (Federal) is long (rules + a few notices of each kind), so it is split into
-  // short sections, each scrolling on its own with a scrollbar in its own colour, and
-  // a row of matching pills at the top jumps to any of them.
+  // Every list shows at most SHOW_MAX rows ("x of y showing") with a "See all" button
+  // to the official site for the rest.
+  const SHOW_MAX = 7;
+  function showing(shown, total) { return shown + " of " + total + " showing"; }
+  // target is an official-site URL (opens in a new tab) or a click handler (loads the
+  // rest of the list on the page; it gets the button and the note).
+  function seeAllRow(text, label, target) {
+    const more = eln("div", "hgroup-more");
+    const note = eln("span", null, text);
+    more.append(note);
+    let all;
+    if (typeof target === "function") {
+      all = eln("button", "hgroup-portal", label);
+      all.type = "button";
+      all.addEventListener("click", () => target(all, note));
+    } else {
+      all = eln("a", "hgroup-portal", label);
+      all.href = target; all.target = "_blank"; all.rel = "noopener";
+    }
+    more.append(all);
+    return more;
+  }
+  // Every open notice of one kind (hearings/notices-<kind>.json, written by the
+  // scraper), fetched only when a reader asks for that kind's whole list; cached.
+  const noticeLists = {};
+  function loadNoticeList(key) {
+    if (!noticeLists[key]) {
+      noticeLists[key] = fetch("hearings/notices-" + encodeURIComponent(key) + ".json")
+        .then((r) => (r.ok ? r.json() : null)).catch(() => null)
+        .then((d) => { if (!d || !Array.isArray(d.hearings)) delete noticeLists[key]; return d; });
+    }
+    return noticeLists[key];
+  }
+
+  // USA (Federal) is long (rules + notices of each kind), so it is split into short
+  // sections, each scrolling on its own with a scrollbar in its own colour, and a row
+  // of pills at the top jumps to any of them.
   const FED_COLORS = {
     rules: "--hh-green", rfi: "--series-1", environment: "--series-4", permits: "--hh-gold",
     meetings: "--series-5", privacy: "--series-7", paperwork: "--series-8", other: "--series-6",
@@ -744,15 +786,17 @@
   function federalSections(group, rules, notices, juris) {
     const sections = [];
     if (rules.length) {
-      sections.push({ key: "rules", label: "Proposed & final rules", rows: rules,
-        count: juris.open_total > rules.length ? rules.length + " of " + juris.open_total : String(rules.length),
-        moreText: juris.open_total > rules.length ? "Showing the " + rules.length + " closing soonest." : "",
-        moreLabel: "See all " + juris.open_total + " open for comment ↗", moreUrl: juris.full_list_url });
+      const total = juris.open_total || rules.length;
+      sections.push({ key: "rules", label: "Proposed & final rules", rows: rules.slice(0, SHOW_MAX), total: total,
+        // The rules link is the Federal Register's list of exactly these, so it can say the count.
+        moreLabel: "See all " + total + " ↗", moreUrl: juris.full_list_url });
     }
     (juris.notice_categories || []).forEach((c) => {
       const rows = notices.filter((h) => h.category === c.key);
-      if (rows.length) sections.push({ key: c.key, label: c.label, rows: rows,
-        count: rows.length + " of " + c.total, note: true });
+      // The Federal Register has no list of Govbot's notice kinds, so "See all" loads the
+      // kind's whole list right here; each row still links to its official page.
+      if (rows.length) sections.push({ key: c.key, label: c.label, rows: rows.slice(0, SHOW_MAX),
+        total: c.total, note: true, moreLabel: "See all " + c.total });
     });
     if (!sections.length) return;
 
@@ -761,39 +805,48 @@
     nav.append(eln("span", "fnav-l", "Jump to"));
     group.append(nav);
 
-    // Notice kinds sit side by side (two columns on wide screens) under one heading.
-    let noteGrid = null;
+    let noticesHead = false;
     sections.forEach((sec) => {
-      if (sec.note && !noteGrid) {
+      if (sec.note && !noticesHead) {
+        noticesHead = true;
         group.append(eln("h3", "hnotices-h", "Other federal notices open for comment"));
         group.append(eln("p", "hnotices-sub", "Agencies also ask for comments on requests for ideas, permits, " +
-          "privacy records, forms and more. A few closing soonest of each kind:"));
-        noteGrid = eln("div", "fsec-grid");
-        group.append(noteGrid);
+          "privacy records, forms and more. The " + SHOW_MAX + " closing soonest of each kind:"));
       }
       const box = eln("section", "fsec");
       box.id = "fed-" + sec.key;
       box.style.setProperty("--sc", "var(" + (FED_COLORS[sec.key] || "--hh-green") + ")");
       const h = eln("h4", "fsec-h", sec.label);
-      h.append(eln("span", "fsec-n", sec.count + " open"));
+      const count = eln("span", "fsec-n", showing(sec.rows.length, sec.total));
+      h.append(count);
       box.append(h);
       const rows = eln("div", "hgroup-rows fsec-rows");
       sec.rows.forEach((r) => rows.append(hearingRow(r)));
       box.append(rows);
-      if (sec.moreUrl && sec.moreText) {
-        const more = eln("div", "hgroup-more");
-        more.append(eln("span", null, sec.moreText));
-        const all = eln("a", "hgroup-portal", sec.moreLabel);
-        all.href = sec.moreUrl; all.target = "_blank"; all.rel = "noopener";
-        more.append(all);
-        box.append(more);
-      }
-      (sec.note ? noteGrid : group).append(box);
 
       const pill = eln("button", "fnav-pill");
       pill.type = "button";
       pill.append(document.createTextNode(sec.label));
-      pill.append(eln("span", "fnav-n", String(sec.rows.length)));
+      const pillN = eln("span", "fnav-n", String(sec.rows.length));
+      pill.append(pillN);
+
+      if (sec.total > sec.rows.length) {
+        const text = "Showing the " + sec.rows.length + " closing soonest.";
+        box.append(seeAllRow(text, sec.moreLabel, sec.moreUrl || ((btn, note) => {
+          btn.disabled = true; btn.textContent = "Loading…";
+          loadNoticeList(sec.key).then((list) => {
+            if (!list) { btn.disabled = false; btn.textContent = "Couldn't load the list. Try again"; return; }
+            // Same order as the rows already shown, so only the rest is added. Rows past
+            // the first few have no RSS feeds of their own, so they carry no RSS links.
+            list.hearings.slice(sec.rows.length).forEach((r) => rows.append(hearingRow(r, { noFeeds: true })));
+            count.textContent = showing(list.hearings.length, list.total);
+            pillN.textContent = String(list.hearings.length);
+            note.textContent = "Showing all " + list.total + ", closing soonest first.";
+            btn.remove();
+          });
+        })));
+      }
+      group.append(box);
       pill.addEventListener("click", () => {
         const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         box.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
@@ -802,12 +855,8 @@
     });
 
     if (juris.notice_list_url && juris.notice_total) {
-      const more = eln("div", "hgroup-more");
-      more.append(eln("span", null, juris.notice_total + " notices are open for comment in all."));
-      const all = eln("a", "hgroup-portal", "See all " + juris.notice_total + " notices ↗");
-      all.href = juris.notice_list_url; all.target = "_blank"; all.rel = "noopener";
-      more.append(all);
-      group.append(more);
+      group.append(seeAllRow(juris.notice_total + " notices are open for comment in all.",
+        "See all " + juris.notice_total + " notices ↗", juris.notice_list_url));
     }
   }
 
@@ -818,7 +867,8 @@
     public_comment: "Comment ↗",
   };
 
-  function hearingRow(h) {
+  function hearingRow(h, opts) {
+    const feeds = !(opts && opts.noFeeds);
     const row = eln("div", "hearing-row" + (h.status === "canceled" ? " is-canceled" : ""));
 
     const when = eln("div", "h-when");
@@ -859,7 +909,7 @@
           g.title = "View " + b.id + " in the govbot Legislation Dashboard";
           row.append(g);
         }
-        row.append(billRssTrigger(h, b));
+        if (feeds) row.append(billRssTrigger(h, b));
         list.append(row);
       });
       main.append(list);
@@ -877,7 +927,7 @@
       a.href = href; a.target = "_blank"; a.rel = "noopener";
       actions.append(a);
     }
-    actions.append(hearingRssTrigger(h));
+    if (feeds) actions.append(hearingRssTrigger(h));
     if (actions.childNodes.length) main.append(actions);
     row.append(main);
     return row;

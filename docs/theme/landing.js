@@ -372,7 +372,7 @@
     }
   }, true);
 
-  // ---- Social bots slide: a live, auto-scrolling feed of what the bots really posted ----
+  // ---- Social media trackers slide: a live, auto-scrolling feed of what the bots really posted ----
   // Sources (both public, CORS-open, fetched fail-soft and only once the carousel nears the screen):
   //  - Twitter (X), Threads and Instagram: the bot repo's own dashboard data (its `feed` records the
   //    exact post text + URL + posted time; `records` carries each bill's latest action).
@@ -452,14 +452,17 @@
     }
     function topicOf(key) { return TOPICS[key] || [key ? String(key).replace(/_/g, " ") : "Legislation", "#A5ADBC"]; }
 
-    function postHtml(p, clone) {
+    // Posts alternate green / gold (`.is-gold` on every other one). `n` is the post's place in
+    // the whole scrolling run, the looping copy included, so the pattern never repeats a colour
+    // where the copy starts.
+    function postHtml(p, clone, n) {
       var t = topicOf(p.topic), pl = PLAT[p.platform];
       var tab = clone ? ' tabindex="-1"' : "";
       var body = p.platform === "instagram"
         ? '<div class="gl-post-ig"><div class="gl-igcard" aria-hidden="true"><span class="gl-igcard-t">' + esc(t[0]) + '</span>' +
           '<span class="gl-igcard-h">' + esc(p.cardTitle) + '</span></div><div class="gl-post-body">' + esc(p.body) + '</div></div>'
         : '<div class="gl-post-body">' + esc(p.body) + '</div>';
-      return '<article class="gl-post" style="--tc: ' + t[1] + '; --plc: ' + pl.color + '">' +
+      return '<article class="gl-post' + (n % 2 ? " is-gold" : "") + '" style="--tc: ' + t[1] + '; --plc: ' + pl.color + '">' +
         '<img class="gl-post-av" src="' + AVATAR + '" alt="" width="40" height="40" loading="lazy">' +
         '<div class="gl-post-main"><div class="gl-post-top"><span class="gl-post-name">Govbot</span>' +
         '<span class="gl-post-handle">' + esc(p.handle) + '</span>' +
@@ -593,15 +596,16 @@
             "https://frankies2727.github.io/CHN-SocialMedia-Govbot-Main/", "Open the bot dashboard ↗");
           return;
         }
-        var html = posts.map(function (p) { return postHtml(p, false); }).join("");
+        var html = posts.map(function (p, i) { return postHtml(p, false, i); }).join("");
         looping = !reduceMotion && posts.length > 2;
         list.innerHTML = looping
-          ? html + '<div class="gl-bf-list" aria-hidden="true">' + posts.map(function (p) { return postHtml(p, true); }).join("") + "</div>"
+          ? html + '<div class="gl-bf-list" aria-hidden="true">' +
+            posts.map(function (p, i) { return postHtml(p, true, posts.length + i); }).join("") + "</div>"
           : html;
         if (looping) { measure(); kick(); }
       });
     }
-    // Fetch the posts (~3 MB of bot data + 18 Bluesky calls) only once the Social bots slide is
+    // Fetch the posts (~3 MB of bot data + 18 Bluesky calls) only once the Social media trackers slide is
     // actually the one showing and the carousel is on screen — not just because the page loaded.
     function maybeStart() { if (onScreen && slideActive()) start(); kick(); }
     if (slide && "MutationObserver" in window) {
