@@ -1,4 +1,10 @@
-ID	Name
-900	Friends of Casey Sample
-901	Casey Sample Victory Fund
-902	Sam Example for Ward 1
+ID	TypeOfCommittee	Name	Status
+900	Candidate	Friends of Casey Sample	A
+901	Candidate	Casey Sample Victory Fund	A
+902	Candidate	Sam Example for Ward 1	A
+903	Candidate	Casey Sample for County Board	A
+904	Political Party	1st Ward Democratic Organization	A
+905	Candidate	Friends of Kam Buckner	A
+906	Candidate	Kam for Chicago Mayor	F
+907	Candidate	Morgan Placeholder for Clerk	A
+908	Candidate	Pat Repfed for State Rep	A

@@ -277,6 +277,7 @@
   .cand-money { margin-top: 5px; font-size: 11.5px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 10px; }
   .cand-money .m-fig { display: inline-flex; gap: 4px; }
   .cand-money .m-fig .m-lbl { color: var(--text-muted); }
+  .cand-money .m-head { font-weight: 700; }
   .cand-money .m-fig .m-val { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--series-4); }
   .cand-money .m-fig.spent .m-val { color: var(--text-secondary); }
   .cand-money .m-cmte { color: var(--text-muted); font-size: 10.5px; width: 100%; }
@@ -2194,13 +2195,17 @@
     const context = isIl ? maps.il_context : maps.context;
     if (!view || !context) return null;
 
+    // Statewide offices (Governor…Treasurer, U.S. Senate) are flagged citywide too —
+    // every Chicago voter has them — but they are voted on across all of Illinois.
+    const statewide = r.office_group === "il_exec" || r.office_group === "us_senate";
+    const areaName = statewide ? "Statewide & citywide" : "Citywide";
     const wrap = document.createElement("div"); wrap.className = "race-map" + (isIl ? " race-map--il" : "");
     wrap.style.setProperty("--gc", "var(" + meta.color + ")");
     const svg = document.createElementNS(SVGNS, "svg");
     svg.setAttribute("viewBox", "0 0 " + view.w + " " + view.h);
     svg.setAttribute("role", "img");
     svg.setAttribute("aria-label",
-      (r.is_citywide ? "Citywide" : (entry && entry.label) || "District")
+      (r.is_citywide ? areaName : (entry && entry.label) || "District")
       + " locator map of " + (isIl ? "Illinois" : "Chicago"));
     const mk = (d, cls) => { const p = document.createElementNS(SVGNS, "path"); p.setAttribute("d", d); p.setAttribute("class", cls); return p; };
     // base outline (whole city, or the state silhouette); a citywide office
@@ -2217,7 +2222,7 @@
 
     const cap = document.createElement("div"); cap.className = "map-cap";
     const b = document.createElement("b");
-    b.textContent = r.is_citywide ? "Citywide" : (entry && entry.label) || (r.district || "");
+    b.textContent = r.is_citywide ? areaName : (entry && entry.label) || (r.district || "");
     cap.append(b);
     // Places the district touches — Chicago neighborhoods (community areas) AND
     // the Illinois counties it covers (the non-Chicago "hoods"), each on its own
@@ -2236,7 +2241,7 @@
     if (counties.length) placeLine("Counties", counties);
     if (!hoods.length && !counties.length && r.is_citywide) {
       const mh = document.createElement("div"); mh.className = "map-hoods";
-      mh.textContent = "All of Chicago";
+      mh.textContent = statewide ? "All of Illinois, including all of Chicago" : "All of Chicago";
       cap.append(mh);
     }
     wrap.append(cap);
@@ -2335,9 +2340,12 @@
         const v = document.createElement("span"); v.className = "m-val"; v.textContent = fmtMoney(val);
         s.append(l, v); return s;
       };
-      if (m.funds_raised != null) mon.append(fig("💵 Raised", m.funds_raised));
+      // Figures come from the committee's latest state (SBE) report, which covers one
+      // reporting period: raised/spent are that period's, cash is on hand at its end.
+      mon.append(Object.assign(document.createElement("span"), { className: "m-lbl m-head", textContent: "💵 Latest report:" }));
+      if (m.funds_raised != null) mon.append(fig("Raised", m.funds_raised));
       if (m.funds_spent != null) mon.append(fig("Spent", m.funds_spent, "spent"));
-      if (m.cash_on_hand != null) mon.append(fig("Cash", m.cash_on_hand));
+      if (m.cash_on_hand != null) mon.append(fig("Cash on hand", m.cash_on_hand));
       if (m.committee_name || m.source_url) {
         const cm = document.createElement("span"); cm.className = "m-cmte";
         cm.append(document.createTextNode((m.committee_name || "Committee") +
@@ -2346,7 +2354,7 @@
         a.href = m.source_url || "https://www.elections.il.gov/"; a.target = "_blank"; a.rel = "noopener";
         a.textContent = "SBE filing ↗";
         cm.append(a);
-        if (m.as_of) cm.append(document.createTextNode(" · as of " + prettyDate(m.as_of)));
+        if (m.as_of) cm.append(document.createTextNode(" · checked " + prettyDate(m.as_of)));
         mon.append(cm);
       }
       body.append(mon);

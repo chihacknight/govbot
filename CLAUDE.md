@@ -1129,9 +1129,22 @@ rebuild). Pure parsers are offline-snapshot-tested against `__snapshots__/raw/wi
 fetching is fail-soft (an unreachable/edited page — or a rate-limit — contributes nothing).
 
 **Campaign money** (Illinois SBE) attaches to each candidate via the SBE ID crosswalk
-(candidate name → `Candidates.txt` ID → `CmteCandidateLinks` → `Committees` → latest
-`D2Totals` row): receipts, spending, cash on hand. Only unambiguous name matches are kept
-(never fuzzy dollar matching). Because the SBE bulk files are ~70MB, `deploy-docs.yml`
+(candidate → `Candidates.txt` ID → `CmteCandidateLinks` → `Committees` → latest
+`D2Totals` row): receipts, spending, cash on hand (never fuzzy dollar matching).
+`Candidates.txt` holds one record per person **per office they ran for**, so the match is by
+**office + district too** (`sbe_office_for(race_id)` → SBE Office/DistrictType/District; surname +
+first initial via `_person_key`, so "Kam" finds "Kambium E") — a name-only match had given Mike
+Frerichs (Treasurer) his 2000 "for County Board" committee and Kam Buckner (IL House 26) his 2023
+mayoral one. Two different people for the same office are skipped, never guessed; only **active
+candidate committees** count (`TypeOfCommittee == "Candidate"`, `Status == "A"` — not closed
+committees from old races, nor party/ward organizations a candidate chairs); **federal races get no
+SBE money** (they file with the FEC). `source_url` links that committee's own SBE page
+(`CommitteeDetail.aspx?id=`). A D2 covers one reporting period, so the page labels the figures
+"💵 Latest report: Raised · Spent · Cash on hand" and "checked <date>". On the Oct 2026 data this
+gave 134 candidates money, with Frerichs → "Friends of Frerichs" and Buckner → "Friends of Kam
+Buckner". The locator caption for statewide offices (`il_exec`, U.S. Senate — flagged `is_citywide`
+because every Chicago voter has them) reads **"Statewide & citywide · All of Illinois, including
+all of Chicago"**, not "Citywide · All of Chicago". Because the SBE bulk files are ~70MB, `deploy-docs.yml`
 runs it as a **separate step gated on candidates being present** —
 `main.py --enrich-money docs/src/dashboard/elections.json --money-dir <sbe-files>` — so the
 committed sample (empty rosters) carries no money. Parsers/aggregation are offline-tested

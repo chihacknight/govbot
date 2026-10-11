@@ -401,46 +401,78 @@ class Springfield(unittest.TestCase):
 
 
 class Money(unittest.TestCase):
+    MAYOR, CLERK, WARD1, WARD2 = ("chicago-mayor", "chicago-city-clerk",
+                                  "chicago-alderperson-ward-01", "chicago-alderperson-ward-02")
+
     def setUp(self):
         self.dir = RAW / "sbe"
         self.now = main.datetime(2026, 9, 7, tzinfo=main.timezone.utc)
-        keys = {main._name_key(n) for n in
-                ["Casey R. Sample", "Morgan Placeholder", "Sam T. Example", "Lee Q. Testcase"]}
-        self.idx = main.build_money_index(str(self.dir), keys, self.now)
+        self.idx = main.build_money_index(str(self.dir), {
+            (self.MAYOR, "Casey R. Sample"), (self.CLERK, "Morgan Placeholder"),
+            (self.WARD1, "Sam T. Example"), (self.WARD2, "Lee Q. Testcase"),
+            ("il-house-026", "Kam Buckner"), ("us-house-il-05", "Pat Repfed"),
+        }, self.now)
 
-    def test_name_key(self):
-        self.assertEqual(main._name_key("Casey R. Sample"), "caseysample")
-        self.assertEqual(main._name_key("Sample, Casey R."), "caseysample")
+    def test_sbe_office_for(self):
+        self.assertEqual(main.sbe_office_for("il-treasurer"), ({"Treasurer"}, "Statewide", None))
+        self.assertEqual(main.sbe_office_for("chicago-city-treasurer"), ({"Treasurer"}, "City", ""))
+        self.assertEqual(main.sbe_office_for("il-house-026"), ({"State Representative"}, "Representative", "26"))
+        self.assertEqual(main.sbe_office_for("cps-board-member-1a")[2], "1a")
+        self.assertEqual(main.sbe_office_for("chicago-police-district-council-025")[2], "25")
+        # Federal races file with the FEC, not the Illinois SBE.
+        self.assertIsNone(main.sbe_office_for("us-house-il-05"))
+        self.assertIsNone(main.sbe_office_for("us-senate-il"))
 
-    def test_aggregates_multiple_committees(self):
-        m = self.idx[main._name_key("Casey R. Sample")]
+    def test_person_keys(self):
+        self.assertEqual(main._ballot_person_key("Casey R. Sample"), ("c", "sample"))
+        self.assertEqual(main._ballot_person_key('Michilla "Kyla" Blaise'), ("m", "blaise"))
+        self.assertEqual(main._ballot_person_key("Carlos A. Rivas Jr."), ("c", "rivas"))
+        self.assertEqual(main._person_key("Kambium E", "Buckner"), ("k", "buckner"))
+        self.assertEqual(main._person_key("Lauren", '"Young" Weber'), ("l", "weber"))
+
+    def test_aggregates_active_candidate_committees_for_this_office(self):
+        m = self.idx[(self.MAYOR, "Casey R. Sample")]
+        # 900 + 901 count; the County Board candidacy's committee (903) and the
+        # party organization he is linked to (904) do not.
         self.assertEqual(m["committees"], 2)
         self.assertEqual(m["funds_raised"], 90000.0)
         self.assertEqual(m["funds_spent"], 54000.0)
         self.assertEqual(m["cash_on_hand"], 41000.0)
         self.assertEqual(m["committee_name"], "Friends of Casey Sample")  # most cash
+        self.assertEqual(m["source_url"], main.SBE_COMMITTEE_URL + "900")
 
     def test_latest_d2_by_max_id(self):
         # committee 900 has filings id 10 and 20; the id-20 receipts (80000) win.
-        m = self.idx[main._name_key("Casey R. Sample")]
+        m = self.idx[(self.MAYOR, "Casey R. Sample")]
         self.assertNotIn(50000.0, [m["funds_raised"]])  # not the older filing
 
-    def test_ambiguous_name_skipped(self):
-        # "Morgan Placeholder" appears twice in Candidates.txt -> no money.
-        self.assertNotIn(main._name_key("Morgan Placeholder"), self.idx)
+    def test_same_name_other_office_not_used(self):
+        # "Kam Buckner" is also a 2023 mayoral candidate; the State Rep race gets the
+        # State Rep record ("Kambium E") and its committee, never the mayoral one.
+        m = self.idx[("il-house-026", "Kam Buckner")]
+        self.assertEqual(m["committee_name"], "Friends of Kam Buckner")
+        self.assertEqual(m["cash_on_hand"], 340000.0)
 
-    def test_no_committee_skipped(self):
-        self.assertNotIn(main._name_key("Lee Q. Testcase"), self.idx)
+    def test_two_people_same_office_skipped(self):
+        # Morgan and Max Placeholder both ran for City Clerk -> no money, never a guess.
+        self.assertNotIn((self.CLERK, "Morgan Placeholder"), self.idx)
+
+    def test_federal_and_no_committee_skipped(self):
+        self.assertNotIn(("us-house-il-05", "Pat Repfed"), self.idx)  # a State Rep record exists
+        self.assertNotIn((self.WARD2, "Lee Q. Testcase"), self.idx)
+        self.assertIn((self.WARD1, "Sam T. Example"), self.idx)
 
     def test_missing_dir_empty(self):
-        self.assertEqual(main.build_money_index("/no/such/dir", {"caseysample"}, self.now), {})
+        self.assertEqual(main.build_money_index("/no/such/dir", {(self.MAYOR, "Casey Sample")}, self.now), {})
 
     def test_enrich_money_attaches(self):
-        doc = {"races": [{"candidates": [{"name": "Casey R. Sample"}, {"name": "Nobody Here"}]}]}
+        doc = {"races": [{"id": self.MAYOR, "candidates": [{"name": "Casey R. Sample"}, {"name": "Nobody Here"}]},
+                         {"id": "us-house-il-05", "candidates": [{"name": "Pat Repfed", "money": {"stale": 1}}]}]}
         n = main.enrich_money(doc, str(self.dir), self.now)
         self.assertEqual(n, 1)
         self.assertEqual(doc["races"][0]["candidates"][0]["money"]["committees"], 2)
         self.assertNotIn("money", doc["races"][0]["candidates"][1])
+        self.assertNotIn("money", doc["races"][1]["candidates"][0])
 
 
 class Results(unittest.TestCase):
