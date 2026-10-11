@@ -180,13 +180,17 @@ its bubble shows. mdbook's docs-search scripts + ~600 KB `searchindex.json` load
 homepage (`index.hbs` loader skips `.gb-landing`).
 
 **Download the data (Explore Legislation, CC BY 4.0).** Anyone can take the bill data: a **"Download the
-data"** outline button in legislation.html's hero (`#dl-open`) opens a panel (`#dl-overlay`, a
+data"** pill in legislation.html's hero (`#dl-open`, `.is-rainbow`: a 3px border in six colours —
+`--dl-rainbow`: #5EBD3E, #FFB900, #F78200, #E23838, #973999, #009CDF — that travels around it, a spinning
+conic gradient behind a page-coloured inner layer, transform-only, paused while a panel is open, still
+under reduced motion) opens a panel (`#dl-overlay`, a
 `.modal-overlay`; `#download` deep-links to it — the header's **Data ▾ → "Download bill data"** item in
 `docs/theme/header.html` points there; closing strips the hash; Escape closes it before the catalog).
 **For spreadsheets:** all bills as one zipped CSV and a state picker for one state's CSV (counts and sizes
 from `downloads/manifest.json`, fetched only when the panel opens). **For developers:** `data.json`,
 `bills/<code>.json`, the manifest, the `govbot-data` repos (full per-bill records via `govbot clone` /
-DuckDB), `catalog.json` / `llms.txt`, and a copyable curl + pandas snippet. A column guide, the source
+DuckDB), `catalog.json` / `llms.txt`, and a copyable curl + pandas snippet. A column guide (expanded by
+default), a six-colour divider (`.dl-rule`, the same six hues), the source
 and the **CC BY 4.0** notice ("credit Govbot (Chi Hack Night)"; `LICENSE-DATA` at the repo root) close the
 panel. In a state's catalog popup, `#dl-state-csv` links that state's pre-built CSV and `#dl-view`
 ("Download these N bills", shown once a search/filter narrows it) builds the same CSV in the browser

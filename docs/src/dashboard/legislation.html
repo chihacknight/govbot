@@ -184,6 +184,26 @@
   .dl-btn.is-primary { background: var(--gb-primary); border-color: var(--gb-primary); color: var(--gb-on-primary) !important; }
   .dl-btn.is-primary:hover { filter: brightness(1.08); }
   .dl-btn.is-sm { padding: 5px 12px; font-size: 13px; }
+  /* The hero's "Download the data" pill: a six-colour border that travels around it. A square
+     conic gradient spins behind the pill (transform only, so the GPU does it) and an inner
+     page-coloured layer leaves a 3px ring; the text sits on the page colour, readable in both
+     themes. Still under reduced motion, paused while a panel covers the page. */
+  :root { --dl-rainbow: #5EBD3E, #FFB900, #F78200, #E23838, #973999, #009CDF; }
+  .dl-btn.is-rainbow { position: relative; isolation: isolate; overflow: hidden; border: 0; padding: 9px 18px; }
+  .dl-btn.is-rainbow::before { content: ""; position: absolute; z-index: -2; left: 50%; top: 50%; width: 150%;
+    aspect-ratio: 1; background: conic-gradient(var(--dl-rainbow), #5EBD3E);
+    transform: translate(-50%, -50%); animation: dl-spin 4s linear infinite; }
+  .dl-btn.is-rainbow::after { content: ""; position: absolute; z-index: -1; inset: 3px; border-radius: inherit;
+    background: var(--page); }
+  .dl-btn.is-rainbow:hover { background: transparent; }
+  .dl-btn.is-rainbow:hover::after { background: linear-gradient(var(--hover-wash), var(--hover-wash)), var(--page); }
+  @keyframes dl-spin { to { transform: translate(-50%, -50%) rotate(1turn); } }
+  body.dl-open .dl-btn.is-rainbow::before, body.results-open .dl-btn.is-rainbow::before { animation-play-state: paused; }
+  @media (prefers-reduced-motion: reduce) { .dl-btn.is-rainbow::before { animation: none; } }
+  /* Six-colour divider between the column guide and the source/license note. */
+  .dl-rule { height: 5px; margin: 16px 0 0; border: 0; border-radius: 999px;
+    background: linear-gradient(90deg, #5EBD3E 0 16.67%, #FFB900 0 33.33%, #F78200 0 50%,
+      #E23838 0 66.67%, #973999 0 83.33%, #009CDF 0); }
   body.dl-open { overflow: hidden; }
   .dl-card { position: relative; max-width: 860px; padding: 22px 24px 20px; }
   .dl-card h2 { margin: 0 44px 6px 0; font-size: 22px; }
@@ -796,7 +816,7 @@
     <div class="title-row">
       <h1>Explore Legislation</h1>
       <div class="asof" id="asof" hidden><span class="dot"></span><span id="asof-text"></span></div>
-      <button type="button" class="dl-btn" id="dl-open" aria-haspopup="dialog">
+      <button type="button" class="dl-btn is-rainbow" id="dl-open" aria-haspopup="dialog">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
         Download the data</button>
     </div>
@@ -996,7 +1016,7 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
         </div>
       </section>
     </div>
-    <details class="dl-dict">
+    <details class="dl-dict" open>
       <summary>What each column means</summary>
       <dl>
         <dt>Jurisdiction</dt><dd>Two/three-letter code (usa = U.S. Congress)</dd>
@@ -1013,6 +1033,7 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
         <dt>Govbot link</dt><dd>The bill on this page</dd>
       </dl>
     </details>
+    <hr class="dl-rule">
     <p class="dl-license">Source: public government records gathered by the Open States scrapers, tagged by Govbot
       and refreshed twice a day. License: <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0 ↗</a>
       — share and adapt it for any purpose, including commercially; please credit <b>“Govbot (Chi Hack Night)”</b>.
