@@ -500,6 +500,7 @@ class SamePerson(unittest.TestCase):
         self.assertTrue(main.same_person("Diane Harris", "Diane M. Harris"))
         self.assertTrue(main.same_person('Michael "Mike" Crawford', "Mike Crawford"))
         self.assertTrue(main.same_person("Carlos A. Rivas Jr.", "Carlos Rivas"))
+        self.assertTrue(main.same_person("JB Pritzker", "JB Pritzker & Christian Mitchell"))   # a ticket
         self.assertFalse(main.same_person("Patty Garcia", "Jesus Garcia"))
         self.assertFalse(main.same_person("Jo Smith", "John Smith"))
 

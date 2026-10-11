@@ -825,7 +825,9 @@ shares the standard shell and, on load or `#q=`/`?q=` change, fetches `data.json
 categorized result groups** — **Bills** (id/title/sponsors/tags → `legislation.html#bill=<key>`),
 **Legislators & sponsors** (the whole `people.json` roster, name/party/area, party-coloured →
 `legislation.html#q=<name>`, which filters bills by that sponsor), **Election candidates** (official
-+ potential, each tagged → the race, see below), **Races & offices** (office/district/ballot →
++ potential, each tagged → the race, see below; each card says **which race and when** — "Running for
+<office> — <district | Statewide (all of Illinois) | Citywide (all of Chicago)>" and "On the <date> ballot ·
+<stage> election", `raceArea` / `raceWhen`), **Races & offices** (office/district/ballot →
 the race), and **Hearings** (title/committee/bill → `hearings.html#hg-<code>`). Each group shows a
 count, caps the list at 60 with a "refine" note, and there is a live result total. **Jump chips** are
 coloured `<button>`s (category icon + label + a filled count badge, in the section's colour) that
@@ -1153,7 +1155,9 @@ data: 170 candidates with money, 32 of them federal; Frerichs → "Friends of Fr
 surname + same first name or nickname: "Sonya Harper"/"Sonya Marie Harper", "Jonathan Jackson"/
 "Jonathan L. Jackson") and `add_candidate` (keeps the fuller name, fills missing fields) are used by
 `assemble`, `merge_candidates` (BOE) and the Wikipedia nominee step, and potential candidates graduate
-out by the same rule — the Oct 2026 data had 9 such duplicates. The locator caption for statewide offices (`il_exec`, U.S. Senate — flagged `is_citywide`
+out by the same rule — the Oct 2026 data had 9 such duplicates. A **joint ticket** on the BOE list
+("JB Pritzker & Christian Mitchell", Governor + Lt. Governor) is read as its first name, so it folds
+with "JB Pritzker" from Wikipedia (the ticket name is kept as the fuller one). The locator caption for statewide offices (`il_exec`, U.S. Senate — flagged `is_citywide`
 because every Chicago voter has them) reads **"Statewide & citywide · All of Illinois, including
 all of Chicago"**, not "Citywide · All of Chicago". Because the SBE bulk files are ~70MB, `deploy-docs.yml`
 runs it as a **separate step gated on candidates being present** —
@@ -1321,8 +1325,15 @@ their Chicago SVG maps are skipped), and the highlighted-district pulse animates
 animated `drop-shadow` filter re-rastered each map every frame).
 Deep links open the popup: `alignDeepRace` maps `#office=<group>` / `#race=<id>` to the office, opens its
 popup once (`state._deepModalOpened`), then scrolls + flashes the specific race inside `#gm-body`; a
-side-panel race (citywide/statewide/U.S. Senate/CPS-president/alderman) still falls back to the "Find your
-ballot" map. `.group-overlay` sets `display:flex`, so a `.group-overlay[hidden]{display:none}` rule
+side-panel race (citywide/statewide/U.S. Senate/CPS-president/alderman — no office card) opens **on its
+own in the same popup** (`openRaceModal` / `fillRaceModal`, full-width `.gm-body--one`, kept in sync on
+re-render via `state._gmRace`), so a global-search result lands straight on its race. The office popup's
+search (`#gm-search`, "Search candidates, districts, neighborhoods…") matches **every word in any order**
+against `raceHaystack`, which now includes the roster incumbent of an empty IL Senate/House seat too.
+**The "Find your ballot" side panel has a name search** (`#cm-search`, `cmSearchBox` / `cmFilterItems`):
+with a ward or neighborhood picked it narrows that ballot's race bars; with nothing picked it searches
+**every race on the page** (up to `CM_SEARCH_MAX` = 30 bars, by election date); each hit shows
+"Matches: <names>" (`cmMatchedNames`) under its bar, and "No race … matches" when nothing does. `.group-overlay` sets `display:flex`, so a `.group-overlay[hidden]{display:none}` rule
 re-asserts `[hidden]` (same pitfall as `.gb-state`).
 
 **Race-card detail** (`renderRace(r, meta, opts)`, shared by the office popup and the "On this ballot"

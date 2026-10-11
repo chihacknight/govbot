@@ -369,20 +369,34 @@
     });
     return out;
   }
+  // Where a race is voted on: its district, else the whole state or city.
+  var STATEWIDE_GROUPS = { il_exec: 1, us_senate: 1 };
+  function raceArea(r) {
+    if (r.district) return r.district;
+    if (STATEWIDE_GROUPS[r.office_group]) return "Statewide (all of Illinois)";
+    return "Citywide (all of Chicago)";
+  }
+  // "Nov 3, 2026 · general election" — when the race is on the ballot.
+  function raceWhen(r) {
+    if (!r.ballot_date) return "";
+    var stage = r.ballot_stage ? " · " + r.ballot_stage.replace(/_/g, " ") + " election" : "";
+    return "On the " + prettyDate(r.ballot_date) + " ballot" + stage;
+  }
   function searchCandidates(t) {
     var out = [];
     state.races.forEach(function (r) {
-      var office = r.office + (r.district ? " · " + r.district : "");
+      var race = "Running for " + r.office + " — " + raceArea(r);
+      var href = "elections.html#race=" + encodeURIComponent(r.id);
       (r.candidates || []).forEach(function (c) {
         if (matchAll(hay([c.name, r.office, r.district, c.party]), t)) out.push({
-          title: c.name, sub: office, juris: r.jurisdiction, badge: "On ballot", badgeClass: "official", party: c.party,
-          href: "elections.html#race=" + encodeURIComponent(r.id)
+          title: c.name, sub: race, sub2: raceWhen(r), juris: r.jurisdiction, badge: "On ballot", badgeClass: "official",
+          party: c.party, href: href
         });
       });
       (r.potential_candidates || []).forEach(function (c) {
         if (matchAll(hay([c.name, r.office, r.district]), t)) out.push({
-          title: c.name, sub: office + "  ·  reported, unofficial", juris: r.jurisdiction, badge: "Potential", badgeClass: "potential",
-          href: "elections.html#race=" + encodeURIComponent(r.id)
+          title: c.name, sub: race + " (reported, unofficial)", sub2: raceWhen(r), juris: r.jurisdiction,
+          badge: "Potential", badgeClass: "potential", href: href
         });
       });
     });
@@ -457,6 +471,7 @@
     if (r.party) title.appendChild(el("span", "s-party " + partyClass(r.party), r.party));
     a.appendChild(title);
     if (r.sub) a.appendChild(el("div", "sc-sub", r.sub));
+    if (r.sub2) a.appendChild(el("div", "sc-sub", r.sub2));
     if (r.tags && r.tags.length) {
       var tg = el("div", "sc-tags");
       r.tags.forEach(function (x) { tg.appendChild(el("span", "sc-tag", x)); });

@@ -681,7 +681,10 @@ def fetch_boe_candidates(pdf_source=None):
 def _name_parts(name):
     """(given names, surname) of a ballot name, lowercase alphanumerics: a quoted or
     parenthesized nickname counts as another given name ('Michael "Mike" Crawford'
-    -> {'michael', 'mike'}, 'crawford'); middle names/initials and Jr./III dropped."""
+    -> {'michael', 'mike'}, 'crawford'); middle names/initials and Jr./III dropped.
+    A joint ticket ("JB Pritzker & Christian Mitchell", Governor + Lt. Governor on the
+    BOE list) is read as its first name, the person running for this office."""
+    name = (name or "").split("&")[0]
     nick = re.findall(r'["(]([^")]+)[")]', name or "")
     words = [re.sub(r"[^a-z0-9]", "", w.lower())
              for w in re.split(r"[\s,]+", re.sub(r'["(][^")]*[")]', " ", name or ""))]
