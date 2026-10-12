@@ -186,8 +186,12 @@ conic gradient behind a page-coloured inner layer, transform-only, paused while 
 under reduced motion) opens a panel (`#dl-overlay`, a
 `.modal-overlay`; `#download` deep-links to it — the header's **Data ▾ → "Download bill data"** item in
 `docs/theme/header.html` points there; closing strips the hash; Escape closes it before the catalog).
-**For spreadsheets:** all bills as one zipped CSV and a state picker for one state's CSV (counts and sizes
-from `downloads/manifest.json`, fetched only when the panel opens). **For developers:** `data.json`,
+**For spreadsheets:** all bills as one zipped CSV and a **multi-state picker** ("Pick states": a filterable
+checkbox list with flags + bill counts, `#dl-st-list` / `dlPicked`; the open state starts ticked; the line under
+the button names the picks (up to 3, then "N states") with their bills and MB from `downloads/manifest.json`,
+fetched only when the panel opens). One state downloads its pre-built `bills-<code>.csv` as is; several are
+fetched and **joined into one CSV in the browser** (`dlDownloadPicked`: `text()` drops each BOM, every file
+after the first drops its header line, one BOM is put back) → `govbot-bills-<codes|N-states>-<date>.csv`. **For developers:** `data.json`,
 `bills/<code>.json`, the manifest, the `govbot-data` repos (full per-bill records via `govbot clone` /
 DuckDB), `catalog.json` / `llms.txt`, and a copyable curl + pandas snippet. A column guide (expanded by
 default), a six-colour divider (`.dl-rule`, the same six hues), the source

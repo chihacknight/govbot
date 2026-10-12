@@ -214,9 +214,28 @@
   .dl-box > p { margin: 0 0 12px; font-size: 13.5px; }
   .dl-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 12px; }
   .dl-meta { font-size: 13px; }
-  .dl-pick { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; }
-  .dl-pick select { font: inherit; font-weight: 500; padding: 6px 8px; border-radius: 8px; max-width: 220px;
+  /* Multi-state picker: a filterable checkbox list; the chosen states download as one CSV. */
+  .dl-multi { border: 1px solid var(--gb-border-strong); border-radius: 10px; padding: 10px 10px 2px; margin: 0 0 12px; }
+  .dl-multi-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 8px; }
+  .dl-multi-t { font-size: 13.5px; font-weight: 700; }
+  .dl-st-filter { flex: 1 1 140px; min-width: 0; font: inherit; font-size: 13.5px; padding: 6px 10px; border-radius: 8px;
     border: 1px solid var(--gb-border-strong); background: var(--gb-surface); color: var(--gb-text); }
+  .dl-st-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); gap: 2px 8px;
+    max-height: 200px; overflow-y: auto; overscroll-behavior: contain; padding-right: 4px;
+    scrollbar-width: thin; scrollbar-color: var(--series-1) color-mix(in srgb, var(--series-1) 14%, transparent); }
+  .dl-st { display: flex; align-items: center; gap: 7px; padding: 5px 6px; border-radius: 7px; cursor: pointer; font-size: 13.5px; }
+  .dl-st:hover { background: var(--hover-wash); }
+  .dl-st[hidden] { display: none; }   /* author display:flex would beat [hidden] */
+  .dl-st input { width: 16px; height: 16px; margin: 0; flex: none; accent-color: var(--series-1); }
+  .dl-st img { width: 20px; height: 13px; object-fit: cover; border-radius: 2px; flex: none; }
+  .dl-st-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dl-st-n { font-size: 12px; font-variant-numeric: tabular-nums; }
+  .dl-st:has(input:checked) { background: color-mix(in srgb, var(--series-1) 16%, transparent); font-weight: 650; }
+  .dl-st-none { grid-column: 1 / -1; margin: 6px 4px; font-size: 13px; }
+  .dl-multi-foot { margin: 10px 0 8px; }
+  .dl-btn[disabled] { opacity: .55; cursor: not-allowed; }
+  .dl-clear-btn { font: inherit; font-size: 13px; font-weight: 650; background: none; border: 0; padding: 4px 2px;
+    color: var(--gb-link); text-decoration: underline; cursor: pointer; }
   .dl-tip { margin: 4px 0 0; font-size: 13px; }
   .dl-links { margin: 0 0 10px; padding-left: 18px; font-size: 13.5px; line-height: 1.5; }
   .dl-links li { margin: 3px 0; }
@@ -1005,9 +1024,18 @@
             All bills, every state</a>
           <span class="dl-meta" id="dl-all-meta">CSV in a zip file</span>
         </div>
-        <div class="dl-row">
-          <label class="dl-pick" for="dl-state">One state <select id="dl-state"></select></label>
-          <a class="dl-btn" id="dl-state-go" download>Download CSV</a>
+        <!-- Pick any number of states; their pre-built CSVs are joined into one file in the browser. -->
+        <div class="dl-multi">
+          <div class="dl-multi-head">
+            <span class="dl-multi-t" id="dl-multi-t">Pick states</span>
+            <input type="search" id="dl-st-filter" class="dl-st-filter" placeholder="Filter states…" aria-label="Filter states">
+          </div>
+          <div class="dl-st-list" id="dl-st-list" role="group" aria-labelledby="dl-multi-t"></div>
+          <div class="dl-row dl-multi-foot">
+            <button type="button" class="dl-btn" id="dl-states-go" disabled>Download selected (CSV)</button>
+            <button type="button" class="dl-clear-btn" id="dl-st-clear" hidden>Clear</button>
+            <span class="dl-meta" id="dl-st-meta" aria-live="polite">Pick one or more states.</span>
+          </div>
         </div>
         <p class="dl-tip">Tip: unzip the file first, then open the <b>.csv</b>. In Google Sheets use <b>File → Import</b>.
           Each state's bills list also has a button to download just the bills you've searched or filtered.</p>
@@ -2407,7 +2435,7 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     saveFile("govbot-" + one + "-bills-" + isoToday() + ".csv", billsToCsv(catalogRows));
   }
 
-  let dlOpener = null, dlManifest = null;
+  let dlOpener = null, dlManifest = null, dlManifestData = null;
   function openDownloads() {
     const ov = $("dl-overlay"); if (!ov || !ov.hidden) return;
     dlOpener = document.activeElement;
@@ -2422,6 +2450,8 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
       dlManifest = fetch("downloads/manifest.json").then((r) => (r.ok ? r.json() : null)).catch(() => null);
     }
     dlManifest.then((m) => {
+      dlManifestData = m;
+      dlSyncPicked();
       if (!m || !m.all) return;
       $("dl-all-meta").textContent = "CSV in a zip · " + fmt(m.all.rows) + " bills · " + (m.all.bytes / 1e6).toFixed(1) + " MB";
     });
@@ -2434,24 +2464,92 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     if (location.hash === "#download") history.replaceState(null, "", location.pathname + location.search);
     if (dlOpener && dlOpener.focus) dlOpener.focus();
   }
+  // "Pick states": a checkbox per jurisdiction. One state downloads its pre-built file as is;
+  // several are fetched and joined into one CSV (same columns, so only the first header is kept).
+  const dlPicked = new Set();
   function fillDownloadPicker() {
-    const sel = $("dl-state"), go = $("dl-state-go");
-    if (!sel || !state.data) return;
+    const list = $("dl-st-list");
+    if (!list || !state.data) return;
     const counts = state.data.counts || {};
-    if (!sel.options.length) {
+    if (!list.childElementCount) {
       Object.keys(counts).filter((c) => counts[c])
         .sort((a, b) => (state.stateNames[a] || a).localeCompare(state.stateNames[b] || b))
         .forEach((c) => {
-          const o = document.createElement("option");
-          o.value = c; o.textContent = (state.stateNames[c] || c.toUpperCase()) + " (" + fmt(counts[c]) + ")";
-          sel.append(o);
+          const lab = mkel("label", "dl-st");
+          lab.dataset.name = (state.stateNames[c] || c).toLowerCase();
+          const cb = document.createElement("input");
+          cb.type = "checkbox"; cb.value = c;
+          const flag = document.createElement("img");
+          flag.src = "flags/" + (c === "usa" ? "us" : c) + ".png"; flag.alt = ""; flag.loading = "lazy";
+          flag.onerror = () => flag.remove();
+          lab.append(cb, flag, mkel("span", "dl-st-name", state.stateNames[c] || c.toUpperCase()),
+            mkel("span", "dl-st-n", fmt(counts[c])));
+          list.append(lab);
         });
-      // Start on the state the reader is looking at, if any.
+      list.append(mkel("p", "dl-st-none", "No state matches."));
+      // Start with the state the reader is looking at, if any.
       const open = Array.from(state.filters.states)[0] || eeSel;
-      if (open && counts[open]) sel.value = open;
+      if (open && counts[open]) dlPicked.add(open);
     }
-    const sync = () => { go.href = "downloads/bills-" + encodeURIComponent(sel.value) + ".csv"; };
-    sel.onchange = sync; sync();
+    list.querySelectorAll("input").forEach((cb) => { cb.checked = dlPicked.has(cb.value); });
+    dlFilterStates();
+    dlSyncPicked();
+  }
+  function dlFilterStates() {
+    const q = ($("dl-st-filter").value || "").trim().toLowerCase();
+    let shown = 0;
+    $("dl-st-list").querySelectorAll(".dl-st").forEach((lab) => {
+      const hit = !q || lab.dataset.name.indexOf(q) !== -1 || lab.querySelector("input").value === q;
+      lab.hidden = !hit; if (hit) shown++;
+    });
+    $("dl-st-list").querySelector(".dl-st-none").hidden = shown > 0;
+  }
+  // The button and the "N states · N bills · N MB" line follow the picks.
+  function dlSyncPicked() {
+    const go = $("dl-states-go"), meta = $("dl-st-meta"), n = dlPicked.size;
+    const counts = (state.data && state.data.counts) || {};
+    go.disabled = !n;
+    go.textContent = n > 1 ? "Download " + n + " states (CSV)" : "Download selected (CSV)";
+    $("dl-st-clear").hidden = !n;
+    if (!n) { meta.textContent = "Pick one or more states."; return; }
+    const picked = Array.from(dlPicked);
+    let rows = 0; picked.forEach((c) => { rows += counts[c] || 0; });
+    // Name the picks (they may be scrolled out of the list), up to 3; more reads "N states".
+    const names = picked.map((c) => state.stateNames[c] || c.toUpperCase()).sort();
+    let text = (n <= 3 ? names.join(", ") : n + " states") + " · " + fmt(rows) + " bills";
+    const m = dlManifestData;
+    if (m && m.jurisdictions) {
+      let bytes = 0; m.jurisdictions.forEach((j) => { if (dlPicked.has(j.jurisdiction)) bytes += j.bytes || 0; });
+      if (bytes) text += " · " + (bytes / 1e6 < 0.1 ? "<0.1" : (bytes / 1e6).toFixed(1)) + " MB";
+    }
+    meta.textContent = text;
+  }
+  async function dlDownloadPicked() {
+    const picked = Array.from(dlPicked).sort((a, b) =>
+      (state.stateNames[a] || a).localeCompare(state.stateNames[b] || b));
+    if (!picked.length) return;
+    const url = (c) => "downloads/bills-" + encodeURIComponent(c) + ".csv";
+    if (picked.length === 1) {   // the pre-built file as is, no copy in memory
+      const a = document.createElement("a");
+      a.href = url(picked[0]); a.download = ""; document.body.append(a); a.click(); a.remove();
+      return;
+    }
+    const go = $("dl-states-go"), meta = $("dl-st-meta");
+    go.disabled = true; go.textContent = "Preparing…";
+    try {
+      // text() drops each file's BOM; every file after the first also drops its header line.
+      const parts = await Promise.all(picked.map((c) => fetch(url(c)).then((r) => {
+        if (!r.ok) throw new Error(c);
+        return r.text();
+      })));
+      const body = parts.map((t, i) => (i ? t.slice(t.indexOf("\r\n") + 2) : t)).join("");
+      const tag = picked.length <= 4 ? picked.join("-") : picked.length + "-states";
+      saveFile("govbot-bills-" + tag + "-" + isoToday() + ".csv", "\ufeff" + body);
+      dlSyncPicked();
+    } catch (e) {
+      dlSyncPicked();
+      meta.textContent = "Couldn't download " + (e && e.message ? e.message.toUpperCase() : "the files") + ". Please try again.";
+    }
   }
   function dlWire() {
     $("dl-open").addEventListener("click", openDownloads);
@@ -2460,6 +2558,18 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     ov.addEventListener("click", (e) => { if (e.target === ov) closeDownloads(); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDownloads(); });
     $("dl-view").addEventListener("click", downloadView);
+    $("dl-st-list").addEventListener("change", (e) => {
+      const cb = e.target; if (!cb || cb.type !== "checkbox") return;
+      if (cb.checked) dlPicked.add(cb.value); else dlPicked.delete(cb.value);
+      dlSyncPicked();
+    });
+    $("dl-st-filter").addEventListener("input", dlFilterStates);
+    $("dl-st-clear").addEventListener("click", () => {
+      dlPicked.clear();
+      $("dl-st-list").querySelectorAll("input").forEach((cb) => { cb.checked = false; });
+      dlSyncPicked();
+    });
+    $("dl-states-go").addEventListener("click", dlDownloadPicked);
     $("dl-copy").addEventListener("click", () => {
       const b = $("dl-copy");
       const done = (msg) => { b.textContent = msg; setTimeout(() => { b.textContent = "Copy"; }, 1400); };
