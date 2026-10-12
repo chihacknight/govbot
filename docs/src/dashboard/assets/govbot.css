@@ -206,6 +206,20 @@ h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spaci
   background: transparent; border: none; outline: none; width: 100%;
 }
 .gb-search input::placeholder { color: var(--gb-placeholder); }
+/* One clear (×) for every search box, phones included (govbot-shell.js places it); the
+   browser's own desktop-only × is hidden so a box never shows two. */
+input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
+input[type="search"].gb-has-clear { padding-right: 36px !important; }
+.gb-clear {
+  position: absolute; z-index: 3; width: 26px; height: 26px; padding: 0; margin: 0;
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  border: 0; border-radius: 50%; cursor: pointer; color: var(--gb-text);
+  background: color-mix(in srgb, var(--gb-text) 16%, transparent);
+}
+.gb-clear:hover, .gb-clear:focus-visible { background: color-mix(in srgb, var(--gb-text) 28%, transparent); }
+.gb-clear:focus-visible { outline: 2px solid var(--gb-primary); outline-offset: 2px; }
+.gb-clear svg { width: 12px; height: 12px; }
+.gb-clear[hidden] { display: none; }
 /* Every search/filter box on every page: placeholder hints stay lighter than real text. */
 input::placeholder, textarea::placeholder { color: var(--gb-placeholder) !important; opacity: 1; }
 .gb-icon-btn {

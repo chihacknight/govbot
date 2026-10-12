@@ -533,8 +533,19 @@ jobs:
       # candidate summary for U.S. House/Senate races. Gated on candidates actually
       # being present — the SBE bulk files are large (~70MB), so we only download +
       # enrich when there's something to enrich. Fully fail-soft: a download error
-      # just leaves money off.
+      # just leaves money off. elections.il.gov sometimes answers 403 to GitHub's
+      # runners for a while, so each file is retried, and a file that still fails
+      # falls back to the last complete set of SBE files (cached below), so one
+      # blocked run doesn't wipe every Illinois candidate's money off the page.
+      - name: Restore last good SBE money files
+        if: steps.gate.outputs.refresh == 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/sbe-last
+          key: sbe-money-${{ github.run_id }}
+          restore-keys: sbe-money-
       - name: Enrich candidates with campaign money (SBE + FEC)
+        id: money
         if: steps.gate.outputs.refresh == 'true'
         run: |
           set -uo pipefail
@@ -542,10 +553,37 @@ jobs:
           if [ "$CANDS" -gt 0 ]; then
             mkdir -p /tmp/sbe
             base="https://www.elections.il.gov/campaigndisclosuredatafiles"
-            ok=1
+            ok=1; fresh=1
             for f in Candidates.txt CmteCandidateLinks.txt Committees.txt D2Totals.txt; do
-              curl -fsSL --retry 3 -o "/tmp/sbe/$f" "$base/$f" || { echo "::warning::could not download $f"; ok=0; }
+              got=0
+              for wait in 0 20 60; do
+                sleep "$wait"
+                # curl's --retry skips a 403, so retry here; write to .part so a
+                # failed download never leaves a half file behind.
+                if curl -fsSL --retry 3 -A "chihacknight-civic-data/1.0" \
+                     -o "/tmp/sbe/$f.part" "$base/$f"; then
+                  mv "/tmp/sbe/$f.part" "/tmp/sbe/$f"; got=1; break
+                fi
+              done
+              rm -f "/tmp/sbe/$f.part"
+              if [ "$got" = "0" ]; then
+                fresh=0
+                if [ -s "/tmp/sbe-last/$f" ]; then
+                  echo "::warning::could not download $f; using the last good copy"
+                  cp "/tmp/sbe-last/$f" "/tmp/sbe/$f"
+                else
+                  echo "::warning::could not download $f"; ok=0
+                fi
+              fi
             done
+            # Only a complete, fresh set becomes the next run's fallback.
+            if [ "$fresh" = "1" ]; then
+              mkdir -p /tmp/sbe-last
+              for f in Candidates.txt CmteCandidateLinks.txt Committees.txt D2Totals.txt; do
+                cp "/tmp/sbe/$f" "/tmp/sbe-last/$f"
+              done
+              echo "fresh=true" >> "$GITHUB_OUTPUT"
+            fi
             # U.S. House/Senate money: the FEC's keyless "All candidates" summary for the
             # 2026 cycle (~200 KB zipped). Optional — without it federal races get none.
             curl -fsSL --retry 3 -o /tmp/weball.zip https://www.fec.gov/files/bulk-downloads/2026/weball26.zip \
@@ -559,6 +597,12 @@ jobs:
           else
             echo "no candidates present; skipping SBE money download/enrichment"
           fi
+      - name: Save SBE money files for the next run
+        if: steps.money.outputs.fresh == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/sbe-last
+          key: sbe-money-${{ github.run_id }}
 
       # Election results (post-Election-Night): when the ELECTION_RESULTS_URL repo
       # variable/secret points at the authority's results export (Chicago BOE or

@@ -288,19 +288,31 @@
   .hgroup-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start;
     gap: 8px 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gridline); font-size: 14px; }
   .hgroup-more .hgroup-portal { margin-left: 0; }
-  /* Federal: short sections, each in its own colour; the rules scroll in their own box. */
+  /* USA (Federal): the whole card is one shorter scroll box with a coloured scrollbar. Its
+     header ("USA (Federal) · x of y showing · Follow") sticks to the top while it scrolls, and
+     each kind's title sticks just under it (--fed-head-h, the header's measured height). */
+  .hgroup--fed { max-height: 600px; overflow-y: auto; padding-top: 0; overscroll-behavior: contain;
+    scrollbar-width: thin; scrollbar-color: var(--hg-accent) color-mix(in srgb, var(--hg-accent) 14%, transparent); }
+  .hgroup--fed::-webkit-scrollbar { width: 11px; }
+  .hgroup--fed::-webkit-scrollbar-track { background: color-mix(in srgb, var(--hg-accent) 12%, transparent); border-radius: 999px; }
+  .hgroup--fed::-webkit-scrollbar-thumb { background: var(--hg-accent); border-radius: 999px;
+    border: 2px solid transparent; background-clip: padding-box; }
+  .hgroup--fed > .hgroup-head { position: sticky; top: 0; z-index: 3; background: var(--surface-1); padding-top: 12px; }
+  /* Phones: a tighter sticky header (Follow + Comment share a line) leaves more room to read. */
+  @media (max-width: 620px) {
+    .hgroup--fed { max-height: 500px; }
+    .hgroup--fed > .hgroup-head { gap: 6px 8px; padding-top: 10px; }
+    .hgroup--fed > .hgroup-head .hgroup-portal { padding: 3px 10px; font-size: 12.5px; }
+  }
+  /* Federal: short sections, each in its own colour. */
   .fsec { margin-top: 16px; }
   .fsec-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 6px;
-    padding-left: 10px; border-left: 4px solid var(--sc); font-size: 15.5px; }
+    padding: 6px 0 6px 10px; border-left: 4px solid var(--sc); font-size: 15.5px;
+    position: sticky; top: var(--fed-head-h, 52px); z-index: 2; background: var(--surface-1); }
   .fsec-n { font-size: 12px; font-weight: 800; padding: 1px 9px; border-radius: 999px;
     border: 1.5px solid var(--sc); background: color-mix(in srgb, var(--sc) 16%, transparent); }
-  .fsec-rows { max-height: 360px; border: 1px solid color-mix(in srgb, var(--sc) 35%, var(--gridline));
-    border-radius: 10px; padding: 0 4px; scrollbar-color: var(--sc) color-mix(in srgb, var(--sc) 14%, transparent); }
-  .hgroup-rows.fsec-rows::-webkit-scrollbar { width: 11px; }
-  .hgroup-rows.fsec-rows::-webkit-scrollbar-track { background: color-mix(in srgb, var(--sc) 12%, transparent); border-radius: 999px; }
-  .hgroup-rows.fsec-rows::-webkit-scrollbar-thumb { background: linear-gradient(var(--sc), color-mix(in srgb, var(--sc) 65%, #ffffff));
-    border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
-  @media (max-width: 620px) { .fsec-rows { max-height: 300px; } }
+  .hgroup-rows.fsec-rows { max-height: none; overflow: visible; scrollbar-gutter: auto;
+    border: 1px solid color-mix(in srgb, var(--sc) 35%, var(--gridline)); border-radius: 10px; padding: 0 4px; }
   .hnotices-h { margin: 22px 0 4px; padding-top: 16px; border-top: 2px solid var(--gridline); font-size: 18px; }
   .hnotices-sub { margin: 0; font-size: 14px; }
   .pstate-sub { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--gridline); }
@@ -685,6 +697,12 @@
         head.append(p);
       }
       group.append(head);
+      if (code === "us") {
+        group.classList.add("hgroup--fed");
+        // The kinds' sticky titles sit just under the sticky header, whatever height it wraps to.
+        const fit = () => group.style.setProperty("--fed-head-h", head.offsetHeight + "px");
+        if ("ResizeObserver" in window) new ResizeObserver(fit).observe(head); else fit();
+      }
       jumps.push({ code: code, name: juris.name, total: totalHere });
       if (code === "us") {
         federalSections(group, listed, notices, juris);

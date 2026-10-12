@@ -206,6 +206,17 @@ same bytes). `downloads/` is **gitignored** (the repo's root `.gitignore` alread
 a build artifact like the legislator photos, published by mdbook. Offline-tested in
 `scripts/test_build_site_slices.py`.
 
+**Clear (×) in every search box.** Desktop browsers draw their own ×, iPhones don't, so `govbot-shell.js`
+adds one Govbot × (`.gb-clear`, styled in `govbot.css`, which hides the native one) to every
+`input[type=search]` on every page — header, drawer, the dashboards' boxes, search.html and mdbook's doc
+search. It's an absolutely placed **sibling** of the input (no wrapper, so no page layout changes), shown
+while the box has text and placed over its right edge on input/focus/resize/hashchange/load; boxes built
+later (elections' `#cm-search` / `#gm-search`) join on first focus. Clicking it empties the box and fires
+`input` (+ `keyup` for mdbook's search) so each page's own filter resets.
+**Long bill summaries scroll.** In legislation's bill modal, "What is this bill about" (`.m-plain`) is
+capped at 240px (200px on phones) with a blue scrollbar; one that actually overflows also gets a blue
+left edge (`.is-scroll`, set after layout) because phone scrollbars only show while scrolling.
+
 **Link colour.** Blue text and links use `--gb-link` (`govbot.css`: `#8AB4FF` dark, `#1747C9` light —
 ~9:1 / ~7:1), not `--gb-blue-hi`, which is too dim on the dark page; the legislation bill modal's links
 (`.m-links a`) are also bolder and underlined, and its "Share this bill" pill has a 2px full-contrast
@@ -905,9 +916,12 @@ reviews, Permits/licenses/approvals, Meetings, Privacy & government records, For
 (~70%), Other — paperwork is matched first), and only the **2 closing soonest per kind** (`NOTICE_SHOW`)
 ship, each record carrying its `category`; the `us` entry adds `notice_total`, `notice_categories`
 (key/label/full count) and `notice_list_url` (the Federal Register's search for every open notice — it
-has no list of Govbot's kinds). The page draws the federal group with `federalSections`: the rules in
-their own colour-bordered scroll box (`.fsec-rows`, 360px; 300px on phones, scrollbar in the section's
-colour, `FED_COLORS`) reading "7 of N showing" with "Showing the 7 closing soonest. **See all N ↗**" (the
+has no list of Govbot's kinds). The page draws the federal group with `federalSections`. **The whole
+federal card is one shorter scroll box** (`.hgroup--fed`, 600px; 500px on phones, a scrollbar in its
+green/gold accent): its header ("USA (Federal) · x of y showing · Follow this state (RSS)") is **sticky**
+at the top, and each kind's title (`.fsec-h`) sticks just under it (`--fed-head-h`, the header's height
+measured by a ResizeObserver, since it wraps on phones). The rules sit in their own colour-bordered box
+(`.fsec-rows`, `FED_COLORS`, no inner scroll) reading "7 of N showing" with "Showing the 7 closing soonest. **See all N ↗**" (the
 Federal Register's list), then **"Other federal notices open for comment"**: one short block per kind,
 each clearly labelled with its kind and "2 of N showing" (`fedSection`; `noticePreview` keeps 2 per kind
 even from an older file), and **one** line at the bottom — "Showing the X closing soonest. **See all Y ↗**"
@@ -1162,7 +1176,7 @@ because every Chicago voter has them) reads **"Statewide & citywide · All of Il
 all of Chicago"**, not "Citywide · All of Chicago". Because the SBE bulk files are ~70MB, `deploy-docs.yml`
 runs it as a **separate step gated on candidates being present** —
 `main.py --enrich-money docs/src/dashboard/elections.json --money-dir <sbe-files>` — so the
-committed sample (empty rosters) carries no money. Parsers/aggregation are offline-tested
+committed sample (empty rosters) carries no money. elections.il.gov sometimes answers **403 to GitHub's runners** (Oct 2026: 3 of 4 files blocked, so only FEC money shipped), so each SBE file is retried (curl's own `--retry` skips a 403) and a file that still fails falls back to the **last complete set**, kept in an `actions/cache` (`sbe-money-<run_id>`, saved only when all four downloaded fresh). Parsers/aggregation are offline-tested
 in `test_scrape_elections.py`.
 
 **Results** (post–Election Night) are scaffolded: each race can carry a `results` block
