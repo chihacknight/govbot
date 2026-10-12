@@ -462,7 +462,17 @@
     margin: 0 0 8px; font-size: 12px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.04em; color: var(--text-muted);
   }
-  .m-plain { color: var(--text-primary); line-height: 1.5; }
+  /* A long summary (some run pages) scrolls in a shorter box with a blue scrollbar; short ones
+     are untouched. */
+  .m-plain { color: var(--text-primary); line-height: 1.5; max-height: 240px; overflow-y: auto;
+    overscroll-behavior: contain; padding-right: 8px;
+    scrollbar-width: thin; scrollbar-color: var(--series-1) color-mix(in srgb, var(--series-1) 14%, transparent); }
+  .m-plain::-webkit-scrollbar { width: 9px; }
+  .m-plain::-webkit-scrollbar-track { background: color-mix(in srgb, var(--series-1) 12%, transparent); border-radius: 999px; }
+  .m-plain::-webkit-scrollbar-thumb { background: var(--series-1); border-radius: 999px; }
+  /* Phones hide scrollbars until you scroll, so a summary that scrolls also gets a blue edge. */
+  .m-plain.is-scroll { border-left: 3px solid var(--series-1); padding-left: 10px; }
+  @media (max-width: 620px) { .m-plain { max-height: 200px; } }
   .m-plain.is-lines { white-space: pre-line; }   /* official summaries keep their bullet lines */
   .m-plain-src { margin-top: 8px; }
   .m-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
@@ -2688,7 +2698,9 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
         wrap.append(mkel("p", "m-plain m-muted",
           "The legislature hasn’t published a plain-language summary for this bill yet. Its title above is the official description."));
       } else {
-        wrap.append(mkel("p", "m-plain" + (ss && sum === ss[0] ? " is-lines" : ""), sum));
+        const plain = mkel("p", "m-plain" + (ss && sum === ss[0] ? " is-lines" : ""), sum);
+        wrap.append(plain);
+        requestAnimationFrame(() => plain.classList.toggle("is-scroll", plain.scrollHeight > plain.clientHeight + 4));
       }
       const link = docUrl ? ["Read the official summary ↗", docUrl]
                  : (restates && fullTextUrl(meta)) ? ["Read the full bill text ↗", fullTextUrl(meta)] : null;
