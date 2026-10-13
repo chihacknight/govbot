@@ -196,9 +196,12 @@ after the first drops its header line, one BOM is put back) → `govbot-bills-<c
 DuckDB), `catalog.json` / `llms.txt`, and a copyable curl + pandas snippet. A column guide (expanded by
 default), a six-colour divider (`.dl-rule`, the same six hues), the source
 and the **CC BY 4.0** notice ("credit Govbot (Chi Hack Night)"; `LICENSE-DATA` at the repo root) close the
-panel. In a state's catalog popup, `#dl-state-csv` links that state's pre-built CSV and `#dl-view`
-("Download these N bills", shown once a search/filter narrows it) builds the same CSV in the browser
-from the rows on screen (`billsToCsv` / `csvCell`, a Blob — no extra fetch). The files are built every
+panel. In a state's catalog popup **one** rainbow download pill (`#dl-cat`, the same moving six-colour
+border as the hero pill; its inner layer uses the card's `--dl-fill`) reads "Download all <State> bills (CSV)" and
+downloads the pre-built file, and once a search/filter narrows the list it reads "Download these N bills (CSV)"
+and builds that CSV in the browser from the rows on screen (`downloadCatalog` → `billsToCsv` / `csvCell`, a Blob —
+no extra fetch). The hero pill's border pauses while a panel or the catalog covers it; the catalog's pauses
+while a bill card covers it. The files are built every
 deploy by `scripts/build_site_slices.py --downloads-dir docs/src/dashboard/downloads` (`build_downloads`,
 pure; the "Build per-page bill slices and downloads" step): `bills-<code>.csv` per jurisdiction,
 `govbot-bills-all.csv.zip` (all ~182k bills, ~10 MB; 70 MB unzipped, well under Excel's row limit) with
