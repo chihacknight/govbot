@@ -194,11 +194,14 @@
     aspect-ratio: 1; background: conic-gradient(var(--dl-rainbow), #5EBD3E);
     transform: translate(-50%, -50%); animation: dl-spin 4s linear infinite; }
   .dl-btn.is-rainbow::after { content: ""; position: absolute; z-index: -1; inset: 3px; border-radius: inherit;
-    background: var(--page); }
+    background: var(--dl-fill, var(--page)); }
   .dl-btn.is-rainbow:hover { background: transparent; }
-  .dl-btn.is-rainbow:hover::after { background: linear-gradient(var(--hover-wash), var(--hover-wash)), var(--page); }
+  .dl-btn.is-rainbow:hover::after { background: linear-gradient(var(--hover-wash), var(--hover-wash)), var(--dl-fill, var(--page)); }
+  .dl-btn.is-rainbow.is-sm { padding: 7px 14px; }
   @keyframes dl-spin { to { transform: translate(-50%, -50%) rotate(1turn); } }
-  body.dl-open .dl-btn.is-rainbow::before, body.results-open .dl-btn.is-rainbow::before { animation-play-state: paused; }
+  /* Paused while covered: the hero pill under a panel or the catalog, the catalog's pill under a bill. */
+  body.dl-open #dl-open::before, body.results-open #dl-open::before,
+  body:has(#bill-modal:not([hidden])) #dl-cat::before { animation-play-state: paused; }
   @media (prefers-reduced-motion: reduce) { .dl-btn.is-rainbow::before { animation: none; } }
   /* Six-colour divider between the column guide and the source/license note. */
   .dl-rule { height: 5px; margin: 16px 0 0; border: 0; border-radius: 999px;
@@ -253,7 +256,7 @@
   .dl-license { margin: 14px 0 0; font-size: 13px; line-height: 1.5; }
   .dl-license a { font-weight: 650; }
   /* In a state's catalog popup: download that state, or exactly the bills on screen. */
-  .results-dl { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+  .results-dl { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; --dl-fill: var(--surface-1); }
   @media (max-width: 620px) { .dl-card { padding: 18px 16px; } .dl-dict dl { grid-template-columns: 1fr; } }
 
   /* ---------- bill details modal ---------- */
@@ -1095,8 +1098,7 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     <div class="results-head">
       <h2 id="table-title">Bills</h2>
       <div class="results-dl" id="results-dl">
-        <a class="dl-btn is-sm" id="dl-state-csv" download hidden>Download all bills (CSV)</a>
-        <button type="button" class="dl-btn is-sm" id="dl-view" hidden>Download these bills (CSV)</button>
+        <button type="button" class="dl-btn is-sm is-rainbow" id="dl-cat" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span id="dl-cat-t">Download all bills (CSV)</span></button>
       </div>
     </div>
     <div class="results-search">
@@ -2414,24 +2416,29 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  // The catalog popup's two buttons: the whole state (pre-built file) and, once a search or
-  // filter narrows it, exactly the bills on screen.
+  // The catalog popup's one download pill: the whole state (its pre-built file) until a search or
+  // filter narrows the list, then exactly the bills on screen (built here, no extra fetch).
   let catalogRows = [];
   function syncCatalogDownloads(bills) {
     catalogRows = bills;
     const one = state.filters.states.size === 1 ? Array.from(state.filters.states)[0] : "";
-    const all = $("dl-state-csv"), view = $("dl-view");
-    if (!all || !view) return;
-    all.hidden = !one;
-    if (one) {
-      all.href = "downloads/bills-" + encodeURIComponent(one) + ".csv";
-      all.textContent = "Download all " + (state.stateNames[one] || one.toUpperCase()) + " bills (CSV)";
-    }
-    view.hidden = !(one && catalogFiltersActive() && bills.length);
-    view.textContent = "Download these " + fmt(bills.length) + " bills (CSV)";
+    const btn = $("dl-cat");
+    if (!btn) return;
+    btn.hidden = !one || !bills.length;
+    const name = state.stateNames[one] || (one || "").toUpperCase();
+    $("dl-cat-t").textContent = catalogFiltersActive()
+      ? "Download these " + fmt(bills.length) + " bills (CSV)"
+      : "Download all " + name + " bills (CSV)";
   }
-  function downloadView() {
-    const one = Array.from(state.filters.states)[0] || "bills";
+  function downloadCatalog() {
+    const one = Array.from(state.filters.states)[0];
+    if (!one) return;
+    if (!catalogFiltersActive()) {   // the pre-built file as is
+      const a = document.createElement("a");
+      a.href = "downloads/bills-" + encodeURIComponent(one) + ".csv"; a.download = "";
+      document.body.append(a); a.click(); a.remove();
+      return;
+    }
     saveFile("govbot-" + one + "-bills-" + isoToday() + ".csv", billsToCsv(catalogRows));
   }
 
@@ -2557,7 +2564,7 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     const ov = $("dl-overlay");
     ov.addEventListener("click", (e) => { if (e.target === ov) closeDownloads(); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDownloads(); });
-    $("dl-view").addEventListener("click", downloadView);
+    $("dl-cat").addEventListener("click", downloadCatalog);
     $("dl-st-list").addEventListener("change", (e) => {
       const cb = e.target; if (!cb || cb.type !== "checkbox") return;
       if (cb.checked) dlPicked.add(cb.value); else dlPicked.delete(cb.value);
