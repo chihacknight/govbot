@@ -71,8 +71,8 @@
 <div class="gl-slide-head">
 <div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/><path d="M12 12v8"/></svg></span>Illinois elections</div>
 <h3 class="gl-h3">What's on my ballot?</h3>
-<p class="gl-p">Every race and candidate, down to your Chicago ward.</p>
-<a class="gl-btn gl-btn-primary gl-slide-cta" href="dashboard/elections.html">Find your ballot</a>
+<p class="gl-p">Your exact ballot by address, every race and judge. Know Your Ballot: Illinois, built on Govbot.</p>
+<a class="gl-btn gl-btn-primary gl-slide-cta" href="https://frankies2727.github.io/frankie-labs/projects/know-your-ballot-illinois">Find your ballot</a>
 </div>
 <div class="gl-slide-body gl-elect">
 <span class="gl-label" style="color: var(--gb-amber-hi)">Next Illinois election</span>
@@ -141,7 +141,7 @@
 <li><a href="2023-Civi-Social/index.html">2023 · Civi Social</a><span>Chicago residents talk directly with their elected officials.</span></li>
 <li><a href="2024-Windy-Civi/index.html">2024 · Windy Civi</a><span>One app for local, state &amp; federal bills, with AI summaries.</span></li>
 <li><a href="2025-Decentralize/index.html">2025 · Decentralize</a><span>No new app, no private APIs: open data anyone can run.</span></li>
-<li class="is-now"><strong>2026 · Govbot today</strong><span>56 open datasets and the civic tools built on them.</span></li>
+<li class="is-now"><strong>2026 · Govbot today</strong><span>56 open datasets and the civic tools built on them.</span><span>October · <a href="dashboard/illinois-elections-v1.html">Illinois Elections v1, the original ballot guide (archived)</a></span></li>
 <li class="is-next"><strong>Next · On the roadmap</strong><span>From our open GitHub issues — anyone can pick one up.</span><div class="gl-road"><a class="gl-road-item" href="https://github.com/chihacknight/govbot/issues/25" target="_blank" rel="noopener"><b>Ask Govbot from ChatGPT or Claude ↗</b><i>An MCP server, so AI assistants can query the data directly.</i></a><a class="gl-road-item" href="https://github.com/chihacknight/govbot/issues/19" target="_blank" rel="noopener"><b>Easier installs ↗</b><i>Homebrew, npm, Docker and Windows.</i></a><a class="gl-road-item" href="https://github.com/chihacknight/govbot/issues/28" target="_blank" rel="noopener"><b>More of government ↗</b><i>Executive actions, Chicago City Council and full bill text.</i></a><a class="gl-road-item" href="https://github.com/chihacknight/govbot/issues/111" target="_blank" rel="noopener"><b>Fresher, fuller data ↗</b><i>Catch up lagging states and split repos by session.</i></a></div><a class="gl-road-cta" href="https://github.com/chihacknight/govbot/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22" target="_blank" rel="noopener"><span class="gl-gh" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.4-.6-1.6 0-3.2 0 0 1-.3 3.4 1.2a11.5 11.5 0 0 1 6 0C17.3 4.6 18.3 5 18.3 5c.7 1.6.2 2.9.1 3.2.8.8 1.3 1.9 1.3 3.1 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3"/></svg></span>Pick a good first issue ↗</a></li>
 </ol>
 </div>

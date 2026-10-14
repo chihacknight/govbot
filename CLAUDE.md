@@ -612,7 +612,7 @@ doesn't stack), so the address bar / "Share this bill" link is always copyable a
 (Back == close) or strips a deep-link hash it didn't push, and cleans up only when the close didn't
 come from the pop; the ✕ handler calls `closeDetails()` with no argument so the click event isn't
 mistaken for `fromPop`.
-`elections.html` has been reframed **ballot-first**: a Capitol hero — `#hero-flag` (populated by
+The original Illinois Elections page (now archived as `illinois-elections-v1.html`, linked from the homepage's "Our story" timeline) was reframed **ballot-first**: a Capitol hero — `#hero-flag` (populated by
 `renderElectionHero`) shows `assets/il-capitol-building.png`, the **Illinois State Capitol** as gold
 line-art (keyed to a transparent background so it drops onto the dark hero in both themes), with a
 separate **waving Illinois flag** SVG (`.cap-flag`/`.ilwave`, a CSS `@keyframes capflag`, off under
@@ -831,7 +831,14 @@ How-Govbot-Works page plus a global search page**:
 `docs/src/dashboard/legislation.html` (**Explore Legislation** — the legislation dashboard,
 formerly `index.html`; deep links are `legislation.html#q=<billid>`),
 `docs/src/dashboard/hearings.html` (**Hearings & Public Comment**),
-`docs/src/dashboard/elections.html` (**Illinois Elections**),
+`docs/src/dashboard/illinois-elections.html` (**Illinois Elections**: forwards to
+Know Your Ballot: Illinois, https://frankies2727.github.io/frankie-labs/projects/know-your-ballot-illinois,
+a Frankie Labs project built on Govbot's elections data; the homepage's "Find your ballot" links there
+directly. **Naming for more states:** `<state>-elections.html` (full lowercase state name), archived
+versions `<state>-elections-v<N>.html`; `elections.html` forwards to `illinois-elections.html` and becomes
+a state picker once there's a second state. Data/RSS files keep their names (`elections.json`,
+`elections.xml`, `elections/*.xml`) since feeds and the archived page read them; a new state's are
+`<state>-elections.json` / `.xml`. Every forwarder keeps the hash, so `#race=<id>` links still land),
 `docs/src/dashboard/architecture.html` (**How Govbot Works** — a static, no-data explainer of all
 three backend pipelines), and
 `docs/src/dashboard/search.html` (**Search** — the site-wide search page).
@@ -859,8 +866,8 @@ then sponsors/details and topic chips (`resultCard`; flags via `flagSrc`, the el
 elections file's ("usa" there is "United States (Illinois seats)"), and federal is always "USA (Federal)".
 The page is `search.html` is authored by assembling the shared shell (favicon, header, drawer,
 footer) with the page's own hero + `#s-results`; input is debounced and mirrored into the hash.
-Candidate/race results deep-link as **`elections.html#race=<id>`** (or `#office=<group>`): the
-elections page tags each race card with `data-race-id`, and `applyElectionsDeepLink()` reveals every
+Candidate/race results deep-link as **`illinois-elections.html#race=<id>`** (or `#office=<group>`), which
+Know Your Ballot: Illinois maps from Govbot's race ids to its own races. The archived v1 page tags each race card with `data-race-id`, and `applyElectionsDeepLink()` reveals every
 section, then `alignDeepRace()` (called at the end of every `render()`, so late maps/incumbent
 fetches don't lose the place) scrolls to and briefly flashes (`.race-flash`) that race.
 

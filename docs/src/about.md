@@ -27,7 +27,7 @@ Projects built on it:
 
 - [**Legislation dashboard**](dashboard/legislation.html) — every jurisdiction's bills by place, topic, sponsor and status.
 - [**Hearings & public comment**](dashboard/hearings.html) — upcoming hearings and how to weigh in.
-- [**Illinois elections**](dashboard/elections.html) — every race and candidate on your ballot.
+- [**Illinois elections**](dashboard/illinois-elections.html) — every race and candidate on your ballot.
 - [**Transportation Legislation** Bluesky bot](https://bsky.app/profile/govbottransport.bsky.social) — transportation bills across all jurisdictions, posted as they move.
 - [**Data Center & AI Legislation** Bluesky bot](https://bsky.app/profile/govbotaidatacenter.bsky.social) — AI and data-center bills nationwide.
 
