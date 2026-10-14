@@ -7,12 +7,15 @@ title = "govbot"
 edition = "2021"
 
 [output.html]
-git-repository-url = "https://github.com/chihacknight/govbot/tree/main/docs"
-edit-url-template = "https://github.com/chihacknight/govbot/edit/main/docs/{path}"
 default-theme = "rust"
 preferred-dark-theme = "coal"
 additional-css = ["theme/mdbook-civic.css"]
 additional-js = ["theme/landing.js"]
+
+# The doc pages carry the site's own header and footer: no print-the-book,
+# GitHub or suggest-an-edit icons in mdbook's bar (GitHub is in the header).
+[output.html.print]
+enable = false
 
 [output.html.search]
 limit-results = 20

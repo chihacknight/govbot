@@ -79,8 +79,6 @@ html { scroll-padding-top: calc(var(--gb-header-h) + var(--menu-bar-height, 50px
 /* ---------- homepage: full-bleed, no mdbook chrome (:has the landing) ---------- */
 body:has(.gb-landing) #sidebar,
 body:has(.gb-landing) #menu-bar,
-body:has(.gb-landing) .nav-wide-wrapper,
-body:has(.gb-landing) .nav-wrapper,
 body:has(.gb-landing) #sidebar-resize-handle { display: none !important; }
 body:has(.gb-landing) #page-wrapper { margin-left: 0 !important; left: 0 !important; transform: none !important; }
 body:has(.gb-landing) .gb-footer { padding-left: 0 !important; }
