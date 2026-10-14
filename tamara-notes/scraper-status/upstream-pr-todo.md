@@ -25,28 +25,13 @@ workflow back to the default and cross it off. Check back periodically — no au
   ("preserve session cookies across setsession.php POST"), is already **MERGED** — that fixed a
   different bug. #5742 is a follow-on issue found after #5722 landed, not a duplicate.
 
-## USA
+## USA — ✅ CLOSED (2026-10-13)
 
-- **PR:** [openstates/openstates-scrapers#5847](https://github.com/openstates/openstates-scrapers/pull/5847) — "fix: handle 'Concurrent Resolution Rejected' Senate vote result"
-- **Issue:** [openstates/issues#1422](https://github.com/openstates/issues/issues/1422) — filed
-  2026-10-03, referencing #5847
-- **Status:** OPEN (filed 2026-10-03)
-- **Fix verified:** reproduced offline against a fixture matching the real Senate roll-call
-  vote XML schema, confirmed the fix resolves it, then verified live against production — a
-  full `usa` scrape completed cleanly end-to-end (1h39m29s, zero failure annotations,
-  +263 net-new bills downstream in `govbot-data/usa-legislation`). See
-  `tamara-notes/state-specific/usa.md` for the full writeup.
-- **Currently pointed at:** `ghcr.io/tamara-builds/openstates-scrapers:usa-fix-test`, set via
-  `chn-openstates-scrape.yml`'s `docker_image` config field for `usa` (applied via
-  `apply.py --test-states usa`), same config-driven mechanism FL's override uses — see govbot
-  PR #196.
-- **When #5847 merges:**
-  1. Confirm a new `openstates/scrapers:latest` image has actually been cut with the merge
-     (merged ≠ live — upstream only rebuilds on their own release cadence).
-  2. Delete the `docker_image` line for `usa` in `chn-openstates-scrape.yml`, then
-     `apply.py --test-states usa` to push the reverted config live.
-  3. Trigger a manual run, confirm `usa` scrapes clean on the official image.
-  4. Delete/stop publishing `ghcr.io/tamara-builds/openstates-scrapers:usa-fix-test`.
+- **PR:** [openstates/openstates-scrapers#5847](https://github.com/openstates/openstates-scrapers/pull/5847) — "fix: handle 'Concurrent Resolution Rejected' Senate vote result" — **MERGED 2026-10-06**
+- **Issue:** [openstates/issues#1422](https://github.com/openstates/issues/issues/1422) — filed 2026-10-03, referencing #5847
+- **Confirmed the official image actually has it** (merged ≠ live, checked properly): `openstates/scrapers:latest` was rebuilt 2026-10-13 (Docker Hub `last_updated`), and `raw.githubusercontent.com/openstates/openstates-scrapers/main/scrapers/usa/bills.py` has the fix at line 61.
+- **Reverted:** deleted the `docker_image` line for `usa` in `chn-openstates-scrape.yml`, applied live via `apply.py --test-states usa`, confirmed the live workflow now reads `docker-image: openstates/scrapers:latest`. Dispatched a confirmation run ([38498947245](https://github.com/govbot-openstates-scrapers/usa-legislation/actions/runs/38498947245)) on the official image.
+- **Still open:** delete/stop publishing `ghcr.io/tamara-builds/openstates-scrapers:usa-fix-test` (version id `1329967562`) — blocked on the `gh` token lacking `delete:packages` scope; do it manually via the GitHub UI at `https://github.com/users/tamara-builds/packages/container/openstates-scrapers/1329967562`.
   5. Update `tamara-notes/state-specific/usa.md` and `docs/src/state-status-reference.md`'s
      USA row to close the loop.
 
