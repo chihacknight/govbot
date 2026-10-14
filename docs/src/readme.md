@@ -72,7 +72,7 @@
 <div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/><path d="M12 12v8"/></svg></span>Illinois elections</div>
 <h3 class="gl-h3">What's on my ballot?</h3>
 <p class="gl-p">Your exact ballot by address, every race and judge. Know Your Ballot: Illinois, built on Govbot.</p>
-<a class="gl-btn gl-btn-primary gl-slide-cta" href="https://frankies2727.github.io/frankie-labs/projects/know-your-ballot-illinois">Find your ballot</a>
+<a class="gl-btn gl-btn-primary gl-slide-cta" href="https://frankies2727.github.io/frankie-labs/projects/know-your-ballot-illinois">IL Ballot</a>
 </div>
 <div class="gl-slide-body gl-elect">
 <span class="gl-label" style="color: var(--gb-amber-hi)">Next Illinois election</span>
