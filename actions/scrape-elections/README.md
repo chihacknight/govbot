@@ -3,7 +3,8 @@
 Builds the **Elections Happening in IL** dashboard feed: every office on upcoming Chicago
 and Illinois ballots, with the candidates running for each.
 
-Powers `docs/src/dashboard/elections.html`. Output validates against
+Powers Know Your Ballot: Illinois (`docs/src/dashboard/illinois-elections.html` forwards there) and
+the archived `docs/src/dashboard/illinois-elections-v1.html`. Output validates against
 `schemas/govbot.elections.schema.json`.
 
 ## What it covers
