@@ -2,6 +2,7 @@ id: votes-on-my-topic
 prompt: |
   How has Senator Durbin voted on voting access?
 setup:
+  tags: personal
   jurisdictions: [usa]
   # govbot.yml defines "expanding voter access"; usa tag file present
 expect:
