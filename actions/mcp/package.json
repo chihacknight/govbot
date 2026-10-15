@@ -1,6 +1,7 @@
 {
   "name": "@govbot/mcp",
   "version": "0.1.0",
+  "govbot": { "cliMin": "0.1.0" },
   "description": "Ask Claude Desktop about your representatives, using government data cloned to your own computer.",
   "type": "module",
   "license": "MIT",

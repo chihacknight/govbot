@@ -66,10 +66,60 @@ jobs:
           path: actions/govbot/target/${{ matrix.target }}/release/govbot
           retention-days: 1
 
+  # The Claude Desktop bundle, published next to the CLI so its URL is stable:
+  #   releases/download/nightly/govbot.mcpb
+  #   releases/download/nightly/govbot-mcp-version.json  (read by the server's update check)
+  # Each is its own one-file artifact, so the "Prepare release files" step below
+  # picks them up unchanged, named after the artifact.
+  mcp-bundle:
+    name: Build Claude Desktop bundle
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build govbot.mcpb
+        working-directory: actions/mcp
+        run: scripts/build-bundle.sh "$PWD/govbot.mcpb"
+
+      - name: Write govbot-mcp-version.json
+        working-directory: actions/mcp
+        run: |
+          # package.json is the source of truth; build-bundle.sh has already
+          # checked that mcpb/manifest.json agrees with it.
+          node -e '
+            const pkg = require("./package.json");
+            if (!pkg.govbot?.cliMin) throw new Error("package.json is missing govbot.cliMin");
+            process.stdout.write(JSON.stringify({
+              mcp: pkg.version,
+              cli_min: pkg.govbot.cliMin,
+              built: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
+            }) + "\n");
+          ' > govbot-mcp-version.json
+          cat govbot-mcp-version.json
+
+      - name: Upload bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: govbot.mcpb
+          path: actions/mcp/govbot.mcpb
+          retention-days: 1
+
+      - name: Upload version file
+        uses: actions/upload-artifact@v4
+        with:
+          name: govbot-mcp-version.json
+          path: actions/mcp/govbot-mcp-version.json
+          retention-days: 1
+
   create-nightly-release:
     name: Create nightly
     if: github.ref == 'refs/heads/main'
-    needs: [build]
+    needs: [build, mcp-bundle]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

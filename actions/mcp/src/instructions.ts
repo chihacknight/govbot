@@ -108,6 +108,14 @@ judgment is yours — no threshold can make it.
 Show the person the topics you wrote and offer to adjust them. They are saved in
 the workspace as plain YAML they can edit.
 
+## Updates
+
+\`setup_workspace\` and \`check_local_data\` may end with an "Update available" or
+"Update needed" notice. Pass it on once, in plain words, with the steps it gives,
+then get on with the person's question — don't repeat it on later turns. If they
+ask whether govbot is up to date, call \`setup_workspace\`: it reports the installed
+versions and the last update check.
+
 ## The workspace
 
 Everything lives in one folder the person owns. Tell them where it is, and that

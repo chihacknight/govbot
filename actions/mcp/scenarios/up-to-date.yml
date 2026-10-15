@@ -1,0 +1,10 @@
+id: up-to-date
+prompt: |
+  Is my govbot up to date?
+setup:
+  jurisdictions: []
+expect:
+  - Calls setup_workspace (check the trace) and reports the installed extension and command-line tool versions.
+  - If an update exists, gives the govbot.mcpb download link and the drag-into-Settings → Extensions step, or the one-line installer for the CLI.
+  - If it could not check (offline, or still checking), says so rather than claiming everything is up to date.
+  - Mentions any update once, in plain words, without repeating it later in the conversation.

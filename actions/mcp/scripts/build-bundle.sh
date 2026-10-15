@@ -12,6 +12,17 @@ OUT="${1:-$ROOT/govbot.mcpb}"
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
+# package.json is the version source of truth: the server reads it at runtime
+# and the release publishes it. The manifest is what Claude Desktop shows, so a
+# mismatch would make the bundle claim one version and report another.
+PKG_VERSION=$(node -p 'require("./package.json").version')
+MANIFEST_VERSION=$(node -p 'require("./mcpb/manifest.json").version')
+if [ "$PKG_VERSION" != "$MANIFEST_VERSION" ]; then
+  echo "Version mismatch: package.json is $PKG_VERSION but mcpb/manifest.json is $MANIFEST_VERSION." >&2
+  echo "Bump both together." >&2
+  exit 1
+fi
+
 echo "Building..." >&2
 npm install --silent
 npm run build --silent
@@ -36,7 +47,7 @@ PROBE=$(printf '%s\n' \
   '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"build","version":"1"}}}' \
   '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
   '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
-  | GOVBOT_WORKSPACE="$(mktemp -d)" node "$STAGE/server/index.js" 2>/dev/null)
+  | GOVBOT_WORKSPACE="$(mktemp -d)" GOVBOT_NO_UPDATE_CHECK=1 node "$STAGE/server/index.js" 2>/dev/null)
 
 case "$PROBE" in
   *'"tools"'*) ;;

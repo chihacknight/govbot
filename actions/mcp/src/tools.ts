@@ -9,6 +9,8 @@
 
 import { z } from "zod";
 import * as govbot from "./govbot.js";
+import * as updates from "./updates.js";
+import { CLI_MIN, SERVER_VERSION } from "./version.js";
 import * as workspace from "./workspace.js";
 
 /** What a tool hands back: text for the model, plus the structured payload. */
@@ -22,6 +24,19 @@ const LOOKUP_LINKS = [
   "State legislators and districts: https://openstates.org/find_your_legislator/",
   "Members of Congress: https://www.congress.gov/members/find-your-member",
 ].join("\n");
+
+/**
+ * Update notices for the installed versions, from whatever the background
+ * check already knows. Never waits on the network.
+ */
+function currentNotices(cli: string | null): string[] {
+  return updates.updateNotices({
+    bundle: SERVER_VERSION,
+    cli,
+    cliMin: CLI_MIN,
+    state: updates.currentUpdateState(),
+  });
+}
 
 // ---------------------------------------------------------------------------
 // setup_workspace
@@ -50,11 +65,29 @@ export async function setupWorkspace(): Promise<ToolOutput> {
     `Jurisdictions tracked: ${config.repos.length ? config.repos.join(", ") : "none yet"}`,
     `Topics defined: ${Object.keys(config.tags).length ? Object.keys(config.tags).join(", ") : "none yet"}`,
     `govbot CLI: ${cli ?? "NOT FOUND — the other tools will not work until it is installed"}`,
+    `govbot for Claude Desktop: ${SERVER_VERSION}`,
+  );
+
+  // This is where "is govbot up to date?" gets answered, so say something
+  // either way; check_local_data only speaks up when there is an update.
+  const notices = currentNotices(cli);
+  lines.push(
+    "",
+    ...(notices.length
+      ? notices.flatMap((notice, i) => (i ? ["", notice] : [notice]))
+      : [updates.describeState(updates.currentUpdateState())]),
   );
 
   return {
     text: lines.join("\n"),
-    data: { ...result, repos: config.repos, tags: Object.keys(config.tags), cli },
+    data: {
+      ...result,
+      repos: config.repos,
+      tags: Object.keys(config.tags),
+      cli,
+      server: SERVER_VERSION,
+      updates: notices,
+    },
   };
 }
 
@@ -92,6 +125,12 @@ export async function checkLocalData(args: {
     args_.push("--jurisdiction", jurisdiction);
   }
 
+  // Computed before the query: a CLI too old to know `query coverage` lands in
+  // the "nothing cloned" branch below, and that is exactly when the person
+  // needs to be told the CLI is out of date.
+  const notices = currentNotices(cli);
+  const noticeText = notices.map((n) => `\n${n}`).join("\n");
+
   let response: QueryResponse;
   try {
     response = await govbot.runJson<QueryResponse>(args_, {
@@ -105,13 +144,14 @@ export async function checkLocalData(args: {
         "Ask which state the person lives in, then use clone_government_data. " +
         "For Congress, clone `usa` as well.\n\n" +
         `Workspace: ${workspace.workspacePath()}\n` +
-        (error instanceof govbot.GovbotError && error.detail ? `\n${error.detail}` : ""),
+        (error instanceof govbot.GovbotError && error.detail ? `\n${error.detail}` : "") +
+        (noticeText ? `\n${noticeText}` : ""),
       data: { cloned: [], workspace: workspace.workspacePath() },
     };
   }
 
   return {
-    text: describeCoverage(response, config),
+    text: describeCoverage(response, config) + (noticeText ? `\n${noticeText}` : ""),
     data: response,
   };
 }

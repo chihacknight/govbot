@@ -17,8 +17,9 @@ fi
 npm run build --silent
 
 echo "Rendering tool surface..." >&2
-# A throwaway workspace, so snapshots never depend on the machine they ran on.
-GOVBOT_WORKSPACE="$(mktemp -d)" \
+# A throwaway workspace, so snapshots never depend on the machine they ran on,
+# and no update check, so they never depend on the network or ~/.govbot either.
+GOVBOT_WORKSPACE="$(mktemp -d)" GOVBOT_NO_UPDATE_CHECK=1 \
   node scripts/mcp-session.mjs "$OUT/requests-surface.jsonl" \
   | python3 scripts/normalize-snapshot.py > "$OUT/surface.json"
 
