@@ -19,9 +19,9 @@ import { SERVER_INSTRUCTIONS } from "./instructions.js";
 import type { SendProgress } from "./progress.js";
 import * as tools from "./tools.js";
 import { withTrace } from "./trace.js";
+import { startUpdateCheck } from "./updates.js";
+import { SERVER_VERSION as VERSION } from "./version.js";
 import * as workspace from "./workspace.js";
-
-const VERSION = "0.1.0";
 
 /** Diagnostics go to stderr. Writing to stdout would corrupt the transport. */
 function log(message: string): void {
@@ -340,6 +340,9 @@ async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   log(`ready (v${VERSION}, workspace ${workspace.workspacePath()})`);
+  // Fire and forget, after the transport is up: tools read whatever it has
+  // found so far and never wait for it.
+  startUpdateCheck();
 }
 
 main().catch((error) => {

@@ -11,6 +11,8 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import * as govbot from "./govbot.js";
+import * as updates from "./updates.js";
+import { CLI_MIN, SERVER_VERSION } from "./version.js";
 import * as workspace from "./workspace.js";
 import { formatElapsed, trackClone, trackTag, type SendProgress } from "./progress.js";
 
@@ -25,6 +27,23 @@ const LOOKUP_LINKS = [
   "State legislators and districts: https://openstates.org/find_your_legislator/",
   "Members of Congress: https://www.congress.gov/members/find-your-member",
 ].join("\n");
+
+/**
+ * Update notices for the installed versions, from whatever the background
+ * check already knows. Never waits on the network.
+ */
+function currentNotices(cli: string | null): string[] {
+  return updates.updateNotices(noticeInput(cli));
+}
+
+/** The installed-versions and update-status block both status tools end with. */
+function currentVersionStatus(cli: string | null): string {
+  return updates.versionStatus(noticeInput(cli));
+}
+
+function noticeInput(cli: string | null): updates.NoticeInput {
+  return { bundle: SERVER_VERSION, cli, cliMin: CLI_MIN, state: updates.currentUpdateState() };
+}
 
 // ---------------------------------------------------------------------------
 // setup_workspace
@@ -55,9 +74,21 @@ export async function setupWorkspace(): Promise<ToolOutput> {
     `govbot CLI: ${cli ?? "NOT FOUND — the other tools will not work until it is installed"}`,
   );
 
+  // Same block as check_local_data, so "is govbot up to date?" gets the same
+  // answer whichever of the two Claude calls.
+  const notices = currentNotices(cli);
+  lines.push("", currentVersionStatus(cli));
+
   return {
     text: lines.join("\n"),
-    data: { ...result, repos: config.repos, tags: Object.keys(config.tags), cli },
+    data: {
+      ...result,
+      repos: config.repos,
+      tags: Object.keys(config.tags),
+      cli,
+      server: SERVER_VERSION,
+      updates: notices,
+    },
   };
 }
 
@@ -86,7 +117,8 @@ export async function checkLocalData(args: {
       isError: true,
       text:
         "The govbot command-line tool is not installed, so there is no local data to read.\n\n" +
-        'Install it with:\n  sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"',
+        'Install it with:\n  sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"' +
+        `\n\n${currentVersionStatus(null)}`,
     };
   }
 
@@ -94,6 +126,13 @@ export async function checkLocalData(args: {
   for (const jurisdiction of args.jurisdictions ?? []) {
     args_.push("--jurisdiction", jurisdiction);
   }
+
+  // Always appended, not only when there is an update: people ask "is my
+  // govbot up to date?" and Claude may answer from this tool alone. Computed
+  // before the query: a CLI too old to know `query coverage` lands in the
+  // "outdated" failure branch below, and that is exactly when the person needs
+  // to be told the CLI is out of date.
+  const versionText = `\n\n${currentVersionStatus(cli)}`;
 
   let response: QueryResponse;
   try {
@@ -116,7 +155,8 @@ export async function checkLocalData(args: {
           "Ask which state the person lives in, then use clone_government_data. " +
           "For Congress, clone `usa` as well.\n\n" +
           `Workspace: ${workspace.workspacePath()}\n` +
-          (error instanceof govbot.GovbotError && error.detail ? `\n${error.detail}` : ""),
+          (error instanceof govbot.GovbotError && error.detail ? `\n${error.detail}` : "") +
+          versionText,
         data: { cloned: [], workspace: workspace.workspacePath() },
       };
     }
@@ -131,22 +171,24 @@ export async function checkLocalData(args: {
         text:
           `${detail}\n\n` +
           "That jurisdiction name was not recognised; use a locale code instead.\n" +
-          clonedLine,
+          clonedLine +
+          versionText,
         data: { cloned, workspace: workspace.workspacePath() },
       };
     }
     return {
       isError: true,
-      text: describeToolFailure(kind, detail, cloned, cli),
+      text: describeToolFailure(kind, detail, cloned, cli) + versionText,
       data: { cloned, workspace: workspace.workspacePath() },
     };
   }
 
   return {
-    text: describeCoverage(response, config, {
-      requested: args.jurisdictions ?? [],
-      cloned: clonedLocales(),
-    }),
+    text:
+      describeCoverage(response, config, {
+        requested: args.jurisdictions ?? [],
+        cloned: clonedLocales(),
+      }) + versionText,
     data: response,
   };
 }

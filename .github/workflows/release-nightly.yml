@@ -8,6 +8,7 @@ on:
     paths:
       - '.github/workflows/release-nightly.yml'
       - 'actions/govbot/**'
+      - 'actions/mcp/**'
 
 permissions:
   contents: write
@@ -66,10 +67,84 @@ jobs:
           path: actions/govbot/target/${{ matrix.target }}/release/govbot
           retention-days: 1
 
+  # The Claude Desktop bundle, published next to the CLI so its URL is stable:
+  #   releases/download/nightly/govbot.mcpb
+  #   releases/download/nightly/govbot-mcp-version.json  (read by the server's update check)
+  # Each is its own one-file artifact, so the "Prepare release files" step below
+  # picks them up unchanged, named after the artifact.
+  #
+  # Every build is stamped <package.json version>-nightly.<UTC YYYYMMDDHHMM>, so
+  # tonight's bundle compares newer than last night's (semver pre-release
+  # precedence, see src/updates.ts) and people on an older nightly get a notice.
+  #
+  # The nightly release does not wait on this job succeeding (see
+  # create-nightly-release): a broken bundle must not hold back the CLI that
+  # install-nightly.sh downloads.
+  mcp-bundle:
+    name: Build Claude Desktop bundle
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Stamp the nightly version
+        working-directory: actions/mcp
+        run: |
+          version="$(node -p 'require("./package.json").version')-nightly.$(date -u +%Y%m%d%H%M)"
+          echo "GOVBOT_MCP_VERSION=$version" >> "$GITHUB_ENV"
+          echo "Bundle version: $version"
+
+      - name: Build govbot.mcpb
+        working-directory: actions/mcp
+        # Reads GOVBOT_MCP_VERSION from the step above and stamps it into the
+        # bundle's manifest and the server's package.json; it refuses anything
+        # that is not a pre-release of package.json's version.
+        run: scripts/build-bundle.sh "$PWD/govbot.mcpb"
+
+      - name: Write govbot-mcp-version.json
+        working-directory: actions/mcp
+        run: |
+          # Must be the exact version stamped into the bundle above, or the
+          # server would compare itself against a version it never reports.
+          node -e '
+            const pkg = require("./package.json");
+            const version = process.env.GOVBOT_MCP_VERSION;
+            if (!pkg.govbot?.cliMin) throw new Error("package.json is missing govbot.cliMin");
+            if (!version?.startsWith(pkg.version + "-")) throw new Error("GOVBOT_MCP_VERSION is not stamped");
+            process.stdout.write(JSON.stringify({
+              mcp: version,
+              cli_min: pkg.govbot.cliMin,
+              built: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
+            }) + "\n");
+          ' > govbot-mcp-version.json
+          cat govbot-mcp-version.json
+
+      # Bundle first, version file second: if only one makes it, it is the
+      # bundle, so a version file never advertises a bundle that isn't there.
+      - name: Upload bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: govbot.mcpb
+          path: actions/mcp/govbot.mcpb
+          retention-days: 1
+
+      - name: Upload version file
+        uses: actions/upload-artifact@v4
+        with:
+          name: govbot-mcp-version.json
+          path: actions/mcp/govbot-mcp-version.json
+          retention-days: 1
+
   create-nightly-release:
     name: Create nightly
-    if: github.ref == 'refs/heads/main'
-    needs: [build]
+    # always(): run even if mcp-bundle failed, so the CLI nightly still ships.
+    # A failed or cancelled CLI build still blocks the release, as before.
+    if: always() && github.ref == 'refs/heads/main' && needs.build.result == 'success'
+    needs: [build, mcp-bundle]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -79,6 +154,12 @@ jobs:
         with:
           path: release_artifacts
 
+      # Takes whatever artifacts exist. When mcp-bundle failed there is no
+      # govbot.mcpb / govbot-mcp-version.json directory and the loop below just
+      # skips them. The release action replaces all old assets, so that night's
+      # release has no bundle: the README link 404s until the next good build,
+      # and installed servers treat the missing version file as "could not
+      # check" (no notice, nothing cached).
       - name: Prepare release files
         shell: bash
         run: |
@@ -96,6 +177,10 @@ jobs:
               done
             fi
           done
+          if [ ! -f release_files/govbot.mcpb ]; then
+            echo "::warning::No Claude Desktop bundle this run (mcp-bundle: ${{ needs.mcp-bundle.result }}); releasing the CLI only."
+          fi
+          ls -l release_files
 
       - name: Update Nightly Release
         uses: andelf/nightly-release@main

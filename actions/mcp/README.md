@@ -51,6 +51,48 @@ values?"* — or pick the **who_are_my_reps** prompt.
 |---|---|---|
 | `GOVBOT_WORKSPACE` | Where the workspace folder lives | `~/govbot-workspace` |
 | `GOVBOT_BIN` | Path to the `govbot` binary | `~/.govbot/bin/govbot`, else `PATH` |
+| `GOVBOT_NO_UPDATE_CHECK` | Set to `1` to never check for updates | unset |
+
+## Updating
+
+There are two pieces, and neither updates itself.
+
+**The Claude Desktop extension (`govbot.mcpb`).** Claude Desktop only auto-updates
+extensions installed from its own directory
+([support article](https://support.claude.com/en/articles/10949351)). This one is
+distributed privately, so updating is manual: download the latest bundle from
+
+<https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb>
+
+and drag it into Claude Desktop → Settings → Extensions. That URL always points at
+the latest build from `main`. Submitting govbot to the extensions directory is the
+eventual path to automatic updates.
+
+**The `govbot` command-line tool.** Re-run the one-line installer; it replaces
+`~/.govbot/bin/govbot` in place:
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"
+```
+
+**How you find out.** At most once a day, in the background, the server fetches
+[`govbot-mcp-version.json`](https://github.com/chihacknight/govbot/releases/download/nightly/govbot-mcp-version.json)
+from the same release and caches it in `~/.govbot/update-check.json`. If a newer
+extension exists, or the installed CLI is older than the server needs, a short
+notice with the steps above appears in `setup_workspace` and `check_local_data`.
+The check never delays an answer: offline, it gives up after 3 seconds in the
+background and nothing is shown. Ask *"Is my govbot up to date?"* to see the
+installed versions and the last check.
+
+**Releasing.** `package.json`'s `version` is the source of truth; bump
+`mcpb/manifest.json` with it (`scripts/build-bundle.sh` fails if they differ).
+Each nightly bundle ships as `<version>-nightly.<UTC YYYYMMDDHHMM>` (the workflow
+passes `GOVBOT_MCP_VERSION` to `build-bundle.sh`), so every night's build is newer
+than the last. A local build stays plain `<version>`, which semver ranks above
+that version's nightlies, so it never shows an update notice for them.
+`govbot.cliMin` in `package.json` is the oldest CLI this server works with. The
+nightly CLI reports the version in `actions/govbot/Cargo.toml`, so raising
+`cliMin` only works together with a bump there.
 
 ## What it will not do
 
