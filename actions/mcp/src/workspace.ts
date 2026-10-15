@@ -19,7 +19,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+import { type Document, isMap, isScalar, isSeq, parseDocument, stringify as stringifyYaml } from "yaml";
 
 const execFileAsync = promisify(execFile);
 
@@ -152,22 +152,71 @@ async function ensureGitRepo(path: string): Promise<boolean> {
   }
 }
 
-export async function readConfig(): Promise<GovbotConfig> {
-  try {
-    const raw = await readFile(configPath(), "utf8");
-    const parsed = parseYaml(raw) as Partial<GovbotConfig> | null;
-    return {
-      $schema: parsed?.$schema ?? SCHEMA_URL,
-      repos: parsed?.repos ?? [],
-      tags: parsed?.tags ?? {},
-    };
-  } catch {
-    return { $schema: SCHEMA_URL, repos: [], tags: {} };
+/**
+ * `govbot.yml` exists but cannot be safely edited: it does not parse, or its
+ * shape is not what this server knows how to update.
+ *
+ * Thrown instead of falling back to an empty config, because the next save
+ * would then write that empty config over every topic the person defined.
+ * The message is written for the person, and names the file and the problem.
+ */
+export class ConfigError extends Error {
+  constructor(problem: string) {
+    super(
+      `Could not update ${configPath()}, so it was left exactly as it was: ${problem}\n\n` +
+        "Fix that in the file, or move the file aside to start fresh, then try again. " +
+        "Do not recreate the file: the topics the person defined are in it.",
+    );
+    this.name = "ConfigError";
   }
 }
 
+/**
+ * Parse `govbot.yml` as an editable document, or return null if there is no file.
+ *
+ * A missing file means "start fresh". Anything else that goes wrong is thrown:
+ * a YAML error (as a ConfigError with line and column), or an unreadable file.
+ */
+async function loadDocument(): Promise<Document | null> {
+  let raw: string;
+  try {
+    raw = await readFile(configPath(), "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
+  const doc = parseDocument(raw);
+  const [firstError] = doc.errors;
+  if (firstError) {
+    // The library's message reads "<what> at line L, column C:" followed by a
+    // snippet; the part before the snippet is what a person can act on.
+    throw new ConfigError(firstError.message.split(":\n")[0] ?? firstError.message);
+  }
+  // An empty file, or one holding only comments, has no contents. That is fine;
+  // a list or a bare string at the top level is not something we can add keys to.
+  if (doc.contents !== null && !isMap(doc.contents)) {
+    throw new ConfigError("the top level is not a set of `key: value` entries.");
+  }
+  return doc;
+}
+
+export async function readConfig(): Promise<GovbotConfig> {
+  const doc = await loadDocument();
+  const parsed = (doc?.toJS() ?? null) as Partial<GovbotConfig> | null;
+  return {
+    $schema: parsed?.$schema ?? SCHEMA_URL,
+    repos: parsed?.repos ?? [],
+    tags: parsed?.tags ?? {},
+  };
+}
+
+/** Write a whole new `govbot.yml`. Only for creating the file; edits go through editConfig. */
 export async function writeConfig(config: GovbotConfig): Promise<void> {
   await mkdir(workspacePath(), { recursive: true });
+  await writeFile(configPath(), freshConfigText(config), "utf8");
+}
+
+function freshConfigText(config: GovbotConfig): string {
   const header =
     "# Your govbot project.\n" +
     "#\n" +
@@ -176,18 +225,63 @@ export async function writeConfig(config: GovbotConfig): Promise<void> {
     "# yours to edit — this file is read, not owned, by the Claude Desktop extension.\n" +
     "#\n" +
     "# Run `govbot logs | govbot tag` in this folder to re-score bills after editing.\n\n";
-  await writeFile(configPath(), header + stringifyYaml(config, { lineWidth: 88 }), "utf8");
+  return header + stringifyYaml(config, { lineWidth: 88 });
+}
+
+/**
+ * Change `govbot.yml` in place, touching only what `edit` touches.
+ *
+ * The file is edited as a YAML document rather than re-serialised from a plain
+ * object, so the person's comments, key order and keys this server does not
+ * know about all survive. If the file does not parse, nothing is written.
+ */
+/**
+ * The node under a top-level key, or undefined when the key is absent or has no
+ * value (`repos:` on its own line), which the old reader also treated as empty.
+ */
+function topLevel(doc: Document, key: string): unknown {
+  const node = doc.get(key, true);
+  if (node == null || (isScalar(node) && node.value == null)) return undefined;
+  return node;
+}
+
+async function editConfig<T>(edit: (doc: Document) => T): Promise<T> {
+  let doc = await loadDocument();
+  if (doc === null) {
+    doc = parseDocument(freshConfigText({ $schema: SCHEMA_URL, repos: [], tags: {} }));
+  }
+  if (doc.contents === null) doc.contents = doc.createNode({});
+  const result = edit(doc);
+  await mkdir(workspacePath(), { recursive: true });
+  await writeFile(configPath(), doc.toString({ lineWidth: 88 }), "utf8");
+  return result;
 }
 
 /**
  * Record the jurisdictions being tracked, preserving any already listed.
+ *
+ * New entries are appended, in sorted order, after the person's own; the list
+ * is not re-sorted, so a comment next to an entry stays next to it.
  */
 export async function addRepos(locales: string[]): Promise<string[]> {
-  const config = await readConfig();
-  const merged = new Set([...config.repos, ...locales.map((l) => l.toLowerCase())]);
-  config.repos = [...merged].sort();
-  await writeConfig(config);
-  return config.repos;
+  return editConfig((doc) => {
+    const node = topLevel(doc, "repos");
+    if (node !== undefined && !isSeq(node)) {
+      throw new ConfigError("`repos` is not a list, so new jurisdictions cannot be added to it.");
+    }
+    const existing = (node?.toJSON() ?? []) as unknown[];
+    const additions = [...new Set(locales.map((l) => l.toLowerCase()))]
+      .filter((l) => !existing.includes(l))
+      .sort();
+    if (!node || node.items.length === 0) {
+      // Absent, or the `repos: []` of a fresh file: write a block list rather
+      // than growing the inline `[]` into `[ il, usa ]`.
+      doc.set("repos", doc.createNode(additions));
+    } else {
+      for (const locale of additions) node.add(locale);
+    }
+    return [...existing.map(String), ...additions];
+  });
 }
 
 /**
@@ -195,10 +289,21 @@ export async function addRepos(locales: string[]): Promise<string[]> {
  *
  * `govbot tag` keys its cached scores on a hash of the tag definition, so
  * changing a definition here correctly invalidates the previous scores.
+ * Other topics, and comments around them, are left as they are.
  */
 export async function saveTags(tags: Record<string, TagDefinition>): Promise<string[]> {
-  const config = await readConfig();
-  config.tags = { ...config.tags, ...tags };
-  await writeConfig(config);
-  return Object.keys(config.tags).sort();
+  return editConfig((doc) => {
+    const node = topLevel(doc, "tags");
+    if (node !== undefined && !isMap(node)) {
+      throw new ConfigError("`tags` is not a set of named topics, so topics cannot be added to it.");
+    }
+    // A fresh file has `tags: {}`; let it become a normal block mapping.
+    if (node === undefined) doc.set("tags", doc.createNode({}));
+    else if (node.items.length === 0) node.flow = false;
+    for (const [name, definition] of Object.entries(tags)) {
+      doc.setIn(["tags", name], doc.createNode(definition));
+    }
+    const all = doc.get("tags", true);
+    return Object.keys(isMap(all) ? (all.toJSON() as object) : {}).sort();
+  });
 }

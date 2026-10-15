@@ -158,7 +158,19 @@ export async function clone(
     };
   }
 
-  await workspace.addRepos(locales);
+  try {
+    await workspace.addRepos(locales);
+  } catch (error) {
+    // The data is on disk and usable either way; only the record in govbot.yml
+    // is missing, and the person's file is left exactly as it was.
+    if (!(error instanceof workspace.ConfigError)) throw error;
+    return {
+      isError: true,
+      text:
+        `Cloned ${locales.join(", ")} into ${workspace.dataPath()}, but did not add ` +
+        `them to govbot.yml.\n\n${error.message}`,
+    };
+  }
 
   return {
     text:
@@ -249,7 +261,16 @@ export async function saveValues(args: {
     tags[name] = definition as workspace.TagDefinition;
   }
 
-  const saved = await workspace.saveTags(tags);
+  let saved: string[];
+  try {
+    saved = await workspace.saveTags(tags);
+  } catch (error) {
+    if (!(error instanceof workspace.ConfigError)) throw error;
+    return {
+      isError: true,
+      text: `Did not save ${Object.keys(tags).join(", ")}.\n\n${error.message}`,
+    };
+  }
 
   return {
     text: [
