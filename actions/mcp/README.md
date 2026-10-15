@@ -121,7 +121,7 @@ scenarios it judges against are in `scenarios/`.
 1. System Settings → Privacy & Security: give your terminal **Accessibility** and
    **Screen Recording** access.
 2. `scripts/desktop-capture.sh setup`. This backs up `claude_desktop_config.json` and
-   points its `govbot` entry at `~/.govbot/mcp-under-test`. It also points govbot at
+   points its `govbot` entry at `~/.govbot/mcp-under-test`, where each install puts the server *and* a `govbot` CLI built from the same checkout, so PRs that change the Rust query code show it in their screenshots. It also points govbot at
    a separate workspace, `~/govbot-loop-workspace`, so scenarios never edit your own
    `govbot.yml`. Cloned data is shared with `~/govbot-workspace` through a symlink.
 3. `scripts/desktop-capture.sh install --ref origin/main`. This builds `main` and

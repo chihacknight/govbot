@@ -126,7 +126,8 @@ cmd_doctor() {
   check "Desktop config points govbot at $TARGET" \
     "python3 -c 'import json,sys; c=json.load(open(sys.argv[1])); a=c[\"mcpServers\"][\"govbot\"][\"args\"][0]; sys.exit(0 if a.startswith(sys.argv[2]) else 1)' \"\$CONFIG\" \"\$TARGET\"" \
     "run: $0 setup"
-  check "a build is installed" "[ -f '$TARGET/server/dist/index.js' ]" "run: $0 install --ref HEAD"
+  check "a build is installed" "[ -f '$TARGET/server/dist/index.js' ] && [ -x '$TARGET/server/govbot' ]" "run: $0 install --ref origin/main"
+  check "Rust toolchain (the CLI is built per capture)" "command -v cargo || [ -x '$HOME/.cargo/bin/cargo' ]" "install from rustup.rs"
   check "Accessibility (can talk to System Events)" \
     "osascript -e 'tell application \"System Events\" to get name of first process'" \
     "System Settings → Privacy & Security → Accessibility → add your terminal"
@@ -160,6 +161,9 @@ entry["command"] = entry.get("command") or shutil.which("node") or "node"
 entry["args"] = [f"{target}/server/dist/index.js"]
 env = entry.setdefault("env", {})
 env["GOVBOT_MCP_TRACE"] = f"{target}/trace.jsonl"
+# The CLI is built from the same checkout as the server (see cmd_install), so a
+# PR that changes `govbot query` shows that change in its captures.
+env["GOVBOT_BIN"] = f"{target}/server/govbot"
 env["GOVBOT_WORKSPACE"] = sys.argv[3]
 with open(config_path, "w") as f:
     json.dump(config, f, indent=2)
@@ -198,6 +202,15 @@ cmd_install() {
   (cd "$src" && npm ci --silent --no-audit --no-fund && npm run build --silent)
   mkdir -p "$TARGET/server"
   rsync -a --delete "$src/dist" "$src/node_modules" "$src/package.json" "$TARGET/server/"
+
+  # Build the govbot CLI from the same checkout. One shared target dir keeps
+  # rebuilds across worktrees incremental (minutes the first time, seconds after).
+  local cargo="${CARGO:-$(command -v cargo || echo "$HOME/.cargo/bin/cargo")}"
+  [ -x "$cargo" ] || die "cargo not found; the CLI must be built from $src/../govbot (install Rust: rustup.rs)"
+  say "building the govbot CLI from $src/../govbot"
+  (cd "$src/../govbot" && CARGO_TARGET_DIR="$TARGET/cargo-target" "$cargo" build --release --quiet --bin govbot) \
+    || die "cargo build failed"
+  cp "$TARGET/cargo-target/release/govbot" "$TARGET/server/govbot"
   rev="$(git -C "$src" rev-parse --short HEAD) ($label)"
   echo "$rev from $src" > "$TARGET/INSTALLED"
   say "installed $rev"
