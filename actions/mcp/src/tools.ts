@@ -12,6 +12,7 @@ import { join } from "node:path";
 import { z } from "zod";
 import * as govbot from "./govbot.js";
 import * as workspace from "./workspace.js";
+import { formatElapsed, trackClone, trackTag, type SendProgress } from "./progress.js";
 
 /** What a tool hands back: text for the model, plus the structured payload. */
 export interface ToolOutput {
@@ -296,29 +297,26 @@ export const cloneSchema = {
 
 export async function clone(
   args: { jurisdictions: string[] },
-  onProgress?: (message: string) => void,
+  sendProgress?: SendProgress,
 ): Promise<ToolOutput> {
   await workspace.ensure();
 
   const locales = args.jurisdictions.map((j) => normalizeLocale(j));
-  const result = await govbot.run(
-    ["clone", ...locales, "--govbot-dir", workspace.dataPath()],
-    {
+  const started = Date.now();
+  const progress = sendProgress ? trackClone(locales, sendProgress) : undefined;
+  const result = await govbot
+    .run(["clone", ...locales, "--govbot-dir", workspace.dataPath()], {
       cwd: workspace.workspacePath(),
-      onProgress: (chunk) => {
-        for (const line of chunk.split("\n")) {
-          const trimmed = line.trim();
-          if (trimmed) onProgress?.(trimmed);
-        }
-      },
-    },
-  );
+      onProgress: progress?.stderr,
+    })
+    .finally(() => progress?.stop());
+  const took = formatElapsed(Date.now() - started);
 
   if (result.code !== 0) {
     return {
       isError: true,
       text:
-        `Cloning failed for: ${locales.join(", ")}\n\n` +
+        `Cloning failed for: ${locales.join(", ")} (after ${took})\n\n` +
         (result.stderr.trim() || `Exit code ${result.code}`),
     };
   }
@@ -339,7 +337,7 @@ export async function clone(
 
   return {
     text:
-      `Cloned ${locales.join(", ")} into ${workspace.dataPath()}.\n\n` +
+      `Cloned ${locales.join(", ")} into ${workspace.dataPath()} in ${took}.\n\n` +
       "This is public data from git repositories — no account, no API key, and no\n" +
       "record of the request anywhere but this computer.\n\n" +
       result.stderr.trim(),
@@ -472,7 +470,7 @@ export const tagSchemaInput = {
 
 export async function tagWithLocalAi(
   args: { jurisdictions?: string[]; limit?: number },
-  onProgress?: (message: string) => void,
+  sendProgress?: SendProgress,
 ): Promise<ToolOutput> {
   await workspace.ensure();
 
@@ -518,22 +516,24 @@ export async function tagWithLocalAi(
   }
 
   // `govbot tag` reads govbot.yml from the working directory and writes tag files
-  // beside it, which is exactly what the workspace is for.
-  const tagged = await govbot.run(["tag", "--overwrite"], {
-    cwd: workspace.workspacePath(),
-    stdin: logs.stdout,
-    onProgress: (chunk) => {
-      for (const line of chunk.split("\n")) {
-        const trimmed = line.trim();
-        if (trimmed) onProgress?.(trimmed);
-      }
-    },
-  });
+  // beside it, which is exactly what the workspace is for. Progress covers only
+  // this run, the slow part (scoring, and the first-run model download); the
+  // `govbot logs` read above is not covered.
+  const started = Date.now();
+  const progress = sendProgress ? trackTag(args.limit ?? 400, sendProgress) : undefined;
+  const tagged = await govbot
+    .run(["tag", "--overwrite"], {
+      cwd: workspace.workspacePath(),
+      stdin: logs.stdout,
+      onProgress: progress?.stderr,
+    })
+    .finally(() => progress?.stop());
+  const took = formatElapsed(Date.now() - started);
 
   if (tagged.code !== 0) {
     return {
       isError: true,
-      text: `Tagging failed.\n\n${tagged.stderr.trim()}`,
+      text: `Tagging failed after ${took}.\n\n${tagged.stderr.trim()}`,
     };
   }
 
@@ -567,6 +567,7 @@ export async function tagWithLocalAi(
       "",
     );
   }
+  lines.push(`Scoring took ${took}.`, "");
   lines.push("Use `query` with a `tag` to pull the highest-scoring bills.");
 
   return {

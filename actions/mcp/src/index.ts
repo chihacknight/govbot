@@ -16,6 +16,7 @@ import { z } from "zod";
 
 import { GovbotError } from "./govbot.js";
 import { SERVER_INSTRUCTIONS } from "./instructions.js";
+import type { SendProgress } from "./progress.js";
 import * as tools from "./tools.js";
 import { withTrace } from "./trace.js";
 import * as workspace from "./workspace.js";
@@ -49,6 +50,32 @@ function failure(error: unknown) {
   return {
     content: [{ type: "text" as const, text: [message, detail ?? ""].filter(Boolean).join("\n\n") }],
     isError: true,
+  };
+}
+
+/**
+ * A progress sender for this request, or `undefined` when the client did not put
+ * a `progressToken` in `_meta`: the spec allows progress only for requests that
+ * asked for it. Progress is used instead of `notifications/message` because this
+ * server declares no `logging` capability, so the SDK refuses log notifications,
+ * and log lines are not shown to the person anyway.
+ */
+function progressFor(extra: {
+  _meta?: { progressToken?: string | number };
+  sendNotification: (notification: {
+    method: "notifications/progress";
+    params: { progressToken: string | number; progress: number; total?: number; message?: string };
+  }) => Promise<void>;
+}): SendProgress | undefined {
+  const progressToken = extra._meta?.progressToken;
+  if (progressToken === undefined) return undefined;
+  return (update) => {
+    extra
+      .sendNotification({ method: "notifications/progress", params: { progressToken, ...update } })
+      .catch((error: unknown) => {
+        // Best-effort: a closed transport must not fail the tool call.
+        log(`progress not sent: ${error instanceof Error ? error.message : String(error)}`);
+      });
   };
 }
 
@@ -123,16 +150,7 @@ server.registerTool(
   },
   withTrace("clone_government_data", async (args, extra) => {
     try {
-      return respond(
-        await tools.clone(args, (message) => {
-          extra.sendNotification?.({
-            method: "notifications/message",
-            params: { level: "info", data: message },
-          }).catch(() => {
-            // Progress is best-effort; a client that does not accept it is fine.
-          });
-        }),
-      );
+      return respond(await tools.clone(args, progressFor(extra)));
     } catch (error) {
       return failure(error);
     }
@@ -188,14 +206,7 @@ server.registerTool(
   },
   withTrace("tag_with_local_ai", async (args, extra) => {
     try {
-      return respond(
-        await tools.tagWithLocalAi(args, (message) => {
-          extra.sendNotification?.({
-            method: "notifications/message",
-            params: { level: "info", data: message },
-          }).catch(() => {});
-        }),
-      );
+      return respond(await tools.tagWithLocalAi(args, progressFor(extra)));
     } catch (error) {
       return failure(error);
     }
