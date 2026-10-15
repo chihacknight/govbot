@@ -10,7 +10,7 @@
 //!
 //! | jurisdiction | what a vote row says |
 //! |---|---|
-//! | usa    | `Arrington`, with the bioguide id in `note` |
+//! | usa    | `Kelly (PA)`, `Kelly (D-AZ)`, `Arrington`, with the member id in `note` |
 //! | co, oh | `Max Brooks`, `Roy Klopfenstein` |
 //! | il, sc | `Cunningham, Bill`, `Adams, Brian` |
 //! | ga     | `ADESANYA`, with the district in `note` |
@@ -118,6 +118,12 @@ pub struct NameMatch {
     /// surname, or a source hint. Their rows are left out; callers should say so.
     #[serde(skip)]
     pub unlinked_surname_only_spellings: Vec<String>,
+    /// The member ids (see [`member_id`]) of the person matched. A row that
+    /// carries a member id belongs to them only if it is one of these, whatever
+    /// its name says: `Grijalva` is two members of Congress. Empty outside
+    /// Congress, and for an ambiguous match.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub member_ids: Vec<String>,
 }
 
 impl NameMatch {
@@ -129,11 +135,19 @@ impl NameMatch {
             surname_only_spellings: Vec::new(),
             surname_only_scopes: BTreeMap::new(),
             unlinked_surname_only_spellings: Vec::new(),
+            member_ids: Vec::new(),
         }
     }
 
+    #[cfg(test)]
     fn resolved(method: MatchMethod, name: String) -> Self {
         Self::resolved_many(method, vec![name])
+    }
+
+    fn resolved_person(method: MatchMethod, person: Person) -> Self {
+        let mut matched = Self::resolved_many(method, person.spellings);
+        matched.member_ids = person.member_ids;
+        matched
     }
 
     /// One person, spelled several ways in the data. Every spelling is carried so a
@@ -146,6 +160,7 @@ impl NameMatch {
             surname_only_spellings: Vec::new(),
             surname_only_scopes: BTreeMap::new(),
             unlinked_surname_only_spellings: Vec::new(),
+            member_ids: Vec::new(),
         }
     }
 
@@ -157,6 +172,7 @@ impl NameMatch {
             surname_only_spellings: Vec::new(),
             surname_only_scopes: BTreeMap::new(),
             unlinked_surname_only_spellings: Vec::new(),
+            member_ids: Vec::new(),
         }
     }
 
@@ -179,6 +195,18 @@ impl NameMatch {
                 .is_some_and(|scopes| scopes.contains(scope))
         });
         linked_here.then(|| MatchMethod::SurnameOnlySpelling.confidence())
+    }
+
+    /// [`Self::confidence_for`] for a whole vote row. A row carrying a member id
+    /// counts only if the id is this person's, so a Congress row is never given
+    /// to someone else because the name happens to agree.
+    pub fn confidence_for_row(&self, row: &RawVoteRow, scope: Option<&str>) -> Option<Confidence> {
+        if let Some(id) = member_id(&row.note) {
+            if !self.member_ids.contains(&id) {
+                return None;
+            }
+        }
+        self.confidence_for(&row.voter_name, scope)
     }
 
     /// The match as it applies to one row naming `raw`, so a row reached through
@@ -283,6 +311,79 @@ impl NormalizedName {
     pub fn is_empty(&self) -> bool {
         self.tokens.is_empty()
     }
+}
+
+/// The member id in a vote row's `note`, if the note is one.
+///
+/// Congress's roll calls carry a stable per-member id there: a bioguide id for
+/// the House (`K000376`) and a Senate LIS id for the Senate (`S406`). Other
+/// sources use `note` for other things (Georgia puts the district there), so
+/// only those two shapes count as identity.
+pub fn member_id(note: &str) -> Option<String> {
+    let id = note.trim().to_uppercase();
+    let bytes = id.as_bytes();
+    let digits = |from: usize| bytes[from..].iter().all(u8::is_ascii_digit);
+    let is_bioguide = bytes.len() == 7 && bytes[0].is_ascii_uppercase() && digits(1);
+    let is_senate_lis = bytes.len() == 4 && bytes[0] == b'S' && digits(1);
+    (is_bioguide || is_senate_lis).then_some(id)
+}
+
+/// The key that tells one person from another, for a spelling seen with
+/// `member_id` (or without one).
+///
+/// - With a member id, the id decides: `Grijalva` seen with G000551 (Raúl) and
+///   with G000606 (Adelita, who succeeded him) is two people, and one member
+///   printed two ways would be one.
+/// - Otherwise a source hint is part of identity. Congress prints `Kelly (IL)`,
+///   `Kelly (PA)` and `Kelly (D-AZ)` for three different members; dropping the
+///   hint would make them one person.
+/// - Otherwise the normalized name, as before: `Smith, S` and `SMITH, S` are one.
+///
+/// Only a plain key ever contains a space for a full name, so the surname-link
+/// code (which looks for full names) never links a hinted or id'd spelling.
+pub fn identity_key(raw: &str, member_id: Option<&str>) -> String {
+    let normalized = normalize(raw);
+    match (member_id, &normalized.hint) {
+        (Some(id), _) => format!("{}[{}]", normalized.key(), id),
+        (None, Some(hint)) => format!("{}({})", normalized.key(), hint),
+        (None, None) => normalized.key(),
+    }
+}
+
+/// Take a member id out of a query, so `Grijalva [G000606]` (the form an
+/// ambiguous match lists) or `Mike Kelly K000376` resolves by the id.
+fn split_member_id(query: &str) -> (String, Option<String>) {
+    let mut id = None;
+    let rest: Vec<&str> = query
+        .split_whitespace()
+        .filter(|token| {
+            let bare = token.trim_matches(|c: char| "[](),".contains(c));
+            match member_id(bare) {
+                Some(found) if id.is_none() => {
+                    id = Some(found);
+                    false
+                }
+                _ => true,
+            }
+        })
+        .collect();
+    (rest.join(" "), id)
+}
+
+/// Whether a person's source hint is compatible with the hint a caller wrote.
+/// `pa` matches `pa`, and also `r-pa`, since a caller gives a state, not a party.
+fn hint_matches(person_hint: &str, query_hint: &str) -> bool {
+    person_hint == query_hint
+        || (!query_hint.contains('-')
+            && person_hint.rsplit_once('-').is_some_and(|(_, state)| state == query_hint))
+}
+
+/// One person found in the data: every spelling they appear under, and the
+/// member ids their rows carry (Congress only).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Person {
+    pub spellings: Vec<String>,
+    pub member_ids: Vec<String>,
 }
 
 /// Reduce a raw name to comparable tokens.
@@ -414,7 +515,13 @@ pub fn repair_split_rows(rows: Vec<RawVoteRow>) -> (Vec<RawVoteRow>, usize) {
 pub struct NameIndex {
     by_full_key: HashMap<String, BTreeSet<String>>,
     by_surname: HashMap<String, BTreeSet<String>>,
-    by_bioguide: HashMap<String, String>,
+    by_bioguide: HashMap<String, BTreeSet<String>>,
+    /// The member ids each spelling's vote rows carried (see [`member_id`]).
+    member_ids: HashMap<String, BTreeSet<String>>,
+    /// Spellings seen at least once without a member id. Congress's `Peters`
+    /// (Scott Peters, P000608) and the Illinois Senate's `Peters` are the same
+    /// string, and only the Congress rows carry an id.
+    unidentified: BTreeSet<String>,
     /// Where each raw spelling appears, as opaque caller-chosen scope keys (the
     /// query layer uses `jurisdiction|chamber|session`). Only names recorded with
     /// [`Self::insert_in_scope`] have any; [`Self::surname_link`] needs them.
@@ -428,20 +535,58 @@ impl NameIndex {
         Self::default()
     }
 
-    /// Record a name that appears in the data.
+    /// Record a name that appears in the data, with no member id.
     pub fn insert(&mut self, raw: &str) {
+        if self.record(raw) {
+            self.unidentified.insert(raw.trim().to_string());
+        }
+    }
+
+    /// Record one vote row's name, where it was cast (if known), and its `note`,
+    /// which for Congress is the member id that decides who the row belongs to.
+    pub fn insert_vote(&mut self, raw: &str, scope: Option<&str>, note: &str) {
+        let trimmed = raw.trim();
+        if !self.record(trimmed) {
+            return;
+        }
+        match member_id(note) {
+            Some(id) => {
+                self.member_ids
+                    .entry(trimmed.to_string())
+                    .or_default()
+                    .insert(id.clone());
+                self.by_bioguide
+                    .entry(id)
+                    .or_default()
+                    .insert(trimmed.to_string());
+            }
+            None => {
+                self.unidentified.insert(trimmed.to_string());
+            }
+        }
+        if let Some(scope) = scope {
+            self.scopes
+                .entry(trimmed.to_string())
+                .or_default()
+                .insert(scope.to_string());
+        }
+    }
+
+    /// The lookups behind [`Self::insert`]. False when the name was skipped
+    /// (empty, or a suspect fragment).
+    fn record(&mut self, raw: &str) -> bool {
         let raw = raw.trim();
         if raw.is_empty() {
-            return;
+            return false;
         }
         if is_suspect_fragment(raw) {
             self.suspect_fragments.insert(raw.to_string());
-            return;
+            return false;
         }
 
         let normalized = normalize(raw);
         if normalized.is_empty() {
-            return;
+            return false;
         }
 
         self.all.insert(raw.to_string());
@@ -455,20 +600,14 @@ impl NameIndex {
                 .or_default()
                 .insert(raw.to_string());
         }
+        true
     }
 
-    /// Record a name together with where it appears. The scope is opaque here;
-    /// two spellings share a scope when the caller passes equal strings.
+    /// Record a name together with where it appears, with no member id. The
+    /// scope is opaque here; two spellings share a scope when the caller passes
+    /// equal strings.
     pub fn insert_in_scope(&mut self, raw: &str, scope: &str) {
-        let trimmed = raw.trim();
-        self.insert(trimmed);
-        // `insert` skips empty names and suspect fragments; give those no scope.
-        if self.all.contains(trimmed) {
-            self.scopes
-                .entry(trimmed.to_string())
-                .or_default()
-                .insert(scope.to_string());
-        }
+        self.insert_vote(raw, Some(scope), "");
     }
 
     /// Where the bare-surname spellings of `surname` can be read as the one
@@ -531,15 +670,15 @@ impl NameIndex {
                 .filter(|raw| !is_bare(raw))
                 .cloned()
                 .collect();
-            let mut people = group_by_person(&full);
+            let mut people = self.group_by_person(&full);
             if people.len() != 1 {
                 continue;
             }
-            let (person_key, person_spellings) = people.pop_first().expect("checked above");
+            let (person_key, person) = people.pop_first().expect("checked above");
             links.push(SurnameLink {
                 scope: scope.clone(),
                 person_key,
-                person_spellings,
+                person_spellings: person.spellings,
                 bare_spellings: bare,
             });
         }
@@ -615,15 +754,21 @@ impl NameIndex {
             .collect()
     }
 
-    /// Record a stable external identifier for a name — the bioguide id carried in
-    /// the `note` field of federal vote rows.
+    /// Record a stable external identifier for a name, so a caller who has the id
+    /// can look the name up. The sponsor index uses this for bill bioguides. It
+    /// does not decide who is who; vote rows do that through [`Self::insert_vote`].
     pub fn insert_identifier(&mut self, identifier: &str, raw_name: &str) {
         let identifier = identifier.trim();
         if identifier.is_empty() {
             return;
         }
-        self.by_bioguide
-            .insert(identifier.to_uppercase(), raw_name.trim().to_string());
+        // Replaces rather than adds, as it always has: the sponsor index calls this
+        // for every bioguide on a bill, and only vote rows decide identity (see
+        // [`Self::insert_vote`]).
+        self.by_bioguide.insert(
+            identifier.to_uppercase(),
+            BTreeSet::from([raw_name.trim().to_string()]),
+        );
     }
 
     /// Distinct people, counted after normalization.
@@ -631,9 +776,59 @@ impl NameIndex {
     /// Prefer this over [`Self::distinct_raw_spellings`] for anything a reader will
     /// interpret as a headcount. Wyoming's data spells the same legislator both
     /// `Smith, S` and `SMITH, S`, so counting raw strings reports 184 voters for a
-    /// 93-member legislature.
+    /// 93-member legislature. Congress's `Kelly (IL)` and `Kelly (PA)` count as two,
+    /// and so do the two members recorded as `Grijalva` (see [`identity_key`]).
     pub fn distinct_people(&self) -> usize {
-        self.by_full_key.len()
+        let people: BTreeSet<String> = self
+            .all
+            .iter()
+            .flat_map(|raw| self.identity_keys(raw))
+            .collect();
+        people.len()
+    }
+
+    /// The identity key of each person `raw` is a spelling of: one per member id
+    /// its rows carried, plus a plain key if it was also seen without one.
+    fn identity_keys(&self, raw: &str) -> Vec<String> {
+        let mut keys: Vec<String> = self
+            .member_ids
+            .get(raw)
+            .into_iter()
+            .flatten()
+            .map(|id| identity_key(raw, Some(id)))
+            .collect();
+        if self.unidentified.contains(raw) || keys.is_empty() {
+            keys.push(identity_key(raw, None));
+        }
+        keys
+    }
+
+    /// Group raw spellings by the person they belong to.
+    ///
+    /// This is what separates "one legislator written two ways" from "two
+    /// legislators who share a surname"; the first is resolvable, the second
+    /// must not be. A spelling seen under two member ids lands in both people.
+    pub fn group_by_person(&self, names: &BTreeSet<String>) -> BTreeMap<String, Person> {
+        let mut grouped: BTreeMap<String, Person> = BTreeMap::new();
+        for name in names {
+            for key in self.identity_keys(name) {
+                let person = grouped.entry(key).or_insert_with(|| Person {
+                    spellings: Vec::new(),
+                    member_ids: Vec::new(),
+                });
+                if !person.spellings.contains(name) {
+                    person.spellings.push(name.clone());
+                }
+            }
+            for id in self.member_ids.get(name).into_iter().flatten() {
+                let key = identity_key(name, Some(id));
+                let person = grouped.get_mut(&key).expect("inserted above");
+                if !person.member_ids.contains(id) {
+                    person.member_ids.push(id.clone());
+                }
+            }
+        }
+        grouped
     }
 
     /// Distinct raw strings, before normalization. Useful for describing how noisy a
@@ -657,22 +852,48 @@ impl NameIndex {
             return NameMatch::unmatched();
         }
 
-        // A bioguide id, if the caller happens to have one, beats every heuristic.
-        if let Some(name) = self.by_bioguide.get(&query.to_uppercase()) {
-            return NameMatch::resolved(MatchMethod::Bioguide, name.clone());
+        // A member id, if the caller has one, beats every heuristic. It may come
+        // alone (`K000376`) or with the name an ambiguous match listed it under
+        // (`Grijalva [G000606]`).
+        let (rest, id) = split_member_id(query);
+        if let Some(id) = id {
+            let Some(spellings) = self.by_bioguide.get(&id) else {
+                return NameMatch::unmatched();
+            };
+            // A name given with the id must agree with it: `Kelly [S380]` is a
+            // mistake (S380 is Peters), not a request for Peters's votes.
+            let named = normalize(&rest);
+            if let Some(surname) = named.surname() {
+                if !spellings.iter().any(|s| normalize(s).surname() == Some(surname)) {
+                    return NameMatch::unmatched();
+                }
+            }
+            return NameMatch::resolved_person(
+                MatchMethod::Bioguide,
+                Person {
+                    spellings: to_vec(spellings),
+                    member_ids: vec![id],
+                },
+            );
         }
+        let query = rest.as_str();
 
         let normalized = normalize(query);
         if normalized.is_empty() {
             return NameMatch::unmatched();
         }
+        let hint = normalized.hint.as_deref();
 
         // Full name, exactly as given. Several raw strings may share one normalized
         // key — `Smith, S` and `SMITH, S` are one legislator spelled two ways, not
-        // two legislators — so every spelling is returned and none is ambiguity.
+        // two legislators — so every spelling of the person is returned. But the
+        // same key can also be several people: Congress's `Kelly (IL)` and
+        // `Kelly (PA)`, or the two members recorded as `Grijalva`. A hint in the
+        // query (`Kelly (PA)`) narrows them; otherwise that is ambiguity.
         if let Some(matches) = self.by_full_key.get(&normalized.key()) {
-            let matched = NameMatch::resolved_many(MatchMethod::ExactName, to_vec(matches));
-            return self.with_surname_link(matched, &normalized.key());
+            if let Some(found) = self.pick_person(matches, hint, MatchMethod::ExactName) {
+                return found;
+            }
         }
 
         // The caller wrote the name in the other order from the data, or the data
@@ -682,11 +903,10 @@ impl NameIndex {
             let mut swapped = normalized.tokens.clone();
             let last = swapped.len() - 1;
             swapped.rotate_left(last);
-            let swapped_key = swapped.join(" ");
-            if let Some(matches) = self.by_full_key.get(&swapped_key) {
-                let matched =
-                    NameMatch::resolved_many(MatchMethod::ReversedName, to_vec(matches));
-                return self.with_surname_link(matched, &swapped_key);
+            if let Some(matches) = self.by_full_key.get(&swapped.join(" ")) {
+                if let Some(found) = self.pick_person(matches, hint, MatchMethod::ReversedName) {
+                    return found;
+                }
             }
         }
 
@@ -698,61 +918,125 @@ impl NameIndex {
             return NameMatch::unmatched();
         };
 
-        let people = group_by_person(surname_matches);
+        let people = narrow_by_hint(self.group_by_person(surname_matches), hint);
+        if people.is_empty() {
+            // `Kelly (NY)` when no Kelly from New York is in the data.
+            return NameMatch::unmatched();
+        }
         if people.len() == 1 {
-            let (key, spellings) = people.into_iter().next().expect("checked above");
-            let matched = NameMatch::resolved_many(MatchMethod::UniqueSurname, spellings);
+            let (key, person) = people.into_iter().next().expect("checked above");
+            let matched = NameMatch::resolved_person(MatchMethod::UniqueSurname, person);
             return self.with_surname_link(matched, &key);
         }
 
         // Several distinct people share the surname. A given-name initial from the
-        // caller may pick one out; anything less and we refuse.
+        // caller may pick one out; anything less and we refuse. Congress's names
+        // carry no given name (`Kelly (PA)`), so "Mike Kelly" never narrows here.
         if let Some(initial) = normalized.given_initial() {
-            let narrowed: Vec<Vec<String>> = people
-                .values()
-                .filter(|spellings| {
-                    spellings.first().is_some_and(|name| {
+            let narrowed: Vec<(&String, &Person)> = people
+                .iter()
+                .filter(|(_, person)| {
+                    person.spellings.first().is_some_and(|name| {
                         normalize(name)
                             .given_initial()
                             .is_some_and(|c| c == initial)
                     })
                 })
-                .cloned()
                 .collect();
-            if narrowed.len() == 1 {
-                let spellings = narrowed.into_iter().next().expect("checked above");
-                let key = normalize(&spellings[0]).key();
-                let matched = NameMatch::resolved_many(MatchMethod::SurnameInitial, spellings);
+            if let [(key, person)] = narrowed.as_slice() {
+                let matched =
+                    NameMatch::resolved_person(MatchMethod::SurnameInitial, (*person).clone());
                 // `Laura Murphy` reaches `Murphy, Laura M` here, not by exact
                 // name, and her floor votes print `Murphy` all the same.
-                return self.with_surname_link(matched, &key);
+                return self.with_surname_link(matched, key);
             }
         }
 
-        // Report one representative spelling per person, so the caller is choosing
-        // between people rather than between spellings.
-        NameMatch::ambiguous(
-            people
-                .into_values()
-                .filter_map(|spellings| spellings.into_iter().next())
-                .collect(),
-        )
+        NameMatch::ambiguous(candidate_labels(people))
+    }
+
+    /// The one person among `matches` (narrowed by the caller's `hint`), linked
+    /// to their surname-only spellings; ambiguity if several remain; `None` if
+    /// the hint ruled them all out, so the caller can try the next rule.
+    fn pick_person(
+        &self,
+        matches: &BTreeSet<String>,
+        hint: Option<&str>,
+        method: MatchMethod,
+    ) -> Option<NameMatch> {
+        let people = narrow_by_hint(self.group_by_person(matches), hint);
+        match people.len() {
+            0 => None,
+            1 => {
+                let (key, person) = people.into_iter().next().expect("checked above");
+                Some(self.with_surname_link(NameMatch::resolved_person(method, person), &key))
+            }
+            _ => Some(NameMatch::ambiguous(candidate_labels(people))),
+        }
     }
 }
 
-/// Group raw spellings by the person they normalize to.
-///
-/// This is what separates "one legislator written two ways" from "two legislators
-/// who share a surname" — the first is resolvable, the second must not be.
-fn group_by_person(names: &BTreeSet<String>) -> BTreeMap<String, Vec<String>> {
-    let mut grouped: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    for name in names {
-        grouped
-            .entry(normalize(name).key())
-            .or_default()
-            .push(name.clone());
+/// Keep the people whose source hint agrees with the caller's. People with an
+/// exactly equal hint win over ones that only share the state, so `Kelly (IL)`
+/// is never ambiguous with a senator printed `Kelly (D-IL)`. A person with no hint
+/// can't be confirmed, so is dropped: `Kelly (NY)` must not fall through to some
+/// other Kelly printed without one. With no caller hint, everyone is kept.
+fn narrow_by_hint(
+    people: BTreeMap<String, Person>,
+    hint: Option<&str>,
+) -> BTreeMap<String, Person> {
+    let Some(hint) = hint else {
+        return people;
+    };
+    let person_hint = |person: &Person| {
+        person
+            .spellings
+            .iter()
+            .find_map(|raw| normalize(raw).hint)
+    };
+    let exact: BTreeMap<String, Person> = people
+        .iter()
+        .filter(|(_, person)| person_hint(person).as_deref() == Some(hint))
+        .map(|(key, person)| (key.clone(), person.clone()))
+        .collect();
+    if !exact.is_empty() {
+        return exact;
     }
-    grouped
+    people
+        .into_iter()
+        .filter(|(_, person)| {
+            person_hint(person).is_some_and(|theirs| hint_matches(&theirs, hint))
+        })
+        .collect()
+}
+
+/// One label per person, so the caller is choosing between people rather than
+/// between spellings, and each label resolves back to that one person. The
+/// label is the person's first spelling, plus their member id when the
+/// spelling alone wouldn't pick them out: another candidate has the same
+/// spelling (`Grijalva [G000551]`, `Grijalva [G000606]`), or it has no hint to
+/// narrow by (Congress's `Peters`, beside `Peters (D-MI)`).
+fn candidate_labels(people: BTreeMap<String, Person>) -> Vec<String> {
+    let firsts: Vec<(String, Option<String>)> = people
+        .into_values()
+        .filter_map(|person| {
+            let first = person.spellings.into_iter().next()?;
+            Some((first, person.member_ids.into_iter().next()))
+        })
+        .collect();
+    let mut labels: Vec<String> = firsts
+        .iter()
+        .map(|(name, id)| {
+            let shared = firsts.iter().filter(|(other, _)| other == name).count() > 1;
+            let unhinted = normalize(name).hint.is_none();
+            match id {
+                Some(id) if shared || unhinted => format!("{name} [{id}]"),
+                _ => name.clone(),
+            }
+        })
+        .collect();
+    labels.sort();
+    labels
 }
 
 fn to_vec(set: &BTreeSet<String>) -> Vec<String> {
@@ -1088,6 +1372,181 @@ mod tests {
 
         let index = scoped_index_of(&[("Smith, Adrian", "usa|lower|119"), ("Smith (NJ)", "usa|lower|119")]);
         assert!(index.surname_links("smith").is_empty());
+    }
+
+    // ---- Congress: surname + state, with a member id in `note` ----------------
+
+    const HOUSE_119: &str = "usa|lower|119";
+    const SENATE_119: &str = "usa|upper|119";
+
+    /// The 119th Congress's Kellys and Johnsons, as its roll calls print them.
+    fn congress() -> NameIndex {
+        let mut index = NameIndex::new();
+        for (name, scope, id) in [
+            ("Kelly (IL)", HOUSE_119, "K000385"),
+            ("Kelly (MS)", HOUSE_119, "K000388"),
+            ("Kelly (PA)", HOUSE_119, "K000376"),
+            ("Kelly (D-AZ)", SENATE_119, "S406"),
+            ("Johnson (GA)", HOUSE_119, "J000288"),
+            ("Johnson (LA)", HOUSE_119, "J000299"),
+            ("Johnson (SD)", HOUSE_119, "J000301"),
+            ("Johnson (TX)", HOUSE_119, "J000310"),
+            ("Johnson (R-WI)", SENATE_119, "S345"),
+            ("Davis (IL)", HOUSE_119, "D000096"),
+            ("Davis (NC)", HOUSE_119, "D000230"),
+            ("Peters", HOUSE_119, "P000608"),
+            ("Peters (D-MI)", SENATE_119, "S380"),
+            // Raúl Grijalva, then Adelita Grijalva, who succeeded him.
+            ("Grijalva", HOUSE_119, "G000551"),
+            ("Grijalva", HOUSE_119, "G000606"),
+        ] {
+            index.insert_vote(name, Some(scope), id);
+        }
+        index
+    }
+
+    fn vote(name: &str, note: &str) -> RawVoteRow {
+        RawVoteRow {
+            voter_name: name.to_string(),
+            option: "yes".to_string(),
+            note: note.to_string(),
+        }
+    }
+
+    #[test]
+    fn only_congress_member_id_shapes_count() {
+        assert_eq!(member_id("K000376").as_deref(), Some("K000376"));
+        assert_eq!(member_id(" s406 ").as_deref(), Some("S406"));
+        // Georgia puts the district in `note`; that is not who someone is.
+        for note in ["", "12", "District 12", "HD012", "S40", "K00037"] {
+            assert_eq!(member_id(note), None, "{note:?}");
+        }
+    }
+
+    #[test]
+    fn kelly_by_state_is_four_people() {
+        let index = congress();
+        let m = index.resolve("Kelly");
+        assert_eq!(m.method, MatchMethod::Ambiguous);
+        assert_eq!(
+            m.candidates,
+            vec!["Kelly (D-AZ)", "Kelly (IL)", "Kelly (MS)", "Kelly (PA)"]
+        );
+
+        // Congress prints no given names, so "Mike Kelly" can't pick one either.
+        let m = index.resolve("Mike Kelly");
+        assert_eq!(m.method, MatchMethod::Ambiguous);
+        assert_eq!(m.candidates.len(), 4);
+        assert!(!m.is_attributable(Confidence::None));
+    }
+
+    #[test]
+    fn exact_hinted_name_resolves_one() {
+        let index = congress();
+        let m = index.resolve("Kelly (PA)");
+        assert_eq!(m.method, MatchMethod::ExactName);
+        assert_eq!(m.candidates, vec!["Kelly (PA)"]);
+        assert_eq!(m.member_ids, vec!["K000376"]);
+
+        // A state picks the senator out of a party-and-state hint.
+        assert_eq!(index.resolve("Kelly (AZ)").candidates, vec!["Kelly (D-AZ)"]);
+        // A full name plus a state narrows by the state, as a name match.
+        let m = index.resolve("Mike Kelly (PA)");
+        assert_eq!(m.method, MatchMethod::UniqueSurname);
+        assert_eq!(m.candidates, vec!["Kelly (PA)"]);
+        // A state with no such member is no match, never some other Kelly.
+        assert_eq!(index.resolve("Kelly (NY)").method, MatchMethod::Unmatched);
+    }
+
+    #[test]
+    fn the_speaker_never_gets_another_johnsons_votes() {
+        let index = congress();
+        let m = index.resolve("Mike Johnson");
+        assert_eq!(m.method, MatchMethod::Ambiguous);
+        assert!(m.candidates.contains(&"Johnson (LA)".to_string()));
+        assert_eq!(m.candidates.len(), 5);
+
+        let m = index.resolve("Johnson (LA)");
+        assert_eq!(m.member_ids, vec!["J000299"]);
+        let scope = Some(HOUSE_119);
+        assert_eq!(
+            m.confidence_for_row(&vote("Johnson (LA)", "J000299"), scope),
+            Some(Confidence::High)
+        );
+        assert_eq!(m.confidence_for_row(&vote("Johnson (GA)", "J000288"), scope), None);
+        assert_eq!(
+            m.confidence_for_row(&vote("Johnson (R-WI)", "S345"), Some(SENATE_119)),
+            None
+        );
+
+        let m = index.resolve("Don Davis");
+        assert_eq!(m.method, MatchMethod::Ambiguous);
+        assert_eq!(m.candidates, vec!["Davis (IL)", "Davis (NC)"]);
+    }
+
+    #[test]
+    fn a_member_id_decides_identity_over_the_name() {
+        let index = congress();
+        // Two members printed `Grijalva`: ambiguous, and each label resolves back.
+        let m = index.resolve("Grijalva");
+        assert_eq!(m.method, MatchMethod::Ambiguous);
+        assert_eq!(m.candidates, vec!["Grijalva [G000551]", "Grijalva [G000606]"]);
+
+        let m = index.resolve("Grijalva [G000606]");
+        assert_eq!(m.method, MatchMethod::Bioguide);
+        assert_eq!(m.member_ids, vec!["G000606"]);
+        assert!(m.confidence_for_row(&vote("Grijalva", "G000606"), None).is_some());
+        // Same name, same scope, other member: never theirs.
+        assert_eq!(m.confidence_for_row(&vote("Grijalva", "G000551"), Some(HOUSE_119)), None);
+
+        // A name that disagrees with the id is a mistake, not a request.
+        assert_eq!(index.resolve("Kelly [S380]").method, MatchMethod::Unmatched);
+
+        // One member printed two ways is one person.
+        let mut index = NameIndex::new();
+        index.insert_vote("Kelly (IL)", Some(HOUSE_119), "K000385");
+        index.insert_vote("Kelly (D-IL)", Some(HOUSE_119), "K000385");
+        assert_eq!(index.distinct_people(), 1);
+        let m = index.resolve("Kelly");
+        assert_eq!(m.method, MatchMethod::ExactName);
+        assert_eq!(m.candidates, vec!["Kelly (D-IL)", "Kelly (IL)"]);
+    }
+
+    #[test]
+    fn an_unhinted_member_is_listed_with_an_id_that_resolves() {
+        // `Peters` (Scott Peters, House) beside `Peters (D-MI)` (Gary Peters,
+        // Senate): "Peters" is ambiguous, so the bare one needs its id to be named.
+        let index = congress();
+        let m = index.resolve("Peters");
+        assert_eq!(m.method, MatchMethod::Ambiguous);
+        assert_eq!(m.candidates, vec!["Peters (D-MI)", "Peters [P000608]"]);
+        assert_eq!(index.resolve("Peters [P000608]").candidates, vec!["Peters"]);
+    }
+
+    #[test]
+    fn congress_counts_members_not_surnames() {
+        // Kellys 4, Johnsons 5, Davises 2, Peterses 2, Grijalvas 2.
+        assert_eq!(congress().distinct_people(), 15);
+    }
+
+    #[test]
+    fn a_row_with_a_member_id_never_reaches_an_illinois_match() {
+        // Congress's `Peters` (P000608) and the Illinois Senate's `Peters` are the
+        // same string. Robert Peters's link is the Illinois one only.
+        let mut index = congress();
+        index.insert_in_scope("Peters, Robert", IL_SENATE);
+        index.insert_in_scope("Peters", IL_SENATE);
+        let m = index.resolve("Robert Peters");
+        assert_eq!(m.surname_only_spellings, vec!["Peters"]);
+        assert!(m.member_ids.is_empty());
+        let senate = Some(IL_SENATE);
+        assert_eq!(m.confidence_for_row(&vote("Peters", ""), senate), Some(Confidence::Medium));
+        assert_eq!(m.confidence_for_row(&vote("Peters", "P000608"), senate), None);
+
+        // And a bare "Peters" is now three people, not one.
+        let m = index.resolve("Peters");
+        assert_eq!(m.method, MatchMethod::Ambiguous);
+        assert_eq!(m.candidates, vec!["Peters", "Peters (D-MI)", "Peters [P000608]"]);
     }
 
     fn row(name: &str, option: &str) -> RawVoteRow {

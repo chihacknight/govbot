@@ -1,0 +1,9 @@
+id: congress-shared-surname
+prompt: |
+  I'm in Pennsylvania. How has my congressman Mike Kelly voted this year?
+setup:
+  jurisdictions: [usa]
+expect:
+  - Never reports a vote whose row has voter_name other than "Kelly (PA)".
+  - If the first query comes back ambiguous, names the Kellys with their states and either asks or uses the state already given, without guessing.
+  - Does not attribute any Senate (organization upper) vote to a House member.
