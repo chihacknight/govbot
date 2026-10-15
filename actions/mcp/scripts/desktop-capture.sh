@@ -210,7 +210,17 @@ cmd_install() {
   say "building the govbot CLI from $src/../govbot"
   (cd "$src/../govbot" && CARGO_TARGET_DIR="$TARGET/cargo-target" "$cargo" build --release --quiet --bin govbot) \
     || die "cargo build failed"
-  cp "$TARGET/cargo-target/release/govbot" "$TARGET/server/govbot"
+  cp "$TARGET/cargo-target/release/govbot" "$TARGET/server/govbot-real"
+  # Desktop runs this shim, so a scenario can swap in a stub CLI (setup.env.GOVBOT_BIN)
+  # without editing the Desktop config or restarting it.
+  cat > "$TARGET/server/govbot" <<'SH'
+#!/bin/sh
+override="$(dirname "$0")/bin-override"
+if [ -s "$override" ]; then exec "$(cat "$override")" "$@"; fi
+exec "$(dirname "$0")/govbot-real" "$@"
+SH
+  chmod +x "$TARGET/server/govbot"
+  rm -f "$TARGET/server/bin-override"
   rev="$(git -C "$src" rev-parse --short HEAD) ($label)"
   echo "$rev from $src" > "$TARGET/INSTALLED"
   say "installed $rev"
@@ -244,9 +254,41 @@ cmd_run() {
   fi
 
   # Reset the workspace so every capture starts from the same state.
-  rm -f "$WORKSPACE/govbot.yml"
+  rm -f "$WORKSPACE/govbot.yml" "$WORKSPACE/README.md" "$WORKSPACE/.gitignore"
   if [ "$(node "$HERE/read-scenario.mjs" "$scenario" setup.workspace)" != fresh ]; then
     cp "$MCP_DIR/scenarios/workspace-baseline.yml" "$WORKSPACE/govbot.yml"
+  fi
+  # setup.workspace_files: {relative path: content} written after the reset, so a
+  # scenario can start from a workspace the person has already edited.
+  node -e '
+    const [ws, json] = process.argv.slice(1);
+    if (!json) process.exit(0);
+    const fs = require("fs"), path = require("path");
+    for (const [rel, text] of Object.entries(JSON.parse(json))) {
+      const file = path.resolve(ws, rel);
+      if (!file.startsWith(path.resolve(ws) + path.sep)) throw new Error("outside workspace: " + rel);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, text);
+    }' "$WORKSPACE" "$(node "$HERE/read-scenario.mjs" "$scenario" setup.workspace_files)"
+
+  # setup.env: only GOVBOT_BIN is supported (via the shim from cmd_install); a path
+  # is relative to the actions/mcp folder the scenario file lives in.
+  local env_json bin_override=""
+  env_json="$(node "$HERE/read-scenario.mjs" "$scenario" setup.env)"
+  if [ -n "$env_json" ]; then
+    bin_override="$(node -e '
+      const env = JSON.parse(process.argv[1]);
+      const extra = Object.keys(env).filter((k) => k !== "GOVBOT_BIN");
+      if (extra.length) { console.error("unsupported setup.env keys: " + extra.join(", ")); process.exit(1); }
+      process.stdout.write(env.GOVBOT_BIN ?? "");' "$env_json")" || die "$scenario: bad setup.env"
+    if [ -n "$bin_override" ]; then
+      bin_override="$(cd "$(dirname "$scenario")/.." && cd "$(dirname "$bin_override")" && pwd)/$(basename "$bin_override")"
+      [ -x "$bin_override" ] || die "$scenario: GOVBOT_BIN $bin_override is not executable"
+      [ -x "$TARGET/server/govbot" ] || die "reinstall first: this build has no CLI shim"
+      echo "$bin_override" > "$TARGET/server/bin-override"
+      trap 'rm -f "$TARGET/server/bin-override"' EXIT
+      say "[$id] using stub CLI $bin_override"
+    fi
   fi
 
   : > "$TRACE"
@@ -284,6 +326,13 @@ cmd_run() {
 
   screencapture -x -R "$(content_rect)" "$out/reply.png"
   cp "$TRACE" "$out/trace.jsonl"
+  rm -f "$TARGET/server/bin-override"
+  # What the workspace looked like afterwards, for expectations like "README.md
+  # still contains …" (the data folder is a symlink and is left out).
+  mkdir -p "$out/workspace"
+  for f in govbot.yml README.md .gitignore; do
+    [ -f "$WORKSPACE/$f" ] && cp "$WORKSPACE/$f" "$out/workspace/"
+  done
   python3 - "$out/meta.json" <<PY
 import json, sys
 json.dump({

@@ -7,7 +7,10 @@
 #                                            captures of a PR worktree, then puts the
 #                                            base build back so Desktop keeps working
 #
-# With no ids, `base` captures every scenario. Exits 75 (deferred) if someone is
+# Scenario files are looked up in $MCP_LOOP_SCENARIOS (colon-separated dirs, e.g. a
+# PR worktree's actions/mcp/scenarios first) and then this checkout's, so a scenario
+# a PR adds can be captured against the base build too. With no ids, `base`
+# captures every scenario in this checkout. Exits 75 (deferred) if someone is
 # using the Mac, 1 if any capture failed — after capturing the rest.
 set -euo pipefail
 
@@ -19,11 +22,20 @@ base="${MCP_LOOP_BASE:-main}"
 
 all_ids() { for f in "$scenarios"/*.yml; do [ "$(basename "$f")" = workspace-baseline.yml ] || basename "$f" .yml; done; }
 
+scenario_file() {
+  local dir
+  IFS=: read -ra dirs <<<"${MCP_LOOP_SCENARIOS:-}"
+  for dir in "${dirs[@]}" "$scenarios"; do
+    [ -n "$dir" ] && [ -f "$dir/$1.yml" ] && { echo "$dir/$1.yml"; return; }
+  done
+  return 1
+}
+
 run_ids() {  # <outdir> ids...
   local out="$1" failed=0; shift
   for id in "$@"; do
-    [ -f "$scenarios/$id.yml" ] || { echo "no scenario $id" >&2; failed=1; continue; }
-    "$desk" run "$scenarios/$id.yml" "$out" || { rc=$?; [ $rc = 75 ] && exit 75; failed=1; }
+    file="$(scenario_file "$id")" || { echo "no scenario $id" >&2; failed=1; continue; }
+    "$desk" run "$file" "$out" || { rc=$?; [ $rc = 75 ] && exit 75; failed=1; }
   done
   return $failed
 }
@@ -53,6 +65,7 @@ case "${1:-}" in
     out="${3:?usage: capture.sh branch <worktree> <out> ids...}"
     shift 3
     [ $# -gt 0 ] || { echo "name at least one scenario" >&2; exit 2; }
+    export MCP_LOOP_SCENARIOS="$worktree/actions/mcp/scenarios${MCP_LOOP_SCENARIOS:+:$MCP_LOOP_SCENARIOS}"
     "$desk" install "$worktree" >&2
     run_ids "$out" "$@" >&2 || status=1
     "$desk" install --ref "origin/$base" >&2

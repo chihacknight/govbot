@@ -50,7 +50,8 @@ changed, it adds `mcp-loop:needs-captures`.
 For the first PR in `needs_captures`:
 
 1. Read the scenario ids from the PR body's `<!-- mcp-loop:scenarios: a,b -->` line.
-2. `before=$($S/capture.sh base <ids>)`
+2. `before=$(MCP_LOOP_SCENARIOS=~/.govbot/mcp-loop/worktrees/<branch>/actions/mcp/scenarios $S/capture.sh base <ids>)`
+   (so scenarios the PR adds are also run against the base build)
 3. `$S/capture.sh branch ~/.govbot/mcp-loop/worktrees/<branch> /tmp/mcp-loop/pr-<n>/after <ids>`
    (fetch and `git worktree add` it first if missing).
 4. **Look at every PNG with Read before publishing.** If anything other than the
