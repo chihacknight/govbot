@@ -7,7 +7,7 @@
  * literally true of what the tool does.
  */
 
-import { readdirSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import * as govbot from "./govbot.js";
@@ -136,14 +136,7 @@ export async function checkLocalData(args: {
     }
     return {
       isError: true,
-      text:
-        `The govbot command-line tool (${cli}) could not read the local data:\n${detail}\n\n` +
-        (cloned.length
-          ? "The data on this computer is still there. Don't re-clone; this is a tool problem.\n"
-          : "") +
-        clonedLine +
-        "\n\nThe tool is probably out of date. Update or reinstall it with:\n" +
-        `  ${INSTALL_COMMAND}`,
+      text: describeToolFailure(kind, detail, cloned, cli),
       data: { cloned, workspace: workspace.workspacePath() },
     };
   }
@@ -160,37 +153,132 @@ export async function checkLocalData(args: {
 const INSTALL_COMMAND =
   'sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"';
 
+type FailureKind = "first-run" | "bad-jurisdiction" | "outdated" | "timeout" | "tool-problem";
+
 /**
- * Why `govbot query coverage` failed, judged from the CLI's own message.
+ * Why a `govbot query` call failed, judged from the CLI's own message.
  *
  * Only the CLI's "nothing cloned" messages mean first run (`No cloned data at …`
- * when the repos folder is missing, `Nothing cloned at …` when it is empty). Any
- * other message — an old CLI that has no `query` subcommand, a crash, a timeout —
- * is a tool problem, even if the repos folder happens to be empty too: cloning
- * would not make it go away.
+ * when the repos folder is missing, `Nothing cloned at …` when it is empty). The
+ * rest are not missing data, even if the repos folder happens to be empty too:
+ * cloning would not make them go away.
+ *
+ * - `outdated`: clap rejected the subcommand or a flag, so the CLI is older than
+ *   this server. Only this one gets "update the tool" as the advice.
+ * - `timeout`: our own kill after the deadline (see govbot.run). Reinstalling
+ *   would not help; the data is fine and the call can be retried or narrowed.
+ * - `tool-problem`: anything else (a crash, unreadable JSON). We show the CLI's
+ *   message and offer reinstalling only as a fallback.
  */
-export function classifyCoverageFailure(
-  detail: string,
-): "first-run" | "bad-jurisdiction" | "tool-problem" {
+export function classifyCoverageFailure(detail: string): FailureKind {
   if (/No cloned data at|Nothing cloned at/.test(detail)) return "first-run";
   if (/Could not read .* as a jurisdiction/.test(detail)) return "bad-jurisdiction";
+  if (/unrecognized subcommand|unexpected argument/.test(detail)) return "outdated";
+  if (/did not finish within/.test(detail)) return "timeout";
   return "tool-problem";
 }
 
 /**
- * Locales cloned into this workspace, read straight from disk
- * (`govbot_data/repos/<locale>-legislation`), so it is right even when the CLI
- * is not. Empty when the folder does not exist.
+ * The message for a failure that is not about missing data. Shared by
+ * check_local_data and query so an old or stuck CLI reads the same in both.
  */
-export function clonedLocales(): string[] {
+function describeToolFailure(
+  kind: "outdated" | "timeout" | "tool-problem",
+  detail: string,
+  cloned: string[],
+  cli?: string,
+): string {
+  const tool = cli ? `The govbot command-line tool (${cli})` : "The govbot command-line tool";
+  const stillThere = cloned.length
+    ? "The data on this computer is still there. Don't re-clone; that would not fix this.\n"
+    : "";
+  const clonedLine = `Cloned here: ${cloned.length ? cloned.join(", ") : "nothing yet"}.`;
+
+  if (kind === "timeout") {
+    return (
+      `${tool} took too long and was stopped:\n${detail}\n\n` +
+      stillThere +
+      clonedLine +
+      "\n\nTry again, or narrow the request (fewer jurisdictions, a session, a lower limit)."
+    );
+  }
+  if (kind === "outdated") {
+    return (
+      `${tool} is older than this connector and does not understand the request:\n${detail}\n\n` +
+      stillThere +
+      clonedLine +
+      "\n\nUpdate it by reinstalling:\n" +
+      `  ${INSTALL_COMMAND}`
+    );
+  }
+  return (
+    `${tool} failed:\n${detail}\n\n` +
+    stillThere +
+    clonedLine +
+    "\n\nIf this keeps happening, reinstalling the tool may help:\n" +
+    `  ${INSTALL_COMMAND}`
+  );
+}
+
+/**
+ * Locales cloned into this workspace, read straight from disk so it is right
+ * even when the CLI is not. Mirrors `get_available_locales` in
+ * actions/govbot/src/git.rs; keep the two in step:
+ *
+ * - Only git repositories count. An interrupted clone leaves a plain folder
+ *   behind, and the CLI ignores it, so we do too. The CLI opens each folder
+ *   with git2's `Repository::open` (no upward search); we approximate that as
+ *   "has a `.git` entry" (folder, or file for worktrees/submodules) or "looks
+ *   like a bare repo" (`HEAD` + `objects` + `refs`).
+ * - Symlinks are followed (Rust's `path.is_dir()` does; `Dirent.isDirectory()`
+ *   does not, hence `statSync`).
+ * - The suffix comes from `GOVBOT_REPO_URL_TEMPLATE` (`…/{locale}<suffix>.git`),
+ *   defaulting to `-legislation`; the legacy `-data-pipeline` suffix also counts.
+ *
+ * Empty when the folder does not exist.
+ */
+export function clonedLocales(reposDir = join(workspace.dataPath(), "repos")): string[] {
+  const suffix = repoSuffix(process.env.GOVBOT_REPO_URL_TEMPLATE);
+  let names: string[];
   try {
-    return readdirSync(join(workspace.dataPath(), "repos"), { withFileTypes: true })
-      .filter((entry) => entry.isDirectory() && entry.name.endsWith("-legislation"))
-      .map((entry) => entry.name.slice(0, -"-legislation".length))
-      .sort();
+    names = readdirSync(reposDir);
   } catch {
     return [];
   }
+  const locales = new Set<string>();
+  for (const name of names) {
+    const path = join(reposDir, name);
+    if (!isDirectory(path) || !isGitRepo(path)) continue;
+    if (suffix && name.endsWith(suffix)) {
+      locales.add(name.slice(0, -suffix.length));
+    } else if (name.endsWith("-data-pipeline")) {
+      locales.add(name.slice(0, -"-data-pipeline".length));
+    }
+  }
+  return [...locales].sort();
+}
+
+/** `extract_repo_suffix` in git.rs: what follows `{locale}` in the repo name. */
+function repoSuffix(template: string | undefined): string {
+  if (!template) return "-legislation";
+  let name = template.slice(template.lastIndexOf("/") + 1);
+  const git = name.lastIndexOf(".git");
+  if (git !== -1) name = name.slice(0, git);
+  const at = name.indexOf("{locale}");
+  return at === -1 ? "-legislation" : name.slice(at + "{locale}".length);
+}
+
+function isDirectory(path: string): boolean {
+  try {
+    return statSync(path).isDirectory(); // follows symlinks; a dangling one throws
+  } catch {
+    return false;
+  }
+}
+
+function isGitRepo(path: string): boolean {
+  if (existsSync(join(path, ".git"))) return true;
+  return ["HEAD", "objects", "refs"].every((entry) => existsSync(join(path, entry)));
 }
 
 // ---------------------------------------------------------------------------
@@ -567,10 +655,14 @@ export async function query(args: Record<string, unknown>): Promise<ToolOutput> 
     });
   } catch (error) {
     if (error instanceof govbot.GovbotError) {
-      return {
-        isError: true,
-        text: [error.message, error.detail ?? ""].filter(Boolean).join("\n\n"),
-      };
+      const detail = [error.message, error.detail ?? ""].filter(Boolean).join("\n\n");
+      const kind = classifyCoverageFailure(detail);
+      // The CLI's own messages for missing data or a bad jurisdiction already say
+      // what to do; only tool failures need the shared wording.
+      if (kind === "first-run" || kind === "bad-jurisdiction") {
+        return { isError: true, text: detail };
+      }
+      return { isError: true, text: describeToolFailure(kind, detail, clonedLocales()) };
     }
     throw error;
   }

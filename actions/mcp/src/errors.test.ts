@@ -10,23 +10,27 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { classifyCoverageFailure } from "./tools.js";
+import { classifyCoverageFailure, clonedLocales } from "./tools.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SERVER = join(here, "index.js");
 const TOO_OLD = join(here, "..", "scenarios", "fixtures", "govbot-too-old");
 
-/** A workspace with IL and USA "cloned" (empty repo folders are enough here). */
+/**
+ * A workspace with these locales "cloned". A `.git` folder is enough for
+ * clonedLocales() to count it; the stub CLIs never look inside.
+ */
 function workspaceWith(locales: string[]): string {
   const dir = mkdtempSync(join(tmpdir(), "govbot-mcp-test-"));
+  mkdirSync(join(dir, "govbot_data", "repos"), { recursive: true });
   for (const locale of locales) {
-    mkdirSync(join(dir, "govbot_data", "repos", `${locale}-legislation`), { recursive: true });
+    mkdirSync(join(dir, "govbot_data", "repos", `${locale}-legislation`, ".git"), { recursive: true });
   }
   return dir;
 }
@@ -60,7 +64,9 @@ function call(
   ];
   const result = spawnSync(process.execPath, [SERVER], {
     input: requests.map((r) => JSON.stringify(r)).join("\n") + "\n",
-    env: { ...process.env, GOVBOT_BIN: bin, GOVBOT_WORKSPACE: ws },
+    // GOVBOT_NO_UPDATE_CHECK keeps the server's background update check (#235)
+    // from reaching the network during tests.
+    env: { ...process.env, GOVBOT_BIN: bin, GOVBOT_WORKSPACE: ws, GOVBOT_NO_UPDATE_CHECK: "1" },
     encoding: "utf8",
   });
   const reply = result.stdout
@@ -133,6 +139,57 @@ test("only the CLI's own nothing-cloned messages count as a first run", () => {
     classifyCoverageFailure('Error: Could not read "Illinois" as a jurisdiction.'),
     "bad-jurisdiction",
   );
-  assert.equal(classifyCoverageFailure("error: unrecognized subcommand 'query'"), "tool-problem");
+  assert.equal(classifyCoverageFailure("error: unrecognized subcommand 'query'"), "outdated");
+  assert.equal(classifyCoverageFailure("error: unexpected argument '--limit' found"), "outdated");
+  assert.equal(classifyCoverageFailure("`govbot query` did not finish within 900s."), "timeout");
   assert.equal(classifyCoverageFailure("`govbot query` did not return readable JSON."), "tool-problem");
+});
+
+test("a crash is not blamed on an old tool", () => {
+  const bin = stub(`echo "thread 'main' panicked at src/query.rs:1" >&2; exit 101`);
+  const out = call(bin, workspaceWith(["il"]), "check_local_data", {});
+  assert.equal(out.isError, true);
+  assert.doesNotMatch(out.text, /older than this connector/);
+  assert.match(out.text, /panicked/);
+  assert.match(out.text, /still there/);
+});
+
+test("an old CLI on query gets the install step and the data-is-still-there line", () => {
+  const out = call(TOO_OLD, workspaceWith(["il", "usa"]), "query", { type: "bills" });
+  assert.equal(out.isError, true);
+  assert.match(out.text, /unrecognized subcommand 'query'/);
+  assert.match(out.text, /still there/);
+  assert.match(out.text, /Cloned here: il, usa\./);
+  assert.match(out.text, /install-nightly\.sh/);
+});
+
+test("an interrupted clone (a folder that is not a git repo) does not count as cloned", () => {
+  const ws = workspaceWith(["usa"]);
+  mkdirSync(join(ws, "govbot_data", "repos", "il-legislation"));
+  const bin = stub(
+    `echo '{"query":{},"results":[],"truncation":{"returned":0,"total_matching":0,"limit":20},"coverage":[]}'`,
+  );
+  const out = call(bin, ws, "check_local_data", { jurisdictions: ["il"] });
+  assert.match(out.text, /il is not cloned yet\. Cloned here: usa\./);
+});
+
+test("clonedLocales follows the CLI's rule: git repos, symlinks, legacy suffix", () => {
+  const repos = join(workspaceWith(["il"]), "govbot_data", "repos");
+  // Symlinked repo folder (e.g. data kept on another disk).
+  const elsewhere = mkdtempSync(join(tmpdir(), "govbot-elsewhere-"));
+  mkdirSync(join(elsewhere, "wy-legislation", ".git"), { recursive: true });
+  symlinkSync(join(elsewhere, "wy-legislation"), join(repos, "wy-legislation"));
+  // Legacy name from older clones.
+  mkdirSync(join(repos, "gu-data-pipeline", ".git"), { recursive: true });
+  // Worktree-style `.git` file.
+  mkdirSync(join(repos, "ak-legislation"));
+  writeFileSync(join(repos, "ak-legislation", ".git"), "gitdir: /elsewhere\n");
+  // Not repos: interrupted clone, dangling symlink, stray file, wrong suffix.
+  mkdirSync(join(repos, "ca-legislation"));
+  symlinkSync(join(elsewhere, "gone"), join(repos, "tx-legislation"));
+  writeFileSync(join(repos, "notes-legislation"), "");
+  mkdirSync(join(repos, "scratch", ".git"), { recursive: true });
+
+  assert.deepEqual(clonedLocales(repos), ["ak", "gu", "il", "wy"]);
+  assert.deepEqual(clonedLocales(join(repos, "missing")), []);
 });
