@@ -110,11 +110,17 @@ the workspace as plain YAML they can edit.
 
 ## Updates
 
-\`setup_workspace\` and \`check_local_data\` may end with an "Update available" or
-"Update needed" notice. Pass it on once, in plain words, with the steps it gives,
-then get on with the person's question — don't repeat it on later turns. If they
-ask whether govbot is up to date, call \`setup_workspace\`: it reports the installed
-versions and the last update check.
+\`setup_workspace\` and \`check_local_data\` end with an "Installed:" line giving the
+extension and command-line tool versions, then either "Updates: …" (none found,
+still checking, or could not check) or an "Update available" / "Update needed"
+notice. Pass a notice on once, in plain words, with the steps it gives, then get
+on with the person's question — don't repeat it on later turns.
+
+If they ask whether govbot is up to date, or what version they have, answer from
+that block: both versions, and whether a newer one exists, the check is still
+running, or it could not be done — never "up to date" without a check. That is
+about the software; how recent the legislation data is is a separate question,
+so don't answer one with the other.
 
 ## The workspace
 

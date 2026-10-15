@@ -30,12 +30,16 @@ const LOOKUP_LINKS = [
  * check already knows. Never waits on the network.
  */
 function currentNotices(cli: string | null): string[] {
-  return updates.updateNotices({
-    bundle: SERVER_VERSION,
-    cli,
-    cliMin: CLI_MIN,
-    state: updates.currentUpdateState(),
-  });
+  return updates.updateNotices(noticeInput(cli));
+}
+
+/** The installed-versions and update-status block both status tools end with. */
+function currentVersionStatus(cli: string | null): string {
+  return updates.versionStatus(noticeInput(cli));
+}
+
+function noticeInput(cli: string | null): updates.NoticeInput {
+  return { bundle: SERVER_VERSION, cli, cliMin: CLI_MIN, state: updates.currentUpdateState() };
 }
 
 // ---------------------------------------------------------------------------
@@ -65,18 +69,12 @@ export async function setupWorkspace(): Promise<ToolOutput> {
     `Jurisdictions tracked: ${config.repos.length ? config.repos.join(", ") : "none yet"}`,
     `Topics defined: ${Object.keys(config.tags).length ? Object.keys(config.tags).join(", ") : "none yet"}`,
     `govbot CLI: ${cli ?? "NOT FOUND — the other tools will not work until it is installed"}`,
-    `govbot for Claude Desktop: ${SERVER_VERSION}`,
   );
 
-  // This is where "is govbot up to date?" gets answered, so say something
-  // either way; check_local_data only speaks up when there is an update.
+  // Same block as check_local_data, so "is govbot up to date?" gets the same
+  // answer whichever of the two Claude calls.
   const notices = currentNotices(cli);
-  lines.push(
-    "",
-    ...(notices.length
-      ? notices.flatMap((notice, i) => (i ? ["", notice] : [notice]))
-      : [updates.describeState(updates.currentUpdateState())]),
-  );
+  lines.push("", currentVersionStatus(cli));
 
   return {
     text: lines.join("\n"),
@@ -116,7 +114,8 @@ export async function checkLocalData(args: {
       isError: true,
       text:
         "The govbot command-line tool is not installed, so there is no local data to read.\n\n" +
-        'Install it with:\n  sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"',
+        'Install it with:\n  sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"' +
+        `\n\n${currentVersionStatus(null)}`,
     };
   }
 
@@ -125,11 +124,12 @@ export async function checkLocalData(args: {
     args_.push("--jurisdiction", jurisdiction);
   }
 
-  // Computed before the query: a CLI too old to know `query coverage` lands in
-  // the "nothing cloned" branch below, and that is exactly when the person
-  // needs to be told the CLI is out of date.
-  const notices = currentNotices(cli);
-  const noticeText = notices.map((n) => `\n${n}`).join("\n");
+  // Always appended, not only when there is an update: people ask "is my
+  // govbot up to date?" and Claude may answer from this tool alone. Computed
+  // before the query: a CLI too old to know `query coverage` lands in the
+  // "nothing cloned" branch below, and that is exactly when the person needs
+  // to be told the CLI is out of date.
+  const versionText = `\n\n${currentVersionStatus(cli)}`;
 
   let response: QueryResponse;
   try {
@@ -145,13 +145,13 @@ export async function checkLocalData(args: {
         "For Congress, clone `usa` as well.\n\n" +
         `Workspace: ${workspace.workspacePath()}\n` +
         (error instanceof govbot.GovbotError && error.detail ? `\n${error.detail}` : "") +
-        (noticeText ? `\n${noticeText}` : ""),
+        versionText,
       data: { cloned: [], workspace: workspace.workspacePath() },
     };
   }
 
   return {
-    text: describeCoverage(response, config) + (noticeText ? `\n${noticeText}` : ""),
+    text: describeCoverage(response, config) + versionText,
     data: response,
   };
 }

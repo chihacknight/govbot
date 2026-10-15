@@ -203,6 +203,26 @@ export function describeState(state: UpdateState): string {
   }
 }
 
+/**
+ * The version block every status tool ends with, so "is govbot up to date?"
+ * gets the same answer whichever tool Claude happened to call: the installed
+ * versions on one line, then either the update notices or the check's status.
+ *
+ * Edge case: when the check hasn't succeeded (pending, offline, disabled), the
+ * status line is shown even alongside a notice, because a notice from the
+ * offline CLI minimum says nothing about whether a newer bundle exists. After a
+ * successful check the notices are the whole story, and "none found" would
+ * contradict them.
+ */
+export function versionStatus(input: NoticeInput): string {
+  const cli = input.cli ? (parseVersion(input.cli)?.text ?? input.cli) : "not installed";
+  const installed = `Installed: govbot for Claude Desktop ${input.bundle}, govbot command-line tool ${cli}.`;
+  const notices = updateNotices(input);
+  const head = [installed];
+  if (!notices.length || input.state.status !== "checked") head.push(describeState(input.state));
+  return [head.join("\n"), ...notices].join("\n\n");
+}
+
 // ---------------------------------------------------------------------------
 // Cache and fetch
 // ---------------------------------------------------------------------------

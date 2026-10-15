@@ -26,6 +26,7 @@ import {
   parseVersion,
   startUpdateCheck,
   updateNotices,
+  versionStatus,
   type UpdateState,
 } from "./updates.js";
 
@@ -317,4 +318,28 @@ test("GOVBOT_NO_UPDATE_CHECK switches it off", () => {
   assert.equal(isDisabled({ GOVBOT_NO_UPDATE_CHECK: "1" }), true);
   assert.equal(isDisabled({ GOVBOT_NO_UPDATE_CHECK: "0" }), false);
   assert.equal(isDisabled({}), false);
+});
+
+test("the version block always names both installed versions and the check's status", () => {
+  const base = { bundle: "0.1.0", cli: "govbot 0.1.0", cliMin: "0.1.0" };
+  const lines = (state: UpdateState) => versionStatus({ ...base, state }).split("\n");
+  assert.deepEqual(lines(checked("0.1.0")), [
+    "Installed: govbot for Claude Desktop 0.1.0, govbot command-line tool 0.1.0.",
+    "Updates: none found (last checked 2026-10-14).",
+  ]);
+  assert.match(lines({ status: "pending" })[1]!, /still checking/);
+  assert.match(lines({ status: "unavailable" })[1]!, /could not check/);
+  assert.match(versionStatus({ ...base, cli: null, state: { status: "pending" } }), /command-line tool not installed\./);
+});
+
+test("after a successful check, a notice replaces the none-found line", () => {
+  const text = versionStatus({ bundle: "0.1.0", cli: "govbot 0.1.0", cliMin: "0.1.0", state: checked("0.2.0") });
+  assert.match(text, /^Installed: .*\n\nUpdate available: /);
+  assert.doesNotMatch(text, /none found/);
+});
+
+test("an offline CLI notice still says the bundle check didn't happen", () => {
+  const text = versionStatus({ bundle: "0.2.0", cli: "govbot 0.1.0", cliMin: "0.2.0", state: { status: "unavailable" } });
+  assert.match(text, /could not check/);
+  assert.match(text, /Update needed: /);
 });
