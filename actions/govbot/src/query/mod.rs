@@ -109,6 +109,20 @@ pub struct Truncation {
 
 /// Run a query.
 pub fn run(request: &QueryRequest) -> Result<QueryResponse> {
+    // People and coverage have no topic filter. Running anyway would echo the
+    // `tag` back in `query` while ignoring it, which reads as "filtered by topic".
+    if matches!(request.kind, QueryKind::People | QueryKind::Coverage) {
+        for (flag, given) in [("tag", request.tag.is_some()), ("min_score", request.min_score.is_some())] {
+            if given {
+                anyhow::bail!(
+                    "`{flag}` is not supported for {} queries. Use `query bills` or `query \
+                     votes` with `tag` for topic results, or drop `{flag}`.",
+                    request.kind.as_str()
+                );
+            }
+        }
+    }
+
     let mut caveats = Vec::new();
     let mut coverage = Vec::new();
 
@@ -337,13 +351,11 @@ fn defined_topics(tags_dir: &std::path::Path) -> Result<Option<Vec<String>>> {
 // Bills
 // ---------------------------------------------------------------------------
 
-fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>)> {
-    let mut caveats = Vec::new();
-
-    // A misspelled or invented topic ("renters" for "renter protections") finds no
-    // tag files anywhere, so every scope below would report itself "not scored yet"
-    // and hide the real mistake. Failing with the defined names lets the caller
-    // retry with the right one.
+/// A misspelled or invented topic ("renters" for "renter protections") finds no
+/// tag files anywhere, so every scope would report itself "not scored yet" and
+/// hide the real mistake. Failing with the defined names lets the caller retry
+/// with the right one.
+fn ensure_topic_defined(request: &QueryRequest) -> Result<()> {
     if let Some(tag) = request.tag.as_deref() {
         if let Some(topics) = defined_topics(&request.tags_dir)? {
             if !topics.iter().any(|topic| topic == tag) {
@@ -356,6 +368,43 @@ fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
             }
         }
     }
+    Ok(())
+}
+
+/// No tag file means nobody has scored this session for this topic. (`govbot
+/// tag` writes one for every session it scores, matches or not.) The scope then
+/// contributes nothing: returning its bills or votes unfiltered would present
+/// every one of them as on topic.
+fn unscored_caveat(
+    request: &QueryRequest,
+    jurisdiction: &Jurisdiction,
+    session_id: &str,
+    tag: &str,
+) -> Result<String> {
+    Ok(format!(
+        "{} ({}) has not been scored for '{}' yet, so it contributes no \
+         results. This is missing data, not an empty record. Run `govbot \
+         tag` (tag_with_local_ai in Claude Desktop) for {}.",
+        jurisdiction_display_name(request, jurisdiction, session_id)?,
+        session_id,
+        tag,
+        jurisdiction.locale
+    ))
+}
+
+/// The bill's topic score if it clears `--min-score` (default: the topic's own
+/// threshold); `None` if it has no score or falls below.
+fn topic_score(request: &QueryRequest, scores: &TagScores, bill: &BillRecord) -> Option<(f64, Value)> {
+    let score = scores.score_for(bill)?;
+    let final_score = score.get("final_score").and_then(Value::as_f64).unwrap_or(0.0);
+    let floor = request.min_score.unwrap_or(scores.threshold);
+    (final_score >= floor).then(|| (final_score, score.clone()))
+}
+
+fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>)> {
+    let mut caveats = Vec::new();
+
+    ensure_topic_defined(request)?;
 
     // Matching a person needs to know every name in scope before it can tell a
     // unique surname from an ambiguous one, so that costs a first pass.
@@ -382,19 +431,7 @@ fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
         for session_id in sessions_in_scope(request, jurisdiction) {
             let scores = TagScores::load(request, jurisdiction, &session_id)?;
             if let (Some(tag), None) = (request.tag.as_deref(), scores.as_ref()) {
-                // No tag file means nobody has scored these bills for this topic.
-                // (`govbot tag` writes one for every session it scores, matches or
-                // not.) The scope contributes nothing: returning its bills
-                // unfiltered would present every one of them as a match.
-                caveats.push(format!(
-                    "{} ({}) has not been scored for '{}' yet, so it contributes no \
-                     results. This is missing data, not an empty record. Run `govbot \
-                     tag` (tag_with_local_ai in Claude Desktop) for {}.",
-                    jurisdiction_display_name(request, jurisdiction, &session_id)?,
-                    session_id,
-                    tag,
-                    jurisdiction.locale
-                ));
+                caveats.push(unscored_caveat(request, jurisdiction, &session_id, tag)?);
                 continue;
             }
 
@@ -429,16 +466,10 @@ fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
                             if scores.was_scored(&bill) == Some(true) {
                                 scored_candidates += 1;
                             }
-                            let Some(score) = scores.score_for(&bill) else {
+                            let Some(score) = topic_score(request, scores, &bill) else {
                                 return Ok(ControlFlow::Continue);
                             };
-                            let final_score =
-                                score.get("final_score").and_then(Value::as_f64).unwrap_or(0.0);
-                            let floor = request.min_score.unwrap_or(scores.threshold);
-                            if final_score < floor {
-                                return Ok(ControlFlow::Continue);
-                            }
-                            Some((final_score, score.clone()))
+                            Some(score)
                         }
                         None => None,
                     };
@@ -459,6 +490,7 @@ fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
                     jurisdiction,
                     &session_id,
                     tag,
+                    "bills",
                     scores.scored.is_some(),
                     scored_candidates,
                     candidates,
@@ -495,6 +527,8 @@ fn coverage_caveat(
     jurisdiction: &Jurisdiction,
     session_id: &str,
     tag: &str,
+    // What was counted: "bills", or for votes "bills with recorded votes".
+    noun: &str,
     tracked: bool,
     scored: usize,
     total: usize,
@@ -515,7 +549,7 @@ fn coverage_caveat(
     if !tracked {
         return Ok(Some(format!(
             "{name} ({session_id}) was tagged for '{tag}' before govbot recorded which \
-             bills it scored, so coverage is unknown: some of its {} bills{in_scope} may \
+             bills it scored, so coverage is unknown: some of its {} {noun}{in_scope} may \
              never have been checked, and are missing from these results rather than \
              non-matching. Run `govbot tag` (tag_with_local_ai in Claude Desktop) for {} \
              again to record coverage, or use `query` with `text` to search every bill.",
@@ -524,7 +558,7 @@ fn coverage_caveat(
         )));
     }
     Ok(Some(format!(
-        "{} of {} bills{in_scope} in {name} ({session_id}) have been scored for '{tag}'. \
+        "{} of {} {noun}{in_scope} in {name} ({session_id}) have been scored for '{tag}'. \
          The other {} were not checked, so they are missing from these results, not \
          non-matching. Use `query` with `text` to search every bill, or run `govbot tag` \
          (tag_with_local_ai in Claude Desktop) for {} with a higher limit.",
@@ -692,6 +726,8 @@ fn bill_row(
 fn query_votes(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>)> {
     let mut caveats = Vec::new();
 
+    ensure_topic_defined(request)?;
+
     let person_match = match request.person.as_deref() {
         Some(person) => {
             let index = build_voter_index(request)?;
@@ -708,11 +744,30 @@ fn query_votes(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
         }
     }
 
-    let mut results = Vec::new();
+    // (topic score, start date, row). Without a tag, rows stay in scan order and
+    // stop accumulating at the limit. With one, every on-topic row is kept so the
+    // most on-topic votes can be ranked first; that set is small.
+    let mut results: Vec<(f64, String, Value)> = Vec::new();
     let mut total = 0usize;
+    // Bills on the topic (passing every other filter too), for saying so when none
+    // of them had a recorded vote.
+    let mut tagged_bills = 0usize;
 
     for jurisdiction in &request.jurisdictions {
         for session_id in sessions_in_scope(request, jurisdiction) {
+            // The tag step mirrors `query_bills`: an unscored session contributes no
+            // rows, and a partly scored one says how much was checked.
+            let scores = TagScores::load(request, jurisdiction, &session_id)?;
+            if let (Some(tag), None) = (request.tag.as_deref(), scores.as_ref()) {
+                caveats.push(unscored_caveat(request, jurisdiction, &session_id, tag)?);
+                continue;
+            }
+            // Coverage is counted over bills with at least one vote in scope (one
+            // cast by `person`, if given): a bill with no roll call could not have
+            // added a row whether it was scored or not.
+            let mut candidates = 0usize;
+            let mut scored_candidates = 0usize;
+
             scan::for_each_bill(
                 &request.repos_dir,
                 jurisdiction,
@@ -721,6 +776,13 @@ fn query_votes(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
                     if !bill_matches(request, &bill) {
                         return Ok(ControlFlow::Continue);
                     }
+                    // `None`: no tag. `Some(None)`: tagged, but this bill is not on
+                    // the topic, so its votes only count toward coverage.
+                    let topic = scores.as_ref().map(|scores| topic_score(request, scores, &bill));
+                    if let Some(Some(_)) = topic {
+                        tagged_bills += 1;
+                    }
+                    let mut events_in_scope = 0usize;
                     for event in scan::vote_events(&bill, &request.repos_dir) {
                         let person_vote = match person_match.as_ref() {
                             Some(resolved) => {
@@ -731,21 +793,84 @@ fn query_votes(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
                             }
                             None => None,
                         };
+                        events_in_scope += 1;
+                        if let Some(None) = topic {
+                            continue;
+                        }
                         total += 1;
-                        if results.len() < request.limit {
-                            results.push(vote_row(
+                        if topic.is_some() || results.len() < request.limit {
+                            let mut row = vote_row(
                                 &bill,
                                 &event,
                                 person_vote,
                                 person_match.as_ref(),
-                            ));
+                            );
+                            let rank = match &topic {
+                                Some(Some((final_score, _))) => {
+                                    row["topic_score"] = json!(final_score);
+                                    *final_score
+                                }
+                                _ => 0.0,
+                            };
+                            results.push((rank, event.start_date.clone(), row));
+                        }
+                    }
+                    if let (Some(scores), true) = (scores.as_ref(), events_in_scope > 0) {
+                        candidates += 1;
+                        if scores.was_scored(&bill) == Some(true) {
+                            scored_candidates += 1;
                         }
                     }
                     Ok(ControlFlow::Continue)
                 },
             )?;
+
+            if let (Some(tag), Some(scores)) = (request.tag.as_deref(), scores.as_ref()) {
+                if let Some(caveat) = coverage_caveat(
+                    request,
+                    jurisdiction,
+                    &session_id,
+                    tag,
+                    "bills with recorded votes",
+                    scores.scored.is_some(),
+                    scored_candidates,
+                    candidates,
+                )? {
+                    caveats.push(caveat);
+                }
+            }
         }
     }
+
+    if let Some(tag) = request.tag.as_deref() {
+        // Most bills never reach a roll call. Without this, an empty result reads
+        // as the legislator having avoided the topic.
+        if tagged_bills > 0 && total == 0 {
+            let by = match request.person.as_deref() {
+                Some(person) => format!(" that includes {person}"),
+                None => String::new(),
+            };
+            caveats.push(format!(
+                "{} {} tagged for '{tag}' in scope, but none has a recorded vote{by}. \
+                 Most bills never reach a roll call, so this says nothing about how \
+                 anyone stands on the topic.",
+                thousands(tagged_bills),
+                if tagged_bills == 1 { "bill is" } else { "bills are" },
+            ));
+        }
+        // Most on-topic first; among equal scores (votes on one bill), the latest
+        // vote first, since that is usually the decisive one (final passage).
+        results.sort_by(|a, b| {
+            b.0.partial_cmp(&a.0)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| b.1.cmp(&a.1))
+        });
+    }
+    let results = results
+        .into_iter()
+        .take(request.limit)
+        .map(|(_, _, row)| row)
+        .collect();
 
     Ok((results, total, caveats))
 }

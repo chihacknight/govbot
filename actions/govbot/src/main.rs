@@ -120,11 +120,11 @@ enum Command {
         #[arg(long)]
         person: Option<String>,
 
-        /// A tag from govbot.yml, used to rank and filter by relevance
+        /// A tag from govbot.yml, used to rank and filter by relevance (bills and votes only)
         #[arg(long)]
         tag: Option<String>,
 
-        /// Minimum tag score (default: the tag's own threshold)
+        /// Minimum tag score (default: the tag's own threshold; bills and votes only)
         #[arg(long = "min-score")]
         min_score: Option<f64>,
 

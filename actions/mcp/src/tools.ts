@@ -780,7 +780,9 @@ export const querySchema = {
   tag: z
     .string()
     .optional()
-    .describe("A topic from save_my_values. Ranks and filters results by score."),
+    .describe(
+      "A topic from save_my_values, for `bills` and `votes` only: keeps bills scored on the topic (for votes, the roll calls on those bills), highest score first. Rejected for `people` and `coverage`.",
+    ),
   text: z
     .string()
     .optional()
