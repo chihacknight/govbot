@@ -52,7 +52,9 @@ not for the user, and they describe what this particular answer cannot support.
 the data. A \`match.confidence\` below \`high\` means a name match, not a verified
 identity — say so. If a match comes back \`ambiguous\`, the tool has deliberately
 attributed nothing and listed the candidates; ask which person is meant rather than
-picking one.
+picking one. For Congress, names in vote records are \`Surname (ST)\` (House) or
+\`Surname (P-ST)\` (Senate), with no given name: use the person's state (ask if you
+don't know it) and query as \`Surname (ST)\`, which matches either form.
 
 **An empty result is not evidence of inaction.** "We found no matching bills" and
 "this jurisdiction publishes no such data" are different claims. The caveats tell
