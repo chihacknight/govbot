@@ -14,6 +14,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { readFile } from "node:fs/promises";
 import { z } from "zod";
 
+import { GovbotError } from "./govbot.js";
 import { SERVER_INSTRUCTIONS } from "./instructions.js";
 import * as tools from "./tools.js";
 import * as workspace from "./workspace.js";
@@ -41,8 +42,11 @@ function respond(output: tools.ToolOutput) {
 function failure(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   log(`tool error: ${message}`);
+  // GovbotError keeps the actionable part (the install command, the CLI's own
+  // stderr) in `detail`; dropping it leaves the person at a dead end.
+  const detail = error instanceof GovbotError ? error.detail : undefined;
   return {
-    content: [{ type: "text" as const, text: message }],
+    content: [{ type: "text" as const, text: [message, detail ?? ""].filter(Boolean).join("\n\n") }],
     isError: true,
   };
 }

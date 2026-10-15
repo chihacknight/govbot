@@ -7,6 +7,8 @@
  * literally true of what the tool does.
  */
 
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
 import { z } from "zod";
 import * as govbot from "./govbot.js";
 import * as workspace from "./workspace.js";
@@ -98,22 +100,97 @@ export async function checkLocalData(args: {
       cwd: workspace.workspacePath(),
     });
   } catch (error) {
+    const detail =
+      error instanceof govbot.GovbotError
+        ? [error.message, error.detail ?? ""].filter(Boolean).join("\n")
+        : String(error);
+    const cloned = clonedLocales();
+    const kind = classifyCoverageFailure(detail);
+
     // Nothing cloned yet is the normal first-run state, not a failure.
+    if (kind === "first-run") {
+      return {
+        text:
+          "No government data has been cloned to this computer yet.\n\n" +
+          "Ask which state the person lives in, then use clone_government_data. " +
+          "For Congress, clone `usa` as well.\n\n" +
+          `Workspace: ${workspace.workspacePath()}\n` +
+          (error instanceof govbot.GovbotError && error.detail ? `\n${error.detail}` : ""),
+        data: { cloned: [], workspace: workspace.workspacePath() },
+      };
+    }
+
+    // Anything else is a problem with the request or the tool, not missing data.
+    // Saying "nothing is cloned" here sends Claude off to re-clone gigabytes that
+    // are already on disk and that would not fix the problem anyway.
+    const clonedLine = `Cloned here: ${cloned.length ? cloned.join(", ") : "nothing yet"}.`;
+    if (kind === "bad-jurisdiction") {
+      return {
+        isError: true,
+        text:
+          `${detail}\n\n` +
+          "That jurisdiction name was not recognised; use a locale code instead.\n" +
+          clonedLine,
+        data: { cloned, workspace: workspace.workspacePath() },
+      };
+    }
     return {
+      isError: true,
       text:
-        "No government data has been cloned to this computer yet.\n\n" +
-        "Ask which state the person lives in, then use clone_government_data. " +
-        "For Congress, clone `usa` as well.\n\n" +
-        `Workspace: ${workspace.workspacePath()}\n` +
-        (error instanceof govbot.GovbotError && error.detail ? `\n${error.detail}` : ""),
-      data: { cloned: [], workspace: workspace.workspacePath() },
+        `The govbot command-line tool (${cli}) could not read the local data:\n${detail}\n\n` +
+        (cloned.length
+          ? "The data on this computer is still there. Don't re-clone; this is a tool problem.\n"
+          : "") +
+        clonedLine +
+        "\n\nThe tool is probably out of date. Update or reinstall it with:\n" +
+        `  ${INSTALL_COMMAND}`,
+      data: { cloned, workspace: workspace.workspacePath() },
     };
   }
 
   return {
-    text: describeCoverage(response, config),
+    text: describeCoverage(response, config, {
+      requested: args.jurisdictions ?? [],
+      cloned: clonedLocales(),
+    }),
     data: response,
   };
+}
+
+const INSTALL_COMMAND =
+  'sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"';
+
+/**
+ * Why `govbot query coverage` failed, judged from the CLI's own message.
+ *
+ * Only the CLI's "nothing cloned" messages mean first run (`No cloned data at …`
+ * when the repos folder is missing, `Nothing cloned at …` when it is empty). Any
+ * other message — an old CLI that has no `query` subcommand, a crash, a timeout —
+ * is a tool problem, even if the repos folder happens to be empty too: cloning
+ * would not make it go away.
+ */
+export function classifyCoverageFailure(
+  detail: string,
+): "first-run" | "bad-jurisdiction" | "tool-problem" {
+  if (/No cloned data at|Nothing cloned at/.test(detail)) return "first-run";
+  if (/Could not read .* as a jurisdiction/.test(detail)) return "bad-jurisdiction";
+  return "tool-problem";
+}
+
+/**
+ * Locales cloned into this workspace, read straight from disk
+ * (`govbot_data/repos/<locale>-legislation`), so it is right even when the CLI
+ * is not. Empty when the folder does not exist.
+ */
+export function clonedLocales(): string[] {
+  try {
+    return readdirSync(join(workspace.dataPath(), "repos"), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && entry.name.endsWith("-legislation"))
+      .map((entry) => entry.name.slice(0, -"-legislation".length))
+      .sort();
+  } catch {
+    return [];
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -546,8 +623,21 @@ function summarize(response: QueryResponse): string {
 function describeCoverage(
   response: QueryResponse,
   config: workspace.GovbotConfig,
+  filter: { requested: string[]; cloned: string[] } = { requested: [], cloned: [] },
 ): string {
   const lines = [`Workspace: ${workspace.workspacePath()}`, ""];
+
+  // A filter for a state that is not cloned comes back as empty coverage. That
+  // means "not this one", not "nothing at all" — say which ones are here. (When
+  // some of the filter *is* cloned, the CLI's own caveat names the missing ones.)
+  const missing = filter.requested;
+  if (!response.coverage?.length && missing.length && filter.cloned.length) {
+    lines.push(
+      `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} not cloned yet. ` +
+        `Cloned here: ${filter.cloned.join(", ")}.`,
+    );
+    return lines.join("\n");
+  }
 
   if (!response.coverage?.length) {
     lines.push(
