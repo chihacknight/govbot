@@ -69,5 +69,6 @@ gh issue create --label mcp-loop --label mcp-loop:proposal \
 Use the template at `.claude/skills/mcp-improve/proposal-template.md`, and keep the
 `<!-- mcp-loop -->` marker in the body.
 
-Return: the issue numbers and titles you filed, and for each one the capture dirs of
+Return: the issue numbers and titles you filed — copy each number from the URL
+`gh issue create` printed, never predict it (PRs share the numbering) — and for each one the capture dirs of
 scenarios whose screenshots would help a reviewer see the problem.
