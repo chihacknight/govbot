@@ -16,6 +16,8 @@ import { accessSync, constants } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
+import { pathFromEnv } from "./env.js";
+
 /** How a `govbot` invocation ended. */
 export interface CommandResult {
   stdout: string;
@@ -39,9 +41,10 @@ export class GovbotError extends Error {
  *
  * Checked in order: an explicit override, the default install location used by
  * `install-nightly.sh`, a local release build, then whatever is on `PATH`.
+ * A blank or unsubstituted `GOVBOT_BIN` (see env.ts) is no override.
  */
 export function resolveBinary(): string {
-  const override = process.env.GOVBOT_BIN;
+  const override = pathFromEnv("GOVBOT_BIN");
   if (override) return override;
 
   const candidates = [

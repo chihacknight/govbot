@@ -21,6 +21,8 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
+import { pathFromEnv } from "./env.js";
+
 const execFileAsync = promisify(execFile);
 
 /** A topic definition, in the shape `govbot.yml` expects. */
@@ -43,9 +45,12 @@ export interface GovbotConfig {
 const SCHEMA_URL =
   "https://raw.githubusercontent.com/chihacknight/govbot/main/schemas/govbot.schema.json";
 
-/** Where the workspace lives. */
+/**
+ * Where the workspace lives. A blank or unsubstituted `GOVBOT_WORKSPACE` (see
+ * env.ts) falls back to the default rather than creating a folder named `${HOME}`.
+ */
 export function workspacePath(): string {
-  return process.env.GOVBOT_WORKSPACE ?? join(homedir(), "govbot-workspace");
+  return pathFromEnv("GOVBOT_WORKSPACE") ?? join(homedir(), "govbot-workspace");
 }
 
 /** Where `govbot clone` puts repositories, inside the workspace. */
