@@ -291,7 +291,8 @@ fn wy_logs() -> String {
 
 /// Runs `govbot tag` in `workspace` on `logs`. Placeholder model files make the
 /// embedding model fail to load, so tagging falls back to keyword matching: no
-/// download, deterministic scores.
+/// download, deterministic scores. `govbot tag` has no flag to force keyword mode;
+/// the model path is passed explicitly with `--govbot-dir`, so no other model is used.
 fn govbot_tag(workspace: &Path, logs: &str) {
     use std::io::Write;
     let model_dir = workspace.join("model");
@@ -304,6 +305,11 @@ fn govbot_tag(workspace: &Path, logs: &str) {
         .arg("--govbot-dir")
         .arg(&model_dir)
         .current_dir(workspace)
+        // Nothing outside the workspace may influence the run: no inherited
+        // GOVBOT_DIR, and HOME pointed at the temp dir so no cache under the
+        // developer's home directory can be picked up.
+        .env_remove("GOVBOT_DIR")
+        .env("HOME", workspace)
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::piped())
@@ -371,9 +377,20 @@ fn govbot_tag_writes_a_tag_file_for_every_session_it_scores() {
 fn govbot_tag_on_part_of_a_session_reports_partial_coverage() {
     let ws = tempfile::tempdir().unwrap();
     std::fs::write(ws.path().join("govbot.yml"), GOVBOT_YML).unwrap();
-    // A run cut short the way `govbot logs --limit` cuts one: only the first log
-    // entries, which here cover some of wy 2025's bills and none of 2026's.
-    let logs: String = wy_logs().lines().take(5).map(|line| format!("{line}\n")).collect();
+    // A run cut short the way `govbot logs --limit` cuts one: some of wy 2025's
+    // bills (HB0001, HB0002) and none of 2026's. The entries are picked by bill,
+    // not by position: `govbot logs` yields files in directory-iteration order
+    // (jwalk, unsorted), which is name order on APFS but hash order on ext4, so
+    // "the first five lines" were 2025's bills on macOS and 2026's on Linux CI.
+    let logs: String = wy_logs()
+        .lines()
+        .filter(|line| {
+            let entry: Value = serde_json::from_str(line).unwrap();
+            entry["bill"]["legislative_session"] == "2025"
+                && ["HB0001", "HB0002"].contains(&entry["bill"]["identifier"].as_str().unwrap())
+        })
+        .map(|line| format!("{line}\n"))
+        .collect();
     govbot_tag(ws.path(), &logs);
 
     let (stdout, stderr, code) = govbot(
