@@ -210,6 +210,30 @@ test("an empty bill search says so without an empty JSON array", () => {
   );
 });
 
+test("rows say once where citation paths live, and that source_url is the official page", () => {
+  // A relative git path is useless to someone who doesn't know where the clone
+  // is; stating the folder once is cheaper than an absolute path on every row.
+  const text = summarize(billsResponse({ text: "rent" }, [bigBill(), bigBill()]), "/home/x/govbot_data/repos");
+  const notes = text.split("\n").filter((line) => line.includes("citation.path"));
+  assert.equal(notes.length, 1);
+  assert.match(notes[0] ?? "", /\/home\/x\/govbot_data\/repos\/<citation\.repo>/);
+  assert.match(notes[0] ?? "", /source_url/);
+  assert.equal(rowsOf(text).length, 2, "the note is not mistaken for a row");
+});
+
+test("no citation note when no row carries a citation", () => {
+  for (const [type, results] of [
+    ["bills", []],
+    ["people", [{ name: "Smith", sponsored: 3 }]],
+  ] as const) {
+    const text = summarize(
+      { query: { type }, results: [...results], truncation: { returned: results.length, total_matching: results.length, limit: 20 }, coverage: [IL] },
+      "/home/x/govbot_data/repos",
+    );
+    assert.doesNotMatch(text, /citation\.path/, type);
+  }
+});
+
 test("coverage for an uncloned jurisdiction doesn't claim nothing is cloned", () => {
   // Reported on #236: with IL and USA cloned, asking about ca said
   // "No government data has been cloned to this computer yet."
@@ -222,14 +246,14 @@ test("coverage for an uncloned jurisdiction doesn't claim nothing is cloned", ()
     coverage: [],
     caveats: [caveat],
   };
-  const text = summarize(response, [IL]);
+  const text = summarize(response, undefined, [IL]);
   assert.doesNotMatch(text, /No government data has been cloned/);
   assert.match(text, /^The requested jurisdictions are not cloned to this computer\./);
   assert.match(text, /Cloned to this computer:\n  Illinois \(il\): 12780 bills/);
   assert.match(text, /nothing here reflects them: ca/);
 
   // Nothing cloned at all, but a jurisdiction was named: still about that request.
-  assert.match(summarize(response, []), /not cloned to this computer\.\nNothing else is cloned either\./);
+  assert.match(summarize(response, undefined, []), /not cloned to this computer\.\nNothing else is cloned either\./);
 
   // No jurisdictions requested and nothing cloned: the first-run message.
   assert.match(
