@@ -91,6 +91,36 @@ content_rect() {
   echo "$((x + SIDEBAR)),$y,$((w - SIDEBAR)),$h"
 }
 
+ocr_bin() {
+  local bin="$TARGET/bin/ocr"
+  if [ ! -x "$bin" ] || [ "$HERE/ocr.swift" -nt "$bin" ]; then
+    mkdir -p "$TARGET/bin"
+    swiftc -O -o "$bin" "$HERE/ocr.swift" >&2 || die "could not compile ocr.swift"
+  fi
+  echo "$bin"
+}
+
+# Answer a tool-permission prompt with "Always allow" (⇧⌘⏎) ONLY when the prompt on
+# screen is for one of govbot's own tools. Any other prompt (folder access, running
+# commands, cloud uploads, other connectors) is left for a person: the capture
+# times out and the screenshot shows the prompt, which is itself a finding.
+allow_if_govbot_prompt() {
+  local shot="$TARGET/capture-prompt.png" text
+  rm -f "$shot"
+  screencapture -x -R "$(content_rect)" "$shot"
+  [ -s "$shot" ] || return 1
+  text="$("$(ocr_bin)" "$shot" 2>/dev/null | tr '\n' ' ')"
+  rm -f "$shot"
+  case "$text" in
+    *"wants to use"*" from "[Gg]"ovbot"*)
+      case "$text" in *folder*|*command*|*"leave your device"*|*"U.S. Legislation"*) return 1 ;; esac
+      osa 'tell application "System Events" to keystroke return using {command down, shift down}'
+      say "[$id] allowed a govbot tool prompt"
+      return 0 ;;
+  esac
+  return 1
+}
+
 ready_count() {
   [ -f "$LOG" ] || { echo 0; return; }
   grep -c 'govbot-mcp\] ready' "$LOG" || true
@@ -383,25 +413,19 @@ cmd_run() {
       # with no prompt showing it does nothing. If the screen changes, keep
       # waiting; if not, the reply really is finished.
       [ "$allows" -ge "$MAX_ALLOWS" ] && break
-      osa 'tell application "System Events" to keystroke return using {command down, shift down}'
+      allow_if_govbot_prompt || break
       allows=$((allows + 1))
       sleep 3; elapsed=$((elapsed + 3))
-      rm -f "$probe"
-      screencapture -x -R "$x,$y,$w,$((h - COMPOSER))" "$probe"
-      [ "$(md5 -q "$probe" 2>/dev/null)" = "$last" ] && break
-      say "[$id] answered a tool-permission prompt (Always allow)"
       stable=0; last=""
       continue
     fi
     # A permission prompt shows a pulsing dot, so the screen never looks finished.
-    # If no CLI call has happened for a while, press "Always allow" (⇧⌘⏎) anyway:
-    # it does nothing without a prompt, and prompts that would send files off the
-    # machine ("Allow once" only) have no such shortcut, so they are never approved.
+    # If no CLI call has happened for a while, look for a govbot tool prompt.
     local calls; calls=$(wc -l < "$TRACE" | tr -d ' ')
     if [ "$calls" != "${last_calls:-}" ]; then last_calls=$calls; quiet=0; else quiet=$((quiet + POLL)); fi
     if [ "$quiet" -ge 20 ] && [ "$allows" -lt "$MAX_ALLOWS" ]; then
-      osa 'tell application "System Events" to keystroke return using {command down, shift down}'
-      allows=$((allows + 1)); quiet=0
+      allow_if_govbot_prompt && allows=$((allows + 1))
+      quiet=0
     fi
     if [ $elapsed -ge "$TIMEOUT" ]; then timed_out=true; say "[$id] reply still changing after ${TIMEOUT}s; capturing anyway"; break; fi
     sleep $POLL; elapsed=$((elapsed + POLL))
