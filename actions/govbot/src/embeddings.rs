@@ -31,7 +31,17 @@ pub struct TagFile {
     pub tag_config: TagDefinition,
     #[serde(default)]
     pub text_cache: HashMap<String, String>,
+    /// Only the bills that matched (score at or above the threshold).
     pub bills: HashMap<String, BillTagResult>,
+    /// Every bill id `govbot tag` has scored for this topic in this session, matched
+    /// or not. `bills` alone cannot tell "scored, no match" from "never scored",
+    /// and a run usually covers only part of a session (`govbot logs --limit`).
+    ///
+    /// A list rather than a count so re-running over the same bills is idempotent.
+    /// `None` in files written before this field existed: coverage is unknown, which
+    /// readers must not treat as either complete or unscored.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scored_bills: Option<std::collections::BTreeSet<String>>,
 }
 
 /// Metadata about the tag file
