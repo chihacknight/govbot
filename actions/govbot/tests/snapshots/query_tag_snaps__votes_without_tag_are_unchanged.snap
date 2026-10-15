@@ -1,0 +1,32 @@
+---
+source: tests/query_tag_snaps.rs
+expression: summary
+---
+{
+  "caveats": null,
+  "results": [
+    {
+      "bill": "HB0001",
+      "session": "2025",
+      "start_date": "2025-02-10",
+      "topic_score": null
+    },
+    {
+      "bill": "HB0001",
+      "session": "2025",
+      "start_date": "2025-03-01",
+      "topic_score": null
+    },
+    {
+      "bill": "HB0002",
+      "session": "2025",
+      "start_date": "2025-02-15",
+      "topic_score": null
+    }
+  ],
+  "truncation": {
+    "limit": 3,
+    "returned": 3,
+    "total_matching": 5
+  }
+}
