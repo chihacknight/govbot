@@ -1,0 +1,11 @@
+id: reps-happy-path
+prompt: |
+  Who are my reps, and how do they align to my values? I live in Illinois.
+setup:
+  jurisdictions: [il, usa]
+expect:
+  - Checks what data is on the computer before answering (check_local_data or query coverage in the trace).
+  - Does not ask for a street address; points to a lookup site to find the district.
+  - Any vote it attributes to a person is backed by a `query` votes row in the trace.
+  - Says plainly where the data cannot answer (e.g. no legislator roster).
+  - The first useful answer arrives without the person having to know govbot's vocabulary.

@@ -33,6 +33,82 @@ pub struct Citation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub commit: Option<String>,
     pub path: String,
+    /// The official web page for the record — the legislature's bill page, or the
+    /// roll-call page for a vote — taken from the record's own `sources`. It
+    /// is what a person without git can click to check a claim.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_url: Option<String>,
+}
+
+/// Pick the one source URL worth showing a person, from `sources: [{url, note}]`.
+///
+/// Only http(s) URLs are ever returned: a relative path, `ftp:` or `javascript:`
+/// value in a scraped `sources` list is not something to present as the official
+/// page, so a record with nothing else gets no `source_url` at all.
+///
+/// Congress lists the govinfo bulk-data XML first and the congress.gov page
+/// second; a person wants the page, so the first URL that is not `.xml` wins.
+/// US House and Senate roll calls list only their XML; those are rewritten to
+/// the human-readable page for the same vote (see `roll_call_page`), and any
+/// other XML is returned as-is, since it is still better than nothing.
+pub fn official_source_url(record: &Value) -> Option<String> {
+    let urls: Vec<&str> = record
+        .get("sources")?
+        .as_array()?
+        .iter()
+        .filter_map(|source| source.get("url").and_then(Value::as_str))
+        .map(str::trim)
+        .filter(|url| {
+            let lower = url.to_ascii_lowercase();
+            lower.starts_with("https://") || lower.starts_with("http://")
+        })
+        .collect();
+    let is_xml = |url: &str| {
+        let lower = url.to_ascii_lowercase();
+        let path = lower.split(['?', '#']).next().unwrap_or_default();
+        path.ends_with(".xml")
+    };
+    if let Some(page) = urls.iter().find(|url| !is_xml(url)) {
+        return Some(page.to_string());
+    }
+    let first = urls.first()?;
+    Some(roll_call_page(first).unwrap_or_else(|| first.to_string()))
+}
+
+/// The human-readable page for a US House or Senate roll-call XML URL, if the
+/// URL has one of the two shapes usa-legislation uses (checked against every
+/// vote source in that repo, October 2026):
+///
+/// - House: `https://clerk.house.gov/evs/2025/roll003.xml` is shown at
+///   `https://clerk.house.gov/Votes/20253` — the year followed by the roll
+///   number without leading zeros.
+/// - Senate: `.../roll_call_votes/vote1191/vote_119_1_00001.xml` is shown at the
+///   same path ending in `.htm`.
+///
+/// Anything else returns `None` and the caller keeps the original URL.
+fn roll_call_page(url: &str) -> Option<String> {
+    const HOUSE: &str = "https://clerk.house.gov/evs/";
+    const SENATE: &str = "https://www.senate.gov/legislative/LIS/roll_call_votes/";
+
+    if let Some(rest) = url.strip_prefix(HOUSE) {
+        let (year, file) = rest.split_once('/')?;
+        let roll = file.strip_prefix("roll")?.strip_suffix(".xml")?;
+        let all_digits = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit());
+        if year.len() != 4 || !all_digits(year) || !all_digits(roll) {
+            return None;
+        }
+        let roll: u32 = roll.parse().ok()?;
+        return Some(format!("https://clerk.house.gov/Votes/{year}{roll}"));
+    }
+    if let Some(rest) = url.strip_prefix(SENATE) {
+        let (dir, file) = rest.split_once('/')?;
+        let stem = file.strip_suffix(".xml")?;
+        if !dir.starts_with("vote") || !stem.starts_with("vote_") || file.contains('/') {
+            return None;
+        }
+        return Some(format!("{SENATE}{dir}/{stem}.htm"));
+    }
+    None
 }
 
 /// One bill, as read from `metadata.json`.
@@ -108,14 +184,43 @@ impl BillRecord {
             .unwrap_or_default()
     }
 
-    /// Bioguide ids for federal bills, from `extras`. Absent for state bills.
-    pub fn sponsor_bioguides(&self) -> Vec<String> {
+    /// Each person sponsorship that carries a bioguide id, paired with that id.
+    /// Federal bills only; state bills have no ids and return nothing.
+    ///
+    /// `extras.sponsor_bioguides` and `extras.cosponsor_bioguides` are parallel to
+    /// the primary and the non-primary person sponsorships, in the order they
+    /// appear in `sponsorships`. That order is the only link between an id and a
+    /// name, so a group whose length disagrees with its id list is skipped rather
+    /// than guessed at. (In the 119th Congress every bill's lengths agree, and each
+    /// id pairs with one person.) Pairing every id with the bill's first sponsor
+    /// instead is what once sent `K000376` (Mike Kelly) to John Moolenaar's bills.
+    pub fn sponsorships_by_id(&self) -> Vec<(String, Sponsorship)> {
         let extras = self.metadata.get("extras");
-        let mut ids = string_array(extras.and_then(|e| e.get("sponsor_bioguides")));
-        ids.extend(string_array(
-            extras.and_then(|e| e.get("cosponsor_bioguides")),
-        ));
-        ids
+        let primary_ids = string_array(extras.and_then(|e| e.get("sponsor_bioguides")));
+        let cosponsor_ids = string_array(extras.and_then(|e| e.get("cosponsor_bioguides")));
+        if primary_ids.is_empty() && cosponsor_ids.is_empty() {
+            return Vec::new();
+        }
+
+        let (primaries, cosponsors): (Vec<Sponsorship>, Vec<Sponsorship>) = self
+            .sponsorships()
+            .into_iter()
+            .filter(Sponsorship::is_person)
+            .partition(|s| s.primary);
+
+        let mut paired = Vec::new();
+        for (ids, people) in [(primary_ids, primaries), (cosponsor_ids, cosponsors)] {
+            if ids.len() != people.len() {
+                continue;
+            }
+            for (id, person) in ids.into_iter().zip(people) {
+                let id = id.trim().to_uppercase();
+                if !id.is_empty() {
+                    paired.push((id, person));
+                }
+            }
+        }
+        paired
     }
 
     /// The most recent action, by date.
@@ -390,6 +495,7 @@ where
                 .unwrap_or(&bill_id)
                 .to_string();
 
+            let source_url = official_source_url(&metadata);
             let record = BillRecord {
                 jurisdiction: jurisdiction.clone(),
                 session_id: session_id.clone(),
@@ -401,6 +507,7 @@ where
                     repo: repo_name.clone(),
                     commit: commit.clone(),
                     path: relative_path(&dir.join("metadata.json"), repos_dir, &repo_name),
+                    source_url,
                 },
             };
 
@@ -520,6 +627,8 @@ fn read_vote_event(path: &Path, bill: &BillRecord, repos_dir: &Path) -> Option<V
             repo: bill.citation.repo.clone(),
             commit: bill.citation.commit.clone(),
             path: relative_path(path, repos_dir, &bill.citation.repo),
+            // The vote event's own source (the roll-call document), not the bill's.
+            source_url: official_source_url(&value),
         },
     })
 }
@@ -547,6 +656,97 @@ mod tests {
         assert!(!is_vote_event_file(
             "20250131T030931Z.classification.introduction.lower.json"
         ));
+    }
+
+    #[test]
+    fn prefers_the_official_page_over_bulk_xml() {
+        // usa-legislation bills: govinfo bulk XML first, congress.gov second.
+        let bill = serde_json::json!({"sources": [
+            {"url": "https://www.govinfo.gov/bulkdata/BILLSTATUS/119/s/BILLSTATUS-119s4369.xml", "note": ""},
+            {"url": "https://congress.gov/bill/119th-congress/senate-bill/4369", "note": ""}
+        ]});
+        assert_eq!(
+            official_source_url(&bill).as_deref(),
+            Some("https://congress.gov/bill/119th-congress/senate-bill/4369")
+        );
+
+        // il-legislation: a query string is not mistaken for a file extension.
+        let bill = serde_json::json!({"sources": [
+            {"url": "https://ilga.gov/Legislation/BillStatus?DocNum=3526&GAID=18&DocTypeID=HB"}
+        ]});
+        assert_eq!(
+            official_source_url(&bill).as_deref(),
+            Some("https://ilga.gov/Legislation/BillStatus?DocNum=3526&GAID=18&DocTypeID=HB")
+        );
+
+        // US Senate and House roll calls list only XML: the readable page for
+        // the same vote is given instead.
+        let vote = serde_json::json!({"sources": [
+            {"url": "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1191/vote_119_1_00278.xml"}
+        ]});
+        assert_eq!(
+            official_source_url(&vote).as_deref(),
+            Some("https://www.senate.gov/legislative/LIS/roll_call_votes/vote1191/vote_119_1_00278.htm")
+        );
+        let vote = serde_json::json!({"sources": [
+            {"url": "https://clerk.house.gov/evs/2025/roll003.xml"}
+        ]});
+        assert_eq!(
+            official_source_url(&vote).as_deref(),
+            Some("https://clerk.house.gov/Votes/20253")
+        );
+        let vote = serde_json::json!({"sources": [
+            {"url": "https://clerk.house.gov/evs/2026/roll150.xml"}
+        ]});
+        assert_eq!(
+            official_source_url(&vote).as_deref(),
+            Some("https://clerk.house.gov/Votes/2026150")
+        );
+
+        // Other XML, or a roll-call URL of an unfamiliar shape, is kept as-is.
+        for url in [
+            "https://example.gov/votes/123.xml",
+            "https://clerk.house.gov/evs/2025/rollcall003.xml",
+            "https://clerk.house.gov/evs/25/roll003.xml",
+        ] {
+            let vote = serde_json::json!({"sources": [{"url": url}]});
+            assert_eq!(official_source_url(&vote).as_deref(), Some(url));
+        }
+
+        // No sources, empty sources, or blank URLs: no field rather than "".
+        assert_eq!(official_source_url(&serde_json::json!({})), None);
+        assert_eq!(
+            official_source_url(&serde_json::json!({"sources": []})),
+            None
+        );
+        assert_eq!(
+            official_source_url(&serde_json::json!({"sources": [{"url": " "}]})),
+            None
+        );
+    }
+
+    #[test]
+    fn never_offers_a_non_web_link_as_the_official_page() {
+        for url in [
+            "/legislation/bills/HB1.htm",
+            "bills/HB1.xml",
+            "ftp://ftp.legislature.example/HB1.pdf",
+            "javascript:void(0)",
+            "mailto:clerk@example.gov",
+        ] {
+            let record = serde_json::json!({"sources": [{"url": url}]});
+            assert_eq!(official_source_url(&record), None, "{url}");
+        }
+
+        // A web URL later in the list still wins over a non-web one first.
+        let record = serde_json::json!({"sources": [
+            {"url": "javascript:void(0)"},
+            {"url": "HTTPS://legislature.example/HB1"}
+        ]});
+        assert_eq!(
+            official_source_url(&record).as_deref(),
+            Some("HTTPS://legislature.example/HB1")
+        );
     }
 
     #[test]
@@ -601,6 +801,92 @@ mod tests {
         std::fs::write(git.join("HEAD"), "2222222000000000000000000000000000000000\n")
             .expect("write");
         assert_eq!(head_commit_from_files(dir.path()).as_deref(), Some("2222222"));
+    }
+
+    fn federal_bill(metadata: Value) -> BillRecord {
+        BillRecord {
+            jurisdiction: Jurisdiction::new("usa"),
+            session_id: "119".into(),
+            bill_id: "HR1".into(),
+            identifier: "HR 1".into(),
+            metadata,
+            dir: PathBuf::new(),
+            citation: Citation {
+                repo: "usa-legislation".into(),
+                commit: None,
+                path: String::new(),
+                source_url: None,
+            },
+        }
+    }
+
+    fn sponsor(name: &str, primary: bool) -> Value {
+        serde_json::json!({
+            "name": name,
+            "classification": if primary { "primary" } else { "cosponsor" },
+            "entity_type": "person",
+            "primary": primary,
+        })
+    }
+
+    /// The shape of a real federal bill: cosponsors listed before the primary
+    /// sponsor, with ids in two lists parallel to them.
+    #[test]
+    fn pairs_each_sponsor_id_with_its_own_name() {
+        let bill = federal_bill(serde_json::json!({
+            "sponsorships": [
+                sponsor("Kathy Castor", false),
+                sponsor("Erin Houchin", false),
+                { "name": "Some Committee", "entity_type": "organization", "primary": false },
+                sponsor("Steve Womack", true),
+                sponsor("Mike Kelly", false),
+            ],
+            "extras": {
+                "sponsor_bioguides": ["W000809"],
+                "cosponsor_bioguides": ["C001066", "H001093", "k000376"],
+            },
+        }));
+        let paired: Vec<(String, String, bool)> = bill
+            .sponsorships_by_id()
+            .into_iter()
+            .map(|(id, s)| (id, s.name, s.primary))
+            .collect();
+        assert_eq!(
+            paired,
+            vec![
+                ("W000809".into(), "Steve Womack".into(), true),
+                ("C001066".into(), "Kathy Castor".into(), false),
+                ("H001093".into(), "Erin Houchin".into(), false),
+                ("K000376".into(), "Mike Kelly".into(), false),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_misaligned_id_list_is_skipped_not_guessed() {
+        let bill = federal_bill(serde_json::json!({
+            "sponsorships": [
+                sponsor("Steve Womack", true),
+                sponsor("Kathy Castor", false),
+                sponsor("Mike Kelly", false),
+            ],
+            "extras": {
+                "sponsor_bioguides": ["W000809"],
+                // One cosponsor id missing: no way to tell whose.
+                "cosponsor_bioguides": ["K000376"],
+            },
+        }));
+        let ids: Vec<String> = bill
+            .sponsorships_by_id()
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        assert_eq!(ids, vec!["W000809".to_string()]);
+
+        // A state bill has no ids at all.
+        let state =
+            federal_bill(serde_json::json!({ "sponsorships": [sponsor("Bill Cunningham", true)] }));
+        assert!(state.sponsorships_by_id().is_empty());
     }
 
     #[test]
