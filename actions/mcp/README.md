@@ -29,7 +29,18 @@ be reproduced from a terminal in the same folder.
 
 ## Install into Claude Desktop
 
-Add this to `claude_desktop_config.json` (Settings → Developer → Edit Config):
+Step-by-step guide with screenshots: <https://chihacknight.github.io/govbot/dashboard/claude.html>
+
+1. Install the `govbot` CLI (above).
+2. Download [`govbot.mcpb`](https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb)
+   and double-click it, or drag it onto Claude Desktop → Settings → Extensions. Click **Install**.
+3. Ask *"Use govbot: who are my reps, and how do they align to my values?"*, or pick the
+   **who_are_my_reps** prompt.
+
+### For development
+
+Point Claude Desktop at a local build instead, in `claude_desktop_config.json`
+(Settings → Developer → Edit Config), then restart it:
 
 ```json
 {
@@ -41,9 +52,6 @@ Add this to `claude_desktop_config.json` (Settings → Developer → Edit Config
   }
 }
 ```
-
-Then restart Claude Desktop and ask *"Who are my reps, and how do they align to my
-values?"* — or pick the **who_are_my_reps** prompt.
 
 ### Configuration
 

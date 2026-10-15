@@ -467,6 +467,15 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 /* build your own */
 .gl-sec-intro { display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; }
 .gl-sec-intro .gl-sub { max-width: 640px; margin-top: 0 !important; }
+/* "Ask Govbot from Claude": copy + one real Claude Desktop screenshot, linking to dashboard/claude.html. */
+.gl-claude { display: grid; grid-template-columns: 1fr 1.05fr; gap: 44px; align-items: center; }
+.gl-claude-copy { display: flex; flex-direction: column; gap: 10px; }
+.gl-claude-copy .gl-btns { margin-top: 10px; }
+.gl-claude-note { font-size: 14px; margin: 4px 0 0; }
+.gb-landing a.gl-claude-shot { display: block; border-radius: 14px; overflow: hidden; border: 1px solid var(--gb-border-strong);
+  box-shadow: var(--gb-shadow); max-height: 460px; }
+.gl-claude-shot img { display: block; width: 100%; height: auto; }
+@media (max-width: 860px) { .gl-claude { grid-template-columns: 1fr; gap: 24px; } .gb-landing a.gl-claude-shot { max-height: 340px; } }
 .gl-build { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
 .gl-steps { display: flex; flex-direction: column; gap: 14px; }
 .gl-step { display: flex; gap: 16px; padding: 20px; border-radius: 18px; background: var(--gb-bg); border: 1px solid var(--gb-border); }
