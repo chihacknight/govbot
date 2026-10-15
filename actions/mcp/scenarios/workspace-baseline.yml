@@ -1,0 +1,6 @@
+# The govbot.yml every scenario starts from (unless it sets `setup.workspace: fresh`),
+# so one scenario saving values never changes what the next one sees.
+repos:
+  - il
+  - usa
+tags: {}
