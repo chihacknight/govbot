@@ -383,3 +383,245 @@ fn govbot_tag_on_part_of_a_session_reports_partial_coverage() {
     assert_eq!(code, 0, "stderr: {stderr}");
     insta::assert_json_snapshot!(summarize(&stdout));
 }
+
+// ---------------------------------------------------------------------------
+// `query votes --tag`
+// ---------------------------------------------------------------------------
+//
+// The guarded failure: `query votes --tag` used to ignore the tag, returning every
+// vote in scope (all of a legislator's votes) while echoing the tag back as if it
+// had been applied. The mocks carry no roll calls, so these tests copy wy into a
+// temp data dir and add vote events to some of its bills.
+
+/// Like [`govbot`], against a data dir other than the shipped mocks.
+fn govbot_with_data(data_dir: &Path, tags_dir: &Path, args: &[&str]) -> (String, String, i32) {
+    let output = Command::new(env!("CARGO_BIN_EXE_govbot"))
+        .args(args)
+        .arg("--govbot-dir")
+        .arg(data_dir)
+        .arg("--tags-dir")
+        .arg(tags_dir)
+        .output()
+        .expect("failed to run govbot");
+    (
+        String::from_utf8_lossy(&output.stdout).to_string(),
+        String::from_utf8_lossy(&output.stderr).to_string(),
+        output.status.code().unwrap_or(-1),
+    )
+}
+
+fn copy_dir(from: &Path, to: &Path) {
+    std::fs::create_dir_all(to).unwrap();
+    for entry in std::fs::read_dir(from).unwrap() {
+        let entry = entry.unwrap();
+        let target = to.join(entry.file_name());
+        if entry.file_type().unwrap().is_dir() {
+            copy_dir(&entry.path(), &target);
+        } else {
+            std::fs::copy(entry.path(), target).unwrap();
+        }
+    }
+}
+
+/// The wy mocks with roll calls on 2025's HB0001 (on topic in [`workspace`]),
+/// HB0002 (scored below threshold) and HB0004 (never scored), and on 2026's
+/// HB0002 (a session with no tag file). HB0001 has two, so ranking within a bill
+/// is visible. Smith votes in all of them; Jones only on HB0002.
+fn wy_with_votes() -> tempfile::TempDir {
+    let dir = tempfile::tempdir().unwrap();
+    let repo = dir.path().join("repos").join("wy-legislation");
+    copy_dir(
+        &manifest_dir().join("mocks/govbot_data/repos/wy-legislation"),
+        &repo,
+    );
+    let sessions = repo.join("country:us/state:wy/sessions");
+    for (session, bill, stamp, voters) in [
+        ("2025", "HB0001", "20250210T120000Z", vec!["Smith"]),
+        ("2025", "HB0001", "20250301T120000Z", vec!["Smith"]),
+        ("2025", "HB0002", "20250215T120000Z", vec!["Smith", "Jones"]),
+        ("2025", "HB0004", "20250220T120000Z", vec!["Smith"]),
+        ("2026", "HB0002", "20260215T120000Z", vec!["Smith"]),
+    ] {
+        let votes: Vec<Value> = voters
+            .iter()
+            .map(|name| json!({ "voter_name": name, "option": "yes", "note": "" }))
+            .collect();
+        let event = json!({
+            "motion_text": format!("Third reading {bill}"),
+            "start_date": format!("{}-{}-{}", &stamp[0..4], &stamp[4..6], &stamp[6..8]),
+            "result": "pass",
+            "organization": "~{\"classification\": \"lower\"}",
+            "votes": votes,
+            "counts": [{ "option": "yes", "value": voters.len() }],
+        });
+        std::fs::write(
+            sessions
+                .join(session)
+                .join("bills")
+                .join(bill)
+                .join("logs")
+                .join(format!("{stamp}.vote_event.pass.lower.json")),
+            serde_json::to_string_pretty(&event).unwrap(),
+        )
+        .unwrap();
+    }
+    dir
+}
+
+/// Vote rows reduced to what these tests are about.
+fn summarize_votes(stdout: &str) -> Value {
+    let response: Value = serde_json::from_str(stdout).expect("stdout is JSON");
+    let rows: Vec<Value> = response["results"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|row| {
+            json!({
+                "bill": row["bill_identifier"],
+                "session": row["legislative_session"],
+                "start_date": row["start_date"],
+                "topic_score": row["topic_score"],
+            })
+        })
+        .collect();
+    json!({
+        "truncation": response["truncation"],
+        "results": rows,
+        "caveats": response["caveats"],
+    })
+}
+
+#[test]
+fn votes_with_tag_return_only_votes_on_bills_on_the_topic() {
+    let ws = workspace();
+    let data = wy_with_votes();
+    let (stdout, stderr, code) = govbot_with_data(
+        data.path(),
+        ws.path(),
+        &["query", "votes", "--jurisdiction", "wy", "--person", "Smith", "--tag", TOPIC],
+    );
+    assert_eq!(code, 0, "stderr: {stderr}");
+    let summary = summarize_votes(&stdout);
+    // HB0001's two votes, latest first. Not HB0002 (below threshold), HB0004
+    // (unscored, counted in the coverage caveat), or 2026 (no tag file).
+    assert_eq!(summary["truncation"]["total_matching"], 2);
+    insta::assert_json_snapshot!(summary);
+}
+
+#[test]
+fn votes_with_tag_honour_min_score() {
+    let ws = workspace();
+    let data = wy_with_votes();
+    let (stdout, stderr, code) = govbot_with_data(
+        data.path(),
+        ws.path(),
+        &[
+            "query", "votes", "--jurisdiction", "wy", "--session", "2025", "--tag", TOPIC,
+            "--min-score", "0.1",
+        ],
+    );
+    assert_eq!(code, 0, "stderr: {stderr}");
+    let summary = summarize_votes(&stdout);
+    let bills: Vec<&str> = summary["results"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|row| row["bill"].as_str().unwrap())
+        .collect();
+    // HB0002 (0.2) now clears the floor, and ranks after HB0001 (0.9).
+    assert_eq!(bills, ["HB0001", "HB0001", "HB0002"]);
+}
+
+#[test]
+fn votes_with_tag_in_an_unscored_session_return_no_rows() {
+    let ws = workspace();
+    let data = wy_with_votes();
+    let (stdout, stderr, code) = govbot_with_data(
+        data.path(),
+        ws.path(),
+        &["query", "votes", "--jurisdiction", "wy", "--session", "2026", "--tag", TOPIC],
+    );
+    assert_eq!(code, 0, "stderr: {stderr}");
+    let summary = summarize_votes(&stdout);
+    assert_eq!(summary["truncation"]["total_matching"], 0);
+    insta::assert_json_snapshot!(summary["caveats"]);
+}
+
+#[test]
+fn votes_with_tag_say_when_no_tagged_bill_had_a_vote() {
+    let ws = workspace();
+    // The shipped mocks: HB0001 is on topic, but wy has no roll calls at all.
+    let (stdout, stderr, code) = govbot(
+        ws.path(),
+        &["query", "votes", "--jurisdiction", "wy", "--session", "2025", "--tag", TOPIC],
+    );
+    assert_eq!(code, 0, "stderr: {stderr}");
+    let no_roll_calls = summarize_votes(&stdout)["caveats"].clone();
+
+    // Jones voted only on HB0002, which is below the threshold: HB0001 had roll
+    // calls, just none Jones was in.
+    let data = wy_with_votes();
+    let (stdout, stderr, code) = govbot_with_data(
+        data.path(),
+        ws.path(),
+        &[
+            "query", "votes", "--jurisdiction", "wy", "--session", "2025", "--person", "Jones",
+            "--tag", TOPIC,
+        ],
+    );
+    assert_eq!(code, 0, "stderr: {stderr}");
+    let not_in_them = summarize_votes(&stdout)["caveats"].clone();
+
+    insta::assert_json_snapshot!(json!({
+        "no_roll_calls": no_roll_calls,
+        "person_not_in_them": not_in_them,
+    }));
+}
+
+#[test]
+fn votes_with_undefined_topic_is_an_error() {
+    let ws = workspace();
+    let (stdout, stderr, code) = govbot(
+        ws.path(),
+        &["query", "votes", "--jurisdiction", "wy", "--tag", "renters"],
+    );
+    assert_ne!(code, 0, "an undefined topic must fail; stdout was {stdout}");
+    assert!(stderr.contains("No topic named 'renters'"), "stderr: {stderr}");
+}
+
+#[test]
+fn votes_without_tag_are_unchanged() {
+    let ws = workspace();
+    let data = wy_with_votes();
+    let (stdout, stderr, code) = govbot_with_data(
+        data.path(),
+        ws.path(),
+        &["query", "votes", "--jurisdiction", "wy", "--limit", "3"],
+    );
+    assert_eq!(code, 0, "stderr: {stderr}");
+    let summary = summarize_votes(&stdout);
+    // All five roll calls match; the first three in scan order, no topic scores.
+    assert_eq!(summary["truncation"]["total_matching"], 5);
+    insta::assert_json_snapshot!(summary);
+}
+
+#[test]
+fn people_and_coverage_refuse_a_topic_filter() {
+    let ws = workspace();
+    for (kind, flag, value) in [
+        ("people", "--tag", TOPIC),
+        ("people", "--min-score", "0.5"),
+        ("coverage", "--tag", TOPIC),
+    ] {
+        let (stdout, stderr, code) = govbot(
+            ws.path(),
+            &["query", kind, "--jurisdiction", "wy", flag, value],
+        );
+        assert_ne!(code, 0, "{kind} {flag} must fail; stdout was {stdout}");
+        assert!(stdout.trim().is_empty());
+        assert!(
+            stderr.contains("is not supported for") && stderr.contains(kind),
+            "stderr: {stderr}"
+        );
+    }
+}

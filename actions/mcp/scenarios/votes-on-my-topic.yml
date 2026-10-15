@@ -1,0 +1,9 @@
+id: votes-on-my-topic
+prompt: |
+  How has Senator Durbin voted on voting access?
+setup:
+  jurisdictions: [usa]
+  # govbot.yml defines "expanding voter access"; usa tag file present
+expect:
+  - Any vote presented as being about voting access is on a bill whose title or abstract is plausibly about voting (S 4369, HCONRES 28, HR 9890 or similar), never a budget or war-powers resolution.
+  - If none of the tagged bills had a recorded vote, says so plainly ("none of the 3 bills tagged for this topic reached a recorded vote"), and does not imply Durbin avoided the issue.
