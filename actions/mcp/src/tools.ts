@@ -75,7 +75,7 @@ export const checkLocalDataSchema = {
 export async function checkLocalData(args: {
   jurisdictions?: string[];
 }): Promise<ToolOutput> {
-  await workspace.ensure();
+  // Read-only: no workspace.ensure(). A missing workspace is the first-run case below.
   const config = await workspace.readConfig();
 
   const cli = await govbot.version();
@@ -96,7 +96,7 @@ export async function checkLocalData(args: {
   let response: QueryResponse;
   try {
     response = await govbot.runJson<QueryResponse>(args_, {
-      cwd: workspace.workspacePath(),
+      cwd: workspace.readCwd(),
     });
   } catch (error) {
     // Nothing cloned yet is the normal first-run state, not a failure.
@@ -459,7 +459,8 @@ export interface CoverageEntry {
 }
 
 export async function query(args: Record<string, unknown>): Promise<ToolOutput> {
-  await workspace.ensure();
+  // Read-only: no workspace.ensure(). With nothing cloned, the CLI's own error
+  // ("run govbot clone first") is returned below.
 
   const cliArgs = ["query", String(args.type), "--govbot-dir", workspace.dataPath()];
 
@@ -487,7 +488,7 @@ export async function query(args: Record<string, unknown>): Promise<ToolOutput> 
   let response: QueryResponse;
   try {
     response = await govbot.runJson<QueryResponse>(cliArgs, {
-      cwd: workspace.workspacePath(),
+      cwd: workspace.readCwd(),
     });
   } catch (error) {
     if (error instanceof govbot.GovbotError) {

@@ -96,3 +96,58 @@ Claude Desktop disconnects without an error message. All diagnostics go to stder
 `__snapshots__/surface.json` is the full tool, resource, and prompt surface. The
 descriptions in it are shown to people when Claude asks permission to run something,
 so changes to that wording are worth reviewing — the snapshot makes them a diff.
+
+## Improvement loop
+
+A Claude Code loop proposes improvements to this experience, builds the ones you
+approve, and opens draft PRs with before/after screenshots from the real Claude
+Desktop app. Its instructions are in `.claude/skills/mcp-improve/SKILL.md`, and the
+scenarios it judges against are in `scenarios/`.
+
+```
+ /loop /mcp-improve
+   │
+   ├─ product-owner agent ── runs scenarios in Claude Desktop ──▶ issue (mcp-loop:proposal)
+   │                                                                 │ you add mcp-loop:approved
+   ├─ implementer agent ── worktree, tests, snapshots, bundle ──▶ draft PR
+   │                                                                 │
+   ├─ capture ── main vs PR build in Claude Desktop ──▶ before/after table in the PR
+   │                                                                 │ you review / comment
+   └─ implementer agent ── addresses comments, re-captures ◀────────┘   you merge
+```
+
+**One-time setup on the Mac that runs it:**
+
+1. System Settings → Privacy & Security: give your terminal **Accessibility** and
+   **Screen Recording** access.
+2. `scripts/desktop-capture.sh setup`. This backs up `claude_desktop_config.json` and
+   points its `govbot` entry at `~/.govbot/mcp-under-test`, where each install puts the server *and* a `govbot` CLI built from the same checkout, so PRs that change the Rust query code show it in their screenshots. It also points govbot at
+   a separate workspace, `~/govbot-loop-workspace`, so scenarios never edit your own
+   `govbot.yml`. Cloned data is shared with `~/govbot-workspace` through a symlink.
+3. `scripts/desktop-capture.sh install --ref origin/main`. This builds `main` and
+   restarts Claude Desktop on it.
+4. In Claude Desktop, set govbot's tools to **Always allow**. Otherwise the
+   permission prompt stops every automated run.
+5. Clone the data the scenarios use: `cd ~/govbot-workspace && govbot clone il usa wy ma`.
+6. `scripts/desktop-capture.sh doctor` should then report everything ok.
+
+**Running it:** in Claude Code at the repo root, run `/loop /mcp-improve`, or
+`/mcp-improve` for a single pass. It never takes over the keyboard while you are
+using the Mac (5 minutes idle is the default), never merges, and never pushes to
+`main`.
+
+**Steering it from GitHub:**
+
+- **Approve a proposal:** add `mcp-loop:approved` to the issue.
+- **Reject a proposal:** close the issue as *not planned*.
+- **Request changes:** comment on the PR. The loop addresses it on its next pass.
+
+**Web search vs. govbot.** With web search on, Claude Desktop often answers a
+legislation question from the web and never calls govbot. In the first real
+capture, the rent-bill citation scenario made zero govbot calls. To make
+captures exercise the change under review, the loop prefixes prompts with
+`MCP_CAPTURE_PROMPT_PREFIX="Use govbot for this. "`. Whether Claude should reach
+for local data unprompted is itself tracked as a proposal.
+
+The capture camera also works on its own:
+`scripts/desktop-capture.sh run scenarios/first-run.yml /tmp/captures`.
