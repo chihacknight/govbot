@@ -43,9 +43,15 @@ const jsonResponse = (body: unknown) =>
 // ---------------------------------------------------------------------------
 
 test("versions parse from `govbot --version` output and bare strings", () => {
-  assert.deepEqual(parseVersion("govbot 0.1.0"), [0, 1, 0]);
-  assert.deepEqual(parseVersion("0.12.3\n"), [0, 12, 3]);
-  assert.deepEqual(parseVersion("1.2.3-nightly.4"), [1, 2, 3]);
+  assert.deepEqual(parseVersion("govbot 0.1.0")?.core, [0, 1, 0]);
+  assert.deepEqual(parseVersion("0.12.3\n")?.core, [0, 12, 3]);
+  assert.deepEqual(parseVersion("1.2.3-nightly.4"), {
+    core: [1, 2, 3],
+    prerelease: ["nightly", "4"],
+    text: "1.2.3-nightly.4",
+  });
+  // Build metadata is accepted but dropped; it never affects ordering.
+  assert.deepEqual(parseVersion("1.2.3+abc.5"), { core: [1, 2, 3], prerelease: [], text: "1.2.3" });
   assert.equal(parseVersion("unknown"), null);
   assert.equal(parseVersion(null), null);
 });
@@ -58,6 +64,39 @@ test("comparison is numeric, strict, and false whenever either side is unparseab
   // A version we cannot read must never make someone think an update exists.
   assert.equal(isOlder("unknown", "9.9.9"), false);
   assert.equal(isOlder("0.1.0", "garbage"), false);
+});
+
+test("pre-releases follow semver precedence", () => {
+  // A release outranks its own pre-releases, and a pre-release of a higher
+  // version outranks an older release.
+  assert.equal(isOlder("0.2.0-rc.1", "0.2.0"), true);
+  assert.equal(isOlder("0.2.0", "0.2.0-rc.1"), false);
+  assert.equal(isOlder("0.1.0", "0.2.0-rc.1"), true);
+  assert.equal(isOlder("0.2.0-rc.1", "0.1.0"), false);
+  // Identifiers: numeric ones numerically, numeric before alphanumeric,
+  // alphanumeric as ASCII, and a longer list wins when the rest are equal.
+  assert.equal(isOlder("1.0.0-alpha", "1.0.0-alpha.1"), true);
+  assert.equal(isOlder("1.0.0-alpha.1", "1.0.0-alpha.beta"), true);
+  assert.equal(isOlder("1.0.0-alpha.beta", "1.0.0-beta"), true);
+  assert.equal(isOlder("1.0.0-beta.2", "1.0.0-beta.11"), true, "numeric, not lexical");
+  assert.equal(isOlder("1.0.0-rc.1", "1.0.0-rc.1"), false);
+  assert.equal(isOlder("1.0.0-rc.1+build.9", "1.0.0-rc.1"), false, "build metadata is ignored");
+});
+
+test("nightly stamps order by build time, and a local build is never nagged", () => {
+  // The release workflow stamps <package version>-nightly.<UTC YYYYMMDDHHMM>.
+  assert.equal(isOlder("0.1.0-nightly.202610142359", "0.1.0-nightly.202610150000"), true);
+  assert.equal(isOlder("0.1.0-nightly.202610150000", "0.1.0-nightly.202610150000"), false);
+  assert.equal(isOlder("0.1.0-nightly.202612312359", "0.2.0-nightly.202601010000"), true, "version bump wins");
+  // A local build reports plain 0.1.0, which ranks above any 0.1.0 nightly.
+  assert.equal(isOlder("0.1.0", "0.1.0-nightly.202610150000"), false);
+  const [notice] = updateNotices({
+    bundle: "0.1.0-nightly.202610140000",
+    cli: null,
+    cliMin: null,
+    state: checked("0.1.0-nightly.202610150000"),
+  });
+  assert.match(notice!, /0\.1\.0-nightly\.202610150000 is out \(this is 0\.1\.0-nightly\.202610140000\)/);
 });
 
 test("malformed version files are treated as no data", () => {

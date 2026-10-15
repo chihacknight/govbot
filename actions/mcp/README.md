@@ -86,6 +86,10 @@ installed versions and the last check.
 
 **Releasing.** `package.json`'s `version` is the source of truth; bump
 `mcpb/manifest.json` with it (`scripts/build-bundle.sh` fails if they differ).
+Each nightly bundle ships as `<version>-nightly.<UTC YYYYMMDDHHMM>` (the workflow
+passes `GOVBOT_MCP_VERSION` to `build-bundle.sh`), so every night's build is newer
+than the last. A local build stays plain `<version>`, which semver ranks above
+that version's nightlies, so it never shows an update notice for them.
 `govbot.cliMin` in `package.json` is the oldest CLI this server works with. The
 nightly CLI reports the version in `actions/govbot/Cargo.toml`, so raising
 `cliMin` only works together with a bump there.

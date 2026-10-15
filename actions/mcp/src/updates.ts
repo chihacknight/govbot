@@ -55,15 +55,70 @@ interface CacheFile {
 // Pure decisions
 // ---------------------------------------------------------------------------
 
+/** A parsed version: `major.minor.patch`, plus any pre-release identifiers. */
+export interface Version {
+  core: [number, number, number];
+  /** `["nightly", "202610151200"]` for `0.1.0-nightly.202610151200`; empty for a release. */
+  prerelease: string[];
+  /** The matched text without build metadata, e.g. `0.1.0-nightly.202610151200`. */
+  text: string;
+}
+
+// Build metadata (`+...`) is matched so it is not mistaken for anything else,
+// but semver says it never affects ordering, so it is dropped.
+const VERSION_PATTERN = /(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?/;
+
 /**
- * The first `major.minor.patch` in a string, so `govbot 0.1.0` and `0.1.0`
- * both parse. Anything after it (a prerelease tag) is ignored. Returns null
- * for anything unparseable, which always means "no notice".
+ * The first semver version in a string, so `govbot 0.1.0` and `0.1.0` both
+ * parse. Returns null for anything unparseable, which always means "no notice".
  */
-export function parseVersion(input: string | null | undefined): [number, number, number] | null {
-  const match = input?.match(/(\d+)\.(\d+)\.(\d+)/);
+export function parseVersion(input: string | null | undefined): Version | null {
+  const match = input?.match(VERSION_PATTERN);
   if (!match) return null;
-  return [Number(match[1]), Number(match[2]), Number(match[3])];
+  const core: [number, number, number] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const prerelease = match[4] ? match[4].split(".") : [];
+  return { core, prerelease, text: core.join(".") + (match[4] ? `-${match[4]}` : "") };
+}
+
+/**
+ * Semver pre-release precedence for two identifiers: numeric ones compare as
+ * numbers (by length first, so 12-digit nightly stamps never lose precision),
+ * numeric sorts before alphanumeric, and the rest compare as ASCII.
+ */
+function compareIdentifier(a: string, b: string): number {
+  const aNumeric = /^\d+$/.test(a);
+  const bNumeric = /^\d+$/.test(b);
+  if (aNumeric && bNumeric) {
+    const x = a.replace(/^0+(?=\d)/, "");
+    const y = b.replace(/^0+(?=\d)/, "");
+    if (x.length !== y.length) return x.length - y.length;
+    return x < y ? -1 : x > y ? 1 : 0;
+  }
+  if (aNumeric !== bNumeric) return aNumeric ? -1 : 1;
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/**
+ * Semver precedence: `0.2.0-rc.1 < 0.2.0`, `0.1.0 < 0.2.0-rc.1`, and nightly
+ * builds (`0.1.0-nightly.<UTC YYYYMMDDHHMM>`, stamped by the release workflow)
+ * order by build time. One consequence, intended: a local build reports plain
+ * `0.1.0`, which ranks above every `0.1.0-nightly.*`, so a developer's own build
+ * is never told to "update" to a nightly of the same version.
+ */
+export function compareVersions(left: Version, right: Version): number {
+  for (let i = 0; i < 3; i++) {
+    if (left.core[i]! !== right.core[i]!) return left.core[i]! - right.core[i]!;
+  }
+  // A release outranks any pre-release of the same core version.
+  if (!left.prerelease.length || !right.prerelease.length) {
+    return right.prerelease.length - left.prerelease.length;
+  }
+  const shared = Math.min(left.prerelease.length, right.prerelease.length);
+  for (let i = 0; i < shared; i++) {
+    const order = compareIdentifier(left.prerelease[i]!, right.prerelease[i]!);
+    if (order !== 0) return order;
+  }
+  return left.prerelease.length - right.prerelease.length;
 }
 
 /** True only when both parse and `a` is strictly older than `b`. */
@@ -71,10 +126,7 @@ export function isOlder(a: string | null | undefined, b: string | null | undefin
   const left = parseVersion(a);
   const right = parseVersion(b);
   if (!left || !right) return false;
-  for (let i = 0; i < 3; i++) {
-    if (left[i]! !== right[i]!) return left[i]! < right[i]!;
-  }
-  return false;
+  return compareVersions(left, right) < 0;
 }
 
 /** Whichever minimum is higher; either may be missing. */
@@ -126,7 +178,7 @@ export function updateNotices(input: NoticeInput): string[] {
 
   const needed = higherMinimum(input.cliMin, remote?.cli_min);
   if (input.cli && needed && isOlder(input.cli, needed)) {
-    const current = parseVersion(input.cli)!.join(".");
+    const current = parseVersion(input.cli)!.text;
     notices.push(
       `Update needed: the govbot command-line tool on this computer is ${current}, but ` +
         `${needed} or newer is needed. Some answers may fail until it is updated. ` +

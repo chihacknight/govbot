@@ -23,6 +23,25 @@ if [ "$PKG_VERSION" != "$MANIFEST_VERSION" ]; then
   exit 1
 fi
 
+# The version the bundle ships as. Locally that is package.json's version. The
+# nightly release passes GOVBOT_MCP_VERSION=<that version>-nightly.<UTC
+# YYYYMMDDHHMM> so each night's bundle is newer than the last; without it every
+# nightly would be "0.1.0" and nobody would ever see an update. Only a
+# pre-release of package.json's own version is accepted, so the stamp can never
+# drift from the source of truth. It is written into the staged copies of
+# manifest.json and package.json only; the checked-in files are not touched.
+VERSION="${GOVBOT_MCP_VERSION:-$PKG_VERSION}"
+if [ "$VERSION" != "$PKG_VERSION" ]; then
+  case "$VERSION" in
+    "$PKG_VERSION"-*) ;;
+    *) echo "GOVBOT_MCP_VERSION=$VERSION must be $PKG_VERSION or a pre-release of it ($PKG_VERSION-...)." >&2; exit 1 ;;
+  esac
+  if ! printf '%s' "${VERSION#"$PKG_VERSION"-}" | grep -Eq '^[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*$'; then
+    echo "GOVBOT_MCP_VERSION=$VERSION has an invalid pre-release part." >&2
+    exit 1
+  fi
+fi
+
 echo "Building..." >&2
 npm install --silent
 npm run build --silent
@@ -32,6 +51,14 @@ cp -R dist/. "$STAGE/server/"
 rm -f "$STAGE/server"/*.map "$STAGE/server"/*.test.js
 cp mcpb/manifest.json "$STAGE/manifest.json"
 cp package.json "$STAGE/server/package.json"
+STAGE="$STAGE" VERSION="$VERSION" node -e '
+  const fs = require("fs");
+  for (const file of [process.env.STAGE + "/manifest.json", process.env.STAGE + "/server/package.json"]) {
+    const json = JSON.parse(fs.readFileSync(file, "utf8"));
+    json.version = process.env.VERSION;
+    fs.writeFileSync(file, JSON.stringify(json, null, 2) + "\n");
+  }
+'
 
 echo "Staging production dependencies..." >&2
 (cd "$STAGE/server" && npm install --silent --omit=dev --no-package-lock)
@@ -53,6 +80,12 @@ case "$PROBE" in
   *'"tools"'*) ;;
   *) echo "The staged server did not answer tools/list." >&2; exit 1 ;;
 esac
+# The update check compares against the version the server reports, so it must
+# be the stamped one, not whatever package.json said before staging.
+case "$PROBE" in
+  *'"name":"govbot","version":"'"$VERSION"'"'*) ;;
+  *) echo "The staged server does not report version $VERSION." >&2; exit 1 ;;
+esac
 
 npx --yes @anthropic-ai/mcpb@2.1.2 pack "$STAGE" "$OUT"
-echo "Wrote $OUT" >&2
+echo "Wrote $OUT (version $VERSION)" >&2
