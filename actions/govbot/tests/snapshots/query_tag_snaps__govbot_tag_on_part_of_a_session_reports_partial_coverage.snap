@@ -1,0 +1,23 @@
+---
+source: tests/query_tag_snaps.rs
+expression: summarize(&stdout)
+---
+{
+  "caveats": [
+    "Wyoming publishes no roll-call votes in this dataset (10 bills, 0 vote events). Sponsorship is the only available evidence. Do not describe this as a legislator not having voted on something.",
+    "2 of 5 bills in Wyoming (2025) have been scored for 'public budgets'. The other 3 were not checked, so they are missing from these results, not non-matching. Use `query` with `text` to search every bill, or run `govbot tag` (tag_with_local_ai in Claude Desktop) for wy with a higher limit.",
+    "Wyoming (2026) has not been scored for 'public budgets' yet, so it contributes no results. This is missing data, not an empty record. Run `govbot tag` (tag_with_local_ai in Claude Desktop) for wy."
+  ],
+  "results": [
+    {
+      "final_score": 0.6000000238418579,
+      "identifier": "HB0001",
+      "session": "2025"
+    }
+  ],
+  "truncation": {
+    "limit": 20,
+    "returned": 1,
+    "total_matching": 1
+  }
+}

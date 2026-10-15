@@ -1,0 +1,9 @@
+id: first-run
+prompt: |
+  What can govbot do? I just installed it.
+setup:
+  workspace: fresh   # no govbot.yml yet, as after a fresh install
+expect:
+  - Explains in plain language what it can answer and what it cannot, in a few lines.
+  - Checks the local data and says what is already cloned.
+  - Suggests one concrete next step (e.g. "clone your state") rather than a feature list.

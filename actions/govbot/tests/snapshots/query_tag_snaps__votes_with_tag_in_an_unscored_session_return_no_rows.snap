@@ -1,0 +1,7 @@
+---
+source: tests/query_tag_snaps.rs
+expression: "summary[\"caveats\"]"
+---
+[
+  "Wyoming (2026) has not been scored for 'public budgets' yet, so it contributes no results. This is missing data, not an empty record. Run `govbot tag` (tag_with_local_ai in Claude Desktop) for wy."
+]

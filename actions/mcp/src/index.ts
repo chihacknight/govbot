@@ -14,8 +14,11 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { readFile } from "node:fs/promises";
 import { z } from "zod";
 
+import { GovbotError } from "./govbot.js";
 import { SERVER_INSTRUCTIONS } from "./instructions.js";
+import type { SendProgress } from "./progress.js";
 import * as tools from "./tools.js";
+import { withTrace } from "./trace.js";
 import { startUpdateCheck } from "./updates.js";
 import { SERVER_VERSION as VERSION } from "./version.js";
 import * as workspace from "./workspace.js";
@@ -41,9 +44,38 @@ function respond(output: tools.ToolOutput) {
 function failure(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   log(`tool error: ${message}`);
+  // GovbotError keeps the actionable part (the install command, the CLI's own
+  // stderr) in `detail`; dropping it leaves the person at a dead end.
+  const detail = error instanceof GovbotError ? error.detail : undefined;
   return {
-    content: [{ type: "text" as const, text: message }],
+    content: [{ type: "text" as const, text: [message, detail ?? ""].filter(Boolean).join("\n\n") }],
     isError: true,
+  };
+}
+
+/**
+ * A progress sender for this request, or `undefined` when the client did not put
+ * a `progressToken` in `_meta`: the spec allows progress only for requests that
+ * asked for it. Progress is used instead of `notifications/message` because this
+ * server declares no `logging` capability, so the SDK refuses log notifications,
+ * and log lines are not shown to the person anyway.
+ */
+function progressFor(extra: {
+  _meta?: { progressToken?: string | number };
+  sendNotification: (notification: {
+    method: "notifications/progress";
+    params: { progressToken: string | number; progress: number; total?: number; message?: string };
+  }) => Promise<void>;
+}): SendProgress | undefined {
+  const progressToken = extra._meta?.progressToken;
+  if (progressToken === undefined) return undefined;
+  return (update) => {
+    extra
+      .sendNotification({ method: "notifications/progress", params: { progressToken, ...update } })
+      .catch((error: unknown) => {
+        // Best-effort: a closed transport must not fail the tool call.
+        log(`progress not sent: ${error instanceof Error ? error.message : String(error)}`);
+      });
   };
 }
 
@@ -60,14 +92,21 @@ server.registerTool(
       "the data cloned so far and a plain-text file describing the topics you care about, " +
       "and it can be published to GitHub or deleted at any time.",
     inputSchema: tools.setupWorkspaceSchema,
+    // Only creates what is missing; an existing workspace is left as it is.
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
   },
-  async () => {
+  withTrace("setup_workspace", async () => {
     try {
       return respond(await tools.setupWorkspace());
     } catch (error) {
       return failure(error);
     }
-  },
+  }),
 );
 
 server.registerTool(
@@ -78,14 +117,16 @@ server.registerTool(
       "Report which jurisdictions have been cloned, how many bills and recorded votes " +
       "each has, and what questions that data can and cannot answer.",
     inputSchema: tools.checkLocalDataSchema,
+    // Reads only; never creates or touches the workspace (see tools.checkLocalData).
+    annotations: { readOnlyHint: true, openWorldHint: false },
   },
-  async (args) => {
+  withTrace("check_local_data", async (args) => {
     try {
       return respond(await tools.checkLocalData(args));
     } catch (error) {
       return failure(error);
     }
-  },
+  }),
 );
 
 server.registerTool(
@@ -97,23 +138,23 @@ server.registerTool(
       "to this computer. No account, no API key, and no record of what you look up — " +
       "every later question is answered from the local copy.",
     inputSchema: tools.cloneSchema,
+    // Downloads the repositories over the network. Destructive because it records the
+    // jurisdictions by rewriting govbot.yml (workspace.writeConfig), which drops
+    // any comments or extra keys the person added by hand.
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
   },
-  async (args, extra) => {
+  withTrace("clone_government_data", async (args, extra) => {
     try {
-      return respond(
-        await tools.clone(args, (message) => {
-          extra.sendNotification?.({
-            method: "notifications/message",
-            params: { level: "info", data: message },
-          }).catch(() => {
-            // Progress is best-effort; a client that does not accept it is fine.
-          });
-        }),
-      );
+      return respond(await tools.clone(args, progressFor(extra)));
     } catch (error) {
       return failure(error);
     }
-  },
+  }),
 );
 
 server.registerTool(
@@ -124,14 +165,22 @@ server.registerTool(
       "Write the topics you care about into your workspace as reusable definitions. " +
       "They are saved as plain YAML you can read, edit, and re-run yourself.",
     inputSchema: tools.saveValuesSchema,
+    // Destructive: a topic with the same name is replaced, and govbot.yml is
+    // rewritten (workspace.writeConfig), dropping hand-written comments.
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
   },
-  async (args) => {
+  withTrace("save_my_values", async (args) => {
     try {
       return respond(await tools.saveValues(args));
     } catch (error) {
       return failure(error);
     }
-  },
+  }),
 );
 
 server.registerTool(
@@ -143,21 +192,25 @@ server.registerTool(
       "computer. Your topics and the bill text never leave the machine, and there is " +
       "no per-use cost.",
     inputSchema: tools.tagSchemaInput,
+    // Rewrites only its own score files, which are derived from govbot.yml and the
+    // cloned data and come out the same on a re-run. The model runs locally, but
+    // open-world because `govbot tag` downloads model.onnx and tokenizer.json from
+    // huggingface.co on its first run (actions/govbot/src/main.rs); bill text and
+    // topics are never sent anywhere.
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
   },
-  async (args, extra) => {
+  withTrace("tag_with_local_ai", async (args, extra) => {
     try {
-      return respond(
-        await tools.tagWithLocalAi(args, (message) => {
-          extra.sendNotification?.({
-            method: "notifications/message",
-            params: { level: "info", data: message },
-          }).catch(() => {});
-        }),
-      );
+      return respond(await tools.tagWithLocalAi(args, progressFor(extra)));
     } catch (error) {
       return failure(error);
     }
-  },
+  }),
 );
 
 server.registerTool(
@@ -169,14 +222,16 @@ server.registerTool(
       "named in the data, or a report of what the data covers. Every result carries the " +
       "repository, commit, and file path it came from.",
     inputSchema: tools.querySchema,
+    // Reads only; never creates or touches the workspace (see tools.query).
+    annotations: { readOnlyHint: true, openWorldHint: false },
   },
-  async (args) => {
+  withTrace("query", async (args) => {
     try {
       return respond(await tools.query(args));
     } catch (error) {
       return failure(error);
     }
-  },
+  }),
 );
 
 // ---------------------------------------------------------------------------

@@ -87,5 +87,27 @@ case "$PROBE" in
   *) echo "The staged server does not report version $VERSION." >&2; exit 1 ;;
 esac
 
+# Claude Desktop passes the manifest's settings without expanding variables in
+# their defaults, so an install with default settings has, in the past, started
+# the server with a literal `${HOME}` in GOVBOT_WORKSPACE (issue #257). Start it
+# the same way, with HOME pointed at a throwaway folder, and check setup_workspace
+# lands in ~/govbot-workspace and creates nothing named `${HOME}`.
+echo "Verifying setup_workspace with the settings Claude Desktop passes..." >&2
+PROBE_HOME="$(mktemp -d)"
+PROBE=$(cd "$PROBE_HOME" && printf '%s\n' \
+  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"build","version":"1"}}}' \
+  '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+  '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"setup_workspace","arguments":{}}}' \
+  | HOME="$PROBE_HOME" GOVBOT_WORKSPACE='${HOME}/govbot-workspace' GOVBOT_BIN='' \
+    node "$STAGE/server/index.js" 2>/dev/null)
+if [ ! -f "$PROBE_HOME/govbot-workspace/govbot.yml" ] \
+  || [ -n "$(find "$PROBE_HOME" -name '${HOME}' -print -quit)" ]; then
+  echo "setup_workspace did not create ~/govbot-workspace from Desktop's default settings:" >&2
+  echo "$PROBE" >&2
+  rm -rf "$PROBE_HOME"
+  exit 1
+fi
+rm -rf "$PROBE_HOME"
+
 npx --yes @anthropic-ai/mcpb@2.1.2 pack "$STAGE" "$OUT"
 echo "Wrote $OUT (version $VERSION)" >&2

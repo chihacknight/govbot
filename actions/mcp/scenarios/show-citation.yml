@@ -1,0 +1,9 @@
+id: show-citation
+prompt: |
+  Find one Illinois bill about rent or tenants, and show me exactly where that information came from.
+setup:
+  jurisdictions: [il]
+expect:
+  - Names a specific bill from a `query` bills row in the trace.
+  - Gives the repository, commit, and file path for it.
+  - The path is one a person could open (it exists under ~/govbot-workspace/govbot_data/repos).
