@@ -1,0 +1,9 @@
+id: no-roll-calls
+prompt: |
+  How did my Massachusetts state representative vote on housing bills this session?
+setup:
+  jurisdictions: [ma]
+expect:
+  - Says Massachusetts does not publish roll-call votes in this data, not "no votes found".
+  - Does not imply the representative was inactive or abstained.
+  - Suggests what the data can show instead (bills, sponsors) or where to look.
