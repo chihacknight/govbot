@@ -281,7 +281,7 @@ export const tagSchemaInput = {
     .positive()
     .optional()
     .describe(
-      "Bills to score per jurisdiction. Scoring runs at roughly 25 bills per second, so keep this in the hundreds for an interactive answer.",
+      "Log entries to read per jurisdiction (default 400). Each bill has one or more, so this is an upper bound on the bills scored, and the default covers only part of a large state. Scoring runs at about 25 bills per second, so keep this in the hundreds for an interactive answer. To search every bill, use `query` with `text` instead.",
     ),
 };
 
@@ -355,7 +355,15 @@ export async function tagWithLocalAi(
   const mode = detectTaggingMode(tagged.stderr);
   const matched = tagged.stdout.trim() ? tagged.stdout.trim().split("\n").length : 0;
 
+  // How much of each jurisdiction this run actually looked at. Without it, "0
+  // matched" after scoring 3% of a state reads as "no such bills exist".
+  const scored = countScoredBills(logs.stdout);
+  const totals = await billTotals(args.jurisdictions);
+  const tagCoverage = describeTagCoverage(scored, totals);
+
   const lines = [
+    ...tagCoverage.lines,
+    "",
     `Scored bills against: ${Object.keys(config.tags).join(", ")}`,
     `${matched} bill records matched at least one topic.`,
     "",
@@ -378,8 +386,175 @@ export async function tagWithLocalAi(
 
   return {
     text: lines.join("\n"),
-    data: { mode, matched, topics: Object.keys(config.tags) },
+    data: {
+      mode,
+      matched,
+      topics: Object.keys(config.tags),
+      coverage: tagCoverage.jurisdictions,
+      partial: tagCoverage.partial,
+    },
   };
+}
+
+/** Scoring speed measured with the local embedding model; used for time estimates. */
+const BILLS_PER_SECOND = 25;
+
+/**
+ * Distinct bills per jurisdiction locale in `govbot logs --join bill` output.
+ *
+ * `--limit` caps log entries, not bills, and a bill usually has several entries
+ * (400 Illinois entries were 384 bills; 20 Wyoming mock entries are 10). A bill is
+ * keyed by session as well as identifier because identifiers restart each session:
+ * Wyoming has an HB0002 in both 2025 and 2026, and `govbot tag` writes them to
+ * different tag files.
+ *
+ * The locale and session come from the `sources.log` path, the same place
+ * `govbot tag` reads them from, so the count matches what was tagged. A line with
+ * no recognisable path is skipped: `govbot tag` files it under "unknown", which
+ * no jurisdiction's results will ever include.
+ */
+export function countScoredBills(logsJsonl: string): Map<string, number> {
+  const bills = new Map<string, Set<string>>();
+  for (const line of logsJsonl.split("\n")) {
+    if (!line.trim()) continue;
+    let entry: { id?: unknown; sources?: { log?: unknown; bill?: unknown } };
+    try {
+      entry = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const path = String(entry.sources?.log ?? entry.sources?.bill ?? "");
+    const match = path.match(/state:([^/]+)\/sessions\/([^/]+)\/bills\/([^/]+)\//);
+    if (!match) continue;
+    const [, locale, session, billDir] = match as unknown as [string, string, string, string];
+    const id = typeof entry.id === "string" && entry.id ? entry.id : billDir;
+    if (!bills.has(locale)) bills.set(locale, new Set());
+    bills.get(locale)!.add(`${session}/${id}`);
+  }
+  return new Map([...bills].map(([locale, set]) => [locale, set.size]));
+}
+
+/**
+ * Every jurisdiction's bill count, from the same `query coverage` that
+ * check_local_data uses. `null` if it could not be read; the caller then says
+ * the totals are unknown rather than guessing.
+ */
+async function billTotals(jurisdictions?: string[]): Promise<CoverageEntry[] | null> {
+  const args = ["query", "coverage", "--govbot-dir", workspace.dataPath()];
+  for (const jurisdiction of jurisdictions ?? []) {
+    args.push("--jurisdiction", normalizeLocale(jurisdiction));
+  }
+  try {
+    const response = await govbot.runJson<QueryResponse>(args, {
+      cwd: workspace.workspacePath(),
+    });
+    return response.coverage ?? [];
+  } catch {
+    return null;
+  }
+}
+
+export interface TagCoverage {
+  jurisdiction: string;
+  name: string;
+  scored: number;
+  /** `null` when the jurisdiction's bill count could not be read. */
+  total: number | null;
+}
+
+/**
+ * The lines that lead the tag_with_local_ai result: how many of each
+ * jurisdiction's bills were scored, and — when that is not all of them — that the
+ * rest are missing from topic results rather than non-matching.
+ *
+ * A partial run is the normal case: the default limit reads a few hundred log
+ * entries per jurisdiction, and Illinois alone has about 12,800 bills. Partial
+ * runs with matches are just as incomplete as ones without, so the warning does
+ * not depend on the match count.
+ */
+export function describeTagCoverage(
+  scored: Map<string, number>,
+  totals: CoverageEntry[] | null,
+): { lines: string[]; jurisdictions: TagCoverage[]; partial: boolean } {
+  const jurisdictions: TagCoverage[] = [];
+  const seen = new Set<string>();
+  for (const entry of totals ?? []) {
+    const locale = entry.jurisdiction.locale;
+    seen.add(locale);
+    jurisdictions.push({
+      jurisdiction: locale,
+      name: entry.jurisdiction.name ?? locale.toUpperCase(),
+      scored: scored.get(locale) ?? 0,
+      total: entry.bills,
+    });
+  }
+  // Scored but absent from coverage: only if coverage failed or disagrees with
+  // `logs` about what is cloned. Report it with an unknown total.
+  for (const [locale, count] of scored) {
+    if (seen.has(locale)) continue;
+    jurisdictions.push({ jurisdiction: locale, name: locale.toUpperCase(), scored: count, total: null });
+  }
+
+  const lines: string[] = [];
+  let reachable = 0;
+  let partial = false;
+  for (const j of jurisdictions) {
+    if (j.total === null) {
+      partial = true;
+      lines.push(
+        `${j.name}: scored ${fmt(j.scored)} bills, out of an unknown total. Treat this ` +
+          "run as partial.",
+      );
+    } else if (j.total === 0) {
+      lines.push(`${j.name}: no bills in the cloned data.`);
+    } else if (j.scored >= j.total) {
+      // `>=`: logs can name a bill whose metadata coverage did not count.
+      lines.push(`${j.name}: scored all ${fmt(j.total)} bills.`);
+    } else {
+      partial = true;
+      const rest = j.total - j.scored;
+      let line =
+        `${j.name}: scored ${fmt(j.scored)} of ${fmt(j.total)} bills (${percent(j.scored, j.total)}). ` +
+        `The other ${fmt(rest)} were not checked, so they are missing from topic ` +
+        "results, not non-matching.";
+      if (j.scored === 0) {
+        // `--limit` is per jurisdiction, so zero entries means its bills have no
+        // log entries at all (the Guam mock is like this). Tagging reads log
+        // entries, so no limit reaches these bills; only a text query does.
+        line += " Its bills have no log entries, so a higher limit will not reach them.";
+      } else {
+        reachable += rest;
+      }
+      lines.push(line);
+    }
+  }
+
+  if (partial) {
+    // A lower bound: tagging scores every log entry, and most bills have several.
+    const minutes = Math.max(1, Math.ceil(reachable / BILLS_PER_SECOND / 60));
+    lines.push(
+      "",
+      "Zero or few matches from a partial run is not evidence that no such bills " +
+        "exist, and `query` with this tag only ever returns bills from the scored part. " +
+        "Use `query` with `text`, which searches every bill" +
+        (reachable > 0
+          ? `, or rerun with a higher limit (the unscored bills would take at least ${minutes} minute${minutes === 1 ? "" : "s"}).`
+          : "."),
+    );
+  }
+
+  return { lines, jurisdictions, partial };
+}
+
+function fmt(n: number): string {
+  return n.toLocaleString("en-US");
+}
+
+/** Whole percent, but never "0%" for some bills or "100%" for not all of them. */
+function percent(part: number, whole: number): string {
+  const value = Math.floor((part / whole) * 100);
+  if (value === 0 && part > 0) return "under 1%";
+  return `${Math.min(value, 99)}%`;
 }
 
 /**

@@ -14,7 +14,7 @@
           "listChanged": true
         }
       },
-      "instructions": "<5846 characters>",
+      "instructions": "<6029 characters>",
       "protocolVersion": "2025-06-18",
       "serverInfo": {
         "name": "govbot",
@@ -208,7 +208,7 @@
                 "type": "array"
               },
               "limit": {
-                "description": "Bills to score per jurisdiction. Scoring runs at roughly 25 bills per second, so keep this in the hundreds for an interactive answer.",
+                "description": "Log entries to read per jurisdiction (default 400). Each bill has one or more, so this is an upper bound on the bills scored, and the default covers only part of a large state. Scoring runs at about 25 bills per second, so keep this in the hundreds for an interactive answer. To search every bill, use `query` with `text` instead.",
                 "exclusiveMinimum": 0,
                 "type": "integer"
               }
