@@ -525,9 +525,13 @@ fn query_votes(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
                     for event in scan::vote_events(&bill, &request.repos_dir) {
                         let person_vote = match person_match.as_ref() {
                             Some(resolved) => {
-                                let Some(found) =
-                                    matching_vote(&event, resolved, request.min_confidence)
-                                else {
+                                let scope = vote_scope(jurisdiction, &event.chamber, &session_id);
+                                let Some(found) = matching_vote(
+                                    &event,
+                                    resolved,
+                                    request.min_confidence,
+                                    scope.as_deref(),
+                                ) else {
                                     continue;
                                 };
                                 Some(found)
@@ -554,18 +558,20 @@ fn query_votes(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
 }
 
 /// The row in `event` cast by the resolved person, if any. A surname-only
-/// spelling counts only when its medium confidence meets the caller's minimum.
+/// spelling counts only when it was linked in this event's `scope` (see
+/// [`vote_scope`]) and its medium confidence meets the caller's minimum.
 fn matching_vote(
     event: &VoteEventRecord,
     resolved: &NameMatch,
     minimum: Confidence,
+    scope: Option<&str>,
 ) -> Option<names::RawVoteRow> {
     event
         .votes
         .iter()
         .find(|row| {
             resolved
-                .confidence_for(&row.voter_name)
+                .confidence_for(&row.voter_name, scope)
                 .is_some_and(|c| c >= minimum && c > Confidence::None)
         })
         .cloned()
@@ -632,7 +638,10 @@ struct PersonTally {
     sponsored: usize,
     cosponsored: usize,
     votes: usize,
-    /// Bare-surname spellings folded in by `NameIndex::surname_link`.
+    /// `votes`, split by [`vote_scope`], so a bare surname's votes can be folded
+    /// into a full name one scope at a time. Votes with no scope are not here.
+    votes_by_scope: BTreeMap<String, usize>,
+    /// Bare-surname spellings folded in by `NameIndex::surname_links`.
     surname_only_spellings: Vec<String>,
 }
 
@@ -682,17 +691,23 @@ fn query_people(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String
                         }
                     }
                     for event in scan::vote_events(&bill, &request.repos_dir) {
-                        let scope = format!("{jurisdiction}|{}|{session_id}", event.chamber);
+                        let scope = vote_scope(jurisdiction, &event.chamber, &session_id);
                         for vote in &event.votes {
                             if names::is_suspect_fragment(&vote.voter_name) {
                                 continue;
                             }
-                            index.insert_in_scope(&vote.voter_name, &scope);
+                            match &scope {
+                                Some(scope) => index.insert_in_scope(&vote.voter_name, scope),
+                                None => index.insert(&vote.voter_name),
+                            }
                             let entry = tallies
                                 .entry(names::normalize(&vote.voter_name).key())
                                 .or_default();
                             entry.record_spelling(&vote.voter_name);
                             entry.votes += 1;
+                            if let Some(scope) = &scope {
+                                *entry.votes_by_scope.entry(scope.clone()).or_default() += 1;
+                            }
                         }
                     }
                     Ok(ControlFlow::Continue)
@@ -703,29 +718,43 @@ fn query_people(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String
 
     // Fold each linkable bare surname (`Cunningham`) into the one full-named
     // person it belongs to (`Cunningham, Bill`), so one legislator is one row.
+    // Only the bare spelling's votes in scopes where the link holds move; the
+    // same `Peters` in Congress stays its own row. Sponsorships carry no scope,
+    // so they never move. The link is medium confidence, so a higher minimum
+    // leaves every row as the data spells it, matching `query votes`.
+    let fold = request.min_confidence <= Confidence::Medium;
+    let mut withheld = false;
     let bare_keys: Vec<String> = tallies
         .keys()
         .filter(|key| !key.contains(' '))
         .cloned()
         .collect();
     for bare_key in bare_keys {
-        let Some(link) = index.surname_link(&bare_key) else {
-            continue;
-        };
-        if !tallies.contains_key(&link.person_key) {
-            continue;
+        let mut bare = tallies.remove(&bare_key).expect("key came from the map");
+        for link in index.surname_links(&bare_key) {
+            let Some(person) = tallies.get_mut(&link.person_key) else {
+                continue;
+            };
+            let Some(&moved) = bare.votes_by_scope.get(&link.scope) else {
+                continue;
+            };
+            if !fold {
+                withheld = true;
+                continue;
+            }
+            bare.votes_by_scope.remove(&link.scope);
+            bare.votes -= moved;
+            person.votes += moved;
+            for spelling in &link.bare_spellings {
+                person.record_spelling(spelling);
+                if !person.surname_only_spellings.contains(spelling) {
+                    person.surname_only_spellings.push(spelling.clone());
+                }
+            }
         }
-        let bare = tallies.remove(&bare_key).expect("key came from the map");
-        let person = tallies
-            .get_mut(&link.person_key)
-            .expect("checked above");
-        for spelling in &bare.spellings {
-            person.record_spelling(spelling);
-            person.surname_only_spellings.push(spelling.clone());
+        if bare.votes + bare.sponsored + bare.cosponsored > 0 {
+            tallies.insert(bare_key, bare);
         }
-        person.sponsored += bare.sponsored;
-        person.cosponsored += bare.cosponsored;
-        person.votes += bare.votes;
     }
 
     let mut rows: Vec<(usize, Value)> = tallies
@@ -776,6 +805,15 @@ fn query_people(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String
              chamber and session; that link is by surname only (medium confidence)."
                 .to_string(),
         );
+    }
+    if withheld {
+        caveats.push(format!(
+            "Some names appear twice: once in full (\"Cunningham, Bill\") and once \
+             as a bare surname (\"Cunningham\", as Illinois floor votes print it). \
+             They were not combined, because that link is by surname only (medium \
+             confidence), below the requested minimum of {:?}.",
+            request.min_confidence
+        ));
     }
 
     Ok((results, total, caveats))
@@ -921,6 +959,19 @@ fn coverage_for(request: &QueryRequest, jurisdiction: &Jurisdiction) -> Result<C
 // Shared helpers
 // ---------------------------------------------------------------------------
 
+/// The scope a bare surname is linked to a full name within (see
+/// `NameIndex::surname_links`): one jurisdiction's chamber in one session.
+///
+/// `None` when the vote event names no chamber. Without it a House `Johnson`
+/// and a Senate `Johnson` would share one scope, so such rows are never linked.
+fn vote_scope(jurisdiction: &Jurisdiction, chamber: &str, session_id: &str) -> Option<String> {
+    let chamber = chamber.trim();
+    if chamber.is_empty() {
+        return None;
+    }
+    Some(format!("{jurisdiction}|{chamber}|{session_id}"))
+}
+
 fn sessions_in_scope(request: &QueryRequest, jurisdiction: &Jurisdiction) -> Vec<String> {
     let available = scan::sessions(&request.repos_dir, jurisdiction);
     match &request.session {
@@ -971,12 +1022,15 @@ fn build_voter_index(request: &QueryRequest) -> Result<NameIndex> {
                 Some(&session_id),
                 |bill| {
                     for event in scan::vote_events(&bill, &request.repos_dir) {
-                        // Scope for `NameIndex::surname_link`: a bare surname is
+                        // Scope for `NameIndex::surname_links`: a bare surname is
                         // only linked to a full name seen in the same jurisdiction,
                         // chamber and session.
-                        let scope = format!("{jurisdiction}|{}|{session_id}", event.chamber);
+                        let scope = vote_scope(jurisdiction, &event.chamber, &session_id);
                         for vote in &event.votes {
-                            index.insert_in_scope(&vote.voter_name, &scope);
+                            match &scope {
+                                Some(scope) => index.insert_in_scope(&vote.voter_name, scope),
+                                None => index.insert(&vote.voter_name),
+                            }
                             // Federal rows carry the bioguide id in `note`, which
                             // is the one exact join this data offers.
                             if !vote.note.is_empty() {
@@ -1022,7 +1076,25 @@ fn describe_match(query: &str, resolved: &NameMatch, minimum: Confidence) -> Vec
     }
     .into_iter()
     .chain(describe_surname_link(resolved, minimum))
+    .chain(describe_unlinked(resolved, minimum))
     .collect()
+}
+
+/// Say so when bare-surname rows sit beside this person but couldn't be linked
+/// to them, since those rows may well be theirs.
+fn describe_unlinked(resolved: &NameMatch, minimum: Confidence) -> Option<String> {
+    if resolved.unlinked_surname_only_spellings.is_empty() || !resolved.is_attributable(minimum)
+    {
+        return None;
+    }
+    Some(format!(
+        "Some records in the same chamber and session as \"{}\" print only the \
+         surname (\"{}\") and were left out: more than one legislator with that \
+         surname appears there, or the source marked the name in a way govbot can't \
+         check, so they can't be attributed by name. This may leave out floor votes.",
+        resolved.candidates.join("\", \""),
+        resolved.unlinked_surname_only_spellings.join("\", \"")
+    ))
 }
 
 /// Say so when rows were (or, below the minimum, were not) included through a
@@ -1064,6 +1136,7 @@ fn truncate(text: &str, max_chars: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::BTreeSet;
 
     #[test]
     fn text_search_matches_whole_words_only() {
@@ -1110,6 +1183,8 @@ mod tests {
             confidence: Confidence::None,
             candidates: vec!["Brown, G".into(), "Brown, L".into()],
             surname_only_spellings: Vec::new(),
+            surname_only_scopes: BTreeMap::new(),
+            unlinked_surname_only_spellings: Vec::new(),
         };
         let caveats = describe_match("Brown", &resolved, Confidence::Medium);
         assert_eq!(caveats.len(), 1);
@@ -1125,6 +1200,8 @@ mod tests {
             confidence: Confidence::None,
             candidates: Vec::new(),
             surname_only_spellings: Vec::new(),
+            surname_only_scopes: BTreeMap::new(),
+            unlinked_surname_only_spellings: Vec::new(),
         };
         let caveats = describe_match("Nobody", &resolved, Confidence::Medium);
         assert!(caveats[0].contains("not that the person took no action"));
@@ -1137,6 +1214,8 @@ mod tests {
             confidence: Confidence::Medium,
             candidates: vec!["Filer".into()],
             surname_only_spellings: Vec::new(),
+            surname_only_scopes: BTreeMap::new(),
+            unlinked_surname_only_spellings: Vec::new(),
         };
         let caveats = describe_match("Filer", &resolved, Confidence::Medium);
         assert!(caveats[0].contains("no legislator roster"));
@@ -1149,6 +1228,8 @@ mod tests {
             confidence: Confidence::High,
             candidates: vec!["Cunningham, Bill".into()],
             surname_only_spellings: Vec::new(),
+            surname_only_scopes: BTreeMap::new(),
+            unlinked_surname_only_spellings: Vec::new(),
         };
         assert!(describe_match("Bill Cunningham", &resolved, Confidence::Medium).is_empty());
     }
@@ -1160,6 +1241,11 @@ mod tests {
             confidence: Confidence::High,
             candidates: vec!["Cunningham, Bill".into()],
             surname_only_spellings: vec!["Cunningham".into()],
+            surname_only_scopes: BTreeMap::from([(
+                "Cunningham".into(),
+                BTreeSet::from(["il|upper|104th".to_string()]),
+            )]),
+            unlinked_surname_only_spellings: Vec::new(),
         };
         let caveats = describe_match("Bill Cunningham", &resolved, Confidence::Medium);
         assert_eq!(caveats.len(), 1);
@@ -1179,6 +1265,11 @@ mod tests {
             confidence: Confidence::High,
             candidates: vec!["Cunningham, Bill".into()],
             surname_only_spellings: vec!["Cunningham".into()],
+            surname_only_scopes: BTreeMap::from([(
+                "Cunningham".into(),
+                BTreeSet::from(["il|upper|104th".to_string()]),
+            )]),
+            unlinked_surname_only_spellings: Vec::new(),
         };
         let event = VoteEventRecord {
             votes: vec![names::RawVoteRow {
@@ -1199,7 +1290,38 @@ mod tests {
                 path: String::new(),
             },
         };
-        assert!(matching_vote(&event, &resolved, Confidence::Medium).is_some());
-        assert!(matching_vote(&event, &resolved, Confidence::High).is_none());
+        let senate = Some("il|upper|104th");
+        assert!(matching_vote(&event, &resolved, Confidence::Medium, senate).is_some());
+        assert!(matching_vote(&event, &resolved, Confidence::High, senate).is_none());
+        // Linked in the Senate only: a House row, or one whose chamber is
+        // unknown, is not this senator's.
+        assert!(matching_vote(&event, &resolved, Confidence::Medium, Some("il|lower|104th")).is_none());
+        assert!(matching_vote(&event, &resolved, Confidence::Medium, None).is_none());
+    }
+
+    #[test]
+    fn a_vote_with_no_chamber_has_no_scope() {
+        let il = ocd::parse_jurisdiction("il").expect("il parses");
+        assert_eq!(
+            vote_scope(&il, "upper", "104th").as_deref(),
+            Some(format!("{il}|upper|104th").as_str())
+        );
+        assert_eq!(vote_scope(&il, "", "104th"), None);
+        assert_eq!(vote_scope(&il, "  ", "104th"), None);
+    }
+
+    #[test]
+    fn unlinked_bare_rows_are_named_in_a_caveat() {
+        let resolved = NameMatch {
+            method: MatchMethod::ExactName,
+            confidence: Confidence::High,
+            candidates: vec!["Brown, L".into()],
+            surname_only_spellings: Vec::new(),
+            surname_only_scopes: BTreeMap::new(),
+            unlinked_surname_only_spellings: vec!["Brown".into()],
+        };
+        let caveats = describe_match("Brown, L", &resolved, Confidence::Medium);
+        assert_eq!(caveats.len(), 1);
+        assert!(caveats[0].contains("(\"Brown\") and were left out"));
     }
 }
