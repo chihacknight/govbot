@@ -135,7 +135,7 @@ ready_count() {
   grep -c 'govbot-mcp\] ready' "$LOG" || true
 }
 
-osa() { osascript -e "$@" >/dev/null; }
+osa() { osascript -e "$@" >/dev/null; mkdir -p "$TARGET"; date +%s > "$TARGET/last-input"; }
 
 restart_desktop() {
   local before waited=0
@@ -157,8 +157,11 @@ restart_desktop() {
 # --------------------------------------------------------------------------
 
 cmd_idle() {
-  local idle; idle="$(idle_seconds)"
-  if [ "${MCP_CAPTURE_FORCE:-0}" = 1 ] || [ "$idle" -ge "$IDLE_SECS" ]; then
+  local idle ours=999999; idle="$(idle_seconds)"
+  # Our own keystrokes reset the idle timer too. If the last input is the one
+  # this script sent (recorded in last-input), nobody else has touched the Mac.
+  [ -f "$TARGET/last-input" ] && ours=$(( $(date +%s) - $(cat "$TARGET/last-input") ))
+  if [ "${MCP_CAPTURE_FORCE:-0}" = 1 ] || [ "$idle" -ge "$IDLE_SECS" ] || [ "$idle" -ge $((ours - 2)) ]; then
     say "idle for ${idle}s — ok to drive Claude Desktop"
     return 0
   fi
