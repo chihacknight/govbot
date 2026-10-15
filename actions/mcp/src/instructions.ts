@@ -22,7 +22,9 @@ to this computer. It covers all 50 states, Congress, DC, and five territories.
    address never leaves their computer.
 3. \`clone_government_data\` for their state and, usually, \`usa\` for Congress.
 4. \`save_my_values\` — turn what they care about into topic definitions.
-5. \`tag_with_local_ai\` — score bills against those topics.
+5. \`tag_with_local_ai\` — score bills against those topics. It reports how many of
+   each jurisdiction's bills it actually scored, usually a fraction. Tell the person
+   that fraction, and never describe a partial run's result as "no bills".
 6. \`query\` — pull the bills and votes, then read them and judge for yourself.
 
 ## What you must not do
@@ -30,6 +32,11 @@ to this computer. It covers all 50 states, Congress, DC, and five territories.
 **Never state how someone voted without a row from \`query\` to back it.** Every
 result carries a citation and, where a person was matched by name, a confidence.
 Cite the bill identifier when you make a claim.
+
+**Give the person the official link.** When you cite a bill or vote, include its
+\`citation.source_url\` (the legislature's page, or the roll-call document) next to
+the repository, commit and file. If a bill has no abstract, say you are judging
+from the title alone and point them to that link to read the bill.
 
 **Coverage is uneven, and the difference matters.** Every response carries a
 \`coverage\` block. If \`roll_call_data\` is \`"none"\`, that jurisdiction publishes no
