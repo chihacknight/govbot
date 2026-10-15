@@ -16,6 +16,7 @@ import { z } from "zod";
 
 import { SERVER_INSTRUCTIONS } from "./instructions.js";
 import * as tools from "./tools.js";
+import { withTrace } from "./trace.js";
 import * as workspace from "./workspace.js";
 
 const VERSION = "0.1.0";
@@ -68,13 +69,13 @@ server.registerTool(
       openWorldHint: false,
     },
   },
-  async () => {
+  withTrace("setup_workspace", async () => {
     try {
       return respond(await tools.setupWorkspace());
     } catch (error) {
       return failure(error);
     }
-  },
+  }),
 );
 
 server.registerTool(
@@ -88,13 +89,13 @@ server.registerTool(
     // Reads only; never creates or touches the workspace (see tools.checkLocalData).
     annotations: { readOnlyHint: true, openWorldHint: false },
   },
-  async (args) => {
+  withTrace("check_local_data", async (args) => {
     try {
       return respond(await tools.checkLocalData(args));
     } catch (error) {
       return failure(error);
     }
-  },
+  }),
 );
 
 server.registerTool(
@@ -116,7 +117,7 @@ server.registerTool(
       openWorldHint: true,
     },
   },
-  async (args, extra) => {
+  withTrace("clone_government_data", async (args, extra) => {
     try {
       return respond(
         await tools.clone(args, (message) => {
@@ -131,7 +132,7 @@ server.registerTool(
     } catch (error) {
       return failure(error);
     }
-  },
+  }),
 );
 
 server.registerTool(
@@ -151,13 +152,13 @@ server.registerTool(
       openWorldHint: false,
     },
   },
-  async (args) => {
+  withTrace("save_my_values", async (args) => {
     try {
       return respond(await tools.saveValues(args));
     } catch (error) {
       return failure(error);
     }
-  },
+  }),
 );
 
 server.registerTool(
@@ -181,7 +182,7 @@ server.registerTool(
       openWorldHint: true,
     },
   },
-  async (args, extra) => {
+  withTrace("tag_with_local_ai", async (args, extra) => {
     try {
       return respond(
         await tools.tagWithLocalAi(args, (message) => {
@@ -194,7 +195,7 @@ server.registerTool(
     } catch (error) {
       return failure(error);
     }
-  },
+  }),
 );
 
 server.registerTool(
@@ -209,13 +210,13 @@ server.registerTool(
     // Reads only; never creates or touches the workspace (see tools.query).
     annotations: { readOnlyHint: true, openWorldHint: false },
   },
-  async (args) => {
+  withTrace("query", async (args) => {
     try {
       return respond(await tools.query(args));
     } catch (error) {
       return failure(error);
     }
-  },
+  }),
 );
 
 // ---------------------------------------------------------------------------

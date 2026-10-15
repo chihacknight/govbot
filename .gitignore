@@ -121,8 +121,11 @@ target/
 
 sample_data/*
 
-# Claude Code local tool config (personal permission allowlists, not shared project config)
-.claude/
+# Claude Code local tool config (personal permission allowlists, not shared project config).
+# Skills and agents are shared: the MCP improvement loop lives in .claude/skills/mcp-improve.
+.claude/*
+!.claude/skills/
+!.claude/agents/
 
 
 
