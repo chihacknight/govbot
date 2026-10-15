@@ -111,8 +111,9 @@ vocab.txt
 /**
  * Create the workspace if it is not already there, and return what happened.
  *
- * Safe to call repeatedly: an existing workspace is left exactly as it is, so a
- * user's edits to `govbot.yml` are never overwritten.
+ * Safe to call repeatedly: existing files are left exactly as they are, so a
+ * user's edits to `govbot.yml`, `README.md` and `.gitignore` are never
+ * overwritten. Only the tools that write (setup, clone, save, tag) call this.
  */
 export async function ensure(): Promise<{
   path: string;
@@ -128,12 +129,32 @@ export async function ensure(): Promise<{
   if (!alreadyExisted) {
     await writeConfig({ $schema: SCHEMA_URL, repos: [], tags: {} });
   }
-  // These two are safe to refresh — neither is something a user edits.
-  await writeFile(join(path, "README.md"), README, "utf8");
-  await writeFile(join(path, ".gitignore"), GITIGNORE, "utf8");
+  // Written only when missing, the same rule as govbot.yml. The README tells the
+  // person the folder is theirs to edit, so a note they add to it (or a line they
+  // add to .gitignore) must survive the next tool call.
+  await writeIfMissing(join(path, "README.md"), README);
+  await writeIfMissing(join(path, ".gitignore"), GITIGNORE);
 
   const isGitRepo = await ensureGitRepo(path);
   return { path, created: !alreadyExisted, isGitRepo };
+}
+
+async function writeIfMissing(file: string, contents: string): Promise<void> {
+  if (!existsSync(file)) await writeFile(file, contents, "utf8");
+}
+
+/**
+ * The working directory for read-only `govbot` commands.
+ *
+ * Reads must never create the workspace (check_local_data and query are marked
+ * read-only), so they cannot simply use the workspace path: before the first
+ * setup or clone it does not exist, and spawning a process there fails. Every
+ * read passes `--govbot-dir` explicitly, so the home directory is a harmless
+ * stand-in; the CLI then reports "nothing cloned" in its own words.
+ */
+export function readCwd(): string {
+  const path = workspacePath();
+  return existsSync(path) ? path : homedir();
 }
 
 /**

@@ -1,0 +1,9 @@
+id: ambiguous-name
+prompt: |
+  How has Representative Brown in Wyoming voted on education bills?
+setup:
+  jurisdictions: [wy]
+expect:
+  - Names both Wyoming legislators called Brown and asks which one was meant.
+  - Does not attribute any vote before the person disambiguates.
+  - If Wyoming is not cloned, offers to clone it rather than answering from memory.

@@ -1,0 +1,10 @@
+id: partial-tag-run
+prompt: |
+  I care about renter protections. Tag Illinois bills for that and tell me which ones match.
+setup:
+  jurisdictions: [il]
+  # The default limit scores ~384 of Illinois's ~12,780 bills; at least 15 mention "tenant".
+expect:
+  - Calls tag_with_local_ai, then tells the person how many of Illinois's bills were actually scored (a fraction, not just a match count).
+  - Does not say "no bills match" or "none found" when the run covered only part of the state.
+  - Uses query with text (e.g. tenant, eviction) or offers a fuller run before concluding anything.
