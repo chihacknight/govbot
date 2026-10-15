@@ -1,0 +1,29 @@
+---
+source: tests/query_tag_snaps.rs
+expression: summary
+---
+{
+  "caveats": [
+    "2 of 3 bills with recorded votes matching the other filters in Wyoming (2025) have been scored for 'public budgets'. The other 1 were not checked, so they are missing from these results, not non-matching. Use `query` with `text` to search every bill, or run `govbot tag` (tag_with_local_ai in Claude Desktop) for wy with a higher limit.",
+    "Wyoming (2026) has not been scored for 'public budgets' yet, so it contributes no results. This is missing data, not an empty record. Run `govbot tag` (tag_with_local_ai in Claude Desktop) for wy."
+  ],
+  "results": [
+    {
+      "bill": "HB0001",
+      "session": "2025",
+      "start_date": "2025-03-01",
+      "topic_score": 0.9
+    },
+    {
+      "bill": "HB0001",
+      "session": "2025",
+      "start_date": "2025-02-10",
+      "topic_score": 0.9
+    }
+  ],
+  "truncation": {
+    "limit": 20,
+    "returned": 2,
+    "total_matching": 2
+  }
+}

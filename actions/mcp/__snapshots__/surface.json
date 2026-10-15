@@ -14,7 +14,7 @@
           "listChanged": true
         }
       },
-      "instructions": "<5535 characters>",
+      "instructions": "<6248 characters>",
       "protocolVersion": "2025-06-18",
       "serverInfo": {
         "name": "govbot",
@@ -28,6 +28,12 @@
     "result": {
       "tools": [
         {
+          "annotations": {
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": false,
+            "readOnlyHint": false
+          },
           "description": "Create a folder on this computer for tracking legislation. You own it \u2014 it holds the data cloned so far and a plain-text file describing the topics you care about, and it can be published to GitHub or deleted at any time.",
           "execution": {
             "taskSupport": "forbidden"
@@ -41,6 +47,10 @@
           "title": "Create your legislation workspace"
         },
         {
+          "annotations": {
+            "openWorldHint": false,
+            "readOnlyHint": true
+          },
           "description": "Report which jurisdictions have been cloned, how many bills and recorded votes each has, and what questions that data can and cannot answer.",
           "execution": {
             "taskSupport": "forbidden"
@@ -63,6 +73,12 @@
           "title": "See what data is on this computer"
         },
         {
+          "annotations": {
+            "destructiveHint": true,
+            "idempotentHint": true,
+            "openWorldHint": true,
+            "readOnlyHint": false
+          },
           "description": "Download legislation for one or more jurisdictions from public git repositories to this computer. No account, no API key, and no record of what you look up \u2014 every later question is answered from the local copy.",
           "execution": {
             "taskSupport": "forbidden"
@@ -89,6 +105,12 @@
           "title": "Privately clone government data"
         },
         {
+          "annotations": {
+            "destructiveHint": true,
+            "idempotentHint": true,
+            "openWorldHint": false,
+            "readOnlyHint": false
+          },
           "description": "Write the topics you care about into your workspace as reusable definitions. They are saved as plain YAML you can read, edit, and re-run yourself.",
           "execution": {
             "taskSupport": "forbidden"
@@ -164,6 +186,12 @@
           "title": "Save what you care about"
         },
         {
+          "annotations": {
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": true,
+            "readOnlyHint": false
+          },
           "description": "Score bills against your saved topics using an AI model that runs on this computer. Your topics and the bill text never leave the machine, and there is no per-use cost.",
           "execution": {
             "taskSupport": "forbidden"
@@ -180,7 +208,7 @@
                 "type": "array"
               },
               "limit": {
-                "description": "Bills to score per jurisdiction. Scoring runs at roughly 25 bills per second, so keep this in the hundreds for an interactive answer.",
+                "description": "Log entries to read per jurisdiction (default 400). Each bill has one or more, so this is an upper bound on the bills scored, and the default covers only part of a large state. Scoring runs at about 25 bills per second, so keep this in the hundreds for an interactive answer. To search every bill, use `query` with `text` instead.",
                 "exclusiveMinimum": 0,
                 "type": "integer"
               }
@@ -191,6 +219,10 @@
           "title": "Tag legislation with a local AI model"
         },
         {
+          "annotations": {
+            "openWorldHint": false,
+            "readOnlyHint": true
+          },
           "description": "Search the legislation on this computer: bills, roll-call votes, the people named in the data, or a report of what the data covers. Every result carries the repository, commit, and file path it came from.",
           "execution": {
             "taskSupport": "forbidden"
@@ -243,7 +275,7 @@
                 "type": "string"
               },
               "tag": {
-                "description": "A topic from save_my_values. Ranks and filters results by score.",
+                "description": "A topic from save_my_values, for `bills` and `votes` only: keeps bills scored on the topic (for votes, the roll calls on those bills), highest score first. Rejected for `people` and `coverage`.",
                 "type": "string"
               },
               "text": {

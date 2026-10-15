@@ -1,0 +1,48 @@
+---
+source: tests/query_tag_snaps.rs
+expression: written
+---
+{
+  "2025/public budgets": {
+    "bills": [
+      "HB0001"
+    ],
+    "scored_bills": [
+      "HB0001",
+      "HB0002",
+      "HB0003",
+      "HB0004",
+      "HB0005"
+    ]
+  },
+  "2025/renter protections": {
+    "bills": [],
+    "scored_bills": [
+      "HB0001",
+      "HB0002",
+      "HB0003",
+      "HB0004",
+      "HB0005"
+    ]
+  },
+  "2026/public budgets": {
+    "bills": [],
+    "scored_bills": [
+      "HB0002",
+      "HB0003",
+      "HB0004",
+      "HB0005",
+      "HB0006"
+    ]
+  },
+  "2026/renter protections": {
+    "bills": [],
+    "scored_bills": [
+      "HB0002",
+      "HB0003",
+      "HB0004",
+      "HB0005",
+      "HB0006"
+    ]
+  }
+}

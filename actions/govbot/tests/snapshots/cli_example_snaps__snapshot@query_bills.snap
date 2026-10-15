@@ -1,0 +1,108 @@
+---
+source: tests/cli_example_snaps.rs
+expression: "&formatted_stdout"
+---
+Command:
+govbot query bills --jurisdiction wy --limit 2
+
+Output:
+{
+  "query": {
+    "jurisdictions": [
+      "ocd-jurisdiction/country:us/state:wy/government"
+    ],
+    "min_confidence": "medium",
+    "type": "bills"
+  },
+  "results": [
+    {
+      "citation": {
+        "path": "country:us/state:wy/sessions/2025/bills/HB0001/metadata.json",
+        "repo": "wy-legislation",
+        "source_url": "https://wyoleg.gov/Legislation/2025/HB0001"
+      },
+      "classification": [
+        "bill"
+      ],
+      "identifier": "HB0001",
+      "jurisdiction": {
+        "id": "ocd-jurisdiction/country:us/state:wy/government",
+        "name": "Wyoming"
+      },
+      "latest_action": {
+        "date": "2025-03-06T21:50:11+00:00",
+        "description": "H See Mirror Bill SF0001"
+      },
+      "legislative_session": "2025",
+      "sponsorships": [
+        {
+          "classification": "primary",
+          "entity_type": "organization",
+          "name": "Appropriations",
+          "primary": true
+        }
+      ],
+      "title": "General government appropriations-2."
+    },
+    {
+      "citation": {
+        "path": "country:us/state:wy/sessions/2025/bills/HB0002/metadata.json",
+        "repo": "wy-legislation",
+        "source_url": "https://wyoleg.gov/Legislation/2025/HB0002"
+      },
+      "classification": [
+        "bill"
+      ],
+      "identifier": "HB0002",
+      "jurisdiction": {
+        "id": "ocd-jurisdiction/country:us/state:wy/government",
+        "name": "Wyoming"
+      },
+      "latest_action": {
+        "date": "2025-02-11T04:07:26+00:00",
+        "description": "H COW:H Did not consider for COW"
+      },
+      "legislative_session": "2025",
+      "sponsorships": [
+        {
+          "classification": "primary",
+          "entity_type": "organization",
+          "name": "Travel, Recreation, Wildlife and Cultural Resource",
+          "primary": true
+        }
+      ],
+      "title": "Hunting license application fees increase."
+    }
+  ],
+  "truncation": {
+    "returned": 2,
+    "total_matching": 10,
+    "limit": 2
+  },
+  "coverage": [
+    {
+      "bills": 10,
+      "distinct_voter_names": 0,
+      "distinct_voter_spellings": 0,
+      "jurisdiction": {
+        "division_id": "ocd-division/country:us/state:wy",
+        "id": "ocd-jurisdiction/country:us/state:wy/government",
+        "locale": "wy",
+        "name": "Wyoming"
+      },
+      "member_vote_rows": 0,
+      "roll_call_data": "none",
+      "sessions": [
+        "2025",
+        "2026"
+      ],
+      "split_rows_repaired": 0,
+      "suspect_name_fragments": 0,
+      "vote_events": 0,
+      "vote_events_with_member_votes": 0
+    }
+  ],
+  "caveats": [
+    "Wyoming publishes no roll-call votes in this dataset (10 bills, 0 vote events). Sponsorship is the only available evidence. Do not describe this as a legislator not having voted on something."
+  ]
+}

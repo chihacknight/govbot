@@ -98,7 +98,12 @@ Each `{tag_name}.tag.json` file contains:
 - `metadata`: Model info, last run timestamp, hash of the tag config
 - `tag_config`: The tag definition as used on the last run
 - `text_cache`: Deduplicated bill/log texts keyed by content hash
-- `bills`: Map of bill identifiers to their `ScoreBreakdown`
+- `bills`: Map of bill identifiers to their `ScoreBreakdown`, for bills that matched
+- `scored_bills`: Every bill identifier scored for this tag in this session, matched or
+  not. A session that was scored but matched nothing still gets a tag file, with empty
+  `bills`. `govbot query bills --tag` uses this to report partial coverage; files written
+  before this field existed have no `scored_bills`, and their coverage is reported as
+  unknown.
 
 `ScoreBreakdown` includes:
 

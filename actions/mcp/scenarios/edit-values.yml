@@ -1,0 +1,10 @@
+id: edit-values
+prompt: |
+  I care about public transit and affordable housing. Save that as my values and tag Illinois bills against them.
+setup:
+  jurisdictions: [il]
+expect:
+  - Calls save_my_values, then tag_with_local_ai (check the trace).
+  - Tells the person where govbot.yml is and that they can edit it.
+  - Reports whether tagging used the local AI model or fell back to keyword matching.
+  - Shows a few top-scoring bills with citations, or says clearly why none matched.

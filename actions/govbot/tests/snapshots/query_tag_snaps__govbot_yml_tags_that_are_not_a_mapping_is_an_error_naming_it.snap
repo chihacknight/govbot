@@ -1,0 +1,5 @@
+---
+source: tests/query_tag_snaps.rs
+expression: "redact(&stderr, ws.path())"
+---
+Error: In [WORKSPACE]/govbot.yml, `tags:` must map each topic name to its definition, but it is not a mapping. Fix that file; until then no topic query can run.
