@@ -2,6 +2,7 @@ id: slow-clone
 prompt: |
   I'm in Illinois. Get my state's and Congress's legislation so we can look at my reps.
 setup:
+  data: empty
   workspace: fresh
   # Illinois (~2.0 GB) plus Congress (~1.5 GB) took ~91 s on a fast connection,
   # past the 60 s default request timeout of TypeScript-SDK clients.
