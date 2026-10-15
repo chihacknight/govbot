@@ -33,6 +33,82 @@ pub struct Citation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub commit: Option<String>,
     pub path: String,
+    /// The official web page for the record — the legislature's bill page, or the
+    /// roll-call page for a vote — taken from the record's own `sources`. It
+    /// is what a person without git can click to check a claim.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_url: Option<String>,
+}
+
+/// Pick the one source URL worth showing a person, from `sources: [{url, note}]`.
+///
+/// Only http(s) URLs are ever returned: a relative path, `ftp:` or `javascript:`
+/// value in a scraped `sources` list is not something to present as the official
+/// page, so a record with nothing else gets no `source_url` at all.
+///
+/// Congress lists the govinfo bulk-data XML first and the congress.gov page
+/// second; a person wants the page, so the first URL that is not `.xml` wins.
+/// US House and Senate roll calls list only their XML; those are rewritten to
+/// the human-readable page for the same vote (see `roll_call_page`), and any
+/// other XML is returned as-is, since it is still better than nothing.
+pub fn official_source_url(record: &Value) -> Option<String> {
+    let urls: Vec<&str> = record
+        .get("sources")?
+        .as_array()?
+        .iter()
+        .filter_map(|source| source.get("url").and_then(Value::as_str))
+        .map(str::trim)
+        .filter(|url| {
+            let lower = url.to_ascii_lowercase();
+            lower.starts_with("https://") || lower.starts_with("http://")
+        })
+        .collect();
+    let is_xml = |url: &str| {
+        let lower = url.to_ascii_lowercase();
+        let path = lower.split(['?', '#']).next().unwrap_or_default();
+        path.ends_with(".xml")
+    };
+    if let Some(page) = urls.iter().find(|url| !is_xml(url)) {
+        return Some(page.to_string());
+    }
+    let first = urls.first()?;
+    Some(roll_call_page(first).unwrap_or_else(|| first.to_string()))
+}
+
+/// The human-readable page for a US House or Senate roll-call XML URL, if the
+/// URL has one of the two shapes usa-legislation uses (checked against every
+/// vote source in that repo, October 2026):
+///
+/// - House: `https://clerk.house.gov/evs/2025/roll003.xml` is shown at
+///   `https://clerk.house.gov/Votes/20253` — the year followed by the roll
+///   number without leading zeros.
+/// - Senate: `.../roll_call_votes/vote1191/vote_119_1_00001.xml` is shown at the
+///   same path ending in `.htm`.
+///
+/// Anything else returns `None` and the caller keeps the original URL.
+fn roll_call_page(url: &str) -> Option<String> {
+    const HOUSE: &str = "https://clerk.house.gov/evs/";
+    const SENATE: &str = "https://www.senate.gov/legislative/LIS/roll_call_votes/";
+
+    if let Some(rest) = url.strip_prefix(HOUSE) {
+        let (year, file) = rest.split_once('/')?;
+        let roll = file.strip_prefix("roll")?.strip_suffix(".xml")?;
+        let all_digits = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit());
+        if year.len() != 4 || !all_digits(year) || !all_digits(roll) {
+            return None;
+        }
+        let roll: u32 = roll.parse().ok()?;
+        return Some(format!("https://clerk.house.gov/Votes/{year}{roll}"));
+    }
+    if let Some(rest) = url.strip_prefix(SENATE) {
+        let (dir, file) = rest.split_once('/')?;
+        let stem = file.strip_suffix(".xml")?;
+        if !dir.starts_with("vote") || !stem.starts_with("vote_") || file.contains('/') {
+            return None;
+        }
+        return Some(format!("{SENATE}{dir}/{stem}.htm"));
+    }
+    None
 }
 
 /// One bill, as read from `metadata.json`.
@@ -390,6 +466,7 @@ where
                 .unwrap_or(&bill_id)
                 .to_string();
 
+            let source_url = official_source_url(&metadata);
             let record = BillRecord {
                 jurisdiction: jurisdiction.clone(),
                 session_id: session_id.clone(),
@@ -401,6 +478,7 @@ where
                     repo: repo_name.clone(),
                     commit: commit.clone(),
                     path: relative_path(&dir.join("metadata.json"), repos_dir, &repo_name),
+                    source_url,
                 },
             };
 
@@ -520,6 +598,8 @@ fn read_vote_event(path: &Path, bill: &BillRecord, repos_dir: &Path) -> Option<V
             repo: bill.citation.repo.clone(),
             commit: bill.citation.commit.clone(),
             path: relative_path(path, repos_dir, &bill.citation.repo),
+            // The vote event's own source (the roll-call document), not the bill's.
+            source_url: official_source_url(&value),
         },
     })
 }
@@ -547,6 +627,97 @@ mod tests {
         assert!(!is_vote_event_file(
             "20250131T030931Z.classification.introduction.lower.json"
         ));
+    }
+
+    #[test]
+    fn prefers_the_official_page_over_bulk_xml() {
+        // usa-legislation bills: govinfo bulk XML first, congress.gov second.
+        let bill = serde_json::json!({"sources": [
+            {"url": "https://www.govinfo.gov/bulkdata/BILLSTATUS/119/s/BILLSTATUS-119s4369.xml", "note": ""},
+            {"url": "https://congress.gov/bill/119th-congress/senate-bill/4369", "note": ""}
+        ]});
+        assert_eq!(
+            official_source_url(&bill).as_deref(),
+            Some("https://congress.gov/bill/119th-congress/senate-bill/4369")
+        );
+
+        // il-legislation: a query string is not mistaken for a file extension.
+        let bill = serde_json::json!({"sources": [
+            {"url": "https://ilga.gov/Legislation/BillStatus?DocNum=3526&GAID=18&DocTypeID=HB"}
+        ]});
+        assert_eq!(
+            official_source_url(&bill).as_deref(),
+            Some("https://ilga.gov/Legislation/BillStatus?DocNum=3526&GAID=18&DocTypeID=HB")
+        );
+
+        // US Senate and House roll calls list only XML: the readable page for
+        // the same vote is given instead.
+        let vote = serde_json::json!({"sources": [
+            {"url": "https://www.senate.gov/legislative/LIS/roll_call_votes/vote1191/vote_119_1_00278.xml"}
+        ]});
+        assert_eq!(
+            official_source_url(&vote).as_deref(),
+            Some("https://www.senate.gov/legislative/LIS/roll_call_votes/vote1191/vote_119_1_00278.htm")
+        );
+        let vote = serde_json::json!({"sources": [
+            {"url": "https://clerk.house.gov/evs/2025/roll003.xml"}
+        ]});
+        assert_eq!(
+            official_source_url(&vote).as_deref(),
+            Some("https://clerk.house.gov/Votes/20253")
+        );
+        let vote = serde_json::json!({"sources": [
+            {"url": "https://clerk.house.gov/evs/2026/roll150.xml"}
+        ]});
+        assert_eq!(
+            official_source_url(&vote).as_deref(),
+            Some("https://clerk.house.gov/Votes/2026150")
+        );
+
+        // Other XML, or a roll-call URL of an unfamiliar shape, is kept as-is.
+        for url in [
+            "https://example.gov/votes/123.xml",
+            "https://clerk.house.gov/evs/2025/rollcall003.xml",
+            "https://clerk.house.gov/evs/25/roll003.xml",
+        ] {
+            let vote = serde_json::json!({"sources": [{"url": url}]});
+            assert_eq!(official_source_url(&vote).as_deref(), Some(url));
+        }
+
+        // No sources, empty sources, or blank URLs: no field rather than "".
+        assert_eq!(official_source_url(&serde_json::json!({})), None);
+        assert_eq!(
+            official_source_url(&serde_json::json!({"sources": []})),
+            None
+        );
+        assert_eq!(
+            official_source_url(&serde_json::json!({"sources": [{"url": " "}]})),
+            None
+        );
+    }
+
+    #[test]
+    fn never_offers_a_non_web_link_as_the_official_page() {
+        for url in [
+            "/legislation/bills/HB1.htm",
+            "bills/HB1.xml",
+            "ftp://ftp.legislature.example/HB1.pdf",
+            "javascript:void(0)",
+            "mailto:clerk@example.gov",
+        ] {
+            let record = serde_json::json!({"sources": [{"url": url}]});
+            assert_eq!(official_source_url(&record), None, "{url}");
+        }
+
+        // A web URL later in the list still wins over a non-web one first.
+        let record = serde_json::json!({"sources": [
+            {"url": "javascript:void(0)"},
+            {"url": "HTTPS://legislature.example/HB1"}
+        ]});
+        assert_eq!(
+            official_source_url(&record).as_deref(),
+            Some("HTTPS://legislature.example/HB1")
+        );
     }
 
     #[test]
