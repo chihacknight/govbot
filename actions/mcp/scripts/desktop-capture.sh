@@ -106,6 +106,7 @@ ocr_bin() {
 # times out and the screenshot shows the prompt, which is itself a finding.
 allow_if_govbot_prompt() {
   local shot="$TARGET/capture-prompt.png" text
+  require_claude_front
   rm -f "$shot"
   screencapture -x -R "$(content_rect)" "$shot"
   [ -s "$shot" ] || return 1
@@ -119,6 +120,14 @@ allow_if_govbot_prompt() {
       return 0 ;;
   esac
   return 1
+}
+
+# Typing goes to whatever app is frontmost, and screenshots capture whatever is on
+# screen. Never do either unless Claude Desktop is the frontmost app.
+require_claude_front() {
+  local front
+  front="$(osascript -e 'tell application "System Events" to get name of first process whose frontmost is true' 2>/dev/null)"
+  [ "$front" = "Claude" ] || die "Claude Desktop is not the frontmost app (\"$front\" is); refusing to type or capture"
 }
 
 ready_count() {
@@ -379,13 +388,16 @@ cmd_run() {
   say "[$id] new chat, sending prompt"
   osa 'tell application "Claude" to activate'
   sleep 1
+  require_claude_front
   osa 'tell application "System Events" to keystroke "n" using command down'
   sleep 2
   local i
   for ((i = 0; i < ZOOM_OUT; i++)); do osa 'tell application "System Events" to keystroke "-" using command down'; done
   printf '%s' "$prompt" | pbcopy
+  require_claude_front
   osa 'tell application "System Events" to keystroke "v" using command down'
   sleep 1
+  require_claude_front
   osa 'tell application "System Events" to key code 36'
   printf '%s' "$clipboard" | pbcopy
 
@@ -403,6 +415,7 @@ cmd_run() {
     # screencapture can exit 0 without writing (e.g. a dot-prefixed file name),
     # so check the file, not the exit code.
     rm -f "$probe"
+    require_claude_front
     screencapture -x -R "$x,$y,$w,$((h - COMPOSER))" "$probe"
     [ -s "$probe" ] || die "screencapture failed (Screen Recording permission? screen locked?)"
     now="$(md5 -q "$probe")"
@@ -433,6 +446,7 @@ cmd_run() {
   rm -f "$probe"
 
   rm -f "$TARGET/capture-reply.png"
+  require_claude_front
   screencapture -x -R "$(content_rect)" "$TARGET/capture-reply.png"
   [ -s "$TARGET/capture-reply.png" ] || die "screencapture wrote no image"
   mv "$TARGET/capture-reply.png" "$out/reply.png"
