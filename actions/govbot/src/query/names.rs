@@ -39,6 +39,10 @@ pub enum MatchMethod {
     UniqueSurname,
     /// Surname plus a given-name initial selected exactly one person.
     SurnameInitial,
+    /// A bare-surname spelling (`Cunningham`) linked to the one full-named person
+    /// (`Cunningham, Bill`) who shares that surname in every chamber and session
+    /// where the bare spelling appears. See [`NameIndex::surname_link`].
+    SurnameOnlySpelling,
     /// Surname matched more than one person and nothing disambiguated them.
     Ambiguous,
     /// The name is a committee or other body, not a person.
@@ -78,7 +82,9 @@ impl MatchMethod {
         match self {
             MatchMethod::Bioguide => Confidence::Exact,
             MatchMethod::ExactName | MatchMethod::ReversedName => Confidence::High,
-            MatchMethod::UniqueSurname | MatchMethod::SurnameInitial => Confidence::Medium,
+            MatchMethod::UniqueSurname
+            | MatchMethod::SurnameInitial
+            | MatchMethod::SurnameOnlySpelling => Confidence::Medium,
             MatchMethod::Ambiguous | MatchMethod::Organization | MatchMethod::Unmatched => {
                 Confidence::None
             }
@@ -95,6 +101,13 @@ pub struct NameMatch {
     /// [`MatchMethod::Ambiguous`], in which case it lists what the caller must
     /// choose between.
     pub candidates: Vec<String>,
+    /// Other spellings of the same person, linked only by surname, and so trusted
+    /// at [`MatchMethod::SurnameOnlySpelling`]'s confidence rather than this
+    /// match's. Illinois floor votes say `Cunningham` where its committee votes
+    /// say `Cunningham, Bill`; without this, a full-name query silently loses the
+    /// floor record. Use [`Self::confidence_for`] to gate a row on these.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub surname_only_spellings: Vec<String>,
 }
 
 impl NameMatch {
@@ -103,6 +116,7 @@ impl NameMatch {
             method: MatchMethod::Unmatched,
             confidence: Confidence::None,
             candidates: Vec::new(),
+            surname_only_spellings: Vec::new(),
         }
     }
 
@@ -117,6 +131,7 @@ impl NameMatch {
             method,
             confidence: method.confidence(),
             candidates: spellings,
+            surname_only_spellings: Vec::new(),
         }
     }
 
@@ -125,6 +140,7 @@ impl NameMatch {
             method: MatchMethod::Ambiguous,
             confidence: Confidence::None,
             candidates,
+            surname_only_spellings: Vec::new(),
         }
     }
 
@@ -132,6 +148,45 @@ impl NameMatch {
     pub fn is_attributable(&self, minimum: Confidence) -> bool {
         self.confidence >= minimum && self.confidence > Confidence::None
     }
+
+    /// How far a row naming `raw` may be attributed to this person: the match's
+    /// own confidence for one of its candidates, Medium for a surname-only
+    /// spelling, `None` for anything else.
+    pub fn confidence_for(&self, raw: &str) -> Option<Confidence> {
+        if self.candidates.iter().any(|c| c == raw) {
+            Some(self.confidence)
+        } else if self.surname_only_spellings.iter().any(|c| c == raw) {
+            Some(MatchMethod::SurnameOnlySpelling.confidence())
+        } else {
+            None
+        }
+    }
+
+    /// The match as it applies to one row naming `raw`, so a row reached through
+    /// a surname-only spelling reports that, at medium confidence, instead of
+    /// inheriting the full-name match's.
+    pub fn for_spelling(&self, raw: &str) -> NameMatch {
+        let mut row_match = self.clone();
+        if !self.candidates.iter().any(|c| c == raw)
+            && self.surname_only_spellings.iter().any(|c| c == raw)
+        {
+            row_match.method = MatchMethod::SurnameOnlySpelling;
+            row_match.confidence = MatchMethod::SurnameOnlySpelling.confidence();
+        }
+        row_match
+    }
+}
+
+/// The result of [`NameIndex::surname_link`]: one person known by a full name, and
+/// the bare-surname spellings that may be read as the same person.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SurnameLink {
+    /// The full-named person's normalized key, e.g. `bill cunningham`.
+    pub person_key: String,
+    /// The full-named person's raw spellings.
+    pub person_spellings: Vec<String>,
+    /// The bare-surname raw spellings, e.g. `Cunningham`.
+    pub bare_spellings: Vec<String>,
 }
 
 /// Fold the accented Latin characters that actually occur in US legislator names
@@ -339,6 +394,10 @@ pub struct NameIndex {
     by_full_key: HashMap<String, BTreeSet<String>>,
     by_surname: HashMap<String, BTreeSet<String>>,
     by_bioguide: HashMap<String, String>,
+    /// Where each raw spelling appears, as opaque caller-chosen scope keys (the
+    /// query layer uses `jurisdiction|chamber|session`). Only names recorded with
+    /// [`Self::insert_in_scope`] have any; [`Self::surname_link`] needs them.
+    scopes: HashMap<String, BTreeSet<String>>,
     suspect_fragments: BTreeSet<String>,
     all: BTreeSet<String>,
 }
@@ -375,6 +434,105 @@ impl NameIndex {
                 .or_default()
                 .insert(raw.to_string());
         }
+    }
+
+    /// Record a name together with where it appears. The scope is opaque here;
+    /// two spellings share a scope when the caller passes equal strings.
+    pub fn insert_in_scope(&mut self, raw: &str, scope: &str) {
+        let trimmed = raw.trim();
+        self.insert(trimmed);
+        // `insert` skips empty names and suspect fragments; give those no scope.
+        if self.all.contains(trimmed) {
+            self.scopes
+                .entry(trimmed.to_string())
+                .or_default()
+                .insert(scope.to_string());
+        }
+    }
+
+    /// Whether the bare-surname spellings of `surname` can be read as the one
+    /// person who appears with that surname and a full name.
+    ///
+    /// Illinois is the case this exists for: floor roll calls print `Cunningham`,
+    /// committee roll calls print `Cunningham, Bill`, and they are the same
+    /// senator. But a bare surname is exactly where two people collide, so the
+    /// link is made only when all of these hold:
+    ///
+    /// - exactly one full-named person (two or more tokens) in the index has
+    ///   this surname. Two — Wyoming's `Brown, G` and `Brown, L`, or Illinois's
+    ///   `Johnson, Gregg` (House) and `Johnson, Adriane` (Senate), whose floor
+    ///   votes both print `Johnson` — and nothing is linked;
+    /// - every scope the bare spelling appears in also contains that person, so
+    ///   a bare `Cunningham` in a chamber, session or state where Bill
+    ///   Cunningham never appears is not assumed to be him;
+    /// - the bare spelling has recorded scopes at all (names inserted without
+    ///   one never link), and carries no parenthetical hint — `Smith (NJ)` has
+    ///   been disambiguated by its source in a way this rule can't check.
+    ///
+    /// Otherwise `None`, and the two spellings stay two names.
+    pub fn surname_link(&self, surname: &str) -> Option<SurnameLink> {
+        let spellings = self.by_surname.get(surname)?;
+
+        let mut bare: Vec<String> = Vec::new();
+        let mut full: BTreeSet<String> = BTreeSet::new();
+        for raw in spellings {
+            let normalized = normalize(raw);
+            if normalized.tokens.len() == 1 {
+                if normalized.hint.is_some() {
+                    return None;
+                }
+                bare.push(raw.clone());
+            } else {
+                full.insert(raw.clone());
+            }
+        }
+        if bare.is_empty() {
+            return None;
+        }
+
+        let mut people = group_by_person(&full);
+        if people.len() != 1 {
+            return None;
+        }
+        let (person_key, person_spellings) = people.pop_first().expect("checked above");
+
+        let person_scopes: BTreeSet<&String> = person_spellings
+            .iter()
+            .filter_map(|raw| self.scopes.get(raw))
+            .flatten()
+            .collect();
+        for raw in &bare {
+            let Some(bare_scopes) = self.scopes.get(raw) else {
+                return None;
+            };
+            if bare_scopes.is_empty() || !bare_scopes.iter().all(|s| person_scopes.contains(s)) {
+                return None;
+            }
+        }
+
+        Some(SurnameLink {
+            person_key,
+            person_spellings,
+            bare_spellings: bare,
+        })
+    }
+
+    /// Add the other side of a [`SurnameLink`] to an exact or reversed full-name
+    /// match: the bare spellings for a full-name query, or the full-named person
+    /// for a bare-surname query.
+    fn with_surname_link(&self, mut matched: NameMatch, key: &str) -> NameMatch {
+        let Some(surname) = key.split(' ').next_back() else {
+            return matched;
+        };
+        let Some(link) = self.surname_link(surname) else {
+            return matched;
+        };
+        if link.person_key == key {
+            matched.surname_only_spellings = link.bare_spellings;
+        } else if !key.contains(' ') {
+            matched.surname_only_spellings = link.person_spellings;
+        }
+        matched
     }
 
     /// Record a stable external identifier for a name — the bioguide id carried in
@@ -433,7 +591,8 @@ impl NameIndex {
         // key — `Smith, S` and `SMITH, S` are one legislator spelled two ways, not
         // two legislators — so every spelling is returned and none is ambiguity.
         if let Some(matches) = self.by_full_key.get(&normalized.key()) {
-            return NameMatch::resolved_many(MatchMethod::ExactName, to_vec(matches));
+            let matched = NameMatch::resolved_many(MatchMethod::ExactName, to_vec(matches));
+            return self.with_surname_link(matched, &normalized.key());
         }
 
         // The caller wrote the name in the other order from the data, or the data
@@ -443,8 +602,11 @@ impl NameIndex {
             let mut swapped = normalized.tokens.clone();
             let last = swapped.len() - 1;
             swapped.rotate_left(last);
-            if let Some(matches) = self.by_full_key.get(&swapped.join(" ")) {
-                return NameMatch::resolved_many(MatchMethod::ReversedName, to_vec(matches));
+            let swapped_key = swapped.join(" ");
+            if let Some(matches) = self.by_full_key.get(&swapped_key) {
+                let matched =
+                    NameMatch::resolved_many(MatchMethod::ReversedName, to_vec(matches));
+                return self.with_surname_link(matched, &swapped_key);
             }
         }
 
@@ -694,6 +856,107 @@ mod tests {
         let m = NameMatch::resolved(MatchMethod::UniqueSurname, "Filer".into());
         assert!(m.is_attributable(Confidence::Medium));
         assert!(!m.is_attributable(Confidence::High));
+    }
+
+    fn scoped_index_of(names: &[(&str, &str)]) -> NameIndex {
+        let mut index = NameIndex::new();
+        for (name, scope) in names {
+            index.insert_in_scope(name, scope);
+        }
+        index
+    }
+
+    const IL_SENATE: &str = "il|upper|104th";
+    const IL_HOUSE: &str = "il|lower|104th";
+
+    #[test]
+    fn full_name_query_includes_the_surname_only_floor_spelling() {
+        // Illinois: committee roll calls say `Cunningham, Bill`, floor roll calls
+        // say `Cunningham`. One senator.
+        let index = scoped_index_of(&[
+            ("Cunningham, Bill", IL_SENATE),
+            ("Cunningham", IL_SENATE),
+            ("Peters, Robert", IL_SENATE),
+            ("Peters", IL_SENATE),
+        ]);
+
+        let m = index.resolve("Bill Cunningham");
+        assert_eq!(m.method, MatchMethod::ExactName);
+        assert_eq!(m.confidence, Confidence::High);
+        assert_eq!(m.candidates, vec!["Cunningham, Bill"]);
+        assert_eq!(m.surname_only_spellings, vec!["Cunningham"]);
+        assert_eq!(m.confidence_for("Cunningham, Bill"), Some(Confidence::High));
+        assert_eq!(m.confidence_for("Cunningham"), Some(Confidence::Medium));
+        assert_eq!(m.confidence_for("Peters"), None);
+
+        let row = m.for_spelling("Cunningham");
+        assert_eq!(row.method, MatchMethod::SurnameOnlySpelling);
+        assert_eq!(row.confidence, Confidence::Medium);
+        assert_eq!(m.for_spelling("Cunningham, Bill").method, MatchMethod::ExactName);
+
+        // And the other way round: the bare surname pulls in the full name.
+        let m = index.resolve("Cunningham");
+        assert_eq!(m.method, MatchMethod::ExactName);
+        assert_eq!(m.candidates, vec!["Cunningham"]);
+        assert_eq!(m.surname_only_spellings, vec!["Cunningham, Bill"]);
+        assert_eq!(m.confidence_for("Cunningham, Bill"), Some(Confidence::Medium));
+    }
+
+    #[test]
+    fn two_full_named_people_keep_a_bare_surname_unlinked() {
+        // Wyoming's two Browns: a bare `Brown` must not be given to either.
+        let index = scoped_index_of(&[
+            ("Brown", "wy|lower|2025"),
+            ("Brown, G", "wy|lower|2025"),
+            ("Brown, L", "wy|lower|2025"),
+        ]);
+        assert!(index.surname_link("brown").is_none());
+        assert!(index.resolve("Brown, L").surname_only_spellings.is_empty());
+        assert!(index.resolve("Brown").surname_only_spellings.is_empty());
+
+        // Illinois's floor votes print `Johnson` for both Gregg Johnson (House) and
+        // Adriane Johnson (Senate). Two people, so nothing links.
+        let index = scoped_index_of(&[
+            ("Johnson", IL_HOUSE),
+            ("Johnson", IL_SENATE),
+            ("Johnson, Gregg", IL_HOUSE),
+            ("Johnson, Adriane", IL_SENATE),
+        ]);
+        assert!(index.surname_link("johnson").is_none());
+        let m = index.resolve("Gregg Johnson");
+        assert_eq!(m.candidates, vec!["Johnson, Gregg"]);
+        assert!(m.surname_only_spellings.is_empty());
+        assert_eq!(m.confidence_for("Johnson"), None);
+    }
+
+    #[test]
+    fn a_bare_surname_outside_the_full_names_scope_is_not_linked() {
+        // A House `Cunningham` is not assumed to be Senator Bill Cunningham.
+        let index = scoped_index_of(&[("Cunningham, Bill", IL_SENATE), ("Cunningham", IL_HOUSE)]);
+        assert!(index.surname_link("cunningham").is_none());
+
+        // Nor is one from a session he doesn't appear in, or another state.
+        let index = scoped_index_of(&[
+            ("Cunningham, Bill", IL_SENATE),
+            ("Cunningham", IL_SENATE),
+            ("Cunningham", "il|upper|103rd"),
+        ]);
+        assert!(index.surname_link("cunningham").is_none());
+        let index = scoped_index_of(&[
+            ("Cunningham, Bill", IL_SENATE),
+            ("Cunningham", IL_SENATE),
+            ("Cunningham", "oh|upper|136"),
+        ]);
+        assert!(index.surname_link("cunningham").is_none());
+    }
+
+    #[test]
+    fn names_without_scope_or_with_a_source_hint_never_link() {
+        let index = index_of(&["Cunningham, Bill", "Cunningham"]);
+        assert!(index.resolve("Bill Cunningham").surname_only_spellings.is_empty());
+
+        let index = scoped_index_of(&[("Smith, Adrian", "usa|lower|119"), ("Smith (NJ)", "usa|lower|119")]);
+        assert!(index.surname_link("smith").is_none());
     }
 
     fn row(name: &str, option: &str) -> RawVoteRow {

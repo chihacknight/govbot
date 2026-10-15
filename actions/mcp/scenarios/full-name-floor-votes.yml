@@ -1,0 +1,9 @@
+id: full-name-floor-votes
+prompt: |
+  My Illinois state senator is Bill Cunningham. How has he voted on the floor this session?
+setup:
+  jurisdictions: [il]
+expect:
+  - The query votes rows in the trace include Third Reading votes (floor-sized counts), not only committee votes.
+  - The reply mentions that the floor-vote records name him by surname only, and that this was treated as the same legislator.
+  - Does not describe his record using committee votes alone.
