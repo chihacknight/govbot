@@ -60,6 +60,13 @@ server.registerTool(
       "the data cloned so far and a plain-text file describing the topics you care about, " +
       "and it can be published to GitHub or deleted at any time.",
     inputSchema: tools.setupWorkspaceSchema,
+    // Only creates what is missing; an existing workspace is left as it is.
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
   },
   async () => {
     try {
@@ -78,6 +85,8 @@ server.registerTool(
       "Report which jurisdictions have been cloned, how many bills and recorded votes " +
       "each has, and what questions that data can and cannot answer.",
     inputSchema: tools.checkLocalDataSchema,
+    // Reads only; never creates or touches the workspace (see tools.checkLocalData).
+    annotations: { readOnlyHint: true, openWorldHint: false },
   },
   async (args) => {
     try {
@@ -97,6 +106,15 @@ server.registerTool(
       "to this computer. No account, no API key, and no record of what you look up — " +
       "every later question is answered from the local copy.",
     inputSchema: tools.cloneSchema,
+    // The only tool that uses the network. Destructive because it records the
+    // jurisdictions by rewriting govbot.yml (workspace.writeConfig), which drops
+    // any comments or extra keys the person added by hand.
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
   },
   async (args, extra) => {
     try {
@@ -124,6 +142,14 @@ server.registerTool(
       "Write the topics you care about into your workspace as reusable definitions. " +
       "They are saved as plain YAML you can read, edit, and re-run yourself.",
     inputSchema: tools.saveValuesSchema,
+    // Destructive: a topic with the same name is replaced, and govbot.yml is
+    // rewritten (workspace.writeConfig), dropping hand-written comments.
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
   },
   async (args) => {
     try {
@@ -143,6 +169,14 @@ server.registerTool(
       "computer. Your topics and the bill text never leave the machine, and there is " +
       "no per-use cost.",
     inputSchema: tools.tagSchemaInput,
+    // Rewrites only its own score files, which are derived from govbot.yml and the
+    // cloned data and come out the same on a re-run; the model runs locally.
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
   },
   async (args, extra) => {
     try {
@@ -169,6 +203,8 @@ server.registerTool(
       "named in the data, or a report of what the data covers. Every result carries the " +
       "repository, commit, and file path it came from.",
     inputSchema: tools.querySchema,
+    // Reads only; never creates or touches the workspace (see tools.query).
+    annotations: { readOnlyHint: true, openWorldHint: false },
   },
   async (args) => {
     try {
