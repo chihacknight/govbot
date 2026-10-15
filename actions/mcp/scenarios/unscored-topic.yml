@@ -1,0 +1,10 @@
+id: unscored-topic
+prompt: |
+  Which Illinois bills match my "expanding voter access" topic?
+setup:
+  jurisdictions: [il]
+  # govbot.yml defines "expanding voter access", but no il tag file exists
+expect:
+  - Does not present any bill as matching the topic unless the query row carries a tag score.
+  - Says Illinois has not been scored for this topic yet and offers to run tag_with_local_ai (or runs it).
+  - Never reports a "N matches" count that equals the whole jurisdiction's bill count.

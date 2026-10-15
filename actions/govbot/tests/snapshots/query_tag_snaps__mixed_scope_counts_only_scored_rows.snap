@@ -1,0 +1,24 @@
+---
+source: tests/query_tag_snaps.rs
+expression: summary
+---
+{
+  "caveats": [
+    "Wyoming publishes no roll-call votes in this dataset (10 bills, 0 vote events). Sponsorship is the only available evidence. Do not describe this as a legislator not having voted on something.",
+    "Guam publishes no roll-call votes in this dataset (5 bills, 0 vote events). Sponsorship is the only available evidence. Do not describe this as a legislator not having voted on something.",
+    "Wyoming (2026) has not been scored for 'public budgets' yet, so it contributes no results. This is missing data, not an empty record. Run `govbot tag` (tag_with_local_ai in Claude Desktop) for wy.",
+    "Guam (38th) has not been scored for 'public budgets' yet, so it contributes no results. This is missing data, not an empty record. Run `govbot tag` (tag_with_local_ai in Claude Desktop) for gu."
+  ],
+  "results": [
+    {
+      "final_score": 0.9,
+      "identifier": "HB0001",
+      "session": "2025"
+    }
+  ],
+  "truncation": {
+    "limit": 20,
+    "returned": 1,
+    "total_matching": 1
+  }
+}

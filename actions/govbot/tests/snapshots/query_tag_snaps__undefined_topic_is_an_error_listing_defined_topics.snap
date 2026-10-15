@@ -1,0 +1,5 @@
+---
+source: tests/query_tag_snaps.rs
+expression: stderr.trim()
+---
+Error: No topic named 'renters'. Defined topics: public budgets, renter protections

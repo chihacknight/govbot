@@ -247,12 +247,57 @@ impl TagScores {
     }
 }
 
+/// The topic names `govbot.yml` defines, if there is a `govbot.yml` beside the tag
+/// files.
+///
+/// `None` means there is no config to check against — `--tags-dir` can point at
+/// bare `govbot tag` output — in which case an unknown topic simply finds no tag
+/// files and every scope reports itself unscored.
+fn defined_topics(tags_dir: &std::path::Path) -> Result<Option<Vec<String>>> {
+    let path = tags_dir.join("govbot.yml");
+    let raw = match std::fs::read_to_string(&path) {
+        Ok(raw) => raw,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => anyhow::bail!("Could not read {}: {error}", path.display()),
+    };
+    let config: serde_yaml::Value = serde_yaml::from_str(&raw)
+        .map_err(|error| anyhow::anyhow!("Failed to parse {}: {error}", path.display()))?;
+    let mut topics: Vec<String> = config
+        .get("tags")
+        .and_then(serde_yaml::Value::as_mapping)
+        .map(|tags| {
+            tags.keys()
+                .filter_map(|key| key.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default();
+    topics.sort();
+    Ok(Some(topics))
+}
+
 // ---------------------------------------------------------------------------
 // Bills
 // ---------------------------------------------------------------------------
 
 fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>)> {
     let mut caveats = Vec::new();
+
+    // A misspelled or invented topic ("renters" for "renter protections") finds no
+    // tag files anywhere, so every scope below would report itself "not scored yet"
+    // and hide the real mistake. Failing with the defined names lets the caller
+    // retry with the right one.
+    if let Some(tag) = request.tag.as_deref() {
+        if let Some(topics) = defined_topics(&request.tags_dir)? {
+            if !topics.iter().any(|topic| topic == tag) {
+                let defined = if topics.is_empty() {
+                    "none (govbot.yml has no `tags:` entries)".to_string()
+                } else {
+                    topics.join(", ")
+                };
+                anyhow::bail!("No topic named '{tag}'. Defined topics: {defined}");
+            }
+        }
+    }
 
     // Matching a person needs to know every name in scope before it can tell a
     // unique surname from an ambiguous one, so that costs a first pass.
@@ -278,14 +323,21 @@ fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
     for jurisdiction in &request.jurisdictions {
         for session_id in sessions_in_scope(request, jurisdiction) {
             let scores = TagScores::load(request, jurisdiction, &session_id);
-            if request.tag.is_some() && scores.is_none() {
+            if let (Some(tag), None) = (request.tag.as_deref(), scores.as_ref()) {
+                // No tag file means nobody has scored these bills for this topic.
+                // The scope contributes nothing: returning its bills unfiltered would
+                // present every one of them as a match. An unreadable tag file lands
+                // here too; re-running `govbot tag` rewrites it, so the advice holds.
                 caveats.push(format!(
-                    "No tag file for '{}' in {} session {}. Run `govbot tag` before \
-                     filtering by tag, or results will be missing rather than empty.",
-                    request.tag.clone().unwrap_or_default(),
-                    jurisdiction.locale,
-                    session_id
+                    "{} ({}) has not been scored for '{}' yet, so it contributes no \
+                     results. This is missing data, not an empty record. Run `govbot \
+                     tag` (tag_with_local_ai in Claude Desktop) for {}.",
+                    jurisdiction_display_name(request, jurisdiction, &session_id)?,
+                    session_id,
+                    tag,
+                    jurisdiction.locale
                 ));
+                continue;
             }
 
             scan::for_each_bill(
@@ -851,6 +903,21 @@ fn coverage_for(request: &QueryRequest, jurisdiction: &Jurisdiction) -> Result<C
 // Shared helpers
 // ---------------------------------------------------------------------------
 
+/// A jurisdiction's name as its data spells it ("Illinois"), read from the first
+/// bill in the session; the upper-cased locale when the session has no bills.
+fn jurisdiction_display_name(
+    request: &QueryRequest,
+    jurisdiction: &Jurisdiction,
+    session_id: &str,
+) -> Result<String> {
+    let mut name = None;
+    scan::for_each_bill(&request.repos_dir, jurisdiction, Some(session_id), |bill| {
+        name = bill.jurisdiction_name();
+        Ok(ControlFlow::Stop)
+    })?;
+    Ok(name.unwrap_or_else(|| jurisdiction.locale.to_uppercase()))
+}
+
 fn sessions_in_scope(request: &QueryRequest, jurisdiction: &Jurisdiction) -> Vec<String> {
     let available = scan::sessions(&request.repos_dir, jurisdiction);
     match &request.session {
@@ -1033,6 +1100,26 @@ mod tests {
         };
         let caveats = describe_match("Filer", &resolved, Confidence::Medium);
         assert!(caveats[0].contains("no legislator roster"));
+    }
+
+    #[test]
+    fn defined_topics_reads_govbot_yml_and_tolerates_its_absence() {
+        let dir = tempfile::tempdir().unwrap();
+        // No govbot.yml: nothing to validate against, so no error either.
+        assert_eq!(defined_topics(dir.path()).unwrap(), None);
+
+        std::fs::write(dir.path().join("govbot.yml"), "repos: [il]\n").unwrap();
+        assert_eq!(defined_topics(dir.path()).unwrap(), Some(Vec::new()));
+
+        std::fs::write(
+            dir.path().join("govbot.yml"),
+            "tags:\n  transit:\n    description: x\n  affordable housing:\n    description: y\n",
+        )
+        .unwrap();
+        assert_eq!(
+            defined_topics(dir.path()).unwrap(),
+            Some(vec!["affordable housing".to_string(), "transit".to_string()])
+        );
     }
 
     #[test]
