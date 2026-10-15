@@ -112,14 +112,12 @@ allow_if_govbot_prompt() {
   [ -s "$shot" ] || return 1
   text="$("$(ocr_bin)" "$shot" 2>/dev/null | tr '\n' ' ')"
   rm -f "$shot"
-  case "$text" in
-    *"wants to use"*" from "[Gg]"ovbot"*)
-      case "$text" in *folder*|*command*|*"leave your device"*|*"U.S. Legislation"*) return 1 ;; esac
-      osa 'tell application "System Events" to keystroke return using {command down, shift down}'
-      say "[$id] allowed a govbot tool prompt"
-      return 0 ;;
-  esac
-  return 1
+  # OCR reads the connector's icon as a letter ("from G Govbot"), so allow one.
+  printf '%s' "$text" | grep -Eq 'wants to use .* from ([A-Za-z] )?[Gg]ovbot' || return 1
+  case "$text" in *folder*|*command*|*"leave your device"*|*"U.S. Legislation"*) return 1 ;; esac
+  osa 'tell application "System Events" to keystroke return using {command down, shift down}'
+  say "[$id] allowed a govbot tool prompt"
+  return 0
 }
 
 # Typing goes to whatever app is frontmost, and screenshots capture whatever is on
