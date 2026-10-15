@@ -617,7 +617,7 @@ fn votes_without_tag_are_unchanged() {
     );
     assert_eq!(code, 0, "stderr: {stderr}");
     let summary = summarize_votes(&stdout);
-    // All five roll calls match; the first three in scan order, no topic scores.
+    // All five roll calls match; the newest three come back (#261), no topic scores.
     assert_eq!(summary["truncation"]["total_matching"], 5);
     insta::assert_json_snapshot!(summary);
 }

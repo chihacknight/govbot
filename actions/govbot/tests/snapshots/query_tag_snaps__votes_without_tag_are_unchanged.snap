@@ -6,9 +6,9 @@ expression: summary
   "caveats": null,
   "results": [
     {
-      "bill": "HB0001",
-      "session": "2025",
-      "start_date": "2025-02-10",
+      "bill": "HB0002",
+      "session": "2026",
+      "start_date": "2026-02-15",
       "topic_score": null
     },
     {
@@ -18,9 +18,9 @@ expression: summary
       "topic_score": null
     },
     {
-      "bill": "HB0002",
+      "bill": "HB0004",
       "session": "2025",
-      "start_date": "2025-02-15",
+      "start_date": "2025-02-20",
       "topic_score": null
     }
   ],

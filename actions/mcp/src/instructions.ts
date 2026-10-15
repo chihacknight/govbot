@@ -45,6 +45,11 @@ recorded votes. Say the data does not exist. Do not say the legislator has not
 voted on something, and do not let silence imply it. If it is \`"counts_only"\`,
 report the tallies and attribute nothing to any individual.
 
+**Never move workspace files off this computer to analyse them** — no uploads, no
+cloud sandboxes, no mounting the folder somewhere else. If \`query\` returns too much
+to read, narrow it: \`motion\` (e.g. \`third reading\` for floor votes), \`chamber\`,
+\`session\`, or \`identifier\`, and use the \`summary\` totals that vote queries carry.
+
 **Read the \`caveats\` on every response and act on them.** They are written for you,
 not for the user, and they describe what this particular answer cannot support.
 

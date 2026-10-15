@@ -14,7 +14,7 @@
           "listChanged": true
         }
       },
-      "instructions": "<7001 characters>",
+      "instructions": "<7330 characters>",
       "protocolVersion": "2025-06-18",
       "serverInfo": {
         "name": "govbot",
@@ -231,6 +231,10 @@
             "$schema": "http://json-schema.org/draft-07/schema#",
             "additionalProperties": false,
             "properties": {
+              "chamber": {
+                "description": "Votes only. `upper` (Senate) or `lower` (House).",
+                "type": "string"
+              },
               "identifier": {
                 "description": "A single bill, e.g. `HB1234`.",
                 "type": "string"
@@ -262,6 +266,10 @@
                 "description": "Lowest topic score to include. Defaults to the topic's threshold.",
                 "type": "number"
               },
+              "motion": {
+                "description": "Votes only. Text the vote's motion must contain, case-insensitive. Floor votes are usually `third reading` (final passage) or `concurrence`; committee votes are named after the committee.",
+                "type": "string"
+              },
               "person": {
                 "description": "A legislator's name, matched against sponsors and voters. If it comes back ambiguous, ask which person is meant rather than choosing.",
                 "type": "string"
@@ -279,7 +287,7 @@
                 "type": "string"
               },
               "text": {
-                "description": "Words that must all appear in the bill, matched as whole words.",
+                "description": "Words that must all appear in the bill, matched as whole words. Searches bills, not vote motions: use `motion` for those.",
                 "type": "string"
               },
               "type": {

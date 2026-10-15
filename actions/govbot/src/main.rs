@@ -141,6 +141,14 @@ enum Command {
         #[arg(long)]
         subject: Option<String>,
 
+        /// Votes only: motion text contains this, case-insensitive (e.g. "third reading")
+        #[arg(long)]
+        motion: Option<String>,
+
+        /// Votes only: the chamber that voted: upper | lower (senate | house accepted)
+        #[arg(long)]
+        chamber: Option<String>,
+
         /// Maximum rows to return (default: 20)
         #[arg(long, default_value = "20")]
         limit: usize,
@@ -1470,6 +1478,8 @@ async fn run_query_command(cmd: Command) -> anyhow::Result<()> {
         min_confidence,
         text,
         subject,
+        motion,
+        chamber,
         limit,
         govbot_dir,
         tags_dir,
@@ -1541,6 +1551,8 @@ async fn run_query_command(cmd: Command) -> anyhow::Result<()> {
         text,
         subject,
         limit,
+        motion,
+        chamber,
     };
 
     let response = govbot::query::run(&request)?;
