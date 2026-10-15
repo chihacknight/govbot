@@ -184,14 +184,43 @@ impl BillRecord {
             .unwrap_or_default()
     }
 
-    /// Bioguide ids for federal bills, from `extras`. Absent for state bills.
-    pub fn sponsor_bioguides(&self) -> Vec<String> {
+    /// Each person sponsorship that carries a bioguide id, paired with that id.
+    /// Federal bills only; state bills have no ids and return nothing.
+    ///
+    /// `extras.sponsor_bioguides` and `extras.cosponsor_bioguides` are parallel to
+    /// the primary and the non-primary person sponsorships, in the order they
+    /// appear in `sponsorships`. That order is the only link between an id and a
+    /// name, so a group whose length disagrees with its id list is skipped rather
+    /// than guessed at. (In the 119th Congress every bill's lengths agree, and each
+    /// id pairs with one person.) Pairing every id with the bill's first sponsor
+    /// instead is what once sent `K000376` (Mike Kelly) to John Moolenaar's bills.
+    pub fn sponsorships_by_id(&self) -> Vec<(String, Sponsorship)> {
         let extras = self.metadata.get("extras");
-        let mut ids = string_array(extras.and_then(|e| e.get("sponsor_bioguides")));
-        ids.extend(string_array(
-            extras.and_then(|e| e.get("cosponsor_bioguides")),
-        ));
-        ids
+        let primary_ids = string_array(extras.and_then(|e| e.get("sponsor_bioguides")));
+        let cosponsor_ids = string_array(extras.and_then(|e| e.get("cosponsor_bioguides")));
+        if primary_ids.is_empty() && cosponsor_ids.is_empty() {
+            return Vec::new();
+        }
+
+        let (primaries, cosponsors): (Vec<Sponsorship>, Vec<Sponsorship>) = self
+            .sponsorships()
+            .into_iter()
+            .filter(Sponsorship::is_person)
+            .partition(|s| s.primary);
+
+        let mut paired = Vec::new();
+        for (ids, people) in [(primary_ids, primaries), (cosponsor_ids, cosponsors)] {
+            if ids.len() != people.len() {
+                continue;
+            }
+            for (id, person) in ids.into_iter().zip(people) {
+                let id = id.trim().to_uppercase();
+                if !id.is_empty() {
+                    paired.push((id, person));
+                }
+            }
+        }
+        paired
     }
 
     /// The most recent action, by date.
@@ -772,6 +801,91 @@ mod tests {
         std::fs::write(git.join("HEAD"), "2222222000000000000000000000000000000000\n")
             .expect("write");
         assert_eq!(head_commit_from_files(dir.path()).as_deref(), Some("2222222"));
+    }
+
+    fn federal_bill(metadata: Value) -> BillRecord {
+        BillRecord {
+            jurisdiction: Jurisdiction::new("usa"),
+            session_id: "119".into(),
+            bill_id: "HR1".into(),
+            identifier: "HR 1".into(),
+            metadata,
+            dir: PathBuf::new(),
+            citation: Citation {
+                repo: "usa-legislation".into(),
+                commit: None,
+                path: String::new(),
+            },
+        }
+    }
+
+    fn sponsor(name: &str, primary: bool) -> Value {
+        serde_json::json!({
+            "name": name,
+            "classification": if primary { "primary" } else { "cosponsor" },
+            "entity_type": "person",
+            "primary": primary,
+        })
+    }
+
+    /// The shape of a real federal bill: cosponsors listed before the primary
+    /// sponsor, with ids in two lists parallel to them.
+    #[test]
+    fn pairs_each_sponsor_id_with_its_own_name() {
+        let bill = federal_bill(serde_json::json!({
+            "sponsorships": [
+                sponsor("Kathy Castor", false),
+                sponsor("Erin Houchin", false),
+                { "name": "Some Committee", "entity_type": "organization", "primary": false },
+                sponsor("Steve Womack", true),
+                sponsor("Mike Kelly", false),
+            ],
+            "extras": {
+                "sponsor_bioguides": ["W000809"],
+                "cosponsor_bioguides": ["C001066", "H001093", "k000376"],
+            },
+        }));
+        let paired: Vec<(String, String, bool)> = bill
+            .sponsorships_by_id()
+            .into_iter()
+            .map(|(id, s)| (id, s.name, s.primary))
+            .collect();
+        assert_eq!(
+            paired,
+            vec![
+                ("W000809".into(), "Steve Womack".into(), true),
+                ("C001066".into(), "Kathy Castor".into(), false),
+                ("H001093".into(), "Erin Houchin".into(), false),
+                ("K000376".into(), "Mike Kelly".into(), false),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_misaligned_id_list_is_skipped_not_guessed() {
+        let bill = federal_bill(serde_json::json!({
+            "sponsorships": [
+                sponsor("Steve Womack", true),
+                sponsor("Kathy Castor", false),
+                sponsor("Mike Kelly", false),
+            ],
+            "extras": {
+                "sponsor_bioguides": ["W000809"],
+                // One cosponsor id missing: no way to tell whose.
+                "cosponsor_bioguides": ["K000376"],
+            },
+        }));
+        let ids: Vec<String> = bill
+            .sponsorships_by_id()
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        assert_eq!(ids, vec!["W000809".to_string()]);
+
+        // A state bill has no ids at all.
+        let state =
+            federal_bill(serde_json::json!({ "sponsorships": [sponsor("Bill Cunningham", true)] }));
+        assert!(state.sponsorships_by_id().is_empty());
     }
 
     #[test]

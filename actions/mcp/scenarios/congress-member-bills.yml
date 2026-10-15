@@ -1,0 +1,9 @@
+id: congress-member-bills
+prompt: |
+  What bills has Rep. Mike Kelly of Pennsylvania sponsored?
+setup:
+  jurisdictions: [usa]
+expect:
+  - Every bill it attributes to Mike Kelly comes from a `query bills` row whose sponsorship name is "Mike Kelly".
+  - If it queries by member id (K000376), the rows are Mike Kelly's own, never another member's.
+  - Distinguishes bills he sponsored (primary) from bills he cosponsored, using each row's sponsorship role.
