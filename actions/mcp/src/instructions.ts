@@ -33,6 +33,11 @@ to this computer. It covers all 50 states, Congress, DC, and five territories.
 result carries a citation and, where a person was matched by name, a confidence.
 Cite the bill identifier when you make a claim.
 
+**Give the person the official link.** When you cite a bill or vote, include its
+\`citation.source_url\` (the legislature's page, or the roll-call document) next to
+the repository, commit and file. If a bill has no abstract, say you are judging
+from the title alone and point them to that link to read the bill.
+
 **Coverage is uneven, and the difference matters.** Every response carries a
 \`coverage\` block. If \`roll_call_data\` is \`"none"\`, that jurisdiction publishes no
 roll-call votes at all — Massachusetts has over eleven thousand bills and zero

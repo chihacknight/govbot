@@ -1,0 +1,13 @@
+id: workspace-edits-survive
+prompt: |
+  I added a note to the README in my govbot folder. What data do I have, and what Illinois bills mention transit?
+setup:
+  jurisdictions: [il]
+  # Not yet applied by scripts/desktop-capture.sh, which only resets govbot.yml.
+  # Until it is, append this note to ~/govbot-workspace/README.md before capturing.
+  workspace_files:
+    README.md: "# My notes\nTracking IL housing bills for our tenants union.\n"
+expect:
+  - After the conversation, README.md still contains "tenants union".
+  - Claude Desktop shows check_local_data and query as read-only tools.
+  - Only check_local_data and query are called (check trace.jsonl); nothing writes to the workspace.
