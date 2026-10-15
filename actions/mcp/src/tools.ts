@@ -499,6 +499,9 @@ export async function query(args: Record<string, unknown>): Promise<ToolOutput> 
     throw error;
   }
 
+  // The CLI was given `--govbot-dir` explicitly above, and that flag wins over
+  // GOVBOT_DIR in the CLI (get_govbot_dir in actions/govbot/src/main.rs), so
+  // `<dataPath>/repos` is the folder it read even when GOVBOT_DIR is set.
   return { text: summarize(response, join(workspace.dataPath(), "repos")), data: response };
 }
 
