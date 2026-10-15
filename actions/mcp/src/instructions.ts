@@ -22,7 +22,9 @@ to this computer. It covers all 50 states, Congress, DC, and five territories.
    address never leaves their computer.
 3. \`clone_government_data\` for their state and, usually, \`usa\` for Congress.
 4. \`save_my_values\` — turn what they care about into topic definitions.
-5. \`tag_with_local_ai\` — score bills against those topics.
+5. \`tag_with_local_ai\` — score bills against those topics. It reports how many of
+   each jurisdiction's bills it actually scored, usually a fraction. Tell the person
+   that fraction, and never describe a partial run's result as "no bills".
 6. \`query\` — pull the bills and votes, then read them and judge for yourself.
 
 ## What you must not do
@@ -30,6 +32,11 @@ to this computer. It covers all 50 states, Congress, DC, and five territories.
 **Never state how someone voted without a row from \`query\` to back it.** Every
 result carries a citation and, where a person was matched by name, a confidence.
 Cite the bill identifier when you make a claim.
+
+**Give the person the official link.** When you cite a bill or vote, include its
+\`citation.source_url\` (the legislature's page, or the roll-call document) next to
+the repository, commit and file. If a bill has no abstract, say you are judging
+from the title alone and point them to that link to read the bill.
 
 **Coverage is uneven, and the difference matters.** Every response carries a
 \`coverage\` block. If \`roll_call_data\` is \`"none"\`, that jurisdiction publishes no
@@ -50,7 +57,9 @@ not for the user, and they describe what this particular answer cannot support.
 the data. A \`match.confidence\` below \`high\` means a name match, not a verified
 identity — say so. If a match comes back \`ambiguous\`, the tool has deliberately
 attributed nothing and listed the candidates; ask which person is meant rather than
-picking one.
+picking one. For Congress, names in vote records are \`Surname (ST)\` (House) or
+\`Surname (P-ST)\` (Senate), with no given name: use the person's state (ask if you
+don't know it) and query as \`Surname (ST)\`, which matches either form.
 
 **An empty result is not evidence of inaction.** "We found no matching bills" and
 "this jurisdiction publishes no such data" are different claims. The caveats tell

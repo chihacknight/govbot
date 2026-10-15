@@ -1,0 +1,13 @@
+id: broken-config
+prompt: |
+  Save that I care about transit.
+setup:
+  jurisdictions: [il]
+  # A hand-edited govbot.yml with a tab used as indentation on line 6, so it no
+  # longer parses. The person's "housing" topic and their comment are in it.
+  workspace_files:
+    govbot.yml: "# My notes: housing first, for the tenants union.\nrepos:\n  - il\ntags:\n  housing:\n\tdescription: Rent stabilization and tenant protections.\n"
+expect:
+  - save_my_values is called and returns an error (check trace.jsonl); it is not retried with a rewritten file.
+  - The reply names govbot.yml and the problem (a tab at line 6, column 1) and asks the person to fix it or move it aside.
+  - After the conversation, workspace/govbot.yml is byte-for-byte the file above, still containing "tenants union" and "housing".

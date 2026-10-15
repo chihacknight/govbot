@@ -1,0 +1,13 @@
+---
+source: tests/query_tag_snaps.rs
+expression: "json!({ \"no_roll_calls\": no_roll_calls, \"person_not_in_them\": not_in_them, })"
+---
+{
+  "no_roll_calls": [
+    "Wyoming publishes no roll-call votes in this dataset (5 bills, 0 vote events). Sponsorship is the only available evidence. Do not describe this as a legislator not having voted on something.",
+    "1 bill is tagged for 'public budgets' in scope, but none has a recorded vote. Most bills never reach a roll call, so this says nothing about how anyone stands on the topic."
+  ],
+  "person_not_in_them": [
+    "1 bill is tagged for 'public budgets' in scope, but none has a recorded vote that includes Jones. Most bills never reach a roll call, so this says nothing about how anyone stands on the topic."
+  ]
+}

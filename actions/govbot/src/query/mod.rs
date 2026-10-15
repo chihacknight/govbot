@@ -20,7 +20,7 @@ pub mod scan;
 use anyhow::Result;
 use serde::Serialize;
 use serde_json::{json, Value};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::path::PathBuf;
 
 pub use names::{Confidence, MatchMethod, NameIndex, NameMatch};
@@ -120,6 +120,20 @@ pub struct Truncation {
 
 /// Run a query.
 pub fn run(request: &QueryRequest) -> Result<QueryResponse> {
+    // People and coverage have no topic filter. Running anyway would echo the
+    // `tag` back in `query` while ignoring it, which reads as "filtered by topic".
+    if matches!(request.kind, QueryKind::People | QueryKind::Coverage) {
+        for (flag, given) in [("tag", request.tag.is_some()), ("min_score", request.min_score.is_some())] {
+            if given {
+                anyhow::bail!(
+                    "`{flag}` is not supported for {} queries. Use `query bills` or `query \
+                     votes` with `tag` for topic results, or drop `{flag}`.",
+                    request.kind.as_str()
+                );
+            }
+        }
+    }
+
     let mut caveats = Vec::new();
     let mut coverage = Vec::new();
 
@@ -232,11 +246,24 @@ fn describe(request: &QueryRequest) -> Value {
 struct TagScores {
     threshold: f64,
     by_bill: BTreeMap<String, Value>,
+    /// Bills scored for this topic, matched or not. `None` for tag files written
+    /// before `govbot tag` recorded `scored_bills`: coverage unknown.
+    scored: Option<HashSet<String>>,
 }
 
 impl TagScores {
-    fn load(request: &QueryRequest, jurisdiction: &Jurisdiction, session_id: &str) -> Option<Self> {
-        let tag = request.tag.as_ref()?;
+    /// `Ok(None)` when there is no tag file: the session has not been scored for
+    /// this topic. A file that exists but cannot be read or parsed is an error
+    /// naming it. Treating it as unscored would hide the damage and advise a re-run
+    /// that, for a hand-edited or truncated file, may not be what the person wants.
+    fn load(
+        request: &QueryRequest,
+        jurisdiction: &Jurisdiction,
+        session_id: &str,
+    ) -> Result<Option<Self>> {
+        let Some(tag) = request.tag.as_ref() else {
+            return Ok(None);
+        };
         let path = request
             .tags_dir
             .join("country:us")
@@ -246,8 +273,18 @@ impl TagScores {
             .join("tags")
             .join(format!("{tag}.tag.json"));
 
-        let raw = std::fs::read_to_string(&path).ok()?;
-        let value: Value = serde_json::from_str(&raw).ok()?;
+        let raw = match std::fs::read_to_string(&path) {
+            Ok(raw) => raw,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(error) => anyhow::bail!("Could not read tag file {}: {error}", path.display()),
+        };
+        let value: Value = serde_json::from_str(&raw).map_err(|error| {
+            anyhow::anyhow!(
+                "Tag file {} is not valid JSON: {error}. Fix or delete it, then run \
+                 `govbot tag` again.",
+                path.display()
+            )
+        })?;
 
         let threshold = value
             .get("tag_config")
@@ -255,7 +292,7 @@ impl TagScores {
             .and_then(Value::as_f64)
             .unwrap_or(0.5);
 
-        let by_bill = value
+        let by_bill: BTreeMap<String, Value> = value
             .get("bills")
             .and_then(Value::as_object)
             .map(|bills| {
@@ -268,7 +305,30 @@ impl TagScores {
             })
             .unwrap_or_default();
 
-        Some(Self { threshold, by_bill })
+        // A bill with a score was scored even if `scored_bills` omits it (a run
+        // interrupted between writing a match and recording what it scored).
+        let scored = value
+            .get("scored_bills")
+            .and_then(Value::as_array)
+            .map(|ids| {
+                ids.iter()
+                    .filter_map(Value::as_str)
+                    .map(str::to_string)
+                    .chain(by_bill.keys().cloned())
+                    .collect()
+            });
+
+        Ok(Some(Self {
+            threshold,
+            by_bill,
+            scored,
+        }))
+    }
+
+    /// `None` when the file predates `scored_bills`.
+    fn was_scored(&self, bill: &BillRecord) -> Option<bool> {
+        let scored = self.scored.as_ref()?;
+        Some(scored.contains(&bill.identifier) || scored.contains(&bill.bill_id))
     }
 
     fn score_for(&self, bill: &BillRecord) -> Option<&Value> {
@@ -278,12 +338,104 @@ impl TagScores {
     }
 }
 
+/// The topic names `govbot.yml` defines, if there is a `govbot.yml` beside the tag
+/// files.
+///
+/// `None` means there is no config to check against — `--tags-dir` can point at
+/// bare `govbot tag` output — in which case an unknown topic simply finds no tag
+/// files and every scope reports itself unscored.
+fn defined_topics(tags_dir: &std::path::Path) -> Result<Option<Vec<String>>> {
+    let path = tags_dir.join("govbot.yml");
+    let raw = match std::fs::read_to_string(&path) {
+        Ok(raw) => raw,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => anyhow::bail!("Could not read {}: {error}", path.display()),
+    };
+    // `query bills --tag` reads this file only to learn which topics exist, but a
+    // broken one stops every topic query, so the error says which file and what
+    // to fix rather than just "parse error".
+    let config: serde_yaml::Value = serde_yaml::from_str(&raw).map_err(|error| {
+        anyhow::anyhow!(
+            "{} is not valid YAML, so the topics it defines cannot be checked: {error}. \
+             Fix the YAML in that file; until then no topic query can run.",
+            path.display()
+        )
+    })?;
+    let mut topics: Vec<String> = match config.get("tags") {
+        // No `tags:` at all: a workspace with no topics yet.
+        None | Some(serde_yaml::Value::Null) => Vec::new(),
+        Some(serde_yaml::Value::Mapping(tags)) => tags
+            .keys()
+            .filter_map(|key| key.as_str().map(str::to_string))
+            .collect(),
+        Some(_) => anyhow::bail!(
+            "In {}, `tags:` must map each topic name to its definition, but it is not a \
+             mapping. Fix that file; until then no topic query can run.",
+            path.display()
+        ),
+    };
+    topics.sort();
+    Ok(Some(topics))
+}
+
 // ---------------------------------------------------------------------------
 // Bills
 // ---------------------------------------------------------------------------
 
+/// A misspelled or invented topic ("renters" for "renter protections") finds no
+/// tag files anywhere, so every scope would report itself "not scored yet" and
+/// hide the real mistake. Failing with the defined names lets the caller retry
+/// with the right one.
+fn ensure_topic_defined(request: &QueryRequest) -> Result<()> {
+    if let Some(tag) = request.tag.as_deref() {
+        if let Some(topics) = defined_topics(&request.tags_dir)? {
+            if !topics.iter().any(|topic| topic == tag) {
+                let defined = if topics.is_empty() {
+                    format!("none ({} has no `tags:` entries)", request.tags_dir.join("govbot.yml").display())
+                } else {
+                    topics.join(", ")
+                };
+                anyhow::bail!("No topic named '{tag}'. Defined topics: {defined}");
+            }
+        }
+    }
+    Ok(())
+}
+
+/// No tag file means nobody has scored this session for this topic. (`govbot
+/// tag` writes one for every session it scores, matches or not.) The scope then
+/// contributes nothing: returning its bills or votes unfiltered would present
+/// every one of them as on topic.
+fn unscored_caveat(
+    request: &QueryRequest,
+    jurisdiction: &Jurisdiction,
+    session_id: &str,
+    tag: &str,
+) -> Result<String> {
+    Ok(format!(
+        "{} ({}) has not been scored for '{}' yet, so it contributes no \
+         results. This is missing data, not an empty record. Run `govbot \
+         tag` (tag_with_local_ai in Claude Desktop) for {}.",
+        jurisdiction_display_name(request, jurisdiction, session_id)?,
+        session_id,
+        tag,
+        jurisdiction.locale
+    ))
+}
+
+/// The bill's topic score if it clears `--min-score` (default: the topic's own
+/// threshold); `None` if it has no score or falls below.
+fn topic_score(request: &QueryRequest, scores: &TagScores, bill: &BillRecord) -> Option<(f64, Value)> {
+    let score = scores.score_for(bill)?;
+    let final_score = score.get("final_score").and_then(Value::as_f64).unwrap_or(0.0);
+    let floor = request.min_score.unwrap_or(scores.threshold);
+    (final_score >= floor).then(|| (final_score, score.clone()))
+}
+
 fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>)> {
     let mut caveats = Vec::new();
+
+    ensure_topic_defined(request)?;
 
     // Matching a person needs to know every name in scope before it can tell a
     // unique surname from an ambiguous one, so that costs a first pass.
@@ -308,16 +460,17 @@ fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
 
     for jurisdiction in &request.jurisdictions {
         for session_id in sessions_in_scope(request, jurisdiction) {
-            let scores = TagScores::load(request, jurisdiction, &session_id);
-            if request.tag.is_some() && scores.is_none() {
-                caveats.push(format!(
-                    "No tag file for '{}' in {} session {}. Run `govbot tag` before \
-                     filtering by tag, or results will be missing rather than empty.",
-                    request.tag.clone().unwrap_or_default(),
-                    jurisdiction.locale,
-                    session_id
-                ));
+            let scores = TagScores::load(request, jurisdiction, &session_id)?;
+            if let (Some(tag), None) = (request.tag.as_deref(), scores.as_ref()) {
+                caveats.push(unscored_caveat(request, jurisdiction, &session_id, tag)?);
+                continue;
             }
+
+            // Of the bills the tag filter is applied to (those passing every other
+            // filter), how many were scored. Only meaningful with a tag file that
+            // records `scored_bills`.
+            let mut candidates = 0usize;
+            let mut scored_candidates = 0usize;
 
             scan::for_each_bill(
                 &request.repos_dir,
@@ -330,7 +483,9 @@ fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
 
                     let sponsorship = match person_match.as_ref() {
                         Some(resolved) => {
-                            let Some(found) = matching_sponsorship(&bill, resolved) else {
+                            let Some(found) =
+                                matching_sponsorship(&bill, resolved, request.person.as_deref())
+                            else {
                                 return Ok(ControlFlow::Continue);
                             };
                             Some(found)
@@ -340,16 +495,14 @@ fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
 
                     let score = match scores.as_ref() {
                         Some(scores) => {
-                            let Some(score) = scores.score_for(&bill) else {
+                            candidates += 1;
+                            if scores.was_scored(&bill) == Some(true) {
+                                scored_candidates += 1;
+                            }
+                            let Some(score) = topic_score(request, scores, &bill) else {
                                 return Ok(ControlFlow::Continue);
                             };
-                            let final_score =
-                                score.get("final_score").and_then(Value::as_f64).unwrap_or(0.0);
-                            let floor = request.min_score.unwrap_or(scores.threshold);
-                            if final_score < floor {
-                                return Ok(ControlFlow::Continue);
-                            }
-                            Some((final_score, score.clone()))
+                            Some(score)
                         }
                         None => None,
                     };
@@ -363,6 +516,21 @@ fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
                     Ok(ControlFlow::Continue)
                 },
             )?;
+
+            if let (Some(tag), Some(scores)) = (request.tag.as_deref(), scores.as_ref()) {
+                if let Some(caveat) = coverage_caveat(
+                    request,
+                    jurisdiction,
+                    &session_id,
+                    tag,
+                    "bills",
+                    scores.scored.is_some(),
+                    scored_candidates,
+                    candidates,
+                )? {
+                    caveats.push(caveat);
+                }
+            }
         }
     }
 
@@ -378,6 +546,73 @@ fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
         .collect();
 
     Ok((results, total, caveats))
+}
+
+/// The caveat for a scored session whose coverage is partial or unknown; `None`
+/// when every bill in scope was scored.
+///
+/// Partial is the normal case: tag_with_local_ai reads a few hundred log entries
+/// per jurisdiction, and a large session has thousands of bills. Without this, "3
+/// matches" from a session where 3 of 18,380 bills were scored reads as complete.
+/// The wording follows tag_with_local_ai's own coverage report.
+fn coverage_caveat(
+    request: &QueryRequest,
+    jurisdiction: &Jurisdiction,
+    session_id: &str,
+    tag: &str,
+    // What was counted: "bills", or for votes "bills with recorded votes".
+    noun: &str,
+    tracked: bool,
+    scored: usize,
+    total: usize,
+) -> Result<Option<String>> {
+    // `total == 0`: nothing in scope (an empty session, or other filters excluded
+    // everything), so there is nothing that could be missing.
+    if total == 0 || (tracked && scored >= total) {
+        return Ok(None);
+    }
+    let name = jurisdiction_display_name(request, jurisdiction, session_id)?;
+    // Other filters (text, subject, identifier, person) shrink the set the topic is
+    // checked against; say so, so the count is not read as the session's size.
+    let narrowed = request.identifier.is_some()
+        || request.subject.is_some()
+        || request.text.is_some()
+        || request.person.is_some();
+    let in_scope = if narrowed { " matching the other filters" } else { "" };
+    if !tracked {
+        return Ok(Some(format!(
+            "{name} ({session_id}) was tagged for '{tag}' before govbot recorded which \
+             bills it scored, so coverage is unknown: some of its {} {noun}{in_scope} may \
+             never have been checked, and are missing from these results rather than \
+             non-matching. Run `govbot tag` (tag_with_local_ai in Claude Desktop) for {} \
+             again to record coverage, or use `query` with `text` to search every bill.",
+            thousands(total),
+            jurisdiction.locale
+        )));
+    }
+    Ok(Some(format!(
+        "{} of {} {noun}{in_scope} in {name} ({session_id}) have been scored for '{tag}'. \
+         The other {} were not checked, so they are missing from these results, not \
+         non-matching. Use `query` with `text` to search every bill, or run `govbot tag` \
+         (tag_with_local_ai in Claude Desktop) for {} with a higher limit.",
+        thousands(scored),
+        thousands(total),
+        thousands(total - scored),
+        jurisdiction.locale
+    )))
+}
+
+/// 12780 -> "12,780", matching how tag_with_local_ai prints counts.
+fn thousands(n: usize) -> String {
+    let digits = n.to_string();
+    let mut out = String::new();
+    for (i, c) in digits.chars().enumerate() {
+        if i > 0 && (digits.len() - i) % 3 == 0 {
+            out.push(',');
+        }
+        out.push(c);
+    }
+    out
 }
 
 fn bill_matches(request: &QueryRequest, bill: &BillRecord) -> bool {
@@ -445,7 +680,23 @@ fn is_word_byte(byte: u8) -> bool {
     byte.is_ascii_alphanumeric() || byte >= 0x80
 }
 
-fn matching_sponsorship(bill: &BillRecord, resolved: &NameMatch) -> Option<scan::Sponsorship> {
+fn matching_sponsorship(
+    bill: &BillRecord,
+    resolved: &NameMatch,
+    person: Option<&str>,
+) -> Option<scan::Sponsorship> {
+    // Asked by member id: the id itself must be on the bill. Matching the name it
+    // resolved to instead would pick up a namesake's bills (another jurisdiction,
+    // say) and miss the member's bills under a second spelling (`Bernie Sanders` /
+    // `Bernard Sanders` are both S000033).
+    if resolved.method == MatchMethod::Bioguide {
+        let id = person.unwrap_or_default().trim().to_uppercase();
+        return bill
+            .sponsorships_by_id()
+            .into_iter()
+            .find(|(bioguide, _)| *bioguide == id)
+            .map(|(_, sponsorship)| sponsorship);
+    }
     bill.sponsorships().into_iter().find(|sponsorship| {
         sponsorship.is_person() && resolved.candidates.contains(&sponsorship.name)
     })
@@ -525,6 +776,8 @@ fn query_votes(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
     let mut caveats = Vec::new();
     let mut summary = VoteSummary::default();
 
+    ensure_topic_defined(request)?;
+
     let person_match = match request.person.as_deref() {
         Some(person) => {
             let index = build_voter_index(request)?;
@@ -541,13 +794,30 @@ fn query_votes(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
         }
     }
 
-    // (start date, row). Pruned to the newest as it grows; see `keep_newest`.
-    let mut results: Vec<(String, Value)> = Vec::new();
+    // (topic score, start date, row); the score is 0.0 without a tag. Pruned to
+    // the first `limit` in output order as it grows; see `keep_newest`.
+    let mut results: Vec<(f64, String, Value)> = Vec::new();
     let mut total = 0usize;
     let mut excluded_by_event_filter = 0usize;
+    // Bills on the topic (passing every other filter too), for saying so when none
+    // of them had a recorded vote.
+    let mut tagged_bills = 0usize;
 
     for jurisdiction in &request.jurisdictions {
         for session_id in sessions_in_scope(request, jurisdiction) {
+            // The tag step mirrors `query_bills`: an unscored session contributes no
+            // rows, and a partly scored one says how much was checked.
+            let scores = TagScores::load(request, jurisdiction, &session_id)?;
+            if let (Some(tag), None) = (request.tag.as_deref(), scores.as_ref()) {
+                caveats.push(unscored_caveat(request, jurisdiction, &session_id, tag)?);
+                continue;
+            }
+            // Coverage is counted over bills with at least one vote in scope (one
+            // cast by `person`, if given): a bill with no roll call could not have
+            // added a row whether it was scored or not.
+            let mut candidates = 0usize;
+            let mut scored_candidates = 0usize;
+
             scan::for_each_bill(
                 &request.repos_dir,
                 jurisdiction,
@@ -556,10 +826,23 @@ fn query_votes(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
                     if !bill_matches(request, &bill) {
                         return Ok(ControlFlow::Continue);
                     }
+                    // `None`: no tag. `Some(None)`: tagged, but this bill is not on
+                    // the topic, so its votes only count toward coverage.
+                    let topic = scores.as_ref().map(|scores| topic_score(request, scores, &bill));
+                    if let Some(Some(_)) = topic {
+                        tagged_bills += 1;
+                    }
+                    let mut events_in_scope = 0usize;
                     for event in scan::vote_events(&bill, &request.repos_dir) {
                         let person_vote = match person_match.as_ref() {
                             Some(resolved) => {
-                                let Some(found) = matching_vote(&event, resolved) else {
+                                let scope = vote_scope(jurisdiction, &event.chamber, &session_id);
+                                let Some(found) = matching_vote(
+                                    &event,
+                                    resolved,
+                                    request.min_confidence,
+                                    scope.as_deref(),
+                                ) else {
                                     continue;
                                 };
                                 Some(found)
@@ -568,19 +851,57 @@ fn query_votes(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
                         };
                         // After the person match, so an empty result can say how
                         // many of their votes the motion or chamber filter removed.
+                        // Before coverage: a bill whose only votes fail the filter
+                        // could not have added a row whether scored or not.
                         if !event_matches(request, &event) {
-                            excluded_by_event_filter += 1;
+                            // Off-topic votes would not have been returned anyway.
+                            if !matches!(topic, Some(None)) {
+                                excluded_by_event_filter += 1;
+                            }
+                            continue;
+                        }
+                        events_in_scope += 1;
+                        if let Some(None) = topic {
                             continue;
                         }
                         total += 1;
                         summary.record(&event, person_vote.as_ref());
-                        let row = vote_row(&bill, &event, person_vote, person_match.as_ref());
-                        results.push((event.start_date.clone(), row));
+                        let mut row =
+                            vote_row(&bill, &event, person_vote, person_match.as_ref());
+                        let rank = match &topic {
+                            Some(Some((final_score, _))) => {
+                                row["topic_score"] = json!(final_score);
+                                *final_score
+                            }
+                            _ => 0.0,
+                        };
+                        results.push((rank, event.start_date.clone(), row));
                         keep_newest(&mut results, request.limit);
+                    }
+                    if let (Some(scores), true) = (scores.as_ref(), events_in_scope > 0) {
+                        candidates += 1;
+                        if scores.was_scored(&bill) == Some(true) {
+                            scored_candidates += 1;
+                        }
                     }
                     Ok(ControlFlow::Continue)
                 },
             )?;
+
+            if let (Some(tag), Some(scores)) = (request.tag.as_deref(), scores.as_ref()) {
+                if let Some(caveat) = coverage_caveat(
+                    request,
+                    jurisdiction,
+                    &session_id,
+                    tag,
+                    "bills with recorded votes",
+                    scores.scored.is_some(),
+                    scored_candidates,
+                    candidates,
+                )? {
+                    caveats.push(caveat);
+                }
+            }
         }
     }
 
@@ -588,17 +909,50 @@ fn query_votes(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
         caveats.push(event_filter_caveat(request, excluded_by_event_filter));
     }
 
+    if let Some(tag) = request.tag.as_deref() {
+        // Most bills never reach a roll call. Without this, an empty result reads
+        // as the legislator having avoided the topic. Not when the motion/chamber
+        // filter removed votes: those bills do have recorded votes, and the
+        // caveat above says so.
+        if tagged_bills > 0 && total == 0 && excluded_by_event_filter == 0 {
+            let by = match request.person.as_deref() {
+                Some(person) => format!(" that includes {person}"),
+                None => String::new(),
+            };
+            caveats.push(format!(
+                "{} {} tagged for '{tag}' in scope, but none has a recorded vote{by}. \
+                 Most bills never reach a roll call, so this says nothing about how \
+                 anyone stands on the topic.",
+                thousands(tagged_bills),
+                if tagged_bills == 1 { "bill is" } else { "bills are" },
+            ));
+        }
+    }
+
     sort_newest_first(&mut results);
     results.truncate(request.limit);
-    let results = results.into_iter().map(|(_, row)| row).collect();
+    let results = results.into_iter().map(|(_, _, row)| row).collect();
     Ok((results, total, caveats, summary.to_json()))
 }
 
-fn matching_vote(event: &VoteEventRecord, resolved: &NameMatch) -> Option<names::RawVoteRow> {
+/// The row in `event` cast by the resolved person, if any. A surname-only
+/// spelling counts only when it was linked in this event's `scope` (see
+/// [`vote_scope`]) and its medium confidence meets the caller's minimum. A row
+/// carrying a member id counts only when the id is the person's.
+fn matching_vote(
+    event: &VoteEventRecord,
+    resolved: &NameMatch,
+    minimum: Confidence,
+    scope: Option<&str>,
+) -> Option<names::RawVoteRow> {
     event
         .votes
         .iter()
-        .find(|row| resolved.candidates.contains(&row.voter_name))
+        .find(|row| {
+            resolved
+                .confidence_for_row(row, scope)
+                .is_some_and(|c| c >= minimum && c > Confidence::None)
+        })
         .cloned()
 }
 
@@ -625,6 +979,12 @@ fn vote_row(
     row.insert("counts".into(), json!(event.counts));
     row.insert("has_member_votes".into(), json!(event.has_member_votes()));
 
+    // A row reached through a surname-only spelling reports its own, lower
+    // confidence rather than the full-name match's.
+    let row_match = match (person_match, &person_vote) {
+        (Some(resolved), Some(vote)) => Some(resolved.for_spelling(&vote.voter_name)),
+        (resolved, _) => resolved.cloned(),
+    };
     if let Some(vote) = person_vote {
         let mut entry = serde_json::Map::new();
         entry.insert("voter_name".into(), json!(vote.voter_name));
@@ -634,7 +994,7 @@ fn vote_row(
         }
         row.insert("person_vote".into(), Value::Object(entry));
     }
-    if let Some(resolved) = person_match {
+    if let Some(resolved) = row_match {
         row.insert("match".into(), json!(resolved));
     }
     if event.repaired_rows > 0 {
@@ -700,24 +1060,33 @@ fn normalize_chamber(chamber: &str) -> String {
     }
 }
 
-/// Drop everything past the newest `limit` rows once the buffer holds twice
-/// that many. Sorting the whole match set at the end would hold every row in
-/// memory (tens of thousands for a state with no `person`) when only `limit`
-/// are returned.
-fn keep_newest(rows: &mut Vec<(String, Value)>, limit: usize) {
+/// Drop everything past the first `limit` rows in output order (see
+/// [`sort_newest_first`]) once the buffer holds twice that many. Sorting the
+/// whole match set at the end would hold every row in memory (tens of thousands
+/// for a state with no `person`) when only `limit` are returned.
+fn keep_newest(rows: &mut Vec<(f64, String, Value)>, limit: usize) {
     if rows.len() >= limit.saturating_mul(2).max(1) {
         sort_newest_first(rows);
         rows.truncate(limit);
     }
 }
 
-/// The sort is stable, so equal dates keep scan order and repeated runs agree.
+/// Output order for `(topic score, start date, row)`. With a tag, the most
+/// on-topic first; among equal scores (votes on one bill, or every row without
+/// a tag, where the score is 0.0), the latest vote first, since that is usually
+/// the decisive one (final passage).
+///
+/// The sort is stable, so equal keys keep scan order and repeated runs agree.
 /// Dates are compared as strings: ISO dates order correctly that way, and a
 /// date-only value ("2026-02-17") sorts just before timestamps on the same day.
 /// Timestamps with different UTC offsets can be misordered by hours, never by
 /// days. An event with no date sorts last.
-fn sort_newest_first(rows: &mut [(String, Value)]) {
-    rows.sort_by(|a, b| b.0.cmp(&a.0));
+fn sort_newest_first(rows: &mut [(f64, String, Value)]) {
+    rows.sort_by(|a, b| {
+        b.0.partial_cmp(&a.0)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| b.1.cmp(&a.1))
+    });
 }
 
 /// Totals over every vote a query matched, including the ones past `limit`.
@@ -815,6 +1184,7 @@ mod vote_filter_tests {
                 repo: "il-legislation".into(),
                 commit: None,
                 path: "x.json".into(),
+                source_url: None,
             },
         }
     }
@@ -872,14 +1242,14 @@ mod vote_filter_tests {
 
     #[test]
     fn votes_come_back_newest_first_with_undated_last() {
-        let mut rows: Vec<(String, Value)> =
+        let mut rows: Vec<(f64, String, Value)> =
             ["2025-03-01", "", "2026-02-17T10:00:00+00:00", "2026-02-17"]
                 .iter()
                 .enumerate()
-                .map(|(i, d)| (d.to_string(), json!(i)))
+                .map(|(i, d)| (0.0, d.to_string(), json!(i)))
                 .collect();
         sort_newest_first(&mut rows);
-        let order: Vec<Value> = rows.into_iter().map(|(_, row)| row).collect();
+        let order: Vec<Value> = rows.into_iter().map(|(_, _, row)| row).collect();
         assert_eq!(order, vec![json!(2), json!(3), json!(0), json!(1)]);
     }
 
@@ -890,20 +1260,35 @@ mod vote_filter_tests {
             .collect();
         let mut pruned = Vec::new();
         for (i, d) in dates.iter().enumerate() {
-            pruned.push((d.clone(), json!(i)));
+            pruned.push((0.0, d.clone(), json!(i)));
             keep_newest(&mut pruned, 5);
         }
         sort_newest_first(&mut pruned);
         pruned.truncate(5);
 
-        let mut all: Vec<(String, Value)> = dates
+        let mut all: Vec<(f64, String, Value)> = dates
             .iter()
             .enumerate()
-            .map(|(i, d)| (d.clone(), json!(i)))
+            .map(|(i, d)| (0.0, d.clone(), json!(i)))
             .collect();
         sort_newest_first(&mut all);
         all.truncate(5);
         assert_eq!(pruned, all);
+    }
+
+    #[test]
+    fn with_a_tag_the_most_on_topic_votes_come_first_then_newest() {
+        let mut rows: Vec<(f64, String, Value)> = vec![
+            (0.4, "2026-03-01".into(), json!("weak, newest")),
+            (0.9, "2025-01-01".into(), json!("strong, older")),
+            (0.9, "2025-06-01".into(), json!("strong, newer")),
+        ];
+        sort_newest_first(&mut rows);
+        let order: Vec<Value> = rows.into_iter().map(|(_, _, row)| row).collect();
+        assert_eq!(
+            order,
+            vec![json!("strong, newer"), json!("strong, older"), json!("weak, newest")]
+        );
     }
 
     #[test]
@@ -979,6 +1364,13 @@ struct PersonTally {
     sponsored: usize,
     cosponsored: usize,
     votes: usize,
+    /// `votes`, split by [`vote_scope`], so a bare surname's votes can be folded
+    /// into a full name one scope at a time. Votes with no scope are not here.
+    votes_by_scope: BTreeMap<String, usize>,
+    /// Bare-surname spellings folded in by `NameIndex::surname_links`.
+    surname_only_spellings: Vec<String>,
+    /// The member id this person's vote rows carry (Congress only).
+    member_id: Option<String>,
 }
 
 impl PersonTally {
@@ -990,16 +1382,20 @@ impl PersonTally {
 }
 
 fn query_people(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>)> {
-    let caveats = vec![
+    let mut caveats = vec![
         "These names are derived from sponsorship and vote records, not from a \
          legislator roster. They carry no party, district, or term information, and \
          a name appearing here is not proof that person currently holds office."
             .to_string(),
     ];
 
-    // Keyed by normalized name, so `Smith, S` and `SMITH, S` are one person.
+    // Keyed by `names::identity_key`, so `Smith, S` and `SMITH, S` are one
+    // person, and `Kelly (IL)` and `Kelly (PA)` are two.
     let mut tallies: BTreeMap<String, PersonTally> = BTreeMap::new();
     let wanted = request.person.as_ref().map(|p| names::normalize(p));
+    // Built alongside the tallies so bare surnames can be linked afterwards, with
+    // the same rule `query votes` uses.
+    let mut index = NameIndex::new();
 
     for jurisdiction in &request.jurisdictions {
         for session_id in sessions_in_scope(request, jurisdiction) {
@@ -1013,9 +1409,10 @@ fn query_people(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String
                             continue;
                         }
                         let entry = tallies
-                            .entry(names::normalize(&sponsorship.name).key())
+                            .entry(names::identity_key(&sponsorship.name, None))
                             .or_default();
                         entry.record_spelling(&sponsorship.name);
+                        index.insert(&sponsorship.name);
                         if sponsorship.primary {
                             entry.sponsored += 1;
                         } else {
@@ -1023,20 +1420,68 @@ fn query_people(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String
                         }
                     }
                     for event in scan::vote_events(&bill, &request.repos_dir) {
+                        let scope = vote_scope(jurisdiction, &event.chamber, &session_id);
                         for vote in &event.votes {
                             if names::is_suspect_fragment(&vote.voter_name) {
                                 continue;
                             }
+                            index.insert_vote(&vote.voter_name, scope.as_deref(), &vote.note);
+                            let id = names::member_id(&vote.note);
                             let entry = tallies
-                                .entry(names::normalize(&vote.voter_name).key())
+                                .entry(names::identity_key(&vote.voter_name, id.as_deref()))
                                 .or_default();
                             entry.record_spelling(&vote.voter_name);
+                            entry.member_id = id;
                             entry.votes += 1;
+                            if let Some(scope) = &scope {
+                                *entry.votes_by_scope.entry(scope.clone()).or_default() += 1;
+                            }
                         }
                     }
                     Ok(ControlFlow::Continue)
                 },
             )?;
+        }
+    }
+
+    // Fold each linkable bare surname (`Cunningham`) into the one full-named
+    // person it belongs to (`Cunningham, Bill`), so one legislator is one row.
+    // Only the bare spelling's votes in scopes where the link holds move; the
+    // same `Peters` in Congress stays its own row. Sponsorships carry no scope,
+    // so they never move. The link is medium confidence, so a higher minimum
+    // leaves every row as the data spells it, matching `query votes`.
+    let fold = request.min_confidence <= Confidence::Medium;
+    let mut withheld = false;
+    let bare_keys: Vec<String> = tallies
+        .keys()
+        .filter(|key| !key.contains(' '))
+        .cloned()
+        .collect();
+    for bare_key in bare_keys {
+        let mut bare = tallies.remove(&bare_key).expect("key came from the map");
+        for link in index.surname_links(&bare_key) {
+            let Some(person) = tallies.get_mut(&link.person_key) else {
+                continue;
+            };
+            let Some(&moved) = bare.votes_by_scope.get(&link.scope) else {
+                continue;
+            };
+            if !fold {
+                withheld = true;
+                continue;
+            }
+            bare.votes_by_scope.remove(&link.scope);
+            bare.votes -= moved;
+            person.votes += moved;
+            for spelling in &link.bare_spellings {
+                person.record_spelling(spelling);
+                if !person.surname_only_spellings.contains(spelling) {
+                    person.surname_only_spellings.push(spelling.clone());
+                }
+            }
+        }
+        if bare.votes + bare.sponsored + bare.cosponsored > 0 {
+            tallies.insert(bare_key, bare);
         }
     }
 
@@ -1058,6 +1503,15 @@ fn query_people(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String
                     json!(&tally.spellings[1..]),
                 );
             }
+            if !tally.surname_only_spellings.is_empty() {
+                row.insert(
+                    "surname_only_spellings".into(),
+                    json!(tally.surname_only_spellings),
+                );
+            }
+            if let Some(id) = &tally.member_id {
+                row.insert("member_id".into(), json!(id));
+            }
             row.insert("sponsored".into(), json!(tally.sponsored));
             row.insert("cosponsored".into(), json!(tally.cosponsored));
             row.insert("votes".into(), json!(tally.votes));
@@ -1067,11 +1521,31 @@ fn query_people(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String
 
     rows.sort_by(|a, b| b.0.cmp(&a.0));
     let total = rows.len();
-    let results = rows
+    let results: Vec<Value> = rows
         .into_iter()
         .take(request.limit)
         .map(|(_, row)| row)
         .collect();
+
+    if results.iter().any(|row| row.get("surname_only_spellings").is_some()) {
+        caveats.push(
+            "Rows with `surname_only_spellings` combine a full name with records that \
+             print only the surname (e.g. Illinois floor votes say \"Cunningham\" where \
+             committee votes say \"Cunningham, Bill\"). They were combined because only \
+             one legislator with that surname appears with a full name in the same \
+             chamber and session; that link is by surname only (medium confidence)."
+                .to_string(),
+        );
+    }
+    if withheld {
+        caveats.push(format!(
+            "Some names appear twice: once in full (\"Cunningham, Bill\") and once \
+             as a bare surname (\"Cunningham\", as Illinois floor votes print it). \
+             They were not combined, because that link is by surname only (medium \
+             confidence), below the requested minimum of {:?}.",
+            request.min_confidence
+        ));
+    }
 
     Ok((results, total, caveats))
 }
@@ -1166,7 +1640,7 @@ fn coverage_for(request: &QueryRequest, jurisdiction: &Jurisdiction) -> Result<C
                         report.vote_events_with_member_votes += 1;
                         report.member_vote_rows += event.votes.len();
                         for vote in &event.votes {
-                            voters.insert(&vote.voter_name);
+                            voters.insert_vote(&vote.voter_name, None, &vote.note);
                         }
                     }
                 }
@@ -1216,6 +1690,34 @@ fn coverage_for(request: &QueryRequest, jurisdiction: &Jurisdiction) -> Result<C
 // Shared helpers
 // ---------------------------------------------------------------------------
 
+/// The scope a bare surname is linked to a full name within (see
+/// `NameIndex::surname_links`): one jurisdiction's chamber in one session.
+///
+/// `None` when the vote event names no chamber. Without it a House `Johnson`
+/// and a Senate `Johnson` would share one scope, so such rows are never linked.
+fn vote_scope(jurisdiction: &Jurisdiction, chamber: &str, session_id: &str) -> Option<String> {
+    let chamber = chamber.trim();
+    if chamber.is_empty() {
+        return None;
+    }
+    Some(format!("{jurisdiction}|{chamber}|{session_id}"))
+}
+
+/// A jurisdiction's name as its data spells it ("Illinois"), read from the first
+/// bill in the session; the upper-cased locale when the session has no bills.
+fn jurisdiction_display_name(
+    request: &QueryRequest,
+    jurisdiction: &Jurisdiction,
+    session_id: &str,
+) -> Result<String> {
+    let mut name = None;
+    scan::for_each_bill(&request.repos_dir, jurisdiction, Some(session_id), |bill| {
+        name = bill.jurisdiction_name();
+        Ok(ControlFlow::Stop)
+    })?;
+    Ok(name.unwrap_or_else(|| jurisdiction.locale.to_uppercase()))
+}
+
 fn sessions_in_scope(request: &QueryRequest, jurisdiction: &Jurisdiction) -> Vec<String> {
     let available = scan::sessions(&request.repos_dir, jurisdiction);
     match &request.session {
@@ -1240,12 +1742,8 @@ fn build_sponsor_index(request: &QueryRequest) -> Result<NameIndex> {
                             index.insert(&sponsorship.name);
                         }
                     }
-                    for bioguide in bill.sponsor_bioguides() {
-                        if let Some(primary) =
-                            bill.sponsorships().iter().find(|s| s.is_person())
-                        {
-                            index.insert_identifier(&bioguide, &primary.name);
-                        }
+                    for (bioguide, sponsorship) in bill.sponsorships_by_id() {
+                        index.insert_identifier(&bioguide, &sponsorship.name);
                     }
                     Ok(ControlFlow::Continue)
                 },
@@ -1266,13 +1764,15 @@ fn build_voter_index(request: &QueryRequest) -> Result<NameIndex> {
                 Some(&session_id),
                 |bill| {
                     for event in scan::vote_events(&bill, &request.repos_dir) {
+                        // Scope for `NameIndex::surname_links`: a bare surname is
+                        // only linked to a full name seen in the same jurisdiction,
+                        // chamber and session.
+                        let scope = vote_scope(jurisdiction, &event.chamber, &session_id);
+                        // Federal rows carry the member id in `note`, which is
+                        // the one exact join this data offers; it decides who
+                        // is who (see `names::identity_key`).
                         for vote in &event.votes {
-                            index.insert(&vote.voter_name);
-                            // Federal rows carry the bioguide id in `note`, which
-                            // is the one exact join this data offers.
-                            if !vote.note.is_empty() {
-                                index.insert_identifier(&vote.note, &vote.voter_name);
-                            }
+                            index.insert_vote(&vote.voter_name, scope.as_deref(), &vote.note);
                         }
                     }
                     Ok(ControlFlow::Continue)
@@ -1286,12 +1786,31 @@ fn build_voter_index(request: &QueryRequest) -> Result<NameIndex> {
 /// Turn a name match into something a caller can act on honestly.
 fn describe_match(query: &str, resolved: &NameMatch, minimum: Confidence) -> Vec<String> {
     match resolved.method {
-        MatchMethod::Ambiguous => vec![format!(
-            "\"{query}\" matches {} people in this data: {}. Nothing has been \
-             attributed. Ask which one is meant, then query that exact name.",
-            resolved.candidates.len(),
-            resolved.candidates.join(", ")
-        )],
+        MatchMethod::Ambiguous => {
+            let mut caveat = format!(
+                "\"{query}\" matches {} people in this data: {}. Nothing has been \
+                 attributed. Ask which one is meant, then query that exact name.",
+                resolved.candidates.len(),
+                resolved.candidates.join(", ")
+            );
+            // Congress's roll calls carry no given names, so "Mike Kelly" can only
+            // be told apart by the state in the record's own spelling.
+            if resolved.candidates.iter().any(|c| c.contains('(')) {
+                caveat.push_str(
+                    " In Congress's records the parentheses hold the member's state \
+                     (House, e.g. \"Kelly (PA)\") or party and state (Senate, e.g. \
+                     \"Kelly (D-AZ)\"); use the state the person gave you, or ask for it.",
+                );
+            }
+            if resolved.candidates.iter().any(|c| c.contains('[')) {
+                caveat.push_str(
+                    " A bracketed code is a member id, shown where the name alone can't \
+                     pick out that member (two members recorded under one name, such as \
+                     a member and their successor); query the label as listed.",
+                );
+            }
+            vec![caveat]
+        }
         MatchMethod::Unmatched => vec![format!(
             "\"{query}\" does not appear in the sponsorship or vote records for the \
              jurisdictions searched. This means the name was not found, not that the \
@@ -1311,6 +1830,54 @@ fn describe_match(query: &str, resolved: &NameMatch, minimum: Confidence) -> Vec
         )],
         _ => Vec::new(),
     }
+    .into_iter()
+    .chain(describe_surname_link(resolved, minimum))
+    .chain(describe_unlinked(resolved, minimum))
+    .collect()
+}
+
+/// Say so when bare-surname rows sit beside this person but couldn't be linked
+/// to them, since those rows may well be theirs.
+fn describe_unlinked(resolved: &NameMatch, minimum: Confidence) -> Option<String> {
+    if resolved.unlinked_surname_only_spellings.is_empty() || !resolved.is_attributable(minimum)
+    {
+        return None;
+    }
+    Some(format!(
+        "Some records in the same chamber and session as \"{}\" print only the \
+         surname (\"{}\") and were left out: more than one legislator with that \
+         surname appears there, or the source marked the name in a way govbot can't \
+         check, so they can't be attributed by name. This may leave out floor votes.",
+        resolved.candidates.join("\", \""),
+        resolved.unlinked_surname_only_spellings.join("\", \"")
+    ))
+}
+
+/// Say so when rows were (or, below the minimum, were not) included through a
+/// surname-only spelling, since that is a weaker link than the match itself.
+fn describe_surname_link(resolved: &NameMatch, minimum: Confidence) -> Option<String> {
+    if resolved.surname_only_spellings.is_empty() || !resolved.is_attributable(minimum) {
+        return None;
+    }
+    let linked = resolved.surname_only_spellings.join("\", \"");
+    let matched = resolved.candidates.join("\", \"");
+    if MatchMethod::SurnameOnlySpelling.confidence() >= minimum {
+        Some(format!(
+            "\"{matched}\" and \"{linked}\" were treated as the same legislator and \
+             both were included. One of them is a surname-only spelling (Illinois floor \
+             votes, for example, print only the surname), and only one legislator with \
+             that surname appears with a full name in the same chamber and session. \
+             Rows for \"{linked}\" are a surname match, so they have medium \
+             confidence. Say so when reporting them."
+        ))
+    } else {
+        Some(format!(
+            "Records spelled \"{linked}\" are probably the same legislator as \
+             \"{matched}\", but were left out because that link is by surname only \
+             (medium confidence), below the requested minimum of {minimum:?}. This may \
+             leave out floor votes."
+        ))
+    }
 }
 
 fn truncate(text: &str, max_chars: usize) -> String {
@@ -1325,6 +1892,111 @@ fn truncate(text: &str, max_chars: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::BTreeSet;
+
+    fn usa_bill(
+        bill_id: &str,
+        sponsorships: Value,
+        primary_ids: &[&str],
+        cosponsor_ids: &[&str],
+    ) -> BillRecord {
+        BillRecord {
+            jurisdiction: ocd::Jurisdiction::new("usa"),
+            session_id: "119".into(),
+            bill_id: bill_id.into(),
+            identifier: bill_id.into(),
+            metadata: json!({
+                "sponsorships": sponsorships,
+                "extras": { "sponsor_bioguides": primary_ids, "cosponsor_bioguides": cosponsor_ids },
+            }),
+            dir: PathBuf::new(),
+            citation: scan::Citation {
+                repo: "usa-legislation".into(),
+                commit: None,
+                path: String::new(),
+                source_url: None,
+            },
+        }
+    }
+
+    fn person(name: &str, primary: bool) -> Value {
+        json!({
+            "name": name,
+            "classification": if primary { "primary" } else { "cosponsor" },
+            "entity_type": "person",
+            "primary": primary,
+        })
+    }
+
+    /// #254: every id on a bill used to resolve to the bill's first sponsor, so
+    /// asking for K000376 (Mike Kelly) returned John Moolenaar's bills.
+    #[test]
+    fn a_sponsor_id_finds_only_that_members_bills_with_their_role() {
+        let moolenaar_bill = usa_bill(
+            "HR1",
+            json!([
+                person("John R. Moolenaar", true),
+                person("Mike Kelly", false),
+                person("Kathy Castor", false)
+            ]),
+            &["M001136"],
+            &["K000376", "C001066"],
+        );
+        let kelly_bill = usa_bill(
+            "HR2",
+            json!([person("Kathy Castor", false), person("Mike Kelly", true)]),
+            &["K000376"],
+            &["C001066"],
+        );
+        let moolenaar_only = usa_bill(
+            "HR3",
+            json!([person("John R. Moolenaar", true)]),
+            &["M001136"],
+            &[],
+        );
+        let bills = [moolenaar_bill, kelly_bill, moolenaar_only];
+
+        let mut index = NameIndex::new();
+        for bill in &bills {
+            for (id, sponsorship) in bill.sponsorships_by_id() {
+                index.insert(&sponsorship.name);
+                index.insert_identifier(&id, &sponsorship.name);
+            }
+        }
+
+        let roles = |id: &str| -> Vec<(String, String, bool)> {
+            let resolved = index.resolve(id);
+            assert_eq!(resolved.method, MatchMethod::Bioguide);
+            bills
+                .iter()
+                .filter_map(|bill| {
+                    matching_sponsorship(bill, &resolved, Some(id))
+                        .map(|s| (bill.bill_id.clone(), s.name, s.primary))
+                })
+                .collect()
+        };
+        assert_eq!(
+            roles("K000376"),
+            vec![
+                ("HR1".into(), "Mike Kelly".into(), false),
+                ("HR2".into(), "Mike Kelly".into(), true)
+            ]
+        );
+        assert_eq!(
+            roles("c001066"),
+            vec![
+                ("HR1".into(), "Kathy Castor".into(), false),
+                ("HR2".into(), "Kathy Castor".into(), false)
+            ]
+        );
+        assert_eq!(
+            roles("M001136"),
+            vec![
+                ("HR1".into(), "John R. Moolenaar".into(), true),
+                ("HR3".into(), "John R. Moolenaar".into(), true)
+            ]
+        );
+    }
 
     #[test]
     fn text_search_matches_whole_words_only() {
@@ -1370,6 +2042,10 @@ mod tests {
             method: MatchMethod::Ambiguous,
             confidence: Confidence::None,
             candidates: vec!["Brown, G".into(), "Brown, L".into()],
+            surname_only_spellings: Vec::new(),
+            surname_only_scopes: BTreeMap::new(),
+            unlinked_surname_only_spellings: Vec::new(),
+            member_ids: Vec::new(),
         };
         let caveats = describe_match("Brown", &resolved, Confidence::Medium);
         assert_eq!(caveats.len(), 1);
@@ -1384,6 +2060,10 @@ mod tests {
             method: MatchMethod::Unmatched,
             confidence: Confidence::None,
             candidates: Vec::new(),
+            surname_only_spellings: Vec::new(),
+            surname_only_scopes: BTreeMap::new(),
+            unlinked_surname_only_spellings: Vec::new(),
+            member_ids: Vec::new(),
         };
         let caveats = describe_match("Nobody", &resolved, Confidence::Medium);
         assert!(caveats[0].contains("not that the person took no action"));
@@ -1395,9 +2075,51 @@ mod tests {
             method: MatchMethod::UniqueSurname,
             confidence: Confidence::Medium,
             candidates: vec!["Filer".into()],
+            surname_only_spellings: Vec::new(),
+            surname_only_scopes: BTreeMap::new(),
+            unlinked_surname_only_spellings: Vec::new(),
+            member_ids: Vec::new(),
         };
         let caveats = describe_match("Filer", &resolved, Confidence::Medium);
         assert!(caveats[0].contains("no legislator roster"));
+    }
+
+    #[test]
+    fn defined_topics_reads_govbot_yml_and_tolerates_its_absence() {
+        let dir = tempfile::tempdir().unwrap();
+        // No govbot.yml: nothing to validate against, so no error either.
+        assert_eq!(defined_topics(dir.path()).unwrap(), None);
+
+        std::fs::write(dir.path().join("govbot.yml"), "repos: [il]\n").unwrap();
+        assert_eq!(defined_topics(dir.path()).unwrap(), Some(Vec::new()));
+
+        std::fs::write(
+            dir.path().join("govbot.yml"),
+            "tags:\n  transit:\n    description: x\n  affordable housing:\n    description: y\n",
+        )
+        .unwrap();
+        assert_eq!(
+            defined_topics(dir.path()).unwrap(),
+            Some(vec!["affordable housing".to_string(), "transit".to_string()])
+        );
+    }
+
+    #[test]
+    fn defined_topics_rejects_tags_that_are_not_a_mapping() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("govbot.yml"), "tags: [transit]\n").unwrap();
+        let error = defined_topics(dir.path()).unwrap_err().to_string();
+        assert!(error.contains("govbot.yml"), "{error}");
+        assert!(error.contains("not a mapping"), "{error}");
+    }
+
+    #[test]
+    fn thousands_groups_digits() {
+        assert_eq!(thousands(0), "0");
+        assert_eq!(thousands(999), "999");
+        assert_eq!(thousands(1000), "1,000");
+        assert_eq!(thousands(18380), "18,380");
+        assert_eq!(thousands(1234567), "1,234,567");
     }
 
     #[test]
@@ -1406,7 +2128,178 @@ mod tests {
             method: MatchMethod::ExactName,
             confidence: Confidence::High,
             candidates: vec!["Cunningham, Bill".into()],
+            surname_only_spellings: Vec::new(),
+            surname_only_scopes: BTreeMap::new(),
+            unlinked_surname_only_spellings: Vec::new(),
+            member_ids: Vec::new(),
         };
         assert!(describe_match("Bill Cunningham", &resolved, Confidence::Medium).is_empty());
+    }
+
+    #[test]
+    fn a_surname_only_link_is_named_in_a_caveat() {
+        let resolved = NameMatch {
+            method: MatchMethod::ExactName,
+            confidence: Confidence::High,
+            candidates: vec!["Cunningham, Bill".into()],
+            surname_only_spellings: vec!["Cunningham".into()],
+            surname_only_scopes: BTreeMap::from([(
+                "Cunningham".into(),
+                BTreeSet::from(["il|upper|104th".to_string()]),
+            )]),
+            unlinked_surname_only_spellings: Vec::new(),
+            member_ids: Vec::new(),
+        };
+        let caveats = describe_match("Bill Cunningham", &resolved, Confidence::Medium);
+        assert_eq!(caveats.len(), 1);
+        assert!(caveats[0].contains("Rows for \"Cunningham\""));
+        assert!(caveats[0].contains("medium confidence"));
+
+        // Above medium, the floor rows are dropped, and that is said too.
+        let caveats = describe_match("Bill Cunningham", &resolved, Confidence::High);
+        assert_eq!(caveats.len(), 1);
+        assert!(caveats[0].contains("left out"));
+    }
+
+    #[test]
+    fn a_vote_row_matches_a_surname_only_spelling_at_medium_only() {
+        let resolved = NameMatch {
+            method: MatchMethod::ExactName,
+            confidence: Confidence::High,
+            candidates: vec!["Cunningham, Bill".into()],
+            surname_only_spellings: vec!["Cunningham".into()],
+            surname_only_scopes: BTreeMap::from([(
+                "Cunningham".into(),
+                BTreeSet::from(["il|upper|104th".to_string()]),
+            )]),
+            unlinked_surname_only_spellings: Vec::new(),
+            member_ids: Vec::new(),
+        };
+        let event = VoteEventRecord {
+            votes: vec![names::RawVoteRow {
+                voter_name: "Cunningham".into(),
+                option: "yes".into(),
+                note: String::new(),
+            }],
+            bill_identifier: "SB 1".into(),
+            motion_text: "Third Reading".into(),
+            start_date: String::new(),
+            result: "pass".into(),
+            chamber: "upper".into(),
+            counts: BTreeMap::new(),
+            repaired_rows: 0,
+            citation: scan::Citation {
+                repo: "il-legislation".into(),
+                commit: None,
+                path: String::new(),
+                source_url: None,
+            },
+        };
+        let senate = Some("il|upper|104th");
+        assert!(matching_vote(&event, &resolved, Confidence::Medium, senate).is_some());
+        assert!(matching_vote(&event, &resolved, Confidence::High, senate).is_none());
+        // Linked in the Senate only: a House row, or one whose chamber is
+        // unknown, is not this senator's.
+        assert!(matching_vote(&event, &resolved, Confidence::Medium, Some("il|lower|104th")).is_none());
+        assert!(matching_vote(&event, &resolved, Confidence::Medium, None).is_none());
+    }
+
+    #[test]
+    fn a_congress_row_is_matched_by_member_id_not_by_name() {
+        // `Kelly (PA)` is Mike Kelly. A roll call also holds `Kelly (IL)`, and
+        // no row but his own may be returned for him.
+        let index = {
+            let mut index = NameIndex::new();
+            index.insert_vote("Kelly (IL)", Some("usa|lower|119"), "K000385");
+            index.insert_vote("Kelly (PA)", Some("usa|lower|119"), "K000376");
+            index
+        };
+        let resolved = index.resolve("Kelly (PA)");
+        let row = |name: &str, note: &str| names::RawVoteRow {
+            voter_name: name.into(),
+            option: "yes".into(),
+            note: note.into(),
+        };
+        let mut event = VoteEventRecord {
+            votes: vec![row("Kelly (IL)", "K000385"), row("Kelly (PA)", "K000376")],
+            bill_identifier: "HR 1".into(),
+            motion_text: "On Passage".into(),
+            start_date: String::new(),
+            result: "pass".into(),
+            chamber: "lower".into(),
+            counts: BTreeMap::new(),
+            repaired_rows: 0,
+            citation: scan::Citation {
+                repo: "usa-legislation".into(),
+                commit: None,
+                path: String::new(),
+                source_url: None,
+            },
+        };
+        let house = Some("usa|lower|119");
+        let found = matching_vote(&event, &resolved, Confidence::Medium, house).expect("his row");
+        assert_eq!(found.note, "K000376");
+
+        // He didn't vote: nothing, rather than the Illinois Kelly's row.
+        event.votes.pop();
+        assert!(matching_vote(&event, &resolved, Confidence::Medium, house).is_none());
+    }
+
+    #[test]
+    fn a_congress_ambiguity_says_how_to_pick_by_state() {
+        let index = {
+            let mut index = NameIndex::new();
+            index.insert_vote("Kelly (PA)", Some("usa|lower|119"), "K000376");
+            index.insert_vote("Kelly (D-AZ)", Some("usa|upper|119"), "S406");
+            index.insert_vote("Grijalva", Some("usa|lower|119"), "G000551");
+            index.insert_vote("Grijalva", Some("usa|lower|119"), "G000606");
+            index
+        };
+        let caveats = describe_match("Mike Kelly", &index.resolve("Mike Kelly"), Confidence::Medium);
+        assert_eq!(caveats.len(), 1);
+        assert!(caveats[0].contains("Kelly (D-AZ), Kelly (PA)"));
+        assert!(caveats[0].contains("member's state"));
+        assert!(!caveats[0].contains("member id"));
+
+        let caveats = describe_match("Grijalva", &index.resolve("Grijalva"), Confidence::Medium);
+        assert!(caveats[0].contains("Grijalva [G000551], Grijalva [G000606]"));
+        assert!(caveats[0].contains("member id"));
+
+        // Outside Congress the caveat is as it was.
+        let wy = {
+            let mut index = NameIndex::new();
+            index.insert("Brown, G");
+            index.insert("Brown, L");
+            index
+        };
+        let caveats = describe_match("Brown", &wy.resolve("Brown"), Confidence::Medium);
+        assert!(!caveats[0].contains("Congress"));
+    }
+
+    #[test]
+    fn a_vote_with_no_chamber_has_no_scope() {
+        let il = ocd::parse_jurisdiction("il").expect("il parses");
+        assert_eq!(
+            vote_scope(&il, "upper", "104th").as_deref(),
+            Some(format!("{il}|upper|104th").as_str())
+        );
+        assert_eq!(vote_scope(&il, "", "104th"), None);
+        assert_eq!(vote_scope(&il, "  ", "104th"), None);
+    }
+
+    #[test]
+    fn unlinked_bare_rows_are_named_in_a_caveat() {
+        let resolved = NameMatch {
+            method: MatchMethod::ExactName,
+            confidence: Confidence::High,
+            candidates: vec!["Brown, L".into()],
+            surname_only_spellings: Vec::new(),
+            surname_only_scopes: BTreeMap::new(),
+            unlinked_surname_only_spellings: vec!["Brown".into()],
+            member_ids: Vec::new(),
+        };
+        let caveats = describe_match("Brown, L", &resolved, Confidence::Medium);
+        assert_eq!(caveats.len(), 1);
+        assert!(caveats[0].contains("(\"Brown\") and were left out"));
     }
 }
