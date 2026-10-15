@@ -83,6 +83,13 @@ pub struct QueryRequest {
     pub text: Option<String>,
     pub subject: Option<String>,
     pub limit: usize,
+    /// Votes only: a case-insensitive substring of the vote event's motion text.
+    /// In Illinois, floor votes read "Third Reading" or "Concurrence" and committee
+    /// votes carry the committee's name ("Executive Appointments").
+    pub motion: Option<String>,
+    /// Votes only: the chamber that voted, `upper` or `lower` (`senate` and
+    /// `house` are accepted). See [`normalize_chamber`].
+    pub chamber: Option<String>,
 }
 
 /// The envelope every query returns.
@@ -98,6 +105,10 @@ pub struct QueryResponse {
     pub coverage: Vec<Value>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub caveats: Vec<String>,
+    /// Votes only: totals over every matching vote, not just the rows returned,
+    /// so "how did they vote on the floor" can be answered without paging.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary: Option<Value>,
 }
 
 #[derive(Debug, Serialize)]
@@ -138,9 +149,26 @@ pub fn run(request: &QueryRequest) -> Result<QueryResponse> {
         }
     }
 
+    // Motion and chamber describe vote events. Ignoring them elsewhere would echo
+    // them back in `query` as if they had narrowed the result.
+    if request.kind != QueryKind::Votes {
+        for (flag, given) in [("motion", &request.motion), ("chamber", &request.chamber)] {
+            if given.is_some() {
+                anyhow::bail!(
+                    "`{flag}` only applies to votes queries. Drop it, or use `query votes`."
+                );
+            }
+        }
+    }
+
+    let mut summary = None;
     let (results, total_matching, extra_caveats) = match request.kind {
         QueryKind::Bills => query_bills(request)?,
-        QueryKind::Votes => query_votes(request)?,
+        QueryKind::Votes => {
+            let (results, total, caveats, votes_summary) = query_votes(request)?;
+            summary = Some(votes_summary);
+            (results, total, caveats)
+        }
         QueryKind::People => query_people(request)?,
         QueryKind::Coverage => (Vec::new(), 0, Vec::new()),
     };
@@ -156,6 +184,7 @@ pub fn run(request: &QueryRequest) -> Result<QueryResponse> {
         results,
         coverage,
         caveats,
+        summary,
     })
 }
 
@@ -177,6 +206,8 @@ fn describe(request: &QueryRequest) -> Value {
         ("tag", request.tag.clone()),
         ("text", request.text.clone()),
         ("subject", request.subject.clone()),
+        ("motion", request.motion.clone()),
+        ("chamber", request.chamber.clone()),
     ] {
         if let Some(value) = value {
             described.insert(key.into(), json!(value));
@@ -490,8 +521,9 @@ fn bill_row(
 // Votes
 // ---------------------------------------------------------------------------
 
-fn query_votes(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>)> {
+fn query_votes(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>, Value)> {
     let mut caveats = Vec::new();
+    let mut summary = VoteSummary::default();
 
     let person_match = match request.person.as_deref() {
         Some(person) => {
@@ -505,12 +537,14 @@ fn query_votes(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
 
     if let Some(resolved) = &person_match {
         if !resolved.is_attributable(request.min_confidence) {
-            return Ok((Vec::new(), 0, caveats));
+            return Ok((Vec::new(), 0, caveats, summary.to_json()));
         }
     }
 
-    let mut results = Vec::new();
+    // (start date, row). Pruned to the newest as it grows; see `keep_newest`.
+    let mut results: Vec<(String, Value)> = Vec::new();
     let mut total = 0usize;
+    let mut excluded_by_event_filter = 0usize;
 
     for jurisdiction in &request.jurisdictions {
         for session_id in sessions_in_scope(request, jurisdiction) {
@@ -532,15 +566,17 @@ fn query_votes(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
                             }
                             None => None,
                         };
-                        total += 1;
-                        if results.len() < request.limit {
-                            results.push(vote_row(
-                                &bill,
-                                &event,
-                                person_vote,
-                                person_match.as_ref(),
-                            ));
+                        // After the person match, so an empty result can say how
+                        // many of their votes the motion or chamber filter removed.
+                        if !event_matches(request, &event) {
+                            excluded_by_event_filter += 1;
+                            continue;
                         }
+                        total += 1;
+                        summary.record(&event, person_vote.as_ref());
+                        let row = vote_row(&bill, &event, person_vote, person_match.as_ref());
+                        results.push((event.start_date.clone(), row));
+                        keep_newest(&mut results, request.limit);
                     }
                     Ok(ControlFlow::Continue)
                 },
@@ -548,7 +584,14 @@ fn query_votes(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
         }
     }
 
-    Ok((results, total, caveats))
+    if total == 0 && excluded_by_event_filter > 0 {
+        caveats.push(event_filter_caveat(request, excluded_by_event_filter));
+    }
+
+    sort_newest_first(&mut results);
+    results.truncate(request.limit);
+    let results = results.into_iter().map(|(_, row)| row).collect();
+    Ok((results, total, caveats, summary.to_json()))
 }
 
 fn matching_vote(event: &VoteEventRecord, resolved: &NameMatch) -> Option<names::RawVoteRow> {
@@ -600,6 +643,328 @@ fn vote_row(
 
     row.insert("citation".into(), json!(event.citation));
     Value::Object(row)
+}
+
+/// Without this, "0 third-reading votes" reads as "never voted on the floor".
+/// Often the votes are there under a motion worded differently, or the person's
+/// floor votes are recorded under another spelling of their name.
+fn event_filter_caveat(request: &QueryRequest, excluded: usize) -> String {
+    let filters: Vec<String> = [("motion", &request.motion), ("chamber", &request.chamber)]
+        .iter()
+        .filter_map(|(name, value)| value.as_ref().map(|v| format!("{name} \"{v}\"")))
+        .collect();
+    let whose = match &request.person {
+        Some(person) => format!(" matched to \"{person}\""),
+        None => String::new(),
+    };
+    format!(
+        "No votes matched {}, but {excluded} other vote(s){whose} are in scope. This \
+         is not evidence that they did not vote: drop the filter and read \
+         `summary.by_motion` for how motions are worded here, and check `query people` \
+         for other spellings of the name (some states print only the surname on \
+         floor votes).",
+        filters.join(" and ")
+    )
+}
+
+/// The vote-event filters: `motion` and `chamber`.
+fn event_matches(request: &QueryRequest, event: &VoteEventRecord) -> bool {
+    if let Some(motion) = &request.motion {
+        // A substring, not whole words, so "third reading" also finds
+        // "Third Reading, Amendment 1" and "concur" finds "Concurrence".
+        if !event
+            .motion_text
+            .to_lowercase()
+            .contains(motion.trim().to_lowercase().as_str())
+        {
+            return false;
+        }
+    }
+    if let Some(chamber) = &request.chamber {
+        if normalize_chamber(&event.chamber) != normalize_chamber(chamber) {
+            return false;
+        }
+    }
+    true
+}
+
+/// Open Civic Data names chambers `upper` and `lower`; people say Senate and
+/// House (or Assembly, in some states). Nebraska's single chamber is
+/// `legislature`. Anything else is compared as given, lowercased.
+fn normalize_chamber(chamber: &str) -> String {
+    let chamber = chamber.trim().to_lowercase();
+    match chamber.as_str() {
+        "senate" => "upper".to_string(),
+        "house" | "assembly" | "house of representatives" => "lower".to_string(),
+        _ => chamber,
+    }
+}
+
+/// Drop everything past the newest `limit` rows once the buffer holds twice
+/// that many. Sorting the whole match set at the end would hold every row in
+/// memory (tens of thousands for a state with no `person`) when only `limit`
+/// are returned.
+fn keep_newest(rows: &mut Vec<(String, Value)>, limit: usize) {
+    if rows.len() >= limit.saturating_mul(2).max(1) {
+        sort_newest_first(rows);
+        rows.truncate(limit);
+    }
+}
+
+/// The sort is stable, so equal dates keep scan order and repeated runs agree.
+/// Dates are compared as strings: ISO dates order correctly that way, and a
+/// date-only value ("2026-02-17") sorts just before timestamps on the same day.
+/// Timestamps with different UTC offsets can be misordered by hours, never by
+/// days. An event with no date sorts last.
+fn sort_newest_first(rows: &mut [(String, Value)]) {
+    rows.sort_by(|a, b| b.0.cmp(&a.0));
+}
+
+/// Totals over every vote a query matched, including the ones past `limit`.
+#[derive(Default)]
+struct VoteSummary {
+    /// Motion text → (events, the person's options → count).
+    by_motion: BTreeMap<String, (usize, BTreeMap<String, usize>)>,
+    /// The person's options across every matched event.
+    person_votes: BTreeMap<String, usize>,
+    earliest: Option<String>,
+    latest: Option<String>,
+}
+
+/// How many motions `summary.by_motion` lists. Without a `motion` filter a
+/// state has hundreds (every committee, and in Congress every resolution), and
+/// the point of the summary is to be read in one go.
+const SUMMARY_MOTIONS: usize = 25;
+
+impl VoteSummary {
+    fn record(&mut self, event: &VoteEventRecord, person_vote: Option<&names::RawVoteRow>) {
+        let entry = self.by_motion.entry(event.motion_text.clone()).or_default();
+        entry.0 += 1;
+        if let Some(vote) = person_vote {
+            *entry.1.entry(vote.option.clone()).or_default() += 1;
+            *self.person_votes.entry(vote.option.clone()).or_default() += 1;
+        }
+        if !event.start_date.is_empty() {
+            if self
+                .earliest
+                .as_ref()
+                .map_or(true, |d| event.start_date < *d)
+            {
+                self.earliest = Some(event.start_date.clone());
+            }
+            if self.latest.as_ref().map_or(true, |d| event.start_date > *d) {
+                self.latest = Some(event.start_date.clone());
+            }
+        }
+    }
+
+    fn to_json(&self) -> Value {
+        // Most frequent first; ties by name, so the order is stable.
+        let mut motions: Vec<_> = self.by_motion.iter().collect();
+        motions.sort_by(|a, b| b.1 .0.cmp(&a.1 .0).then_with(|| a.0.cmp(b.0)));
+        let listed: Vec<Value> = motions
+            .iter()
+            .take(SUMMARY_MOTIONS)
+            .map(|(motion, (events, options))| {
+                let mut row = serde_json::Map::new();
+                row.insert("motion_text".into(), json!(motion));
+                row.insert("votes".into(), json!(events));
+                if !options.is_empty() {
+                    row.insert("person_votes".into(), json!(options));
+                }
+                Value::Object(row)
+            })
+            .collect();
+
+        let mut summary = serde_json::Map::new();
+        summary.insert("by_motion".into(), json!(listed));
+        if motions.len() > SUMMARY_MOTIONS {
+            summary.insert(
+                "motions_not_listed".into(),
+                json!(motions.len() - SUMMARY_MOTIONS),
+            );
+        }
+        if !self.person_votes.is_empty() {
+            summary.insert("person_votes".into(), json!(self.person_votes));
+        }
+        if let (Some(earliest), Some(latest)) = (&self.earliest, &self.latest) {
+            summary.insert(
+                "dates".into(),
+                json!({ "earliest": earliest, "latest": latest }),
+            );
+        }
+        Value::Object(summary)
+    }
+}
+
+#[cfg(test)]
+mod vote_filter_tests {
+    use super::*;
+
+    fn event(motion: &str, chamber: &str, date: &str) -> VoteEventRecord {
+        VoteEventRecord {
+            bill_identifier: "SB1".into(),
+            motion_text: motion.into(),
+            start_date: date.into(),
+            result: "pass".into(),
+            chamber: chamber.into(),
+            counts: BTreeMap::new(),
+            votes: Vec::new(),
+            repaired_rows: 0,
+            citation: scan::Citation {
+                repo: "il-legislation".into(),
+                commit: None,
+                path: "x.json".into(),
+            },
+        }
+    }
+
+    fn request(motion: Option<&str>, chamber: Option<&str>) -> QueryRequest {
+        QueryRequest {
+            kind: QueryKind::Votes,
+            repos_dir: PathBuf::new(),
+            tags_dir: PathBuf::new(),
+            jurisdictions: Vec::new(),
+            session: None,
+            identifier: None,
+            person: None,
+            tag: None,
+            min_score: None,
+            min_confidence: Confidence::Medium,
+            text: None,
+            subject: None,
+            limit: 20,
+            motion: motion.map(str::to_string),
+            chamber: chamber.map(str::to_string),
+        }
+    }
+
+    #[test]
+    fn motion_is_a_case_insensitive_substring() {
+        let third = request(Some("third reading"), None);
+        assert!(event_matches(&third, &event("Third Reading", "upper", "")));
+        assert!(event_matches(
+            &third,
+            &event("Third Reading, Amendment 1", "upper", "")
+        ));
+        assert!(!event_matches(
+            &third,
+            &event("Executive Appointments", "upper", "")
+        ));
+    }
+
+    #[test]
+    fn chamber_accepts_senate_and_house() {
+        let floor = event("Third Reading", "upper", "");
+        assert!(event_matches(&request(None, Some("senate")), &floor));
+        assert!(event_matches(&request(None, Some("Upper")), &floor));
+        assert!(!event_matches(&request(None, Some("house")), &floor));
+        assert!(event_matches(
+            &request(None, Some("House")),
+            &event("Motion", "lower", "")
+        ));
+        // An event that names no chamber never matches a chamber filter.
+        assert!(!event_matches(
+            &request(None, Some("upper")),
+            &event("Motion", "", "")
+        ));
+    }
+
+    #[test]
+    fn votes_come_back_newest_first_with_undated_last() {
+        let mut rows: Vec<(String, Value)> =
+            ["2025-03-01", "", "2026-02-17T10:00:00+00:00", "2026-02-17"]
+                .iter()
+                .enumerate()
+                .map(|(i, d)| (d.to_string(), json!(i)))
+                .collect();
+        sort_newest_first(&mut rows);
+        let order: Vec<Value> = rows.into_iter().map(|(_, row)| row).collect();
+        assert_eq!(order, vec![json!(2), json!(3), json!(0), json!(1)]);
+    }
+
+    #[test]
+    fn pruning_keeps_the_same_rows_as_sorting_everything() {
+        let dates: Vec<String> = (0..57)
+            .map(|i| format!("2026-01-{:02}", (i * 7) % 28 + 1))
+            .collect();
+        let mut pruned = Vec::new();
+        for (i, d) in dates.iter().enumerate() {
+            pruned.push((d.clone(), json!(i)));
+            keep_newest(&mut pruned, 5);
+        }
+        sort_newest_first(&mut pruned);
+        pruned.truncate(5);
+
+        let mut all: Vec<(String, Value)> = dates
+            .iter()
+            .enumerate()
+            .map(|(i, d)| (d.clone(), json!(i)))
+            .collect();
+        sort_newest_first(&mut all);
+        all.truncate(5);
+        assert_eq!(pruned, all);
+    }
+
+    #[test]
+    fn summary_counts_every_match_and_the_persons_options() {
+        let mut summary = VoteSummary::default();
+        let yes = names::RawVoteRow {
+            voter_name: "Cunningham".into(),
+            option: "yes".into(),
+            note: String::new(),
+        };
+        let no = names::RawVoteRow {
+            option: "no".into(),
+            ..yes.clone()
+        };
+        summary.record(&event("Third Reading", "upper", "2026-03-01"), Some(&yes));
+        summary.record(&event("Third Reading", "upper", "2025-05-01"), Some(&no));
+        summary.record(&event("Executive", "upper", "2025-04-01"), Some(&yes));
+        let json = summary.to_json();
+        assert_eq!(json["by_motion"][0]["motion_text"], "Third Reading");
+        assert_eq!(json["by_motion"][0]["votes"], 2);
+        assert_eq!(
+            json["by_motion"][0]["person_votes"],
+            json!({"no": 1, "yes": 1})
+        );
+        assert_eq!(json["person_votes"], json!({"no": 1, "yes": 2}));
+        assert_eq!(
+            json["dates"],
+            json!({"earliest": "2025-04-01", "latest": "2026-03-01"})
+        );
+        assert!(json.get("motions_not_listed").is_none());
+    }
+
+    #[test]
+    fn summary_lists_the_commonest_motions_and_counts_the_rest() {
+        let mut summary = VoteSummary::default();
+        for i in 0..(SUMMARY_MOTIONS + 3) {
+            summary.record(&event(&format!("Committee {i:02}"), "upper", ""), None);
+        }
+        let json = summary.to_json();
+        assert_eq!(json["by_motion"].as_array().unwrap().len(), SUMMARY_MOTIONS);
+        assert_eq!(json["motions_not_listed"], 3);
+        assert!(json.get("person_votes").is_none());
+    }
+
+    #[test]
+    fn an_empty_filtered_result_is_not_reported_as_inaction() {
+        let mut floor = request(Some("third reading"), Some("senate"));
+        floor.person = Some("Cunningham, Bill".into());
+        let caveat = event_filter_caveat(&floor, 1761);
+        assert!(caveat.contains("motion \"third reading\" and chamber \"senate\""));
+        assert!(caveat.contains("1761 other vote(s) matched to \"Cunningham, Bill\""));
+        assert!(caveat.contains("not evidence that they did not vote"));
+    }
+
+    #[test]
+    fn motion_and_chamber_are_refused_outside_votes() {
+        let mut bills = request(Some("third reading"), None);
+        bills.kind = QueryKind::Bills;
+        let error = run(&bills).unwrap_err().to_string();
+        assert!(error.contains("`motion` only applies to votes"), "{error}");
+    }
 }
 
 // ---------------------------------------------------------------------------

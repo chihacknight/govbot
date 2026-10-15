@@ -423,10 +423,22 @@ export const querySchema = {
   text: z
     .string()
     .optional()
-    .describe("Words that must all appear in the bill, matched as whole words."),
+    .describe(
+      "Words that must all appear in the bill, matched as whole words. Searches bills, not vote motions: use `motion` for those.",
+    ),
   subject: z.string().optional().describe("A subject term the jurisdiction assigned."),
   identifier: z.string().optional().describe("A single bill, e.g. `HB1234`."),
   session: z.string().optional().describe("A single legislative session."),
+  motion: z
+    .string()
+    .optional()
+    .describe(
+      "Votes only. Text the vote's motion must contain, case-insensitive. Floor votes are usually `third reading` (final passage) or `concurrence`; committee votes are named after the committee.",
+    ),
+  chamber: z
+    .string()
+    .optional()
+    .describe("Votes only. `upper` (Senate) or `lower` (House)."),
   min_score: z
     .number()
     .optional()
@@ -446,6 +458,15 @@ interface QueryResponse {
   truncation: { returned: number; total_matching: number; limit: number };
   coverage: CoverageEntry[];
   caveats?: string[];
+  /** Votes only: totals over every match, not just the rows returned. */
+  summary?: VoteSummary;
+}
+
+interface VoteSummary {
+  by_motion: { motion_text: string; votes: number; person_votes?: Record<string, number> }[];
+  motions_not_listed?: number;
+  person_votes?: Record<string, number>;
+  dates?: { earliest: string; latest: string };
 }
 
 interface CoverageEntry {
@@ -472,6 +493,8 @@ export async function query(args: Record<string, unknown>): Promise<ToolOutput> 
     ["subject", "--subject"],
     ["identifier", "--identifier"],
     ["session", "--session"],
+    ["motion", "--motion"],
+    ["chamber", "--chamber"],
     ["min_confidence", "--min-confidence"],
   ];
   for (const [key, flag] of passthrough) {
@@ -534,6 +557,10 @@ function summarize(response: QueryResponse): string {
     lines.push(`  ${name}: ${entry.bills} bills, ${rollCall}.`);
   }
 
+  if (response.summary && total_matching > 0) {
+    lines.push("", ...describeVoteSummary(response.summary, total_matching));
+  }
+
   if (response.caveats?.length) {
     lines.push("", "Read these before answering:");
     for (const caveat of response.caveats) lines.push(`  - ${caveat}`);
@@ -541,6 +568,32 @@ function summarize(response: QueryResponse): string {
 
   lines.push("", JSON.stringify(response.results, null, 2));
   return lines.join("\n");
+}
+
+/**
+ * Totals over every matching vote, newest first in `results`. These let the
+ * model answer "how did they vote on the floor" from counts, without paging
+ * through thousands of rows or copying the workspace somewhere to tally it.
+ */
+export function describeVoteSummary(summary: VoteSummary, total: number): string[] {
+  const tally = (options?: Record<string, number>) =>
+    Object.entries(options ?? {})
+      .sort((a, b) => b[1] - a[1])
+      .map(([option, count]) => `${option} ${count}`)
+      .join(", ");
+
+  const span = summary.dates ? `, ${summary.dates.earliest} to ${summary.dates.latest}` : "";
+  const lines = [`Totals across all ${total} matching votes${span} (rows below are newest first):`];
+  if (summary.person_votes) lines.push(`  This person voted: ${tally(summary.person_votes)}.`);
+  lines.push("  By motion:");
+  for (const motion of summary.by_motion) {
+    const theirs = motion.person_votes ? ` (${tally(motion.person_votes)})` : "";
+    lines.push(`    ${motion.motion_text || "(no motion text)"}: ${motion.votes}${theirs}`);
+  }
+  if (summary.motions_not_listed) {
+    lines.push(`    …and ${summary.motions_not_listed} more motions. Narrow with \`motion\`.`);
+  }
+  return lines;
 }
 
 function describeCoverage(
