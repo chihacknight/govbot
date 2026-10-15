@@ -7,6 +7,7 @@
  * literally true of what the tool does.
  */
 
+import { join } from "node:path";
 import { z } from "zod";
 import * as govbot from "./govbot.js";
 import * as workspace from "./workspace.js";
@@ -498,7 +499,7 @@ export async function query(args: Record<string, unknown>): Promise<ToolOutput> 
     throw error;
   }
 
-  return { text: summarize(response), data: response };
+  return { text: summarize(response, join(workspace.dataPath(), "repos")), data: response };
 }
 
 // ---------------------------------------------------------------------------
@@ -514,8 +515,12 @@ export async function query(args: Record<string, unknown>): Promise<ToolOutput> 
  * Rows are written one compact JSON object per line rather than pretty-printed:
  * indentation alone was about a third of a 20-row bill search (issue #234), and
  * one object per line is just as easy for the model to read.
+ *
+ * `reposDir` is where the cloned repositories live. It is stated once, rather
+ * than as an absolute path on every row, so a citation can be turned into a file
+ * the person can open without paying ~55 characters per row for it (issue #233).
  */
-export function summarize(response: QueryResponse): string {
+export function summarize(response: QueryResponse, reposDir?: string): string {
   const lines: string[] = [];
   const type = response.query?.type;
 
@@ -555,6 +560,14 @@ export function summarize(response: QueryResponse): string {
 
   pushCaveats(lines, response.caveats);
 
+  // `people` rows carry no citation, so the note would only cost characters there.
+  if (reposDir && rows.some((row) => row.citation)) {
+    lines.push(
+      "",
+      `Each citation.path is a file under ${join(reposDir, "<citation.repo>")}; ` +
+        "citation.source_url, where present, is the official page to give the person.",
+    );
+  }
   if (rows.length) lines.push("", rows.map((row) => JSON.stringify(row)).join("\n"));
   return lines.join("\n");
 }
@@ -568,8 +581,8 @@ interface ShapedRow extends Record<string, unknown> {
 
 /**
  * Shape one result row for the model. Everything the CLI returned is kept
- * except where noted, so citation (repo, commit, path), match, tag scores and
- * vote details pass through untouched. Per-row additions belong here.
+ * except where noted, so citation (repo, commit, path, source_url), match, tag
+ * scores and vote details pass through untouched. Per-row additions belong here.
  */
 export function shapeRow(row: Record<string, unknown>, query: Record<string, unknown>): ShapedRow {
   // With `identifier` or `person` set, the sponsor list is the point of the

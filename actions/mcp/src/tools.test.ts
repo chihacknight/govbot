@@ -209,3 +209,27 @@ test("an empty bill search says so without an empty JSON array", () => {
     "No matching records.\n\nRead these before answering:\n  - Not cloned yet, so nothing here reflects them: ma.",
   );
 });
+
+test("rows say once where citation paths live, and that source_url is the official page", () => {
+  // A relative git path is useless to someone who doesn't know where the clone
+  // is; stating the folder once is cheaper than an absolute path on every row.
+  const text = summarize(billsResponse({ text: "rent" }, [bigBill(), bigBill()]), "/home/x/govbot_data/repos");
+  const notes = text.split("\n").filter((line) => line.includes("citation.path"));
+  assert.equal(notes.length, 1);
+  assert.match(notes[0] ?? "", /\/home\/x\/govbot_data\/repos\/<citation\.repo>/);
+  assert.match(notes[0] ?? "", /source_url/);
+  assert.equal(rowsOf(text).length, 2, "the note is not mistaken for a row");
+});
+
+test("no citation note when no row carries a citation", () => {
+  for (const [type, results] of [
+    ["bills", []],
+    ["people", [{ name: "Smith", sponsored: 3 }]],
+  ] as const) {
+    const text = summarize(
+      { query: { type }, results: [...results], truncation: { returned: results.length, total_matching: results.length, limit: 20 }, coverage: [IL] },
+      "/home/x/govbot_data/repos",
+    );
+    assert.doesNotMatch(text, /citation\.path/, type);
+  }
+});
