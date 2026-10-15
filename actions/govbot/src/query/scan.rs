@@ -815,6 +815,7 @@ mod tests {
                 repo: "usa-legislation".into(),
                 commit: None,
                 path: String::new(),
+                source_url: None,
             },
         }
     }
