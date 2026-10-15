@@ -58,6 +58,7 @@ MIN_WAIT="${MCP_CAPTURE_MIN_WAIT:-15}"
 STABLE="${MCP_CAPTURE_STABLE:-10}"
 TIMEOUT="${MCP_CAPTURE_TIMEOUT:-420}"
 ZOOM_OUT="${MCP_CAPTURE_ZOOM_OUT:-2}"
+MAX_ALLOWS="${MCP_CAPTURE_MAX_ALLOWS:-8}"
 POLL=2
 
 say() { printf '[desktop-capture] %s\n' "$*" >&2; }
@@ -212,14 +213,15 @@ cmd_install() {
   mkdir -p "$TARGET/server"
   rsync -a --delete "$src/dist" "$src/node_modules" "$src/package.json" "$TARGET/server/"
 
-  # Build the govbot CLI from the same checkout. One shared target dir keeps
-  # rebuilds across worktrees incremental (minutes the first time, seconds after).
+  # Build the govbot CLI from the same checkout, in that checkout's own target
+  # dir. A target dir shared between worktrees is NOT safe: cargo can judge a
+  # binary built from another branch "fresh" and silently reuse it.
   local cargo="${CARGO:-$(command -v cargo || echo "$HOME/.cargo/bin/cargo")}"
   [ -x "$cargo" ] || die "cargo not found; the CLI must be built from $src/../govbot (install Rust: rustup.rs)"
   say "building the govbot CLI from $src/../govbot"
-  (cd "$src/../govbot" && CARGO_TARGET_DIR="$TARGET/cargo-target" "$cargo" build --release --quiet --bin govbot) \
+  (cd "$src/../govbot" && env -u CARGO_TARGET_DIR "$cargo" build --release --quiet --bin govbot) \
     || die "cargo build failed"
-  cp "$TARGET/cargo-target/release/govbot" "$TARGET/server/govbot-real"
+  cp "$src/../govbot/target/release/govbot" "$TARGET/server/govbot-real"
   # Desktop runs this shim, so a scenario can swap in a stub CLI (setup.env.GOVBOT_BIN)
   # without editing the Desktop config or restarting it.
   cat > "$TARGET/server/govbot" <<'SH'
@@ -250,7 +252,7 @@ SH
   chmod +x "$TARGET/server/govbot"
   rm -f "$TARGET/server/bin-override"
   rev="$(git -C "$src" rev-parse --short HEAD) ($label)"
-  echo "$rev from $src" > "$TARGET/INSTALLED"
+  echo "$rev from $src; cli sha $(shasum "$TARGET/server/govbot-real" | cut -c1-12)" > "$TARGET/INSTALLED"
   say "installed $rev"
   restart_desktop
 }
@@ -360,7 +362,7 @@ cmd_run() {
   # "Done" = the conversation area (window minus sidebar minus composer, where
   # the caret blinks) has not changed for $STABLE seconds. Tool calls in flight
   # show an animated indicator, so a long-running clone does not look finished.
-  local rect x y w h probe last="" now stable=0 elapsed=0 timed_out=false
+  local rect x y w h probe last="" now stable=0 elapsed=0 timed_out=false allows=0 quiet=0 last_calls=""
   sleep "$MIN_WAIT"; elapsed=$MIN_WAIT
   # screencapture runs as its own process and may not be allowed to write into
   # sandboxed output folders, so capture under $TARGET and move the result.
@@ -375,7 +377,32 @@ cmd_run() {
     [ -s "$probe" ] || die "screencapture failed (Screen Recording permission? screen locked?)"
     now="$(md5 -q "$probe")"
     if [ "$now" = "$last" ]; then stable=$((stable + POLL)); else stable=0; last="$now"; fi
-    [ $stable -ge "$STABLE" ] && break
+    if [ $stable -ge "$STABLE" ]; then
+      # A reply that stops changing may be waiting on Desktop's tool-permission
+      # prompt. ⇧⌘⏎ is its "Always allow" shortcut (setup step 4, by keyboard);
+      # with no prompt showing it does nothing. If the screen changes, keep
+      # waiting; if not, the reply really is finished.
+      [ "$allows" -ge "$MAX_ALLOWS" ] && break
+      osa 'tell application "System Events" to keystroke return using {command down, shift down}'
+      allows=$((allows + 1))
+      sleep 3; elapsed=$((elapsed + 3))
+      rm -f "$probe"
+      screencapture -x -R "$x,$y,$w,$((h - COMPOSER))" "$probe"
+      [ "$(md5 -q "$probe" 2>/dev/null)" = "$last" ] && break
+      say "[$id] answered a tool-permission prompt (Always allow)"
+      stable=0; last=""
+      continue
+    fi
+    # A permission prompt shows a pulsing dot, so the screen never looks finished.
+    # If no CLI call has happened for a while, press "Always allow" (⇧⌘⏎) anyway:
+    # it does nothing without a prompt, and prompts that would send files off the
+    # machine ("Allow once" only) have no such shortcut, so they are never approved.
+    local calls; calls=$(wc -l < "$TRACE" | tr -d ' ')
+    if [ "$calls" != "${last_calls:-}" ]; then last_calls=$calls; quiet=0; else quiet=$((quiet + POLL)); fi
+    if [ "$quiet" -ge 20 ] && [ "$allows" -lt "$MAX_ALLOWS" ]; then
+      osa 'tell application "System Events" to keystroke return using {command down, shift down}'
+      allows=$((allows + 1)); quiet=0
+    fi
     if [ $elapsed -ge "$TIMEOUT" ]; then timed_out=true; say "[$id] reply still changing after ${TIMEOUT}s; capturing anyway"; break; fi
     sleep $POLL; elapsed=$((elapsed + POLL))
   done
