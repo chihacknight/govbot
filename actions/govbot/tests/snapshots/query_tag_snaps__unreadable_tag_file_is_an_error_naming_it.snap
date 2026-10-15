@@ -1,0 +1,5 @@
+---
+source: tests/query_tag_snaps.rs
+expression: "redact(&stderr, ws.path())"
+---
+Error: Tag file [WORKSPACE]/country:us/state:wy/sessions/2025/tags/public budgets.tag.json is not valid JSON: key must be a string at line 1 column 14. Fix or delete it, then run `govbot tag` again.

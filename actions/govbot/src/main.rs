@@ -1801,6 +1801,13 @@ async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
     let mut processed_count = 0;
     let mut skipped_count = 0;
     let mut read_count: usize = 0;
+
+    // Bill ids scored in this run, per session tags directory. Written into every
+    // evaluated topic's tag file once stdin ends (see `record_scored_bills`), so a
+    // session that was scored but matched nothing still gets a tag file, and
+    // `query bills --tag` can tell how much of a session has been scored.
+    let mut scored_this_run: std::collections::BTreeMap<PathBuf, std::collections::BTreeSet<String>> =
+        std::collections::BTreeMap::new();
     
     eprintln!("Reading JSON lines from stdin...");
     
@@ -1891,6 +1898,11 @@ async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
                     
                     // Run tagging logic if needed
                     if should_run_tagging {
+                        scored_this_run
+                            .entry(tags_dir.clone())
+                            .or_default()
+                            .insert(bill_id.clone());
+
                         // Choose strategy based on mode
                         let mut tags: Vec<TagResult> = if let Some(matcher) = embedding_matcher.as_ref() {
                             match matcher.match_json_value(&json_value) {
@@ -1964,6 +1976,7 @@ async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
                                                         tag_config: tag_def,
                                                         text_cache: HashMap::new(),
                                                         bills: HashMap::new(),
+                                                        scored_bills: None,
                                                     }
                                                 })
                                             }
@@ -1994,6 +2007,7 @@ async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
                                                     tag_config: tag_def,
                                                     text_cache: HashMap::new(),
                                                     bills: HashMap::new(),
+                                                    scored_bills: None,
                                                 }
                                             }
                                         }
@@ -2024,6 +2038,7 @@ async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
                                             tag_config: tag_def,
                                             text_cache: HashMap::new(),
                                             bills: HashMap::new(),
+                                            scored_bills: None,
                                         }
                                     };
 
@@ -2095,9 +2110,79 @@ async fn run_tag_command(cmd: Command) -> anyhow::Result<()> {
         }
     }
     
+    // Every topic this run evaluated: the requested one, or all of them.
+    let evaluated_topics: Vec<&govbot::TagDefinition> = tag_defs
+        .iter()
+        .filter(|td| tag_name.as_ref().map_or(true, |requested| td.name == *requested))
+        .collect();
+    let model_name = if embedding_matcher.is_some() {
+        model_path.to_string_lossy().to_string()
+    } else {
+        "keyword-fallback".to_string()
+    };
+    for (tags_dir, bill_ids) in &scored_this_run {
+        for tag_def in &evaluated_topics {
+            record_scored_bills(tags_dir, tag_def, bill_ids, &model_name)?;
+        }
+    }
+
     eprintln!("\nProcessed: {}, Skipped: {}", processed_count, skipped_count);
     eprintln!("\n✅ Tagging complete!");
     
+    Ok(())
+}
+
+/// Add `bill_ids` to the `scored_bills` of one topic's tag file in one session,
+/// creating the file (with empty `bills`) if nothing matched there.
+///
+/// Matches were already written as they were found, so this only records which
+/// bills were looked at. Bills already in `bills` count as scored too: a file from
+/// before `scored_bills` existed, or a run interrupted before reaching this point,
+/// still proves those were scored.
+///
+/// An existing file that does not parse is an error naming it, not something to
+/// overwrite: it may hold scores that took a long time to compute.
+fn record_scored_bills(
+    tags_dir: &std::path::Path,
+    tag_def: &govbot::TagDefinition,
+    bill_ids: &std::collections::BTreeSet<String>,
+    model_name: &str,
+) -> anyhow::Result<()> {
+    let tag_path = tags_dir.join(format!("{}.tag.json", tag_def.name));
+    let now = chrono::Utc::now().to_rfc3339();
+    let mut tag_file: TagFile = match fs::read_to_string(&tag_path) {
+        Ok(contents) => serde_json::from_str(&contents).map_err(|e| {
+            anyhow::anyhow!(
+                "Tag file {} is not valid: {}. Fix or delete it, then run `govbot tag` again.",
+                tag_path.display(),
+                e
+            )
+        })?,
+        Err(e) if e.kind() == io::ErrorKind::NotFound => TagFile {
+            metadata: TagFileMetadata {
+                last_run: now.clone(),
+                model: model_name.to_string(),
+                tag_config_hash: hash_text(&serde_json::to_string(tag_def)?),
+            },
+            tag_config: tag_def.clone(),
+            text_cache: HashMap::new(),
+            bills: HashMap::new(),
+            scored_bills: None,
+        },
+        Err(e) => {
+            return Err(anyhow::anyhow!("Could not read tag file {}: {}", tag_path.display(), e))
+        }
+    };
+
+    let mut scored = tag_file.scored_bills.take().unwrap_or_default();
+    scored.extend(tag_file.bills.keys().cloned());
+    scored.extend(bill_ids.iter().cloned());
+    tag_file.scored_bills = Some(scored);
+    tag_file.metadata.last_run = now;
+    tag_file.metadata.model = model_name.to_string();
+
+    fs::create_dir_all(tags_dir)?;
+    fs::write(&tag_path, serde_json::to_string_pretty(&tag_file)?)?;
     Ok(())
 }
 
