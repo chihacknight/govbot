@@ -1,0 +1,7 @@
+#!/bin/sh
+# Stands in for a govbot CLI that predates `govbot query`: it answers --version,
+# and rejects every subcommand the way clap does. Used by the
+# tool-problem-not-empty scenario and by src/errors.test.ts.
+if [ "$1" = "--version" ]; then echo "govbot 0.0.9"; exit 0; fi
+echo "error: unrecognized subcommand '$1'" >&2
+exit 2

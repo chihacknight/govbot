@@ -1,0 +1,10 @@
+id: tool-problem-not-empty
+prompt: |
+  What data do I have on this computer?
+setup:
+  jurisdictions: [il, usa]
+  env:
+    GOVBOT_BIN: ./scenarios/fixtures/govbot-too-old   # answers --version, fails on `query`
+expect:
+  - Does not say nothing is cloned, and does not start a clone.
+  - Says the govbot tool needs updating or reinstalling, and gives the install step.
