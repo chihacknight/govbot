@@ -1,0 +1,11 @@
+id: slow-clone
+prompt: |
+  I'm in Illinois. Get my state's and Congress's legislation so we can look at my reps.
+setup:
+  workspace: fresh
+  # Illinois (~2.0 GB) plus Congress (~1.5 GB) took ~91 s on a fast connection,
+  # past the 60 s default request timeout of TypeScript-SDK clients.
+expect:
+  - The trace shows notifications/progress during clone_government_data (if the client sent a progressToken), at least every 5 seconds.
+  - The call completes without a client timeout even though it runs longer than 60 seconds.
+  - Claude tells the person how long it took and what is now on their computer.
