@@ -440,7 +440,7 @@ export const querySchema = {
   limit: z.number().int().positive().max(100).optional().describe("Rows to return (default 20)."),
 };
 
-interface QueryResponse {
+export interface QueryResponse {
   query: Record<string, unknown>;
   results: Record<string, unknown>[];
   truncation: { returned: number; total_matching: number; limit: number };
@@ -448,7 +448,7 @@ interface QueryResponse {
   caveats?: string[];
 }
 
-interface CoverageEntry {
+export interface CoverageEntry {
   jurisdiction: { id: string; name: string | null; locale: string };
   bills: number;
   vote_events: number;
@@ -506,15 +506,33 @@ export async function query(args: Record<string, unknown>): Promise<ToolOutput> 
 // ---------------------------------------------------------------------------
 
 /**
- * A short prose summary in front of the JSON.
+ * A short prose summary in front of the results, then one JSON object per line.
  *
  * The point is that the reasons an answer might be incomplete are stated up
  * front rather than buried in a field the model may not read.
+ *
+ * Rows are written one compact JSON object per line rather than pretty-printed:
+ * indentation alone was about a third of a 20-row bill search (issue #234), and
+ * one object per line is just as easy for the model to read.
  */
-function summarize(response: QueryResponse): string {
+export function summarize(response: QueryResponse): string {
   const lines: string[] = [];
-  const { returned, total_matching, limit } = response.truncation;
+  const type = response.query?.type;
 
+  // `coverage` never returns rows; the coverage entries are the answer. Saying
+  // "No matching records." there reads like a failure on a call that worked.
+  if (type === "coverage") {
+    if (!response.coverage?.length) {
+      lines.push("No government data has been cloned to this computer yet.");
+    } else {
+      lines.push("Cloned to this computer:");
+      for (const entry of response.coverage) lines.push(coverageLine(entry, true));
+    }
+    pushCaveats(lines, response.caveats);
+    return lines.join("\n");
+  }
+
+  const { returned, total_matching, limit } = response.truncation;
   if (returned === 0) {
     lines.push("No matching records.");
   } else if (total_matching > returned) {
@@ -523,24 +541,99 @@ function summarize(response: QueryResponse): string {
     lines.push(`${returned} match${returned === 1 ? "" : "es"}.`);
   }
 
-  for (const entry of response.coverage ?? []) {
-    const name = entry.jurisdiction.name ?? entry.jurisdiction.locale.toUpperCase();
-    const rollCall =
-      entry.roll_call_data === "available"
-        ? `${entry.vote_events} recorded votes`
-        : entry.roll_call_data === "counts_only"
-          ? `${entry.vote_events} vote totals but no individual votes`
-          : "NO recorded votes at all";
-    lines.push(`  ${name}: ${entry.bills} bills, ${rollCall}.`);
+  for (const entry of response.coverage ?? []) lines.push(coverageLine(entry, false));
+
+  const rows = response.results.map((row) => shapeRow(row, response.query ?? {}));
+  if (rows.some((row) => row.cosponsors_total !== undefined && row.cosponsors_total > COSPONSOR_NAMES)) {
+    // Without this, a name missing from a trimmed list reads as "did not cosponsor".
+    lines.push(
+      "",
+      `Cosponsor lists are trimmed to ${COSPONSOR_NAMES} names (cosponsors_total has the count). ` +
+        "Query one bill by `identifier`, or a legislator by `person`, before saying whether someone cosponsored.",
+    );
   }
 
-  if (response.caveats?.length) {
-    lines.push("", "Read these before answering:");
-    for (const caveat of response.caveats) lines.push(`  - ${caveat}`);
-  }
+  pushCaveats(lines, response.caveats);
 
-  lines.push("", JSON.stringify(response.results, null, 2));
+  if (rows.length) lines.push("", rows.map((row) => JSON.stringify(row)).join("\n"));
   return lines.join("\n");
+}
+
+/** Cosponsor names kept per bill in a broad search. */
+const COSPONSOR_NAMES = 5;
+
+interface ShapedRow extends Record<string, unknown> {
+  cosponsors_total?: number;
+}
+
+/**
+ * Shape one result row for the model. Everything the CLI returned is kept
+ * except where noted, so citation (repo, commit, path), match, tag scores and
+ * vote details pass through untouched. Per-row additions belong here.
+ */
+export function shapeRow(row: Record<string, unknown>, query: Record<string, unknown>): ShapedRow {
+  // With `identifier` or `person` set, the sponsor list is the point of the
+  // question, so it is returned whole. (Person-filtered bill rows carry a single
+  // `sponsorship` rather than `sponsorships` anyway.)
+  if (query.identifier || query.person) return row;
+  if (!Array.isArray(row.sponsorships)) return row;
+  return compactSponsorships(row, row.sponsorships as Sponsorship[]);
+}
+
+interface Sponsorship {
+  name?: string;
+  primary?: boolean;
+  [key: string]: unknown;
+}
+
+/**
+ * Keep primary sponsors as full objects; reduce everyone else to a capped list
+ * of plain names plus a total. A 25-cosponsor bill otherwise costs ~6,000
+ * characters of near-identical objects nobody asked about.
+ *
+ * Edge case: if no sponsor is flagged primary (none in IL or Congress today, but
+ * scrapers differ), the list is left alone rather than relabelling a bill's
+ * authors as cosponsors.
+ */
+function compactSponsorships(row: Record<string, unknown>, sponsorships: Sponsorship[]): ShapedRow {
+  const primary = sponsorships.filter((s) => s.primary === true);
+  if (!primary.length) return row;
+  const others = sponsorships.filter((s) => s.primary !== true);
+
+  // Rebuild in the original key order so `sponsorships` stays where it was.
+  const shaped: ShapedRow = {};
+  for (const [key, value] of Object.entries(row)) {
+    if (key !== "sponsorships") {
+      shaped[key] = value;
+      continue;
+    }
+    shaped.sponsorships = primary;
+    if (others.length) {
+      shaped.cosponsors = others.slice(0, COSPONSOR_NAMES).map((s) => s.name ?? "(unnamed)");
+      shaped.cosponsors_total = others.length;
+    }
+  }
+  return shaped;
+}
+
+function coverageLine(entry: CoverageEntry, withSessions: boolean): string {
+  const name = entry.jurisdiction.name ?? entry.jurisdiction.locale.toUpperCase();
+  const rollCall =
+    entry.roll_call_data === "available"
+      ? `${entry.vote_events} recorded votes`
+      : entry.roll_call_data === "counts_only"
+        ? `${entry.vote_events} vote totals but no individual votes`
+        : "NO recorded votes at all";
+  const sessions = withSessions
+    ? `, sessions ${entry.sessions.join(", ") || "none"}`
+    : "";
+  return `  ${name}${withSessions ? ` (${entry.jurisdiction.locale})` : ""}: ${entry.bills} bills, ${rollCall}${sessions}.`;
+}
+
+function pushCaveats(lines: string[], caveats: string[] | undefined): void {
+  if (!caveats?.length) return;
+  lines.push("", "Read these before answering:");
+  for (const caveat of caveats) lines.push(`  - ${caveat}`);
 }
 
 function describeCoverage(
