@@ -142,5 +142,12 @@ using the Mac (5 minutes idle is the default), never merges, and never pushes to
 - **Reject a proposal:** close the issue as *not planned*.
 - **Request changes:** comment on the PR. The loop addresses it on its next pass.
 
+**Web search vs. govbot.** With web search on, Claude Desktop often answers a
+legislation question from the web and never calls govbot. In the first real
+capture, the rent-bill citation scenario made zero govbot calls. To make
+captures exercise the change under review, the loop prefixes prompts with
+`MCP_CAPTURE_PROMPT_PREFIX="Use govbot for this. "`. Whether Claude should reach
+for local data unprompted is itself tracked as a proposal.
+
 The capture camera also works on its own:
 `scripts/desktop-capture.sh run scenarios/first-run.yml /tmp/captures`.

@@ -1,6 +1,33 @@
 # The govbot.yml every scenario starts from (unless it sets `setup.workspace: fresh`),
-# so one scenario saving values never changes what the next one sees.
+# so one scenario saving values never changes what the next one sees. One topic is
+# defined but, by default, never scored (score files are cleared before each run).
 repos:
   - il
   - usa
-tags: {}
+tags:
+  expanding voter access:
+    description: Legislation that makes it easier for eligible citizens to register and cast
+      a ballot, including automatic and same-day registration, expanded early and mail
+      voting, more polling places and hours, language and disability access, and
+      restoration of voting rights.
+    examples:
+      - A bill establishing automatic voter registration through state motor vehicle
+        agencies for all eligible citizens.
+      - A bill requiring no-excuse absentee voting and at least two weeks of early
+        in-person voting.
+      - A bill restoring federal voting rights to people who have completed a felony
+        sentence.
+    negative_examples:
+      - A bill requiring photo identification at the polls and eliminating alternatives
+        such as signature affidavits.
+      - A bill mandating aggressive purges of voter registration rolls and shortening
+        the window to cure mail ballots.
+      - A bill restricting the number of drop boxes and banning third-party return of
+        absentee ballots.
+    include_keywords:
+      - voter registration
+      - absentee
+      - early voting
+      - polling place
+      - ballot access
+    threshold: 0.55

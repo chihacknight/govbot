@@ -24,12 +24,18 @@
 #   MCP_LOOP_WORKSPACE      workspace the captured server uses (default ~/govbot-loop-workspace)
 #   MCP_CAPTURE_IDLE_SECS   idle needed before typing (default 300)
 #   MCP_CAPTURE_FORCE=1     skip the idle check (only when you are watching)
-#   MCP_CAPTURE_SIDEBAR     points cropped off the left, hiding chat history (default 300)
+#   MCP_CAPTURE_SIDEBAR     points cropped off the left, hiding chat history (default 250)
 #   MCP_CAPTURE_COMPOSER    points at the bottom ignored when deciding "done" (default 180)
 #   MCP_CAPTURE_MIN_WAIT    seconds before a reply can count as done (default 15)
 #   MCP_CAPTURE_STABLE      seconds the reply must stay unchanged (default 10)
+#   MCP_CAPTURE_PROMPT_PREFIX  text put before every scenario prompt, e.g. "Use govbot for this. "
+#                           (with web search on, Claude Desktop often answers legislation
+#                           questions from the web and never calls govbot; see the README)
 #   MCP_CAPTURE_TIMEOUT     seconds before giving up on a reply (default 420)
-#   MCP_CAPTURE_SIZE        "w,h" to resize the window first, e.g. "1280,1500" (default: leave as is)
+#   MCP_CAPTURE_SIZE        "w,h" to resize the window first, e.g. "1280,1500" (default: leave as is;
+#                           needs osascript itself in Accessibility, not just your terminal)
+#   MCP_CAPTURE_ZOOM_OUT    ⌘− presses during a capture so more of the reply fits (default 2;
+#                           reset with ⌘0 afterwards). Only needs keystroke access.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -46,11 +52,12 @@ WORKSPACE="${MCP_LOOP_WORKSPACE:-$HOME/govbot-loop-workspace}"
 PERSONAL_DATA="$HOME/govbot-workspace/govbot_data"
 
 IDLE_SECS="${MCP_CAPTURE_IDLE_SECS:-300}"
-SIDEBAR="${MCP_CAPTURE_SIDEBAR:-300}"
+SIDEBAR="${MCP_CAPTURE_SIDEBAR:-250}"
 COMPOSER="${MCP_CAPTURE_COMPOSER:-180}"
 MIN_WAIT="${MCP_CAPTURE_MIN_WAIT:-15}"
 STABLE="${MCP_CAPTURE_STABLE:-10}"
 TIMEOUT="${MCP_CAPTURE_TIMEOUT:-420}"
+ZOOM_OUT="${MCP_CAPTURE_ZOOM_OUT:-2}"
 POLL=2
 
 say() { printf '[desktop-capture] %s\n' "$*" >&2; }
@@ -128,18 +135,20 @@ cmd_doctor() {
     "run: $0 setup"
   check "a build is installed" "[ -f '$TARGET/server/dist/index.js' ] && [ -x '$TARGET/server/govbot' ]" "run: $0 install --ref origin/main"
   check "Rust toolchain (the CLI is built per capture)" "command -v cargo || [ -x '$HOME/.cargo/bin/cargo' ]" "install from rustup.rs"
-  check "Accessibility (can talk to System Events)" \
-    "osascript -e 'tell application \"System Events\" to get name of first process'" \
-    "System Settings → Privacy & Security → Accessibility → add your terminal"
+  # Reading process names works without Accessibility; typing does not. "UI elements
+  # enabled" is true only when this process may send keystrokes.
+  check "Accessibility (can type into Claude Desktop)" \
+    "[ \"\$(osascript -e 'tell application \"System Events\" to get UI elements enabled')\" = true ]" \
+    "System Settings → Privacy & Security → Accessibility → add the app that runs this shell (and osascript if listed), then restart it"
   check "Screen Recording (can capture the screen)" \
-    "screencapture -x -R 0,0,10,10 '$TARGET/.doctor.png'" \
+    "screencapture -x -R 0,0,10,10 '$TARGET/capture-doctor.png' && [ -s '$TARGET/capture-doctor.png' ]" \
     "System Settings → Privacy & Security → Screen Recording → add your terminal; the screen must also be unlocked"
   check "window helper compiles" 'window_info_bin'
   check "loop workspace data at $WORKSPACE/govbot_data" "[ -d '$WORKSPACE/govbot_data' ]" "run: $0 setup"
   say "cloned: $(ls "$WORKSPACE/govbot_data/repos" 2>/dev/null | sed 's/-legislation//' | tr '\n' ' ')"
   say "idle for $(idle_seconds)s"
   [ -f "$TARGET/INSTALLED" ] && say "installed build: $(cat "$TARGET/INSTALLED")"
-  rm -f "$TARGET/.doctor.png"
+  rm -f "$TARGET/capture-doctor.png"
   [ $ok = 1 ] || exit 1
 }
 
@@ -215,9 +224,28 @@ cmd_install() {
   # without editing the Desktop config or restarting it.
   cat > "$TARGET/server/govbot" <<'SH'
 #!/bin/sh
-override="$(dirname "$0")/bin-override"
-if [ -s "$override" ]; then exec "$(cat "$override")" "$@"; fi
-exec "$(dirname "$0")/govbot-real" "$@"
+# Shim between the MCP server and the govbot CLI (installed by desktop-capture.sh).
+# 1. A scenario can swap in a stub CLI by writing its path to bin-override.
+# 2. Every call is appended to $GOVBOT_MCP_TRACE, so captures show exactly what the
+#    server asked the CLI, whatever server build is installed (trace.ts only exists
+#    on newer builds).
+here="$(cd "$(dirname "$0")" && pwd)"
+bin="$here/govbot-real"
+[ -s "$here/bin-override" ] && bin="$(cat "$here/bin-override")"
+[ -n "$GOVBOT_MCP_TRACE" ] || exec "$bin" "$@"
+start="$(perl -MTime::HiRes=time -e 'printf "%d", time*1000')"
+"$bin" "$@"
+status=$?
+end="$(perl -MTime::HiRes=time -e 'printf "%d", time*1000')"
+python3 -c 'import json,os,sys,datetime
+status, ms = int(sys.argv[1]), int(sys.argv[2])
+args = sys.argv[3:]
+rec = {"at": datetime.datetime.utcnow().isoformat() + "Z", "source": "cli",
+       "tool": "govbot " + " ".join(a for a in args[:2] if not a.startswith("-")),
+       "args": args, "ms": ms, "isError": status != 0}
+open(os.environ["GOVBOT_MCP_TRACE"], "a").write(json.dumps(rec) + "\n")' \
+  "$status" "$((end - start))" "$@" 2>/dev/null || true
+exit $status
 SH
   chmod +x "$TARGET/server/govbot"
   rm -f "$TARGET/server/bin-override"
@@ -235,7 +263,7 @@ cmd_run() {
 
   local id prompt out jurisdiction
   id="$(node "$HERE/read-scenario.mjs" "$scenario" id)"
-  prompt="$(node "$HERE/read-scenario.mjs" "$scenario" prompt)"
+  prompt="${MCP_CAPTURE_PROMPT_PREFIX:-}$(node "$HERE/read-scenario.mjs" "$scenario" prompt)"
   out="$outroot/$id"
   mkdir -p "$out"
   rm -f "$out"/*.png
@@ -258,6 +286,28 @@ cmd_run() {
   if [ "$(node "$HERE/read-scenario.mjs" "$scenario" setup.workspace)" != fresh ]; then
     cp "$MCP_DIR/scenarios/workspace-baseline.yml" "$WORKSPACE/govbot.yml"
   fi
+  # However the run ends, put the real CLI and the shared data folder back.
+  trap 'rm -f "$TARGET/server/bin-override"; ln -sfn "$PERSONAL_DATA" "$WORKSPACE/govbot_data"' EXIT
+
+  # Topic scores live in the workspace (country:us/…/tags). Clear them so one run's
+  # tagging never changes what the next sees; setup.tags: personal copies the
+  # person's real scores in instead, for scenarios about already-tagged data.
+  rm -rf "$WORKSPACE/country:us"
+  if [ "$(node "$HERE/read-scenario.mjs" "$scenario" setup.tags)" = personal ]; then
+    [ -d "$HOME/govbot-workspace/country:us" ] || die "$scenario: setup.tags personal, but ~/govbot-workspace has no scores"
+    cp -R "$HOME/govbot-workspace/country:us" "$WORKSPACE/"
+  fi
+
+  # setup.data: empty runs against an empty data folder (e.g. to watch a real
+  # clone), then puts the shared data folder back and deletes what was cloned.
+  local empty_data=""
+  if [ "$(node "$HERE/read-scenario.mjs" "$scenario" setup.data)" = empty ]; then
+    empty_data="$TARGET/empty-data"
+    rm -rf "$empty_data"; mkdir -p "$empty_data"
+    rm "$WORKSPACE/govbot_data"
+    ln -s "$empty_data" "$WORKSPACE/govbot_data"
+  fi
+
   # setup.workspace_files: {relative path: content} written after the reset, so a
   # scenario can start from a workspace the person has already edited.
   node -e '
@@ -286,7 +336,6 @@ cmd_run() {
       [ -x "$bin_override" ] || die "$scenario: GOVBOT_BIN $bin_override is not executable"
       [ -x "$TARGET/server/govbot" ] || die "reinstall first: this build has no CLI shim"
       echo "$bin_override" > "$TARGET/server/bin-override"
-      trap 'rm -f "$TARGET/server/bin-override"' EXIT
       say "[$id] using stub CLI $bin_override"
     fi
   fi
@@ -300,6 +349,8 @@ cmd_run() {
   sleep 1
   osa 'tell application "System Events" to keystroke "n" using command down'
   sleep 2
+  local i
+  for ((i = 0; i < ZOOM_OUT; i++)); do osa 'tell application "System Events" to keystroke "-" using command down'; done
   printf '%s' "$prompt" | pbcopy
   osa 'tell application "System Events" to keystroke "v" using command down'
   sleep 1
@@ -311,11 +362,17 @@ cmd_run() {
   # show an animated indicator, so a long-running clone does not look finished.
   local rect x y w h probe last="" now stable=0 elapsed=0 timed_out=false
   sleep "$MIN_WAIT"; elapsed=$MIN_WAIT
-  probe="$out/.probe.png"
+  # screencapture runs as its own process and may not be allowed to write into
+  # sandboxed output folders, so capture under $TARGET and move the result.
+  probe="$TARGET/capture-probe.png"
   while :; do
     rect="$(content_rect)"
     IFS=, read -r x y w h <<<"$rect"
-    screencapture -x -R "$x,$y,$w,$((h - COMPOSER))" "$probe" || die "screencapture failed (Screen Recording permission? screen locked?)"
+    # screencapture can exit 0 without writing (e.g. a dot-prefixed file name),
+    # so check the file, not the exit code.
+    rm -f "$probe"
+    screencapture -x -R "$x,$y,$w,$((h - COMPOSER))" "$probe"
+    [ -s "$probe" ] || die "screencapture failed (Screen Recording permission? screen locked?)"
     now="$(md5 -q "$probe")"
     if [ "$now" = "$last" ]; then stable=$((stable + POLL)); else stable=0; last="$now"; fi
     [ $stable -ge "$STABLE" ] && break
@@ -324,8 +381,18 @@ cmd_run() {
   done
   rm -f "$probe"
 
-  screencapture -x -R "$(content_rect)" "$out/reply.png"
+  rm -f "$TARGET/capture-reply.png"
+  screencapture -x -R "$(content_rect)" "$TARGET/capture-reply.png"
+  [ -s "$TARGET/capture-reply.png" ] || die "screencapture wrote no image"
+  mv "$TARGET/capture-reply.png" "$out/reply.png"
+  [ "$ZOOM_OUT" -gt 0 ] && osa 'tell application "System Events" to keystroke "0" using command down' || true
   cp "$TRACE" "$out/trace.jsonl"
+  if [ -n "$empty_data" ]; then
+    rm "$WORKSPACE/govbot_data"
+    ln -s "$PERSONAL_DATA" "$WORKSPACE/govbot_data"
+    ls "$empty_data/repos" > "$out/cloned.txt" 2>/dev/null || true
+    rm -rf "$empty_data"
+  fi
   rm -f "$TARGET/server/bin-override"
   # What the workspace looked like afterwards, for expectations like "README.md
   # still contains …" (the data folder is a symlink and is left out).

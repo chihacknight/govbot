@@ -16,6 +16,9 @@ setup:
     README.md: "# My notes\n"
   env:
     GOVBOT_BIN: ./scenarios/fixtures/govbot-too-old   # optional: stub CLI, relative to actions/mcp
+  tags: personal               # optional: start with ~/govbot-workspace's topic scores
+                               # (default: none — scores are cleared before every run)
+  data: empty                  # optional: run against an empty data folder (e.g. a real clone)
 expect:                        # plain language; judged by reading the screenshot + trace
   - Does not pass the street address to any tool (check trace.jsonl).
   - Points to openstates.org to find legislators from an address.
