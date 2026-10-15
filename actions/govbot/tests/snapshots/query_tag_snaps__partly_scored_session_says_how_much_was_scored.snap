@@ -1,0 +1,8 @@
+---
+source: tests/query_tag_snaps.rs
+expression: "summary[\"caveats\"]"
+---
+[
+  "Wyoming publishes no roll-call votes in this dataset (5 bills, 0 vote events). Sponsorship is the only available evidence. Do not describe this as a legislator not having voted on something.",
+  "3 of 5 bills in Wyoming (2025) have been scored for 'public budgets'. The other 2 were not checked, so they are missing from these results, not non-matching. Use `query` with `text` to search every bill, or run `govbot tag` (tag_with_local_ai in Claude Desktop) for wy with a higher limit."
+]

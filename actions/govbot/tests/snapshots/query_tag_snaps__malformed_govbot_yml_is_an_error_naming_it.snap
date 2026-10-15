@@ -1,0 +1,5 @@
+---
+source: tests/query_tag_snaps.rs
+expression: "redact(&stderr, ws.path())"
+---
+Error: [WORKSPACE]/govbot.yml is not valid YAML, so the topics it defines cannot be checked: did not find expected node content at line 3 column 1, while parsing a flow node. Fix the YAML in that file; until then no topic query can run.

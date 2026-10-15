@@ -20,7 +20,7 @@ pub mod scan;
 use anyhow::Result;
 use serde::Serialize;
 use serde_json::{json, Value};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::path::PathBuf;
 
 pub use names::{Confidence, MatchMethod, NameIndex, NameMatch};
@@ -201,11 +201,24 @@ fn describe(request: &QueryRequest) -> Value {
 struct TagScores {
     threshold: f64,
     by_bill: BTreeMap<String, Value>,
+    /// Bills scored for this topic, matched or not. `None` for tag files written
+    /// before `govbot tag` recorded `scored_bills`: coverage unknown.
+    scored: Option<HashSet<String>>,
 }
 
 impl TagScores {
-    fn load(request: &QueryRequest, jurisdiction: &Jurisdiction, session_id: &str) -> Option<Self> {
-        let tag = request.tag.as_ref()?;
+    /// `Ok(None)` when there is no tag file: the session has not been scored for
+    /// this topic. A file that exists but cannot be read or parsed is an error
+    /// naming it. Treating it as unscored would hide the damage and advise a re-run
+    /// that, for a hand-edited or truncated file, may not be what the person wants.
+    fn load(
+        request: &QueryRequest,
+        jurisdiction: &Jurisdiction,
+        session_id: &str,
+    ) -> Result<Option<Self>> {
+        let Some(tag) = request.tag.as_ref() else {
+            return Ok(None);
+        };
         let path = request
             .tags_dir
             .join("country:us")
@@ -215,8 +228,18 @@ impl TagScores {
             .join("tags")
             .join(format!("{tag}.tag.json"));
 
-        let raw = std::fs::read_to_string(&path).ok()?;
-        let value: Value = serde_json::from_str(&raw).ok()?;
+        let raw = match std::fs::read_to_string(&path) {
+            Ok(raw) => raw,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(error) => anyhow::bail!("Could not read tag file {}: {error}", path.display()),
+        };
+        let value: Value = serde_json::from_str(&raw).map_err(|error| {
+            anyhow::anyhow!(
+                "Tag file {} is not valid JSON: {error}. Fix or delete it, then run \
+                 `govbot tag` again.",
+                path.display()
+            )
+        })?;
 
         let threshold = value
             .get("tag_config")
@@ -224,7 +247,7 @@ impl TagScores {
             .and_then(Value::as_f64)
             .unwrap_or(0.5);
 
-        let by_bill = value
+        let by_bill: BTreeMap<String, Value> = value
             .get("bills")
             .and_then(Value::as_object)
             .map(|bills| {
@@ -237,7 +260,30 @@ impl TagScores {
             })
             .unwrap_or_default();
 
-        Some(Self { threshold, by_bill })
+        // A bill with a score was scored even if `scored_bills` omits it (a run
+        // interrupted between writing a match and recording what it scored).
+        let scored = value
+            .get("scored_bills")
+            .and_then(Value::as_array)
+            .map(|ids| {
+                ids.iter()
+                    .filter_map(Value::as_str)
+                    .map(str::to_string)
+                    .chain(by_bill.keys().cloned())
+                    .collect()
+            });
+
+        Ok(Some(Self {
+            threshold,
+            by_bill,
+            scored,
+        }))
+    }
+
+    /// `None` when the file predates `scored_bills`.
+    fn was_scored(&self, bill: &BillRecord) -> Option<bool> {
+        let scored = self.scored.as_ref()?;
+        Some(scored.contains(&bill.identifier) || scored.contains(&bill.bill_id))
     }
 
     fn score_for(&self, bill: &BillRecord) -> Option<&Value> {
@@ -260,17 +306,29 @@ fn defined_topics(tags_dir: &std::path::Path) -> Result<Option<Vec<String>>> {
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
         Err(error) => anyhow::bail!("Could not read {}: {error}", path.display()),
     };
-    let config: serde_yaml::Value = serde_yaml::from_str(&raw)
-        .map_err(|error| anyhow::anyhow!("Failed to parse {}: {error}", path.display()))?;
-    let mut topics: Vec<String> = config
-        .get("tags")
-        .and_then(serde_yaml::Value::as_mapping)
-        .map(|tags| {
-            tags.keys()
-                .filter_map(|key| key.as_str().map(str::to_string))
-                .collect()
-        })
-        .unwrap_or_default();
+    // `query bills --tag` reads this file only to learn which topics exist, but a
+    // broken one stops every topic query, so the error says which file and what
+    // to fix rather than just "parse error".
+    let config: serde_yaml::Value = serde_yaml::from_str(&raw).map_err(|error| {
+        anyhow::anyhow!(
+            "{} is not valid YAML, so the topics it defines cannot be checked: {error}. \
+             Fix the YAML in that file; until then no topic query can run.",
+            path.display()
+        )
+    })?;
+    let mut topics: Vec<String> = match config.get("tags") {
+        // No `tags:` at all: a workspace with no topics yet.
+        None | Some(serde_yaml::Value::Null) => Vec::new(),
+        Some(serde_yaml::Value::Mapping(tags)) => tags
+            .keys()
+            .filter_map(|key| key.as_str().map(str::to_string))
+            .collect(),
+        Some(_) => anyhow::bail!(
+            "In {}, `tags:` must map each topic name to its definition, but it is not a \
+             mapping. Fix that file; until then no topic query can run.",
+            path.display()
+        ),
+    };
     topics.sort();
     Ok(Some(topics))
 }
@@ -290,7 +348,7 @@ fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
         if let Some(topics) = defined_topics(&request.tags_dir)? {
             if !topics.iter().any(|topic| topic == tag) {
                 let defined = if topics.is_empty() {
-                    "none (govbot.yml has no `tags:` entries)".to_string()
+                    format!("none ({} has no `tags:` entries)", request.tags_dir.join("govbot.yml").display())
                 } else {
                     topics.join(", ")
                 };
@@ -322,12 +380,12 @@ fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
 
     for jurisdiction in &request.jurisdictions {
         for session_id in sessions_in_scope(request, jurisdiction) {
-            let scores = TagScores::load(request, jurisdiction, &session_id);
+            let scores = TagScores::load(request, jurisdiction, &session_id)?;
             if let (Some(tag), None) = (request.tag.as_deref(), scores.as_ref()) {
                 // No tag file means nobody has scored these bills for this topic.
-                // The scope contributes nothing: returning its bills unfiltered would
-                // present every one of them as a match. An unreadable tag file lands
-                // here too; re-running `govbot tag` rewrites it, so the advice holds.
+                // (`govbot tag` writes one for every session it scores, matches or
+                // not.) The scope contributes nothing: returning its bills
+                // unfiltered would present every one of them as a match.
                 caveats.push(format!(
                     "{} ({}) has not been scored for '{}' yet, so it contributes no \
                      results. This is missing data, not an empty record. Run `govbot \
@@ -339,6 +397,12 @@ fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
                 ));
                 continue;
             }
+
+            // Of the bills the tag filter is applied to (those passing every other
+            // filter), how many were scored. Only meaningful with a tag file that
+            // records `scored_bills`.
+            let mut candidates = 0usize;
+            let mut scored_candidates = 0usize;
 
             scan::for_each_bill(
                 &request.repos_dir,
@@ -361,6 +425,10 @@ fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
 
                     let score = match scores.as_ref() {
                         Some(scores) => {
+                            candidates += 1;
+                            if scores.was_scored(&bill) == Some(true) {
+                                scored_candidates += 1;
+                            }
                             let Some(score) = scores.score_for(&bill) else {
                                 return Ok(ControlFlow::Continue);
                             };
@@ -384,6 +452,20 @@ fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
                     Ok(ControlFlow::Continue)
                 },
             )?;
+
+            if let (Some(tag), Some(scores)) = (request.tag.as_deref(), scores.as_ref()) {
+                if let Some(caveat) = coverage_caveat(
+                    request,
+                    jurisdiction,
+                    &session_id,
+                    tag,
+                    scores.scored.is_some(),
+                    scored_candidates,
+                    candidates,
+                )? {
+                    caveats.push(caveat);
+                }
+            }
         }
     }
 
@@ -399,6 +481,71 @@ fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
         .collect();
 
     Ok((results, total, caveats))
+}
+
+/// The caveat for a scored session whose coverage is partial or unknown; `None`
+/// when every bill in scope was scored.
+///
+/// Partial is the normal case: tag_with_local_ai reads a few hundred log entries
+/// per jurisdiction, and a large session has thousands of bills. Without this, "3
+/// matches" from a session where 3 of 18,380 bills were scored reads as complete.
+/// The wording follows tag_with_local_ai's own coverage report.
+fn coverage_caveat(
+    request: &QueryRequest,
+    jurisdiction: &Jurisdiction,
+    session_id: &str,
+    tag: &str,
+    tracked: bool,
+    scored: usize,
+    total: usize,
+) -> Result<Option<String>> {
+    // `total == 0`: nothing in scope (an empty session, or other filters excluded
+    // everything), so there is nothing that could be missing.
+    if total == 0 || (tracked && scored >= total) {
+        return Ok(None);
+    }
+    let name = jurisdiction_display_name(request, jurisdiction, session_id)?;
+    // Other filters (text, subject, identifier, person) shrink the set the topic is
+    // checked against; say so, so the count is not read as the session's size.
+    let narrowed = request.identifier.is_some()
+        || request.subject.is_some()
+        || request.text.is_some()
+        || request.person.is_some();
+    let in_scope = if narrowed { " matching the other filters" } else { "" };
+    if !tracked {
+        return Ok(Some(format!(
+            "{name} ({session_id}) was tagged for '{tag}' before govbot recorded which \
+             bills it scored, so coverage is unknown: some of its {} bills{in_scope} may \
+             never have been checked, and are missing from these results rather than \
+             non-matching. Run `govbot tag` (tag_with_local_ai in Claude Desktop) for {} \
+             again to record coverage, or use `query` with `text` to search every bill.",
+            thousands(total),
+            jurisdiction.locale
+        )));
+    }
+    Ok(Some(format!(
+        "{} of {} bills{in_scope} in {name} ({session_id}) have been scored for '{tag}'. \
+         The other {} were not checked, so they are missing from these results, not \
+         non-matching. Use `query` with `text` to search every bill, or run `govbot tag` \
+         (tag_with_local_ai in Claude Desktop) for {} with a higher limit.",
+        thousands(scored),
+        thousands(total),
+        thousands(total - scored),
+        jurisdiction.locale
+    )))
+}
+
+/// 12780 -> "12,780", matching how tag_with_local_ai prints counts.
+fn thousands(n: usize) -> String {
+    let digits = n.to_string();
+    let mut out = String::new();
+    for (i, c) in digits.chars().enumerate() {
+        if i > 0 && (digits.len() - i) % 3 == 0 {
+            out.push(',');
+        }
+        out.push(c);
+    }
+    out
 }
 
 fn bill_matches(request: &QueryRequest, bill: &BillRecord) -> bool {
@@ -1120,6 +1267,24 @@ mod tests {
             defined_topics(dir.path()).unwrap(),
             Some(vec!["affordable housing".to_string(), "transit".to_string()])
         );
+    }
+
+    #[test]
+    fn defined_topics_rejects_tags_that_are_not_a_mapping() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("govbot.yml"), "tags: [transit]\n").unwrap();
+        let error = defined_topics(dir.path()).unwrap_err().to_string();
+        assert!(error.contains("govbot.yml"), "{error}");
+        assert!(error.contains("not a mapping"), "{error}");
+    }
+
+    #[test]
+    fn thousands_groups_digits() {
+        assert_eq!(thousands(0), "0");
+        assert_eq!(thousands(999), "999");
+        assert_eq!(thousands(1000), "1,000");
+        assert_eq!(thousands(18380), "18,380");
+        assert_eq!(thousands(1234567), "1,234,567");
     }
 
     #[test]
