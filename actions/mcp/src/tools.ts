@@ -498,7 +498,29 @@ export async function query(args: Record<string, unknown>): Promise<ToolOutput> 
     throw error;
   }
 
-  return { text: summarize(response), data: response };
+  // A coverage check on jurisdictions that aren't cloned comes back with no
+  // entries, which on its own can't tell "ca isn't cloned" from "nothing is".
+  // Ask once more without a filter so the answer can name what is cloned.
+  let cloned: CoverageEntry[] | undefined;
+  if (args.type === "coverage" && !response.coverage?.length && requestedJurisdictions(response).length) {
+    try {
+      const all = await govbot.runJson<QueryResponse>(
+        ["query", "coverage", "--govbot-dir", workspace.dataPath()],
+        { cwd: workspace.workspacePath() },
+      );
+      cloned = all.coverage ?? [];
+    } catch {
+      // The CLI exits non-zero when nothing at all is cloned.
+      cloned = [];
+    }
+  }
+
+  return { text: summarize(response, cloned), data: response };
+}
+
+function requestedJurisdictions(response: QueryResponse): unknown[] {
+  const requested = response.query?.jurisdictions;
+  return Array.isArray(requested) ? requested : [];
 }
 
 // ---------------------------------------------------------------------------
@@ -515,14 +537,26 @@ export async function query(args: Record<string, unknown>): Promise<ToolOutput> 
  * indentation alone was about a third of a 20-row bill search (issue #234), and
  * one object per line is just as easy for the model to read.
  */
-export function summarize(response: QueryResponse): string {
+export function summarize(response: QueryResponse, cloned?: CoverageEntry[]): string {
   const lines: string[] = [];
   const type = response.query?.type;
 
   // `coverage` never returns rows; the coverage entries are the answer. Saying
   // "No matching records." there reads like a failure on a call that worked.
+  //
+  // An empty coverage list only means "nothing cloned" when no jurisdictions
+  // were asked for. With `jurisdictions: ["ca"]` it means ca isn't cloned, and
+  // `cloned` (from an unfiltered coverage call) says what is.
   if (type === "coverage") {
-    if (!response.coverage?.length) {
+    if (!response.coverage?.length && requestedJurisdictions(response).length) {
+      lines.push("The requested jurisdictions are not cloned to this computer.");
+      if (cloned?.length) {
+        lines.push("Cloned to this computer:");
+        for (const entry of cloned) lines.push(coverageLine(entry, true));
+      } else if (cloned) {
+        lines.push("Nothing else is cloned either.");
+      }
+    } else if (!response.coverage?.length) {
       lines.push("No government data has been cloned to this computer yet.");
     } else {
       lines.push("Cloned to this computer:");

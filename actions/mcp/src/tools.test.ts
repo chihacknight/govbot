@@ -209,3 +209,31 @@ test("an empty bill search says so without an empty JSON array", () => {
     "No matching records.\n\nRead these before answering:\n  - Not cloned yet, so nothing here reflects them: ma.",
   );
 });
+
+test("coverage for an uncloned jurisdiction doesn't claim nothing is cloned", () => {
+  // Reported on #236: with IL and USA cloned, asking about ca said
+  // "No government data has been cloned to this computer yet."
+  const caveat =
+    "Not cloned yet, so nothing here reflects them: ca. Run `govbot clone ca` first. This is missing data, not an empty record.";
+  const response: QueryResponse = {
+    query: { type: "coverage", jurisdictions: ["ocd-jurisdiction/country:us/state:ca/government"] },
+    results: [],
+    truncation: { returned: 0, total_matching: 0, limit: 20 },
+    coverage: [],
+    caveats: [caveat],
+  };
+  const text = summarize(response, [IL]);
+  assert.doesNotMatch(text, /No government data has been cloned/);
+  assert.match(text, /^The requested jurisdictions are not cloned to this computer\./);
+  assert.match(text, /Cloned to this computer:\n  Illinois \(il\): 12780 bills/);
+  assert.match(text, /nothing here reflects them: ca/);
+
+  // Nothing cloned at all, but a jurisdiction was named: still about that request.
+  assert.match(summarize(response, []), /not cloned to this computer\.\nNothing else is cloned either\./);
+
+  // No jurisdictions requested and nothing cloned: the first-run message.
+  assert.match(
+    summarize({ ...response, query: { type: "coverage", jurisdictions: [] }, caveats: [] }),
+    /^No government data has been cloned to this computer yet\./,
+  );
+});
