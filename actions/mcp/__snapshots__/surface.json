@@ -189,7 +189,7 @@
           "annotations": {
             "destructiveHint": false,
             "idempotentHint": true,
-            "openWorldHint": false,
+            "openWorldHint": true,
             "readOnlyHint": false
           },
           "description": "Score bills against your saved topics using an AI model that runs on this computer. Your topics and the bill text never leave the machine, and there is no per-use cost.",

@@ -106,7 +106,7 @@ server.registerTool(
       "to this computer. No account, no API key, and no record of what you look up — " +
       "every later question is answered from the local copy.",
     inputSchema: tools.cloneSchema,
-    // The only tool that uses the network. Destructive because it records the
+    // Downloads the repositories over the network. Destructive because it records the
     // jurisdictions by rewriting govbot.yml (workspace.writeConfig), which drops
     // any comments or extra keys the person added by hand.
     annotations: {
@@ -170,12 +170,15 @@ server.registerTool(
       "no per-use cost.",
     inputSchema: tools.tagSchemaInput,
     // Rewrites only its own score files, which are derived from govbot.yml and the
-    // cloned data and come out the same on a re-run; the model runs locally.
+    // cloned data and come out the same on a re-run. The model runs locally, but
+    // open-world because `govbot tag` downloads model.onnx and tokenizer.json from
+    // huggingface.co on its first run (actions/govbot/src/main.rs); bill text and
+    // topics are never sent anywhere.
     annotations: {
       readOnlyHint: false,
       destructiveHint: false,
       idempotentHint: true,
-      openWorldHint: false,
+      openWorldHint: true,
     },
   },
   async (args, extra) => {
