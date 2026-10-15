@@ -49,8 +49,7 @@
     "workspace": {
       "type": "directory",
       "title": "Workspace folder",
-      "description": "Where your configuration and the cloned legislation are kept. You own this folder and can publish or delete it at any time.",
-      "default": "${HOME}/govbot-workspace",
+      "description": "Where your configuration and the cloned legislation are kept. Leave blank to use govbot-workspace in your home folder. You own this folder and can publish or delete it at any time.",
       "required": false
     },
     "govbot_binary": {
