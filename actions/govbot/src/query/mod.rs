@@ -299,7 +299,9 @@ fn query_bills(request: &QueryRequest) -> Result<(Vec<Value>, usize, Vec<String>
 
                     let sponsorship = match person_match.as_ref() {
                         Some(resolved) => {
-                            let Some(found) = matching_sponsorship(&bill, resolved) else {
+                            let Some(found) =
+                                matching_sponsorship(&bill, resolved, request.person.as_deref())
+                            else {
                                 return Ok(ControlFlow::Continue);
                             };
                             Some(found)
@@ -414,7 +416,23 @@ fn is_word_byte(byte: u8) -> bool {
     byte.is_ascii_alphanumeric() || byte >= 0x80
 }
 
-fn matching_sponsorship(bill: &BillRecord, resolved: &NameMatch) -> Option<scan::Sponsorship> {
+fn matching_sponsorship(
+    bill: &BillRecord,
+    resolved: &NameMatch,
+    person: Option<&str>,
+) -> Option<scan::Sponsorship> {
+    // Asked by member id: the id itself must be on the bill. Matching the name it
+    // resolved to instead would pick up a namesake's bills (another jurisdiction,
+    // say) and miss the member's bills under a second spelling (`Bernie Sanders` /
+    // `Bernard Sanders` are both S000033).
+    if resolved.method == MatchMethod::Bioguide {
+        let id = person.unwrap_or_default().trim().to_uppercase();
+        return bill
+            .sponsorships_by_id()
+            .into_iter()
+            .find(|(bioguide, _)| *bioguide == id)
+            .map(|(_, sponsorship)| sponsorship);
+    }
     bill.sponsorships().into_iter().find(|sponsorship| {
         sponsorship.is_person() && resolved.candidates.contains(&sponsorship.name)
     })
@@ -875,12 +893,8 @@ fn build_sponsor_index(request: &QueryRequest) -> Result<NameIndex> {
                             index.insert(&sponsorship.name);
                         }
                     }
-                    for bioguide in bill.sponsor_bioguides() {
-                        if let Some(primary) =
-                            bill.sponsorships().iter().find(|s| s.is_person())
-                        {
-                            index.insert_identifier(&bioguide, &primary.name);
-                        }
+                    for (bioguide, sponsorship) in bill.sponsorships_by_id() {
+                        index.insert_identifier(&bioguide, &sponsorship.name);
                     }
                     Ok(ControlFlow::Continue)
                 },
@@ -960,6 +974,109 @@ fn truncate(text: &str, max_chars: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn usa_bill(
+        bill_id: &str,
+        sponsorships: Value,
+        primary_ids: &[&str],
+        cosponsor_ids: &[&str],
+    ) -> BillRecord {
+        BillRecord {
+            jurisdiction: ocd::Jurisdiction::new("usa"),
+            session_id: "119".into(),
+            bill_id: bill_id.into(),
+            identifier: bill_id.into(),
+            metadata: json!({
+                "sponsorships": sponsorships,
+                "extras": { "sponsor_bioguides": primary_ids, "cosponsor_bioguides": cosponsor_ids },
+            }),
+            dir: PathBuf::new(),
+            citation: scan::Citation {
+                repo: "usa-legislation".into(),
+                commit: None,
+                path: String::new(),
+            },
+        }
+    }
+
+    fn person(name: &str, primary: bool) -> Value {
+        json!({
+            "name": name,
+            "classification": if primary { "primary" } else { "cosponsor" },
+            "entity_type": "person",
+            "primary": primary,
+        })
+    }
+
+    /// #254: every id on a bill used to resolve to the bill's first sponsor, so
+    /// asking for K000376 (Mike Kelly) returned John Moolenaar's bills.
+    #[test]
+    fn a_sponsor_id_finds_only_that_members_bills_with_their_role() {
+        let moolenaar_bill = usa_bill(
+            "HR1",
+            json!([
+                person("John R. Moolenaar", true),
+                person("Mike Kelly", false),
+                person("Kathy Castor", false)
+            ]),
+            &["M001136"],
+            &["K000376", "C001066"],
+        );
+        let kelly_bill = usa_bill(
+            "HR2",
+            json!([person("Kathy Castor", false), person("Mike Kelly", true)]),
+            &["K000376"],
+            &["C001066"],
+        );
+        let moolenaar_only = usa_bill(
+            "HR3",
+            json!([person("John R. Moolenaar", true)]),
+            &["M001136"],
+            &[],
+        );
+        let bills = [moolenaar_bill, kelly_bill, moolenaar_only];
+
+        let mut index = NameIndex::new();
+        for bill in &bills {
+            for (id, sponsorship) in bill.sponsorships_by_id() {
+                index.insert(&sponsorship.name);
+                index.insert_identifier(&id, &sponsorship.name);
+            }
+        }
+
+        let roles = |id: &str| -> Vec<(String, String, bool)> {
+            let resolved = index.resolve(id);
+            assert_eq!(resolved.method, MatchMethod::Bioguide);
+            bills
+                .iter()
+                .filter_map(|bill| {
+                    matching_sponsorship(bill, &resolved, Some(id))
+                        .map(|s| (bill.bill_id.clone(), s.name, s.primary))
+                })
+                .collect()
+        };
+        assert_eq!(
+            roles("K000376"),
+            vec![
+                ("HR1".into(), "Mike Kelly".into(), false),
+                ("HR2".into(), "Mike Kelly".into(), true)
+            ]
+        );
+        assert_eq!(
+            roles("c001066"),
+            vec![
+                ("HR1".into(), "Kathy Castor".into(), false),
+                ("HR2".into(), "Kathy Castor".into(), false)
+            ]
+        );
+        assert_eq!(
+            roles("M001136"),
+            vec![
+                ("HR1".into(), "John R. Moolenaar".into(), true),
+                ("HR3".into(), "John R. Moolenaar".into(), true)
+            ]
+        );
+    }
 
     #[test]
     fn text_search_matches_whole_words_only() {
