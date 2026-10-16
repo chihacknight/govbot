@@ -832,9 +832,9 @@ How-Govbot-Works page plus a global search page**:
 formerly `index.html`; deep links are `legislation.html#q=<billid>`),
 `docs/src/dashboard/hearings.html` (**Hearings & Public Comment**),
 `docs/src/dashboard/michigan-elections.html` (**Michigan Elections**: forwards to Know Your Ballot: Michigan,
-https://frankies2727.github.io/frankie-labs/projects/know-your-ballot-michigan) and
+https://govbot-know-your-ballot.vercel.app/michigan) and
 `docs/src/dashboard/illinois-elections.html` (**Illinois Elections**: forwards to
-Know Your Ballot: Illinois, https://frankies2727.github.io/frankie-labs/projects/know-your-ballot-illinois,
+Know Your Ballot: Illinois, https://govbot-know-your-ballot.vercel.app/illinois,
 a Frankie Labs project built on Govbot's elections data; the homepage's "Find your ballot" links there
 directly. **Naming for more states:** `<state>-elections.html` (full lowercase state name), archived
 versions `<state>-elections-v<N>.html`; `elections.html` forwards to `illinois-elections.html` and becomes
