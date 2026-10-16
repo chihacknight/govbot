@@ -237,6 +237,12 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-pill[hidden] { display: none; }
 .gl-elect-then { padding-top: 12px; border-top: 1px solid var(--gb-border); font-size: 14px; color: var(--gb-text-2); }
 .gl-elect-then[hidden] { display: none; }
+/* Two states side by side; stacked on narrow screens. */
+.gl-cta-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.gl-elect-2 { display: grid; gap: 14px; }
+.gl-elect-2 .gl-elect { border-color: color-mix(in srgb, var(--pc) 45%, var(--gb-border)); }
+.gl-elect-2 .gl-elect-date { font-size: 34px; }
+@media (min-width: 900px) { .gl-elect-2 { grid-template-columns: 1fr 1fr; } }
 /* Social media trackers slide: topics, platform buttons and a live auto-scrolling feed of the bots'
    real posts (filled by landing.js). Each post's coloured text (posted date, action chip, topic,
    "View post") and border use --pf: brand green, or on every other post (.is-gold) --gl-fgold, a true
