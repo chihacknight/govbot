@@ -73,11 +73,26 @@ detect_platform() {
 }
 
 latest_nightly_tag() {
-  # Verify the nightly release exists
-  if ! curl -fsSL "https://api.github.com/repos/${REPO}/releases/tags/nightly" >/dev/null 2>&1; then
-    echo "Unable to find nightly release" >&2
-    exit 1
+  # Check that the nightly release exists, so a missing release reads as that
+  # and not as a failed download. The API allows an address only 60 anonymous
+  # calls an hour, and GitHub's own runners share addresses, so the check is
+  # authenticated when a token is at hand (GITHUB_TOKEN or GH_TOKEN) and a
+  # rate-limited answer (HTTP 403/429) is not read as "no release": the
+  # download below, served from github.com rather than the API, decides.
+  local auth=() code
+  if [[ -n "${GITHUB_TOKEN:-${GH_TOKEN:-}}" ]]; then
+    auth=(-H "Authorization: Bearer ${GITHUB_TOKEN:-${GH_TOKEN}}")
   fi
+  code="$(curl -sSL "${auth[@]}" -o /dev/null -w '%{http_code}' "https://api.github.com/repos/${REPO}/releases/tags/nightly" 2>/dev/null || echo 000)"
+  case "${code}" in
+    200) ;;
+    403|429) log "GitHub API rate-limited this address (HTTP ${code}); trying the download anyway" ;;
+    404)
+      echo "Unable to find nightly release" >&2
+      exit 1
+      ;;
+    *) log "Could not check the nightly release (HTTP ${code}); trying the download anyway" ;;
+  esac
   LATEST_TAG="nightly"
 }
 

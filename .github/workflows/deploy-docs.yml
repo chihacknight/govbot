@@ -170,6 +170,11 @@ jobs:
       # Install the govbot CLI so we can run the embedding tagger (`govbot tag`).
       - name: Install govbot CLI
         if: steps.gate.outputs.refresh == 'true'
+        env:
+          # The installer checks the release through the GitHub API; anonymous calls
+          # from the shared runner addresses get rate-limited (a scheduled run in
+          # Oct 2026 failed with "Unable to find nightly release" that way).
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh | bash
           echo "$HOME/.govbot/bin" >> "$GITHUB_PATH"
