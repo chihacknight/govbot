@@ -831,6 +831,8 @@ How-Govbot-Works page plus a global search page**:
 `docs/src/dashboard/legislation.html` (**Explore Legislation** — the legislation dashboard,
 formerly `index.html`; deep links are `legislation.html#q=<billid>`),
 `docs/src/dashboard/hearings.html` (**Hearings & Public Comment**),
+`docs/src/dashboard/michigan-elections.html` (**Michigan Elections**: forwards to Know Your Ballot: Michigan,
+https://frankies2727.github.io/frankie-labs/projects/know-your-ballot-michigan) and
 `docs/src/dashboard/illinois-elections.html` (**Illinois Elections**: forwards to
 Know Your Ballot: Illinois, https://frankies2727.github.io/frankie-labs/projects/know-your-ballot-illinois,
 a Frankie Labs project built on Govbot's elections data; the homepage's "Find your ballot" links there

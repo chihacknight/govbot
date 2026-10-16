@@ -245,15 +245,18 @@
   function prettyDate(ymd) {
     return new Date(ymd + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   }
-  function setCountdown(ymd) {
-    var el = document.getElementById("election-days");
-    if (!el) return;
+  // Each state's pill counts down to the date it names; Illinois' moves to govbot's next ballot date.
+  function fillCountdown(el, ymd) {
     var days = Math.ceil((new Date(ymd + "T00:00:00").getTime() - Date.now()) / MS_DAY);
     if (days < 0) { el.hidden = true; return; }
     el.textContent = days === 0 ? "Today" : days + (days === 1 ? " day" : " days") + " away";
     el.hidden = false;
   }
-  setCountdown("2026-11-03");   // the static fallback date in the markup
+  function setCountdown(ymd) {
+    var el = document.getElementById("election-days");
+    if (el) fillCountdown(el, ymd);
+  }
+  root.querySelectorAll("[data-countdown]").forEach(function (el) { fillCountdown(el, el.getAttribute("data-countdown")); });
   getJSON("elections.json").then(function (e) {
     var today = new Date().toISOString().slice(0, 10);
     var byDate = {};

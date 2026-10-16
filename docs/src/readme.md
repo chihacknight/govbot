@@ -67,19 +67,28 @@
 <div id="hearings-list"><div class="gb-loading"><div class="gb-spinner"></div><p>Loading upcoming hearings…</p></div></div>
 </div>
 </article>
-<article class="gl-slide" style="--pc: var(--gb-amber-hi)" aria-roledescription="slide" aria-label="3 of 5: Illinois elections">
+<article class="gl-slide" style="--pc: var(--gb-amber-hi)" aria-roledescription="slide" aria-label="3 of 5: Elections: Know Your Ballot for Illinois and Michigan">
 <div class="gl-slide-head">
-<div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/><path d="M12 12v8"/></svg></span>Illinois elections</div>
+<div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/><path d="M12 12v8"/></svg></span>Know Your Ballot · Illinois &amp; Michigan</div>
 <h3 class="gl-h3">What's on my ballot?</h3>
-<p class="gl-p">Your exact ballot by address, every race and judge. Know Your Ballot: Illinois, built on Govbot.</p>
-<a class="gl-btn gl-btn-primary gl-slide-cta" href="https://frankies2727.github.io/frankie-labs/projects/know-your-ballot-illinois">IL Ballot</a>
+<p class="gl-p">Your exact ballot by address: every race, judge and question, what each job does, who's running and who's funding them. Know Your Ballot, built on Govbot, for Illinois and Michigan voters.</p>
+<div class="gl-slide-cta gl-cta-row"><a class="gl-btn gl-btn-primary" href="https://frankies2727.github.io/frankie-labs/projects/know-your-ballot-illinois">IL Ballot</a><a class="gl-btn gl-btn-ghost" href="https://frankies2727.github.io/frankie-labs/projects/know-your-ballot-michigan">MI Ballot</a></div>
 </div>
-<div class="gl-slide-body gl-elect">
-<span class="gl-label" style="color: var(--gb-amber-hi)">Next Illinois election</span>
+<div class="gl-slide-body gl-elect-2">
+<div class="gl-elect">
+<span class="gl-label" style="color: var(--gb-amber-hi)">Illinois · next election</span>
 <span class="gl-elect-date" id="election-date">November 3, 2026</span>
-<span class="gl-pill" id="election-days" hidden></span>
+<span class="gl-pill" id="election-days" data-countdown="2026-11-03" hidden></span>
 <p class="gl-p" id="election-note">Governor &amp; statewide offices, U.S. Senate &amp; House, the General Assembly and the CPS board.</p>
 <div class="gl-elect-then" id="election-then">Then: Chicago municipal · February 23, 2027</div>
+</div>
+<div class="gl-elect" style="--pc: var(--gb-primary-hi)">
+<span class="gl-label" style="color: var(--gb-primary-hi)">Michigan · next election</span>
+<span class="gl-elect-date">November 3, 2026</span>
+<span class="gl-pill" data-countdown="2026-11-03" hidden></span>
+<p class="gl-p">Governor, U.S. Senate &amp; House, every seat in Lansing, the Supreme Court, the university boards and two statewide proposals.</p>
+<div class="gl-elect-then">Then: 2027 · local elections in May, August and November</div>
+</div>
 </div>
 </article>
 <article class="gl-slide gl-slide-bots" style="--pc: var(--gl-teal)" aria-roledescription="slide" aria-label="4 of 5: Social media trackers">
