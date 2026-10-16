@@ -148,6 +148,9 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 /* Outline buttons: a 2px full-contrast border so they clearly read as buttons. */
 .gb-landing .gl-btn-ghost { background: transparent; border: 2px solid var(--gb-text); color: var(--gb-text); }
 .gb-landing .gl-btn-ghost:hover { border-color: var(--gb-gold); background: var(--gb-hover); color: var(--gb-text); }
+/* The two Know Your Ballot buttons: an outline in each state's colour (Illinois amber, Michigan green), no fill. */
+.gb-landing .gl-btn-state { border-color: var(--sc); }
+.gb-landing .gl-btn-state:hover { border-color: var(--sc); background: color-mix(in srgb, var(--sc) 12%, transparent); }
 .gb-landing :focus-visible { outline: 3px solid var(--gb-gold-hi); outline-offset: 3px; }
 
 /* hero — the big gold Liberty beside the copy */

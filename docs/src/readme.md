@@ -72,7 +72,7 @@
 <div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/><path d="M12 12v8"/></svg></span>Know Your Ballot · Illinois &amp; Michigan</div>
 <h3 class="gl-h3">What's on my ballot?</h3>
 <p class="gl-p">Your exact ballot by address: every race, judge and question, what each job does, who's running and who's funding them. Know Your Ballot, built on Govbot, for Illinois and Michigan voters.</p>
-<div class="gl-slide-cta gl-cta-row"><a class="gl-btn gl-btn-primary" href="https://frankies2727.github.io/frankie-labs/projects/know-your-ballot-illinois">IL Ballot</a><a class="gl-btn gl-btn-ghost" href="https://frankies2727.github.io/frankie-labs/projects/know-your-ballot-michigan">MI Ballot</a></div>
+<div class="gl-slide-cta gl-cta-row"><a class="gl-btn gl-btn-ghost gl-btn-state" style="--sc: var(--gb-amber-hi)" href="https://frankies2727.github.io/frankie-labs/projects/know-your-ballot-illinois">IL Ballot</a><a class="gl-btn gl-btn-ghost gl-btn-state" style="--sc: var(--gb-primary-hi)" href="https://frankies2727.github.io/frankie-labs/projects/know-your-ballot-michigan">MI Ballot</a></div>
 </div>
 <div class="gl-slide-body gl-elect-2">
 <div class="gl-elect">
