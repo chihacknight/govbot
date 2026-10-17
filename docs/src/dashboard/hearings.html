@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="assets/govbot.css">
 <title>Govbot — Hearings &amp; Public Comment</title>
+<meta name="description" content="Upcoming legislative hearings and federal rules open for public comment, with the form to weigh in on each one. Follow any state, bill or hearing by RSS.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Govbot">
+<meta property="og:title" content="Have your say: hearings &amp; public comment">
+<meta property="og:description" content="Upcoming legislative hearings and federal rules open for public comment, with the form to weigh in on each one. Follow any state, bill or hearing by RSS.">
+<meta property="og:url" content="https://chihacknight.github.io/govbot/dashboard/hearings.html">
+<meta property="og:image" content="https://chihacknight.github.io/govbot/dashboard/assets/og-hearings.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22t%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23161E2C%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23090D15%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%237CEBB0%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2331BE73%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22b%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23C8F7DD%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%235FE09F%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2261%22%20height%3D%2261%22%20rx%3D%2215%22%20fill%3D%22url(%23t)%22%2F%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2261%22%20height%3D%2261%22%20rx%3D%2215%22%20fill%3D%22none%22%20stroke%3D%22%232B3446%22%20stroke-width%3D%221%22%2F%3E%3Crect%20x%3D%2218%22%20y%3D%2248%22%20width%3D%2228%22%20height%3D%224.6%22%20rx%3D%222.3%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%2214.5%22%20y%3D%2253.4%22%20width%3D%2235%22%20height%3D%223.2%22%20rx%3D%221.6%22%20fill%3D%22%231E9E5C%22%2F%3E%3Cg%20transform%3D%22translate(31%2024)%20rotate(70)%22%3E%3Cpath%20d%3D%22M0%20-3.4%20L20%20-2.6%20Q26%20-2.2%2026.5%200%20Q26%202.2%2020%202.6%20L0%203.4%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Ccircle%20cx%3D%2227%22%20cy%3D%220%22%20r%3D%223%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%22-4.2%22%20width%3D%223%22%20height%3D%228.4%22%20rx%3D%221.2%22%20fill%3D%22%232BB56C%22%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(31%2024)%20rotate(-14)%22%3E%3Cpath%20d%3D%22M-5%20-7%20L-15%20-10.5%20A3.2%2010.5%200%200%200%20-15%2010.5%20L-5%207%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Cpath%20d%3D%22M5%20-7%20L15%20-10.5%20A3.2%2010.5%200%200%201%2015%2010.5%20L5%207%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%22-5.5%22%20y%3D%22-9%22%20width%3D%2211%22%20height%3D%2218%22%20rx%3D%222%22%20fill%3D%22url(%23b)%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <style>
   /* Hearings page accents: the design system's green and a true gold (the brand --gb-gold is
@@ -115,23 +125,33 @@
      RSS link. JS positions it (fixed to the viewport) under whichever trigger
      opened it, so it doesn't need a positioned ancestor. */
   .rss-pop {
-    position: fixed; z-index: 40; width: 300px; max-width: 84vw;
-    background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.22); padding: 12px 13px; text-align: left;
+    position: fixed; z-index: 40; width: 340px; max-width: 90vw;
+    background: var(--surface-1); border: 2px solid var(--hh-green); border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.3); padding: 14px 15px; text-align: left;
   }
-  .rss-pop-title { margin: 0 0 3px; font-weight: 650; font-size: 13px; color: var(--text-primary); }
-  .rss-pop-sub { margin: 0 0 9px; font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+  .rss-pop-title { margin: 0 0 4px; font-weight: 750; font-size: 15px; color: var(--text-primary); }
+  .rss-pop-sub { margin: 0 0 10px; font-size: 13px; color: var(--text-primary); line-height: 1.45; }
+  .rss-pop-label { margin: 0 0 4px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-primary); }
   .rss-pop-row { display: flex; gap: 6px; }
   .rss-pop-row input {
-    flex: 1; min-width: 0; font: inherit; font-size: 12px; padding: 6px 8px;
-    border: 1px solid var(--border); border-radius: 7px; background: var(--page); color: var(--text-primary);
+    flex: 1; min-width: 0; font: inherit; font-size: 12.5px; padding: 7px 9px;
+    border: 1.5px solid var(--border); border-radius: 8px; background: var(--page); color: var(--text-primary);
   }
   .rss-copy {
-    cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; padding: 6px 11px;
-    border: 1px solid var(--border); border-radius: 7px; background: var(--series-1); color: #fff;
+    cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 700; padding: 7px 12px;
+    border: 2px solid var(--hh-green); border-radius: 8px; background: var(--hh-green); color: var(--hh-on-accent);
   }
   .rss-copy:hover { filter: brightness(1.08); }
-  .rss-open { display: inline-block; margin-top: 9px; font-size: 12px; color: var(--series-1); }
+  /* One-tap "add to" buttons for the common readers, then the browser preview and a page link to share. */
+  .rss-readers { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .rss-readers a, .rss-foot a, .rss-foot button {
+    display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: 12.5px; font-weight: 700;
+    color: var(--text-primary); text-decoration: none; background: none; cursor: pointer;
+    border: 2px solid var(--text-primary); border-radius: 999px; padding: 5px 11px;
+  }
+  .rss-readers a:hover, .rss-foot a:hover, .rss-foot button:hover { background: var(--hover-wash); border-color: var(--hh-green); }
+  .rss-foot { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .rss-why { margin: 10px 0 0; font-size: 12px; line-height: 1.45; color: var(--text-primary); }
   .hearings-groups { margin-top: 14px; display: flex; flex-direction: column; gap: 18px; }
   /* Each state's hearings sit in their own card with a per-state colored border
      (--hg-accent, set per group in JS) so the sections read as distinct blocks. */
@@ -280,10 +300,10 @@
   .pstate-how { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
   /* "Go to portal" / "How to participate" and each section's top-right portal link read
      as outline buttons: a 2px full-contrast border, like the homepage's outline buttons. */
-  .pstate-link, .hgroup-portal, .details-link { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  .pstate-link, .hgroup-portal { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
     font-size: 13px; font-weight: 650; color: var(--text-primary) !important; text-decoration: none;
     border: 2px solid var(--text-primary); border-radius: 999px; padding: 5px 13px; white-space: nowrap; }
-  .pstate-link:hover, .hgroup-portal:hover, .details-link:hover { background: var(--hover-wash); border-color: var(--hh-green); }
+  .pstate-link:hover, .hgroup-portal:hover { background: var(--hover-wash); border-color: var(--hh-green); }
   .pstate-link { margin-top: auto; }
   .hgroup-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start;
     gap: 8px 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gridline); font-size: 14px; }
@@ -532,9 +552,9 @@
         <span class="asof hearings-asof" id="hearings-asof"></span>
         <span class="rss-wrap">
           <button type="button" class="rss-link" id="rss-btn" aria-haspopup="dialog" aria-expanded="false"
-                  title="Subscribe to all upcoming hearings in a feed reader">
+                  title="Follow every upcoming hearing in a feed reader">
             <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"/></svg>
-            Subscribe to all (RSS)
+            Follow all (RSS)
           </button>
         </span>
       </div>
@@ -568,14 +588,24 @@
 
   <!-- One popover shared by the "all hearings" button and every per-bill RSS
        link; JS fills its text/URL and positions it under the active trigger. -->
-  <div class="rss-pop" id="rss-pop" role="dialog" aria-label="Subscribe by RSS" hidden>
+  <div class="rss-pop" id="rss-pop" role="dialog" aria-label="Follow by RSS" hidden>
     <p class="rss-pop-title" id="rss-pop-title"></p>
     <p class="rss-pop-sub" id="rss-pop-sub"></p>
+    <p class="rss-pop-label">Feed address · for a reader app</p>
     <div class="rss-pop-row">
       <input type="text" id="rss-url" readonly aria-label="Feed URL">
       <button type="button" class="rss-copy" id="rss-copy">Copy</button>
     </div>
-    <a class="rss-open" id="rss-open" target="_blank" rel="noopener">Open the raw feed ↗</a>
+    <div class="rss-readers" aria-label="Add to a reader">
+      <a id="rss-feedly" target="_blank" rel="noopener">Add to Feedly ↗</a>
+      <a id="rss-inoreader" target="_blank" rel="noopener">Inoreader ↗</a>
+      <a id="rss-newsblur" target="_blank" rel="noopener">NewsBlur ↗</a>
+    </div>
+    <div class="rss-foot">
+      <a id="rss-open" target="_blank" rel="noopener">Preview the feed ↗</a>
+      <button type="button" id="rss-share">Copy a link to share</button>
+    </div>
+    <p class="rss-why">A feed address is for a reader app, not a browser or a post. To share with people, copy the page link instead.</p>
   </div>
 </div>
 
@@ -717,7 +747,7 @@
         group.append(rows);
         if (listed.length > SHOW_MAX && juris.portal_url) {
           group.append(seeAllRow("Showing the next " + SHOW_MAX + ".",
-            "See all " + listed.length + " ↗", juris.portal_url));
+            "See all " + fmt(listed.length) + " ↗", juris.portal_url));
         }
       }
       body.append(group);
@@ -731,7 +761,7 @@
       const a = eln("a", null, j.name);
       a.href = "#hg-" + j.code;
       a.style.setProperty("--jc", JUMP_COLORS[i % JUMP_COLORS.length]);
-      a.append(eln("span", "jn-count", String(j.total)));
+      a.append(eln("span", "jn-count", fmt(j.total)));
       jump.append(a);
     });
     jump.hidden = jumps.length < 2;
@@ -746,7 +776,7 @@
   const SHOW_MAX = 7;
   const JUMP_COLORS = ["#5EBD3E", "#FFB900", "#F78200", "#E23838", "#973999", "#009CDF"];
   const NOTICE_SHOW = 2;
-  function showing(shown, total) { return shown + " of " + total + " showing"; }
+  function showing(shown, total) { return fmt(shown) + " of " + fmt(total) + " showing"; }
   function seeAllRow(text, label, url) {
     const more = eln("div", "hgroup-more");
     more.append(eln("span", null, text));
@@ -787,7 +817,7 @@
       // The rules link is the Federal Register's list of exactly these, so it can say the count.
       if (total > shown.length && juris.full_list_url) {
         box.append(seeAllRow("Showing the " + shown.length + " closing soonest.",
-          "See all " + total + " ↗", juris.full_list_url));
+          "See all " + fmt(total) + " ↗", juris.full_list_url));
       }
       group.append(box);
     }
@@ -806,15 +836,16 @@
     const total = juris.notice_total || shown;
     if (juris.notice_list_url) {
       group.append(seeAllRow("Showing the " + shown + " closing soonest.",
-        "See all " + total + " ↗", juris.notice_list_url));
+        "See all " + fmt(total) + " ↗", juris.notice_list_url));
     }
   }
 
+  // The pill next to each jurisdiction's name: the official site where the public takes part.
   const PARTICIPATION = {
-    witness_slip: "File a witness slip ↗",
-    committee_sign_in: "Sign in to testify ↗",
-    written_testimony: "Submit testimony ↗",
-    public_comment: "Comment ↗",
+    witness_slip: "Official: file a witness slip ↗",
+    committee_sign_in: "Official: sign in to testify ↗",
+    written_testimony: "Official: submit testimony ↗",
+    public_comment: "Official: comment portal ↗",
   };
 
   function hearingRow(h) {
@@ -858,21 +889,18 @@
           g.title = "View " + b.id + " in the govbot Legislation Dashboard";
           row.append(g);
         }
-        row.append(billRssTrigger(h, b));
         list.append(row);
       });
       main.append(list);
     }
 
-    // One link per hearing, straight to it: where to take part in this hearing
-    // (witness slip / sign-in / testimony / comment form), else its own page.
+    // One link per hearing, to the hearing itself (its own page, or the rule on
+    // Regulations.gov); the "Official: …" pill by the jurisdiction's name is where
+    // to take part. A hearing with no page of its own links that form instead.
     const actions = eln("div", "h-actions");
-    const takePart = h.status !== "canceled" && h.witness_slip_url;
-    const href = takePart ? h.witness_slip_url : h.details_url;
+    const href = h.details_url || h.witness_slip_url;
     if (href) {
-      const a = takePart
-        ? eln("a", "file-link", PARTICIPATION[participationFor(h)] || "File a slip ↗")
-        : eln("a", "details-link", "Hearing details ↗");
+      const a = eln("a", "file-link", h.jurisdiction === "us" ? "Open this rule ↗" : "Hearing details ↗");
       a.href = href; a.target = "_blank"; a.rel = "noopener";
       actions.append(a);
     }
@@ -880,14 +908,6 @@
     if (actions.childNodes.length) main.append(actions);
     row.append(main);
     return row;
-  }
-
-  function participationFor(h) {
-    // Prefer the jurisdiction's declared participation type; fall back to the
-    // known per-state defaults if the feed didn't carry one.
-    if (jurParticipation[h.jurisdiction]) return jurParticipation[h.jurisdiction];
-    if (h.jurisdiction === "us") return "public_comment";
-    return h.jurisdiction === "wa" ? "committee_sign_in" : "witness_slip";
   }
 
   // Source times are local wall-clock (naive ISO) with a tz name. Format
@@ -1081,9 +1101,6 @@
   // These three must mirror bill_feed_name / jurisdiction_feed_name /
   // hearing_feed_name in actions/scrape-hearings/main.py so each link resolves
   // to the feed the build actually wrote.
-  function billFeedName(jur, id) {
-    return jur + "-" + (id || "").toUpperCase().replace(/[^A-Z0-9]/g, "") + ".xml";
-  }
   function jurisdictionFeedName(code) { return code + ".xml"; }
   function hearingFeedName(id) {
     return "hearing-" + (id || "").replace(/[^A-Za-z0-9._-]/g, "-") + ".xml";
@@ -1112,25 +1129,20 @@
     btn.addEventListener("click", (e) => { e.preventDefault(); toggleRss(btn, optsFn()); });
     return btn;
   }
-  function billRssTrigger(h, b) {
-    return mkRssBtn("RSS", "Subscribe to hearings for " + b.id + " (RSS)", () => ({
-      title: "Follow " + b.id + " hearings",
-      sub: "A feed of upcoming committee hearings for this bill. Copy it into a reader like Feedly, Inoreader, or NetNewsWire.",
-      url: new URL("hearings/" + billFeedName(h.jurisdiction, b.id), location.href).href,
-    }));
-  }
   function jurisdictionRssTrigger(code, name) {
-    return mkRssBtn("Follow this state (RSS)", "Subscribe to all " + name + " hearings (RSS)", () => ({
-      title: "Follow all " + name + " hearings",
-      sub: "Every upcoming " + name + " committee hearing in one feed. Copy it into your reader.",
+    return mkRssBtn("Follow this state (RSS)", "Follow all " + name + " hearings (RSS)", () => ({
+      title: "Follow " + name,
+      sub: "Every upcoming " + name + " hearing in one feed: what it's about, when and where, the bills, and the form to weigh in.",
       url: new URL("hearings/" + jurisdictionFeedName(code), location.href).href,
+      share: new URL("#hg-" + code, location.href).href,
     }));
   }
   function hearingRssTrigger(h) {
-    return mkRssBtn("Subscribe (RSS)", "Subscribe to this hearing (RSS)", () => ({
+    return mkRssBtn("Follow (RSS)", "Follow this hearing (RSS)", () => ({
       title: "Follow this hearing",
-      sub: "This one committee hearing; the item updates if it's rescheduled or canceled. Copy it into your reader.",
+      sub: "Just this one. The entry updates if it's rescheduled or canceled.",
       url: new URL("hearings/" + hearingFeedName(h.id), location.href).href,
+      share: new URL("#hg-" + h.jurisdiction, location.href).href,
     }));
   }
 
@@ -1138,12 +1150,19 @@
   const rssPop = (function () {
     const pop = $("rss-pop"), urlInput = $("rss-url");
     let current = null;  // trigger the popover is currently open for
+    let shareUrl = "";
 
     function open(trigger, opts) {
       $("rss-pop-title").textContent = opts.title;
       $("rss-pop-sub").textContent = opts.sub;
       urlInput.value = opts.url;
       $("rss-open").href = opts.url;
+      const enc = encodeURIComponent(opts.url);
+      $("rss-feedly").href = "https://feedly.com/i/subscription/feed/" + enc;
+      $("rss-inoreader").href = "https://www.inoreader.com/?add_feed=" + enc;
+      $("rss-newsblur").href = "https://newsblur.com/?url=" + enc;
+      // The page link people can post: the section this feed covers, which previews as a page.
+      shareUrl = opts.share || location.href.split("#")[0];
       pop.hidden = false;
       // Position under the trigger, clamped to the viewport (fixed positioning).
       const r = trigger.getBoundingClientRect();
@@ -1169,6 +1188,11 @@
       if (navigator.clipboard) navigator.clipboard.writeText(val).then(done, () => { urlInput.select(); done(); });
       else { urlInput.select(); try { document.execCommand("copy"); } catch (e) {} done(); }
     });
+    $("rss-share").addEventListener("click", () => {
+      const b = $("rss-share");
+      const done = () => { b.textContent = "Link copied!"; setTimeout(() => (b.textContent = "Copy a link to share"), 1400); };
+      if (navigator.clipboard) navigator.clipboard.writeText(shareUrl).then(done, done); else done();
+    });
     document.addEventListener("click", (e) => {
       if (pop.hidden || pop.contains(e.target)) return;
       if (current && (e.target === current || current.contains(e.target))) return;
@@ -1186,8 +1210,8 @@
     if (btn) btn.addEventListener("click", (e) => {
       e.preventDefault();
       toggleRss(btn, {
-        title: "Follow all upcoming hearings",
-        sub: "Copy this link into a reader like Feedly, Inoreader, or NetNewsWire.",
+        title: "Follow every hearing",
+        sub: "Every upcoming hearing and open comment period Govbot tracks, in one feed.",
         url: new URL("hearings.xml", location.href).href,
       });
     });

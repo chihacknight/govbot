@@ -119,7 +119,7 @@
                       <span><xsl:value-of select="pubDate"/></span>
                     </xsl:if>
                   </p>
-                  <p class="desc"><xsl:value-of select="description"/></p>
+                  <p class="desc"><xsl:value-of select="description" disable-output-escaping="yes"/></p>
                 </div>
               </xsl:for-each>
             </xsl:when>
