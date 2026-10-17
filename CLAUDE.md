@@ -761,13 +761,15 @@ a reader app, not a post. Feed items (`_add_item` in `actions/scrape-hearings/ma
 (or committee) and the date, and carry a labelled HTML description (Committee / Where / When / Place / Bills with
 titles and links / Take part / Details) that readers and `feed.xsl` (`disable-output-escaping`) render. The pill
 next to each jurisdiction's name, and each row's action pill, read **"Official: file a witness slip / sign in to
-testify / submit testimony / comment portal ↗"** (`PARTICIPATION`). **One link per hearing, straight to it** (per request — the old "About the
-committee" link and its committee-page lookups/probes were removed): the pill is the source's
-per-hearing `witness_slip_url` (IL bill's Bill Status page, WA Committee Sign-In opened on that
-meeting, MA the hearing page with its testimony form, federal the rule's comment form); when there's
-none (a WA interim work session, Alaska — only a general POMS form) the one link is an outline
-**"Hearing details ↗"** (`.details-link`) to the hearing's own page (`details_url`), with no "comment
-open" badge — see the table in `actions/scrape-hearings/README.md`. **"Weigh in — by state"** has an
+testify / submit testimony / comment portal ↗"** (`PARTICIPATION`). **One link and one follow button per hearing** (per request, Oct 2026): the filled pill opens the
+hearing itself — **"Hearing details ↗"** to its `details_url`, **"Open this rule ↗"** for federal — falling
+back to `witness_slip_url` only when a hearing has no page of its own; the place to take part is the
+"Official: …" pill by the jurisdiction's name (the `witness_slip_url` table is in
+`actions/scrape-hearings/README.md`). The bill chips no longer carry their own RSS trigger (the per-bill
+feeds are still built; nothing on the page links them), so each row has just "Follow (RSS)". Counts in
+the jump row, "x of y showing" and "See all N" carry thousands separators (`fmt`). Feed titles say it all
+on one line for widgets that show only titles: "Illinois · Housing Committee — Sep 9, 2026, 2:00 PM ·
+HB25, SB1486"; federal "USA (Federal) · <rule> (<agency>) — Comments due Oct 16, 2026". **"Weigh in — by state"** has an
 **A–Z letter row** next to its filter box (`buildLetters` / `pLetter`): a letter shows only states
 starting with it (letters no state starts with are disabled; clicking the active one, or "All",
 shows every state), combined with the typed filter; "No states match." when both exclude everything. The `<title>` was also corrected (it had been a stray "Legislation Dashboard").

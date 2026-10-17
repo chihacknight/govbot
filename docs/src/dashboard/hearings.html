@@ -300,10 +300,10 @@
   .pstate-how { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
   /* "Go to portal" / "How to participate" and each section's top-right portal link read
      as outline buttons: a 2px full-contrast border, like the homepage's outline buttons. */
-  .pstate-link, .hgroup-portal, .details-link { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  .pstate-link, .hgroup-portal { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
     font-size: 13px; font-weight: 650; color: var(--text-primary) !important; text-decoration: none;
     border: 2px solid var(--text-primary); border-radius: 999px; padding: 5px 13px; white-space: nowrap; }
-  .pstate-link:hover, .hgroup-portal:hover, .details-link:hover { background: var(--hover-wash); border-color: var(--hh-green); }
+  .pstate-link:hover, .hgroup-portal:hover { background: var(--hover-wash); border-color: var(--hh-green); }
   .pstate-link { margin-top: auto; }
   .hgroup-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start;
     gap: 8px 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gridline); font-size: 14px; }
@@ -747,7 +747,7 @@
         group.append(rows);
         if (listed.length > SHOW_MAX && juris.portal_url) {
           group.append(seeAllRow("Showing the next " + SHOW_MAX + ".",
-            "See all " + listed.length + " ↗", juris.portal_url));
+            "See all " + fmt(listed.length) + " ↗", juris.portal_url));
         }
       }
       body.append(group);
@@ -761,7 +761,7 @@
       const a = eln("a", null, j.name);
       a.href = "#hg-" + j.code;
       a.style.setProperty("--jc", JUMP_COLORS[i % JUMP_COLORS.length]);
-      a.append(eln("span", "jn-count", String(j.total)));
+      a.append(eln("span", "jn-count", fmt(j.total)));
       jump.append(a);
     });
     jump.hidden = jumps.length < 2;
@@ -776,7 +776,7 @@
   const SHOW_MAX = 7;
   const JUMP_COLORS = ["#5EBD3E", "#FFB900", "#F78200", "#E23838", "#973999", "#009CDF"];
   const NOTICE_SHOW = 2;
-  function showing(shown, total) { return shown + " of " + total + " showing"; }
+  function showing(shown, total) { return fmt(shown) + " of " + fmt(total) + " showing"; }
   function seeAllRow(text, label, url) {
     const more = eln("div", "hgroup-more");
     more.append(eln("span", null, text));
@@ -817,7 +817,7 @@
       // The rules link is the Federal Register's list of exactly these, so it can say the count.
       if (total > shown.length && juris.full_list_url) {
         box.append(seeAllRow("Showing the " + shown.length + " closing soonest.",
-          "See all " + total + " ↗", juris.full_list_url));
+          "See all " + fmt(total) + " ↗", juris.full_list_url));
       }
       group.append(box);
     }
@@ -836,7 +836,7 @@
     const total = juris.notice_total || shown;
     if (juris.notice_list_url) {
       group.append(seeAllRow("Showing the " + shown + " closing soonest.",
-        "See all " + total + " ↗", juris.notice_list_url));
+        "See all " + fmt(total) + " ↗", juris.notice_list_url));
     }
   }
 
@@ -889,21 +889,18 @@
           g.title = "View " + b.id + " in the govbot Legislation Dashboard";
           row.append(g);
         }
-        row.append(billRssTrigger(h, b));
         list.append(row);
       });
       main.append(list);
     }
 
-    // One link per hearing, straight to it: where to take part in this hearing
-    // (witness slip / sign-in / testimony / comment form), else its own page.
+    // One link per hearing, to the hearing itself (its own page, or the rule on
+    // Regulations.gov); the "Official: …" pill by the jurisdiction's name is where
+    // to take part. A hearing with no page of its own links that form instead.
     const actions = eln("div", "h-actions");
-    const takePart = h.status !== "canceled" && h.witness_slip_url;
-    const href = takePart ? h.witness_slip_url : h.details_url;
+    const href = h.details_url || h.witness_slip_url;
     if (href) {
-      const a = takePart
-        ? eln("a", "file-link", PARTICIPATION[participationFor(h)] || "File a slip ↗")
-        : eln("a", "details-link", "Hearing details ↗");
+      const a = eln("a", "file-link", h.jurisdiction === "us" ? "Open this rule ↗" : "Hearing details ↗");
       a.href = href; a.target = "_blank"; a.rel = "noopener";
       actions.append(a);
     }
@@ -911,14 +908,6 @@
     if (actions.childNodes.length) main.append(actions);
     row.append(main);
     return row;
-  }
-
-  function participationFor(h) {
-    // Prefer the jurisdiction's declared participation type; fall back to the
-    // known per-state defaults if the feed didn't carry one.
-    if (jurParticipation[h.jurisdiction]) return jurParticipation[h.jurisdiction];
-    if (h.jurisdiction === "us") return "public_comment";
-    return h.jurisdiction === "wa" ? "committee_sign_in" : "witness_slip";
   }
 
   // Source times are local wall-clock (naive ISO) with a tz name. Format
@@ -1112,9 +1101,6 @@
   // These three must mirror bill_feed_name / jurisdiction_feed_name /
   // hearing_feed_name in actions/scrape-hearings/main.py so each link resolves
   // to the feed the build actually wrote.
-  function billFeedName(jur, id) {
-    return jur + "-" + (id || "").toUpperCase().replace(/[^A-Z0-9]/g, "") + ".xml";
-  }
   function jurisdictionFeedName(code) { return code + ".xml"; }
   function hearingFeedName(id) {
     return "hearing-" + (id || "").replace(/[^A-Za-z0-9._-]/g, "-") + ".xml";
@@ -1142,14 +1128,6 @@
     btn.append(mkRssSvg(), document.createTextNode(label));
     btn.addEventListener("click", (e) => { e.preventDefault(); toggleRss(btn, optsFn()); });
     return btn;
-  }
-  function billRssTrigger(h, b) {
-    return mkRssBtn("RSS", "Follow hearings for " + b.id + " (RSS)", () => ({
-      title: "Follow " + b.id,
-      sub: "Every upcoming hearing on this bill, with the date, room, and the form to weigh in, the morning it's posted.",
-      url: new URL("hearings/" + billFeedName(h.jurisdiction, b.id), location.href).href,
-      share: new URL("#hg-" + h.jurisdiction, location.href).href,
-    }));
   }
   function jurisdictionRssTrigger(code, name) {
     return mkRssBtn("Follow this state (RSS)", "Follow all " + name + " hearings (RSS)", () => ({

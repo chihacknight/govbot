@@ -1025,7 +1025,20 @@ def _add_item(ch, h, state, built_822):
     if re.match(r"(?i)subject matter:", subject):
         subject = ""
     what = subject if subject and subject.lower() != committee.lower() else committee
-    title = f"{what} — {_pretty_when(h)}{status}"
+    # Widgets that embed a feed show only the title, so it says it all on one
+    # line: the state, what and who, when, and (state hearings) the bills.
+    bill_ids = [b["id"] for b in h.get("bills", [])]
+    who = f" ({committee})" if what != committee else ""
+    on = f" · {', '.join(bill_ids)}" if bill_ids and h.get("jurisdiction") != "us" else ""
+    when = _pretty_when(h)
+    # A federal date is a comment deadline, not a meeting time.
+    if h.get("jurisdiction") == "us":
+        m = re.match(r"(\d{4})-(\d{2})-(\d{2})", h.get("scheduled_iso") or "")
+        if m:
+            months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
+                      "Oct", "Nov", "Dec"]
+            when = f"Comments due {months[int(m.group(2)) - 1]} {int(m.group(3))}, {m.group(1)}"
+    title = f"{state} · {what}{who} — {when}{status}{on}"
 
     lines = []
     if canceled:
@@ -1033,7 +1046,7 @@ def _add_item(ch, h, state, built_822):
     if subject and what != committee:
         lines.append(f"<b>Committee:</b> {_esc(committee)}")
     lines.append(f"<b>Where:</b> {_esc(state)}")
-    lines.append(f"<b>When:</b> {_esc(_pretty_when(h))}")
+    lines.append(f"<b>When:</b> {_esc(when)}")
     if h.get("location"):
         lines.append(f"<b>Place:</b> {_esc(h['location'])}")
     bills = h.get("bills", [])
