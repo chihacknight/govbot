@@ -753,7 +753,15 @@ due", "Public comment open", "Canceled", the directory's "Live hearings" — sha
 "How to participate" links and each section's top-right portal link are **outline buttons** (2px
 full-contrast border, like the homepage's). Each hearing still makes participation obvious: a green **"Public comment open"**
 badge on the date column and the witness-slip/comment action elevated into a filled green
-`.file-link` pill. **One link per hearing, straight to it** (per request — the old "About the
+`.file-link` pill. **Following by RSS** (`#rss-pop`, one popover for the "Follow all", per-state, per-bill and per-hearing
+buttons): the feed address with Copy, one-tap "Add to Feedly / Inoreader / NewsBlur" links, "Preview the feed"
+(the `feed.xsl` page) and **"Copy a link to share"** (the page's `#hg-<code>` section, which previews as a page
+with the `og:` tags in `hearings.html`'s head + `assets/og-hearings.png`), plus a line saying a feed address is for
+a reader app, not a post. Feed items (`_add_item` in `actions/scrape-hearings/main.py`) lead with the subject
+(or committee) and the date, and carry a labelled HTML description (Committee / Where / When / Place / Bills with
+titles and links / Take part / Details) that readers and `feed.xsl` (`disable-output-escaping`) render. The pill
+next to each jurisdiction's name, and each row's action pill, read **"Official: file a witness slip / sign in to
+testify / submit testimony / comment portal ↗"** (`PARTICIPATION`). **One link per hearing, straight to it** (per request — the old "About the
 committee" link and its committee-page lookups/probes were removed): the pill is the source's
 per-hearing `witness_slip_url` (IL bill's Bill Status page, WA Committee Sign-In opened on that
 meeting, MA the hearing page with its testimony form, federal the rule's comment form); when there's

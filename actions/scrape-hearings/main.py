@@ -1004,24 +1004,58 @@ def _feed_prelude(doc):
     return format_datetime(built.astimezone(FEED_TZ)), names
 
 
-def _add_item(ch, h, state, built_822):
-    """Append one <item> for hearing `h` to channel `ch`."""
-    bills = ", ".join(b["id"] for b in h.get("bills", []))
-    status = " [CANCELED]" if h.get("status") == "canceled" else ""
-    title = f"{state} · {h.get('committee', 'Committee')} — {_pretty_when(h)}{status}"
+def _esc(s):
+    return (str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            .replace('"', "&quot;"))
 
-    parts = []
-    if bills:
-        parts.append(f"Bills: {bills}.")
+
+def _add_item(ch, h, state, built_822):
+    """Append one <item> for hearing `h` to channel `ch`.
+
+    The title leads with what the hearing is about (its subject, or the
+    committee) and when; the description is a few labelled lines of HTML
+    (readers and the browser stylesheet render it) so a reader shows the
+    place, the bills with their titles and the way to take part without
+    opening anything."""
+    canceled = h.get("status") == "canceled"
+    status = " [CANCELED]" if canceled else ""
+    committee = h.get("committee") or "Committee"
+    subject = (h.get("title") or "").strip()
+    # ILGA titles read "SUBJECT MATTER:  HB 1643"; the bills line already says so.
+    if re.match(r"(?i)subject matter:", subject):
+        subject = ""
+    what = subject if subject and subject.lower() != committee.lower() else committee
+    title = f"{what} — {_pretty_when(h)}{status}"
+
+    lines = []
+    if canceled:
+        lines.append("<b>Canceled.</b>")
+    if subject and what != committee:
+        lines.append(f"<b>Committee:</b> {_esc(committee)}")
+    lines.append(f"<b>Where:</b> {_esc(state)}")
+    lines.append(f"<b>When:</b> {_esc(_pretty_when(h))}")
     if h.get("location"):
-        parts.append(h["location"] + ".")
-    if h.get("status") != "canceled" and h.get("witness_slip_url"):
-        parts.append(f"Participate: {h['witness_slip_url']}")
+        lines.append(f"<b>Place:</b> {_esc(h['location'])}")
+    bills = h.get("bills", [])
+    if bills:
+        parts = []
+        for b in bills:
+            label = _esc(b["id"])
+            if b.get("title") and b["title"] != h.get("title"):
+                label += f" — {_esc(b['title'])}"
+            parts.append(f'<a href="{_esc(b["url"])}">{label}</a>' if b.get("url") else label)
+        lines.append(f"<b>Bill{'s' if len(bills) > 1 else ''}:</b> " + "; ".join(parts))
+    if not canceled and h.get("witness_slip_url"):
+        u = _esc(h["witness_slip_url"])
+        lines.append(f'<b>Take part:</b> <a href="{u}">{u}</a>')
+    if h.get("details_url"):
+        u = _esc(h["details_url"])
+        lines.append(f'<b>Details:</b> <a href="{u}">{u}</a>')
 
     item = ET.SubElement(ch, "item")
     ET.SubElement(item, "title").text = title
     ET.SubElement(item, "link").text = h.get("details_url") or DASHBOARD_URL
-    ET.SubElement(item, "description").text = " ".join(parts) or title
+    ET.SubElement(item, "description").text = "<br/>".join(lines)
     ET.SubElement(item, "category").text = state
     ET.SubElement(item, "guid", {"isPermaLink": "false"}).text = h["id"]
     ET.SubElement(item, "pubDate").text = built_822
