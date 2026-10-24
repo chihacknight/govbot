@@ -376,6 +376,12 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-cur-chat.is-on { opacity: 1; transform: none; }
 .gl-cur.is-lead { z-index: 3; }
 .gl-cur.is-saying { z-index: 4; }
+.gl-cur.is-you { z-index: 6; opacity: 0; color: var(--gl-fgold); --cc: var(--gl-fgold); }
+.gl-cur.is-you.is-on { opacity: 1; }
+:root[data-theme="light"] .gl-cur.is-you .gl-cur-label { color: #FFFFFF; }
+.gl-cur.is-you .gl-cur-label { padding-left: 9px; }
+.gl-crew-space.has-you { cursor: none; }
+.gl-crew-space.has-you a, .gl-crew-space.has-you button { cursor: pointer; }
 .gl-cur.flip .gl-cur-chat { left: auto; right: 14px; border-radius: 14px 4px 14px 14px; }
 .gl-cur-chat::after { content: ""; display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -2px;
   background: currentColor; }
