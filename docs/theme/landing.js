@@ -755,6 +755,7 @@
         place(c);
       }
       next = slots;
+      youBuild();
     }
     function place(c) {
       c.el.style.transform = "translate(" + c.x.toFixed(1) + "px," + c.y.toFixed(1) + "px)";
@@ -930,6 +931,55 @@
     }
     function start() { if (!raf && !reduceMotion) { last = 0; raf = requestAnimationFrame(frame); } }
     function stop() { if (raf) cancelAnimationFrame(raf); raf = 0; }
+    // ---- you: the reader's own mouse joins the crew ----
+    // While the mouse is over the workspace the native pointer hides and a cursor labelled
+    // "You" glides after it, same arrow and name tag as the contributors, a click ring on
+    // click: the reader is one of the people here. Mouse only (a finger has no cursor);
+    // the native pointer stays on links and buttons so they still read as clickable.
+    var you = null, youOn = false, youRaf = 0, youLast = 0, yx = 0, yy = 0, ytx = 0, yty = 0, yvx = 0, yvy = 0, yrv = 0;
+    function youBuild() {
+      you = document.createElement("div");
+      you.className = "gl-cur is-you";
+      you.innerHTML = '<span class="gl-cur-ring"></span>' + ARROW + '<span class="gl-cur-label"><b>You</b></span>';
+      layer.appendChild(you);
+      youOn = false; space.classList.remove("has-you");
+    }
+    function youPlace() {
+      you.style.transform = "translate(" + yx.toFixed(1) + "px," + yy.toFixed(1) + "px)";
+      you.classList.toggle("flip", yx > W - 120);
+      you.firstChild.style.opacity = yrv.toFixed(2);
+      you.firstChild.style.transform = "scale(" + (1 + (1 - yrv) * 1.4).toFixed(2) + ")";
+    }
+    function youFrame(ts) {
+      youRaf = requestAnimationFrame(youFrame);
+      var dt = youLast ? Math.min((ts - youLast) / 1000, 0.05) : 0.016;
+      youLast = ts;
+      if (yrv > 0) yrv = Math.max(0, yrv - dt * 1.6);
+      if (reduceMotion) { yx = ytx; yy = yty; }
+      else {                                      // a quick spring: close behind the mouse, a touch of glide
+        yvx += ((ytx - yx) * 120 - yvx * 22) * dt;
+        yvy += ((yty - yy) * 120 - yvy * 22) * dt;
+        yx += yvx * dt; yy += yvy * dt;
+      }
+      youPlace();
+    }
+    space.addEventListener("pointermove", function (e) {
+      if (e.pointerType && e.pointerType !== "mouse") return;
+      var s = space.getBoundingClientRect();
+      ytx = e.clientX - s.left; yty = e.clientY - s.top;
+      if (!youOn) {
+        youOn = true; yx = ytx; yy = yty; yvx = yvy = 0;
+        space.classList.add("has-you"); you.classList.add("is-on");
+        if (!youRaf) { youLast = 0; youRaf = requestAnimationFrame(youFrame); }
+      }
+    });
+    space.addEventListener("pointerdown", function (e) { if (youOn && e.pointerType === "mouse") yrv = 1; });
+    space.addEventListener("pointerleave", function () {
+      if (!youOn) return;
+      youOn = false; space.classList.remove("has-you"); you.classList.remove("is-on");
+      if (youRaf) cancelAnimationFrame(youRaf); youRaf = 0;
+    });
+
     build();
     if (reduceMotion) {                            // a still, composed scatter — @sartaj's line shown whole
       if (cur[0] && cur[0].chat) { cur[0].chat.textContent = SAY; cur[0].chat.classList.add("is-on"); }
