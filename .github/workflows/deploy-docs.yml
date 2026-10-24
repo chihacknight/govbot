@@ -28,7 +28,10 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Pinned: when ubuntu-latest moved to 26.04 (Oct 24, 2026) the run's /tmp
+    # could no longer hold the 56 legislation clones ("could not write",
+    # "Disk quota exceeded"); 24.04 has the room this build needs.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -251,7 +254,16 @@ jobs:
           if [ -z "$(ls -A /tmp/govbot-data/repos 2>/dev/null)" ]; then
             echo "::warning::no legislation data cloned; keeping committed sample data"
           else
-            echo "cloned $(find /tmp/govbot-data/repos -mindepth 1 -maxdepth 1 -type d | wc -l) repos"
+            cloned="$(find /tmp/govbot-data/repos -mindepth 1 -maxdepth 1 -type d | wc -l)"
+            echo "cloned $cloned repos"
+            # Most states missing means the runner ran out of room (or the data
+            # host is down), not that those states have nothing: stop here rather
+            # than publish a dashboard with half the country gone.
+            if [ "$cloned" -lt 40 ]; then
+              echo "::error::only $cloned of 56 legislation repos cloned; refusing to build from a partial clone"
+              df -h /tmp /home/runner || true
+              exit 1
+            fi
 
             # Warm up the model in a single process BEFORE fanning out, so the
             # parallel workers below don't race to download it. Empty stdin is
