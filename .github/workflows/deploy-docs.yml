@@ -213,7 +213,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ runner.temp }}/govbot-model
-          key: govbot-minilm-onnx-v1
+          key: govbot-minilm-onnx-v2 # v2: the model moved from /tmp to runner.temp; a cache archive restores to the path it was saved from, so the v1 archive never lands where the build now looks
 
       # Per-repo incremental state: the seen-bills ledger + a snapshot of the
       # produced tag files. Keyed on the taxonomy hash so editing the topic list
