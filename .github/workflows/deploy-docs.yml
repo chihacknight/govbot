@@ -29,6 +29,11 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Scratch space lives in the runner's work disk (runner.temp), not /tmp:
+    # since ubuntu-latest moved to 26.04 (Oct 24, 2026) /tmp is a small
+    # in-memory filesystem that cannot hold the 56 legislation clones
+    # ("could not write", "Disk quota exceeded"). runner.temp is on disk on
+    # every image.
     steps:
       - uses: actions/checkout@v4
 
@@ -190,10 +195,10 @@ jobs:
         run: |
           set -uo pipefail
           if git clone --depth 1 --filter=blob:none --sparse \
-               https://github.com/openstates/people.git /tmp/openstates-people \
-             && git -C /tmp/openstates-people sparse-checkout set data; then
+               https://github.com/openstates/people.git ${{ runner.temp }}/openstates-people \
+             && git -C ${{ runner.temp }}/openstates-people sparse-checkout set data; then
             python3 scripts/build_people_roster.py \
-              --people-dir /tmp/openstates-people \
+              --people-dir ${{ runner.temp }}/openstates-people \
               --output docs/src/dashboard/people.json \
               || echo "::warning::roster build failed; keeping committed people.json"
           else
@@ -207,7 +212,7 @@ jobs:
         if: steps.gate.outputs.refresh == 'true'
         uses: actions/cache@v4
         with:
-          path: /tmp/govbot-model
+          path: ${{ runner.temp }}/govbot-model
           key: govbot-minilm-onnx-v1
 
       # Per-repo incremental state: the seen-bills ledger + a snapshot of the
@@ -218,7 +223,7 @@ jobs:
         if: steps.gate.outputs.refresh == 'true'
         uses: actions/cache@v4
         with:
-          path: /tmp/govbot-cache
+          path: ${{ runner.temp }}/govbot-cache
           key: govbot-tags-${{ hashFiles('scripts/govbot-dashboard.yml') }}-${{ github.run_id }}
           restore-keys: |
             govbot-tags-${{ hashFiles('scripts/govbot-dashboard.yml') }}-
@@ -234,47 +239,56 @@ jobs:
       - name: Build dashboard data from legislation repos
         if: steps.gate.outputs.refresh == 'true'
         env:
-          GOVBOT_DATA: /tmp/govbot-data
-          MODEL_DIR: /tmp/govbot-model
-          CACHE_DIR: /tmp/govbot-cache
+          GOVBOT_DATA: ${{ runner.temp }}/govbot-data
+          MODEL_DIR: ${{ runner.temp }}/govbot-model
+          CACHE_DIR: ${{ runner.temp }}/govbot-cache
           DASHBOARD_CONFIG: ${{ github.workspace }}/scripts/govbot-dashboard.yml
           FILTER_SCRIPT: ${{ github.workspace }}/scripts/filter_new_bills.py
         run: |
           set -uo pipefail
-          mkdir -p /tmp/govbot-data /tmp/govbot-model /tmp/govbot-cache
+          mkdir -p ${{ runner.temp }}/govbot-data ${{ runner.temp }}/govbot-model ${{ runner.temp }}/govbot-cache
 
           # Clone/pull the full supported dataset (depth-50 shallow, from
-          # chn-openstates-files) into /tmp/govbot-data/repos in govbot format.
-          govbot clone all --govbot-dir /tmp/govbot-data --parallel 8 \
+          # chn-openstates-files) into ${{ runner.temp }}/govbot-data/repos in govbot format.
+          govbot clone all --govbot-dir ${{ runner.temp }}/govbot-data --parallel 8 \
             || echo "::warning::govbot clone reported errors; proceeding with whatever cloned"
 
-          if [ -z "$(ls -A /tmp/govbot-data/repos 2>/dev/null)" ]; then
+          if [ -z "$(ls -A ${{ runner.temp }}/govbot-data/repos 2>/dev/null)" ]; then
             echo "::warning::no legislation data cloned; keeping committed sample data"
           else
-            echo "cloned $(find /tmp/govbot-data/repos -mindepth 1 -maxdepth 1 -type d | wc -l) repos"
+            cloned="$(find ${{ runner.temp }}/govbot-data/repos -mindepth 1 -maxdepth 1 -type d | wc -l)"
+            echo "cloned $cloned repos"
+            # Most states missing means the runner ran out of room (or the data
+            # host is down), not that those states have nothing: stop here rather
+            # than publish a dashboard with half the country gone.
+            if [ "$cloned" -lt 40 ]; then
+              echo "::error::only $cloned of 56 legislation repos cloned; refusing to build from a partial clone"
+              df -h /tmp /home/runner || true
+              exit 1
+            fi
 
             # Warm up the model in a single process BEFORE fanning out, so the
             # parallel workers below don't race to download it. Empty stdin is
             # fine: govbot tag downloads the model before reading any lines.
-            mkdir -p /tmp/govbot-warmup
-            cp "$DASHBOARD_CONFIG" /tmp/govbot-warmup/govbot.yml
-            ( cd /tmp/govbot-warmup && : | govbot tag --govbot-dir "$MODEL_DIR" ) \
+            mkdir -p ${{ runner.temp }}/govbot-warmup
+            cp "$DASHBOARD_CONFIG" ${{ runner.temp }}/govbot-warmup/govbot.yml
+            ( cd ${{ runner.temp }}/govbot-warmup && : | govbot tag --govbot-dir "$MODEL_DIR" ) \
               || echo "::warning::embedding model warm-up failed; tagging may use keyword fallback"
 
             # Tag each repo incrementally, 4 at a time. Repos are independent.
-            find /tmp/govbot-data/repos -mindepth 1 -maxdepth 1 -type d -name '*-legislation' -print0 \
+            find ${{ runner.temp }}/govbot-data/repos -mindepth 1 -maxdepth 1 -type d -name '*-legislation' -print0 \
               | xargs -0 -r -P4 -I{} bash scripts/tag_dashboard_repo.sh {}
-            echo "tag files produced: $(find /tmp/govbot-data/repos -path '*/tags/*.tag.json' | wc -l)"
+            echo "tag files produced: $(find ${{ runner.temp }}/govbot-data/repos -path '*/tags/*.tag.json' | wc -l)"
 
             python3 scripts/build_dashboard_data.py \
-              --govbot-dir /tmp/govbot-data \
+              --govbot-dir ${{ runner.temp }}/govbot-data \
               --tags-config scripts/dashboard_tags.json \
               --source-label "github.com/chn-openstates-files" \
               --output docs/src/dashboard/data.json \
               || {
                 echo "::warning::dashboard data build failed; keeping committed sample data"
                 echo "::group::repo layout sample (for debugging)"
-                find /tmp/govbot-data/repos -mindepth 1 -maxdepth 5 -not -path '*/.git*' | sort | head -300 || true
+                find ${{ runner.temp }}/govbot-data/repos -mindepth 1 -maxdepth 5 -not -path '*/.git*' | sort | head -300 || true
                 echo "::endgroup::"
               }
           fi
@@ -284,17 +298,17 @@ jobs:
       # legislator photos (Open States ``image:`` URLs) are downloaded ONLY for
       # the sponsors of the on-screen recent bills, into an asset dir + manifest
       # that are .gitignore'd — build artifacts published with the site, never
-      # committed. Reuses the /tmp/openstates-people checkout from the roster
+      # committed. Reuses the ${{ runner.temp }}/openstates-people checkout from the roster
       # step. Fully fail-soft: a missing checkout or a failed image just leaves
       # those sponsors as monogram avatars; the deploy never breaks.
       - name: Vendor sponsor photos for on-screen bills
         if: steps.gate.outputs.refresh == 'true'
         run: |
           set -uo pipefail
-          if [ -d /tmp/openstates-people/data ]; then
+          if [ -d ${{ runner.temp }}/openstates-people/data ]; then
             python3 scripts/fetch_sponsor_photos.py \
               --data docs/src/dashboard/data.json \
-              --people-dir /tmp/openstates-people \
+              --people-dir ${{ runner.temp }}/openstates-people \
               --out-dir docs/src/dashboard/assets/legislators \
               --manifest docs/src/dashboard/legislator_images.json \
               || echo "::warning::sponsor-photo vendor reported errors; those sponsors just aren't pictured"
@@ -374,23 +388,23 @@ jobs:
         # Federal rules open for comment come from the keyless Federal Register API.
         run: |
           set -uo pipefail
-          rm -rf /tmp/hearings_feeds
+          rm -rf ${{ runner.temp }}/hearings_feeds
           python3 actions/scrape-hearings/main.py \
             --jurisdictions il,wa,ma,ak,us \
-            --output /tmp/hearings.json \
-            --rss /tmp/hearings.xml \
-            --rss-feeds-dir /tmp/hearings_feeds \
+            --output ${{ runner.temp }}/hearings.json \
+            --rss ${{ runner.temp }}/hearings.xml \
+            --rss-feeds-dir ${{ runner.temp }}/hearings_feeds \
             --dashboard-data docs/src/dashboard/data.json \
             --participation docs/src/dashboard/participation.json \
             || echo "::warning::hearings scrape reported errors"
-          if [ -s /tmp/hearings.json ] && \
-             [ "$(python3 -c 'import json,sys; print(len(json.load(open("/tmp/hearings.json"))["hearings"]))' 2>/dev/null || echo 0)" -gt 0 ]; then
-            mv /tmp/hearings.json docs/src/dashboard/hearings.json
-            [ -s /tmp/hearings.xml ] && mv /tmp/hearings.xml docs/src/dashboard/hearings.xml
+          if [ -s ${{ runner.temp }}/hearings.json ] && \
+             [ "$(python3 -c 'import json,sys; print(len(json.load(open("${{ runner.temp }}/hearings.json"))["hearings"]))' 2>/dev/null || echo 0)" -gt 0 ]; then
+            mv ${{ runner.temp }}/hearings.json docs/src/dashboard/hearings.json
+            [ -s ${{ runner.temp }}/hearings.xml ] && mv ${{ runner.temp }}/hearings.xml docs/src/dashboard/hearings.xml
             # Replace the whole granular-feed directory so feeds for bills/hearings that
             # dropped out of the window don't linger as stale files.
             rm -rf docs/src/dashboard/hearings
-            [ -d /tmp/hearings_feeds ] && mv /tmp/hearings_feeds docs/src/dashboard/hearings
+            [ -d ${{ runner.temp }}/hearings_feeds ] && mv ${{ runner.temp }}/hearings_feeds docs/src/dashboard/hearings
             echo "hearings.json + hearings.xml + granular feeds refreshed"
           else
             echo "::warning::no hearings scraped; keeping committed sample hearings.json + hearings.xml + granular feeds"
@@ -426,22 +440,22 @@ jobs:
         if: steps.gate.outputs.refresh == 'true'
         run: |
           set -uo pipefail
-          rm -rf /tmp/elections_feeds
+          rm -rf ${{ runner.temp }}/elections_feeds
           python3 actions/scrape-elections/main.py \
-            --output /tmp/elections.json \
-            --rss /tmp/elections.xml \
-            --rss-feeds-dir /tmp/elections_feeds \
+            --output ${{ runner.temp }}/elections.json \
+            --rss ${{ runner.temp }}/elections.xml \
+            --rss-feeds-dir ${{ runner.temp }}/elections_feeds \
             --legislation docs/src/dashboard/data.json \
             --hearings docs/src/dashboard/hearings.json \
             || echo "::warning::elections scrape reported errors"
-          if [ -s /tmp/elections.json ] && \
-             [ "$(python3 -c 'import json;d=json.load(open("/tmp/elections.json"));print(sum(len(r["candidates"]) for r in d["races"]) + len(d.get("springfield", [])))' 2>/dev/null || echo 0)" -gt 0 ]; then
-            mv /tmp/elections.json docs/src/dashboard/elections.json
-            [ -s /tmp/elections.xml ] && mv /tmp/elections.xml docs/src/dashboard/elections.xml
+          if [ -s ${{ runner.temp }}/elections.json ] && \
+             [ "$(python3 -c 'import json;d=json.load(open("${{ runner.temp }}/elections.json"));print(sum(len(r["candidates"]) for r in d["races"]) + len(d.get("springfield", [])))' 2>/dev/null || echo 0)" -gt 0 ]; then
+            mv ${{ runner.temp }}/elections.json docs/src/dashboard/elections.json
+            [ -s ${{ runner.temp }}/elections.xml ] && mv ${{ runner.temp }}/elections.xml docs/src/dashboard/elections.xml
             # Replace the whole granular-feed directory so feeds for races that
             # dropped out don't linger as stale files.
             rm -rf docs/src/dashboard/elections
-            [ -d /tmp/elections_feeds ] && mv /tmp/elections_feeds docs/src/dashboard/elections
+            [ -d ${{ runner.temp }}/elections_feeds ] && mv ${{ runner.temp }}/elections_feeds docs/src/dashboard/elections
             echo "elections.json + elections.xml + granular feeds refreshed"
           else
             echo "::warning::no candidates or Springfield bills produced; keeping committed sample elections.json + feeds"
@@ -546,7 +560,7 @@ jobs:
         if: steps.gate.outputs.refresh == 'true'
         uses: actions/cache/restore@v4
         with:
-          path: /tmp/sbe-last
+          path: ${{ runner.temp }}/sbe-last
           key: sbe-money-${{ github.run_id }}
           restore-keys: sbe-money-
       - name: Enrich candidates with campaign money (SBE + FEC)
@@ -556,7 +570,7 @@ jobs:
           set -uo pipefail
           CANDS="$(python3 -c 'import json;d=json.load(open("docs/src/dashboard/elections.json"));print(sum(len(r["candidates"]) for r in d["races"]))' 2>/dev/null || echo 0)"
           if [ "$CANDS" -gt 0 ]; then
-            mkdir -p /tmp/sbe
+            mkdir -p ${{ runner.temp }}/sbe
             base="https://www.elections.il.gov/campaigndisclosuredatafiles"
             ok=1; fresh=1
             for f in Candidates.txt CmteCandidateLinks.txt Committees.txt D2Totals.txt; do
@@ -566,16 +580,16 @@ jobs:
                 # curl's --retry skips a 403, so retry here; write to .part so a
                 # failed download never leaves a half file behind.
                 if curl -fsSL --retry 3 -A "chihacknight-civic-data/1.0" \
-                     -o "/tmp/sbe/$f.part" "$base/$f"; then
-                  mv "/tmp/sbe/$f.part" "/tmp/sbe/$f"; got=1; break
+                     -o "${{ runner.temp }}/sbe/$f.part" "$base/$f"; then
+                  mv "${{ runner.temp }}/sbe/$f.part" "${{ runner.temp }}/sbe/$f"; got=1; break
                 fi
               done
-              rm -f "/tmp/sbe/$f.part"
+              rm -f "${{ runner.temp }}/sbe/$f.part"
               if [ "$got" = "0" ]; then
                 fresh=0
-                if [ -s "/tmp/sbe-last/$f" ]; then
+                if [ -s "${{ runner.temp }}/sbe-last/$f" ]; then
                   echo "::warning::could not download $f; using the last good copy"
-                  cp "/tmp/sbe-last/$f" "/tmp/sbe/$f"
+                  cp "${{ runner.temp }}/sbe-last/$f" "${{ runner.temp }}/sbe/$f"
                 else
                   echo "::warning::could not download $f"; ok=0
                 fi
@@ -583,20 +597,20 @@ jobs:
             done
             # Only a complete, fresh set becomes the next run's fallback.
             if [ "$fresh" = "1" ]; then
-              mkdir -p /tmp/sbe-last
+              mkdir -p ${{ runner.temp }}/sbe-last
               for f in Candidates.txt CmteCandidateLinks.txt Committees.txt D2Totals.txt; do
-                cp "/tmp/sbe/$f" "/tmp/sbe-last/$f"
+                cp "${{ runner.temp }}/sbe/$f" "${{ runner.temp }}/sbe-last/$f"
               done
               echo "fresh=true" >> "$GITHUB_OUTPUT"
             fi
             # U.S. House/Senate money: the FEC's keyless "All candidates" summary for the
             # 2026 cycle (~200 KB zipped). Optional — without it federal races get none.
-            curl -fsSL --retry 3 -o /tmp/weball.zip https://www.fec.gov/files/bulk-downloads/2026/weball26.zip \
-              && unzip -o -q /tmp/weball.zip -d /tmp/sbe \
+            curl -fsSL --retry 3 -o ${{ runner.temp }}/weball.zip https://www.fec.gov/files/bulk-downloads/2026/weball26.zip \
+              && unzip -o -q ${{ runner.temp }}/weball.zip -d ${{ runner.temp }}/sbe \
               || echo "::warning::could not download the FEC candidate summary"
-            if [ "$ok" = "1" ] || ls /tmp/sbe/weball*.txt >/dev/null 2>&1; then
+            if [ "$ok" = "1" ] || ls ${{ runner.temp }}/sbe/weball*.txt >/dev/null 2>&1; then
               python3 actions/scrape-elections/main.py \
-                --enrich-money docs/src/dashboard/elections.json --money-dir /tmp/sbe \
+                --enrich-money docs/src/dashboard/elections.json --money-dir ${{ runner.temp }}/sbe \
                 || echo "::warning::money enrichment reported errors"
             fi
           else
@@ -606,7 +620,7 @@ jobs:
         if: steps.money.outputs.fresh == 'true'
         uses: actions/cache/save@v4
         with:
-          path: /tmp/sbe-last
+          path: ${{ runner.temp }}/sbe-last
           key: sbe-money-${{ github.run_id }}
 
       # Election results (post-Election-Night): when the ELECTION_RESULTS_URL repo
@@ -622,10 +636,10 @@ jobs:
         run: |
           set -uo pipefail
           if [ -n "${ELECTION_RESULTS_URL:-}" ]; then
-            curl -fsSL --retry 3 -o /tmp/results.csv "$ELECTION_RESULTS_URL" \
+            curl -fsSL --retry 3 -o ${{ runner.temp }}/results.csv "$ELECTION_RESULTS_URL" \
               && python3 actions/scrape-elections/main.py \
                    --enrich-results docs/src/dashboard/elections.json \
-                   --results-file /tmp/results.csv \
+                   --results-file ${{ runner.temp }}/results.csv \
                    --results-url "${ELECTION_RESULTS_PAGE:-$ELECTION_RESULTS_URL}" \
               || echo "::warning::results enrichment failed; leaving results off"
           else
