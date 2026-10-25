@@ -67,12 +67,12 @@
 <div id="hearings-list"><div class="gb-loading"><div class="gb-spinner"></div><p>Loading upcoming hearings…</p></div></div>
 </div>
 </article>
-<article class="gl-slide" style="--pc: var(--gb-amber-hi)" aria-roledescription="slide" aria-label="3 of 5: Elections: Know Your Ballot for Illinois and Michigan">
+<article class="gl-slide" style="--pc: var(--gb-amber-hi)" aria-roledescription="slide" aria-label="3 of 5: Elections: Know Your Ballot for Illinois, Michigan, Minnesota and Wisconsin">
 <div class="gl-slide-head">
-<div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/><path d="M12 12v8"/></svg></span>Know Your Ballot · Illinois &amp; Michigan</div>
+<div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/><path d="M12 12v8"/></svg></span>Know Your Ballot · Illinois, Michigan, Minnesota &amp; Wisconsin</div>
 <h3 class="gl-h3">What's on my ballot?</h3>
-<p class="gl-p">Your exact ballot by address: every race, judge and question, what each job does, who's running and who's funding them. Know Your Ballot, built on Govbot, for Illinois and Michigan voters.</p>
-<div class="gl-slide-cta gl-cta-row"><a class="gl-btn gl-btn-ghost gl-btn-state" style="--sc: var(--gb-amber-hi)" href="https://govbot-know-your-ballot.vercel.app/illinois">IL Ballot</a><a class="gl-btn gl-btn-ghost gl-btn-state" style="--sc: var(--gb-primary-hi)" href="https://govbot-know-your-ballot.vercel.app/michigan">MI Ballot</a></div>
+<p class="gl-p">Your exact ballot by address: every race, judge and question, what each job does, who's running and who's funding them. Know Your Ballot, built on Govbot, for Illinois, Michigan, Minnesota and Wisconsin voters.</p>
+<div class="gl-slide-cta gl-cta-row"><a class="gl-btn gl-btn-ghost gl-btn-state" style="--sc: var(--gb-amber-hi)" href="https://govbot-know-your-ballot.vercel.app/illinois">IL Ballot</a><a class="gl-btn gl-btn-ghost gl-btn-state" style="--sc: var(--gb-primary-hi)" href="https://govbot-know-your-ballot.vercel.app/michigan">MI Ballot</a><a class="gl-btn gl-btn-ghost gl-btn-state" style="--sc: var(--gb-blue-hi)" href="https://govbot-know-your-ballot.vercel.app/minnesota">MN Ballot</a><a class="gl-btn gl-btn-ghost gl-btn-state" style="--sc: var(--gb-purple-hi)" href="https://govbot-know-your-ballot.vercel.app/wisconsin">WI Ballot</a></div>
 </div>
 <div class="gl-slide-body gl-elect-2">
 <div class="gl-elect">
@@ -88,6 +88,20 @@
 <span class="gl-pill" data-countdown="2026-11-03" hidden></span>
 <p class="gl-p">Governor, U.S. Senate &amp; House, every seat in Lansing, the Supreme Court, the university boards and two statewide proposals.</p>
 <div class="gl-elect-then">Then: 2027 · local elections in May, August and November</div>
+</div>
+<div class="gl-elect" style="--pc: var(--gb-blue-hi)">
+<span class="gl-label" style="color: var(--gb-blue-hi)">Minnesota · next election</span>
+<span class="gl-elect-date">November 3, 2026</span>
+<span class="gl-pill" data-countdown="2026-11-03" hidden></span>
+<p class="gl-p">Governor &amp; statewide offices, U.S. Senate &amp; House, every seat in the Legislature, the Supreme Court and Court of Appeals, and a school-fund amendment.</p>
+<div class="gl-elect-then">Then: November 2, 2027 · city councils, mayors and school boards where they vote in odd years</div>
+</div>
+<div class="gl-elect" style="--pc: var(--gb-purple-hi)">
+<span class="gl-label" style="color: var(--gb-purple-hi)">Wisconsin · next election</span>
+<span class="gl-elect-date">November 3, 2026</span>
+<span class="gl-pill" data-countdown="2026-11-03" hidden></span>
+<p class="gl-p">Governor &amp; statewide offices, U.S. House, the Assembly and half the Senate, and three statewide questions.</p>
+<div class="gl-elect-then">Then: April 6, 2027 · spring election: a Supreme Court seat, judges and local offices</div>
 </div>
 </div>
 </article>
