@@ -340,6 +340,8 @@ input::placeholder, textarea::placeholder { color: var(--gb-placeholder) !import
 .gb-footer h4, .gb-footer .gb-footer-h { font-family: var(--gb-font-sans); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gb-gold-hi); font-weight: 700; margin: 0 0 12px; }
 .gb-footer a { display: block; font-size: 14px; font-weight: 400; letter-spacing: normal; color: var(--gb-text); padding: 5px 0; }
 .gb-footer a:hover { color: var(--gb-gold-hi); }
+.gb-footer .gb-footer-sub { padding: 0 0 5px 14px; font-size: 14px; }
+.gb-footer .gb-footer-sub a { display: inline; padding: 0; }
 .gb-footer-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .gb-footer-brand img { border-radius: 7px; display: block; flex: none; }
 .gb-footer-blurb { margin: 0; font-size: 14px; line-height: 1.6; color: var(--gb-text); max-width: 320px; }
@@ -452,6 +454,11 @@ input::placeholder, textarea::placeholder { color: var(--gb-placeholder) !import
 .gb-mega a svg { width: 20px; height: 20px; flex: none; margin-top: 1px; color: var(--accent, var(--gb-blue-hi)); }
 .gb-mega .mega-t { font-size: 14px; font-weight: 600; display: block; }
 .gb-mega .mega-d { font-size: 12.5px; color: var(--gb-text-2); display: block; margin-top: 1px; }
+/* Know Your Ballot: one item, its states as small pills under it (a link can't nest links, so the pills are siblings). */
+.gb-mega .mega-states, .gb-drawer .mega-states { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px 43px; }
+.gb-drawer .mega-states { padding-left: 40px; }
+.gb-mega .mega-states a, .gb-drawer .mega-states a { display: inline-flex; padding: 4px 11px; border: 1.5px solid var(--gb-border); border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--gb-text); }
+.gb-mega .mega-states a:hover, .gb-drawer .mega-states a:hover { border-color: var(--accent, var(--gb-blue-hi)); background: var(--gb-hover); }
 @media (max-width: 860px) { .gb-nav-item, .gb-mega { display: none; } }
 
 /* ===== Product-page legacy tab bar: scroll instead of wrapping on phones ===== */
