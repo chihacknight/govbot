@@ -3,7 +3,11 @@
 **Project overview and demo**  
 [![Govbot presentation video](https://img.youtube.com/vi/IFnE1oeUIXo/maxresdefault.jpg)](https://youtu.be/IFnE1oeUIXo)
 
-# 🏛️ govbot
+# 🏛️ Govbot
+
+Govbot is an open-source project of Chi Hack Night that turns every U.S. legislature's activity into open data anyone can clone, query and build on. [Know Your Ballot](https://govbot-know-your-ballot.vercel.app/) is a free, nonpartisan voter guide built on Govbot.
+
+**Website:** [chihacknight.github.io/govbot](https://chihacknight.github.io/govbot/) · **Data:** [govbot-data on GitHub](https://github.com/orgs/govbot-data/repositories) · **Guide for AI assistants:** [llms.txt](https://chihacknight.github.io/govbot/llms.txt)
 
 **Every U.S. legislature, as data you can clone.** `govbot` is a terminal-native toolkit that turns government updates into git repositories you can analyze, query, and build on — no scraper to maintain, no data platform to pay for.
 
@@ -27,6 +31,7 @@
 - [Legislation Data Catalogs](#data-catalogs)
   - [Data Structure](#data-structure)
   - [Read it from an AI assistant (no install)](#read-it-from-an-ai-assistant-no-install)
+- [License](#license)
 - [Contribute](#contribute)
 
 ## Example Projects
@@ -140,6 +145,10 @@ You don't need the CLI to explore the catalogs. Two files let any AI assistant
 This lookup-by-reading path is best for **specific** questions ("what is IL
 SB0813", "what did this sponsor introduce"). For big cross-state number-crunching,
 use the CLI + DuckDB above.
+
+## License
+
+The code in this repository is [MIT](LICENSE) licensed. The bill data Govbot publishes for download is [CC BY 4.0](LICENSE-DATA): credit "Govbot (Chi Hack Night)".
 
 ## Contribute
 

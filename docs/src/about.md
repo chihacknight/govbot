@@ -1,4 +1,6 @@
-# About govbot
+# About Govbot
+
+Govbot is an open-source project of Chi Hack Night that turns every U.S. legislature's activity into open data anyone can clone, query and build on. [Know Your Ballot ↗](https://govbot-know-your-ballot.vercel.app/) is a free, nonpartisan voter guide built on Govbot.
 
 **Every U.S. legislature, as data you can clone.** `govbot` is a terminal-native toolkit that turns government updates into git repositories you can analyze, query, and build on — no scraper to maintain, no data platform to pay for.
 
