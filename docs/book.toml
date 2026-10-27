@@ -1,7 +1,7 @@
 [book]
 language = "en"
 src = "src"
-title = "govbot"
+title = "Govbot"
 description = "Govbot turns every U.S. legislature's activity into open, daily-updated git repositories that anyone can clone, query and build on. An open civic data project from Chi Hack Night."
 
 [rust]
