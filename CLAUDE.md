@@ -10,7 +10,7 @@ This is **govbot** - a monorepo for distributed data analysis of government upda
 teaches any AI assistant to read the `govbot-data/{code}-legislation` catalogs directly
 over HTTPS — no CLI, phone-friendly — and `catalog.json` (repo root) is the
 machine-readable directory of every jurisdiction repo plus the bill path pattern. Keep
-both in sync with the real data layout (they are also published at `chihacknight.github.io/govbot/llms.txt` and `/catalog.json`, copied into the build with `sitemap.xml` by `scripts/build_sitemap.py`, which the deploy workflow runs after `mdbook build`; `docs/src/robots.txt` states the crawler policy) (the authoritative per-repo pattern lives in each
+both in sync with the real data layout (they are also published at `chihacknight.github.io/govbot/llms.txt` and `/catalog.json`, copied into the build with `sitemap.xml` by `scripts/build_sitemap.py`, which the deploy workflow runs after `mdbook build` and which also finishes each page's `<head>` — a canonical address, social-share tags from the page's own title and description, the landing's real title, and FAQ markup generated from the landing's visible questions (so add or edit a question in `docs/src/readme.md` and the markup follows; `test_build_sitemap.py` guards it). The landing's site/organization/dataset JSON-LD is the static `<script>` at the end of `readme.md`; `docs/src/robots.txt` states the crawler policy) (the authoritative per-repo pattern lives in each
 repo's own `data.json`); the README's "Read it from an AI assistant" section links them.
 
 ## Senior Engineering Prompts
