@@ -694,6 +694,12 @@ jobs:
       - name: Build docs
         run: mdbook build docs
 
+      # The plain files crawlers and AI assistants look for at the site's root: sitemap.xml (every
+      # listed page; redirect pages are left out) plus llms.txt and catalog.json, which live at the
+      # repo root and are copied here so they are published at chihacknight.github.io/govbot/.
+      - name: Publish sitemap, llms.txt and catalog.json
+        run: python3 scripts/build_sitemap.py --book docs/book
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

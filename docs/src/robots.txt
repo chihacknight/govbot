@@ -1,0 +1,8 @@
+# govbot is open civic data. Every search engine and AI assistant is welcome to read and quote it.
+# Note: GitHub Pages only honors a robots.txt at the root of the whole domain, so this copy is a
+# plain statement of our policy and a pointer to the sitemap, not a gate.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://chihacknight.github.io/govbot/sitemap.xml

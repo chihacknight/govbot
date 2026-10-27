@@ -130,8 +130,8 @@ Federal and state jurisdictions share one path pattern (`state:usa` for federal)
 
 Two files let any AI assistant (Claude, ChatGPT, etc.) read the data straight from GitHub — great from a phone:
 
-- [`llms.txt`](https://github.com/chihacknight/govbot/blob/main/llms.txt) — a plain-language guide the AI reads first.
-- [`catalog.json`](https://github.com/chihacknight/govbot/blob/main/catalog.json) — a machine-readable directory of every jurisdiction repo plus the bill path pattern.
+- [`llms.txt`](https://chihacknight.github.io/govbot/llms.txt) — a plain-language guide the AI reads first (also on [GitHub](https://github.com/chihacknight/govbot/blob/main/llms.txt)).
+- [`catalog.json`](https://chihacknight.github.io/govbot/catalog.json) — a machine-readable directory of every jurisdiction repo plus the bill path pattern.
 
 **Try it:** paste this into Claude or ChatGPT —
 
