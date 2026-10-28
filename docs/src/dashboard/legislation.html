@@ -21,7 +21,7 @@
     font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
   }
   a { color: var(--gb-link); }
-  .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 20px 48px; }
+  .wrap { max-width: var(--gb-page-max); margin: 0 auto; padding: 24px var(--gb-gutter) 48px; }
 
   header.top { margin-bottom: 20px; }
   header.top .title-row {
@@ -645,7 +645,7 @@
   .ee-maphead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
   .ee-maphead h2 { margin: 0; font-family: var(--gb-font-display); font-size: 18px; font-weight: 600; color: var(--gb-text); }
   .ee-maphint { font-size: 12.5px; color: var(--gb-text-2); }
-  .ee-mapwrap { position: relative; width: 100%; aspect-ratio: 1028 / 746; overflow: hidden; border-radius: 12px; background: #0A0E16; border: 1px solid #1C2434; touch-action: none; }
+  .ee-mapwrap { position: relative; width: 100%; aspect-ratio: 1028 / 746; max-height: max(420px, min(100vh - 300px, 820px)); overflow: hidden; border-radius: 12px; background: #0A0E16; border: 1px solid #1C2434; touch-action: none; }
   .ee-mapzoom { width: 100%; height: 100%; transform-origin: 0 0; }
   .ee-mapzoom svg { display: block; width: 100%; height: 100%; }
   .ee-st { cursor: pointer; transition: filter .15s ease; }
