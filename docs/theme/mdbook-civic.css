@@ -9,6 +9,7 @@
    =========================================================================== */
 
 :root {
+  --content-max-width: 1000px; /* docs prose: wider than mdBook's 750px, still a comfortable reading line */
   --gb-header-h: 60px;
 
   /* map mdbook vars -> civic tokens (civic tokens auto-switch light/dark) */
@@ -115,7 +116,7 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gb-landing ol { margin: 0; padding: 0; list-style: none; }
 .gb-landing button { font-family: inherit; }
 
-.gl-wrap { max-width: 1200px; margin: 0 auto; padding-left: 40px; padding-right: 40px; box-sizing: border-box; }
+.gl-wrap { max-width: var(--gb-page-max); margin: 0 auto; padding-left: var(--gb-gutter); padding-right: var(--gb-gutter); box-sizing: border-box; }
 .gl-sec { padding-top: 88px; padding-bottom: 88px; }
 .gl-band { background: var(--gb-surface); border-top: 1px solid var(--gb-border); border-bottom: 1px solid var(--gb-border); }
 .gl-overline { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700;

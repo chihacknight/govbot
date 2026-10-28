@@ -12,6 +12,9 @@
 
 /* ============================ TOKENS (dark, base) ========================= */
 :root {
+  /* Page width: pages fill the screen and only stop growing on ultra-wide monitors; side space grows a little with the screen. */
+  --gb-page-max: 1920px;
+  --gb-gutter: clamp(16px, 4vw, 64px);
   /* civic palette */
   --gb-bg:            #080B12;
   --gb-surface:       #0D111A;
@@ -162,7 +165,7 @@ body {
 a { color: var(--gb-link); text-decoration: none; }
 a:hover { color: var(--gb-link); }
 h1, h2, h3 { font-family: var(--gb-font-display); font-weight: 500; letter-spacing: -0.01em; }
-.gb-wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.gb-wrap { max-width: var(--gb-page-max); margin: 0 auto; padding: 0 var(--gb-gutter); }
 .gb-display { font-family: var(--gb-font-display); }
 .gb-overline {
   font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase;
@@ -331,7 +334,7 @@ input::placeholder, textarea::placeholder { color: var(--gb-placeholder) !import
 /* Light mode: the 30%-black mix reads as a heavy grey slab — use the plain surface. */
 :root[data-theme="light"] .gb-footer { background: var(--gb-surface); }
 @media (prefers-color-scheme: light) { :root:not([data-theme]) .gb-footer { background: var(--gb-surface); } }
-.gb-footer .gb-footer-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 32px; padding: 52px 24px 20px; max-width: 1200px; margin: 0 auto; }
+.gb-footer .gb-footer-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 32px; padding: 52px var(--gb-gutter) 20px; max-width: var(--gb-page-max); margin: 0 auto; }
 /* Footer copy is full-contrast (not dimmed); section headings carry the brand green. The markup is
    one shared template: docs/theme/footer.html → python3 docs/theme/sync_footer.py. */
 .gb-footer { font-family: var(--gb-font-sans); line-height: 1.5; }
@@ -346,7 +349,7 @@ input::placeholder, textarea::placeholder { color: var(--gb-placeholder) !import
 .gb-footer-brand img { border-radius: 7px; display: block; flex: none; }
 .gb-footer-blurb { margin: 0; font-size: 14px; line-height: 1.6; color: var(--gb-text); max-width: 320px; }
 .gb-footer-tag { font-size: 12.5px; color: var(--gb-text); margin-top: 10px; }
-.gb-footer-bottom { max-width: 1200px; margin: 0 auto; padding: 18px 24px 40px; font-size: 12.5px; color: var(--gb-text); border-top: 1px solid var(--gb-border); }
+.gb-footer-bottom { max-width: var(--gb-page-max); margin: 0 auto; padding: 18px var(--gb-gutter) 40px; font-size: 12.5px; color: var(--gb-text); border-top: 1px solid var(--gb-border); }
 @media (max-width: 860px) { .gb-footer .gb-footer-grid { grid-template-columns: 1fr 1fr; gap: 24px; } }
 /* Footer social row — gold-outline platform chips */
 .gb-social { display: flex; gap: 10px; margin-top: 16px; }
