@@ -38,7 +38,10 @@ anyhow = "1.0"
 pathdiff = "0.2"
 
 # Git operations
-git2 = { version = "0.18" }
+# OpenSSL is compiled into the binary ("vendored-openssl"). Without it the macOS nightly
+# linked Homebrew's libssl and would not start on a Mac without Homebrew. HTTPS only:
+# govbot never clones over SSH, so libssh2 is left out too.
+git2 = { version = "0.18", default-features = false, features = ["https", "vendored-openssl"] }
 
 # Text similarity and embeddings (lightweight, no external models)
 # Using ONNX Runtime + tokenizers for semantic embeddings
