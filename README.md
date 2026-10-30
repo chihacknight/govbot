@@ -30,6 +30,7 @@ Govbot is an open-source project of Chi Hack Night that turns every U.S. legisla
 - [Quick Start](#quick-start)
 - [Legislation Data Catalogs](#data-catalogs)
   - [Data Structure](#data-structure)
+  - [Ask from Claude Desktop](#ask-from-claude-desktop)
   - [Read it from an AI assistant (no install)](#read-it-from-an-ai-assistant-no-install)
 - [License](#license)
 - [Contribute](#contribute)
@@ -121,6 +122,13 @@ Each jurisdiction has its own repo. The root of that repo IS the dataset — no 
 Federal and state jurisdictions share one path pattern (`state:usa` for federal), so downstream tooling doesn't need special-casing.
 
 See [`actions/format/docs/DATA_STRUCTURES.md`](actions/format/docs/DATA_STRUCTURES.md) for the full schema reference (bill metadata, logs, events, error tracking).
+
+### Ask from Claude Desktop
+
+Install the **Govbot for Claude** extension to ask about bills, sponsors and votes from
+Claude Desktop, answered from data cloned to your own computer, with citations. Download
+page and setup steps: <https://chihacknight.github.io/govbot/dashboard/claude.html>
+(source: [`actions/mcp`](actions/mcp)).
 
 ### Read it from an AI assistant (no install)
 

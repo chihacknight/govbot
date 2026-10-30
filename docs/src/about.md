@@ -128,6 +128,10 @@ Formatted legislation data for all 56 jurisdictions lives at [github.com/govbot-
 
 Federal and state jurisdictions share one path pattern (`state:usa` for federal). See [DATA_STRUCTURES.md](https://github.com/chihacknight/govbot/blob/main/actions/format/docs/DATA_STRUCTURES.md) for the full schema reference.
 
+## Ask from Claude Desktop
+
+Install the [Govbot for Claude](dashboard/claude.html) extension to ask about bills, sponsors and votes from Claude Desktop, answered from data on your own computer, with citations.
+
 ## Read it from an AI assistant (no install)
 
 Two files let any AI assistant (Claude, ChatGPT, etc.) read the data straight from GitHub — great from a phone:

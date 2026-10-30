@@ -856,6 +856,17 @@ a state picker once there's a second state. Data/RSS files keep their names (`el
 three backend pipelines), and
 `docs/src/dashboard/search.html` (**Search** — the site-wide search page).
 
+**Govbot for Claude (`dashboard/claude.html`).** The download page for the Claude Desktop extension
+(`actions/mcp`): a static dashboard page (no data files) with one big download button pointing at the stable
+nightly bundle `https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb` (never
+`releases/latest`, which is the unrelated `synthetic-test` release), a "Built <date> · <size>" line read
+fail-soft from GitHub's release API (the release download itself sends no CORS headers), the CLI one-liner,
+five install steps, copyable "Things to ask" prompts and an updates/help FAQ. Its screenshots in
+`dashboard/assets/claude/` are **real Claude Desktop captures** (from the MCP improvement loop's
+`desktop-capture.sh`, cropped to Claude's window, no chat history), committed so a fresh clone renders; retake
+them when Desktop's UI changes. The homepage links it from the `#claude` band (before "Build your own"), the
+Projects menu and the footer; the 2026 timeline point lists it as shipped.
+
 **Global search is cross-site.** The shared header/drawer `.gb-search` boxes (wired in
 `govbot-shell.js`) route to `search.html#q=<query>` (not `legislation.html` any more). `search.html`
 shares the standard shell and, on load or `#q=`/`?q=` change, fetches `data.json`, `elections.json`,
