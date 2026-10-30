@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22t%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23161E2C%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23090D15%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%237CEBB0%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2331BE73%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22b%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23C8F7DD%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%235FE09F%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2261%22%20height%3D%2261%22%20rx%3D%2215%22%20fill%3D%22url(%23t)%22%2F%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2261%22%20height%3D%2261%22%20rx%3D%2215%22%20fill%3D%22none%22%20stroke%3D%22%232B3446%22%20stroke-width%3D%221%22%2F%3E%3Crect%20x%3D%2218%22%20y%3D%2248%22%20width%3D%2228%22%20height%3D%224.6%22%20rx%3D%222.3%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%2214.5%22%20y%3D%2253.4%22%20width%3D%2235%22%20height%3D%223.2%22%20rx%3D%221.6%22%20fill%3D%22%231E9E5C%22%2F%3E%3Cg%20transform%3D%22translate(31%2024)%20rotate(70)%22%3E%3Cpath%20d%3D%22M0%20-3.4%20L20%20-2.6%20Q26%20-2.2%2026.5%200%20Q26%202.2%2020%202.6%20L0%203.4%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Ccircle%20cx%3D%2227%22%20cy%3D%220%22%20r%3D%223%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%22-4.2%22%20width%3D%223%22%20height%3D%228.4%22%20rx%3D%221.2%22%20fill%3D%22%232BB56C%22%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(31%2024)%20rotate(-14)%22%3E%3Cpath%20d%3D%22M-5%20-7%20L-15%20-10.5%20A3.2%2010.5%200%200%200%20-15%2010.5%20L-5%207%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Cpath%20d%3D%22M5%20-7%20L15%20-10.5%20A3.2%2010.5%200%200%201%2015%2010.5%20L5%207%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%22-5.5%22%20y%3D%22-9%22%20width%3D%2211%22%20height%3D%2218%22%20rx%3D%222%22%20fill%3D%22url(%23b)%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <style>
   /* Govbot for Claude: an app-download page. Tokens come from assets/govbot.css. */
-  .wrap { max-width: 1040px; margin: 0 auto; padding: 28px 20px 64px; }
+  .wrap { max-width: var(--gb-page-max); margin: 0 auto; padding: 28px var(--gb-gutter) 64px; }
   .cl-hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 36px; align-items: center; padding: 26px 0 34px; }
   .cl-app { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
   .cl-tile { width: 76px; height: 76px; border-radius: 20px; flex: 0 0 auto; display: grid; place-items: center;
@@ -112,9 +112,17 @@
         <a href="hearings.html" role="menuitem" style="--accent:var(--gb-gold-hi)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg>
           <span><span class="mega-t">Hearings &amp; Public Comment</span><span class="mega-d">Upcoming hearings and how to weigh in</span></span></a>
-        <a href="illinois-elections.html" role="menuitem" style="--accent:var(--gb-amber-hi)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/></svg>
-          <span><span class="mega-t">Illinois Elections</span><span class="mega-d">What&#39;s on your ballot, race by race</span></span></a>
+        <div class="mega-group" style="--accent:var(--gb-amber-hi)">
+          <a href="https://govbot-know-your-ballot.vercel.app/" role="menuitem" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/></svg>
+            <span><span class="mega-t">Know Your Ballot ↗</span><span class="mega-d">Every race, candidate, judge &amp; question on your ballot, by address</span></span></a>
+          <div class="mega-states" aria-label="Know Your Ballot states">
+            <a href="https://govbot-know-your-ballot.vercel.app/illinois" role="menuitem" target="_blank" rel="noopener">Illinois ↗</a>
+            <a href="https://govbot-know-your-ballot.vercel.app/michigan" role="menuitem" target="_blank" rel="noopener">Michigan ↗</a>
+            <a href="https://govbot-know-your-ballot.vercel.app/minnesota" role="menuitem" target="_blank" rel="noopener">Minnesota ↗</a>
+            <a href="https://govbot-know-your-ballot.vercel.app/wisconsin" role="menuitem" target="_blank" rel="noopener">Wisconsin ↗</a>
+          </div>
+        </div>
         <a href="claude.html" role="menuitem" style="--accent:var(--gb-primary-hi)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>
           <span><span class="mega-t">Govbot for Claude</span><span class="mega-d">Ask about legislation from Claude Desktop</span></span></a>
@@ -178,9 +186,17 @@
     <a href="hearings.html" style="--accent:var(--gb-gold-hi)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg>
       <span><span class="mega-t">Hearings &amp; Public Comment</span><span class="mega-d">Upcoming hearings and how to weigh in</span></span></a>
-    <a href="illinois-elections.html" style="--accent:var(--gb-amber-hi)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/></svg>
-      <span><span class="mega-t">Illinois Elections</span><span class="mega-d">What&#39;s on your ballot, race by race</span></span></a>
+    <div class="mega-group" style="--accent:var(--gb-amber-hi)">
+      <a href="https://govbot-know-your-ballot.vercel.app/" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/></svg>
+        <span><span class="mega-t">Know Your Ballot ↗</span><span class="mega-d">Every race, candidate, judge &amp; question on your ballot, by address</span></span></a>
+      <div class="mega-states" aria-label="Know Your Ballot states">
+        <a href="https://govbot-know-your-ballot.vercel.app/illinois" target="_blank" rel="noopener">Illinois ↗</a>
+        <a href="https://govbot-know-your-ballot.vercel.app/michigan" target="_blank" rel="noopener">Michigan ↗</a>
+        <a href="https://govbot-know-your-ballot.vercel.app/minnesota" target="_blank" rel="noopener">Minnesota ↗</a>
+        <a href="https://govbot-know-your-ballot.vercel.app/wisconsin" target="_blank" rel="noopener">Wisconsin ↗</a>
+      </div>
+    </div>
     <a href="claude.html" style="--accent:var(--gb-primary-hi)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>
       <span><span class="mega-t">Govbot for Claude</span><span class="mega-d">Ask about legislation from Claude Desktop</span></span></a>
@@ -227,7 +243,7 @@
       </a>
       <div class="cl-meta">
         <span id="cl-build">Nightly build from the latest code</span> · Free and open source<br>
-        Also needs the free govbot command-line tool. <a href="#steps">Setup takes about 5 minutes ↓</a>
+        Also needs the free Govbot command-line tool. <a href="#steps">Setup takes about 5 minutes ↓</a>
       </div>
     </div>
     <figure class="cl-shot">
@@ -240,7 +256,7 @@
   <h2 class="cl-h2">Before you start</h2>
   <div class="cl-need">
     <div><b>Claude Desktop</b><span>The free desktop app, on a Mac. <a href="https://claude.ai/download" target="_blank" rel="noopener">Get Claude Desktop ↗</a></span></div>
-    <div><b>The govbot tool</b><span>A small program that downloads the public data. One line in Terminal installs it (step 1).</span></div>
+    <div><b>The Govbot tool</b><span>A small program that downloads the public data. One line in Terminal installs it (step 1).</span></div>
     <div><b>Your data stays with you</b><span>Bills and votes are saved in a <code>govbot-workspace</code> folder in your home folder. No account, no API key, nothing about you is sent anywhere.</span></div>
     <div><b>Mac only for now</b><span>Builds are for Macs with Apple silicon (M1 and later). Windows is <a href="https://github.com/chihacknight/govbot/issues/19" target="_blank" rel="noopener">on the roadmap ↗</a>.</span></div>
   </div>
@@ -249,7 +265,7 @@
   <p class="cl-sub">You only do this once. After that, just ask Claude.</p>
   <ol class="cl-steps">
     <li class="cl-step"><div>
-      <h3>Install the govbot tool</h3>
+      <h3>Install the Govbot tool</h3>
       <p>Open <b>Terminal</b> (press <kbd>⌘</kbd> <kbd>Space</kbd>, type “Terminal”, press <kbd>Return</kbd>), paste this line and press <kbd>Return</kbd>. It puts one program in <code>~/.govbot/bin</code> and adds that folder to your Terminal's PATH.</p>
       <div class="cl-code"><code>sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"</code><button class="cl-copy" type="button">Copy</button></div>
     </div></li>
@@ -269,37 +285,37 @@
     </div></li>
     <li class="cl-step"><div>
       <h3>Ask your first question</h3>
-      <p>Start a new chat and type <b>“Use govbot: download Illinois, then tell me what data I have.”</b> The first time Claude uses a govbot tool it asks permission. Click <b>Allow</b>, or <b>Always allow</b> so it won't ask again. The first download of a state takes a minute or two.</p>
+      <p>Start a new chat and type <b>“Use Govbot: download Illinois, then tell me what data I have.”</b> The first time Claude uses a Govbot tool it asks permission. Click <b>Allow</b>, or <b>Always allow</b> so it won't ask again. The first download of a state takes a minute or two.</p>
       <figure class="cl-shot"><img src="assets/claude/first-answer.png" loading="lazy" alt="Claude's answer listing the data on this computer: bills and recorded votes for U.S. Congress, Illinois, Wyoming and Massachusetts, and what govbot can do." width="1400" height="1179"></figure>
     </div></li>
   </ol>
 
   <h2 class="cl-h2">Things to ask</h2>
-  <p class="cl-sub">Starting with “Use govbot” makes sure Claude looks in your data instead of searching the web. Click one to copy it.</p>
+  <p class="cl-sub">Starting with “Use Govbot” makes sure Claude looks in your data instead of searching the web. Click one to copy it.</p>
   <div class="cl-try">
-    <button class="cl-chip" type="button">Use govbot: who are my state legislators in Illinois, and what have they sponsored this session?<em>Copy</em></button>
-    <button class="cl-chip" type="button">Use govbot: find Illinois bills about rent or tenants, and show me where each one came from.<em>Copy</em></button>
-    <button class="cl-chip" type="button">Use govbot: how did Senator Bill Cunningham vote on the floor this session?<em>Copy</em></button>
-    <button class="cl-chip" type="button">Use govbot: I care about public transit. Save that as a topic and tell me which Illinois bills match.<em>Copy</em></button>
-    <button class="cl-chip" type="button">Use govbot: download Wyoming and show me the newest bills.<em>Copy</em></button>
-    <button class="cl-chip" type="button">Use govbot: is my govbot up to date?<em>Copy</em></button>
+    <button class="cl-chip" type="button">Use Govbot: who are my state legislators in Illinois, and what have they sponsored this session?<em>Copy</em></button>
+    <button class="cl-chip" type="button">Use Govbot: find Illinois bills about rent or tenants, and show me where each one came from.<em>Copy</em></button>
+    <button class="cl-chip" type="button">Use Govbot: how did Senator Bill Cunningham vote on the floor this session?<em>Copy</em></button>
+    <button class="cl-chip" type="button">Use Govbot: I care about public transit. Save that as a topic and tell me which Illinois bills match.<em>Copy</em></button>
+    <button class="cl-chip" type="button">Use Govbot: download Wyoming and show me the newest bills.<em>Copy</em></button>
+    <button class="cl-chip" type="button">Use Govbot: is Govbot up to date?<em>Copy</em></button>
   </div>
 
   <h2 class="cl-h2">Updates and help</h2>
   <div class="cl-faq">
     <details open><summary>How do I update?</summary>
-      <p>Govbot checks for a newer version at most once a day and Claude will tell you when one is out. To update, download <a href="https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb" download>govbot.mcpb</a> again and open it, the same as step 3. To update the govbot tool, run the step 1 command again. Your data and topics are kept.</p>
+      <p>Govbot checks for a newer version at most once a day and Claude will tell you when one is out. To update, download <a href="https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb" download>govbot.mcpb</a> again and open it, the same as step 3. To update the Govbot tool, run the step 1 command again. Your data and topics are kept.</p>
       <p>Extensions only update by themselves when they come from Claude's own extension directory; Govbot isn't listed there yet.</p></details>
-    <details><summary>Claude says it can't find the govbot tool</summary>
-      <p>Run the step 1 command again, then quit and reopen Claude Desktop. If you installed govbot somewhere else, set its path in <b>Settings → Extensions → govbot</b>.</p></details>
-    <details><summary>Claude searched the web instead of using govbot</summary>
-      <p>Start your question with “Use govbot”. Check that the extension is switched on in <b>Settings → Extensions</b>.</p></details>
+    <details><summary>Claude says it can't find the Govbot tool</summary>
+      <p>Run the step 1 command again, then quit and reopen Claude Desktop. If you installed the <code>govbot</code> program somewhere else, set its path in <b>Settings → Extensions → govbot</b>.</p></details>
+    <details><summary>Claude searched the web instead of using Govbot</summary>
+      <p>Start your question with “Use Govbot”. Check that the extension is switched on in <b>Settings → Extensions</b>.</p></details>
     <details><summary>Where is my data, and what leaves my computer?</summary>
       <p>Everything is in <code>govbot-workspace</code> in your home folder: the public legislation you downloaded and a <code>govbot.yml</code> file with the topics you care about, which you can open and edit. Govbot downloads public data from GitHub and checks once a day for updates. It never asks for your address and never sends what you look up anywhere. Claude itself still sees your conversation, as with any chat.</p></details>
     <details><summary>Which states are covered?</summary>
       <p>All 50 states, Washington D.C., U.S. Congress and the territories. Coverage varies. For example, Massachusetts publishes no roll-call votes, and Govbot tells you when something isn't in the data instead of guessing.</p></details>
     <details><summary>Windows or an Intel Mac?</summary>
-      <p>Not yet. Ready-made builds of the govbot tool exist only for Apple silicon Macs and Linux. Follow <a href="https://github.com/chihacknight/govbot/issues/19" target="_blank" rel="noopener">issue #19 ↗</a>, or build it from source with Rust (see the <a href="https://github.com/chihacknight/govbot/tree/main/actions/mcp" target="_blank" rel="noopener">developer notes ↗</a>).</p></details>
+      <p>Not yet. Ready-made builds of the Govbot tool exist only for Apple silicon Macs and Linux. Follow <a href="https://github.com/chihacknight/govbot/issues/19" target="_blank" rel="noopener">issue #19 ↗</a>, or build it from source with Rust (see the <a href="https://github.com/chihacknight/govbot/tree/main/actions/mcp" target="_blank" rel="noopener">developer notes ↗</a>).</p></details>
   </div>
 </main>
 
@@ -323,7 +339,8 @@
       <div class="gb-footer-h" role="heading" aria-level="2">Explore</div>
       <a href="legislation.html">Legislation</a>
       <a href="hearings.html">Hearings</a>
-      <a href="illinois-elections.html">Elections</a>
+      <a href="https://govbot-know-your-ballot.vercel.app/" target="_blank" rel="noopener">Know Your Ballot ↗</a>
+      <div class="gb-footer-sub"><a href="https://govbot-know-your-ballot.vercel.app/illinois" target="_blank" rel="noopener">Illinois</a> · <a href="https://govbot-know-your-ballot.vercel.app/michigan" target="_blank" rel="noopener">Michigan</a> · <a href="https://govbot-know-your-ballot.vercel.app/minnesota" target="_blank" rel="noopener">Minnesota</a> · <a href="https://govbot-know-your-ballot.vercel.app/wisconsin" target="_blank" rel="noopener">Wisconsin</a></div>
       <a href="claude.html">Govbot for Claude</a>
       <a href="architecture.html">How Govbot Works</a>
     </div>
@@ -332,7 +349,6 @@
       <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub ↗</a>
       <a href="https://github.com/chihacknight/govbot/blob/main/catalog.json" target="_blank" rel="noopener">Data catalog ↗</a>
       <a href="../about.html">Legacy Site/Documentation</a>
-      <a href="elections.xml">RSS feeds</a>
     </div>
     <div>
       <div class="gb-footer-h" role="heading" aria-level="2">Community</div>

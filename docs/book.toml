@@ -1,7 +1,8 @@
 [book]
 language = "en"
 src = "src"
-title = "govbot"
+title = "Govbot"
+description = "Govbot turns every U.S. legislature's activity into open, daily-updated git repositories that anyone can clone, query and build on. An open civic data project from Chi Hack Night."
 
 [rust]
 edition = "2021"
@@ -11,6 +12,8 @@ default-theme = "rust"
 preferred-dark-theme = "coal"
 additional-css = ["theme/mdbook-civic.css"]
 additional-js = ["theme/landing.js"]
+# Where the site lives on GitHub Pages: the 404 page needs it to find its styles.
+site-url = "/govbot/"
 
 # The doc pages carry the site's own header and footer: no print-the-book,
 # GitHub or suggest-an-edit icons in mdbook's bar (GitHub is in the header).

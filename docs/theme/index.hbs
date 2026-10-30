@@ -82,9 +82,17 @@
                 <a href="{{ path_to_root }}dashboard/hearings.html" role="menuitem" style="--accent:var(--gb-gold-hi)">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg>
                   <span><span class="mega-t">Hearings &amp; Public Comment</span><span class="mega-d">Upcoming hearings and how to weigh in</span></span></a>
-                <a href="{{ path_to_root }}dashboard/illinois-elections.html" role="menuitem" style="--accent:var(--gb-amber-hi)">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/></svg>
-                  <span><span class="mega-t">Illinois Elections</span><span class="mega-d">What&#39;s on your ballot, race by race</span></span></a>
+                <div class="mega-group" style="--accent:var(--gb-amber-hi)">
+                  <a href="https://govbot-know-your-ballot.vercel.app/" role="menuitem" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/></svg>
+                    <span><span class="mega-t">Know Your Ballot ↗</span><span class="mega-d">Every race, candidate, judge &amp; question on your ballot, by address</span></span></a>
+                  <div class="mega-states" aria-label="Know Your Ballot states">
+                    <a href="https://govbot-know-your-ballot.vercel.app/illinois" role="menuitem" target="_blank" rel="noopener">Illinois ↗</a>
+                    <a href="https://govbot-know-your-ballot.vercel.app/michigan" role="menuitem" target="_blank" rel="noopener">Michigan ↗</a>
+                    <a href="https://govbot-know-your-ballot.vercel.app/minnesota" role="menuitem" target="_blank" rel="noopener">Minnesota ↗</a>
+                    <a href="https://govbot-know-your-ballot.vercel.app/wisconsin" role="menuitem" target="_blank" rel="noopener">Wisconsin ↗</a>
+                  </div>
+                </div>
                 <a href="{{ path_to_root }}dashboard/claude.html" role="menuitem" style="--accent:var(--gb-primary-hi)">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>
                   <span><span class="mega-t">Govbot for Claude</span><span class="mega-d">Ask about legislation from Claude Desktop</span></span></a>
@@ -146,9 +154,17 @@
             <a href="{{ path_to_root }}dashboard/hearings.html" style="--accent:var(--gb-gold-hi)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg>
               <span><span class="mega-t">Hearings &amp; Public Comment</span><span class="mega-d">Upcoming hearings and how to weigh in</span></span></a>
-            <a href="{{ path_to_root }}dashboard/illinois-elections.html" style="--accent:var(--gb-amber-hi)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/></svg>
-              <span><span class="mega-t">Illinois Elections</span><span class="mega-d">What&#39;s on your ballot, race by race</span></span></a>
+            <div class="mega-group" style="--accent:var(--gb-amber-hi)">
+              <a href="https://govbot-know-your-ballot.vercel.app/" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/></svg>
+                <span><span class="mega-t">Know Your Ballot ↗</span><span class="mega-d">Every race, candidate, judge &amp; question on your ballot, by address</span></span></a>
+              <div class="mega-states" aria-label="Know Your Ballot states">
+                <a href="https://govbot-know-your-ballot.vercel.app/illinois" target="_blank" rel="noopener">Illinois ↗</a>
+                <a href="https://govbot-know-your-ballot.vercel.app/michigan" target="_blank" rel="noopener">Michigan ↗</a>
+                <a href="https://govbot-know-your-ballot.vercel.app/minnesota" target="_blank" rel="noopener">Minnesota ↗</a>
+                <a href="https://govbot-know-your-ballot.vercel.app/wisconsin" target="_blank" rel="noopener">Wisconsin ↗</a>
+              </div>
+            </div>
             <a href="{{ path_to_root }}dashboard/claude.html" style="--accent:var(--gb-primary-hi)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>
               <span><span class="mega-t">Govbot for Claude</span><span class="mega-d">Ask about legislation from Claude Desktop</span></span></a>
@@ -337,7 +353,8 @@
               <div class="gb-footer-h" role="heading" aria-level="2">Explore</div>
               <a href="{{ path_to_root }}dashboard/legislation.html">Legislation</a>
               <a href="{{ path_to_root }}dashboard/hearings.html">Hearings</a>
-              <a href="{{ path_to_root }}dashboard/illinois-elections.html">Elections</a>
+              <a href="https://govbot-know-your-ballot.vercel.app/" target="_blank" rel="noopener">Know Your Ballot ↗</a>
+              <div class="gb-footer-sub"><a href="https://govbot-know-your-ballot.vercel.app/illinois" target="_blank" rel="noopener">Illinois</a> · <a href="https://govbot-know-your-ballot.vercel.app/michigan" target="_blank" rel="noopener">Michigan</a> · <a href="https://govbot-know-your-ballot.vercel.app/minnesota" target="_blank" rel="noopener">Minnesota</a> · <a href="https://govbot-know-your-ballot.vercel.app/wisconsin" target="_blank" rel="noopener">Wisconsin</a></div>
               <a href="{{ path_to_root }}dashboard/claude.html">Govbot for Claude</a>
               <a href="{{ path_to_root }}dashboard/architecture.html">How Govbot Works</a>
             </div>
@@ -346,7 +363,6 @@
               <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub ↗</a>
               <a href="https://github.com/chihacknight/govbot/blob/main/catalog.json" target="_blank" rel="noopener">Data catalog ↗</a>
               <a href="{{ path_to_root }}about.html">Legacy Site/Documentation</a>
-              <a href="{{ path_to_root }}dashboard/elections.xml">RSS feeds</a>
             </div>
             <div>
               <div class="gb-footer-h" role="heading" aria-level="2">Community</div>
