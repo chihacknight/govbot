@@ -67,19 +67,42 @@
 <div id="hearings-list"><div class="gb-loading"><div class="gb-spinner"></div><p>Loading upcoming hearings…</p></div></div>
 </div>
 </article>
-<article class="gl-slide" style="--pc: var(--gb-amber-hi)" aria-roledescription="slide" aria-label="3 of 5: Illinois elections">
+<article class="gl-slide" style="--pc: var(--gb-amber-hi)" aria-roledescription="slide" aria-label="3 of 5: Elections: Know Your Ballot for Illinois, Michigan, Minnesota and Wisconsin">
 <div class="gl-slide-head">
-<div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/><path d="M12 12v8"/></svg></span>Illinois elections</div>
+<div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/><path d="M12 12v8"/></svg></span>Know Your Ballot · Illinois, Michigan, Minnesota &amp; Wisconsin</div>
 <h3 class="gl-h3">What's on my ballot?</h3>
-<p class="gl-p">Your exact ballot by address, every race and judge. Know Your Ballot: Illinois, built on Govbot.</p>
-<a class="gl-btn gl-btn-primary gl-slide-cta" href="https://frankies2727.github.io/frankie-labs/projects/know-your-ballot-illinois">IL Ballot</a>
+<p class="gl-p">Your exact ballot by address: every race, judge and question, what each job does, who's running and who's funding them. Know Your Ballot, built on Govbot, for Illinois, Michigan, Minnesota and Wisconsin voters.</p>
+<div class="gl-slide-cta gl-cta-row"><a class="gl-btn gl-btn-ghost gl-btn-state" style="--sc: var(--gb-amber-hi)" href="https://govbot-know-your-ballot.vercel.app/illinois">IL Ballot</a><a class="gl-btn gl-btn-ghost gl-btn-state" style="--sc: var(--gb-primary-hi)" href="https://govbot-know-your-ballot.vercel.app/michigan">MI Ballot</a><a class="gl-btn gl-btn-ghost gl-btn-state" style="--sc: var(--gb-blue-hi)" href="https://govbot-know-your-ballot.vercel.app/minnesota">MN Ballot</a><a class="gl-btn gl-btn-ghost gl-btn-state" style="--sc: var(--gb-purple-hi)" href="https://govbot-know-your-ballot.vercel.app/wisconsin">WI Ballot</a></div>
 </div>
-<div class="gl-slide-body gl-elect">
-<span class="gl-label" style="color: var(--gb-amber-hi)">Next Illinois election</span>
+<div class="gl-slide-body gl-elect-2">
+<div class="gl-elect">
+<span class="gl-label" style="color: var(--gb-amber-hi)">Illinois · next election</span>
 <span class="gl-elect-date" id="election-date">November 3, 2026</span>
-<span class="gl-pill" id="election-days" hidden></span>
+<span class="gl-pill" id="election-days" data-countdown="2026-11-03" hidden></span>
 <p class="gl-p" id="election-note">Governor &amp; statewide offices, U.S. Senate &amp; House, the General Assembly and the CPS board.</p>
 <div class="gl-elect-then" id="election-then">Then: Chicago municipal · February 23, 2027</div>
+</div>
+<div class="gl-elect" style="--pc: var(--gb-primary-hi)">
+<span class="gl-label" style="color: var(--gb-primary-hi)">Michigan · next election</span>
+<span class="gl-elect-date">November 3, 2026</span>
+<span class="gl-pill" data-countdown="2026-11-03" hidden></span>
+<p class="gl-p">Governor, U.S. Senate &amp; House, every seat in Lansing, the Supreme Court, the university boards and two statewide proposals.</p>
+<div class="gl-elect-then">Then: 2027 · local elections in May, August and November</div>
+</div>
+<div class="gl-elect" style="--pc: var(--gb-blue-hi)">
+<span class="gl-label" style="color: var(--gb-blue-hi)">Minnesota · next election</span>
+<span class="gl-elect-date">November 3, 2026</span>
+<span class="gl-pill" data-countdown="2026-11-03" hidden></span>
+<p class="gl-p">Governor &amp; statewide offices, U.S. Senate &amp; House, every seat in the Legislature, the Supreme Court and Court of Appeals, and a school-fund amendment.</p>
+<div class="gl-elect-then">Then: November 2, 2027 · city councils, mayors and school boards where they vote in odd years</div>
+</div>
+<div class="gl-elect" style="--pc: var(--gb-purple-hi)">
+<span class="gl-label" style="color: var(--gb-purple-hi)">Wisconsin · next election</span>
+<span class="gl-elect-date">November 3, 2026</span>
+<span class="gl-pill" data-countdown="2026-11-03" hidden></span>
+<p class="gl-p">Governor &amp; statewide offices, U.S. House, the Assembly and half the Senate, and three statewide questions.</p>
+<div class="gl-elect-then">Then: April 6, 2027 · spring election: a Supreme Court seat, judges and local offices</div>
+</div>
 </div>
 </article>
 <article class="gl-slide gl-slide-bots" style="--pc: var(--gl-teal)" aria-roledescription="slide" aria-label="4 of 5: Social media trackers">
@@ -148,7 +171,12 @@
 <div>
 <h2 class="gl-h2">Questions</h2>
 <div class="gl-faq">
-<details open><summary>Can I see the code?</summary><p>Yes. The toolkit and this site: <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">chihacknight/govbot ↗</a>. The data: one repo per jurisdiction at <a href="https://github.com/orgs/govbot-data/repositories" target="_blank" rel="noopener">govbot-data ↗</a>.</p></details>
+<details open><summary>What is Govbot?</summary><p>Govbot is an open-source toolkit and dataset that turns U.S. legislative activity into git repositories anyone can clone, analyze and build on. Each jurisdiction's legislation is its own repository; you can stream it as JSON Lines through Unix pipes or load it into DuckDB and query every state at once with SQL.</p></details>
+<details><summary>Who runs Govbot?</summary><p>Govbot is an open-source project of Chi Hack Night, built by its contributors. The code and the data repositories are public on GitHub.</p></details>
+<details><summary>Which jurisdictions does Govbot cover?</summary><p>Fifty-six: all 50 states, the federal Congress, Washington, D.C., and four territories (Guam, Puerto Rico, the U.S. Virgin Islands and the Northern Mariana Islands).</p></details>
+<details><summary>Is the data free to reuse?</summary><p>Yes. The bill data published for download on this site (the CSV files, data.json and the per-state JSON files) is licensed under Creative Commons Attribution 4.0 (CC BY 4.0). You may share and adapt it for any purpose, including commercially, as long as you credit "Govbot (Chi Hack Night)". The underlying records are public government records. The license covers the published data, not the source code.</p></details>
+<details><summary>How current is the data?</summary><p>The site rebuilds twice a day. How recent a jurisdiction's bills are depends on its scraper, and some scrapers are paused while scraping moves to a new system, so the newest bills may be missing there. Every bill record carries its own dates, and each state's repository shows when it was last updated.</p></details>
+<details><summary>Can I see the code?</summary><p>Yes. The toolkit and this site: <a href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">chihacknight/govbot ↗</a>. The data: one repo per jurisdiction at <a href="https://github.com/orgs/govbot-data/repositories" target="_blank" rel="noopener">govbot-data ↗</a>.</p></details>
 <details><summary>How is the data structured?</summary><p>Each bill is a folder with its metadata, action logs and bill text. See the <a href="https://github.com/chihacknight/govbot/blob/main/actions/format/docs/DATA_STRUCTURES.md" target="_blank" rel="noopener">data structure ↗</a>.</p></details>
 <details><summary>How do I get the data?</summary><p>Run <span class="gl-mono">govbot clone il</span> (or <span class="gl-mono">all</span>), or <a href="https://github.com/orgs/govbot-data/repositories" target="_blank" rel="noopener">browse the repos ↗</a>. To add a new jurisdiction, use the <a href="https://github.com/chihacknight/govbot/blob/main/actions/format/docs/for-caller-repos/README_TEMPLATE.md" target="_blank" rel="noopener">scraper template ↗</a>.</p></details>
 <details><summary>How do I stay in touch?</summary><p>Join our channel on the <a href="https://chihacknight.slack.com/archives/C047500M5RS" target="_blank" rel="noopener">Chi Hack Night Slack ↗</a>, or follow us on Bluesky, X and Instagram (links below).</p></details>
@@ -170,3 +198,12 @@
 </section>
 
 </div>
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"WebSite","@id":"https://chihacknight.github.io/govbot/#website","name":"Govbot","url":"https://chihacknight.github.io/govbot/","description":"Open legislative data for every U.S. legislature: clone it, query it, build on it.","publisher":{"@id":"https://chihacknight.org/#org"},"inLanguage":"en"},
+{"@type":"Organization","@id":"https://chihacknight.org/#org","name":"Chi Hack Night","url":"https://chihacknight.org/"},
+{"@type":"SoftwareSourceCode","name":"govbot","description":"A terminal-native toolkit that turns government updates into git repositories you can analyze, query and build on.","codeRepository":"https://github.com/chihacknight/govbot","url":"https://chihacknight.github.io/govbot/","author":{"@id":"https://chihacknight.org/#org"}},
+{"@type":"Dataset","name":"Govbot legislation data","description":"Bills, actions, sponsors and topics for 56 U.S. jurisdictions (50 states, the federal Congress, Washington, D.C. and four territories), published as CSV and JSON downloads and as one git repository per jurisdiction.","url":"https://chihacknight.github.io/govbot/dashboard/legislation.html#download","license":"https://creativecommons.org/licenses/by/4.0/","isAccessibleForFree":true,"creator":{"@id":"https://chihacknight.org/#org"},"citation":"Govbot (Chi Hack Night), https://chihacknight.github.io/govbot/","keywords":["legislation","bills","legislatures","open data","government data","civic tech"],"distribution":[{"@type":"DataDownload","encodingFormat":"application/zip","contentUrl":"https://chihacknight.github.io/govbot/dashboard/downloads/govbot-bills-all.csv.zip"},{"@type":"DataDownload","encodingFormat":"application/json","contentUrl":"https://chihacknight.github.io/govbot/dashboard/data.json"},{"@type":"DataDownload","encodingFormat":"application/json","contentUrl":"https://chihacknight.github.io/govbot/dashboard/downloads/manifest.json"}]}
+]}
+</script>

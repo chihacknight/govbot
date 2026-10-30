@@ -10,7 +10,7 @@ This is **govbot** - a monorepo for distributed data analysis of government upda
 teaches any AI assistant to read the `govbot-data/{code}-legislation` catalogs directly
 over HTTPS — no CLI, phone-friendly — and `catalog.json` (repo root) is the
 machine-readable directory of every jurisdiction repo plus the bill path pattern. Keep
-both in sync with the real data layout (the authoritative per-repo pattern lives in each
+both in sync with the real data layout (they are also published at `chihacknight.github.io/govbot/llms.txt` and `/catalog.json`, copied into the build with `sitemap.xml` by `scripts/build_sitemap.py`, which the deploy workflow runs after `mdbook build` and which also finishes each page's `<head>` — a canonical address, social-share tags from the page's own title and description, the landing's real title, and FAQ markup generated from the landing's visible questions (so add or edit a question in `docs/src/readme.md` and the markup follows; `test_build_sitemap.py` guards it). The landing's site/organization/dataset JSON-LD is the static `<script>` at the end of `readme.md`; `docs/src/robots.txt` states the crawler policy) (the authoritative per-repo pattern lives in each
 repo's own `data.json`); the README's "Read it from an AI assistant" section links them.
 
 ## Senior Engineering Prompts
@@ -753,13 +753,23 @@ due", "Public comment open", "Canceled", the directory's "Live hearings" — sha
 "How to participate" links and each section's top-right portal link are **outline buttons** (2px
 full-contrast border, like the homepage's). Each hearing still makes participation obvious: a green **"Public comment open"**
 badge on the date column and the witness-slip/comment action elevated into a filled green
-`.file-link` pill. **One link per hearing, straight to it** (per request — the old "About the
-committee" link and its committee-page lookups/probes were removed): the pill is the source's
-per-hearing `witness_slip_url` (IL bill's Bill Status page, WA Committee Sign-In opened on that
-meeting, MA the hearing page with its testimony form, federal the rule's comment form); when there's
-none (a WA interim work session, Alaska — only a general POMS form) the one link is an outline
-**"Hearing details ↗"** (`.details-link`) to the hearing's own page (`details_url`), with no "comment
-open" badge — see the table in `actions/scrape-hearings/README.md`. **"Weigh in — by state"** has an
+`.file-link` pill. **Following by RSS** (`#rss-pop`, one popover for the "Follow all", per-state, per-bill and per-hearing
+buttons): the feed address with Copy, one-tap "Add to Feedly / Inoreader / NewsBlur" links, "Preview the feed"
+(the `feed.xsl` page) and **"Copy a link to share"** (the page's `#hg-<code>` section, which previews as a page
+with the `og:` tags in `hearings.html`'s head + `assets/og-hearings.png`), plus a line saying a feed address is for
+a reader app, not a post. Feed items (`_add_item` in `actions/scrape-hearings/main.py`) lead with the subject
+(or committee) and the date, and carry a labelled HTML description (Committee / Where / When / Place / Bills with
+titles and links / Take part / Details) that readers and `feed.xsl` (`disable-output-escaping`) render. The pill
+next to each jurisdiction's name, and each row's action pill, read **"Official: file a witness slip / sign in to
+testify / submit testimony / comment portal ↗"** (`PARTICIPATION`). **One link and one follow button per hearing** (per request, Oct 2026): the filled pill opens the
+hearing itself — **"Hearing details ↗"** to its `details_url`, **"Open this rule ↗"** for federal — falling
+back to `witness_slip_url` only when a hearing has no page of its own; the place to take part is the
+"Official: …" pill by the jurisdiction's name (the `witness_slip_url` table is in
+`actions/scrape-hearings/README.md`). The bill chips no longer carry their own RSS trigger (the per-bill
+feeds are still built; nothing on the page links them), so each row has just "Follow (RSS)". Counts in
+the jump row, "x of y showing" and "See all N" carry thousands separators (`fmt`). Feed titles say it all
+on one line for widgets that show only titles: "Illinois · Housing Committee — Sep 9, 2026, 2:00 PM ·
+HB25, SB1486"; federal "USA (Federal) · <rule> (<agency>) — Comments due Oct 16, 2026". **"Weigh in — by state"** has an
 **A–Z letter row** next to its filter box (`buildLetters` / `pLetter`): a letter shows only states
 starting with it (letters no state starts with are disabled; clicking the active one, or "All",
 shows every state), combined with the typed filter; "No states match." when both exclude everything. The `<title>` was also corrected (it had been a stray "Legislation Dashboard").
@@ -831,8 +841,11 @@ How-Govbot-Works page plus a global search page**:
 `docs/src/dashboard/legislation.html` (**Explore Legislation** — the legislation dashboard,
 formerly `index.html`; deep links are `legislation.html#q=<billid>`),
 `docs/src/dashboard/hearings.html` (**Hearings & Public Comment**),
+`docs/src/dashboard/michigan-elections.html`, `minnesota-elections.html` and `wisconsin-elections.html`
+(**Michigan / Minnesota / Wisconsin Elections**: each forwards to its Know Your Ballot guide,
+https://govbot-know-your-ballot.vercel.app/<state>) and
 `docs/src/dashboard/illinois-elections.html` (**Illinois Elections**: forwards to
-Know Your Ballot: Illinois, https://frankies2727.github.io/frankie-labs/projects/know-your-ballot-illinois,
+Know Your Ballot: Illinois, https://govbot-know-your-ballot.vercel.app/illinois,
 a Frankie Labs project built on Govbot's elections data; the homepage's "Find your ballot" links there
 directly. **Naming for more states:** `<state>-elections.html` (full lowercase state name), archived
 versions `<state>-elections-v<N>.html`; `elections.html` forwards to `illinois-elections.html` and becomes
@@ -881,7 +894,7 @@ robot logo linking to the Homepage — enlarged to 46px with a 28px "Govbot" wor
 mobile `.gb-drawer` (hamburger → search + the **same nav as desktop**: collapsible "Projects" / "Data"
 `<details class="gb-dgroup">` groups holding the same items as the desktop dropdowns — icons + descriptions —
 then How Govbot Works / GitHub Repo ↗; no separate "Home" link, the logo goes home; a tap on any link,
-including the spans inside a group item, closes the drawer), the civic `.gb-footer` — **the header, mobile drawer and footer are each one template for the whole site**: `docs/theme/header.html` (header + drawer) and `docs/theme/footer.html` are the single sources, written into `docs/theme/index.hbs` (homepage + doc pages) and every `docs/src/dashboard/*.html` page by `python3 docs/theme/sync_shell.py` (`--check` reports drift); edit the templates, never a page copy. Placeholders: `{ROOT}` site-root folder, `{HOME}` the homepage (`index.html` on mdbook pages, whose `path_to_root` is empty at the top level), `{DASH}` the dashboard folder. The current page's nav/drawer link gets `aria-current` at runtime in `govbot-shell.js` (a same-site path match), not in the markup; search forms carry `action="{DASH}search.html"` so they work from any page. **Header nav:** **Projects ▾** (only things built on Govbot: Legislation, Hearings & Public Comment, Illinois Elections, + "All projects" → the homepage carousel) · Data ▾ (the Follow ▾ menu and the homepage's "Follow along" RSS slide were removed; RSS feeds stay linked from each dashboard) · How Govbot Works · GitHub Repo ↗ (the About page is linked from the footer as "Legacy Site/Documentation"); between 861–1180px the search box collapses to a search icon (`.gb-search-btn`) so the nav never wraps. Its headings are `div.gb-footer-h[role=heading]`, not `<h4>`, because mdbook turns every `<h4>` into a self-link; all footer copy is full-contrast `--gb-text` with green headings (a 30%-black
+including the spans inside a group item, closes the drawer), the civic `.gb-footer` — **the header, mobile drawer and footer are each one template for the whole site**: `docs/theme/header.html` (header + drawer) and `docs/theme/footer.html` are the single sources, written into `docs/theme/index.hbs` (homepage + doc pages) and every `docs/src/dashboard/*.html` page by `python3 docs/theme/sync_shell.py` (`--check` reports drift); edit the templates, never a page copy. Placeholders: `{ROOT}` site-root folder, `{HOME}` the homepage (`index.html` on mdbook pages, whose `path_to_root` is empty at the top level), `{DASH}` the dashboard folder. The current page's nav/drawer link gets `aria-current` at runtime in `govbot-shell.js` (a same-site path match), not in the markup; search forms carry `action="{DASH}search.html"` so they work from any page. **Header nav:** **Projects ▾** (only things built on Govbot: Legislation, Hearings & Public Comment, **Know Your Ballot ↗** (one item, "Every race, candidate, judge & question on your ballot, by address", with the four states — Illinois, Michigan, Minnesota, Wisconsin — as small pills under it, `.mega-states`; the footer's Explore column lists it the same way, `.gb-footer-sub`) + "All projects" → the homepage carousel) · Data ▾ (the Follow ▾ menu and the homepage's "Follow along" RSS slide were removed; RSS feeds stay linked from each dashboard) · How Govbot Works · GitHub Repo ↗ (the About page is linked from the footer as "Legacy Site/Documentation"); between 861–1180px the search box collapses to a search icon (`.gb-search-btn`) so the nav never wraps. Its headings are `div.gb-footer-h[role=heading]`, not `<h4>`, because mdbook turns every `<h4>` into a self-link; all footer copy is full-contrast `--gb-text` with green headings (a 30%-black
 mix of the page colour in dark mode, the plain `--gb-surface` in light mode so it isn't a grey slab; the
 `assets/govbot-mark.png` robot logo + brand blurb + a `.gb-social` row of gold-outline social chips —
 Bluesky / Threads / X / Instagram, styled in `govbot.css` off the `--gb-gold` tokens so they adapt

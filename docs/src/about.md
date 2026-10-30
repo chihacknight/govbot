@@ -1,4 +1,6 @@
-# About govbot
+# About Govbot
+
+Govbot is an open-source project of Chi Hack Night that turns every U.S. legislature's activity into open data anyone can clone, query and build on. [Know Your Ballot ↗](https://govbot-know-your-ballot.vercel.app/) is a free, nonpartisan voter guide built on Govbot.
 
 **Every U.S. legislature, as data you can clone.** `govbot` is a terminal-native toolkit that turns government updates into git repositories you can analyze, query, and build on — no scraper to maintain, no data platform to pay for.
 
@@ -130,8 +132,8 @@ Federal and state jurisdictions share one path pattern (`state:usa` for federal)
 
 Two files let any AI assistant (Claude, ChatGPT, etc.) read the data straight from GitHub — great from a phone:
 
-- [`llms.txt`](https://github.com/chihacknight/govbot/blob/main/llms.txt) — a plain-language guide the AI reads first.
-- [`catalog.json`](https://github.com/chihacknight/govbot/blob/main/catalog.json) — a machine-readable directory of every jurisdiction repo plus the bill path pattern.
+- [`llms.txt`](https://chihacknight.github.io/govbot/llms.txt) — a plain-language guide the AI reads first (also on [GitHub](https://github.com/chihacknight/govbot/blob/main/llms.txt)).
+- [`catalog.json`](https://chihacknight.github.io/govbot/catalog.json) — a machine-readable directory of every jurisdiction repo plus the bill path pattern.
 
 **Try it:** paste this into Claude or ChatGPT —
 

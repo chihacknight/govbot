@@ -9,6 +9,7 @@
    =========================================================================== */
 
 :root {
+  --content-max-width: 1000px; /* docs prose: wider than mdBook's 750px, still a comfortable reading line */
   --gb-header-h: 60px;
 
   /* map mdbook vars -> civic tokens (civic tokens auto-switch light/dark) */
@@ -115,7 +116,7 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gb-landing ol { margin: 0; padding: 0; list-style: none; }
 .gb-landing button { font-family: inherit; }
 
-.gl-wrap { max-width: 1200px; margin: 0 auto; padding-left: 40px; padding-right: 40px; box-sizing: border-box; }
+.gl-wrap { max-width: var(--gb-page-max); margin: 0 auto; padding-left: var(--gb-gutter); padding-right: var(--gb-gutter); box-sizing: border-box; }
 .gl-sec { padding-top: 88px; padding-bottom: 88px; }
 .gl-band { background: var(--gb-surface); border-top: 1px solid var(--gb-border); border-bottom: 1px solid var(--gb-border); }
 .gl-overline { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700;
@@ -148,6 +149,9 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 /* Outline buttons: a 2px full-contrast border so they clearly read as buttons. */
 .gb-landing .gl-btn-ghost { background: transparent; border: 2px solid var(--gb-text); color: var(--gb-text); }
 .gb-landing .gl-btn-ghost:hover { border-color: var(--gb-gold); background: var(--gb-hover); color: var(--gb-text); }
+/* The two Know Your Ballot buttons: an outline in each state's colour (Illinois amber, Michigan green), no fill. */
+.gb-landing .gl-btn-state { border-color: var(--sc); }
+.gb-landing .gl-btn-state:hover { border-color: var(--sc); background: color-mix(in srgb, var(--sc) 12%, transparent); }
 .gb-landing :focus-visible { outline: 3px solid var(--gb-gold-hi); outline-offset: 3px; }
 
 /* hero — the big gold Liberty beside the copy */
@@ -237,6 +241,12 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-pill[hidden] { display: none; }
 .gl-elect-then { padding-top: 12px; border-top: 1px solid var(--gb-border); font-size: 14px; color: var(--gb-text-2); }
 .gl-elect-then[hidden] { display: none; }
+/* Two states side by side; stacked on narrow screens. */
+.gl-cta-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.gl-elect-2 { display: grid; gap: 14px; }
+.gl-elect-2 .gl-elect { border-color: color-mix(in srgb, var(--pc) 45%, var(--gb-border)); }
+.gl-elect-2 .gl-elect-date { font-size: 34px; }
+@media (min-width: 900px) { .gl-elect-2 { grid-template-columns: 1fr 1fr; } }
 /* Social media trackers slide: topics, platform buttons and a live auto-scrolling feed of the bots'
    real posts (filled by landing.js). Each post's coloured text (posted date, action chip, topic,
    "View post") and border use --pf: brand green, or on every other post (.is-gold) --gl-fgold, a true
@@ -367,6 +377,12 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-cur-chat.is-on { opacity: 1; transform: none; }
 .gl-cur.is-lead { z-index: 3; }
 .gl-cur.is-saying { z-index: 4; }
+.gl-cur.is-you { z-index: 6; opacity: 0; color: var(--gl-fgold); --cc: var(--gl-fgold); }
+.gl-cur.is-you.is-on { opacity: 1; }
+:root[data-theme="light"] .gl-cur.is-you .gl-cur-label { color: #FFFFFF; }
+.gl-cur.is-you .gl-cur-label { padding-left: 9px; }
+.gl-crew-space.has-you { cursor: none; }
+.gl-crew-space.has-you a, .gl-crew-space.has-you button { cursor: pointer; }
 .gl-cur.flip .gl-cur-chat { left: auto; right: 14px; border-radius: 14px 4px 14px 14px; }
 .gl-cur-chat::after { content: ""; display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -2px;
   background: currentColor; }

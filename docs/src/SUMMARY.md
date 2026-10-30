@@ -2,7 +2,7 @@
 
 # About
 
-- [About govbot](./about.md)
+- [About Govbot](./about.md)
 
 # Dashboard
 
