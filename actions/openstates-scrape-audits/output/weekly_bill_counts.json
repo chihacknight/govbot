@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-10-25",
+  "as_of": "2026-11-01",
   "states": {
     "ak": {
       "count": 0,
@@ -30,7 +30,7 @@
       "days_with_data": 0
     },
     "dc": {
-      "count": 86,
+      "count": 70,
       "days_with_data": 7
     },
     "de": {
@@ -94,8 +94,8 @@
       "days_with_data": 0
     },
     "mi": {
-      "count": 42,
-      "days_with_data": 4
+      "count": 47,
+      "days_with_data": 5
     },
     "mn": {
       "count": 0,
@@ -106,8 +106,8 @@
       "days_with_data": 0
     },
     "mp": {
-      "count": 9,
-      "days_with_data": 2
+      "count": 19,
+      "days_with_data": 3
     },
     "ms": {
       "count": 0,
@@ -150,8 +150,8 @@
       "days_with_data": 0
     },
     "oh": {
-      "count": 28,
-      "days_with_data": 5
+      "count": 40,
+      "days_with_data": 7
     },
     "ok": {
       "count": 0,
@@ -162,8 +162,8 @@
       "days_with_data": 0
     },
     "pa": {
-      "count": 375,
-      "days_with_data": 2
+      "count": 397,
+      "days_with_data": 4
     },
     "pr": {
       "count": 0,
@@ -190,7 +190,7 @@
       "days_with_data": 0
     },
     "usa": {
-      "count": 173,
+      "count": 155,
       "days_with_data": 7
     },
     "ut": {
