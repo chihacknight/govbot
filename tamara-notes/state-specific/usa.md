@@ -1,13 +1,13 @@
 ---
 name: usa
-description: USA's scrape crashed on an unhandled KeyError on a Senate vote result, got misclassified as a rate-limit issue, fell back to nightly data invisibly. Fix built, verified live end-to-end 2026-10-03; upstream PR not yet filed. One of the per-state files indexed in tamara-notes/state-specific/README.md.
+description: USA's scrape crashed on an unhandled KeyError on a Senate vote result, got misclassified as a rate-limit issue, fell back to nightly data invisibly. Fix merged upstream 2026-10-06, confirmed live in the official image, custom docker_image override reverted 2026-10-13. Closed. One of the per-state files indexed in tamara-notes/state-specific/README.md.
 metadata:
   type: project
 ---
 
 # USA (Federal)
 
-## Status: 🟢 Fix confirmed working live — upstream PR filed, awaiting review
+## Status: 🟢 Resolved — fix merged upstream, running on the official image again
 
 **Active state** (`runner: self-hosted`, `scrape_timeout_minutes: 720`) in
 `chn-openstates-scrape.yml`, scheduled daily.
@@ -78,17 +78,21 @@ pipeline.
 
 ## What's still open
 
-- Upstream PR [#5847](https://github.com/openstates/openstates-scrapers/pull/5847) / issue
-  [#1422](https://github.com/openstates/issues/issues/1422) filed 2026-10-03, awaiting
-  maintainer review. Not yet merged.
-- The `429` regex false-positive itself is not fixed — only its symptom (a hidden error) is
-  mitigated. A future bill numbered 429 in any state's log could trigger the same
+- **Resolved 2026-10-13**: PR #5847 merged upstream 2026-10-06; confirmed the official
+  `openstates/scrapers:latest` image was actually rebuilt with it (not just merged — checked
+  Docker Hub's `last_updated` and the raw source directly, same discipline as everywhere else
+  in this doc) before reverting `usa`'s `docker_image` override in `chn-openstates-scrape.yml`
+  and dispatching a confirmation run
+  ([38498947245](https://github.com/govbot-openstates-scrapers/usa-legislation/actions/runs/38498947245))
+  on the real official image.
+- Still need to delete the now-unused `ghcr.io/tamara-builds/openstates-scrapers:usa-fix-test`
+  image (version id `1329967562`) — blocked on the `gh` token's package-delete scope, left as a
+  manual GitHub UI step.
+- The `429` regex false-positive itself is still not fixed — only its symptom (a hidden error)
+  is mitigated. A future bill numbered 429 in any state's log could trigger the same
   misclassification again. Deliberately not "fixed" by hardening the regex further — see
   `actions/openstates-scrape-audits/README.md`'s reasoning on why surfacing the real error
   text was preferred over chasing a perfect classifier.
-- `docker_image` override on `usa-legislation`'s workflow needs to be reverted once the
-  upstream PR merges and `openstates/scrapers:latest` is rebuilt with the fix (same cleanup
-  step FL's override is still waiting on).
 
 ## Timeline
 
