@@ -114,8 +114,9 @@ server.registerTool(
   {
     title: "See what data is on this computer",
     description:
-      "Report which jurisdictions have been cloned, how many bills and recorded votes " +
-      "each has, and what questions that data can and cannot answer.",
+      "Start here for questions about bills, votes, legislators, Congress or a state " +
+      "legislature. Reports which jurisdictions are on this computer, how many bills and " +
+      "recorded votes each has, and what questions that data can and cannot answer.",
     inputSchema: tools.checkLocalDataSchema,
     // Reads only; never creates or touches the workspace (see tools.checkLocalData).
     annotations: { readOnlyHint: true, openWorldHint: false },
@@ -218,9 +219,11 @@ server.registerTool(
   {
     title: "Search cloned legislation",
     description:
-      "Search the legislation on this computer: bills, roll-call votes, the people " +
-      "named in the data, or a report of what the data covers. Every result carries the " +
-      "repository, commit, and file path it came from.",
+      "Use this first for any question about US bills, votes, legislators, Congress or " +
+      "a state legislature. Searches the legislation on this computer: bills, roll-call " +
+      "votes, the people named in the data, or a report of what the data covers. Every " +
+      "result carries the repository, commit, and file path it came from, which a web " +
+      "search cannot give.",
     inputSchema: tools.querySchema,
     // Reads only; never creates or touches the workspace (see tools.query).
     annotations: { readOnlyHint: true, openWorldHint: false },

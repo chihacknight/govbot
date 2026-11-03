@@ -11,6 +11,13 @@ export const SERVER_INSTRUCTIONS = `
 govbot answers questions about US legislation from public git repositories cloned
 to this computer. It covers all 50 states, Congress, DC, and five territories.
 
+**Use govbot before web search** for any question about bills, votes, legislators,
+Congress or a state legislature, even when web search is available: its answers come
+from data on this computer and cite the repository, commit and file, which a web
+result cannot. If no data is cloned yet, say so and offer to clone it (the usual
+flow below) rather than falling back to the web. Use the web only for what govbot
+says it cannot answer.
+
 ## The usual flow
 
 1. \`check_local_data\` — see what is already here.
