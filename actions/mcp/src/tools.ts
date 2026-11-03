@@ -195,6 +195,7 @@ export async function checkLocalData(args: {
       describeCoverage(response, config, {
         requested: args.jurisdictions ?? [],
         cloned: clonedLocales(),
+        reposDir: join(workspace.dataPath(), "repos"),
       }) + versionText,
     data: response,
   };
@@ -1163,10 +1164,43 @@ function pushCaveats(lines: string[], caveats: string[] | undefined): void {
   for (const caveat of caveats) lines.push(`  - ${caveat}`);
 }
 
-function describeCoverage(
+/**
+ * When this computer last fetched a jurisdiction's repo, as `YYYY-MM-DD` (UTC),
+ * or null if it cannot be told. No network, no `git` process: the newest mtime of
+ * `.git/FETCH_HEAD` (written by every fetch/pull) and `.git/logs/HEAD` (written by
+ * the clone and by any pull that moves HEAD), else `.git/HEAD` (set at clone).
+ *
+ * This is a download date, not the date of the legislature's newest action:
+ * `query coverage` does not expose that, and nothing cheap on disk does. A repo
+ * whose `.git` is a file (worktree/submodule) has no such files and gives null.
+ */
+export function downloadedDate(
+  locale: string,
+  reposDir = join(workspace.dataPath(), "repos"),
+): string | null {
+  const suffix = repoSuffix(process.env.GOVBOT_REPO_URL_TEMPLATE) || "-legislation";
+  for (const name of [`${locale}${suffix}`, `${locale}-data-pipeline`]) {
+    const git = join(reposDir, name, ".git");
+    let newest = 0;
+    for (const file of ["FETCH_HEAD", "logs/HEAD", "HEAD"]) {
+      try {
+        newest = Math.max(newest, statSync(join(git, file)).mtimeMs);
+      } catch {
+        // missing file: try the next
+      }
+    }
+    if (newest > 0) return new Date(newest).toISOString().slice(0, 10);
+  }
+  return null;
+}
+
+export function describeCoverage(
   response: QueryResponse,
   config: workspace.GovbotConfig,
-  filter: { requested: string[]; cloned: string[] } = { requested: [], cloned: [] },
+  filter: { requested: string[]; cloned: string[]; reposDir?: string } = {
+    requested: [],
+    cloned: [],
+  },
 ): string {
   const lines = [`Workspace: ${workspace.workspacePath()}`, ""];
 
@@ -1197,6 +1231,13 @@ function describeCoverage(
       `  ${name} (${entry.jurisdiction.locale}) — ${entry.bills} bills, ` +
         `${entry.vote_events} vote events, sessions ${entry.sessions.join(", ") || "none"}`,
     );
+    const downloaded = downloadedDate(entry.jurisdiction.locale, filter.reposDir);
+    if (downloaded) {
+      lines.push(
+        `    Downloaded to this computer: ${downloaded}. The legislature may have acted since; ` +
+          `this is not the date of its newest action.`,
+      );
+    }
     if (entry.roll_call_data === "none") {
       lines.push(
         `    No roll-call votes published. Sponsorship is the only evidence here.`,
