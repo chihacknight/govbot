@@ -71,6 +71,9 @@ vote before saying whether something aligns with what they told you.
 
 ## Writing topic definitions
 
+When the person drops something they cared about, pass its name in \`remove\` to
+\`save_my_values\` instead of leaving the topic behind.
+
 \`save_my_values\` takes topics you write. A definition scores every bill from 0 to 1
 and keeps those at or above its threshold.
 

@@ -336,3 +336,41 @@ export async function saveTags(tags: Record<string, TagDefinition>): Promise<str
     return Object.keys(isMap(all) ? (all.toJSON() as object) : {}).sort();
   });
 }
+
+/**
+ * Remove the named topics from `govbot.yml`, matching names case-insensitively.
+ *
+ * Only those entries under `tags` are deleted; every other topic, key and
+ * comment stays. Names that match nothing are returned in `notFound` rather
+ * than failing the rest. If the file does not exist, nothing is written.
+ *
+ * Score files that `govbot tag` already wrote are deliberately left alone: they
+ * are derived data in the person's folder, and `query` with a `tag` checks the
+ * topic against govbot.yml first, so a removed topic is refused there ("No
+ * topic named ...") and its old scores are never returned.
+ */
+export async function removeTags(
+  names: string[],
+): Promise<{ removed: string[]; notFound: string[]; remaining: string[] }> {
+  const existing = await loadDocument();
+  if (existing === null) return { removed: [], notFound: [...names], remaining: [] };
+  return editConfig((doc) => {
+    const node = topLevel(doc, "tags");
+    if (node !== undefined && !isMap(node)) {
+      throw new ConfigError("`tags` is not a set of named topics, so topics cannot be removed from it.");
+    }
+    const keys = node ? node.items.map((pair) => String((pair.key as { value?: unknown })?.value ?? pair.key)) : [];
+    const removed: string[] = [];
+    const notFound: string[] = [];
+    for (const name of names) {
+      const match = keys.find((key) => key.toLowerCase() === name.trim().toLowerCase());
+      if (match === undefined || removed.includes(match)) {
+        if (match === undefined) notFound.push(name);
+        continue;
+      }
+      doc.deleteIn(["tags", match]);
+      removed.push(match);
+    }
+    return { removed, notFound, remaining: keys.filter((key) => !removed.includes(key)).sort() };
+  });
+}

@@ -14,7 +14,7 @@
           "listChanged": true
         }
       },
-      "instructions": "<7330 characters>",
+      "instructions": "<7464 characters>",
       "protocolVersion": "2025-06-18",
       "serverInfo": {
         "name": "govbot",
@@ -111,7 +111,7 @@
             "openWorldHint": false,
             "readOnlyHint": false
           },
-          "description": "Write the topics you care about into your workspace as reusable definitions. They are saved as plain YAML you can read, edit, and re-run yourself.",
+          "description": "Write the topics you care about into your workspace as reusable definitions, and delete topics the person no longer cares about (`remove`). They are saved as plain YAML you can read, edit, and re-run yourself.",
           "execution": {
             "taskSupport": "forbidden"
           },
@@ -119,6 +119,13 @@
             "$schema": "http://json-schema.org/draft-07/schema#",
             "additionalProperties": false,
             "properties": {
+              "remove": {
+                "description": "Names of saved topics to delete, for when the person drops something they cared about. Matched ignoring case; names that are not saved are reported, not an error. Give `topics`, `remove`, or both.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
               "topics": {
                 "description": "The topics to save.",
                 "items": {
@@ -173,13 +180,9 @@
                   ],
                   "type": "object"
                 },
-                "minItems": 1,
                 "type": "array"
               }
             },
-            "required": [
-              "topics"
-            ],
             "type": "object"
           },
           "name": "save_my_values",

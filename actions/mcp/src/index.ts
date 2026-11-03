@@ -162,11 +162,13 @@ server.registerTool(
   {
     title: "Save what you care about",
     description:
-      "Write the topics you care about into your workspace as reusable definitions. " +
+      "Write the topics you care about into your workspace as reusable definitions, " +
+      "and delete topics the person no longer cares about (`remove`). " +
       "They are saved as plain YAML you can read, edit, and re-run yourself.",
     inputSchema: tools.saveValuesSchema,
-    // Destructive: a topic with the same name is replaced, and govbot.yml is
-    // rewritten (workspace.writeConfig), dropping hand-written comments.
+    // Destructive: a topic with the same name is replaced, and `remove` deletes
+    // the named topics from govbot.yml. Everything else in the file, comments
+    // included, is kept (workspace.editConfig).
     annotations: {
       readOnlyHint: false,
       destructiveHint: true,

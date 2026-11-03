@@ -1,0 +1,13 @@
+id: change-values
+prompt: |
+  Actually I don't care about public transit anymore, just affordable housing.
+setup:
+  jurisdictions: [il]
+  # scripts/desktop-capture.sh resets govbot.yml to workspace-baseline.yml. Before
+  # capturing, make govbot.yml hold two topics, "public transit" and
+  # "affordable housing" (add them under `tags:` with a description each).
+expect:
+  - Calls save_my_values with remove ["public transit"] and does not re-send "affordable housing" (check trace.jsonl).
+  - Tells the person which topics remain, and that bills already scored for transit are no longer shown.
+  - A later topic query for "public transit" is refused ("No topic named"), so transit-tagged bills do not come back.
+  - Other lines and comments in govbot.yml are unchanged.

@@ -442,18 +442,41 @@ const tagSchema = z.object({
 });
 
 export const saveValuesSchema = {
-  topics: z.array(tagSchema).min(1).describe("The topics to save."),
+  topics: z.array(tagSchema).optional().describe("The topics to save."),
+  remove: z
+    .array(z.string())
+    .optional()
+    .describe(
+      "Names of saved topics to delete, for when the person drops something they cared about. Matched ignoring case; names that are not saved are reported, not an error. Give `topics`, `remove`, or both.",
+    ),
 };
 
 export async function saveValues(args: {
-  topics: z.infer<typeof tagSchema>[];
+  topics?: z.infer<typeof tagSchema>[];
+  remove?: string[];
 }): Promise<ToolOutput> {
+  const topics = args.topics ?? [];
+  const remove = args.remove ?? [];
+  if (!topics.length && !remove.length) {
+    return {
+      isError: true,
+      text: "Nothing to do: give `topics` to save, `remove` to delete saved topics, or both.",
+    };
+  }
+  // A name in both lists is ambiguous (save it, or drop it?), so ask rather than guess.
+  const clash = remove.filter((r) => topics.some((t) => t.name.toLowerCase() === r.trim().toLowerCase()));
+  if (clash.length) {
+    return {
+      isError: true,
+      text: `Nothing changed. ${clash.join(", ")} is in both \`topics\` and \`remove\`. Send it in only one.`,
+    };
+  }
   await workspace.ensure();
 
   const tags: Record<string, workspace.TagDefinition> = {};
   const warnings: string[] = [];
 
-  for (const topic of args.topics) {
+  for (const topic of topics) {
     const { name, ...definition } = topic;
     // Thresholds are not interchangeable. Negative examples subtract roughly 0.17
     // from every score, measured against real bills, so 0.72 with them present is
@@ -480,27 +503,51 @@ export async function saveValues(args: {
   }
 
   let saved: string[];
+  let removal: Awaited<ReturnType<typeof workspace.removeTags>> | undefined;
   try {
-    saved = await workspace.saveTags(tags);
+    // Remove first so a failure on a malformed file leaves nothing half-done.
+    if (remove.length) removal = await workspace.removeTags(remove);
+    saved = Object.keys(tags).length
+      ? await workspace.saveTags(tags)
+      : (removal?.remaining ?? []);
   } catch (error) {
     if (!(error instanceof workspace.ConfigError)) throw error;
     return {
       isError: true,
-      text: `Did not save ${Object.keys(tags).join(", ")}.\n\n${error.message}`,
+      text: `Did not ${remove.length ? "change" : "save"} ${[...Object.keys(tags), ...remove].join(", ")}.\n\n${error.message}`,
     };
   }
 
+  const lines: string[] = [];
+  if (Object.keys(tags).length) {
+    lines.push(`Saved ${Object.keys(tags).length} topic(s) to ${workspace.configPath()}.`);
+  }
+  if (removal?.removed.length) {
+    lines.push(
+      `Removed ${removal.removed.join(", ")} from ${workspace.configPath()}. Bills already scored for ` +
+        "it are no longer shown: query refuses a removed topic. The old score files stay on disk, unused.",
+    );
+  }
+  if (removal?.notFound.length) {
+    lines.push(`Not saved, so nothing to remove: ${removal.notFound.join(", ")}.`);
+  }
+  lines.push(`All topics now defined: ${saved.length ? saved.join(", ") : "none"}`);
+
   return {
     text: [
-      `Saved ${Object.keys(tags).length} topic(s) to ${workspace.configPath()}.`,
-      `All topics now defined: ${saved.join(", ")}`,
+      ...lines,
       "",
       ...(warnings.length ? ["Worth flagging:", ...warnings.map((w) => `  - ${w}`), ""] : []),
-      "Run tag_with_local_ai next to score bills against these.",
-      "",
-      "This file is plain YAML the person can open and edit. Show them what you wrote.",
+      ...(Object.keys(tags).length ? ["Run tag_with_local_ai next to score bills against these.", ""] : []),
+      "This file is plain YAML the person can open and edit. Show them what you changed.",
     ].join("\n"),
-    data: { saved, warnings, path: workspace.configPath() },
+    data: {
+      saved,
+      removed: removal?.removed ?? [],
+      not_found: removal?.notFound ?? [],
+      warnings,
+      path: workspace.configPath(),
+    },
   };
 }
 
