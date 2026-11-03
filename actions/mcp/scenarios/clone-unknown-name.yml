@@ -1,0 +1,8 @@
+id: clone-unknown-name
+prompt: |
+  Clone Narnia.
+setup:
+  workspace: fresh
+expect:
+  - Says plainly that Narnia is not a jurisdiction govbot knows and names the valid choices (state names or codes, usa, dc, pr, gu, vi, mp).
+  - Shows no raw CLI error text and makes no clone attempt.
