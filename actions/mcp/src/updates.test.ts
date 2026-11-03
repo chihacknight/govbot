@@ -132,7 +132,7 @@ test("a newer bundle gives the stable download URL and the drag-in step", () => 
   assert.equal(rest.length, 0);
   assert.match(notice!, /0\.2\.0/);
   assert.ok(notice!.includes(BUNDLE_URL));
-  assert.match(notice!, /Settings → Extensions/);
+  assert.match(notice!, /double-click it, then click Update/);
 });
 
 test("a CLI below the published minimum points at the one-line installer", () => {

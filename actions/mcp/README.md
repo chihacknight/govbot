@@ -36,7 +36,7 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/a
 Step-by-step guide with screenshots: <https://chihacknight.github.io/govbot/dashboard/claude.html>
 
 1. Download [`govbot.mcpb`](https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb)
-   and double-click it, or drag it onto Claude Desktop → Settings → Extensions. Click **Install**.
+   and double-click it, or drag it onto Claude Desktop → Settings → Desktop app → Extensions. Click **Install**.
 2. Ask *"Use govbot: who are my reps, and how do they align to my values?"*, or pick the
    **who_are_my_reps** prompt.
 
@@ -73,7 +73,7 @@ distributed privately, so updating is manual: download the latest bundle from
 
 <https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb>
 
-and drag it into Claude Desktop → Settings → Extensions. That URL always points at
+and double-click it, then click **Update**. That URL always points at
 the latest build from `main`. Submitting govbot to the extensions directory is the
 eventual path to automatic updates.
 

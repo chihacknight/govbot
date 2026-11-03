@@ -207,7 +207,7 @@ export async function checkLocalData(args: {
  */
 function repairAdvice(lead: string): string {
   return govbot.usingBundledBinary()
-    ? `Reinstall the extension: download ${updates.BUNDLE_URL}, then drag it into Claude Desktop → Settings → Extensions.`
+    ? `Reinstall the extension: remove it in Claude Desktop → Settings → Desktop app → Extensions, then download ${updates.BUNDLE_URL} and double-click it.`
     : `${lead}:\n  ${updates.CLI_INSTALL_COMMAND}`;
 }
 

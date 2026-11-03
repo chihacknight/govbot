@@ -177,7 +177,7 @@ export function updateNotices(input: NoticeInput): string[] {
   if (remote && isOlder(input.bundle, remote.mcp)) {
     notices.push(
       `Update available: govbot for Claude Desktop ${remote.mcp} is out (this is ${input.bundle}). ` +
-        `To update, download ${BUNDLE_URL}, then drag it into Claude Desktop → Settings → Extensions.`,
+        `To update, download ${BUNDLE_URL}, double-click it, then click Update in Claude Desktop.`,
     );
   }
 

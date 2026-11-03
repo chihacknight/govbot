@@ -269,13 +269,13 @@
     </div></li>
     <li class="cl-step"><div>
       <h3>Open it in Claude Desktop</h3>
-      <p>Double-click <code>govbot.mcpb</code>. Claude Desktop opens and shows what the extension does. Click <b>Install</b>, then <b>Install</b> again when Claude asks “Do you want to install govbot?”. (You can also drag the file onto Claude Desktop's <b>Settings → Extensions</b> page.)</p>
+      <p>Double-click <code>govbot.mcpb</code>. Claude Desktop opens and shows what the extension does. Click <b>Install</b>, then <b>Install</b> again when Claude asks “Do you want to install govbot?”. (You can also drag the file onto Claude Desktop's <b>Settings → Desktop app → Extensions</b> page.)</p>
       <p>The red note is Claude's standard warning for any extension that isn't from its directory. Govbot works only in its own folder, with public data it downloads from GitHub, and its code is <a href="https://github.com/chihacknight/govbot/tree/main/actions/mcp" target="_blank" rel="noopener">open on GitHub ↗</a>.</p>
       <figure class="cl-shot"><img src="assets/claude/install.png" loading="lazy" alt="Claude Desktop's install screen for “govbot — U.S. Legislation”, with an Install button at the top right, Claude's warning about extensions from outside its directory, and govbot's description." width="1400" height="1128"></figure>
     </div></li>
     <li class="cl-step"><div>
       <h3>Check that it's turned on</h3>
-      <p>In Claude Desktop, open <b>Settings</b> (<kbd>⌘</kbd> <kbd>,</kbd>) → <b>Extensions</b>. You should see <b>govbot</b> with its switch turned on. No settings are needed. Your data goes in <code>govbot-workspace</code> unless you pick another folder here.</p>
+      <p>In Claude Desktop, open <b>Settings</b> (<kbd>⌘</kbd> <kbd>,</kbd>) → <b>Desktop app</b> → <b>Extensions</b>. You should see <b>govbot — U.S. Legislation</b> under “Installed on your computer”. No settings are needed. Your data goes in <code>govbot-workspace</code> unless you pick another folder with <b>Configure</b>.</p>
     </div></li>
     <li class="cl-step"><div>
       <h3>Ask your first question</h3>
@@ -298,12 +298,12 @@
   <h2 class="cl-h2">Updates and help</h2>
   <div class="cl-faq">
     <details open><summary>How do I update?</summary>
-      <p>Govbot checks for a newer version at most once a day and Claude will tell you when one is out. To update, download <a href="https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb" download>govbot.mcpb</a> again and open it, the same as step 2. Your data and topics are kept.</p>
+      <p>Govbot checks for a newer version at most once a day and Claude will tell you when one is out. To update, download <a href="https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb" download>govbot.mcpb</a> again, open it and click <b>Update</b>. Your data and topics are kept.</p>
       <p>Extensions only update by themselves when they come from Claude's own extension directory; Govbot isn't listed there yet.</p></details>
     <details><summary>I already use the govbot command line</summary>
-      <p>You don't need to change anything. The extension runs its own built-in copy, and your Terminal keeps using yours. Claude's data is in <code>~/govbot-workspace</code>, so run commands from that folder to see the same bills. To make Claude use your copy instead, enter its path in <b>Settings → Extensions → govbot</b>.</p></details>
+      <p>You don't need to change anything. The extension runs its own built-in copy, and your Terminal keeps using yours. Claude's data is in <code>~/govbot-workspace</code>, so run commands from that folder to see the same bills. To make Claude use your copy instead, enter its path under <b>Configure</b> in <b>Settings → Desktop app → Extensions</b>.</p></details>
     <details><summary>Claude searched the web instead of using Govbot</summary>
-      <p>Start your question with “Use Govbot”. Check that the extension is switched on in <b>Settings → Extensions</b>.</p></details>
+      <p>Start your question with “Use Govbot”. Check that govbot is listed in <b>Settings → Desktop app → Extensions</b> and turned on.</p></details>
     <details><summary>Where is my data, and what leaves my computer?</summary>
       <p>Everything is in <code>govbot-workspace</code> in your home folder: the public legislation you downloaded and a <code>govbot.yml</code> file with the topics you care about, which you can open and edit. Govbot downloads public data from GitHub and checks once a day for updates. It never asks for your address and never sends what you look up anywhere. Claude itself still sees your conversation, as with any chat.</p></details>
     <details><summary>Which states are covered?</summary>
