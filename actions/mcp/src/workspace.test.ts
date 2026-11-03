@@ -131,3 +131,70 @@ test("an empty repos or tags entry is treated as an empty list", async () => {
   assert.match(text, /^# mine$/m);
   assert.deepEqual(parse(text), { repos: ["il"], tags: { transit }, extra: 1 });
 });
+
+const REMOVE_ORIGINAL = [
+  "# My notes.",
+  "repos:",
+  "  - il # home state",
+  "tags:",
+  "  # transit, from the working group",
+  "  public transit:",
+  "    description: Buses and trains.",
+  "  affordable housing:",
+  "    description: Rent.",
+  "owner: maria",
+  "",
+].join("\n");
+
+test("removing a topic matches case-insensitively and keeps everything else", async () => {
+  await writeFile(workspace.configPath(), REMOVE_ORIGINAL, "utf8");
+
+  const result = await workspace.removeTags(["PUBLIC Transit", "parking"]);
+  assert.deepEqual(result, {
+    removed: ["public transit"],
+    notFound: ["parking"],
+    remaining: ["affordable housing"],
+  });
+
+  const text = await readFile(workspace.configPath(), "utf8");
+  assert.match(text, /# My notes\./);
+  assert.match(text, /- il # home state/);
+  assert.match(text, /owner: maria/);
+  assert.doesNotMatch(text, /Buses and trains/);
+  assert.deepEqual(parse(text).tags, { "affordable housing": { description: "Rent." } });
+});
+
+test("removing from a missing govbot.yml writes nothing", async () => {
+  const result = await workspace.removeTags(["transit"]);
+  assert.deepEqual(result, { removed: [], notFound: ["transit"], remaining: [] });
+  await assert.rejects(readFile(workspace.configPath(), "utf8"), { code: "ENOENT" });
+});
+
+test("save_my_values removes topics, reports unknown names and refuses an empty call", async () => {
+  await writeFile(workspace.configPath(), REMOVE_ORIGINAL, "utf8");
+
+  const result = await saveValues({ remove: ["public transit", "nope"] });
+  assert.equal(result.isError, undefined);
+  assert.match(result.text, /Removed public transit/);
+  assert.match(result.text, /Not saved, so nothing to remove: nope/);
+  assert.match(result.text, /All topics now defined: affordable housing/);
+
+  const empty = await saveValues({});
+  assert.equal(empty.isError, true);
+
+  const clash = await saveValues({
+    topics: [{ name: "Affordable Housing", description: "x" }],
+    remove: ["affordable housing"],
+  });
+  assert.equal(clash.isError, true);
+  assert.match(parse(await readFile(workspace.configPath(), "utf8")).tags["affordable housing"].description, /Rent/);
+});
+
+test("save_my_values can save and remove in one call", async () => {
+  await writeFile(workspace.configPath(), REMOVE_ORIGINAL, "utf8");
+  const result = await saveValues({
+    topics: [{ name: "schools", description: "Funding.", include_keywords: ["school"] }],
+    remove: ["public transit"],
+  });
+  assert.match(result.text, /All topics now defined: affordable housing, schools/);
+});
