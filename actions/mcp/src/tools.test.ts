@@ -9,11 +9,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import {
   countScoredBills,
+  describeCoverage,
   describeTagCoverage,
+  downloadedDate,
   describeVoteSummary,
   detectTaggingMode,
   normalizeLocale,
@@ -372,4 +376,47 @@ test("coverage for an uncloned jurisdiction doesn't claim nothing is cloned", ()
     summarize({ ...response, query: { type: "coverage", jurisdictions: [] }, caveats: [] }),
     /^No government data has been cloned to this computer yet\./,
   );
+});
+
+test("downloadedDate reads the fetch time from the repo's .git, never invents one", () => {
+  const repos = mkdtempSync(join(tmpdir(), "govbot-dl-"));
+  const git = join(repos, "il-legislation", ".git");
+  mkdirSync(git, { recursive: true });
+  writeFileSync(join(git, "HEAD"), "ref: refs/heads/main\n");
+  utimesSync(join(git, "HEAD"), new Date("2026-09-01T12:00:00Z"), new Date("2026-09-01T12:00:00Z"));
+  assert.equal(downloadedDate("il", repos), "2026-09-01");
+  // A later fetch wins over the clone-time HEAD.
+  writeFileSync(join(git, "FETCH_HEAD"), "");
+  utimesSync(join(git, "FETCH_HEAD"), new Date("2026-10-20T12:00:00Z"), new Date("2026-10-20T12:00:00Z"));
+  assert.equal(downloadedDate("il", repos), "2026-10-20");
+  assert.equal(downloadedDate("wy", repos), null);
+});
+
+test("check_local_data text states the download date and that it is not the newest action", () => {
+  const repos = mkdtempSync(join(tmpdir(), "govbot-dl-"));
+  const git = join(repos, "il-legislation", ".git");
+  mkdirSync(git, { recursive: true });
+  writeFileSync(join(git, "HEAD"), "x");
+  utimesSync(join(git, "HEAD"), new Date("2026-09-01T12:00:00Z"), new Date("2026-09-01T12:00:00Z"));
+  const text = describeCoverage(
+    {
+      query: {},
+      results: [],
+      truncation: { returned: 0, total_matching: 0, limit: 0 },
+      coverage: [
+        {
+          jurisdiction: { id: "x", name: "Illinois", locale: "il" },
+          bills: 3,
+          vote_events: 0,
+          member_vote_rows: 0,
+          roll_call_data: "none",
+          sessions: ["104th"],
+        },
+      ],
+    },
+    { tags: {} } as never,
+    { requested: [], cloned: ["il"], reposDir: repos },
+  );
+  assert.match(text, /Downloaded to this computer: 2026-09-01/);
+  assert.match(text, /not the date of its newest action/);
 });

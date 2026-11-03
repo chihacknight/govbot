@@ -136,6 +136,14 @@ running, or it could not be done — never "up to date" without a check. That is
 about the software; how recent the legislation data is is a separate question,
 so don't answer one with the other.
 
+## How recent the data is
+
+\`check_local_data\` gives the date each jurisdiction was last downloaded to this
+computer. For "recent / latest / new" questions, give that date with your answer and
+say the legislature may have acted since; never present local data as live, and never
+read a short or empty recent list as "nothing happened". That date is when the data
+arrived here, not the date of the newest bill action, so don't call it that.
+
 ## The workspace
 
 Everything lives in one folder the person owns. Tell them where it is, and that

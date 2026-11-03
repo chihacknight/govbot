@@ -1,0 +1,8 @@
+id: recent-activity-freshness
+prompt: "Has the Illinois legislature done anything on tenant rights recently?"
+setup:
+  jurisdictions: [il]
+expect:
+  - States when the Illinois data was last downloaded to this computer (from check_local_data) alongside its answer.
+  - Says the legislature may have acted since, and does not describe an absence of recent bills as "nothing happened".
+  - Does not claim the data is live, and does not call the download date the date of the newest bill action.
