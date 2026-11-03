@@ -2,13 +2,21 @@
 # Build govbot.mcpb — the one-file install for Claude Desktop.
 #
 # The bundle has to run without an `npm install` on the far side, so production
-# dependencies are staged into it. Source maps and tests are left out; they only
-# make the download bigger.
+# dependencies are staged into it, and so is the govbot CLI, so it also works on a
+# computer that has never installed govbot. Source maps and tests are left out;
+# they only make the download bigger.
+#
+#   build-bundle.sh <output.mcpb> <path to a govbot binary for the target OS>
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 ROOT="$PWD"
 OUT="${1:-$ROOT/govbot.mcpb}"
+CLI="${2:-}"
+if [ ! -f "$CLI" ]; then
+  echo "Usage: build-bundle.sh <output.mcpb> <govbot binary>. Build one with: cargo build --release --bin govbot (in actions/govbot)." >&2
+  exit 1
+fi
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
@@ -51,6 +59,11 @@ cp -R dist/. "$STAGE/server/"
 rm -f "$STAGE/server"/*.map "$STAGE/server"/*.test.js
 cp mcpb/manifest.json "$STAGE/manifest.json"
 cp package.json "$STAGE/server/package.json"
+# Where BUNDLED_BINARY in src/govbot.ts looks. mcpb keeps the executable bit, and
+# so does Claude Desktop when it unpacks the bundle.
+mkdir -p "$STAGE/server/bin"
+cp "$CLI" "$STAGE/server/bin/govbot"
+chmod 755 "$STAGE/server/bin/govbot"
 STAGE="$STAGE" VERSION="$VERSION" node -e '
   const fs = require("fs");
   for (const file of [process.env.STAGE + "/manifest.json", process.env.STAGE + "/server/package.json"]) {
@@ -107,6 +120,12 @@ if [ ! -f "$PROBE_HOME/govbot-workspace/govbot.yml" ] \
   rm -rf "$PROBE_HOME"
   exit 1
 fi
+# The point of the bundle: with nothing installed in HOME, the CLI inside it runs.
+# ("not installed" here would mean it is missing, or built for another computer.)
+case "$PROBE" in
+  *'(built in)'*) ;;
+  *) echo "The staged server did not run the bundled govbot:" >&2; echo "$PROBE" >&2; rm -rf "$PROBE_HOME"; exit 1 ;;
+esac
 rm -rf "$PROBE_HOME"
 
 npx --yes @anthropic-ai/mcpb@2.1.2 pack "$STAGE" "$OUT"

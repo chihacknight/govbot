@@ -81,7 +81,7 @@ before that — usually node or the config path.
 
 ## Testing the bundle instead
 
-`govbot.mcpb` (3.2 MB) is the one-file install a non-technical person would use.
+`govbot.mcpb` (about 27 MB, with the CLI inside) is the one-file install a non-technical person would use.
 To test that path, first **remove the `govbot` entry from
 claude_desktop_config.json** so you are not running two copies, then open the
 bundle. It is unsigned, so macOS will warn.

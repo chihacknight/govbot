@@ -5,7 +5,7 @@ own computer.
 
 > **Who are my reps, and how do they align to my values?**
 
-This is a thin adapter over the `govbot` command-line tool. It owns no database and
+This is a thin adapter over the `govbot` command-line tool, which ships inside the extension. It owns no database and
 no data model — every answer comes from `govbot`, so anything Claude tells you can
 be reproduced from a terminal in the same folder.
 
@@ -21,20 +21,23 @@ be reproduced from a terminal in the same folder.
 
 ## Requirements
 
-- Node 20+
-- The `govbot` CLI:
-  ```bash
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"
-  ```
+Claude Desktop on a Mac (Apple silicon or Intel). Nothing else: the extension carries
+its own copy of the `govbot` CLI and runs on Claude Desktop's built-in Node. Windows is
+[on the roadmap](https://github.com/chihacknight/govbot/issues/19).
+
+To run a local build (below) you need Node 20+ and the CLI:
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"
+```
 
 ## Install into Claude Desktop
 
 Step-by-step guide with screenshots: <https://chihacknight.github.io/govbot/dashboard/claude.html>
 
-1. Install the `govbot` CLI (above).
-2. Download [`govbot.mcpb`](https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb)
-   and double-click it, or drag it onto Claude Desktop → Settings → Extensions. Click **Install**.
-3. Ask *"Use govbot: who are my reps, and how do they align to my values?"*, or pick the
+1. Download [`govbot.mcpb`](https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb)
+   and double-click it, or drag it onto Claude Desktop → Settings → Desktop app → Extensions. Click **Install**.
+2. Ask *"Use govbot: who are my reps, and how do they align to my values?"*, or pick the
    **who_are_my_reps** prompt.
 
 ### For development
@@ -58,26 +61,24 @@ Point Claude Desktop at a local build instead, in `claude_desktop_config.json`
 | Variable | Meaning | Default |
 |---|---|---|
 | `GOVBOT_WORKSPACE` | Where the workspace folder lives | `~/govbot-workspace` |
-| `GOVBOT_BIN` | Path to the `govbot` binary | `~/.govbot/bin/govbot`, else `PATH` |
+| `GOVBOT_BIN` | Path to your own `govbot` binary (the extension's "Use your own" setting) | the copy in the bundle, else `~/.govbot/bin/govbot`, else `PATH` |
 | `GOVBOT_NO_UPDATE_CHECK` | Set to `1` to never check for updates | unset |
 
 ## Updating
 
-There are two pieces, and neither updates itself.
-
-**The Claude Desktop extension (`govbot.mcpb`).** Claude Desktop only auto-updates
+**The Claude Desktop extension (`govbot.mcpb`).** It includes the CLI, so this is the only update most people need. Claude Desktop only auto-updates
 extensions installed from its own directory
 ([support article](https://support.claude.com/en/articles/10949351)). This one is
 distributed privately, so updating is manual: download the latest bundle from
 
 <https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb>
 
-and drag it into Claude Desktop → Settings → Extensions. That URL always points at
+and double-click it, then click **Update**. That URL always points at
 the latest build from `main`. Submitting govbot to the extensions directory is the
 eventual path to automatic updates.
 
-**The `govbot` command-line tool.** Re-run the one-line installer; it replaces
-`~/.govbot/bin/govbot` in place:
+**A separate `govbot` command-line install.** The extension doesn't use it unless you
+set `GOVBOT_BIN`. Re-run the one-line installer; it replaces `~/.govbot/bin/govbot` in place:
 
 ```bash
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"
@@ -86,7 +87,7 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/a
 **How you find out.** At most once a day, in the background, the server fetches
 [`govbot-mcp-version.json`](https://github.com/chihacknight/govbot/releases/download/nightly/govbot-mcp-version.json)
 from the same release and caches it in `~/.govbot/update-check.json`. If a newer
-extension exists, or the installed CLI is older than the server needs, a short
+extension exists, or a CLI you set with `GOVBOT_BIN` is older than the server needs, a short
 notice with the steps above appears in `setup_workspace` and `check_local_data`.
 The check never delays an answer: offline, it gives up after 3 seconds in the
 background and nothing is shown. Ask *"Is my govbot up to date?"* to see the
@@ -98,7 +99,7 @@ Each nightly bundle ships as `<version>-nightly.<UTC YYYYMMDDHHMM>` (the workflo
 passes `GOVBOT_MCP_VERSION` to `build-bundle.sh`), so every night's build is newer
 than the last. A local build stays plain `<version>`, which semver ranks above
 that version's nightlies, so it never shows an update notice for them.
-`govbot.cliMin` in `package.json` is the oldest CLI this server works with. The
+`govbot.cliMin` in `package.json` is the oldest CLI this server works with (it only matters for a `GOVBOT_BIN` CLI; the bundled one always matches). The
 nightly CLI reports the version in `actions/govbot/Cargo.toml`, so raising
 `cliMin` only works together with a bump there.
 

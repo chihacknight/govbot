@@ -15,6 +15,7 @@ import { spawn } from "node:child_process";
 import { accessSync, constants } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { pathFromEnv } from "./env.js";
 
@@ -37,17 +38,27 @@ export class GovbotError extends Error {
 }
 
 /**
+ * The copy of the CLI packed into the `.mcpb` next to this file, so the extension
+ * works on a computer that has never heard of govbot. A checkout has none.
+ */
+export const BUNDLED_BINARY = fileURLToPath(new URL("./bin/govbot", import.meta.url));
+
+/**
  * Locate the `govbot` binary.
  *
- * Checked in order: an explicit override, the default install location used by
- * `install-nightly.sh`, a local release build, then whatever is on `PATH`.
- * A blank or unsubstituted `GOVBOT_BIN` (see env.ts) is no override.
+ * Checked in order: an explicit override, the copy in the bundle, the default
+ * install location used by `install-nightly.sh`, a local release build, then
+ * whatever is on `PATH`. The bundled copy comes before the home install because
+ * it is the build this server shipped and was checked with; someone who wants
+ * their own CLI sets the override. A blank or unsubstituted `GOVBOT_BIN` (see
+ * env.ts) is no override.
  */
-export function resolveBinary(): string {
+export function resolveBinary(bundled: string = BUNDLED_BINARY): string {
   const override = pathFromEnv("GOVBOT_BIN");
   if (override) return override;
 
   const candidates = [
+    bundled,
     join(homedir(), ".govbot", "bin", "govbot"),
     join(homedir(), ".cargo", "bin", "govbot"),
   ];
@@ -60,6 +71,11 @@ export function resolveBinary(): string {
     }
   }
   return "govbot";
+}
+
+/** True when the CLI being run is the one inside the extension, so updating the extension updates it. */
+export function usingBundledBinary(): boolean {
+  return resolveBinary() === BUNDLED_BINARY;
 }
 
 /** Long enough for a clone of a large jurisdiction, which can take minutes. */

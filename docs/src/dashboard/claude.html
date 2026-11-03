@@ -239,11 +239,11 @@
       <p class="cl-tag">Ask Claude about U.S. legislation (bills, sponsors and how your legislators voted) and get answers that cite the official record, from data kept on your own computer.</p>
       <a class="cl-dl" id="cl-dl" href="https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb" download>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
-        <span>Download for Claude Desktop<small>govbot.mcpb · Mac (Apple silicon)</small></span>
+        <span>Download for Claude Desktop<small>govbot.mcpb · Mac</small></span>
       </a>
       <div class="cl-meta">
         <span id="cl-build">Nightly build from the latest code</span> · Free and open source<br>
-        Also needs the free Govbot command-line tool. <a href="#steps">Setup takes about 5 minutes ↓</a>
+        Nothing else to install. <a href="#steps">See the steps ↓</a>
       </div>
     </div>
     <figure class="cl-shot">
@@ -256,32 +256,26 @@
   <h2 class="cl-h2">Before you start</h2>
   <div class="cl-need">
     <div><b>Claude Desktop</b><span>The free desktop app, on a Mac. <a href="https://claude.ai/download" target="_blank" rel="noopener">Get Claude Desktop ↗</a></span></div>
-    <div><b>The Govbot tool</b><span>A small program that downloads the public data. One line in Terminal installs it (step 1).</span></div>
     <div><b>Your data stays with you</b><span>Bills and votes are saved in a <code>govbot-workspace</code> folder in your home folder. No account, no API key, nothing about you is sent anywhere.</span></div>
-    <div><b>Mac only for now</b><span>Builds are for Macs with Apple silicon (M1 and later). Windows is <a href="https://github.com/chihacknight/govbot/issues/19" target="_blank" rel="noopener">on the roadmap ↗</a>.</span></div>
+    <div><b>Mac only for now</b><span>Works on Apple silicon and Intel Macs. Windows is <a href="https://github.com/chihacknight/govbot/issues/19" target="_blank" rel="noopener">on the roadmap ↗</a>.</span></div>
   </div>
 
-  <h2 class="cl-h2" id="steps">Install in five steps</h2>
+  <h2 class="cl-h2" id="steps">Install in four steps</h2>
   <p class="cl-sub">You only do this once. After that, just ask Claude.</p>
   <ol class="cl-steps">
-    <li class="cl-step"><div>
-      <h3>Install the Govbot tool</h3>
-      <p>Open <b>Terminal</b> (press <kbd>⌘</kbd> <kbd>Space</kbd>, type “Terminal”, press <kbd>Return</kbd>), paste this line and press <kbd>Return</kbd>. It puts one program in <code>~/.govbot/bin</code> and adds that folder to your Terminal's PATH.</p>
-      <div class="cl-code"><code>sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"</code><button class="cl-copy" type="button">Copy</button></div>
-    </div></li>
     <li class="cl-step"><div>
       <h3>Download the extension</h3>
       <p><a href="https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb" download>Download govbot.mcpb</a>. It lands in your Downloads folder. It's one file that holds everything Claude needs to talk to govbot.</p>
     </div></li>
     <li class="cl-step"><div>
       <h3>Open it in Claude Desktop</h3>
-      <p>Double-click <code>govbot.mcpb</code>. Claude Desktop opens and shows what the extension does. Click <b>Install</b>, then <b>Install</b> again when Claude asks “Do you want to install govbot?”. (You can also drag the file onto Claude Desktop's <b>Settings → Extensions</b> page.)</p>
+      <p>Double-click <code>govbot.mcpb</code>. Claude Desktop opens and shows what the extension does. Click <b>Install</b>, then <b>Install</b> again when Claude asks “Do you want to install govbot?”. (You can also drag the file onto Claude Desktop's <b>Settings → Desktop app → Extensions</b> page.)</p>
       <p>The red note is Claude's standard warning for any extension that isn't from its directory. Govbot works only in its own folder, with public data it downloads from GitHub, and its code is <a href="https://github.com/chihacknight/govbot/tree/main/actions/mcp" target="_blank" rel="noopener">open on GitHub ↗</a>.</p>
       <figure class="cl-shot"><img src="assets/claude/install.png" loading="lazy" alt="Claude Desktop's install screen for “govbot — U.S. Legislation”, with an Install button at the top right, Claude's warning about extensions from outside its directory, and govbot's description." width="1400" height="1128"></figure>
     </div></li>
     <li class="cl-step"><div>
       <h3>Check that it's turned on</h3>
-      <p>In Claude Desktop, open <b>Settings</b> (<kbd>⌘</kbd> <kbd>,</kbd>) → <b>Extensions</b>. You should see <b>govbot</b> with its switch turned on. No settings are needed. Your data goes in <code>govbot-workspace</code> unless you pick another folder here.</p>
+      <p>In Claude Desktop, open <b>Settings</b> (<kbd>⌘</kbd> <kbd>,</kbd>) → <b>Desktop app</b> → <b>Extensions</b>. You should see <b>govbot — U.S. Legislation</b> under “Installed on your computer”. No settings are needed. Your data goes in <code>govbot-workspace</code> unless you pick another folder with <b>Configure</b>.</p>
     </div></li>
     <li class="cl-step"><div>
       <h3>Ask your first question</h3>
@@ -304,18 +298,18 @@
   <h2 class="cl-h2">Updates and help</h2>
   <div class="cl-faq">
     <details open><summary>How do I update?</summary>
-      <p>Govbot checks for a newer version at most once a day and Claude will tell you when one is out. To update, download <a href="https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb" download>govbot.mcpb</a> again and open it, the same as step 3. To update the Govbot tool, run the step 1 command again. Your data and topics are kept.</p>
+      <p>Govbot checks for a newer version at most once a day and Claude will tell you when one is out. To update, download <a href="https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb" download>govbot.mcpb</a> again, open it and click <b>Update</b>. Your data and topics are kept.</p>
       <p>Extensions only update by themselves when they come from Claude's own extension directory; Govbot isn't listed there yet.</p></details>
-    <details><summary>Claude says it can't find the Govbot tool</summary>
-      <p>Run the step 1 command again, then quit and reopen Claude Desktop. If you installed the <code>govbot</code> program somewhere else, set its path in <b>Settings → Extensions → govbot</b>.</p></details>
+    <details><summary>I already use the govbot command line</summary>
+      <p>You don't need to change anything. The extension runs its own built-in copy, and your Terminal keeps using yours. Claude's data is in <code>~/govbot-workspace</code>, so run commands from that folder to see the same bills. To make Claude use your copy instead, enter its path under <b>Configure</b> in <b>Settings → Desktop app → Extensions</b>.</p></details>
     <details><summary>Claude searched the web instead of using Govbot</summary>
-      <p>Start your question with “Use Govbot”. Check that the extension is switched on in <b>Settings → Extensions</b>.</p></details>
+      <p>Start your question with “Use Govbot”. Check that govbot is listed in <b>Settings → Desktop app → Extensions</b> and turned on.</p></details>
     <details><summary>Where is my data, and what leaves my computer?</summary>
       <p>Everything is in <code>govbot-workspace</code> in your home folder: the public legislation you downloaded and a <code>govbot.yml</code> file with the topics you care about, which you can open and edit. Govbot downloads public data from GitHub and checks once a day for updates. It never asks for your address and never sends what you look up anywhere. Claude itself still sees your conversation, as with any chat.</p></details>
     <details><summary>Which states are covered?</summary>
       <p>All 50 states, Washington D.C., U.S. Congress and the territories. Coverage varies. For example, Massachusetts publishes no roll-call votes, and Govbot tells you when something isn't in the data instead of guessing.</p></details>
-    <details><summary>Windows or an Intel Mac?</summary>
-      <p>Not yet. Ready-made builds of the Govbot tool exist only for Apple silicon Macs and Linux. Follow <a href="https://github.com/chihacknight/govbot/issues/19" target="_blank" rel="noopener">issue #19 ↗</a>, or build it from source with Rust (see the <a href="https://github.com/chihacknight/govbot/tree/main/actions/mcp" target="_blank" rel="noopener">developer notes ↗</a>).</p></details>
+    <details><summary>Windows?</summary>
+      <p>Not yet. Follow <a href="https://github.com/chihacknight/govbot/issues/19" target="_blank" rel="noopener">issue #19 ↗</a>, or build it from source with Rust (see the <a href="https://github.com/chihacknight/govbot/tree/main/actions/mcp" target="_blank" rel="noopener">developer notes ↗</a>).</p></details>
   </div>
 </main>
 

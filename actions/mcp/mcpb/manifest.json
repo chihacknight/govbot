@@ -54,15 +54,15 @@
     },
     "govbot_binary": {
       "type": "string",
-      "title": "Path to the govbot command-line tool",
-      "description": "Leave blank to look in ~/.govbot/bin and then on PATH. Install it with the one-line installer at github.com/chihacknight/govbot.",
+      "title": "Use your own govbot command-line tool (optional)",
+      "description": "Leave blank to use the copy built into this extension. If you already use the govbot command line and want Claude to run that one, enter its full path.",
       "default": "",
       "required": false
     }
   },
   "compatibility": {
     "claude_desktop": ">=0.10.0",
-    "platforms": ["darwin", "win32", "linux"],
+    "platforms": ["darwin"],
     "runtimes": { "node": ">=20.0.0" }
   }
 }
