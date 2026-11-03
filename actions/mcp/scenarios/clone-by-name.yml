@@ -1,0 +1,8 @@
+id: clone-by-name
+prompt: |
+  Download New York and the federal government for me.
+setup:
+  workspace: fresh
+expect:
+  - Clones `ny` and `usa` in one call with no failed attempt in the trace.
+  - Tells the person what was downloaded and how long it took.

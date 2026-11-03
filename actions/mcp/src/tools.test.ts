@@ -17,6 +17,7 @@ import {
   describeVoteSummary,
   detectTaggingMode,
   normalizeLocale,
+  resolveLocales,
   summarize,
   type QueryResponse,
 } from "./tools.js";
@@ -372,4 +373,29 @@ test("coverage for an uncloned jurisdiction doesn't claim nothing is cloned", ()
     summarize({ ...response, query: { type: "coverage", jurisdictions: [] }, caveats: [] }),
     /^No government data has been cloned to this computer yet\./,
   );
+});
+
+test("plain names resolve to codes, case-insensitively", () => {
+  assert.equal(normalizeLocale("New York"), "ny");
+  assert.equal(normalizeLocale("  new   york "), "ny");
+  assert.equal(normalizeLocale("Congress"), "usa");
+  assert.equal(normalizeLocale("federal"), "usa");
+  assert.equal(normalizeLocale("US"), "usa");
+  assert.equal(normalizeLocale("Washington DC"), "dc");
+  assert.equal(normalizeLocale("N. Mariana Islands"), "mp");
+  assert.equal(normalizeLocale("West Virginia"), "wv");
+  assert.deepEqual(resolveLocales(["Illinois", "il", "Congress"]), { codes: ["il", "usa"] });
+});
+
+test("an ambiguous or unknown name explains itself and lists what is valid", () => {
+  const washington = resolveLocales(["Washington"]);
+  assert.ok("problem" in washington && /state.*Washington, D\.C\./.test(washington.problem));
+  const narnia = resolveLocales(["il", "narnia"]);
+  assert.ok("problem" in narnia);
+  assert.match(narnia.problem, /`narnia` is not a jurisdiction govbot knows/);
+  assert.match(narnia.problem, /`usa`/);
+});
+
+test("every table value is a real code", () => {
+  assert.equal(resolveLocales(["wa", "dc", "pr", "gu", "vi", "mp", "usa"]).hasOwnProperty("codes"), true);
 });

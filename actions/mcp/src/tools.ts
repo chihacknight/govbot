@@ -356,7 +356,9 @@ export async function clone(
 ): Promise<ToolOutput> {
   await workspace.ensure();
 
-  const locales = args.jurisdictions.map((j) => normalizeLocale(j));
+  const resolved = resolveLocales(args.jurisdictions);
+  if ("problem" in resolved) return { isError: true, text: resolved.problem };
+  const locales = resolved.codes;
   const started = Date.now();
   const progress = sendProgress ? trackClone(locales, sendProgress) : undefined;
   const result = await govbot
@@ -598,7 +600,9 @@ export async function tagWithLocalAi(
     String(args.limit ?? 400),
   ];
   if (args.jurisdictions?.length) {
-    logsArgs.push("--repos", args.jurisdictions.map(normalizeLocale).join(","));
+    const resolved = resolveLocales(args.jurisdictions);
+    if ("problem" in resolved) return { isError: true, text: resolved.problem };
+    logsArgs.push("--repos", resolved.codes.join(","));
   }
 
   const logs = await govbot.run(logsArgs, { cwd: workspace.workspacePath() });
@@ -1266,13 +1270,76 @@ function describeCoverage(
 }
 
 /**
- * Accept an OCD id wherever a locale code is expected, since the model is told
- * to speak OCD elsewhere and `clone` only understands locales.
+ * Plain-language names for every locale code govbot has, lowercase. Only names
+ * that mean exactly one jurisdiction belong here; "washington" is left out on
+ * purpose (state `wa` or the District of Columbia).
+ */
+const LOCALE_NAMES: Record<string, string> = {
+  alabama: "al", alaska: "ak", arizona: "az", arkansas: "ar", california: "ca",
+  colorado: "co", connecticut: "ct", delaware: "de", florida: "fl", georgia: "ga",
+  hawaii: "hi", idaho: "id", illinois: "il", indiana: "in", iowa: "ia",
+  kansas: "ks", kentucky: "ky", louisiana: "la", maine: "me", maryland: "md",
+  massachusetts: "ma", michigan: "mi", minnesota: "mn", mississippi: "ms",
+  missouri: "mo", montana: "mt", nebraska: "ne", nevada: "nv",
+  "new hampshire": "nh", "new jersey": "nj", "new mexico": "nm", "new york": "ny",
+  "north carolina": "nc", "north dakota": "nd", ohio: "oh", oklahoma: "ok",
+  oregon: "or", pennsylvania: "pa", "rhode island": "ri", "south carolina": "sc",
+  "south dakota": "sd", tennessee: "tn", texas: "tx", utah: "ut", vermont: "vt",
+  virginia: "va", "washington state": "wa", "west virginia": "wv",
+  wisconsin: "wi", wyoming: "wy",
+  "district of columbia": "dc", "washington dc": "dc", "washington d.c.": "dc",
+  "puerto rico": "pr", guam: "gu", "u.s. virgin islands": "vi",
+  "us virgin islands": "vi", "virgin islands": "vi",
+  "northern mariana islands": "mp", "n. mariana islands": "mp",
+  "northern marianas": "mp",
+  congress: "usa", federal: "usa", "u.s. congress": "usa", "us congress": "usa",
+  "united states": "usa", "u.s.": "usa", us: "usa",
+};
+
+const VALID_LOCALES = new Set([
+  ...Object.values(LOCALE_NAMES),
+  "usa",
+]);
+
+/**
+ * Accept an OCD id or a plain name ("New York", "Congress") wherever a locale
+ * code is expected. Unknown input passes through unchanged; use
+ * `resolveLocales` to reject it before any CLI call.
  */
 export function normalizeLocale(input: string): string {
-  const trimmed = input.trim().toLowerCase();
+  const trimmed = input.trim().toLowerCase().replace(/\s+/g, " ");
   const stateMatch = trimmed.match(/\bstate:([a-z]{2,3})\b/);
   if (stateMatch?.[1]) return stateMatch[1];
   if (trimmed.startsWith("ocd-")) return "usa"; // `country:us` with no state is Congress.
-  return trimmed;
+  return LOCALE_NAMES[trimmed] ?? trimmed;
+}
+
+/**
+ * Normalise every name, or explain in plain words what was not understood.
+ * Nothing is guessed: "washington" and unknown names return a message that
+ * lists the valid choices, so no CLI call is wasted on them.
+ */
+export function resolveLocales(
+  inputs: string[],
+): { codes: string[] } | { problem: string } {
+  const codes: string[] = [];
+  for (const input of inputs) {
+    const code = normalizeLocale(input);
+    if (VALID_LOCALES.has(code)) {
+      if (!codes.includes(code)) codes.push(code);
+      continue;
+    }
+    if (code === "washington") {
+      return {
+        problem:
+          '"Washington" could mean the state (`wa`) or Washington, D.C. (`dc`). Ask the person which one they mean.',
+      };
+    }
+    return {
+      problem:
+        `\`${input.trim()}\` is not a jurisdiction govbot knows. Use a state's name or ` +
+        "two-letter code (`il`, `ny`), `usa` for Congress, or `dc`, `pr`, `gu`, `vi`, `mp`.",
+    };
+  }
+  return { codes };
 }
