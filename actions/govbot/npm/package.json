@@ -1,0 +1,36 @@
+{
+  "name": "govbot",
+  "version": "0.1.0",
+  "description": "govbot — streaming pipeline CLI for government legislative data (downloads the prebuilt binary for your platform)",
+  "license": "MIT",
+  "bin": {
+    "govbot": "bin/govbot.js"
+  },
+  "files": [
+    "bin/",
+    "helpers/",
+    "install.js",
+    "README.md"
+  ],
+  "scripts": {
+    "postinstall": "node install.js",
+    "test": "node --test test/platform.test.js test/bin-shim.test.js",
+    "sync-version": "node scripts/sync-version.js",
+    "check-version": "node scripts/sync-version.js --check"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chihacknight/govbot.git",
+    "directory": "actions/govbot/npm"
+  },
+  "keywords": [
+    "govbot",
+    "legislation",
+    "open-data",
+    "rss",
+    "cli"
+  ]
+}
