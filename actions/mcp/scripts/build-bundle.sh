@@ -13,7 +13,7 @@ cd "$(dirname "$0")/.."
 ROOT="$PWD"
 OUT="${1:-$ROOT/govbot.mcpb}"
 CLI="${2:-}"
-if [ ! -x "$CLI" ]; then
+if [ ! -f "$CLI" ]; then
   echo "Usage: build-bundle.sh <output.mcpb> <govbot binary>. Build one with: cargo build --release --bin govbot (in actions/govbot)." >&2
   exit 1
 fi
