@@ -155,6 +155,12 @@ test("the server's own CLI minimum applies offline, without any fetched data", (
   }
 });
 
+test("a CLI inside the extension gets no update notice of its own", () => {
+  const input = { bundle: "0.2.0", cli: "govbot 0.1.0", cliBundled: true, cliMin: "0.2.0", state: checked("0.2.0", "0.3.0") };
+  assert.deepEqual(updateNotices(input), []);
+  assert.match(versionStatus(input), /command-line tool 0\.1\.0 \(built in\)\./);
+});
+
 test("the higher of the two CLI minimums wins", () => {
   const notices = updateNotices({
     bundle: "0.1.0",

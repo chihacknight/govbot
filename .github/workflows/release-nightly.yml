@@ -29,6 +29,10 @@ jobs:
             arch: arm64
             target: aarch64-apple-darwin
             artifact_name: govbot-macos-arm64
+          - os: macos-latest
+            arch: x86_64
+            target: x86_64-apple-darwin
+            artifact_name: govbot-macos-x86_64
 
     steps:
       - name: Checkout repository
@@ -77,12 +81,16 @@ jobs:
   # tonight's bundle compares newer than last night's (semver pre-release
   # precedence, see src/updates.ts) and people on an older nightly get a notice.
   #
+  # The bundle carries the CLI (a universal Mac binary made from the two builds
+  # above), so it runs on macOS: the build proves the binary starts.
+  #
   # The nightly release does not wait on this job succeeding (see
   # create-nightly-release): a broken bundle must not hold back the CLI that
   # install-nightly.sh downloads.
   mcp-bundle:
     name: Build Claude Desktop bundle
-    runs-on: ubuntu-latest
+    needs: build
+    runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -98,12 +106,30 @@ jobs:
           echo "GOVBOT_MCP_VERSION=$version" >> "$GITHUB_ENV"
           echo "Bundle version: $version"
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: govbot-macos-arm64
+          path: cli/arm64
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: govbot-macos-x86_64
+          path: cli/x86_64
+
+      - name: Make the universal CLI
+        run: |
+          lipo -create -output cli/govbot cli/arm64/govbot cli/x86_64/govbot
+          # lipo leaves the slices' signatures unverifiable as a whole; ad-hoc sign the result.
+          codesign --force --sign - cli/govbot
+          codesign --verify cli/govbot
+          lipo -info cli/govbot
+
       - name: Build govbot.mcpb
         working-directory: actions/mcp
         # Reads GOVBOT_MCP_VERSION from the step above and stamps it into the
         # bundle's manifest and the server's package.json; it refuses anything
         # that is not a pre-release of package.json's version.
-        run: scripts/build-bundle.sh "$PWD/govbot.mcpb"
+        run: scripts/build-bundle.sh "$PWD/govbot.mcpb" "$GITHUB_WORKSPACE/cli/govbot"
 
       - name: Write govbot-mcp-version.json
         working-directory: actions/mcp

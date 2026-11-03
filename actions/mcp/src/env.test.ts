@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, beforeEach, test } from "node:test";
 
 import { pathFromEnv } from "./env.js";
@@ -64,6 +64,25 @@ test("the workspace Claude Desktop's default passes is ~/govbot-workspace", () =
   assert.equal(workspacePath(), join(home, "govbot-workspace"));
   process.env.GOVBOT_WORKSPACE = "";
   assert.equal(workspacePath(), join(home, "govbot-workspace"));
+});
+
+test("the copy in the bundle wins over a home install, and GOVBOT_BIN over both", () => {
+  const bin = join(home, ".govbot", "bin");
+  const bundled = join(home, "bundle", "bin", "govbot");
+  for (const path of [join(bin, "govbot"), bundled]) {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, "#!/bin/sh\n");
+    chmodSync(path, 0o755);
+  }
+  process.env.GOVBOT_BIN = "";
+  assert.equal(resolveBinary(bundled), bundled);
+
+  process.env.GOVBOT_BIN = "/opt/my/govbot";
+  assert.equal(resolveBinary(bundled), "/opt/my/govbot");
+
+  // A checkout has no bundled copy, so development keeps using the home install.
+  process.env.GOVBOT_BIN = "";
+  assert.equal(resolveBinary(join(home, "no-bundle", "govbot")), join(bin, "govbot"));
 });
 
 test("an empty GOVBOT_BIN falls back to ~/.govbot/bin, then PATH", () => {

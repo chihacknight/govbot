@@ -860,12 +860,16 @@ three backend pipelines), and
 (`actions/mcp`): a static dashboard page (no data files) with one big download button pointing at the stable
 nightly bundle `https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb` (never
 `releases/latest`, which is the unrelated `synthetic-test` release), a "Built <date> · <size>" line read
-fail-soft from GitHub's release API (the release download itself sends no CORS headers), the CLI one-liner,
-five install steps, copyable "Things to ask" prompts and an updates/help FAQ. Its screenshots in
+fail-soft from GitHub's release API (the release download itself sends no CORS headers),
+four install steps, copyable "Things to ask" prompts and an updates/help FAQ. Its screenshots in
 `dashboard/assets/claude/` are **real Claude Desktop captures** (from the MCP improvement loop's
 `desktop-capture.sh`, cropped to Claude's window, no chat history), committed so a fresh clone renders; retake
 them when Desktop's UI changes. The homepage links it from the `#claude` band (before "Build your own"), the
-Projects menu and the footer; the 2026 timeline point lists it as shipped.
+Projects menu and the footer; the 2026 timeline point lists it as shipped. **The bundle is standalone:**
+`release-nightly.yml` packs a universal Mac `govbot` binary into it (`server/bin/govbot`,
+`scripts/build-bundle.sh <out> <binary>`), and `resolveBinary` (`actions/mcp/src/govbot.ts`) picks it before a
+home install, after `GOVBOT_BIN`, so nobody needs the separate CLI install. Mac only (`platforms: ["darwin"]`)
+until Windows has a build (#19).
 
 **Global search is cross-site.** The shared header/drawer `.gb-search` boxes (wired in
 `govbot-shell.js`) route to `search.html#q=<query>` (not `legislation.html` any more). `search.html`

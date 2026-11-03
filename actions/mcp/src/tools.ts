@@ -42,7 +42,13 @@ function currentVersionStatus(cli: string | null): string {
 }
 
 function noticeInput(cli: string | null): updates.NoticeInput {
-  return { bundle: SERVER_VERSION, cli, cliMin: CLI_MIN, state: updates.currentUpdateState() };
+  return {
+    bundle: SERVER_VERSION,
+    cli,
+    cliBundled: govbot.usingBundledBinary(),
+    cliMin: CLI_MIN,
+    state: updates.currentUpdateState(),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -116,9 +122,10 @@ export async function checkLocalData(args: {
     return {
       isError: true,
       text:
-        "The govbot command-line tool is not installed, so there is no local data to read.\n\n" +
-        'Install it with:\n  sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"' +
-        `\n\n${currentVersionStatus(null)}`,
+        (govbot.usingBundledBinary()
+          ? "The govbot command-line tool built into this extension did not start, so there is no local data to read.\n\n"
+          : "The govbot command-line tool is not installed, so there is no local data to read.\n\n") +
+        `${repairAdvice("Install it with")}\n\n${currentVersionStatus(null)}`,
     };
   }
 
@@ -193,8 +200,16 @@ export async function checkLocalData(args: {
   };
 }
 
-const INSTALL_COMMAND =
-  'sh -c "$(curl -fsSL https://raw.githubusercontent.com/chihacknight/govbot/main/actions/govbot/scripts/install-nightly.sh)"';
+/**
+ * How to get a working CLI. The installer can't replace the copy inside the
+ * extension (it is found first), so a bundled CLI is fixed by reinstalling the
+ * extension.
+ */
+function repairAdvice(lead: string): string {
+  return govbot.usingBundledBinary()
+    ? `Reinstall the extension: download ${updates.BUNDLE_URL}, then drag it into Claude Desktop → Settings → Extensions.`
+    : `${lead}:\n  ${updates.CLI_INSTALL_COMMAND}`;
+}
 
 type FailureKind = "first-run" | "bad-jurisdiction" | "outdated" | "timeout" | "tool-problem";
 
@@ -250,16 +265,14 @@ function describeToolFailure(
       `${tool} is older than this connector and does not understand the request:\n${detail}\n\n` +
       stillThere +
       clonedLine +
-      "\n\nUpdate it by reinstalling:\n" +
-      `  ${INSTALL_COMMAND}`
+      `\n\n${repairAdvice("Update it by reinstalling")}`
     );
   }
   return (
     `${tool} failed:\n${detail}\n\n` +
     stillThere +
     clonedLine +
-    "\n\nIf this keeps happening, reinstalling the tool may help:\n" +
-    `  ${INSTALL_COMMAND}`
+    `\n\n${repairAdvice("If this keeps happening, reinstalling the tool may help")}`
   );
 }
 

@@ -1,10 +1,11 @@
 /**
  * Telling people when govbot has an update.
  *
- * Neither piece updates itself: Claude Desktop only auto-updates extensions
- * installed from Anthropic's directory, so a privately distributed `.mcpb` is
- * replaced by hand, and the CLI in ~/.govbot/bin is only replaced by re-running
- * the installer. Without a nudge, people quietly miss fixes.
+ * Nothing updates itself: Claude Desktop only auto-updates extensions installed
+ * from Anthropic's directory, so a privately distributed `.mcpb` (and the CLI
+ * inside it) is replaced by hand. Someone who pointed the extension at their own
+ * CLI replaces that by re-running the installer. Without a nudge, people quietly
+ * miss fixes.
  *
  * Rules this module keeps:
  * - **Never on the request path.** The check starts in the background at
@@ -153,6 +154,8 @@ export interface NoticeInput {
   bundle: string;
   /** Output of `govbot --version`, or null if the CLI is not installed. */
   cli: string | null;
+  /** The CLI is the copy inside the extension, so it has no update of its own. */
+  cliBundled?: boolean;
   /** The oldest CLI this server needs, from package.json. Known offline. */
   cliMin: string | null;
   state: UpdateState;
@@ -163,7 +166,9 @@ export interface NoticeInput {
  *
  * The CLI check uses the higher of this server's own minimum (known offline)
  * and the published one. A missing CLI produces no notice here: the tools
- * already say "not installed" with the same installer command.
+ * already say "not installed" with the same installer command. Neither does a
+ * bundled CLI: it arrives with the extension, and the installer would not replace
+ * it, so the extension's own notice is the only advice that helps.
  */
 export function updateNotices(input: NoticeInput): string[] {
   const notices: string[] = [];
@@ -177,7 +182,7 @@ export function updateNotices(input: NoticeInput): string[] {
   }
 
   const needed = higherMinimum(input.cliMin, remote?.cli_min);
-  if (input.cli && needed && isOlder(input.cli, needed)) {
+  if (!input.cliBundled && input.cli && needed && isOlder(input.cli, needed)) {
     const current = parseVersion(input.cli)!.text;
     notices.push(
       `Update needed: the govbot command-line tool on this computer is ${current}, but ` +
@@ -215,7 +220,9 @@ export function describeState(state: UpdateState): string {
  * contradict them.
  */
 export function versionStatus(input: NoticeInput): string {
-  const cli = input.cli ? (parseVersion(input.cli)?.text ?? input.cli) : "not installed";
+  const cli = input.cli
+    ? (parseVersion(input.cli)?.text ?? input.cli) + (input.cliBundled ? " (built in)" : "")
+    : "not installed";
   const installed = `Installed: govbot for Claude Desktop ${input.bundle}, govbot command-line tool ${cli}.`;
   const notices = updateNotices(input);
   const head = [installed];

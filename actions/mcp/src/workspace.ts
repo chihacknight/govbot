@@ -85,7 +85,10 @@ any of it.
 
 ## Running it yourself
 
-Everything Claude does here, you can do from a terminal in this folder:
+Everything Claude does here, you can do from a terminal in this folder. The
+extension keeps its own copy of the \`govbot\` command, so this needs the
+[command-line install](https://github.com/chihacknight/govbot#readme) too. Both
+read the same files:
 
     govbot clone il usa      # fetch jurisdictions
     govbot logs | govbot tag # score bills against the topics in govbot.yml
