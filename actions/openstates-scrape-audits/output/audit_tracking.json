@@ -1,5 +1,23 @@
 {
+  "dc": {
+    "first_flagged": "2026-11-08"
+  },
+  "mi": {
+    "first_flagged": "2026-11-08"
+  },
+  "mp": {
+    "first_flagged": "2026-11-08"
+  },
   "nj": {
     "first_flagged": "2026-11-01"
+  },
+  "oh": {
+    "first_flagged": "2026-11-08"
+  },
+  "pa": {
+    "first_flagged": "2026-11-08"
+  },
+  "usa": {
+    "first_flagged": "2026-11-08"
   }
 }
