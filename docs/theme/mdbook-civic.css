@@ -488,6 +488,8 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
 .gl-claude-copy { display: flex; flex-direction: column; gap: 10px; }
 .gl-claude-copy .gl-btns { margin-top: 10px; }
 .gl-claude-note { font-size: 14px; margin: 4px 0 0; }
+.gl-claude-h { display: flex; align-items: center; gap: 14px; }
+.gl-claude-logo { flex: none; width: 44px; height: 44px; }
 .gb-landing a.gl-claude-shot { display: block; border-radius: 14px; overflow: hidden; border: 1px solid var(--gb-border-strong);
   box-shadow: var(--gb-shadow); max-height: 460px; }
 .gl-claude-shot img { display: block; width: 100%; height: auto; }

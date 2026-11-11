@@ -21,6 +21,13 @@
 </div>
 </section>
 
+<section id="claude" class="gl-sec">
+<div class="gl-wrap gl-claude">
+<div class="gl-claude-copy"><span class="gl-overline">New · Govbot for Claude</span><h2 class="gl-h2 gl-claude-h"><img class="gl-claude-logo" src="dashboard/assets/claude/claude-mark.svg" width="44" height="44" alt="">Ask Govbot from Claude</h2><p class="gl-sub">Install the Claude Desktop extension and ask about bills, sponsors and votes in plain English. Every answer cites the official record, and the data stays on your computer.</p><div class="gl-btns"><a class="gl-btn gl-btn-primary" href="dashboard/claude.html">Get Govbot for Claude</a><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb" download>Download .mcpb</a></div><p class="gl-p gl-claude-note">Free · Mac · Nothing else to install</p></div>
+<a class="gl-claude-shot" href="dashboard/claude.html"><img src="dashboard/assets/claude/cited-answer.png" width="1400" height="1179" loading="lazy" alt="Claude Desktop using Govbot to find an Illinois rent bill and showing exactly where the answer came from, with a link to the official ILGA page."></a>
+</div>
+</section>
+
 <section class="gl-crew" aria-label="Built by the Govbot community">
 <div class="gl-wrap gl-crew-space" id="gl-crew">
 <div class="gl-crew-card gl-crew-term" aria-hidden="true"><div class="gl-crew-bar"><b style="background:#F87171"></b><b style="background:#FBBF24"></b><b style="background:#3FB37F"></b><span>govbot — terminal</span></div><div class="gl-crew-code"><div class="gl-crew-hist" id="gl-crew-hist"><span><i>$</i> govbot init</span><span><i>$</i> govbot clone wy il</span><span><i>$</i> govbot logs | govbot tag</span><span><i>$</i> govbot load --memory-limit 32GB</span><span><i>$</i> govbot build</span></div><span class="gl-crew-in"><i>$</i> <span class="gl-crew-typed" id="gl-crew-typed">duckdb --ui govbot_data/govbot.duckdb</span><b class="gl-crew-caret"></b></span></div></div>
@@ -131,13 +138,6 @@
 </div>
 </article>
 </div>
-</div>
-</section>
-
-<section id="claude" class="gl-sec">
-<div class="gl-wrap gl-claude">
-<div class="gl-claude-copy"><span class="gl-overline">New · Govbot for Claude</span><h2 class="gl-h2">Ask Govbot from Claude</h2><p class="gl-sub">Install the Claude Desktop extension and ask about bills, sponsors and votes in plain English. Every answer cites the official record, and the data stays on your computer.</p><div class="gl-btns"><a class="gl-btn gl-btn-primary" href="dashboard/claude.html">Get Govbot for Claude</a><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb" download>Download .mcpb</a></div><p class="gl-p gl-claude-note">Free · Mac · Nothing else to install</p></div>
-<a class="gl-claude-shot" href="dashboard/claude.html"><img src="dashboard/assets/claude/cited-answer.png" width="1400" height="1179" loading="lazy" alt="Claude Desktop using Govbot to find an Illinois rent bill and showing exactly where the answer came from, with a link to the official ILGA page."></a>
 </div>
 </section>
 

@@ -864,8 +864,9 @@ fail-soft from GitHub's release API (the release download itself sends no CORS h
 four install steps, copyable "Things to ask" prompts and an updates/help FAQ. Its screenshots in
 `dashboard/assets/claude/` are **real Claude Desktop captures** (from the MCP improvement loop's
 `desktop-capture.sh`, cropped to Claude's window, no chat history), committed so a fresh clone renders; retake
-them when Desktop's UI changes. The homepage links it from the `#claude` band (before "Build your own"), the
-Projects menu and the footer; the 2026 timeline point lists it as shipped. **The bundle is standalone:**
+them when Desktop's UI changes. The homepage links it from the `#claude` band (with the Claude mark, `assets/claude/claude-mark.svg` —
+the Simple Icons CC0 path in Claude's #D97757 — right after "By the numbers", above the "Built together" band),
+the Projects menu and the footer (the same mark beside "Govbot for Claude", `.gb-claude-mark`); the 2026 timeline point lists it as shipped. **The bundle is standalone:**
 `release-nightly.yml` packs a universal Mac `govbot` binary into it (`server/bin/govbot`,
 `scripts/build-bundle.sh <out> <binary>`), and `resolveBinary` (`actions/mcp/src/govbot.ts`) picks it before a
 home install, after `GOVBOT_BIN`, so nobody needs the separate CLI install. Mac only (`platforms: ["darwin"]`)
