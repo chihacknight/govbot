@@ -77,8 +77,36 @@
   .hh-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
   .hh-title { margin: 14px 0 0; font-size: 64px; line-height: 1.02; }
   .hh-tagline { margin: 14px 0 0; font-size: 24px; line-height: 1.35; color: var(--z-body); max-width: 34ch; }
-  .hh-stamp { flex: none; display: grid; place-items: center; width: 74px; height: 74px; border: var(--z-line);
-    border-radius: 50%; background: var(--z-c3); font-size: 34px; box-shadow: var(--z-shadow); transform: rotate(-6deg); }
+  /* The America-250 fireworks, in pencil: bursts of ink rays (each ray drawn twice, the second a
+     lighter, nudged sketch line) that shoot up and open over a hand-lettered "250th" with a yellow
+     marker swipe. Built by drawFireworks() below; the bursts animate transform/opacity only, the
+     lettering draws itself on (stroke-dashoffset). Paused off screen; still under reduced motion. */
+  .hh-art { flex: 0 1 380px; min-width: 0; margin: -10px -6px -6px 0; }
+  .hh-art svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .fw-ray { stroke: var(--z-ink); stroke-width: 2; stroke-linecap: round; fill: none; }
+  .fw-ray.is-sketch { stroke: var(--z-sketch-2); stroke-width: 1; }
+  .fw-tip { fill: var(--z-ink); }
+  .fw-trail { stroke: var(--z-ink); stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 3 5; fill: none; }
+  .fw-word { fill: none; stroke: var(--z-ink); stroke-width: 2; stroke-linejoin: round; font-family: var(--z-font); font-weight: 400; }
+  .fw-word.is-sketch { stroke: var(--z-sketch-2); stroke-width: 1; }
+  .fw-swipe { fill: var(--z-c3); --swipe: .4; }   /* fainter on night paper, so the light lettering reads */
+  :root[data-theme="light"] .fw-swipe { --swipe: .9; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme]) .fw-swipe { --swipe: .9; } }
+  .fw-burst { transform-box: view-box; animation: fw-burst var(--cycle) var(--d) infinite both; }
+  .fw-trailg { transform-box: view-box; animation: fw-trail var(--cycle) var(--d) infinite both; }
+  @keyframes fw-trail { 0% { transform: scaleY(0); opacity: 1; } 10% { transform: scaleY(1); opacity: 1; } 16%, 100% { transform: scaleY(1); opacity: 0; } }
+  @keyframes fw-burst { 0%, 10% { transform: scale(.08) rotate(-8deg); opacity: 0; } 12% { opacity: 1; }
+    30% { transform: scale(1) rotate(0); opacity: 1; } 46% { transform: scale(1.08) rotate(2deg); opacity: 0; } 100% { transform: scale(1.08); opacity: 0; } }
+  .fw-word { stroke-dasharray: 600; animation: fw-write 11s 0.4s infinite both; }
+  @keyframes fw-write { 0% { stroke-dashoffset: 600; opacity: 1; } 28% { stroke-dashoffset: 0; } 86% { stroke-dashoffset: 0; opacity: 1; } 96%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+  .fw-swipe { transform-box: fill-box; transform-origin: left center; animation: fw-swipe 11s 0.4s infinite both; }
+  @keyframes fw-swipe { 0%, 20% { transform: scaleX(0); opacity: var(--swipe); } 30%, 86% { transform: scaleX(1); opacity: var(--swipe); } 96%, 100% { transform: scaleX(1); opacity: 0; } }
+  .hh-art.is-off * { animation-play-state: paused; }
+  @media (prefers-reduced-motion: reduce) {
+    .fw-burst, .fw-trailg, .fw-word, .fw-swipe { animation: none; }
+    .fw-swipe { opacity: var(--swipe); }
+    .fw-trailg { opacity: 0; }
+  }
   /* Stats: big numbers, tiny caps labels underneath. */
   .hh-stats { display: flex; flex-wrap: wrap; gap: 18px 48px; margin-top: 28px; padding-top: 22px; border-top: 2px dashed var(--z-sketch-2); }
   .hh-stats:empty { display: none; }
@@ -89,7 +117,8 @@
     .hh-hero { padding: 26px 22px 24px; }
     .hh-title { font-size: 44px; }
     .hh-tagline { font-size: 19px; }
-    .hh-stamp { width: 54px; height: 54px; font-size: 25px; }
+    .hh-hero-top { flex-direction: column; }
+    .hh-art { flex: none; width: 100%; max-width: 340px; margin: 4px auto 0; }
     .hh-stat-num { font-size: 56px; }
   }
 
@@ -431,7 +460,7 @@
         <h1 class="hh-title">Have your say.</h1>
         <p class="hh-tagline">Government isn’t just something you watch — you can participate.</p>
       </div>
-      <span class="hh-stamp" aria-hidden="true">🗳️</span>
+      <div class="hh-art" aria-hidden="true"><svg id="hh-fw" viewBox="0 0 380 260" focusable="false"></svg></div>
     </div>
     <div class="hh-stats" id="hh-stats" role="group" aria-label="Live hearing activity"></div>
   </header>
@@ -1125,6 +1154,52 @@
     });
   })();
 
+
+  // The hero's pencil fireworks + "250th" (styles in .hh-art). Rays get a little fixed jitter
+  // (a seeded random) so every burst looks hand-drawn but the drawing is the same each visit.
+  (function drawFireworks() {
+    const svg = $("hh-fw");
+    if (!svg) return;
+    const NS = "http://www.w3.org/2000/svg";
+    const mk = (tag, attrs, parent) => {
+      const n = document.createElementNS(NS, tag);
+      Object.keys(attrs).forEach((k) => n.setAttribute(k, attrs[k]));
+      (parent || svg).append(n);
+      return n;
+    };
+    let seed = 250;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    // [x, y, radius, rays, delay (s)]: four bursts on a 7.5s cycle.
+    [[92, 70, 52, 14, 0], [282, 58, 44, 12, 1.9], [196, 104, 34, 10, 3.6], [330, 140, 28, 9, 5.2], [52, 150, 26, 9, 2.8]].forEach(([x, y, r, n, d]) => {
+      const vars = "--cycle:7.5s;--d:" + d + "s;transform-origin:" + x + "px " + y + "px";
+      const trail = mk("g", { class: "fw-trailg", style: vars.replace(/transform-origin:[^;]+/, "transform-origin:" + x + "px 260px") });
+      mk("path", { class: "fw-trail", d: "M" + (x - 6) + " 258 Q" + (x + 4) + " " + (y + 90) + " " + x + " " + (y + 6) }, trail);
+      const burst = mk("g", { class: "fw-burst", style: vars });
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + rnd() * 0.25;
+        const r0 = r * (0.22 + rnd() * 0.12), r1 = r * (0.82 + rnd() * 0.3);
+        const bend = (rnd() - 0.5) * 6;
+        const p = (rr, off) => [x + Math.cos(a + off) * rr, y + Math.sin(a + off) * rr].map((v) => v.toFixed(1)).join(" ");
+        const mid = [x + Math.cos(a) * (r0 + r1) / 2 - Math.sin(a) * bend, y + Math.sin(a) * (r0 + r1) / 2 + Math.cos(a) * bend].map((v) => v.toFixed(1)).join(" ");
+        mk("path", { class: "fw-ray", d: "M" + p(r0, 0) + " Q" + mid + " " + p(r1, 0) }, burst);
+        mk("path", { class: "fw-ray is-sketch", d: "M" + p(r0 + 3, 0.05) + " L" + p(r1 + 4, 0.06) }, burst);
+        mk("circle", { class: "fw-tip", cx: p(r1 + 7, 0).split(" ")[0], cy: p(r1 + 7, 0).split(" ")[1], r: (1.2 + rnd() * 1.2).toFixed(1) }, burst);
+      }
+    });
+    // A yellow marker swipe, then "250th" written in outline, twice: a nudged pencil line, then ink.
+    mk("rect", { class: "fw-swipe", x: 96, y: 206, width: 196, height: 30, rx: 8, transform: "rotate(-2 194 221)" });
+    [["fw-word is-sketch", "translate(3 2) skewX(-2)"], ["fw-word", ""]].forEach(([cls, tf]) => {
+      const t = mk("text", { class: cls, x: 108, y: 240, "font-size": 74, transform: tf });
+      t.append("250");
+      const th = mk("tspan", { "font-size": 36, dy: -30 }, t);
+      th.append("th");
+    });
+    // Stop the animation while the hero is off screen.
+    const art = svg.parentNode;
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(([e]) => art.classList.toggle("is-off", !e.isIntersecting)).observe(art);
+    }
+  })();
 
   loadHearings();
   loadParticipation();

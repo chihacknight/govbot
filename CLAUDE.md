@@ -742,7 +742,11 @@ hearings cards get theirs from a `.hg-frame` wrapper because the federal card sc
 them), and a thin, slightly tilted **paper frame** around the content (`.wrap::before`). Colour only
 marks where you are: the deck's four section colours `--z-c1..c4` (#8EC5F0 blue, #8FD9A0 green,
 #FFD166 yellow, #F4A3C0 pink; text on them is always dark ink). Top to bottom: a hero card (caps eyebrow
-"Hearings & public comment", "Have your say.", the tagline, a 🗳️ stamp, and the live stats as **big
+"Hearings & public comment", "Have your say.", the tagline, the **America-250 fireworks in pencil** —
+`drawFireworks()` builds an SVG (`#hh-fw`) of ink-ray bursts, each ray doubled by a lighter sketch line
+and given fixed seeded jitter, shooting up on dotted trails over a hand-lettered outline "250th" on a
+yellow marker swipe; the bursts animate transform/opacity only, the lettering draws itself on, paused
+off screen (IntersectionObserver), a still composed frame under reduced motion — and the live stats as **big
 light numerals with caps labels**: "N upcoming hearings and open to public comment" — upcoming and
 comment-open — and "N jurisdictions"); the **"Jump to" nav pills** (`#hh-jump`, hidden with fewer
 than two jurisdictions; one per jurisdiction in section order with its count, linking to `#hg-<code>`;
@@ -753,7 +757,7 @@ Each jurisdiction's card puts its name on a tab in its colour (`zc(i)` cycles `-
 colour as its jump pill; `.hgroup` keeps `scroll-margin-top`, and search's `#hg-<code>` links use the
 same ids). The federal kinds' sections take the colours in turn too (`fedN`). Status chips are small
 all-caps ink-outlined pills; colour only where it means something: "Comment due" yellow, "Public
-comment open" / "Live hearings" green, "Canceled" pink. The White House hero art and the America-250
+comment open" / "Live hearings" green, "Canceled" pink. The White House hero art and the old colour
 fireworks canvas were retired with this redesign (`whitehouse-hero.png` deleted). **Following by RSS** (`#rss-pop`, one popover for the "Follow all", per-state, per-bill and per-hearing
 buttons): the feed address with Copy, one-tap "Add to Feedly / Inoreader / NewsBlur" links, "Preview the feed"
 (the `feed.xsl` page) and **"Copy a link to share"** (the page's `#hg-<code>` section, which previews as a page
