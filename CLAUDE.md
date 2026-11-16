@@ -739,7 +739,14 @@ hierarchy from size), 2px ink outlines on rounded shapes, hard 4px offset ink sh
 buttons that take you somewhere, **pencil-sketch double lines** behind each card (`.z-card` /
 `.hg-frame` `::before/::after`, z-index −1 inside the isolated `.wrap` / `.participation-grid`; the
 hearings cards get theirs from a `.hg-frame` wrapper because the federal card scrolls and would clip
-them), and a thin, slightly tilted **paper frame** around the content (`.wrap::before`). Colour only
+them), and a thin, slightly tilted **paper frame** around the content (`.wrap::before`, doubled by `.wrap::after`).
+A **"Pencil layer"** at the end of the page's styles pushes it to a heavy graphite sketch: SVG-noise
+paper grain + faint smudges on the body; the sketch outlines (never text) run through two hidden SVG
+filters, `#pencil` / `#pencil-2` (turbulence wobble + a grain mask so lines read as graphite);
+coloured-pencil hatching over every colour fill and faint hatching inside cards; section numbers shaded
+in hatching inside a wobbly outline; scribbled underlines under section titles, a scribbled circle round
+"say." (`.hh-circle`); pencil rules instead of dashed lines; and margin doodles (an arrow into "Jump to",
+a star by each section, a squiggle under the stats). All static masks/gradients, nothing animated. Colour only
 marks where you are: the deck's four section colours `--z-c1..c4` (#8EC5F0 blue, #8FD9A0 green,
 #FFD166 yellow, #F4A3C0 pink; text on them is always dark ink). Top to bottom: a hero card (caps eyebrow
 "Hearings & public comment", "Have your say.", the tagline, the **America-250 fireworks in pencil** —
