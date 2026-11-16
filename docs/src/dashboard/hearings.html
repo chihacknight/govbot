@@ -16,386 +16,252 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22t%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23161E2C%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23090D15%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%237CEBB0%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2331BE73%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22b%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23C8F7DD%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%235FE09F%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2261%22%20height%3D%2261%22%20rx%3D%2215%22%20fill%3D%22url(%23t)%22%2F%3E%3Crect%20x%3D%221.5%22%20y%3D%221.5%22%20width%3D%2261%22%20height%3D%2261%22%20rx%3D%2215%22%20fill%3D%22none%22%20stroke%3D%22%232B3446%22%20stroke-width%3D%221%22%2F%3E%3Crect%20x%3D%2218%22%20y%3D%2248%22%20width%3D%2228%22%20height%3D%224.6%22%20rx%3D%222.3%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%2214.5%22%20y%3D%2253.4%22%20width%3D%2235%22%20height%3D%223.2%22%20rx%3D%221.6%22%20fill%3D%22%231E9E5C%22%2F%3E%3Cg%20transform%3D%22translate(31%2024)%20rotate(70)%22%3E%3Cpath%20d%3D%22M0%20-3.4%20L20%20-2.6%20Q26%20-2.2%2026.5%200%20Q26%202.2%2020%202.6%20L0%203.4%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Ccircle%20cx%3D%2227%22%20cy%3D%220%22%20r%3D%223%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%22-4.2%22%20width%3D%223%22%20height%3D%228.4%22%20rx%3D%221.2%22%20fill%3D%22%232BB56C%22%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(31%2024)%20rotate(-14)%22%3E%3Cpath%20d%3D%22M-5%20-7%20L-15%20-10.5%20A3.2%2010.5%200%200%200%20-15%2010.5%20L-5%207%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Cpath%20d%3D%22M5%20-7%20L15%20-10.5%20A3.2%2010.5%200%200%201%2015%2010.5%20L5%207%20Z%22%20fill%3D%22url(%23g)%22%2F%3E%3Crect%20x%3D%22-5.5%22%20y%3D%22-9%22%20width%3D%2211%22%20height%3D%2218%22%20rx%3D%222%22%20fill%3D%22url(%23b)%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap">
 <style>
-  /* Hearings page accents: the design system's green and a true gold (the brand --gb-gold is
-     green), each tuned per theme so the borders, badges and pills read in light and dark mode. */
-  :root { --hh-green: #3DDC84; --hh-gold: #E5B94E; --hh-on-accent: #0A0E16; }
-  :root[data-theme="light"] { --hh-green: #0B7D45; --hh-gold: #8A6100; --hh-on-accent: #FFFFFF; }
-  @media (prefers-color-scheme: light) { :root:not([data-theme]) { --hh-green: #0B7D45; --hh-gold: #8A6100; --hh-on-accent: #FFFFFF; } }
-
-  /* Dark palette. Applied when the OS prefers dark AND the user hasn't
-     forced a choice, OR when the user explicitly picks dark via the toggle.
-     The two selectors carry identical values on purpose (plain CSS can't
-     share a declaration block across a media-query boundary). */
-
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--page);
-    color: var(--text-primary);
-    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Hearings & Public Comment, in the "hand-drawn civic zine" look of the Govbot deck:
+     warm paper, near-black ink, 2px ink outlines on rounded shapes, hard offset shadows,
+     loose pencil lines doubled around each card, one typeface (Roboto) with hierarchy
+     from size, and colour only to mark where you are. The shared header and footer
+     (govbot.css) are untouched; everything here is scoped to this page's content.
+     Light theme = paper; dark theme = "night paper" (the same marks, inverted). */
+  :root {
+    --z-paper: #17160F; --z-card: #211F18; --z-ink: #F3F1E8; --z-body: #E4E2D8;
+    --z-muted: #2E2C25; --z-muted-2: #26241E; --z-sketch-1: #B4B1A6; --z-sketch-2: #7A776E;
+    --z-on-color: #1B1A17;   /* text on a section colour, in both themes */
   }
-  a { color: var(--series-1); }
-  .wrap { max-width: var(--gb-page-max); margin: 0 auto; padding: 24px var(--gb-gutter) 48px; }
-
-  header.top { margin-bottom: 20px; }
-
-  header.top h1 { font-size: 22px; font-weight: 650; margin: 0; }
-  header.top p  { margin: 0; color: var(--text-secondary); }
-
-  .asof {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 3px 10px;
-    border: 1px solid var(--border); border-radius: 999px;
-    font-size: 12.5px; color: var(--text-secondary);
+  :root[data-theme="light"] {
+    --z-paper: #FBFAF5; --z-card: #FFFFFF; --z-ink: #1B1A17; --z-body: #2B2B2B;
+    --z-muted: #E6E6E3; --z-muted-2: #F1F1EE; --z-sketch-1: #3A3A3A; --z-sketch-2: #777777;
+  }
+  @media (prefers-color-scheme: light) { :root:not([data-theme]) {
+    --z-paper: #FBFAF5; --z-card: #FFFFFF; --z-ink: #1B1A17; --z-body: #2B2B2B;
+    --z-muted: #E6E6E3; --z-muted-2: #F1F1EE; --z-sketch-1: #3A3A3A; --z-sketch-2: #777777;
+  } }
+  :root {
+    /* The deck's four section colours, in the order the page uses them. */
+    --z-c1: #8EC5F0; --z-c2: #8FD9A0; --z-c3: #FFD166; --z-c4: #F4A3C0;
+    --z-line: 2px solid var(--z-ink); --z-shadow: 4px 4px 0 var(--z-ink); --z-radius: 14px;
+    --z-font: Roboto, system-ui, -apple-system, "Segoe UI", sans-serif;
   }
 
-  .asof b { color: var(--text-primary); font-weight: 600; }
+  body { background: var(--z-paper); }
+  .wrap, .rss-pop { font-family: var(--z-font); font-weight: 400; color: var(--z-ink); }
+  .wrap h1, .wrap h2, .wrap h3, .wrap h4 { font-family: var(--z-font); font-weight: 400; letter-spacing: -0.01em; }
+  .wrap a { color: var(--z-ink); }
+  .wrap :focus-visible, .rss-pop :focus-visible { outline: 3px solid var(--z-ink); outline-offset: 3px; border-radius: 8px; }
 
-  .fw-canvas {
-    position: absolute; inset: 0; width: 100%; height: 100%;
-    z-index: 0; pointer-events: none; display: block;
-  }
+  /* Paper frame: a thin ink border inset around the page content, very slightly tilted. */
+  .wrap { position: relative; overflow-x: clip; max-width: var(--gb-page-max); margin: 0 auto; padding: 44px calc(var(--gb-gutter) + 18px) 64px; }
+  .wrap::before { content: ""; position: absolute; inset: 14px 8px 18px; border: 1.5px solid var(--z-ink);
+    border-radius: 24px; transform: rotate(-0.2deg); pointer-events: none; }
+  @media (max-width: 620px) { .wrap { padding: 30px 22px 48px; } .wrap::before { inset: 10px 6px 12px; border-radius: 18px; } }
 
-  .brand {
-    display: inline-flex; align-items: center; gap: 9px;
-    text-decoration: none; color: var(--text-primary);
-  }
+  /* Outlined card with pencil-sketch lines: one or two extra outlines behind it, nudged and
+     skewed so the shape looks redrawn by hand. */
+  /* The lines sit at z-index -1 inside the nearest isolated ancestor (.wrap, the grid), so they
+     draw behind the card's own fill. The hearings cards get theirs from a frame around them
+     (.hg-frame), because the federal card scrolls inside itself and would clip them. */
+  .wrap, .participation-grid { isolation: isolate; }
+  .z-card { position: relative; background: var(--z-card); border: var(--z-line); border-radius: var(--z-radius); }
+  .hg-frame { position: relative; border-radius: var(--z-radius); }
+  .z-card::before, .z-card::after, .hg-frame::before, .hg-frame::after { content: ""; position: absolute; inset: -2px; border-radius: inherit; pointer-events: none; z-index: -1; }
+  .z-card::before, .hg-frame::before { border: 1px solid var(--z-sketch-1); transform: translate(-4px, 3px) skew(.4deg, -.3deg); }
+  .z-card::after, .hg-frame::after { border: .75px solid var(--z-sketch-2); transform: translate(3px, -3px) skew(-.3deg, .5deg); }
 
-  .clear-btn:hover { background: var(--hover-wash); }
+  .z-eyebrow { margin: 0; font-size: 15px; letter-spacing: .12em; text-transform: uppercase; }
 
-  .clear-btn { cursor: pointer; color: var(--text-secondary); }
-  .clear-btn[disabled] { opacity: 0.45; cursor: default; }
-
-  .card {
-    background: var(--surface-1);
-    border: 1px solid var(--border); border-radius: 10px;
-    padding: 16px;
-  }
-  .card h2 { font-size: 14px; font-weight: 600; margin: 0 0 2px; }
-  .card .sub { color: var(--text-muted); font-size: 12px; margin: 0 0 12px; }
-
-  /* Section accent: each main section carries its own colored border on all
-     four sides so the sections read as distinct blocks at a glance. */
-  .card--accent { border-width: 2px; }
-
-  /* ---------- tag chips ---------- */
-  .chip {
-    display: inline-flex; align-items: center; gap: 5px;
-    border: 1px solid var(--border); border-radius: 999px;
-    padding: 1px 8px 1px 6px; margin: 1px 2px 1px 0;
-    font-size: 11.5px; color: var(--text-secondary); white-space: nowrap;
-  }
-
-  /* ---------- table ---------- */
-  table { border-collapse: collapse; width: 100%; }
-  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--gridline); vertical-align: top; }
-  th {
-    color: var(--text-secondary); font-size: 12px; font-weight: 600;
-    cursor: pointer; user-select: none; white-space: nowrap;
-    position: sticky; top: 0; background: var(--surface-1);
-  }
-
-  tbody tr:hover { background: var(--hover-wash); }
-  td.num, td.date { font-variant-numeric: tabular-nums; white-space: nowrap; }
-
-  td .bill-title { color: var(--text-secondary); }
-
-  .empty { color: var(--text-muted); padding: 24px; text-align: center; }
-
-  footer { margin-top: 28px; color: var(--text-muted); font-size: 12.5px; }
-  footer code { background: var(--surface-1); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; }
-
-  /* ---------- committee hearings & witness slips ---------- */
-  .card--hearings { margin-top: 12px; }
-  .hearings-head {
-    display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 12px; flex-wrap: wrap;
-  }
-  .hearings-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .hearings-asof { align-self: center; }
-  .rss-wrap { position: relative; display: inline-flex; }
-  .rss-link {
-    display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
-    font: inherit; font-size: 12.5px; font-weight: 550; text-decoration: none;
-    color: var(--series-3); white-space: nowrap; background: none; border: none; padding: 0;
-  }
-  .rss-link:hover { text-decoration: underline; }
-  /* One shared popover reused by the "all hearings" button and every per-bill
-     RSS link. JS positions it (fixed to the viewport) under whichever trigger
-     opened it, so it doesn't need a positioned ancestor. */
-  .rss-pop {
-    position: fixed; z-index: 40; width: 340px; max-width: 90vw;
-    background: var(--surface-1); border: 2px solid var(--hh-green); border-radius: 14px;
-    box-shadow: 0 16px 40px rgba(0,0,0,0.3); padding: 14px 15px; text-align: left;
-  }
-  .rss-pop-title { margin: 0 0 4px; font-weight: 750; font-size: 15px; color: var(--text-primary); }
-  .rss-pop-sub { margin: 0 0 10px; font-size: 13px; color: var(--text-primary); line-height: 1.45; }
-  .rss-pop-label { margin: 0 0 4px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-primary); }
-  .rss-pop-row { display: flex; gap: 6px; }
-  .rss-pop-row input {
-    flex: 1; min-width: 0; font: inherit; font-size: 12.5px; padding: 7px 9px;
-    border: 1.5px solid var(--border); border-radius: 8px; background: var(--page); color: var(--text-primary);
-  }
-  .rss-copy {
-    cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 700; padding: 7px 12px;
-    border: 2px solid var(--hh-green); border-radius: 8px; background: var(--hh-green); color: var(--hh-on-accent);
-  }
-  .rss-copy:hover { filter: brightness(1.08); }
-  /* One-tap "add to" buttons for the common readers, then the browser preview and a page link to share. */
-  .rss-readers { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .rss-readers a, .rss-foot a, .rss-foot button {
-    display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: 12.5px; font-weight: 700;
-    color: var(--text-primary); text-decoration: none; background: none; cursor: pointer;
-    border: 2px solid var(--text-primary); border-radius: 999px; padding: 5px 11px;
-  }
-  .rss-readers a:hover, .rss-foot a:hover, .rss-foot button:hover { background: var(--hover-wash); border-color: var(--hh-green); }
-  .rss-foot { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
-  .rss-why { margin: 10px 0 0; font-size: 12px; line-height: 1.45; color: var(--text-primary); }
-  .hearings-groups { margin-top: 14px; display: flex; flex-direction: column; gap: 18px; }
-  /* Each state's hearings sit in their own card with a per-state colored border
-     (--hg-accent, set per group in JS) so the sections read as distinct blocks. */
-  .hgroup {
-    border: 2px solid var(--hg-accent, var(--series-1));
-    border-radius: 10px; padding: 12px 14px 4px;
-    background: var(--surface-1);
-  }
-  .hgroup-head {
-    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
-    padding-bottom: 8px; margin-bottom: 4px;
-    border-bottom: 2px solid var(--hg-accent, var(--gridline));
-  }
-  .hgroup-name { border-left: 4px solid var(--hg-accent, var(--series-1)); padding-left: 8px; }
-  /* Zebra the hearing rows inside each state card for readability. The rows live
-     in their own wrapper so :nth-child counts rows only (not the header). */
-  .hgroup-rows .hearing-row { padding-left: 8px; padding-right: 8px; border-radius: 6px; }
-  .hgroup-rows .hearing-row:nth-child(even) { background: var(--row-alt); }
-  /* Keep the homepage from getting enormous: each state's hearings scroll inside
-     a capped box (the state header stays put above it). */
-  .hgroup-rows { max-height: 520px; overflow-y: auto; scrollbar-width: thin; scrollbar-gutter: stable;
-    scrollbar-color: var(--hg-accent, var(--series-1)) color-mix(in srgb, var(--hg-accent, var(--series-1)) 12%, transparent); }
-  .hgroup-rows::-webkit-scrollbar { width: 9px; }
-  .hgroup-rows::-webkit-scrollbar-track { background: color-mix(in srgb, var(--hg-accent, var(--series-1)) 10%, transparent); border-radius: 999px; }
-  .hgroup-rows::-webkit-scrollbar-thumb { background: var(--hg-accent, var(--series-1)); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
-  .hgroup-name { font-weight: 650; font-size: 15px; }
-  .hgroup-count { color: var(--text-muted); font-size: 12.5px; }
-  .hgroup-portal { margin-left: auto; }
-  .hearing-row {
-    display: grid; grid-template-columns: 190px 1fr; gap: 4px 18px;
-    padding: 10px 0; border-bottom: 1px solid var(--gridline);
-  }
-  .hearing-row:last-child { border-bottom: 0; }
-  .hearing-row.is-canceled { opacity: 1; }   /* the "Canceled" badge marks it; no dimmed text */
-  .h-when { color: var(--text-secondary); font-size: 13px; }
-  .h-when b { color: var(--text-primary); font-weight: 600; }
-  /* Says what the date means: a scheduled hearing time vs. a submission deadline. */
-  /* Status pills: full-contrast text on a light tint of the pill's colour, with a
-     firm 1.5px border in that colour — readable in both themes. */
-  .h-kind, .h-badge, .h-open, .pstate-live {
-    display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 11.5px; font-weight: 700;
-    color: var(--text-primary); border: 1.5px solid var(--pc);
-    background: color-mix(in srgb, var(--pc) 20%, var(--surface-1));
-  }
-  .h-kind { --pc: var(--gb-blue-hi); margin-bottom: 4px; letter-spacing: 0.04em; text-transform: uppercase; }
-  .h-kind.is-due { --pc: var(--hh-gold); }
-  .h-badge { --pc: var(--series-6); margin-left: 8px; }
-  .h-committee { font-weight: 550; }
-  .h-loc { color: var(--text-muted); font-size: 12.5px; margin-top: 1px; }
-  .h-bills { display: flex; flex-direction: column; gap: 6px; margin-top: 7px; }
-  .bill-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
-  .bill-title { font-size: 12.5px; color: var(--text-secondary); }
-  .bill-tags { display: inline-flex; flex-wrap: wrap; gap: 4px; }
-  .bill-tag {
-    font-size: 11px; color: var(--text-muted);
-    background: var(--hover-wash); border-radius: 5px; padding: 1px 6px;
-  }
-  .gov-link { font-size: 11.5px; font-weight: 600; color: var(--series-1); text-decoration: none; white-space: nowrap; }
-  .gov-link:hover { text-decoration: underline; }
-  /* Per-bill "subscribe to this bill's hearings" trigger. */
-  .bill-rss {
-    display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
-    font: inherit; font-size: 11.5px; font-weight: 600; color: var(--series-3);
-    background: none; border: none; padding: 0; white-space: nowrap;
-  }
-  .bill-rss:hover { text-decoration: underline; }
-  .bill-chip {
-    display: inline-flex; align-items: center; gap: 7px;
-    padding: 2px 8px; border: 1px solid var(--border); border-radius: 7px;
-    background: var(--surface-1); text-decoration: none; color: var(--text-primary);
-    font-size: 12.5px;
-  }
-  .bill-chip:hover { background: var(--hover-wash); }
-  .chip-id { font-weight: 600; font-variant-numeric: tabular-nums; }
-  .slipbar {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding-left: 7px; border-left: 1px solid var(--border);
-  }
-  .slipbar { min-width: 64px; }
-  .slip-seg { height: 7px; border-radius: 2px; display: inline-block; min-width: 3px; }
-  .slip-for { background: var(--series-2); }
-  .slip-against { background: var(--series-6); }
-  .slip-neutral { background: var(--text-muted); }
-  .slipbar { position: relative; }
-  .slipbar .slip-seg { flex: 1 1 auto; }
-  .slip-count { color: var(--text-muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
-  .h-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 7px; }
-  .file-link { font-size: 13px; font-weight: 550; }
+  /* ---------- hero ---------- */
+  .hh-hero { padding: 38px 40px 34px; margin: 0 0 30px; }
+  .hh-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+  .hh-title { margin: 14px 0 0; font-size: 64px; line-height: 1.02; }
+  .hh-tagline { margin: 14px 0 0; font-size: 24px; line-height: 1.35; color: var(--z-body); max-width: 34ch; }
+  .hh-stamp { flex: none; display: grid; place-items: center; width: 74px; height: 74px; border: var(--z-line);
+    border-radius: 50%; background: var(--z-c3); font-size: 34px; box-shadow: var(--z-shadow); transform: rotate(-6deg); }
+  /* Stats: big numbers, tiny caps labels underneath. */
+  .hh-stats { display: flex; flex-wrap: wrap; gap: 18px 48px; margin-top: 28px; padding-top: 22px; border-top: 2px dashed var(--z-sketch-2); }
+  .hh-stats:empty { display: none; }
+  .hh-stat { display: flex; flex-direction: column; gap: 6px; }
+  .hh-stat-num { font-size: 75px; font-weight: 300; line-height: .9; font-variant-numeric: tabular-nums; }
+  .hh-stat-lbl { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; max-width: 26ch; line-height: 1.35; }
   @media (max-width: 620px) {
+    .hh-hero { padding: 26px 22px 24px; }
+    .hh-title { font-size: 44px; }
+    .hh-tagline { font-size: 19px; }
+    .hh-stamp { width: 54px; height: 54px; font-size: 25px; }
+    .hh-stat-num { font-size: 56px; }
+  }
+
+  /* ---------- jump to a jurisdiction: the deck's nav pills ---------- */
+  .hh-jump { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 44px; }
+  .hh-jump-lbl { font-size: 15px; letter-spacing: .12em; text-transform: uppercase; margin-right: 4px; }
+  .hh-jump a { display: inline-flex; align-items: center; gap: 9px; padding: 6px 7px 6px 15px; border: var(--z-line);
+    border-radius: 999px; background: var(--z-card); font-size: 14px; letter-spacing: .06em; text-transform: uppercase;
+    text-decoration: none; transition: transform .12s, box-shadow .12s, background .12s; }
+  .hh-jump a:hover { background: color-mix(in srgb, var(--jc) 35%, var(--z-card)); }
+  .hh-jump a[aria-current="true"] { background: var(--jc); color: var(--z-on-color); box-shadow: var(--z-shadow); transform: translate(-2px, -2px); }
+  .hh-jump .jn-count { min-width: 26px; padding: 1px 8px; border: var(--z-line); border-radius: 999px; background: var(--jc);
+    color: var(--z-on-color); font-size: 12.5px; text-align: center; font-variant-numeric: tabular-nums; }
+  .hh-jump a[aria-current="true"] .jn-count { border-color: var(--z-on-color); background: var(--z-card); color: var(--z-ink); }
+
+  /* ---------- section dividers: giant number, big title, one-line description ---------- */
+  .z-divider { display: flex; align-items: flex-end; gap: 22px; margin: 0 0 22px; }
+  .z-num { flex: none; font-size: 130px; font-weight: 300; line-height: .78; letter-spacing: -0.04em;
+    -webkit-text-stroke: 2px var(--z-ink); color: var(--zc); }
+  .z-divider h2 { margin: 0; font-size: 47px; line-height: 1.05; }
+  .z-divider p { margin: 8px 0 0; font-size: 20px; line-height: 1.4; color: var(--z-body); max-width: 56ch; }
+  @media (max-width: 620px) {
+    .z-divider { gap: 14px; }
+    .z-num { font-size: 76px; -webkit-text-stroke-width: 1.5px; }
+    .z-divider h2 { font-size: 32px; }
+    .z-divider p { font-size: 17px; }
+  }
+  .z-section { margin-top: 10px; }
+  .z-section + .z-section { margin-top: 64px; }
+
+  /* ---------- hearings ---------- */
+  .hearings-head { display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; margin: 0 0 26px; }
+  .asof { display: inline-flex; align-items: center; padding: 5px 13px; border: var(--z-line); border-radius: 999px;
+    background: var(--z-muted-2); font-size: 14px; }
+  .asof:empty { display: none; }
+  .hearings-groups { display: flex; flex-direction: column; gap: 34px; }
+  /* Each jurisdiction: an outlined card, its name on a tab in its own colour. */
+  .hgroup { position: relative; border: var(--z-line); border-radius: var(--z-radius); background: var(--z-card);
+    padding: 16px 20px 8px; scroll-margin-top: 90px; }
+  .hgroup-head { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; padding-bottom: 14px;
+    border-bottom: 2px solid var(--z-ink); }
+  .hgroup-name { display: inline-block; padding: 4px 14px; border: var(--z-line); border-radius: 999px;
+    background: var(--hg-accent); color: var(--z-on-color); font-size: 22px; box-shadow: 3px 3px 0 var(--z-ink); }
+  .hgroup-count { font-size: 15px; letter-spacing: .06em; text-transform: uppercase; }
+  .hgroup-portal { margin-left: auto; }
+  .hgroup-rows { max-height: 560px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--z-ink) var(--z-muted-2); }
+  .hearing-row { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 6px 22px; padding: 18px 0;
+    border-bottom: 1.5px dashed var(--z-sketch-2); }
+  .hearing-row:last-child { border-bottom: 0; }
+  .h-when { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; font-size: 16px; }
+  .h-when b { font-weight: 500; }
+  /* Small all-caps chips; colour only where it carries meaning. */
+  .h-kind, .h-badge, .h-open, .pstate-live, .pstate-kind {
+    display: inline-block; padding: 2px 10px; border: var(--z-line); border-radius: 999px; background: var(--z-card);
+    font-size: 12px; letter-spacing: .08em; text-transform: uppercase; line-height: 1.5; white-space: nowrap; }
+  .h-kind.is-due { background: var(--z-c3); color: var(--z-on-color); }
+  .h-badge { margin-left: 8px; background: var(--z-c4); color: var(--z-on-color); }
+  .h-open, .pstate-live { background: var(--z-c2); color: var(--z-on-color); }
+  .h-main { min-width: 0; }
+  .h-committee { font-size: 21px; line-height: 1.3; }
+  .h-loc { margin-top: 3px; font-size: 15px; color: var(--z-body); }
+  .h-bills { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .bill-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+  .bill-chip { display: inline-flex; align-items: center; gap: 8px; padding: 2px 10px; border: var(--z-line); border-radius: 8px;
+    background: var(--z-muted-2); font-size: 14px; text-decoration: none; }
+  .bill-chip:hover { background: var(--z-muted); }
+  .chip-id { font-variant-numeric: tabular-nums; }
+  .bill-title { font-size: 15px; color: var(--z-body); }
+  .bill-tags { display: inline-flex; flex-wrap: wrap; gap: 5px; }
+  .bill-tag { padding: 0 8px; border: 1px solid var(--z-sketch-2); border-radius: 999px; font-size: 12.5px; }
+  .gov-link { font-size: 14px; white-space: nowrap; text-decoration: underline; text-underline-offset: 3px; }
+  .slipbar { position: relative; display: inline-flex; align-items: center; gap: 4px; min-width: 64px; padding-left: 8px; border-left: 1.5px solid var(--z-ink); }
+  .slip-seg { flex: 1 1 auto; display: inline-block; height: 8px; min-width: 3px; border: 1px solid var(--z-ink); border-radius: 2px; }
+  .slip-for { background: var(--z-c2); }
+  .slip-against { background: var(--z-c4); }
+  .slip-neutral { background: var(--z-muted); }
+  .slip-count { font-size: 12px; font-variant-numeric: tabular-nums; }
+  .h-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 14px; }
+  /* Buttons: ink-outlined pills; the one that takes you somewhere gets the hard shadow. */
+  .file-link, .hgroup-portal, .pstate-link, .clear-btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border: var(--z-line); border-radius: 999px;
+    background: var(--z-card); color: var(--z-ink) !important; font: inherit; font-size: 15px; text-decoration: none;
+    white-space: nowrap; cursor: pointer; transition: transform .12s, box-shadow .12s; }
+  .file-link { box-shadow: var(--z-shadow); }
+  .file-link:hover, .hgroup-portal:hover, .pstate-link:hover, .clear-btn:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--z-ink); }
+  .file-link:active, .hgroup-portal:active, .pstate-link:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--z-ink); }
+  .rss-link, .bill-rss { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; color: var(--z-ink);
+    font: inherit; font-size: 14px; letter-spacing: .06em; text-transform: uppercase; text-decoration: underline;
+    text-decoration-style: wavy; text-decoration-color: var(--z-sketch-2); text-underline-offset: 5px; cursor: pointer; white-space: nowrap; }
+  .rss-link:hover, .bill-rss:hover { text-decoration-color: var(--z-ink); }
+  .hgroup-more { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 4px 0 10px; padding-top: 14px;
+    border-top: 2px solid var(--z-ink); font-size: 15px; }
+  .hgroup-more .hgroup-portal { margin-left: 0; }
+  @media (max-width: 620px) {
+    .hgroup { padding: 14px 14px 6px; }
+    .hgroup-name { font-size: 19px; }
     .hearing-row { grid-template-columns: 1fr; }
     .hgroup-portal { margin-left: 0; }
+    .h-committee { font-size: 19px; }
   }
+
+  /* USA (Federal): the whole card scrolls inside itself; its header sticks to the top and each
+     kind's title sticks just under it (--fed-head-h, the header's measured height). */
+  .hgroup--fed { max-height: 640px; overflow-y: auto; padding-top: 0; overscroll-behavior: contain;
+    scrollbar-width: thin; scrollbar-color: var(--z-ink) var(--z-muted-2); }
+  .hgroup--fed > .hgroup-head { position: sticky; top: 0; z-index: 3; background: var(--z-card); padding-top: 16px; }
+  @media (max-width: 620px) {
+    .hgroup--fed { max-height: 540px; }
+    .hgroup--fed > .hgroup-head { gap: 8px; padding-top: 12px; }
+  }
+  .fsec { margin-top: 20px; }
+  .fsec-h { position: sticky; top: var(--fed-head-h, 60px); z-index: 2; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin: 0 0 4px; padding: 10px 0; background: var(--z-card); font-size: 20px; }
+  .fsec-h::before { content: ""; flex: none; width: 14px; height: 14px; border: var(--z-line); border-radius: 50%; background: var(--sc); }
+  .fsec-n { padding: 1px 10px; border: var(--z-line); border-radius: 999px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+  .hgroup-rows.fsec-rows { max-height: none; overflow: visible; padding: 0 14px; border: 1.5px solid var(--z-ink); border-radius: 12px; background: var(--z-paper); }
+  .hnotices-h { margin: 34px 0 4px; padding-top: 20px; border-top: 2px solid var(--z-ink); font-size: 26px; }
+  .hnotices-sub { margin: 0; font-size: 16px; color: var(--z-body); }
+
+  /* ---------- RSS popover ---------- */
+  .rss-pop { position: fixed; z-index: 40; width: 350px; max-width: 90vw; padding: 16px 17px; text-align: left;
+    background: var(--z-card); border: var(--z-line); border-radius: var(--z-radius); box-shadow: 6px 6px 0 var(--z-ink); }
+  .rss-pop-title { margin: 0 0 4px; font-size: 21px; }
+  .rss-pop-sub { margin: 0 0 12px; font-size: 15px; line-height: 1.45; color: var(--z-body); }
+  .rss-pop-label { margin: 0 0 5px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+  .rss-pop-row { display: flex; gap: 6px; }
+  .rss-pop-row input { flex: 1; min-width: 0; padding: 7px 10px; border: var(--z-line); border-radius: 10px; background: var(--z-muted-2);
+    color: var(--z-ink); font: inherit; font-size: 13.5px; }
+  .rss-copy { padding: 7px 14px; border: var(--z-line); border-radius: 10px; background: var(--z-c3); color: var(--z-on-color);
+    font: inherit; font-size: 14px; cursor: pointer; box-shadow: 3px 3px 0 var(--z-ink); }
+  .rss-readers, .rss-foot { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+  .rss-foot { padding-top: 12px; border-top: 1.5px dashed var(--z-sketch-2); }
+  .rss-readers a, .rss-foot a, .rss-foot button { display: inline-flex; align-items: center; padding: 5px 12px; border: var(--z-line);
+    border-radius: 999px; background: var(--z-card); color: var(--z-ink); font: inherit; font-size: 13.5px; text-decoration: none; cursor: pointer; }
+  .rss-readers a:hover, .rss-foot a:hover, .rss-foot button:hover { background: var(--z-muted-2); }
+  .rss-why { margin: 12px 0 0; font-size: 13px; line-height: 1.45; color: var(--z-body); }
 
   /* ---------- participation directory ---------- */
-  /* Filter box: colorful 2px border on all four sides + a leading search icon. */
-  .p-search-wrap { align-self: center; position: relative; display: inline-flex; align-items: center; }
-  .p-search-wrap .p-search-icon { position: absolute; left: 10px; color: var(--series-3); pointer-events: none; flex: none; }
-  .p-search {
-    min-width: 200px; padding: 7px 11px 7px 32px;
-    border: 2px solid var(--series-3); border-radius: 8px;
-    background: var(--surface-1); color: var(--text-primary); font-size: 13px;
-  }
-  .p-search::placeholder { color: var(--text-muted); }
-  .p-search:focus { outline: none; border-color: var(--series-1); box-shadow: 0 0 0 3px color-mix(in srgb, var(--series-1) 22%, transparent); }
-  /* Search box + A–Z letter buttons: a letter shows only the states starting with it. */
-  .p-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 12px; }
-  .p-letters { display: flex; flex-wrap: wrap; gap: 4px; }
-  .p-letter {
-    min-width: 30px; height: 30px; padding: 0 6px; border-radius: 6px; cursor: pointer;
-    border: 1.5px solid var(--text-primary); background: transparent; color: var(--text-primary);
-    font: inherit; font-size: 13px; font-weight: 700;
-  }
-  .p-letter:hover:not(:disabled) { border-color: var(--hh-green); background: var(--hover-wash); }
-  .p-letter:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
-  .p-letter[aria-pressed="true"] { background: var(--gb-primary); border-color: var(--gb-primary); color: var(--gb-on-primary); }
-  .p-letter:disabled { border-style: dashed; opacity: 0.45; cursor: default; }
-  .p-none { margin: 12px 0 0; }
-  .participation-grid {
-    margin-top: 14px; display: grid; gap: 10px;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    /* The 56-jurisdiction directory scrolls inside a capped box. */
-    max-height: 560px; overflow-y: auto; padding-right: 4px;
-    scrollbar-width: thin; scrollbar-gutter: stable;
-  }
-  .participation-grid::-webkit-scrollbar { width: 9px; }
-  .participation-grid::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--series-3) 45%, transparent); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
-  .pstate {
-    border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px;
-    background: var(--surface-1); display: flex; flex-direction: column; gap: 6px;
-  }
+  .p-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin: 0 0 22px; }
+  .p-search-wrap { position: relative; display: inline-flex; align-items: center; }
+  .p-search-icon { position: absolute; left: 12px; pointer-events: none; }
+  .p-search { min-width: 230px; padding: 9px 13px 9px 36px; border: var(--z-line); border-radius: 999px; background: var(--z-card);
+    color: var(--z-ink); font: inherit; font-size: 16px; box-shadow: 3px 3px 0 var(--z-ink); }
+  .p-search:focus { outline: none; box-shadow: 4px 4px 0 var(--z-ink), 0 0 0 3px var(--z-c1); }
+  .p-letters { display: flex; flex-wrap: wrap; gap: 5px; }
+  .p-letter { min-width: 32px; height: 32px; padding: 0 7px; border: var(--z-line); border-radius: 9px; background: var(--z-card);
+    color: var(--z-ink); font: inherit; font-size: 14px; cursor: pointer; }
+  .p-letter:hover:not(:disabled) { background: var(--z-muted-2); }
+  .p-letter[aria-pressed="true"] { background: var(--z-c2); color: var(--z-on-color); box-shadow: 3px 3px 0 var(--z-ink); }
+  .p-letter:disabled { border-style: dashed; border-color: var(--z-sketch-2); color: var(--z-sketch-2); cursor: default; }
+  .p-none { margin: 0 0 16px; font-size: 16px; }
+  .participation-grid { display: grid; gap: 22px 20px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    max-height: 640px; overflow-y: auto; padding: 8px 10px 12px 8px; scrollbar-width: thin; scrollbar-color: var(--z-ink) var(--z-muted-2); }
+  .pstate { display: flex; flex-direction: column; gap: 8px; padding: 14px 15px; }
   .pstate-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .pstate-idcol { display: flex; align-items: center; gap: 8px; min-width: 0; }
-  .pstate-name { font-weight: 600; }
-  /* Each state card leads with its flag. Sized small; hidden gracefully if the
-     image can't load so the name still reads. */
-  .pstate-flag {
-    width: 28px; height: auto; flex: none; border-radius: 3px;
-    border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.12);
-  }
-  .pstate-live { --pc: var(--hh-green); letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; flex: none; }
-  .pstate-kind {
-    display: inline-block; align-self: flex-start; font-size: 12px; font-weight: 550;
-    color: var(--text-secondary); background: var(--hover-wash);
-    border-radius: 6px; padding: 2px 8px;
-  }
-  .pstate-how { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
-  /* "Go to portal" / "How to participate" and each section's top-right portal link read
-     as outline buttons: a 2px full-contrast border, like the homepage's outline buttons. */
-  .pstate-link, .hgroup-portal { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
-    font-size: 13px; font-weight: 650; color: var(--text-primary) !important; text-decoration: none;
-    border: 2px solid var(--text-primary); border-radius: 999px; padding: 5px 13px; white-space: nowrap; }
-  .pstate-link:hover, .hgroup-portal:hover { background: var(--hover-wash); border-color: var(--hh-green); }
-  .pstate-link { margin-top: auto; }
-  .hgroup-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start;
-    gap: 8px 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gridline); font-size: 14px; }
-  .hgroup-more .hgroup-portal { margin-left: 0; }
-  /* USA (Federal): the whole card is one shorter scroll box with a coloured scrollbar. Its
-     header ("USA (Federal) · x of y showing · Follow") sticks to the top while it scrolls, and
-     each kind's title sticks just under it (--fed-head-h, the header's measured height). */
-  .hgroup--fed { max-height: 600px; overflow-y: auto; padding-top: 0; overscroll-behavior: contain;
-    scrollbar-width: thin; scrollbar-color: var(--hg-accent) color-mix(in srgb, var(--hg-accent) 14%, transparent); }
-  .hgroup--fed::-webkit-scrollbar { width: 11px; }
-  .hgroup--fed::-webkit-scrollbar-track { background: color-mix(in srgb, var(--hg-accent) 12%, transparent); border-radius: 999px; }
-  .hgroup--fed::-webkit-scrollbar-thumb { background: var(--hg-accent); border-radius: 999px;
-    border: 2px solid transparent; background-clip: padding-box; }
-  .hgroup--fed > .hgroup-head { position: sticky; top: 0; z-index: 3; background: var(--surface-1); padding-top: 12px; }
-  /* Phones: a tighter sticky header (Follow + Comment share a line) leaves more room to read. */
-  @media (max-width: 620px) {
-    .hgroup--fed { max-height: 500px; }
-    .hgroup--fed > .hgroup-head { gap: 6px 8px; padding-top: 10px; }
-    .hgroup--fed > .hgroup-head .hgroup-portal { padding: 3px 10px; font-size: 12.5px; }
-  }
-  /* Federal: short sections, each in its own colour. */
-  .fsec { margin-top: 16px; }
-  .fsec-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 6px;
-    padding: 6px 0 6px 10px; border-left: 4px solid var(--sc); font-size: 15.5px;
-    position: sticky; top: var(--fed-head-h, 52px); z-index: 2; background: var(--surface-1); }
-  .fsec-n { font-size: 12px; font-weight: 800; padding: 1px 9px; border-radius: 999px;
-    border: 1.5px solid var(--sc); background: color-mix(in srgb, var(--sc) 16%, transparent); }
-  .hgroup-rows.fsec-rows { max-height: none; overflow: visible; scrollbar-gutter: auto;
-    border: 1px solid color-mix(in srgb, var(--sc) 35%, var(--gridline)); border-radius: 10px; padding: 0 4px; }
-  .hnotices-h { margin: 22px 0 4px; padding-top: 16px; border-top: 2px solid var(--gridline); font-size: 18px; }
-  .hnotices-sub { margin: 0; font-size: 14px; }
-  .pstate-sub { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--gridline); }
+  .pstate-idcol { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .pstate-name { font-size: 20px; line-height: 1.2; }
+  .pstate-flag { flex: none; width: 30px; height: auto; border: 1.5px solid var(--z-ink); border-radius: 4px; }
+  .pstate-kind { align-self: flex-start; background: var(--z-muted-2); }
+  .pstate-how { font-size: 15px; line-height: 1.45; color: var(--z-body); }
+  .pstate-link { align-self: flex-start; margin-top: auto; font-size: 14px; }
+  .pstate-sub { margin-top: 4px; padding-top: 9px; border-top: 1.5px dashed var(--z-sketch-2); }
 
-  /* ===== Hearings — "Have your say" participation hero ===== */
-  /* Signature "night sky" hero: the America-250 fireworks canvas plays behind
-     the copy. Dark in both themes so the bursts read; the shared header/footer
-     stay identical to every other page. */
-  .hh-hero { position: relative; overflow: hidden; display: flex; align-items: center;
-    gap: 26px; margin: 8px 0 20px; padding: 30px; border-radius: 18px;
-    background:
-      radial-gradient(120% 150% at 22% -30%, #1b2c4f 0%, transparent 55%),
-      linear-gradient(180deg, #0a1428 0%, #0b1836 55%, #0a1024 100%);
-    border: 1px solid rgba(255,255,255,0.10); }
-  .hh-hero-copy, .hh-hero-art { position: relative; z-index: 1; }
-  .hh-hero .hh-title { color: #fff; }
-  .hh-hero .hh-tagline { color: #F4F5F7; }
+  /* The shared loading / empty states, on paper. */
+  .wrap .gb-state { border: 2px dashed var(--z-ink); border-radius: var(--z-radius); background: var(--z-muted-2); color: var(--z-ink); }
+  .wrap .gb-state h3 { font-family: var(--z-font); font-weight: 400; color: var(--z-ink); }
+  .wrap .gb-state p, .wrap .gb-loading p { color: var(--z-ink); font-size: 16px; }
+  .wrap .gb-spinner { border-color: var(--z-muted); border-top-color: var(--z-ink); }
 
-  .hh-hero-copy { flex: 1 1 auto; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-  .hh-title { margin: 2px 0 0; font-size: 52px; line-height: 1.0; }
-  .hh-tagline { margin: 0; font-family: var(--gb-font-display); font-size: 20px; color: var(--text-secondary); max-width: 46ch; }
-  /* Live metrics, foregrounded as a row of civic stat tiles (gold display
-     numerals) below the hero, so they read on the page ground in both themes. */
-  .hh-below { display: flex; flex-direction: column; gap: 12px; margin: -8px 0 18px; }
-  .hh-stats { display: flex; flex-wrap: wrap; gap: 10px; }
-  .hh-stat { display: flex; flex-direction: column; gap: 3px; padding: 12px 18px 11px;
-    border-radius: 14px; background: var(--surface-1);
-    border: 1px solid color-mix(in srgb, var(--gb-gold) 32%, var(--border)); }
-  .hh-stat-num { font-family: var(--gb-font-display); font-weight: 600; font-size: 34px; line-height: 1;
-    color: var(--series-3); font-variant-numeric: tabular-nums; }
-  .hh-stat-lbl { font-size: 12.5px; font-weight: 500; letter-spacing: .03em; color: var(--text-secondary); max-width: 20ch; }
-  /* Jump to a jurisdiction: one pill per state with live hearings, each with its own
-     colourful border (--jc, the six hues of the legislation page's download button,
-     set per pill in JS); the text stays full-contrast in both themes. */
-  .hh-jump { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .hh-jump-lbl { font-size: 13px; font-weight: 700; margin-right: 2px; }
-  .hh-jump a { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 650;
-    text-decoration: none; color: var(--text-primary); background: var(--surface-1);
-    border: 2.5px solid var(--jc); border-radius: 999px; padding: 5px 7px 5px 14px; }
-  .hh-jump a:hover { background: color-mix(in srgb, var(--jc) 16%, var(--surface-1)); }
-  .hh-jump a:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
-  .hh-jump .jn-count { min-width: 24px; text-align: center; padding: 1px 8px; border-radius: 999px;
-    border: 1.5px solid var(--jc); background: color-mix(in srgb, var(--jc) 22%, transparent);
-    font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .hgroup { scroll-margin-top: 84px; }
-
-  .hh-hero-art { flex: 0 0 auto; width: 340px; max-width: 46%; filter: drop-shadow(0 0 22px rgba(61,220,132,0.22)); }
-  .hh-hero-art img { width: 100%; height: auto; display: block; opacity: 0.95; }
-  /* Mobile: stack the hero so the copy sits above the art. The fireworks +
-     White House move to a lower band under the text instead of overlapping it. */
-  @media (max-width: 760px) {
-    .hh-hero { flex-direction: column; align-items: stretch; gap: 12px; padding: 26px 22px; }
-    .hh-title { font-size: 38px; }
-    .hh-hero-art { width: 82%; max-width: 300px; margin: 2px auto 0; align-self: center;
-      filter: drop-shadow(0 0 16px rgba(61,220,132,0.20)); }
-    .hh-hero .fw-canvas { top: auto; bottom: 0; height: 46%; }
+  @media (prefers-reduced-motion: reduce) {
+    .hh-jump a, .file-link, .hgroup-portal, .pstate-link, .clear-btn { transition: none; }
   }
-
-  /* participation status made obvious on each hearing */
-  .h-open { --pc: var(--hh-green); margin-top: 6px; letter-spacing: 0.02em; }
-  .file-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 650;
-    color: #06210a; background: var(--series-2); border-radius: 999px; padding: 7px 14px; }
-  .file-link:hover { background: color-mix(in srgb, var(--series-2) 85%, #ffffff); color: #06210a; }
 </style>
 <script>
   // Apply a saved theme choice before first paint to avoid a flash of the
@@ -558,38 +424,35 @@
 </div>
 
 <div class="wrap">
-  <header class="top">
-    <div class="hh-hero">
-      <canvas class="fw-canvas" id="fw-canvas" aria-hidden="true"></canvas>
-      <div class="hh-hero-copy">
-        <div class="gb-overline" style="color:var(--series-3)">Hearings &amp; Public Comment</div>
+  <header class="hh-hero z-card">
+    <div class="hh-hero-top">
+      <div>
+        <p class="z-eyebrow">Hearings &amp; public comment</p>
         <h1 class="hh-title">Have your say.</h1>
         <p class="hh-tagline">Government isn’t just something you watch — you can participate.</p>
       </div>
-      <div class="hh-hero-art" aria-hidden="true">
-        <img src="assets/whitehouse-hero.png" alt="" width="720" height="366">
-      </div>
+      <span class="hh-stamp" aria-hidden="true">🗳️</span>
     </div>
+    <div class="hh-stats" id="hh-stats" role="group" aria-label="Live hearing activity"></div>
   </header>
 
-  <!-- Live metrics + jump to a jurisdiction, below the hero -->
-  <div class="hh-below">
-    <div class="hh-stats" id="hh-stats" role="group" aria-label="Live hearing activity"></div>
-    <nav class="hh-jump" id="hh-jump" aria-label="Jump to a jurisdiction" hidden></nav>
-  </div>
+  <nav class="hh-jump" id="hh-jump" aria-label="Jump to a jurisdiction" hidden></nav>
 
-  <section class="card card--accent card--hearings" id="hearings-card" hidden>
-    <div class="hearings-head">
-      <div class="hearings-meta">
-        <span class="asof hearings-asof" id="hearings-asof"></span>
-        <span class="rss-wrap">
-          <button type="button" class="rss-link" id="rss-btn" aria-haspopup="dialog" aria-expanded="false"
-                  title="Follow every upcoming hearing in a feed reader">
-            <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"/></svg>
-            Follow all (RSS)
-          </button>
-        </span>
+  <section class="z-section" id="hearings-card" aria-labelledby="hearings-h" hidden>
+    <div class="z-divider" style="--zc:var(--z-c1)">
+      <span class="z-num" aria-hidden="true">01</span>
+      <div>
+        <h2 id="hearings-h">Upcoming hearings</h2>
+        <p>Committee hearings in the weeks ahead, and federal rules open for public comment.</p>
       </div>
+    </div>
+    <div class="hearings-head">
+      <span class="asof" id="hearings-asof"></span>
+      <button type="button" class="rss-link" id="rss-btn" aria-haspopup="dialog" aria-expanded="false"
+              title="Follow every upcoming hearing in a feed reader">
+        <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 11a9 9 0 0 1 9 9h2.5A11.5 11.5 0 0 0 4 8.5V11zm0 4a5 5 0 0 1 5 5h2.5A7.5 7.5 0 0 0 4 12.5V15zm1.5 2.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5z"/></svg>
+        Follow all (RSS)
+      </button>
     </div>
     <div id="hearings-body" class="hearings-groups"></div>
   </section>
@@ -600,11 +463,12 @@
   </div>
   <div class="gb-state" id="hearings-empty" hidden></div>
 
-  <section class="card card--accent" id="participation-card" hidden>
-    <div class="hearings-head">
+  <section class="z-section" id="participation-card" aria-labelledby="participation-h" hidden>
+    <div class="z-divider" style="--zc:var(--z-c2)">
+      <span class="z-num" aria-hidden="true">02</span>
       <div>
-        <h2>Weigh in — by state</h2>
-        <p class="sub">How the public participates in legislation in each state, with a link to the official portal. States with a machine-readable hearing feed also show their upcoming hearings above.</p>
+        <h2 id="participation-h">Weigh in — by state</h2>
+        <p>How the public takes part in each state, with the official portal. States with a hearing feed also show their hearings above.</p>
       </div>
     </div>
     <div class="p-tools">
@@ -684,9 +548,10 @@
     return n;
   }
 
-  // Per-state accent colors for the hearings section cards, alternating by group order.
-  // Alternates the design system's green and gold (both tuned per theme in --hh-green/--hh-gold).
-  const HG_ACCENTS = ["--hh-green", "--hh-gold"];
+  // Each jurisdiction's colour (its name tab and its "Jump to" pill), cycling the deck's four
+  // section colours in page order.
+  const ZINE_COLORS = ["--z-c1", "--z-c2", "--z-c3", "--z-c4"];
+  const zc = (i) => "var(" + ZINE_COLORS[i % ZINE_COLORS.length] + ")";
 
   function renderHearings(data) {
     const ld = $("hearings-loading"); if (ld) ld.remove();
@@ -743,8 +608,7 @@
       const juris = portals[code] || { name: code.toUpperCase() };
       const group = eln("div", "hgroup");
       group.id = "hg-" + code;
-      // Per-state accent for the card border / header rule, cycling the palette.
-      group.style.setProperty("--hg-accent", "var(" + HG_ACCENTS[gi % HG_ACCENTS.length] + ")");
+      group.style.setProperty("--hg-accent", zc(gi));
       const head = eln("div", "hgroup-head");
       head.append(eln("span", "hgroup-name", juris.name));
       // Federal carries only the soonest-closing open rules, plus a few notices of each
@@ -782,7 +646,10 @@
             "See all " + fmt(listed.length) + " ↗", juris.portal_url));
         }
       }
-      body.append(group);
+      // The frame carries the card's pencil-sketch lines (the federal card scrolls, which would clip them).
+      const frame = eln("div", "hg-frame");
+      frame.append(group);
+      body.append(frame);
     });
 
     // Jump-to pills at the top, in the same order as the sections, each with its count.
@@ -792,21 +659,33 @@
     jumps.forEach((j, i) => {
       const a = eln("a", null, j.name);
       a.href = "#hg-" + j.code;
-      a.style.setProperty("--jc", JUMP_COLORS[i % JUMP_COLORS.length]);
+      a.style.setProperty("--jc", zc(i));
       a.append(eln("span", "jn-count", fmt(j.total)));
       jump.append(a);
     });
     jump.hidden = jumps.length < 2;
+    markJumpInView(jump);
 
     card.hidden = false;
-    const f = $("footer");
-    if (f) f.textContent = "Committee hearings from " + (data.source || "official sources") + ", refreshed twice daily.";
+  }
+
+  // Colour marks where you are: the "Jump to" pill of the jurisdiction on screen fills in.
+  function markJumpInView(jump) {
+    if (!("IntersectionObserver" in window) || jump.hidden) return;
+    const pills = {};
+    jump.querySelectorAll("a").forEach((a) => { pills[a.hash.slice(1)] = a; });
+    const seen = new Map();
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => seen.set(e.target.id, e.isIntersecting));
+      const here = Object.keys(pills).find((id) => seen.get(id));
+      Object.keys(pills).forEach((id) => pills[id].setAttribute("aria-current", String(id === here)));
+    }, { rootMargin: "-35% 0px -55% 0px" });
+    Object.keys(pills).forEach((id) => { const g = $(id); if (g) io.observe(g); });
   }
 
   // Every list shows at most SHOW_MAX rows ("x of y showing") with a "See all ↗" link
   // to the official site for the rest; federal notices show NOTICE_SHOW of each kind.
   const SHOW_MAX = 7;
-  const JUMP_COLORS = ["#5EBD3E", "#FFB900", "#F78200", "#E23838", "#973999", "#009CDF"];
   const NOTICE_SHOW = 2;
   function showing(shown, total) { return fmt(shown) + " of " + fmt(total) + " showing"; }
   function seeAllRow(text, label, url) {
@@ -826,13 +705,10 @@
   // USA (Federal): the rules in their own scrolling section, then "Other federal notices"
   // with a short, labelled block per kind and one "See all" link to the Federal Register's
   // list of every open notice.
-  const FED_COLORS = {
-    rules: "--hh-green", rfi: "--series-1", environment: "--series-4", permits: "--hh-gold",
-    meetings: "--series-5", privacy: "--series-7", paperwork: "--series-8", other: "--series-6",
-  };
+  let fedN = 0;   // federal sections take the section colours in turn
   function fedSection(key, label, rows, total) {
     const box = eln("section", "fsec");
-    box.style.setProperty("--sc", "var(" + (FED_COLORS[key] || "--hh-green") + ")");
+    box.style.setProperty("--sc", zc(fedN++));
     const h = eln("h4", "fsec-h", label);
     h.append(eln("span", "fsec-n", showing(rows.length, total)));
     box.append(h);
@@ -1249,200 +1125,6 @@
     });
   })();
 
-  /* ---------- 250th fireworks (canvas) ----------
-     A 4th-of-July fireworks show behind the brand: ambient bursts, plus a
-     recurring shell that flies up and settles its sparks into the word "250th"
-     (America's Semiquincentennial), holds, then falls. Self-contained; degrades
-     to a static "250th" when the viewer prefers reduced motion. */
-  (function initFireworks() {
-    const canvas = document.getElementById("fw-canvas");
-    if (!canvas || !canvas.getContext) return;
-    const ctx = canvas.getContext("2d");
-    const RED = [237, 46, 56], WHITE = [255, 255, 255], BLUE = [74, 163, 255],
-          GOLD = [255, 213, 74], GREEN = [46, 230, 166], PINK = [255, 122, 217];
-    const PALETTE = [RED, WHITE, BLUE, GOLD, GREEN, PINK];
-    const rgba = (c, a) => "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")";
-    const pick = (a) => a[(Math.random() * a.length) | 0];
-    const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    let W = 0, H = 0, dpr = 1;
-    function fit() {
-      dpr = Math.min(2, window.devicePixelRatio || 1);
-      W = canvas.clientWidth; H = canvas.clientHeight;
-      canvas.width = Math.max(1, Math.round(W * dpr));
-      canvas.height = Math.max(1, Math.round(H * dpr));
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-    fit();
-    if (window.ResizeObserver) new ResizeObserver(fit).observe(canvas);
-    else window.addEventListener("resize", fit);
-
-    // Sample the word "250th" into target points scaled to the canvas.
-    function wordPoints() {
-      if (!W || !H) return [];
-      const off = document.createElement("canvas");
-      off.width = W; off.height = H;
-      const c = off.getContext("2d");
-      c.textAlign = "center"; c.textBaseline = "middle";
-      let fs = H * 0.72;
-      c.font = "900 " + fs + "px system-ui, 'Segoe UI', sans-serif";
-      const maxW = W * 0.6;
-      const w = c.measureText("250th").width;
-      if (w > maxW) { fs *= maxW / w; c.font = "900 " + fs + "px system-ui, 'Segoe UI', sans-serif"; }
-      c.fillStyle = "#fff";
-      c.fillText("250th", W / 2, H / 2 + 2);
-      const data = c.getImageData(0, 0, W, H).data;
-      const step = Math.max(3, Math.round(fs / 20));
-      const pts = [];
-      for (let y = 0; y < H; y += step)
-        for (let x = 0; x < W; x += step)
-          if (data[(y * W + x) * 4 + 3] > 128) pts.push({ x: x, y: y });
-      // Cap the point count so the word stays cheap to animate.
-      const MAX = 240;
-      if (pts.length > MAX) {
-        const keep = [], s = pts.length / MAX;
-        for (let i = 0; i < MAX; i++) keep.push(pts[(i * s) | 0]);
-        return keep;
-      }
-      return pts;
-    }
-
-    if (reduced) {
-      // Static celebratory word, no animation.
-      const draw = () => {
-        fit(); ctx.clearRect(0, 0, W, H);
-        let fs = H * 0.72;
-        ctx.font = "900 " + fs + "px system-ui, 'Segoe UI', sans-serif";
-        const maxW = W * 0.6, w = ctx.measureText("250th").width;
-        if (w > maxW) { fs *= maxW / w; ctx.font = "900 " + fs + "px system-ui, 'Segoe UI', sans-serif"; }
-        ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.shadowColor = "rgba(255,213,74,0.8)"; ctx.shadowBlur = 18;
-        ctx.fillStyle = "#ffd54a";
-        ctx.fillText("250th", W / 2, H / 2 + 2);
-        ctx.shadowBlur = 0;
-      };
-      draw();
-      window.addEventListener("resize", draw);
-      return;
-    }
-
-    const sparks = [];    // ambient explosion particles
-    const rockets = [];   // rising shells
-    let word = null;      // {parts, phase, clock}
-    let rocketTimer = 300, wordTimer = 900;
-
-    function explode(x, y, color) {
-      const n = 26 + (Math.random() * 12 | 0);
-      for (let i = 0; i < n; i++) {
-        const a = (i / n) * Math.PI * 2 + Math.random() * 0.25;
-        const sp = 0.6 + Math.random() * 3.0;
-        sparks.push({ x: x, y: y, px: x, py: y,
-          vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
-          life: 1, decay: 0.012 + Math.random() * 0.012,
-          color: Math.random() < 0.25 ? WHITE : color });
-      }
-    }
-    function launch() {
-      const x = W * (0.12 + Math.random() * 0.76);
-      rockets.push({ x: x, y: H + 4, vy: -(2.4 + Math.random() * 1.3),
-        ty: H * (0.16 + Math.random() * 0.34), color: pick(PALETTE) });
-    }
-    function startWord() {
-      const pts = wordPoints();
-      if (!pts.length) { wordTimer = 1500; return; }
-      const sx = W / 2 + (Math.random() - 0.5) * 30;
-      word = { phase: "in", clock: 0, parts: pts.map((p) => ({
-        sx: sx, sy: H + 8, x: sx, y: H + 8, px: sx, py: H + 8,
-        tx: p.x, ty: p.y, t: Math.random() * 0.12, life: 1,
-        color: Math.random() < 0.5 ? GOLD : WHITE })) };
-    }
-
-    const easeOut = (t) => 1 - Math.pow(1 - t, 3);
-
-    function updateWord(dt) {
-      if (!word) return;
-      const P = word.parts;
-      if (word.phase === "in") {
-        let done = true;
-        for (const p of P) {
-          p.t += dt / 820;
-          const e = easeOut(Math.min(1, p.t));
-          p.px = p.x; p.py = p.y;
-          p.x = p.sx + (p.tx - p.sx) * e;
-          p.y = p.sy + (p.ty - p.sy) * e;
-          if (p.t < 1) done = false;
-        }
-        if (done) { word.phase = "hold"; word.clock = 0; }
-      } else if (word.phase === "hold") {
-        word.clock += dt;
-        if (word.clock > 1700) {
-          word.phase = "out";
-          for (const p of P) { p.vx = (Math.random() - 0.5) * 1.6; p.vy = -(0.4 + Math.random() * 1.8); }
-        }
-      } else { // out
-        let alive = false;
-        for (const p of P) {
-          p.px = p.x; p.py = p.y;
-          p.vy += 0.05; p.x += p.vx; p.y += p.vy; p.life -= 0.012;
-          if (p.life > 0) alive = true;
-        }
-        if (!alive) { word = null; wordTimer = 3400; }
-      }
-    }
-
-    let last = performance.now();
-    function frame(now) {
-      const dt = Math.min(50, now - last); last = now;
-      requestAnimationFrame(frame);
-      if (document.hidden || !W || !H) return;
-
-      rocketTimer -= dt;
-      if (rocketTimer <= 0) { launch(); rocketTimer = 480 + Math.random() * 720; }
-      if (!word) { wordTimer -= dt; if (wordTimer <= 0) startWord(); }
-
-      // rockets
-      for (let i = rockets.length - 1; i >= 0; i--) {
-        const r = rockets[i];
-        r.y += r.vy;
-        if (r.y <= r.ty) { explode(r.x, r.y, r.color); rockets.splice(i, 1); }
-      }
-      // sparks physics
-      for (let i = sparks.length - 1; i >= 0; i--) {
-        const s = sparks[i];
-        s.px = s.x; s.py = s.y;
-        s.vx *= 0.985; s.vy = s.vy * 0.985 + 0.045;
-        s.x += s.vx; s.y += s.vy; s.life -= s.decay;
-        if (s.life <= 0) sparks.splice(i, 1);
-      }
-      if (sparks.length > 1400) sparks.splice(0, sparks.length - 1400);
-      updateWord(dt);
-
-      // draw
-      ctx.clearRect(0, 0, W, H);
-      ctx.globalCompositeOperation = "lighter";
-      ctx.lineCap = "round";
-      for (const r of rockets) {
-        ctx.strokeStyle = rgba(r.color, 0.9); ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(r.x, r.y + 6); ctx.lineTo(r.x, r.y); ctx.stroke();
-      }
-      for (const s of sparks) {
-        ctx.strokeStyle = rgba(s.color, Math.max(0, s.life));
-        ctx.lineWidth = 1.6;
-        ctx.beginPath(); ctx.moveTo(s.px, s.py); ctx.lineTo(s.x, s.y); ctx.stroke();
-      }
-      if (word) {
-        const tw = (word.phase === "hold")
-          ? 0.75 + 0.25 * Math.sin(now / 140) : 1;
-        for (const p of word.parts) {
-          const a = Math.max(0, p.life) * tw;
-          ctx.fillStyle = rgba(p.color, a);
-          ctx.beginPath(); ctx.arc(p.x, p.y, 1.9, 0, Math.PI * 2); ctx.fill();
-        }
-      }
-      ctx.globalCompositeOperation = "source-over";
-    }
-    requestAnimationFrame(frame);
-  })();
 
   loadHearings();
   loadParticipation();

@@ -268,7 +268,7 @@ brand + Hearings = green; Legislation = blue; **Illinois Elections = amber** (`-
 **locator mini-maps keep the classic look — a GOLD outline/base with the GREEN highlighted district** —
 via their own `--rm-gold` (the pre-rebrand gold, `#D6A84F` dark / `#A9791F` light, set on `.race-map`),
 since `--gb-gold` is now green; "live" / "comment open" status marks stay `--gb-green`. The Liberty
-(`liberty-hero.png`), White House (`whitehouse-hero.png`) and **Illinois Capitol**
+(`liberty-hero.png`) and **Illinois Capitol**
 (`il-capitol-building.png`, deepened with a CSS `brightness`/`saturate` filter in light mode so the line
 art stays crisp; the waving flag overlay is unchanged) heroes were recoloured to green in place
 (a hue remap of their gold pixels, keeping value + alpha; the gold originals are in git history), the
@@ -731,29 +731,30 @@ section's **"Other"** tab. `loadIlRecent()` still fetches the legislation `data.
 The **"Explore entire catalog of IL bills ↗"** button (`#ilr-explore`, `legislation.html#state=il` in a
 new tab, via the `#state=<code>` deep link → `eeApplyFilter`) was relocated to the bottom of the
 Springfield section.
-`hearings.html` has been reframed **participation-first**: an "Have your say." hero (overline
-"Hearings & Public Comment", tagline "Government isn't just something you watch — you can
-participate."), and a
-detailed gold White House line-art (`assets/whitehouse-hero.png`, a transparent-background raster
-so it drops onto the dark hero in both themes); the America-250 `250th` fireworks
-brandbar is kept. (The earlier "See upcoming hearings" CTA button was removed.) **Below** the hero
-sits a `.hh-below` strip with the live metrics as a row of **gold civic stat tiles**
-(`.hh-stats` / `.hh-stat` — theme-aware, gold display numerals on `--surface-1` glass with a
-gold-tinted border: **two** tiles, "N upcoming hearings and open to public comment" (the count that
-are both upcoming and comment-open) and "N jurisdictions"), then a **"Jump to" row** (`#hh-jump`, hidden
-with fewer than two jurisdictions): one pill per jurisdiction with live hearings, in section order, with its
-count (the section's full total — federal = open rules + notices) and its **own colourful 2.5px border**
-(`JUMP_COLORS`, the six hues of legislation's download button, `--jc` per pill; text full-contrast, the count
-in a small tinted badge), linking to `#hg-<code>` (`.hgroup` has `scroll-margin-top`, so the sticky header
-doesn't cover it; search's `#hg-<code>` links use the same ids). The federal section has no jump row. The jurisdiction sections' 4-sided borders **alternate green / gold**
-(`HG_ACCENTS = ["--hh-green", "--hh-gold"]`, page tokens tuned per theme: green `#3DDC84`/`#0B7D45`, true
-gold `#E5B94E`/`#8A6100`, since the brand `--gb-gold` is green). Every status pill — "Hearing", "Comment
-due", "Public comment open", "Canceled", the directory's "Live hearings" — shares one readable style
-(full-contrast text, a 1.5px border in the pill's colour `--pc`, a light tint of it), and the "Go to portal" /
-"How to participate" links and each section's top-right portal link are **outline buttons** (2px
-full-contrast border, like the homepage's). Each hearing still makes participation obvious: a green **"Public comment open"**
-badge on the date column and the witness-slip/comment action elevated into a filled green
-`.file-link` pill. **Following by RSS** (`#rss-pop`, one popover for the "Follow all", per-state, per-bill and per-hearing
+`hearings.html` is participation-first and wears its own **"hand-drawn civic zine"** look (Nov 2026,
+from the Govbot presentation deck; the shared header, drawer and footer are untouched): warm paper
+`#FBFAF5` and near-black ink `#1B1A17` (dark theme = "night paper", the same marks inverted; `--z-*`
+tokens in the page's `<style>`), **Roboto** only (Google Fonts, scoped to `.wrap` + the RSS popover;
+hierarchy from size), 2px ink outlines on rounded shapes, hard 4px offset ink shadows (no blur) on the
+buttons that take you somewhere, **pencil-sketch double lines** behind each card (`.z-card` /
+`.hg-frame` `::before/::after`, z-index −1 inside the isolated `.wrap` / `.participation-grid`; the
+hearings cards get theirs from a `.hg-frame` wrapper because the federal card scrolls and would clip
+them), and a thin, slightly tilted **paper frame** around the content (`.wrap::before`). Colour only
+marks where you are: the deck's four section colours `--z-c1..c4` (#8EC5F0 blue, #8FD9A0 green,
+#FFD166 yellow, #F4A3C0 pink; text on them is always dark ink). Top to bottom: a hero card (caps eyebrow
+"Hearings & public comment", "Have your say.", the tagline, a 🗳️ stamp, and the live stats as **big
+light numerals with caps labels**: "N upcoming hearings and open to public comment" — upcoming and
+comment-open — and "N jurisdictions"); the **"Jump to" nav pills** (`#hh-jump`, hidden with fewer
+than two jurisdictions; one per jurisdiction in section order with its count, linking to `#hg-<code>`;
+the pill of the jurisdiction on screen fills with its colour and gets the hard shadow —
+`markJumpInView`, an IntersectionObserver setting `aria-current`); then two **section dividers**
+(giant outlined number, title, one line): **01 Upcoming hearings** and **02 Weigh in — by state**.
+Each jurisdiction's card puts its name on a tab in its colour (`zc(i)` cycles `--z-c1..c4`, the same
+colour as its jump pill; `.hgroup` keeps `scroll-margin-top`, and search's `#hg-<code>` links use the
+same ids). The federal kinds' sections take the colours in turn too (`fedN`). Status chips are small
+all-caps ink-outlined pills; colour only where it means something: "Comment due" yellow, "Public
+comment open" / "Live hearings" green, "Canceled" pink. The White House hero art and the America-250
+fireworks canvas were retired with this redesign (`whitehouse-hero.png` deleted). **Following by RSS** (`#rss-pop`, one popover for the "Follow all", per-state, per-bill and per-hearing
 buttons): the feed address with Copy, one-tap "Add to Feedly / Inoreader / NewsBlur" links, "Preview the feed"
 (the `feed.xsl` page) and **"Copy a link to share"** (the page's `#hg-<code>` section, which previews as a page
 with the `og:` tags in `hearings.html`'s head + `assets/og-hearings.png`), plus a line saying a feed address is for
@@ -919,9 +920,7 @@ all wired by the shared `assets/govbot-shell.js` (so every page also loads that 
 section is marked `aria-current="page"` in the header's Explore mega-menu (and the top-level How
 Govbot Works link on architecture) + the drawer. Each flagship keeps its own **signature hero**
 below that shared header: legislation's search hero, elections' waving Illinois flag, architecture's
-plain-English pipeline, and hearings' self-contained "night sky" hero panel — the America-250
-`250th` fireworks canvas (`#fw-canvas`) relocated out of the retired brandbar into `.hh-hero` (dark
-in both themes so the bursts read). The per-hero "govbot docs · GitHub repo" links were dropped from
+plain-English pipeline, and hearings' hand-drawn zine hero card (see the hearings paragraph). The per-hero "govbot docs · GitHub repo" links were dropped from
 hearings and elections (the footer already carries them). **External-link convention:** any link that
 leaves the dashboard (`github.com`, `chihacknight.org`, official-source sites, and the mdBook docs at
 `../index.html`/`../dashboard-guide.md` — anything outside `github.io/govbot/dashboard/`) opens in a
@@ -960,11 +959,10 @@ reviews, Permits/licenses/approvals, Meetings, Privacy & government records, For
 ship, each record carrying its `category`; the `us` entry adds `notice_total`, `notice_categories`
 (key/label/full count) and `notice_list_url` (the Federal Register's search for every open notice — it
 has no list of Govbot's kinds). The page draws the federal group with `federalSections`. **The whole
-federal card is one shorter scroll box** (`.hgroup--fed`, 600px; 500px on phones, a scrollbar in its
-green/gold accent): its header ("USA (Federal) · x of y showing · Follow this state (RSS)") is **sticky**
+federal card is one shorter scroll box** (`.hgroup--fed`, 640px; 540px on phones, an ink scrollbar): its header ("USA (Federal) · x of y showing · Follow this state (RSS)") is **sticky**
 at the top, and each kind's title (`.fsec-h`) sticks just under it (`--fed-head-h`, the header's height
 measured by a ResizeObserver, since it wraps on phones). The rules sit in their own colour-bordered box
-(`.fsec-rows`, `FED_COLORS`, no inner scroll) reading "7 of N showing" with "Showing the 7 closing soonest. **See all N ↗**" (the
+(`.fsec-rows`, its kind's colour on a dot before the title, no inner scroll) reading "7 of N showing" with "Showing the 7 closing soonest. **See all N ↗**" (the
 Federal Register's list), then **"Other federal notices open for comment"**: one short block per kind,
 each clearly labelled with its kind and "2 of N showing" (`fedSection`; `noticePreview` keeps 2 per kind
 even from an older file), and **one** line at the bottom — "Showing the X closing soonest. **See all Y ↗**"
@@ -973,7 +971,7 @@ even from an older file), and **one** line at the bottom — "Showing the X clos
 (`SHOW_MAX`), reads **"x of y showing"** (`showing()`; the federal header totals rules + notices), and a
 longer list gets "Showing the next 7. **See all N ↗**" to its `portal_url` (`seeAllRow`, `.hgroup-more`,
 the button right next to the text) — search's `#hg-<code>` links land on the state's section, which may
-not show a hearing past the 7th (the states' `.hgroup-rows` scrollbars use their green/gold accent too);
+not show a hearing past the 7th (the states' `.hgroup-rows` scrollbars are ink);
 the old Regulations.gov `DEMO_KEY` path was rate-limited and its placeholder seed had expired, so both
 were removed) — federal leads the list, above the states. It writes `docs/src/dashboard/hearings.json` + a whole-calendar
 RSS `hearings.xml` + granular RSS feeds under `docs/src/dashboard/hearings/` — per bill
