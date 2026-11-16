@@ -741,8 +741,9 @@ buttons that take you somewhere, **pencil-sketch double lines** behind each card
 hearings cards get theirs from a `.hg-frame` wrapper because the federal card scrolls and would clip
 them), and a thin, slightly tilted **paper frame** around the content (`.wrap::before`, doubled by `.wrap::after`).
 A **"Pencil layer"** at the end of the page's styles pushes it to a heavy graphite sketch: SVG-noise
-paper grain + faint smudges on the body; the sketch outlines (never text) run through two hidden SVG
-filters, `#pencil` / `#pencil-2` (turbulence wobble + a grain mask so lines read as graphite);
+paper grain + faint smudges on the body; the doubled sketch outlines get uneven hand-drawn corners
+(irregular `border-radius`, one partly dashed) — **no live SVG filters**: turbulence filters on the outlines
+(Nov 2026) made the page ~3× slower to load and scroll on a phone-speed CPU, so they were removed;
 coloured-pencil hatching over every colour fill and faint hatching inside cards; section numbers shaded
 in hatching inside a wobbly outline; scribbled underlines under section titles, a scribbled circle round
 "say." (`.hh-circle`); pencil rules instead of dashed lines; and margin doodles (an arrow into "Jump to",
@@ -750,9 +751,12 @@ a star by each section, a squiggle under the stats). All static masks/gradients,
 marks where you are: the deck's four section colours `--z-c1..c4` (#8EC5F0 blue, #8FD9A0 green,
 #FFD166 yellow, #F4A3C0 pink; text on them is always dark ink). Top to bottom: a hero card (caps eyebrow
 "Hearings & public comment", "Have your say.", the tagline, the **America-250 fireworks in pencil** —
-`drawFireworks()` builds an SVG (`#hh-fw`) of ink-ray bursts, each ray doubled by a lighter sketch line
-and given fixed seeded jitter, shooting up on dotted trails over a hand-lettered outline "250th" on a
-yellow marker swipe; the bursts animate transform/opacity only, the lettering draws itself on, paused
+`drawFireworks()` builds ink-ray bursts in `#hh-fw` (`.fw-stage`), each ray doubled by a lighter sketch
+line and given fixed seeded jitter, shooting up on dotted trails over a hand-lettered outline "250th" on a
+yellow marker swipe; **every moving piece is its own small HTML box holding a still SVG**, and only the box
+moves (transform/opacity, so the compositor animates it with zero repaint — animating `<g>`s inside one
+SVG repainted the whole hero card every frame); the lettering "writes" by sliding a clip window over it
+(`.fw-reveal`, two opposite transforms); paused
 off screen (IntersectionObserver), a still composed frame under reduced motion — and the live stats as **big
 light numerals with caps labels**: "N upcoming hearings and open to public comment" — upcoming and
 comment-open — and "N jurisdictions"); the **"Jump to" nav pills** (`#hh-jump`, hidden with fewer

@@ -79,33 +79,42 @@
   .hh-tagline { margin: 14px 0 0; font-size: 24px; line-height: 1.35; color: var(--z-body); max-width: 34ch; }
   /* The America-250 fireworks, in pencil: bursts of ink rays (each ray drawn twice, the second a
      lighter, nudged sketch line) that shoot up and open over a hand-lettered "250th" with a yellow
-     marker swipe. Built by drawFireworks() below; the bursts animate transform/opacity only, the
-     lettering draws itself on (stroke-dashoffset). Paused off screen; still under reduced motion. */
+     marker swipe. Built by drawFireworks() below. Every moving piece is its own small HTML box
+     holding a still drawing, and only the box moves (transform/opacity), so the browser's
+     compositor animates it without repainting anything; the lettering "writes" by sliding a clip
+     window over it (two opposite transforms). Paused off screen; still under reduced motion. */
   .hh-art { flex: 0 1 380px; min-width: 0; margin: -10px -6px -6px 0; }
-  .hh-art svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .fw-stage { position: relative; aspect-ratio: 380 / 260; }
+  .fw-stage > div { position: absolute; }
+  .fw-stage svg { display: block; width: 100%; height: 100%; overflow: visible; }
   .fw-ray { stroke: var(--z-ink); stroke-width: 2; stroke-linecap: round; fill: none; }
   .fw-ray.is-sketch { stroke: var(--z-sketch-2); stroke-width: 1; }
   .fw-tip { fill: var(--z-ink); }
   .fw-trail { stroke: var(--z-ink); stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 3 5; fill: none; }
   .fw-word { fill: none; stroke: var(--z-ink); stroke-width: 2; stroke-linejoin: round; font-family: var(--z-font); font-weight: 400; }
   .fw-word.is-sketch { stroke: var(--z-sketch-2); stroke-width: 1; }
-  .fw-swipe { fill: var(--z-c3); --swipe: .4; }   /* fainter on night paper, so the light lettering reads */
-  :root[data-theme="light"] .fw-swipe { --swipe: .9; }
-  @media (prefers-color-scheme: light) { :root:not([data-theme]) .fw-swipe { --swipe: .9; } }
-  .fw-burst { transform-box: view-box; animation: fw-burst var(--cycle) var(--d) infinite both; }
-  .fw-trailg { transform-box: view-box; animation: fw-trail var(--cycle) var(--d) infinite both; }
+  /* Fainter on night paper, so the light lettering reads over it. */
+  .fw-swipe { --swipe: color-mix(in srgb, var(--z-c3) 40%, transparent); border-radius: 8px; transform-origin: left center; transform: rotate(-2deg);
+    background: repeating-linear-gradient(-58deg, transparent 0 3px, var(--z-hatch) 3px 4.4px), var(--swipe); }
+  :root[data-theme="light"] .fw-swipe { --swipe: color-mix(in srgb, var(--z-c3) 90%, transparent); }
+  @media (prefers-color-scheme: light) { :root:not([data-theme]) .fw-swipe { --swipe: color-mix(in srgb, var(--z-c3) 90%, transparent); } }
+  .fw-reveal { overflow: hidden; }
+  .fw-burst { animation: fw-burst 7.5s var(--d) infinite both; }
+  .fw-trailbox { transform-origin: bottom center; animation: fw-trail 7.5s var(--d) infinite both; }
   @keyframes fw-trail { 0% { transform: scaleY(0); opacity: 1; } 10% { transform: scaleY(1); opacity: 1; } 16%, 100% { transform: scaleY(1); opacity: 0; } }
   @keyframes fw-burst { 0%, 10% { transform: scale(.08) rotate(-8deg); opacity: 0; } 12% { opacity: 1; }
     30% { transform: scale(1) rotate(0); opacity: 1; } 46% { transform: scale(1.08) rotate(2deg); opacity: 0; } 100% { transform: scale(1.08); opacity: 0; } }
-  .fw-word { stroke-dasharray: 600; animation: fw-write 11s 0.4s infinite both; }
-  @keyframes fw-write { 0% { stroke-dashoffset: 600; opacity: 1; } 28% { stroke-dashoffset: 0; } 86% { stroke-dashoffset: 0; opacity: 1; } 96%, 100% { stroke-dashoffset: 0; opacity: 0; } }
-  .fw-swipe { transform-box: fill-box; transform-origin: left center; animation: fw-swipe 11s 0.4s infinite both; }
-  @keyframes fw-swipe { 0%, 20% { transform: scaleX(0); opacity: var(--swipe); } 30%, 86% { transform: scaleX(1); opacity: var(--swipe); } 96%, 100% { transform: scaleX(1); opacity: 0; } }
-  .hh-art.is-off * { animation-play-state: paused; }
+  .fw-reveal { animation: fw-reveal 11s .4s infinite both; }
+  .fw-reveal > div { height: 100%; animation: fw-revin 11s .4s infinite both; }
+  @keyframes fw-reveal { 0% { transform: translateX(-100%); opacity: 1; } 28% { transform: none; } 86% { transform: none; opacity: 1; } 96%, 100% { transform: none; opacity: 0; } }
+  @keyframes fw-revin { 0% { transform: translateX(100%); } 28%, 100% { transform: none; } }
+  .fw-swipe { animation: fw-swipe 11s .4s infinite both; }
+  @keyframes fw-swipe { 0%, 20% { transform: rotate(-2deg) scaleX(0); opacity: 1; } 30%, 86% { transform: rotate(-2deg) scaleX(1); opacity: 1; }
+    96%, 100% { transform: rotate(-2deg) scaleX(1); opacity: 0; } }
+  .hh-art.is-off .fw-stage * { animation-play-state: paused; }
   @media (prefers-reduced-motion: reduce) {
-    .fw-burst, .fw-trailg, .fw-word, .fw-swipe { animation: none; }
-    .fw-swipe { opacity: var(--swipe); }
-    .fw-trailg { opacity: 0; }
+    .fw-stage * { animation: none !important; }
+    .fw-trailbox { opacity: 0; }
   }
   /* Stats: big numbers, tiny caps labels underneath. */
   .hh-stats { display: flex; flex-wrap: wrap; gap: 18px 48px; margin-top: 28px; padding-top: 22px; border-top: 2px dashed var(--z-sketch-2); }
@@ -292,10 +301,10 @@
     .hh-jump a, .file-link, .hgroup-portal, .pstate-link, .clear-btn { transition: none; }
   }
 
-  /* ===== Pencil layer: the page drawn harder in graphite. Paper grain, wobbly doubled lines
-     (an SVG turbulence filter, #pencil / #pencil-2 in the page, on the sketch outlines only —
-     never on text), coloured-pencil hatching instead of flat colour fills, shaded section
-     numbers, scribbled underlines and margin doodles. All static: nothing here animates. ===== */
+  /* ===== Pencil layer: the page drawn harder in graphite. Paper grain, doubled sketch lines with
+     uneven, hand-drawn corners, coloured-pencil hatching instead of flat colour fills, shaded
+     section numbers, scribbled underlines and margin doodles. All static, and no live filters:
+     SVG turbulence filters on the outlines made the page ~3x slower to load and scroll. ===== */
   :root { --z-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); --z-hatch: rgba(255,255,255,.5); }
   :root[data-theme="light"] { --z-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
   @media (prefers-color-scheme: light) { :root:not([data-theme]) { --z-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); } }
@@ -304,12 +313,14 @@
       radial-gradient(50% 35% at 92% 72%, color-mix(in srgb, var(--z-sketch-2) 8%, transparent), transparent 70%); }
 
   /* Every sketch outline wobbles and is drawn three times: two pseudo lines + the frame's own. */
-  .z-card::before, .hg-frame::before, .wrap::before { filter: url(#pencil); border-width: 1.6px; }
-  .z-card::after, .hg-frame::after { filter: url(#pencil-2); border-width: 1.2px;
+  .z-card::before, .hg-frame::before, .wrap::before { border-width: 1.6px; }
+  .z-card::before, .hg-frame::before { border-radius: 18px 11px 20px 13px / 13px 19px 11px 17px; }
+  .z-card::after, .hg-frame::after { border-radius: 12px 19px 14px 21px / 18px 12px 20px 13px; border-style: solid dashed solid solid; }
+  .z-card::after, .hg-frame::after { border-width: 1.2px;
     transform: translate(5px, -4px) skew(-.5deg, .7deg) rotate(.25deg); }
   .z-card::before, .hg-frame::before { transform: translate(-6px, 4px) skew(.6deg, -.4deg) rotate(-.2deg); }
   .wrap::after { content: ""; position: absolute; inset: 20px 4px 12px 14px; border: 1px solid var(--z-sketch-2);
-    border-radius: 28px 20px 26px 22px; transform: rotate(.35deg); pointer-events: none; filter: url(#pencil-2); }
+    border-radius: 28px 20px 26px 22px; transform: rotate(.35deg); pointer-events: none; }
   @media (max-width: 620px) { .wrap::after { inset: 14px 3px 8px 10px; } }
 
   /* Coloured pencil: the section colour laid down in strokes, light paper showing between them. */
@@ -321,7 +332,7 @@
     color-mix(in srgb, var(--z-sketch-2) 7%, transparent) 9px 10px); }
 
   /* Section numbers shaded in hatching inside a wobbly outline. */
-  .z-num { color: transparent; -webkit-text-stroke: 3px var(--z-ink); filter: url(#pencil);
+  .z-num { color: transparent; -webkit-text-stroke: 3px var(--z-ink);
     background: repeating-linear-gradient(-58deg, var(--zc) 0 3px, transparent 3px 6.5px);
     -webkit-background-clip: text; background-clip: text; }
 
@@ -360,7 +371,7 @@
   /* Buttons look pressed in by a pencil: a graphite second outline that wobbles. */
   .file-link, .hgroup-portal, .pstate-link, .clear-btn, .bill-chip { position: relative; }
   .file-link::before, .hgroup-portal::before, .pstate-link::before { content: ""; position: absolute; inset: -4px -3px -3px -4px; border: 1px solid var(--z-sketch-2);
-    border-radius: inherit; pointer-events: none; filter: url(#pencil-2); transform: rotate(-.8deg); }
+    border-radius: inherit; pointer-events: none; transform: rotate(-.8deg); }
 </style>
 <script>
   // Apply a saved theme choice before first paint to avoid a flash of the
@@ -522,11 +533,6 @@
   <a class="gb-dplain" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">GitHub Repo ↗</a>
 </div>
 
-<!-- Pencil filters for the sketch outlines (see "Pencil layer" in the styles). -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-  <filter id="pencil" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="3" result="w"/><feDisplacementMap in="SourceGraphic" in2="w" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/><feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="1" seed="9" result="g"/><feColorMatrix in="g" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.2 1.7" result="m"/><feComposite in="d" in2="m" operator="in"/></filter>
-  <filter id="pencil-2" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="11" result="w"/><feDisplacementMap in="SourceGraphic" in2="w" scale="7" xChannelSelector="G" yChannelSelector="R" result="d"/><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="1" seed="4" result="g"/><feColorMatrix in="g" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.6 1.8" result="m"/><feComposite in="d" in2="m" operator="in"/></filter>
-</svg>
 <div class="wrap">
   <header class="hh-hero z-card">
     <div class="hh-hero-top">
@@ -535,7 +541,7 @@
         <h1 class="hh-title">Have your <span class="hh-circle">say.</span></h1>
         <p class="hh-tagline">Government isn’t just something you watch — you can participate.</p>
       </div>
-      <div class="hh-art" aria-hidden="true"><svg id="hh-fw" viewBox="0 0 380 260" focusable="false"></svg></div>
+      <div class="hh-art" aria-hidden="true"><div class="fw-stage" id="hh-fw"></div></div>
     </div>
     <div class="hh-stats" id="hh-stats" role="group" aria-label="Live hearing activity"></div>
   </header>
@@ -1233,23 +1239,34 @@
   // The hero's pencil fireworks + "250th" (styles in .hh-art). Rays get a little fixed jitter
   // (a seeded random) so every burst looks hand-drawn but the drawing is the same each visit.
   (function drawFireworks() {
-    const svg = $("hh-fw");
-    if (!svg) return;
+    const stage = $("hh-fw");
+    if (!stage) return;
     const NS = "http://www.w3.org/2000/svg";
+    const W = 380, H = 260;   // the drawing's own units; every piece is placed in % of them
     const mk = (tag, attrs, parent) => {
       const n = document.createElementNS(NS, tag);
       Object.keys(attrs).forEach((k) => n.setAttribute(k, attrs[k]));
-      (parent || svg).append(n);
+      parent.append(n);
       return n;
     };
+    // One moving piece: a box at (x, y, w, h) in the drawing's units, holding an SVG that keeps
+    // the drawing's coordinates (its viewBox is that same rectangle).
+    const piece = (cls, x, y, w, h, style) => {
+      const box = document.createElement("div");
+      box.className = cls;
+      box.style.cssText = "left:" + (x / W * 100) + "%;top:" + (y / H * 100) + "%;width:" + (w / W * 100) + "%;height:" + (h / H * 100) + "%;" + (style || "");
+      stage.append(box);
+      return box;
+    };
+    const svgIn = (box, x, y, w, h) => mk("svg", { viewBox: x + " " + y + " " + w + " " + h, focusable: "false" }, box);
     let seed = 250;
     const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    // [x, y, radius, rays, delay (s)]: four bursts on a 7.5s cycle.
+    // [x, y, radius, rays, delay (s)]: five bursts on a 7.5s cycle.
     [[92, 70, 52, 14, 0], [282, 58, 44, 12, 1.9], [196, 104, 34, 10, 3.6], [330, 140, 28, 9, 5.2], [52, 150, 26, 9, 2.8]].forEach(([x, y, r, n, d]) => {
-      const vars = "--cycle:7.5s;--d:" + d + "s;transform-origin:" + x + "px " + y + "px";
-      const trail = mk("g", { class: "fw-trailg", style: vars.replace(/transform-origin:[^;]+/, "transform-origin:" + x + "px 260px") });
+      const trail = svgIn(piece("fw-trailbox", x - 12, y + 6, 24, 254 - y, "--d:" + d + "s"), x - 12, y + 6, 24, 254 - y);
       mk("path", { class: "fw-trail", d: "M" + (x - 6) + " 258 Q" + (x + 4) + " " + (y + 90) + " " + x + " " + (y + 6) }, trail);
-      const burst = mk("g", { class: "fw-burst", style: vars });
+      const R = r * 1.2 + 12;   // the burst's box, tips included; it scales about its centre
+      const burst = svgIn(piece("fw-burst", x - R, y - R, 2 * R, 2 * R, "--d:" + d + "s"), x - R, y - R, 2 * R, 2 * R);
       for (let i = 0; i < n; i++) {
         const a = (i / n) * Math.PI * 2 + rnd() * 0.25;
         const r0 = r * (0.22 + rnd() * 0.12), r1 = r * (0.82 + rnd() * 0.3);
@@ -1258,19 +1275,20 @@
         const mid = [x + Math.cos(a) * (r0 + r1) / 2 - Math.sin(a) * bend, y + Math.sin(a) * (r0 + r1) / 2 + Math.cos(a) * bend].map((v) => v.toFixed(1)).join(" ");
         mk("path", { class: "fw-ray", d: "M" + p(r0, 0) + " Q" + mid + " " + p(r1, 0) }, burst);
         mk("path", { class: "fw-ray is-sketch", d: "M" + p(r0 + 3, 0.05) + " L" + p(r1 + 4, 0.06) }, burst);
-        mk("circle", { class: "fw-tip", cx: p(r1 + 7, 0).split(" ")[0], cy: p(r1 + 7, 0).split(" ")[1], r: (1.2 + rnd() * 1.2).toFixed(1) }, burst);
+        const tip = p(r1 + 7, 0).split(" ");
+        mk("circle", { class: "fw-tip", cx: tip[0], cy: tip[1], r: (1.2 + rnd() * 1.2).toFixed(1) }, burst);
       }
     });
-    // A yellow marker swipe, then "250th" written in outline, twice: a nudged pencil line, then ink.
-    mk("rect", { class: "fw-swipe", x: 96, y: 206, width: 196, height: 30, rx: 8, transform: "rotate(-2 194 221)" });
+    // A yellow marker swipe, then "250th" in outline, twice: a nudged pencil line, then ink.
+    piece("fw-swipe", 96, 206, 196, 30);
+    const word = svgIn(piece("fw-reveal", 98, 170, 216, 84).appendChild(document.createElement("div")), 98, 170, 216, 84);
     [["fw-word is-sketch", "translate(3 2) skewX(-2)"], ["fw-word", ""]].forEach(([cls, tf]) => {
-      const t = mk("text", { class: cls, x: 108, y: 240, "font-size": 74, transform: tf });
+      const t = mk("text", { class: cls, x: 108, y: 240, "font-size": 74, transform: tf }, word);
       t.append("250");
-      const th = mk("tspan", { "font-size": 36, dy: -30 }, t);
-      th.append("th");
+      mk("tspan", { "font-size": 36, dy: -30 }, t).append("th");
     });
     // Stop the animation while the hero is off screen.
-    const art = svg.parentNode;
+    const art = stage.parentNode;
     if ("IntersectionObserver" in window) {
       new IntersectionObserver(([e]) => art.classList.toggle("is-off", !e.isIntersecting)).observe(art);
     }
