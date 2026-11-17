@@ -744,8 +744,8 @@ A **"Pencil layer"** at the end of the page's styles pushes it to a heavy graphi
 paper grain + faint smudges on the body; the doubled sketch outlines get uneven hand-drawn corners
 (irregular `border-radius`, one partly dashed) — **no live SVG filters**: turbulence filters on the outlines
 (Nov 2026) made the page ~3× slower to load and scroll on a phone-speed CPU, so they were removed;
-coloured-pencil hatching only on decorative marks (never behind text: hatched pills and counts were
-unreadable, Nov 2026) and faint hatching inside cards; section numbers solid in the section colour inside an ink outline; scribbled underlines under section titles, a scribbled circle round
+coloured-pencil hatching on the coloured pills kept to their padding — the text sits on a solid patch of the
+same colour (content box, `--pf`), since hatching behind small type was unreadable (Nov 2026) and faint hatching inside cards; section numbers solid in the section colour inside an ink outline; scribbled underlines under section titles, a scribbled circle round
 "say." (`.hh-circle`); pencil rules instead of dashed lines; and margin doodles (an arrow into "Jump to",
 a star by each section, a squiggle under the stats). All static masks/gradients, nothing animated. Colour only
 marks where you are: the deck's four section colours `--z-c1..c4` (#8EC5F0 blue, #8FD9A0 green,

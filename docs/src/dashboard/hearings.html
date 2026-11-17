@@ -325,10 +325,22 @@
     border-radius: 28px 20px 26px 22px; transform: rotate(.35deg); pointer-events: none; }
   @media (max-width: 620px) { .wrap::after { inset: 14px 3px 8px 10px; } }
 
-  /* Coloured pencil on the purely decorative marks only. Anything carrying text keeps a solid
-     fill: hatching behind small type (pills, counts, tags) made it hard to read, worst in dark mode. */
+  /* Coloured pencil: the section colour laid down in strokes, light paper showing between them.
+     On anything carrying text the strokes stay in the padding around it: the text itself sits on a
+     solid patch of the same colour (its content box), since hatching behind small type made it hard
+     to read, worst in dark mode. --pf is each fill's colour. */
   .fsec-h::before {
     background-image: repeating-linear-gradient(-58deg, transparent 0 3px, var(--z-hatch) 3px 4.4px); }
+  .hgroup-name { --pf: var(--hg-accent); }
+  .hh-jump a[aria-current="true"], .hh-jump .jn-count { --pf: var(--jc); }
+  .h-kind.is-due, .rss-copy { --pf: var(--z-c3); }
+  .h-badge { --pf: var(--z-c4); }
+  .h-open, .pstate-live, .p-letter[aria-pressed="true"] { --pf: var(--z-c2); }
+  .hgroup-name, .hh-jump a[aria-current="true"], .hh-jump .jn-count, .h-kind.is-due, .h-badge, .h-open,
+  .pstate-live, .p-letter[aria-pressed="true"], .rss-copy {
+    background: linear-gradient(var(--pf), var(--pf)) content-box,
+      repeating-linear-gradient(-58deg, transparent 0 3px, var(--z-hatch) 3px 4.4px) padding-box, var(--pf); }
+  .hh-jump a[aria-current="true"] .jn-count { background: var(--z-card); }
   .z-card, .hgroup { background-image: repeating-linear-gradient(-58deg, transparent 0 9px,
     color-mix(in srgb, var(--z-sketch-2) 7%, transparent) 9px 10px); }
 
