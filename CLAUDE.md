@@ -744,8 +744,8 @@ A **"Pencil layer"** at the end of the page's styles pushes it to a heavy graphi
 paper grain + faint smudges on the body; the doubled sketch outlines get uneven hand-drawn corners
 (irregular `border-radius`, one partly dashed) — **no live SVG filters**: turbulence filters on the outlines
 (Nov 2026) made the page ~3× slower to load and scroll on a phone-speed CPU, so they were removed;
-coloured-pencil hatching over every colour fill and faint hatching inside cards; section numbers shaded
-in hatching inside a wobbly outline; scribbled underlines under section titles, a scribbled circle round
+coloured-pencil hatching only on decorative marks (never behind text: hatched pills and counts were
+unreadable, Nov 2026) and faint hatching inside cards; section numbers solid in the section colour inside an ink outline; scribbled underlines under section titles, a scribbled circle round
 "say." (`.hh-circle`); pencil rules instead of dashed lines; and margin doodles (an arrow into "Jump to",
 a star by each section, a squiggle under the stats). All static masks/gradients, nothing animated. Colour only
 marks where you are: the deck's four section colours `--z-c1..c4` (#8EC5F0 blue, #8FD9A0 green,
@@ -772,7 +772,8 @@ comment open" / "Live hearings" green, "Canceled" pink. The White House hero art
 fireworks canvas were retired with this redesign (`whitehouse-hero.png` deleted). **Following by RSS** (`#rss-pop`, one popover for the "Follow all", per-state, per-bill and per-hearing
 buttons): the feed address with Copy, one-tap "Add to Feedly / Inoreader / NewsBlur" links, "Preview the feed"
 (the `feed.xsl` page) and **"Copy a link to share"** (the page's `#hg-<code>` section, which previews as a page
-with the `og:` tags in `hearings.html`'s head + `assets/og-hearings.png`), plus a line saying a feed address is for
+with the `og:` tags in `hearings.html`'s head + `assets/og-hearings.png` — "Govbot · Public participation / Your voice belongs in
+the room. / Find a hearing. Weigh in.", the White House line art kept on the right), plus a line saying a feed address is for
 a reader app, not a post. Feed items (`_add_item` in `actions/scrape-hearings/main.py`) lead with the subject
 (or committee) and the date, and carry a labelled HTML description (Committee / Where / When / Place / Bills with
 titles and links / Take part / Details) that readers and `feed.xsl` (`disable-output-escaping`) render. The pill
