@@ -2,7 +2,11 @@
 name: Govbot
 description: Every U.S. legislature's activity as open data you can clone, query and build on.
 tags: [Legislation, Open Data, Rust, Python, AI, DuckDB, GitHub Actions]
-needs: Looking for scraper/data engineers, Rust and Python devs, and front-end/design help
+needs:
+  - Visual artists for our hand-drawn visual identity
+  - Decentralized scrapers dev
+  - Social media dev
+  - AI-native dev
 status: active
 website: https://chihacknight.github.io/govbot/
 repo: https://github.com/chihacknight/govbot
