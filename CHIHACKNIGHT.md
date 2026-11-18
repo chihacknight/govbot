@@ -9,7 +9,6 @@ needs:
   - Social media dev
   - AI-native dev
   - "[Good first issues](https://github.com/chihacknight/govbot/issues?q=is%3Aopen+label%3A%22good+first+issue%22)"
-status: active
 website: https://chihacknight.github.io/govbot/
 repo: https://github.com/chihacknight/govbot
 ---
