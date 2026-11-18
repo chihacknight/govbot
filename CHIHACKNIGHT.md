@@ -1,7 +1,7 @@
 ---
 name: Govbot
 description: Every U.S. legislature's activity as open data you can clone, query and build on.
-tags: [Legislation, Open Data, Rust, Python, AI, DuckDB, GitHub Actions]
+tags: [Decentralized Data, Scrapers, Social Media, AI]
 needs:
   - Visual artists for our hand-drawn visual identity
   - Decentralized scrapers dev
