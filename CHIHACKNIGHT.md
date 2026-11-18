@@ -1,5 +1,6 @@
 ---
-name: Govbot
+title: Govbot
+logo: https://chihacknight.github.io/govbot/dashboard/assets/govbot-mark.png
 description: Every U.S. legislature's activity as open data you can clone, query and build on.
 tags: [Decentralized Data, Scrapers, Social Media, AI]
 needs:
