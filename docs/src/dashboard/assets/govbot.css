@@ -462,6 +462,11 @@ input::placeholder, textarea::placeholder { color: var(--gb-placeholder) !import
 .gb-mega .mega-states, .gb-drawer .mega-states { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px 43px; }
 .gb-drawer .mega-states { padding-left: 40px; }
 .gb-mega .mega-states-h, .gb-drawer .mega-states-h { flex-basis: 100%; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--gb-text-2); }
+/* "Upcoming" (green) and "Past" (blue) under Know Your Ballot, in the menus and the footer: a coloured underline marks which is which. */
+.mega-states-h.is-up, .mega-states-h.is-past, .gb-when { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 4px; }
+.mega-states-h.is-up, .gb-when.is-up { text-decoration-color: var(--gb-primary); }
+.mega-states-h.is-past, .gb-when.is-past { text-decoration-color: var(--gb-blue-hi); }
+.gb-footer .gb-when { font-weight: 700; text-underline-offset: 3px; text-decoration-thickness: 2px; }
 .gb-mega .mega-states a, .gb-drawer .mega-states a { display: inline-flex; padding: 4px 11px; border: 1.5px solid var(--gb-border); border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--gb-text); }
 .gb-mega .mega-states a:hover, .gb-drawer .mega-states a:hover { border-color: var(--accent, var(--gb-blue-hi)); background: var(--gb-hover); }
 @media (max-width: 860px) { .gb-nav-item, .gb-mega { display: none; } }
