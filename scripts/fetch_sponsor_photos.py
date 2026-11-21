@@ -247,6 +247,10 @@ def shrink_photo(data):
     source's extension)."""
     tool = shutil.which("magick") or shutil.which("convert")
     if not tool:
+        if not getattr(shrink_photo, "warned", False):
+            shrink_photo.warned = True
+            print("note: ImageMagick not found; sponsor photos kept at their original size",
+                  file=sys.stderr)
         return data, None
     try:
         out = subprocess.run(

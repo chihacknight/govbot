@@ -305,6 +305,11 @@ jobs:
         if: steps.gate.outputs.refresh == 'true'
         run: |
           set -uo pipefail
+          # ImageMagick shrinks each photo to its 26px circle's needs (128px JPEG);
+          # GitHub's Ubuntu 24.04 image no longer ships it. Without it the
+          # originals are used, as before.
+          command -v convert >/dev/null || command -v magick >/dev/null || \
+            { sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick >/dev/null; } || true
           if [ -d ${{ runner.temp }}/openstates-people/data ]; then
             python3 scripts/fetch_sponsor_photos.py \
               --data docs/src/dashboard/data.json \
