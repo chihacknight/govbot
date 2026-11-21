@@ -62,7 +62,9 @@ import html
 import http.client
 import json
 import re
+import shutil
 import ssl
+import subprocess
 import sys
 import time
 import urllib.error
@@ -230,6 +232,32 @@ def _slug(s):
 def _ext_for(url):
     m = re.search(r"\.(jpg|jpeg|png|webp|gif)(?:\?|#|$)", url, re.I)
     return "." + (m.group(1).lower() if m else "jpg").replace("jpeg", "jpg")
+
+
+# The homepage shows each sponsor in a 26px circle, so a photo is shrunk to
+# 128px on its short side (about 5x, sharp on any screen) as a JPEG. A
+# legislature's original is often 100-250 KB; this makes it ~5 KB. ImageMagick
+# ships on GitHub's runners; without it (or on any error) the original is kept.
+PHOTO_PX = 128
+
+
+def shrink_photo(data):
+    """``(bytes, ext)``: the photo at PHOTO_PX on its short side as JPEG, or the
+    original bytes and ``None`` when it can't be shrunk (the caller keeps the
+    source's extension)."""
+    tool = shutil.which("magick") or shutil.which("convert")
+    if not tool:
+        return data, None
+    try:
+        out = subprocess.run(
+            [tool, "-[0]", "-auto-orient", "-thumbnail", f"{PHOTO_PX}x{PHOTO_PX}^",
+             "-background", "white", "-flatten", "-strip", "-quality", "82", "jpg:-"],
+            input=data, capture_output=True, timeout=30, check=True).stdout
+    except (OSError, subprocess.SubprocessError):
+        return data, None
+    if not out.startswith(b"\xff\xd8\xff") or len(out) >= len(data):
+        return data, None
+    return out, ".jpg"
 
 
 def is_image_bytes(data):
@@ -738,7 +766,8 @@ def vendor(bills, index, out_dir, manifest_path, fetch=default_fetch,
                                   commons=commons, wikidata=wikidata)
         if not data:
             continue
-        fname = f"{st.lower()}-{_slug(full)}{_ext_for(src)}"
+        data, ext = shrink_photo(data)
+        fname = f"{st.lower()}-{_slug(full)}{ext or _ext_for(src)}"
         (out_dir / fname).write_bytes(data)
         manifest[key] = f"assets/legislators/{fname}"
         if is_federal(st):

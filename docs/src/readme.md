@@ -8,7 +8,7 @@
 <p class="gl-lede">A nationwide layer of open legislative data. Every U.S. legislature, ready to explore, query, clone, and build on.</p>
 <div class="gl-btns"><a class="gl-btn gl-btn-primary" href="#projects">See the projects</a><a class="gl-btn gl-btn-ghost" href="#build">Get the data</a></div>
 </div>
-<div class="gl-art" aria-hidden="true"><div class="gl-halo"></div><img class="gl-art-img" src="dashboard/assets/liberty-hero.png" alt="" width="520" height="1000"><canvas class="gl-embers"></canvas></div>
+<div class="gl-art" aria-hidden="true"><div class="gl-halo"></div><img class="gl-art-img" src="dashboard/assets/liberty-hero.webp" alt="" width="520" height="1000" fetchpriority="high"><canvas class="gl-embers"></canvas></div>
 </div>
 </section>
 
@@ -24,7 +24,7 @@
 <section id="claude" class="gl-sec">
 <div class="gl-wrap gl-claude">
 <div class="gl-claude-copy"><span class="gl-overline">New · Govbot for Claude</span><h2 class="gl-h2 gl-claude-h"><img class="gl-claude-logo" src="dashboard/assets/claude/claude-mark.svg" width="44" height="44" alt="">Ask Govbot from Claude</h2><p class="gl-sub">Install the Claude Desktop extension and ask about bills, sponsors and votes in plain English. Every answer cites the official record, and the data stays on your computer.</p><div class="gl-btns"><a class="gl-btn gl-btn-primary" href="dashboard/claude.html">Get Govbot for Claude</a><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot/releases/download/nightly/govbot.mcpb" download>Download .mcpb</a></div><p class="gl-p gl-claude-note">Free · Mac · Nothing else to install</p></div>
-<a class="gl-claude-shot" href="dashboard/claude.html"><img src="dashboard/assets/claude/cited-answer.png" width="1400" height="1179" loading="lazy" alt="Claude Desktop using Govbot to find an Illinois rent bill and showing exactly where the answer came from, with a link to the official ILGA page."></a>
+<a class="gl-claude-shot" href="dashboard/claude.html"><img src="dashboard/assets/claude/cited-answer.webp" srcset="dashboard/assets/claude/cited-answer-700.webp 700w, dashboard/assets/claude/cited-answer.webp 1400w" sizes="(min-width: 900px) 560px, 92vw" width="1400" height="1179" loading="lazy" decoding="async" alt="Claude Desktop using Govbot to find an Illinois rent bill and showing exactly where the answer came from, with a link to the official ILGA page."></a>
 </div>
 </section>
 
@@ -197,7 +197,7 @@
 <div class="gl-finale-head"><h2 class="gl-h2 gl-h2-lg">From the firehose to the point.</h2><p class="gl-finale-sub">Govbot is an open-source infrastructure and data system that turns U.S. government legislative activity into structured, version-controlled, AI-processable data that anyone can build on.</p></div>
 <figure class="stream-figure">
 <canvas id="stream-canvas" role="img" aria-label="Animation: a chaotic stream of raw government records — bills, hearings, votes, ballots, filings — flows in from the left into the Govbot robot, which sorts them into calm, labeled topic lanes on the right: AI and data centers, education, housing, labor rights, transportation, and more."></canvas>
-<div class="stream-bot" aria-hidden="true"><img class="stream-bot-img" src="dashboard/assets/govbot-bot.png" alt="" width="124" height="124"><span class="stream-bot-name">Govbot</span></div>
+<div class="stream-bot" aria-hidden="true"><img class="stream-bot-img" src="dashboard/assets/govbot-bot.webp" alt="" width="124" height="124" loading="lazy" decoding="async"><span class="stream-bot-name">Govbot</span></div>
 <figcaption class="stream-cap"><span class="stream-cap-l">Raw government activity</span><span class="stream-cap-r">Understandable topics</span></figcaption>
 </figure>
 <div class="gl-btns gl-center"><a class="gl-btn gl-btn-ghost" href="#projects">Explore the projects</a><a class="gl-btn gl-btn-ghost" href="dashboard/architecture.html">How Govbot works</a><a class="gl-btn gl-btn-ghost" href="https://github.com/chihacknight/govbot" target="_blank" rel="noopener">Contribute on GitHub ↗</a></div>

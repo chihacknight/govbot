@@ -268,7 +268,7 @@ brand + Hearings = green; Legislation = blue; **Illinois Elections = amber** (`-
 **locator mini-maps keep the classic look — a GOLD outline/base with the GREEN highlighted district** —
 via their own `--rm-gold` (the pre-rebrand gold, `#D6A84F` dark / `#A9791F` light, set on `.race-map`),
 since `--gb-gold` is now green; "live" / "comment open" status marks stay `--gb-green`. The Liberty
-(`liberty-hero.png`) and **Illinois Capitol**
+(`liberty-hero.webp`) and **Illinois Capitol**
 (`il-capitol-building.png`, deepened with a CSS `brightness`/`saturate` filter in light mode so the line
 art stays crisp; the waving flag overlay is unchanged) heroes were recoloured to green in place
 (a hue remap of their gold pixels, keeping value + alpha; the gold originals are in git history), the
@@ -296,7 +296,7 @@ desktop + click, Escape/outside-click to close; the mobile drawer mirrors the sa
 **Homepage** — it is now a redirect to the site root, and the pieces described below (the Liberty hero,
 the live recent-activity / hearings / election cards with sponsor chips, and the firehose animation) were
 ported to the root landing (`docs/src/readme.md` + `docs/theme/landing.js`, see "The site root…" below).
-As originally built it was the landing page (a realistic golden wireframe Lady Liberty raster hero, `assets/liberty-hero.png`, its background keyed to true transparency — the low-alpha (~10–22) background pixels were zeroed so no faint grey box composites onto the light hero; behind her a soft dark halo `.liberty::before` (deeper in light mode) plus a radial edge-mask on the image keep the gold statue **prominent in light mode** and drop cleanly onto the dark hero; the robot mark `assets/govbot-mark.png` is the header logo; "What do you want to know?" cards,
+As originally built it was the landing page (a realistic golden wireframe Lady Liberty raster hero, `assets/liberty-hero.webp`, its background keyed to true transparency — the low-alpha (~10–22) background pixels were zeroed so no faint grey box composites onto the light hero; behind her a soft dark halo `.liberty::before` (deeper in light mode) plus a radial edge-mask on the image keep the gold statue **prominent in light mode** and drop cleanly onto the dark hero; the robot mark `assets/govbot-mark.webp` is the header logo; "What do you want to know?" cards,
 live "What's happening now" fetched fail-soft from `data.json`/`hearings.json`/`elections.json`).
 The homepage's **"Recent legislative activity"** card shows **one bill per state** (up to 4) as rich
 `.activity-row.rich` rows — each row's head line carries the **state + bill number** (`.tag`) and
@@ -453,7 +453,7 @@ the point.", `#stream`, no sub-copy under the heading) is a self-contained **can
 ("chaos becomes understandable"): a
 chaotic stream of raw government records (bills, hearings, votes, ballots, filings — muted, tilted
 scraps) flows in from the left into the **Govbot hub** (the robot mark, keyed transparent as
-`assets/govbot-bot.png` so it drops onto the dark panel, overlaid as a DOM `.stream-bot` centred on
+`assets/govbot-bot.webp` so it drops onto the dark panel, overlaid as a DOM `.stream-bot` centred on
 the canvas hub and captioned with a gold **"Govbot"** wordmark, `.stream-bot-name`, positioned out
 of flow so the robot stays dead-centre on the hub), which emits clean colour-coded packets
 into orderly labeled **topic lanes** on the right (AI + data centers, education, housing, healthcare,
@@ -464,7 +464,7 @@ slower. The **mobile** branch keeps the same desktop framing — chaos on the le
 middle-left (not tucked hard against the edge), the sorted topic lanes with their full labels on the
 right, and **both bottom captions** ("Raw government activity" / "Understandable topics") kept visible
 — on a **taller** figure (440px under 620px) with the lanes stopping higher (laneTop/laneBottom) so
-the captions have room and nothing is cropped. `assets/govbot-bot.png` is the robot mark with its
+the captions have room and nothing is cropped. `assets/govbot-bot.webp` is the robot mark with its
 baked beige background flood-filled to transparent (borders → inward, stopping at the robot's outline).
 The "What do you want to know?" section header carries no sub-copy (the "One clear next step…" aside
 was removed).
@@ -805,7 +805,7 @@ civic tile, crisp at 16px — replacing the earlier robot-face and per-page torc
 the mdbook text docs *and* the dashboards — now wears one civic shell. The root
 `https://chihacknight.github.io/govbot/` is rendered by **mdbook** from `docs/src/readme.md`, the
 civic landing (`.gb-landing`, designed on the "Govbot Landing Revamp" Design canvas). Top to bottom:
-a hero with the big green **Liberty** (`dashboard/assets/liberty-hero.png`, a soft green glow behind her
+a hero with the big green **Liberty** (`dashboard/assets/liberty-hero.webp`, a soft green glow behind her
 in dark mode, a deep-green rounded "night" panel in light mode so she stays prominent; the square sparks once baked into the PNG were erased and replaced by live **rising embers** — a `.gl-embers` canvas in `landing.js`, positioned in the image's own 520×1000 pixel space, flickering up off the torch and past the crown, a still scatter under reduced motion; the "Open civic data · Government Transparency" overline has a rule on **both** sides; **on phones (≤620px) she stands inside the hero beside the headline**, not stacked below it — absolutely positioned full-height on the right with a left-edge fade, the copy at 62% width over her with a text-shadow, the overline on its own full-width line above her torch, and in light mode the phone hero becomes the same deep-green night panel (dark-token overrides on `.gl-hero`); tablets (621–860px) keep narrower side-by-side columns); a **"By the numbers"** strip
 (56 jurisdictions · < 1 min to clone · $0 to tag · 2×/day refresh); a **"Built together" band** (`.gl-crew`, designed on the "Govbot Contributors Opener" Design canvas) right above Projects — the copy "Govbot is built by people who believe government information should be open to everyone." (one subheadline-size block, full-contrast) + an "18 contributors · Meet them ↗" button (→ the GitHub contributors graph), over a dotted workspace of real Govbot pieces (a terminal of real `govbot` commands, a `govbot.yml` excerpt, the merged PR #192 card, `hearings.xml`), with the project's **contributors as live multiplayer cursors** (`landing.js`: coloured arrow + avatar + `@handle` label, a soft-spring glide between spots that never park on — or glide across — the copy, an occasional click ring; half of them on screen at once — 9 desktop / 4 phone — handing over as they pause so all 18 pass through; cursors keep their name tags clear of each other (`crowded()` steers each new resting spot away from other cursors' positions/targets, a gentle vertical separation nudge pushes overlapping tags apart, and `@sartaj` — `.is-lead` — always draws on top); the name tag and chat bubble are `width: max-content` because they sit inside a 22px cursor box — without it Safari shrink-wrapped the tag and clipped names ("@sart"); `@sartaj` is always on screen and, every so often when he pauses, types **"government data as Git"** letter by letter in a Figma-style cursor-chat bubble (`.gl-cur-chat`, held a moment then cleared; shown whole under reduced motion); between wanders the cursors **do real work in the workspace**, one task of each kind at a time — **type a real `govbot` command** into the terminal's live prompt (it then joins the 5-line history), **rewrite the `govbot.yml` topic** (backspace + retype the key and two description lines, excerpts of the real `scripts/govbot-dashboard.yml` descriptions, the edited span tinted in the editor's colour), **stick a note** (`.gl-crew-note`, a short to-do signed "— @handle", fades after ~7s, ≤2 at once) or **drag a selection box** (`.gl-crew-marq`) — notes/boxes only where `freeSpot` finds open canvas clear of the copy and every window (so phones, with no free canvas, skip them); rAF gated by IntersectionObserver + tab visibility, a still scatter under reduced motion). The contributor list (people only, bots left out) is hard-coded in `landing.js` with avatars vendored in `dashboard/assets/contributors/` — refresh both as people join. Below 1180px the copy sits on top and the two code windows go below it (PR/RSS cards hidden); **"Projects built on Govbot"**, a
 **carousel** (a CSS `scroll-snap` row so swipe/scroll work without JS; prev/next + named tab chips +
@@ -919,7 +919,7 @@ fetches don't lose the place) scrolls to and briefly flashes (`.race-flash`) tha
 
 **Every page now wears the same shell as the Homepage** — the old
 per-page tab bar + brandbar (logo + 3-button light/auto/dark theme pill) have been **retired**.
-All six pages (the five flagships plus the utility `search.html`) share, byte-for-byte, the global-nav header (`.gb-header`: the `assets/govbot-mark.png`
+All six pages (the five flagships plus the utility `search.html`) share, byte-for-byte, the global-nav header (`.gb-header`: the `assets/govbot-mark.webp`
 robot logo linking to the Homepage — enlarged to 46px with a 28px "Govbot" wordmark that is **true gold
 (`#E5B94E`, via `--gb-brand-word`) in dark mode** and the normal text colour in light mode, the Projects / Data mega-menus + How Govbot Works /
 **GitHub Repo** plain links (the "GitHub Repo ↗" link → the repo, in a new tab; formerly labelled
@@ -929,7 +929,7 @@ mobile `.gb-drawer` (hamburger → search + the **same nav as desktop**: collaps
 then How Govbot Works / GitHub Repo ↗; no separate "Home" link, the logo goes home; a tap on any link,
 including the spans inside a group item, closes the drawer), the civic `.gb-footer` — **the header, mobile drawer and footer are each one template for the whole site**: `docs/theme/header.html` (header + drawer) and `docs/theme/footer.html` are the single sources, written into `docs/theme/index.hbs` (homepage + doc pages) and every `docs/src/dashboard/*.html` page by `python3 docs/theme/sync_shell.py` (`--check` reports drift); edit the templates, never a page copy. Placeholders: `{ROOT}` site-root folder, `{HOME}` the homepage (`index.html` on mdbook pages, whose `path_to_root` is empty at the top level), `{DASH}` the dashboard folder. The current page's nav/drawer link gets `aria-current` at runtime in `govbot-shell.js` (a same-site path match), not in the markup; search forms carry `action="{DASH}search.html"` so they work from any page. **Header nav:** **Projects ▾** (only things built on Govbot: Legislation, Hearings & Public Comment, **Know Your Ballot ↗** (one item, "Every race, candidate, judge & question on your ballot, by address", with its elections as small pills under it, `.mega-states`, in two groups: **Upcoming** (Chicago · Feb 23, Jacksonville · Mar 9, Denver · Apr 6, Oak Park · Apr 6, Wisconsin spring · Apr 6) and **Past · Nov 2026 midterms** (Illinois, Michigan, Minnesota, Wisconsin), each label with a coloured underline — green upcoming, blue past (`.mega-states-h.is-up` / `.is-past`, `.gb-when` in the footer); the footer's Explore column lists them the same way, `.gb-footer-sub`; add a new guide in all three places) + "All projects" → the homepage carousel) · Data ▾ (the Follow ▾ menu and the homepage's "Follow along" RSS slide were removed; RSS feeds stay linked from each dashboard) · How Govbot Works · GitHub Repo ↗ (the About page is linked from the footer as "Legacy Site/Documentation"); between 861–1180px the search box collapses to a search icon (`.gb-search-btn`) so the nav never wraps. Its headings are `div.gb-footer-h[role=heading]`, not `<h4>`, because mdbook turns every `<h4>` into a self-link; all footer copy is full-contrast `--gb-text` with green headings (a 30%-black
 mix of the page colour in dark mode, the plain `--gb-surface` in light mode so it isn't a grey slab; the
-`assets/govbot-mark.png` robot logo + brand blurb + a `.gb-social` row of gold-outline social chips —
+`assets/govbot-mark.webp` robot logo + brand blurb + a `.gb-social` row of gold-outline social chips —
 Bluesky / Threads / X / Instagram, styled in `govbot.css` off the `--gb-gold` tokens so they adapt
 per theme — plus Explore / Transparency / Community columns), and the floating `.gb-to-top` liquid-glass "Back to Top" pill —
 all wired by the shared `assets/govbot-shell.js` (so every page also loads that script). The active

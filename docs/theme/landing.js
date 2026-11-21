@@ -391,7 +391,7 @@
     var BOTS_DATA = "https://frankies2727.github.io/CHN-SocialMedia-Govbot-Main/data.json";
     var BSKY_API = "https://public.api.bsky.app/xrpc/app.bsky.feed.";
     var PER_PLATFORM = 5;                       // 4 platforms × 5 = the newest 20 posts
-    var AVATAR = "dashboard/assets/govbot-mark.png";
+    var AVATAR = "dashboard/assets/govbot-mark.webp";
     // Topic key → [display name, dot colour]; names match the slide's "Topics tracked" chips.
     var TOPICS = {
       ai_data_centers: ["AI, Data Centers & Crypto", "#818CF8"], criminal_justice: ["Criminal Justice", "#94A3B8"],
