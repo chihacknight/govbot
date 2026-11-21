@@ -683,7 +683,7 @@ jobs:
           key: govbot-built-data-${{ github.run_id }}
 
       # Split the all-bills data.json into the small files each page reads (bills/index.json,
-      # bills/<state>.json, bills/il_recent.json, bills/search.json) so no page downloads all
+      # bills/<state>.json, bills/il_recent.json, bills/search/<state>.json) so no page downloads all
       # ~180k bills. Runs on every deploy, fast path included (data.json is restored there), and
       # takes seconds — so the slices always match the data.json being published. It also writes
       # the public downloads behind Explore Legislation's "Download the data" panel (per-state CSVs,

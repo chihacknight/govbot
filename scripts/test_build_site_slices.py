@@ -30,7 +30,7 @@ def run():
         ],
     }
     s = m.build_slices(data, recent=2, il_days=200, today=dt.date(2026, 10, 1))
-    assert set(s) == {"index.json", "il.json", "wy.json", "il_recent.json", "search.json"}, set(s)
+    assert set(s) == {"index.json", "il.json", "wy.json", "il_recent.json", "search/il.json", "search/wy.json"}, set(s)
 
     idx = s["index.json"]
     assert idx["counts"] == {"il": 4, "wy": 2}
@@ -42,10 +42,11 @@ def run():
     assert len(s["il.json"]["bills"]) == 4 and len(s["wy.json"]["bills"]) == 2
     assert [b["id"] for b in s["il_recent.json"]["bills"]] == ["HB1", "HB3", "HB4"], "last 200 days only"
 
-    rows = s["search.json"]["bills"]
+    rows = s["search/il.json"]["bills"]
     assert rows[0] == ["il", "2026", "HB1", "T HB1", "A Person", [0]], rows[0]
     assert rows[2][5] == [1], "unknown tags are dropped, known ones become ids"
-    assert s["search.json"]["tags"] == ["housing", "education"]
+    assert s["search/il.json"]["tags"] == ["housing", "education"]
+    assert [r[2] for r in s["search/wy.json"]["bills"]] == ["SF1", "SF2"], "one file per jurisdiction"
     print("ok - build_site_slices: all assertions passed")
     run_downloads(data)
 

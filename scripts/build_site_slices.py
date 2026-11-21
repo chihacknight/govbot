@@ -13,8 +13,9 @@ reads a slice built here at deploy time:
   catalog (or one of its bills) is opened on Explore Legislation.
 * ``il_recent.json`` — Illinois bills with activity in the last ``--il-days`` days, for the
   elections page's Springfield tabs (which show the last 6 months).
-* ``search.json`` — a lean search index for ``search.html`` (state, session, id, title,
-  sponsors, topic ids), loaded in the background after the page's other results render.
+* ``search/<state>.json`` — a lean search index for ``search.html`` (state, session, id,
+  title, sponsors, topic ids), one file per jurisdiction, fetched only once someone
+  searches and indexed piece by piece so the page never freezes.
 
 ``data.json`` itself is still built and published (pipelines and direct downloaders use it);
 no page fetches it any more.
@@ -84,15 +85,20 @@ def build_slices(data, recent=RECENT_PER_STATE, il_days=IL_RECENT_DAYS, today=No
         "tags": tags,
         "bills": [b for b in by_state.get("il", []) if (b.get("latest_action") or "")[:10] >= since],
     }
-    # Rows, not objects, to keep the index small: [state, session, id, title, sponsors, [tag ids]].
-    out["search.json"] = {
-        "generated_at": data.get("generated_at"),
-        "states": data.get("states") or [],
-        "tags": [t.get("name") for t in tags],
-        "bills": [[b.get("state") or "", b.get("session") or "", b.get("id") or "", b.get("title") or "",
-                   ", ".join(b.get("sponsors") or []),
-                   [tag_ids[t] for t in (b.get("tags") or []) if t in tag_ids]] for b in bills],
-    }
+    # The search index, one file per jurisdiction (search/<code>.json), so search.html
+    # fetches it only once someone searches and indexes each piece as it lands instead
+    # of one 28 MB file. Rows, not objects, to keep it small:
+    # [state, session, id, title, sponsors, [tag ids]].
+    names = [t.get("name") for t in tags]
+    for code, v in sorted(by_state.items()):
+        if code:
+            out["search/" + code + ".json"] = {
+                "generated_at": data.get("generated_at"),
+                "tags": names,
+                "bills": [[b.get("state") or "", b.get("session") or "", b.get("id") or "", b.get("title") or "",
+                           ", ".join(b.get("sponsors") or []),
+                           [tag_ids[t] for t in (b.get("tags") or []) if t in tag_ids]] for b in v],
+            }
     return out
 
 
@@ -219,10 +225,11 @@ def main():
     slices = build_slices(data, recent=args.recent, il_days=args.il_days)
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    for old in out.glob("*.json"):          # a jurisdiction that dropped out leaves no stale file
-        if old.name not in slices:
+    for old in [*out.glob("*.json"), *out.glob("search/*.json")]:   # a jurisdiction that dropped out leaves no stale file
+        if old.relative_to(out).as_posix() not in slices:
             old.unlink()
     for name, obj in slices.items():
+        (out / name).parent.mkdir(parents=True, exist_ok=True)
         (out / name).write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")) + "\n",
                                 encoding="utf-8")
     total = sum((out / n).stat().st_size for n in slices)

@@ -167,9 +167,11 @@ opens (cached; `eeApplyFilter` now returns a promise and rebuilds the topic/sess
 via `rebuildFilterOptions`), including `#bill=<key>` deep links (state parsed from the key) and
 `#state=<code>&q=<text>` (used by hearings' bill chips and search's legislator results); a bare `#q=` with no
 state redirects to `search.html#q=`; **`il_recent.json`** — IL bills active in the last 200 days, for the
-elections page's Springfield tabs; **`search.json`** — a lean `[state, session, id, title, sponsors, tag ids]`
-index that `search.html` loads in the background after people/races/hearings render (bill search text is
-built once per row). Small samples built from the committed sample `data.json` are committed for local dev.
+elections page's Springfield tabs; **`search/<state>.json`** — a lean `[state, session, id, title, sponsors, tag ids]`
+index, one file per jurisdiction, that `search.html` fetches only once someone searches (focus or first
+keystroke, or a `#q=` link) and indexes 1,500 rows per task so typing never freezes; results fill in as
+pieces land, concatenated in jurisdiction order (the old single file's order), so counts and order match
+the old 28 MB `search.json` exactly (bill search text is built once per row). Small samples built from the committed sample `data.json` are committed for local dev.
 Measured with real data: homepage 9 s → ~1 s, legislation 4.7 s → <1 s, elections 7 s → ~1 s, JS memory
 ~110 MB → under 10 MB. **Homepage runtime:** the Social-bots feed fetches its posts (~3 MB + Bluesky calls) only once its slide is
 the active one *and* the carousel is on screen, and its scroll loop fully stops whenever it can't be seen

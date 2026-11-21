@@ -649,6 +649,7 @@
     var q = readQuery();
     if (q === lastRendered) return;      // our own replaceState, ignore
     input.value = q; render(q); lastRendered = q;
+    if (q.trim()) loadBills();
   });
 
   /* ---- load every dataset, fail-soft ---- */
@@ -657,9 +658,55 @@
   if (initial) { input.value = initial; $("s-summary").textContent = "Loading Govbot data…"; }
 
   function getJSON(url) { return fetch(url).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
-  // People, races and hearings (small files) render first; the bill search index — the big
-  // one, built at deploy as bills/search.json — loads in the background and re-renders.
+  // People, races and hearings (small files) render first. The bill index is one file
+  // per jurisdiction (bills/search/<code>.json, built at deploy), fetched only once
+  // someone searches (or focuses the box), and indexed a slice at a time so typing
+  // never freezes; results fill in as pieces land, always in jurisdiction order.
   state.bills = []; state.billsReady = false;
+  var shards = {}, codes = [], billsStarted = false, renderQueued = false;
+  function queueRender() {
+    if (renderQueued) return;
+    renderQueued = true;
+    requestAnimationFrame(function () { renderQueued = false; render(input.value || ""); });
+  }
+  function rebuildBills() {
+    state.bills = [];
+    codes.forEach(function (c) { if (shards[c]) state.bills = state.bills.concat(shards[c]); });
+  }
+  function indexShard(code, idx, done) {
+    var tags = (idx && idx.tags) || [], rows = (idx && idx.bills) || [], out = [], i = 0;
+    (function slice() {
+      // Rows are [state, session, id, title, sponsors, [tag ids]]; the search text is built once.
+      for (var end = Math.min(i + 1500, rows.length); i < end; i++) {
+        var r = rows[i];
+        var b = { state: r[0], session: r[1], id: r[2], title: r[3],
+                  sponsors: r[4] ? r[4].split(", ") : [], tags: (r[5] || []).map(function (t) { return tags[t]; }) };
+        b._h = hay([b.id, b.title, r[4], b.tags.join(" "), stateName(b.state)]);
+        out.push(b);
+      }
+      if (i < rows.length) return setTimeout(slice, 0);
+      shards[code] = out;
+      done();
+    })();
+  }
+  function loadBills() {
+    if (billsStarted || !state.ready) return;
+    billsStarted = true;
+    var left = codes.length;
+    if (!left) { state.billsReady = true; queueRender(); return; }
+    codes.forEach(function (code) {
+      getJSON("bills/search/" + code + ".json").then(function (idx) {
+        indexShard(code, idx, function () {
+          left--;
+          rebuildBills();
+          if (!left) state.billsReady = true;
+          if (input.value.trim()) queueRender();
+        });
+      });
+    });
+  }
+  input.addEventListener("focus", loadBills);
+  input.addEventListener("input", loadBills);
   Promise.all([getJSON("bills/index.json"), getJSON("elections.json"), getJSON("hearings.json"), getJSON("people.json")])
     .then(function (res) {
       var d = res[0], e = res[1], h = res[2], p = res[3];
@@ -667,22 +714,11 @@
       state.hearings = (h && h.hearings) || [];
       state.people = p || {};
       state.names = buildNames(d, e, h);
+      codes = Object.keys((d && d.counts) || {}).sort();
       state.ready = true;
       render(input.value || initial || "");
       lastRendered = input.value || initial || "";
-      return getJSON("bills/search.json");
-    })
-    .then(function (idx) {
-      var tags = (idx && idx.tags) || [];
-      // Rows are [state, session, id, title, sponsors, [tag ids]]; the search text is built once.
-      state.bills = ((idx && idx.bills) || []).map(function (r) {
-        var b = { state: r[0], session: r[1], id: r[2], title: r[3],
-                  sponsors: r[4] ? r[4].split(", ") : [], tags: (r[5] || []).map(function (i) { return tags[i]; }) };
-        b._h = hay([b.id, b.title, r[4], b.tags.join(" "), stateName(b.state)]);
-        return b;
-      });
-      state.billsReady = true;
-      render(input.value || "");
+      if ((input.value || initial || "").trim()) loadBills();
     });
 })();
 </script>
