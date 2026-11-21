@@ -8,7 +8,9 @@
    ========================================================================== */
 
 /* ---- Fonts: editorial serif display + technical-credible sans body ------- */
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap');
+/* The fonts (IBM Plex Sans, Newsreader) are linked from each page's <head>, not
+   @imported here: an @import is only found after this file arrives, which held
+   up the first paint by one more round trip. */
 
 /* ============================ TOKENS (dark, base) ========================= */
 :root {
