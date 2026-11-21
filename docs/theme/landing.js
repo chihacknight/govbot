@@ -17,6 +17,7 @@
     hl.parentNode.removeChild(hl);
   }
   var BASE = "dashboard/";
+  var HEARINGS = "https://govbot-public-hearings.vercel.app/";  // Govbot Public Hearings, its own site
   var MS_DAY = 86400000;
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -213,7 +214,7 @@
         return !isNaN(t) && t >= now - MS_DAY && x.status !== "canceled";
       }).sort(function (a, b) { return String(a.scheduled_iso).localeCompare(String(b.scheduled_iso)); }).slice(0, 3);
       if (!up.length) {
-        hearingsEl.innerHTML = stateHtml("empty", "No hearings scheduled right now", "Follow a state to hear when one opens.", BASE + "hearings.html", "Browse all hearings");
+        hearingsEl.innerHTML = stateHtml("empty", "No hearings scheduled right now", "Follow a state to hear when one opens.", HEARINGS, "Browse all hearings");
         return;
       }
       hearingsEl.innerHTML = up.map(function (x) {
@@ -225,7 +226,7 @@
         // the agency name alone doesn't.
         var label = (x.jurisdiction === "us" ? x.title || x.committee : x.committee || x.title) || "Hearing";
         if (label.length > 70) label = label.slice(0, 68) + "…";
-        var url = x.witness_slip_url || x.details_url || (BASE + "hearings.html");
+        var url = x.witness_slip_url || x.details_url || HEARINGS;
         var ext = /^https?:/.test(url);
         return '<a class="activity-row hearing-row" href="' + escAttr(url) + '"' + (ext ? ' target="_blank" rel="noopener"' : "") + '>' +
           '<div class="mini-date"><div class="cal-band">' + esc(mon) + '</div>' +
@@ -234,7 +235,7 @@
           '<span class="hr-juris">' + esc(jurisName(x.jurisdiction)) + '</span></span></a>';
       }).join("");
     }).catch(function () {
-      hearingsEl.innerHTML = stateHtml("error", "Hearings didn't load", "The hearings page still works.", BASE + "hearings.html", "Open hearings");
+      hearingsEl.innerHTML = stateHtml("error", "Hearings didn't load", "The hearings page still works.", HEARINGS, "Open hearings");
     });
   }
 

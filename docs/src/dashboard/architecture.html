@@ -320,9 +320,9 @@
         <a href="legislation.html" role="menuitem" style="--accent:var(--gb-blue-hi)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
           <span><span class="mega-t">Legislation Bills Visualization</span><span class="mega-d">Bills, topics, states, sponsors &amp; status</span></span></a>
-        <a href="hearings.html" role="menuitem" style="--accent:var(--gb-gold-hi)">
+        <a href="https://govbot-public-hearings.vercel.app/" role="menuitem" target="_blank" rel="noopener" style="--accent:var(--gb-gold-hi)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg>
-          <span><span class="mega-t">Hearings &amp; Public Comment</span><span class="mega-d">Upcoming hearings and how to weigh in</span></span></a>
+          <span><span class="mega-t">Hearings &amp; Public Comment ↗</span><span class="mega-d">Upcoming hearings and how to weigh in</span></span></a>
         <div class="mega-group" style="--accent:var(--gb-amber-hi)">
           <a href="https://govbot-know-your-ballot.vercel.app/" role="menuitem" target="_blank" rel="noopener">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/></svg>
@@ -403,9 +403,9 @@
     <a href="legislation.html" style="--accent:var(--gb-blue-hi)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
       <span><span class="mega-t">Legislation Bills Visualization</span><span class="mega-d">Bills, topics, states, sponsors &amp; status</span></span></a>
-    <a href="hearings.html" style="--accent:var(--gb-gold-hi)">
+    <a href="https://govbot-public-hearings.vercel.app/" target="_blank" rel="noopener" style="--accent:var(--gb-gold-hi)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg>
-      <span><span class="mega-t">Hearings &amp; Public Comment</span><span class="mega-d">Upcoming hearings and how to weigh in</span></span></a>
+      <span><span class="mega-t">Hearings &amp; Public Comment ↗</span><span class="mega-d">Upcoming hearings and how to weigh in</span></span></a>
     <div class="mega-group" style="--accent:var(--gb-amber-hi)">
       <a href="https://govbot-know-your-ballot.vercel.app/" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8"/></svg>
@@ -594,7 +594,7 @@
         <div class="fan-label">what you open in the browser</div>
         <div class="fan">
           <span class="out" style="--c: var(--series-1)"><span class="out-ico" aria-hidden="true">🏛️</span> Explore Legislation <span class="out-sub">legislation.html</span></span>
-          <span class="out" style="--c: var(--series-3)"><span class="out-ico" aria-hidden="true">🗓️</span> Hearings &amp; Public Comment <span class="out-sub">hearings.html</span></span>
+          <span class="out" style="--c: var(--series-3)"><span class="out-ico" aria-hidden="true">🗓️</span> Hearings &amp; Public Comment <span class="out-sub">its own site</span></span>
           <span class="out" style="--c: var(--series-2)"><span class="out-ico" aria-hidden="true">🗳️</span> Illinois Elections <span class="out-sub">illinois-elections.html</span></span>
           <span class="out" style="--c: var(--series-5)"><span class="out-ico" aria-hidden="true">🗺️</span> This page <span class="out-sub">architecture.html</span></span>
         </div>
@@ -716,7 +716,9 @@
     <p class="sub">
       A completely separate scraper that taps legislature websites <b>directly</b> — not through Open States —
       plus federal public-comment periods. It produces a rolling near-future window of hearings and a family
-      of RSS feeds so you can follow a single bill, a whole state, or one hearing.
+      of RSS feeds so you can follow a single bill, a whole state, or one hearing. It runs every 3 hours in its own
+      repository, <a href="https://github.com/frankies2727/govbot-public-hearings" target="_blank" rel="noopener">govbot-public-hearings ↗</a>, and Govbot copies its
+      <code>hearings.json</code> and feeds into this site on every deploy.
     </p>
 
     <div class="diagram" role="img"
@@ -724,7 +726,7 @@
       <div class="flow">
 
         <div class="flow-job" style="--c: var(--series-3)">
-          <div class="flow-job-head"><span class="badge" aria-hidden="true">1</span> Scrape the sources <span class="flow-job-meta">scrape-hearings/main.py</span></div>
+          <div class="flow-job-head"><span class="badge" aria-hidden="true">1</span> Scrape the sources <span class="flow-job-meta">govbot-public-hearings · scraper/main.py</span></div>
 
           <div class="fan-label">tapped directly — federal leads, then states</div>
           <div class="sources">
@@ -762,7 +764,7 @@
         <div class="node" style="--c: var(--series-3)">
           <span class="n-ico" aria-hidden="true">🗓️</span>
           <div class="n-body">
-            <div class="n-title"><code>hearings.html</code></div>
+            <div class="n-title"><a href="https://govbot-public-hearings.vercel.app/" target="_blank" rel="noopener">Govbot Public Hearings ↗</a></div>
             <div class="n-sub">renders the calendar, witness-slip windows, and RSS links</div>
           </div>
         </div>
@@ -780,7 +782,7 @@
       <span class="co-ico" aria-hidden="true">🧪</span>
       <div class="co-body">
         <b>Tested offline.</b> The parsers are snapshot-tested against saved copies of each site
-        (<code>python3 actions/scrape-hearings/test_scrape_hearings.py</code>), so parsing works without
+        (<code>python3 scraper/test_scrape_hearings.py</code> in that repository), so parsing works without
         hitting the network — exactly the offline-first principle the project is built on.
       </div>
     </div>
@@ -942,7 +944,7 @@
     <div>
       <div class="gb-footer-h" role="heading" aria-level="2">Explore</div>
       <a href="legislation.html">Legislation Bills Visualization</a>
-      <a href="hearings.html">Hearings</a>
+      <a href="https://govbot-public-hearings.vercel.app/" target="_blank" rel="noopener">Hearings ↗</a>
       <a href="https://govbot-know-your-ballot.vercel.app/" target="_blank" rel="noopener">Know Your Ballot ↗</a>
       <div class="gb-footer-sub"><span class="gb-when is-up">Upcoming</span>: <a href="https://govbot-know-your-ballot.vercel.app/2027-02/chicago" target="_blank" rel="noopener">Chicago</a> · <a href="https://govbot-know-your-ballot.vercel.app/2027-03/jacksonville" target="_blank" rel="noopener">Jacksonville</a> · <a href="https://govbot-know-your-ballot.vercel.app/2027-04/denver" target="_blank" rel="noopener">Denver</a> · <a href="https://govbot-know-your-ballot.vercel.app/2027-04/oak-park" target="_blank" rel="noopener">Oak Park</a> · <a href="https://govbot-know-your-ballot.vercel.app/2027-04/wisconsin" target="_blank" rel="noopener">Wisconsin spring</a></div>
       <div class="gb-footer-sub"><span class="gb-when is-past">Past · Nov 2026 midterms</span>: <a href="https://govbot-know-your-ballot.vercel.app/2026-11/illinois" target="_blank" rel="noopener">Illinois</a> · <a href="https://govbot-know-your-ballot.vercel.app/2026-11/michigan" target="_blank" rel="noopener">Michigan</a> · <a href="https://govbot-know-your-ballot.vercel.app/2026-11/minnesota" target="_blank" rel="noopener">Minnesota</a> · <a href="https://govbot-know-your-ballot.vercel.app/2026-11/wisconsin" target="_blank" rel="noopener">Wisconsin</a></div>

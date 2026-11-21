@@ -84,17 +84,15 @@ clone) and incrementally — see `scripts/tag_dashboard_repo.sh` and
 
 ## Committee Hearings & Witness Slips (separate page)
 
-A second page, **[Committee Hearings & Witness Slips →](./dashboard/hearings.html)**, sits
-alongside this one (a tab bar at the top links the two). It lists upcoming committee
-hearings where the public can weigh in — live for Illinois & Washington, plus a
-how-to-participate directory for every state. It is an entirely separate pipeline from the
-bill data: hearings are live artifacts each statehouse publishes on its own endpoint (not
-OpenStates), scraped by [`actions/scrape-hearings`](https://github.com/chihacknight/govbot/blob/main/actions/scrape-hearings/)
-into `docs/src/dashboard/hearings.json` + an RSS feed `hearings.xml`
-(schema `schemas/govbot.hearings.schema.json`), and the state directory is a static
-`docs/src/dashboard/participation.json` (schema `schemas/govbot.participation.schema.json`).
-The Pages deploy rebuilds the hearings feed on the same twice-daily schedule. See that
-page's own notes and `actions/scrape-hearings/README.md` for details.
+A second site, **[Govbot Public Hearings ↗](https://govbot-public-hearings.vercel.app/)**, lists upcoming committee
+hearings where the public can weigh in — live for Illinois, Washington, Massachusetts and Alaska
+plus federal rules open for comment — and a how-to-participate directory for every state. It is an
+entirely separate pipeline from the bill data: hearings are live artifacts each statehouse
+publishes on its own endpoint (not OpenStates). It lives in its own repository,
+[frankies2727/govbot-public-hearings](https://github.com/frankies2727/govbot-public-hearings), which scrapes every 3 hours; Govbot's deploy
+copies its `hearings.json`, `hearings.xml` and `hearings/*.xml` feeds into this site so old feed
+addresses and this site's homepage, search and elections pages keep working, and
+`dashboard/hearings.html` forwards there.
 
 The hearings page also **uses govbot's own bill data**: at build time each hearing's
 bills are cross-referenced against `data.json` (govbot tracks Illinois & Washington

@@ -7,7 +7,7 @@ different cadences.
 **Scope — OpenStates pipeline only.** This covers `actions/scrape/` (the OpenStates-based
 bill scraper, `chn-openstates-scrape.yml`, the `govbot-openstates-scrapers`/`govbot-data`
 orgs) specifically — hence "openstates" in the name. It has **no visibility into the other
-scraper pipelines** in this repo: `actions/scrape-elections/`, `actions/scrape-hearings/`,
+scraper pipelines** in this repo: `actions/scrape-elections/`,
 `actions/scrape-maps/`. Those would need their own equivalent checks if/when they need one;
 nothing here reads their output.
 

@@ -67,7 +67,7 @@
 <div class="gl-kick"><span class="gl-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg></span>Hearings &amp; public comment</div>
 <h3 class="gl-h3">Can I have a say?</h3>
 <p class="gl-p">Upcoming hearings, and the comment or witness-slip form for each one.</p>
-<a class="gl-btn gl-btn-primary gl-slide-cta" href="dashboard/hearings.html">See hearings</a>
+<a class="gl-btn gl-btn-primary gl-slide-cta" href="https://govbot-public-hearings.vercel.app/" target="_blank" rel="noopener">See hearings ↗</a>
 </div>
 <div class="gl-slide-body">
 <div class="gl-body-head"><span class="gl-label">Coming up</span></div>
