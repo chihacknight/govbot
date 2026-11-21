@@ -9,8 +9,7 @@ on:
       - ".github/workflows/deploy-docs.yml"
   schedule:
     # Refresh twice daily: 08:00 UTC (after the 6am UTC bill scrapes) and 20:00
-    # UTC (afternoon, to catch same-day committee-hearing postings). The bill
-    # data.json and the live hearings.json are both rebuilt on each run.
+    # UTC (afternoon). The bill data.json is rebuilt on each run.
     - cron: "0 8,20 * * *"
   workflow_dispatch:
 
@@ -41,7 +40,7 @@ jobs:
       # Fast path for frontend-only changes.
       #
       # The full data pipeline below (clone 47+ legislation repos, tag, vendor
-      # photos, IL synopses, hearings, maps, elections + all enrichments) takes
+      # photos, IL synopses, maps, elections + all enrichments) takes
       # 40+ minutes and refreshes government data. It does NOT need to run for a
       # pure dashboard HTML/CSS/JS change, nor on a PR (PRs never deploy). So:
       #
@@ -117,7 +116,7 @@ jobs:
 
       # On the fast path, restore the last full build's data.json + gitignored
       # artifacts (IL synopses, state summaries, sponsor-photo manifest + images) and the
-      # other pipeline-built files (roster, maps, hearings + elections data and RSS feeds),
+      # other pipeline-built files (roster, maps, elections data and RSS feeds),
       # so the deploy carries the same real data the scheduled build produced — the
       # committed copies of those are old samples.
       - name: Restore last full build's data
@@ -133,9 +132,6 @@ jobs:
             docs/src/dashboard/assets/legislators
             docs/src/dashboard/people.json
             docs/src/dashboard/maps.json
-            docs/src/dashboard/hearings.json
-            docs/src/dashboard/hearings.xml
-            docs/src/dashboard/hearings
             docs/src/dashboard/elections.json
             docs/src/dashboard/elections.xml
             docs/src/dashboard/elections
@@ -382,40 +378,25 @@ jobs:
             || echo "::warning::bill summary build reported errors; bills stay unsummarized"
           ls -lh docs/src/dashboard/summaries 2>/dev/null || true
 
-      # Live committee hearings + witness-slip windows (IL: ilga.gov, WA:
-      # leg.wa.gov, MA: malegislature.gov, AK: akleg.gov). This is a rolling near-future window, separate from the
-      # daily bill snapshot, so it has its own file. The scraper is fail-soft
-      # (a source outage yields zero hearings, never a crash); we only replace
-      # the committed sample when the fresh run actually produced hearings, so
-      # a total outage keeps the last-good sample rather than blanking the panel.
-      - name: Build committee hearings feed
-        if: steps.gate.outputs.refresh == 'true'
-        # Federal rules open for comment come from the keyless Federal Register API.
+      # Hearings & Public Comment is its own site (frankies2727/govbot-public-hearings, which
+      # scrapes every 3 hours). Copy its latest hearings.json + RSS feeds here on every deploy,
+      # fast path included, so the old feed addresses (dashboard/hearings.xml, hearings/*.xml)
+      # keep updating and the homepage, search, legislation and elections steps keep reading
+      # hearings.json. Fail-soft: if the clone fails, the committed copies ship.
+      - name: Copy hearings data and feeds from Govbot Public Hearings
         run: |
           set -uo pipefail
-          rm -rf ${{ runner.temp }}/hearings_feeds
-          python3 actions/scrape-hearings/main.py \
-            --jurisdictions il,wa,ma,ak,us \
-            --output ${{ runner.temp }}/hearings.json \
-            --rss ${{ runner.temp }}/hearings.xml \
-            --rss-feeds-dir ${{ runner.temp }}/hearings_feeds \
-            --dashboard-data docs/src/dashboard/data.json \
-            --participation docs/src/dashboard/participation.json \
-            || echo "::warning::hearings scrape reported errors"
-          if [ -s ${{ runner.temp }}/hearings.json ] && \
-             [ "$(python3 -c 'import json,sys; print(len(json.load(open("${{ runner.temp }}/hearings.json"))["hearings"]))' 2>/dev/null || echo 0)" -gt 0 ]; then
-            mv ${{ runner.temp }}/hearings.json docs/src/dashboard/hearings.json
-            [ -s ${{ runner.temp }}/hearings.xml ] && mv ${{ runner.temp }}/hearings.xml docs/src/dashboard/hearings.xml
-            # Replace the whole granular-feed directory so feeds for bills/hearings that
-            # dropped out of the window don't linger as stale files.
+          src=${{ runner.temp }}/public-hearings
+          rm -rf "$src"
+          if git clone -q --depth 1 https://github.com/frankies2727/govbot-public-hearings "$src" \
+             && [ -s "$src/site/hearings.json" ]; then
+            cp "$src/site/hearings.json" "$src/site/hearings.xml" docs/src/dashboard/
             rm -rf docs/src/dashboard/hearings
-            [ -d ${{ runner.temp }}/hearings_feeds ] && mv ${{ runner.temp }}/hearings_feeds docs/src/dashboard/hearings
-            echo "hearings.json + hearings.xml + granular feeds refreshed"
+            cp -r "$src/site/hearings" docs/src/dashboard/hearings
+            echo "copied hearings from govbot-public-hearings@$(git -C "$src" rev-parse --short HEAD)"
           else
-            echo "::warning::no hearings scraped; keeping committed sample hearings.json + hearings.xml + granular feeds"
+            echo "::warning::couldn't reach govbot-public-hearings; shipping the committed hearings files"
           fi
-          ls -lh docs/src/dashboard/hearings.json docs/src/dashboard/hearings.xml
-          ls -1 docs/src/dashboard/hearings/ 2>/dev/null | head -5 || true
 
       # District locator maps: Chicago ward + police-district boundaries + CPS board
       # subdistricts (City of Chicago Portal + Chalkbeat's 2026 board map) and
@@ -679,9 +660,6 @@ jobs:
             docs/src/dashboard/assets/legislators
             docs/src/dashboard/people.json
             docs/src/dashboard/maps.json
-            docs/src/dashboard/hearings.json
-            docs/src/dashboard/hearings.xml
-            docs/src/dashboard/hearings
             docs/src/dashboard/elections.json
             docs/src/dashboard/elections.xml
             docs/src/dashboard/elections

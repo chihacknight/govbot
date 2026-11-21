@@ -48,7 +48,7 @@ This script lives in its own action (actions/openstates-scrape-audits/),
 scoped specifically to the OpenStates-based bill scraper pipeline
 (actions/scrape/, chn-openstates-scrape.yml) -- it has no visibility into
 the other scraper pipelines in this repo (actions/scrape-elections/,
-actions/scrape-hearings/, actions/scrape-maps/), hence the explicit
+actions/scrape-maps/), hence the explicit
 "openstates" in the name. Separate from actions/pipeline-manager/
 (repo/template provisioning) -- the only functional tie to
 pipeline-manager is reading its locale config (chn-openstates-scrape.yml)

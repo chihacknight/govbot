@@ -733,66 +733,16 @@ section's **"Other"** tab. `loadIlRecent()` still fetches the legislation `data.
 The **"Explore entire catalog of IL bills ↗"** button (`#ilr-explore`, `legislation.html#state=il` in a
 new tab, via the `#state=<code>` deep link → `eeApplyFilter`) was relocated to the bottom of the
 Springfield section.
-`hearings.html` is participation-first and wears its own **"hand-drawn civic zine"** look (Nov 2026,
-from the Govbot presentation deck; the shared header, drawer and footer are untouched): warm paper
-`#FBFAF5` and near-black ink `#1B1A17` (dark theme = "night paper", the same marks inverted; `--z-*`
-tokens in the page's `<style>`), **Roboto** only (Google Fonts, scoped to `.wrap` + the RSS popover;
-hierarchy from size), 2px ink outlines on rounded shapes, hard 4px offset ink shadows (no blur) on the
-buttons that take you somewhere, **pencil-sketch double lines** behind each card (`.z-card` /
-`.hg-frame` `::before/::after`, z-index −1 inside the isolated `.wrap` / `.participation-grid`; the
-hearings cards get theirs from a `.hg-frame` wrapper because the federal card scrolls and would clip
-them), and a thin, slightly tilted **paper frame** around the content (`.wrap::before`, doubled by `.wrap::after`).
-A **"Pencil layer"** at the end of the page's styles pushes it to a heavy graphite sketch: SVG-noise
-paper grain + faint smudges on the body; the doubled sketch outlines get uneven hand-drawn corners
-(irregular `border-radius`, one partly dashed) — **no live SVG filters**: turbulence filters on the outlines
-(Nov 2026) made the page ~3× slower to load and scroll on a phone-speed CPU, so they were removed;
-coloured-pencil hatching on the coloured pills kept to their padding — the text sits on a solid patch of the
-same colour (content box, `--pf`), since hatching behind small type was unreadable (Nov 2026) and faint hatching inside cards; section numbers solid in the section colour inside an ink outline; scribbled underlines under section titles, a scribbled circle round
-"say." (`.hh-circle`); pencil rules instead of dashed lines; and margin doodles (an arrow into "Jump to",
-a star by each section, a squiggle under the stats). All static masks/gradients, nothing animated. Colour only
-marks where you are: the deck's four section colours `--z-c1..c4` (#8EC5F0 blue, #8FD9A0 green,
-#FFD166 yellow, #F4A3C0 pink; text on them is always dark ink). Top to bottom: a hero card (caps eyebrow
-"Hearings & public comment", "Have your say.", the tagline, the **America-250 fireworks in pencil** —
-`drawFireworks()` builds ink-ray bursts in `#hh-fw` (`.fw-stage`), each ray doubled by a lighter sketch
-line and given fixed seeded jitter, shooting up on dotted trails over a hand-lettered outline "250th" on a
-yellow marker swipe; **every moving piece is its own small HTML box holding a still SVG**, and only the box
-moves (transform/opacity, so the compositor animates it with zero repaint — animating `<g>`s inside one
-SVG repainted the whole hero card every frame); the lettering "writes" by sliding a clip window over it
-(`.fw-reveal`, two opposite transforms); paused
-off screen (IntersectionObserver), a still composed frame under reduced motion — and the live stats as **big
-light numerals with caps labels**: "N upcoming hearings and open to public comment" — upcoming and
-comment-open — and "N jurisdictions"); the **"Jump to" nav pills** (`#hh-jump`, hidden with fewer
-than two jurisdictions; one per jurisdiction in section order with its count, linking to `#hg-<code>`;
-the pill of the jurisdiction on screen fills with its colour and gets the hard shadow —
-`markJumpInView`, an IntersectionObserver setting `aria-current`); then two **section dividers**
-(giant outlined number, title, one line): **01 Upcoming hearings** and **02 Weigh in — by state**.
-Each jurisdiction's card puts its name on a tab in its colour (`zc(i)` cycles `--z-c1..c4`, the same
-colour as its jump pill; `.hgroup` keeps `scroll-margin-top`, and search's `#hg-<code>` links use the
-same ids). The federal kinds' sections take the colours in turn too (`fedN`). Status chips are small
-all-caps ink-outlined pills; colour only where it means something: "Comment due" yellow, "Public
-comment open" / "Live hearings" green, "Canceled" pink. The White House hero art and the old colour
-fireworks canvas were retired with this redesign (`whitehouse-hero.png` deleted). **Following by RSS** (`#rss-pop`, one popover for the "Follow all", per-state, per-bill and per-hearing
-buttons): the feed address with Copy, one-tap "Add to Feedly / Inoreader / NewsBlur" links, "Preview the feed"
-(the `feed.xsl` page) and **"Copy a link to share"** (the page's `#hg-<code>` section, which previews as a page
-with the `og:` tags in `hearings.html`'s head + `assets/og-hearings.png` — "Govbot · Public participation / Your voice belongs in
-the room. / Find a hearing. Weigh in.", the White House line art kept on the right), plus a line saying a feed address is for
-a reader app, not a post. Feed items (`_add_item` in `actions/scrape-hearings/main.py`) lead with the subject
-(or committee) and the date, and carry a labelled HTML description (Committee / Where / When / Place / Bills with
-titles and links / Take part / Details) that readers and `feed.xsl` (`disable-output-escaping`) render. The pill
-next to each jurisdiction's name, and each row's action pill, read **"Official: file a witness slip / sign in to
-testify / submit testimony / comment portal ↗"** (`PARTICIPATION`). **One link and one follow button per hearing** (per request, Oct 2026): the filled pill opens the
-hearing itself — **"Hearing details ↗"** to its `details_url`, **"Open this rule ↗"** for federal — falling
-back to `witness_slip_url` only when a hearing has no page of its own; the place to take part is the
-"Official: …" pill by the jurisdiction's name (the `witness_slip_url` table is in
-`actions/scrape-hearings/README.md`). The bill chips no longer carry their own RSS trigger (the per-bill
-feeds are still built; nothing on the page links them), so each row has just "Follow (RSS)". Counts in
-the jump row, "x of y showing" and "See all N" carry thousands separators (`fmt`). Feed titles say it all
-on one line for widgets that show only titles: "Illinois · Housing Committee — Sep 9, 2026, 2:00 PM ·
-HB25, SB1486"; federal "USA (Federal) · <rule> (<agency>) — Comments due Oct 16, 2026". **"Weigh in — by state"** has an
-**A–Z letter row** next to its filter box (`buildLetters` / `pLetter`): a letter shows only states
-starting with it (letters no state starts with are disabled; clicking the active one, or "All",
-shows every state), combined with the typed filter; "No states match." when both exclude everything. The `<title>` was also corrected (it had been a stray "Legislation Dashboard").
-The hearing/participation render engine is otherwise unchanged.
+**Hearings & Public Comment is its own site** (Nov 2026): [Govbot Public Hearings](https://govbot-public-hearings.vercel.app/), repo
+`frankies2727/govbot-public-hearings` (page, scraper, feeds, schemas and their history moved there; its CLAUDE.md holds the page and
+scraper notes that used to live here). It scrapes every 3 hours and Vercel deploys it in about a minute.
+Here, `dashboard/hearings.html` is a forwarder that keeps the hash (`#hg-<code>`), the header/drawer/footer
+and the homepage slide link the new site, and deploy-docs.yml's "Copy hearings data and feeds from Govbot
+Public Hearings" step (every deploy, fast path too, fail-soft) clones that repo and copies `hearings.json`,
+`hearings.xml` and `hearings/*.xml` into `docs/src/dashboard/`, so old feed addresses keep updating and the
+homepage slide, search, legislation and the elections step's Springfield cross-reference keep reading
+`hearings.json`. Its page loads `govbot.css` / `govbot-shell.js` / `govbot-utils.js` / `flags/` from this
+site by full address and copies the shell templates daily, so keep those paths stable.
 `architecture.html` is retitled **"How Govbot Works"** and now opens with a nontechnical layer: a
 plain-English six-stage overview pipeline (`.gw-pipeline`: Government sources → Govbot pipelines →
 Validate + normalize → AI topic tagging → Open data → Your dashboards) and a "How it stays
@@ -859,7 +809,7 @@ How-Govbot-Works page plus a global search page**:
 `docs/src/dashboard/index.html` (**redirect** → `../`, the old dashboard homepage retired),
 `docs/src/dashboard/legislation.html` (**Explore Legislation** — the legislation dashboard,
 formerly `index.html`; deep links are `legislation.html#q=<billid>`),
-`docs/src/dashboard/hearings.html` (**Hearings & Public Comment**),
+`docs/src/dashboard/hearings.html` (**forwarder** → Govbot Public Hearings, its own site),
 `docs/src/dashboard/michigan-elections.html`, `minnesota-elections.html` and `wisconsin-elections.html`
 (**Michigan / Minnesota / Wisconsin Elections**: each forwards to its Know Your Ballot guide,
 https://govbot-know-your-ballot.vercel.app/<state>) and
@@ -901,7 +851,7 @@ categorized result groups** — **Bills** (id/title/sponsors/tags → `legislati
 + potential, each tagged → the race, see below; each card says **which race and when** — "Running for
 <office> — <district | Statewide (all of Illinois) | Citywide (all of Chicago)>" and "On the <date> ballot ·
 <stage> election", `raceArea` / `raceWhen`), **Races & offices** (office/district/ballot →
-the race), and **Hearings** (title/committee/bill → `hearings.html#hg-<code>`). Each group shows a
+the race), and **Hearings** (title/committee/bill → Govbot Public Hearings `#hg-<code>`). Each group shows a
 count, caps the list at 60 with a "refine" note, and there is a live result total. **Jump chips** are
 coloured `<button>`s (category icon + label + a filled count badge, in the section's colour) that
 `scrollIntoView` the section — they used to be `#cat-…` links, and since the hash carries the query a
@@ -961,48 +911,7 @@ and the per-page 3-button light/auto/dark theme pills have been **retired** — 
 design is the single default. On elections and hearings, the long list
 sections scroll inside capped-height boxes (`.group .races`, `.sf-list`, `.hgroup-rows`,
 `.participation-grid`) so the homepage isn't enormous; the elections "Where the data comes
-from" cabinet is **expanded by default** (`<details open>`). The hearings
-page is a *separate* pipeline: `actions/scrape-hearings/` taps ilga.gov, leg.wa.gov,
-malegislature.gov, and akleg.gov directly (not OpenStates), plus **USA (Federal)**: every proposed rule /
-rule whose public comment period is open, from the keyless **Federal Register API** (`parse_fr_documents`,
-one request, ~200 rules, each linked to its own Regulations.gov comment form; **only the 7 closing
-soonest** (`SHOW_MAX`, applied in `assemble` via `federal_preview`) ship in `hearings.json`, and the rules
-section ends with "Showing the 7 closing soonest." + a **"See all N ↗"** button (`.hgroup-more`) to the
-Federal Register's own search for the same set (`open_total` / `full_list_url` on the `us` jurisdiction
-entry). The ~800 open **notices** (announcements that ask for comments without being a rule) are fetched too
-(a second query, `fetch_fr` follows the API's 1,000-per-page `next_page_url`), sorted into plain kinds by
-title (`fr_notice_category` / `NOTICE_CATEGORIES`: Requests for ideas & information, Environment & wildlife
-reviews, Permits/licenses/approvals, Meetings, Privacy & government records, Forms & paperwork reviews
-(~70%), Other — paperwork is matched first), and only the **2 closing soonest per kind** (`NOTICE_SHOW`)
-ship, each record carrying its `category`; the `us` entry adds `notice_total`, `notice_categories`
-(key/label/full count) and `notice_list_url` (the Federal Register's search for every open notice — it
-has no list of Govbot's kinds). The page draws the federal group with `federalSections`. **The whole
-federal card is one shorter scroll box** (`.hgroup--fed`, 640px; 540px on phones, an ink scrollbar): its header ("USA (Federal) · x of y showing · Follow this state (RSS)") is **sticky**
-at the top, and each kind's title (`.fsec-h`) sticks just under it (`--fed-head-h`, the header's height
-measured by a ResizeObserver, since it wraps on phones). The rules sit in their own colour-bordered box
-(`.fsec-rows`, its kind's colour on a dot before the title, no inner scroll) reading "7 of N showing" with "Showing the 7 closing soonest. **See all N ↗**" (the
-Federal Register's list), then **"Other federal notices open for comment"**: one short block per kind,
-each clearly labelled with its kind and "2 of N showing" (`fedSection`; `noticePreview` keeps 2 per kind
-even from an older file), and **one** line at the bottom — "Showing the X closing soonest. **See all Y ↗**"
-→ `notice_list_url`. (The per-kind "See all" buttons, the `notices-<kind>.json` lists and the scraper's
-`--notices-dir`/`notice_lists` were removed with this.) **Every state list shows at most 7**
-(`SHOW_MAX`), reads **"x of y showing"** (`showing()`; the federal header totals rules + notices), and a
-longer list gets "Showing the next 7. **See all N ↗**" to its `portal_url` (`seeAllRow`, `.hgroup-more`,
-the button right next to the text) — search's `#hg-<code>` links land on the state's section, which may
-not show a hearing past the 7th (the states' `.hgroup-rows` scrollbars are ink);
-the old Regulations.gov `DEMO_KEY` path was rate-limited and its placeholder seed had expired, so both
-were removed) — federal leads the list, above the states. It writes `docs/src/dashboard/hearings.json` + a whole-calendar
-RSS `hearings.xml` + granular RSS feeds under `docs/src/dashboard/hearings/` — per bill
-(`<jurisdiction>-<NORMALIZED_ID>.xml`), per jurisdiction (`<code>.xml`), and per hearing
-(`hearing-<id>.xml`) — so a reader can follow one bill, a whole state, or a single hearing
-(schema `schemas/govbot.hearings.schema.json`), plus a static 56-jurisdiction participation
-directory `docs/src/dashboard/participation.json` (schema
-`schemas/govbot.participation.schema.json`). Passing `--participation <file>` also emits an
-empty placeholder `<code>.xml` for every participation state with no live hearings yet, so
-each "Weigh in — by state" card carries a "Follow this state (RSS)" link that starts empty
-and fills when that state opens (its filter box has a colored border + search icon). `deploy-docs.yml` rebuilds both the bill
-`data.json` and the hearings feed on the twice-daily schedule. Hearings parsers are
-offline-snapshot-tested: `python3 actions/scrape-hearings/test_scrape_hearings.py`.
+from" cabinet is **expanded by default** (`<details open>`).
 
 **`deploy-docs.yml` fast path (frontend- and docs-only changes).** The full data pipeline (~40 min) runs
 on the twice-daily **schedule**, on **manual dispatch**, and on any **push to main that touches a file
@@ -1018,7 +927,7 @@ builds + deploys with the committed data. Markdown docs never feed the data pipe
 change (updating this file included) stays fast; mdbook still rebuilds so any published `.md` page
 updates. The committed `data.json` is a tiny sample, the `.gitignore`d artifacts (`il_summaries.json`,
 `summaries/`, `legislator_images.json` + `assets/legislators/`) aren't committed at all, and the committed
-`people.json`, `maps.json`, `hearings.json`/`hearings.xml`/`hearings/` and
+`people.json`, `maps.json` and
 `elections.json`/`elections.xml`/`elections/` are **old samples** the pipeline never writes back — so a full
 build snapshots **all** of them into a rolling `actions/cache` (`govbot-built-data-<run_id>`, restore-key
 `govbot-built-data-`) and the fast path **restores** them. (Before Oct 2026 only the bills + gitignored
