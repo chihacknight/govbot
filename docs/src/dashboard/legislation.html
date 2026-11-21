@@ -678,7 +678,7 @@
   .ee-detail { width: 330px; flex: none; background: var(--gb-surface); border: 1px solid var(--gb-border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; }
   .ee-d-over { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--gb-text-2); }
   .ee-d-titlerow { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 4px; }
-  .ee-d-titlerow h3 { margin: 0; font-family: var(--gb-font-display); font-size: 25px; font-weight: 600; line-height: 1.05; color: var(--gb-text); }
+  .ee-d-titlerow h2 { margin: 0; font-family: var(--gb-font-display); font-size: 25px; font-weight: 600; line-height: 1.05; color: var(--gb-text); }
   .ee-d-pill { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; background: var(--gb-elevated); border: 1px solid var(--gb-border); white-space: nowrap; }
   .ee-d-dot { width: 8px; height: 8px; border-radius: 999px; }
   .ee-d-pill span:last-child { font-size: 12.5px; font-weight: 600; color: var(--gb-text); }
@@ -952,7 +952,7 @@
         <aside class="ee-detail" id="ee-detail" aria-live="polite">
           <span class="ee-d-over">Jurisdiction</span>
           <div class="ee-d-titlerow">
-            <h3 id="ee-d-name">—</h3>
+            <h2 id="ee-d-name">—</h2>
             <span class="ee-d-pill"><span class="ee-d-dot" id="ee-d-dot"></span><span id="ee-d-label"></span></span>
           </div>
           <div class="ee-d-soon" id="ee-d-soon" hidden>
@@ -2259,7 +2259,9 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
       btn.style.background = bg; btn.style.color = fg; btn.style.border = "1px solid " + bd;
     }
     if (on) btn.style.boxShadow = "0 0 0 3px #7CEBB0";
-    btn.setAttribute("aria-label", name + ", " + (eeCounts[code] || 0) + " bills" + (on ? " (selected)" : ""));
+    // The spoken name starts with the chip's own words ("USA Federal"), then the count (WCAG 2.5.3).
+    btn.setAttribute("aria-label", codeLabel + " " + name + ", " + (eeCounts[code] || 0) + " bills");
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
     btn.append(mkel("span", "code", codeLabel), mkel("span", "nm", name));
     btn.addEventListener("click", () => eeSelect(code));
     return btn;

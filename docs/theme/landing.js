@@ -329,7 +329,10 @@
   function sync() {
     cur = nearest();
     for (var i = 0; i < chips.length; i++) chips[i].setAttribute("aria-pressed", i === cur ? "true" : "false");
-    for (var k = 0; k < slides.length; k++) slides[k].classList.toggle("is-active", k === cur);
+    // A faded neighbour that only peeks in is inert: no tabbing into a mostly hidden
+    // slide, and screen readers read only the one shown. Swiping still works (the
+    // touch lands on the carousel itself).
+    for (var k = 0; k < slides.length; k++) { slides[k].classList.toggle("is-active", k === cur); slides[k].inert = k !== cur; }
     if (countEl) countEl.textContent = (cur + 1) + " / " + slides.length;
     if (prevBtn) prevBtn.disabled = cur === 0;
     if (nextBtn) nextBtn.disabled = cur === slides.length - 1;

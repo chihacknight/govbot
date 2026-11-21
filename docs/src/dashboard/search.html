@@ -96,7 +96,7 @@
 
   /* prompt / empty / loading states reuse the shared .gb-state look */
   .s-state { text-align: center; padding: 40px 16px; color: var(--text-secondary); }
-  .s-state h3 { margin: 8px 0 4px; color: var(--text-primary); font-size: 17px; }
+  .s-state h2 { margin: 8px 0 4px; color: var(--text-primary); font-size: 17px; }
   .s-state p { margin: 0; font-size: 13.5px; }
   .s-state .ico { width: 34px; height: 34px; color: var(--text-muted); }
   .s-hidden { display: none; }
@@ -624,7 +624,7 @@
       ? '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M8 11h6"/>'
       : '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>';
     d.innerHTML = icoSvg("ico", paths);
-    d.appendChild(el("h3", null, title));
+    d.appendChild(el("h2", null, title));
     d.appendChild(el("p", null, body));
     return d;
   }

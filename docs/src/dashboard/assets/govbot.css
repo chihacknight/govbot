@@ -103,7 +103,7 @@
   --gb-on-primary:    #FFFFFF;
   --gb-gold:          var(--gb-primary);
   --gb-gold-hi:       var(--gb-primary-hi);
-  --gb-blue:          #2F6BFF;
+  --gb-blue:          #2B64F2;  /* a touch darker than dark mode's, so white text on it and it on white pass 4.5:1 */
   --gb-blue-hi:       #1E56E6;
   --gb-link:          #1747C9;   /* blue for text/links on the light page (~7:1) */
   --gb-green:         #1F8F5F;

@@ -833,7 +833,7 @@
   function fedSection(key, label, rows, total) {
     const box = eln("section", "fsec");
     box.style.setProperty("--sc", zc(fedN++));
-    const h = eln("h4", "fsec-h", label);
+    const h = eln("h3", "fsec-h", label);
     h.append(eln("span", "fsec-n", showing(rows.length, total)));
     box.append(h);
     const list = eln("div", "hgroup-rows fsec-rows");
@@ -1156,7 +1156,8 @@
     btn.setAttribute("aria-haspopup", "dialog");
     btn.setAttribute("aria-expanded", "false");
     btn.title = title;
-    btn.setAttribute("aria-label", title);
+    // The spoken name starts with the words on the button (WCAG 2.5.3), then says what it follows.
+    btn.setAttribute("aria-label", label + ": " + title.replace(/ \(RSS\)$/, ""));
     btn.append(mkRssSvg(), document.createTextNode(label));
     btn.addEventListener("click", (e) => { e.preventDefault(); toggleRss(btn, optsFn()); });
     return btn;
