@@ -855,7 +855,11 @@ async fn run_logs_command(cmd: Command) -> anyhow::Result<()> {
         // repo_name/country:{country}/state:{state}/sessions/{session_name}/logs/*.json
         let mut file_count = 0;
         
+        // sort(true) orders each directory's entries by file name. Without it jwalk
+        // yields filesystem order, which differs between macOS and Linux, so a
+        // `--limit N` run (e.g. a limited tagging run) scored different bills per machine.
         for entry_result in WalkDir::new(&repo_path)
+            .sort(true)
             .process_read_dir(|_depth, _path, _read_dir_state, _children| {
                 // Optional: customize directory reading behavior
             })
