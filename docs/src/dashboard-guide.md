@@ -89,7 +89,7 @@ hearings where the public can weigh in — live for Illinois, Washington, Massac
 plus federal rules open for comment — and a how-to-participate directory for every state. It is an
 entirely separate pipeline from the bill data: hearings are live artifacts each statehouse
 publishes on its own endpoint (not OpenStates). It lives in its own repository,
-[frankies2727/govbot-public-hearings](https://github.com/frankies2727/govbot-public-hearings), which scrapes every 3 hours; Govbot's deploy
+[frankies2727/govbot-public-hearings](https://github.com/frankies2727/govbot-public-hearings), which scrapes every 12 hours; Govbot's deploy
 copies its `hearings.json`, `hearings.xml` and `hearings/*.xml` feeds into this site so old feed
 addresses and this site's homepage, search and elections pages keep working, and
 `dashboard/hearings.html` forwards there.
