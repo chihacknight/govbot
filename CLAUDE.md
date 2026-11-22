@@ -735,7 +735,7 @@ new tab, via the `#state=<code>` deep link → `eeApplyFilter`) was relocated to
 Springfield section.
 **Hearings & Public Comment is its own site** (Nov 2026): [Govbot Public Hearings](https://govbot-public-hearings.vercel.app/), repo
 `frankies2727/govbot-public-hearings` (page, scraper, feeds, schemas and their history moved there; its CLAUDE.md holds the page and
-scraper notes that used to live here). It scrapes every 3 hours and Vercel deploys it in about a minute.
+scraper notes that used to live here). It scrapes every 12 hours (07:17 and 19:17 UTC, just before this site's scheduled deploys) and Vercel deploys it in about a minute.
 Here, `dashboard/hearings.html` is a forwarder that keeps the hash (`#hg-<code>`), the header/drawer/footer
 and the homepage slide link the new site, and deploy-docs.yml's "Copy hearings data and feeds from Govbot
 Public Hearings" step (every deploy, fast path too, fail-soft) clones that repo and copies `hearings.json`,
