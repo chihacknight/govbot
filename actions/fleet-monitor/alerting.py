@@ -254,7 +254,7 @@ def build_rule_group() -> dict:
                 description=(
                     "The collector itself has stopped shipping, so every other rule here is "
                     "now blind rather than quiet — a green board means nothing until this "
-                    "clears. Check the fleet-monitor workflow's recent runs."
+                    "clears. Check the Fleet Metrics workflow's recent runs."
                 ),
                 state_filtered=False,
             ),

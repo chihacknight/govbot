@@ -502,6 +502,10 @@ if ! diff -q <(grep -v '^fleet_collector_heartbeat ' "$output_dir/run-payload.tx
 fi
 echo "✓ run: partial-fail sweep exits 0, logs errors, ships metrics + heartbeat"
 
+pipenv run python3 main.py run-metrics --dry-run --poller-records fixtures/poller-records.jsonl \
+  2> "$stderr_tmp" | diff -u "$output_dir/run-payload.txt" -
+echo "✓ run-metrics: standalone workflow preserves metrics and heartbeat"
+
 # Clean sweep (errors-free records): exits 0, heartbeat reports zero errors.
 if ! pipenv run python3 main.py run --dry-run --poller-records "$clean_records" 2> /dev/null \
     | grep -q '^fleet_collector_heartbeat repos=4,errors=0 '; then
@@ -857,6 +861,9 @@ EOF
 # leave a gap for the watermark to leap. Offline: request_json is monkeypatched.
 pipenv run python3 - <<'EOF'
 from datetime import datetime, timedelta, timezone
+from io import BytesIO
+from unittest.mock import patch
+from urllib.error import HTTPError
 
 import log_harvester
 
@@ -913,6 +920,29 @@ fetch_runs("o", "r", "w.yml")
 assert pages_requested == [1, 2], "a page with no parseable stamps pages on"
 print("✓ run listing: pages to the look-back boundary (anchored to the harvest now), stops on a")
 print("  short page, caps at MAX_RUN_PAGES; unparseable stamps never fake oldness")
+
+# Exercise both real request paths: a retried archive consumes two attempts.
+from http_util import request_json, request_with_retry
+log_harvester.request_json = request_json
+with patch.object(log_harvester, "request_with_retry",
+                  side_effect=lambda *args, **kwargs: request_with_retry(
+                      *args, **kwargs, sleep=lambda _: None
+                  )), patch("urllib.request.urlopen", side_effect=[
+    BytesIO(b'{"workflow_runs": []}'),
+    HTTPError("https://api.github.com", 503, "unavailable", {}, None),
+    BytesIO(b"archive"),
+]) as urlopen:
+    fetch_runs, fetch_archive = log_harvester.github_log_fetchers(ANCHOR, request_budget=3)
+    assert fetch_runs("o", "r", "w.yml") == []
+    assert fetch_archive("o", "r", 42) == b"archive"
+    try:
+        fetch_runs("o", "r", "w.yml")
+    except RuntimeError as error:
+        assert "GitHub request budget exhausted" in str(error), error
+    else:
+        raise AssertionError("The next request must be deferred")
+    assert urlopen.call_count == 3
+print("✓ GitHub logs budget: listings, archives, and retries share one cap")
 EOF
 
 # Loki push wire format + missing-env guard, offline (fake urlopen).
@@ -1386,27 +1416,33 @@ echo "✓ real-config smoke: $real_count records from ../pipeline-manager"
 # 1000 requests/hour. Not snapshotted — the count moves with the fleet; this
 # locks the ceiling, not the number.
 #
-# It counts BOTH legs. The old check looked only at the metrics leg against a
-# flat 400, which understated a sweep by the logs leg's run-listing request per
-# workflow — and it fired for real when upstream added a third fleet config plus
-# a second production workflow, at which point the true cost was over the
-# ceiling, not merely over 400. Budget the whole sweep or the tripwire lies.
+# Both workflows draw on the same repository quota, so account for the
+# scheduled logs workflow's cap and the estimated metrics requests.
 pipenv run python3 - <<'EOF'
+from pathlib import Path
+import re
+
 from fleet_config import read_fleet
 from fleet_poller import DATA_PATHS, estimate_request_count
 
 # GITHUB_TOKEN's documented limit for an Actions workflow, and the sweep runs
-# hourly, so one sweep must fit inside one hour's budget with room for the
-# archive downloads (one per NEW run, unpredictable and unbounded by config).
-# 80% leaves ~200 requests/hour for those; the measured fleet sits at ~62%.
+# hourly, so together they must fit inside the budget with headroom for
+# metrics retries and other workflows.
 TOKEN_LIMIT_PER_HOUR = 1000
 HEADROOM = 0.8
 
 records = read_fleet("../pipeline-manager")
 metrics_requests = estimate_request_count(records)
-# The logs leg lists runs once per workflow; archive downloads are extra and
-# depend on how many runs actually finished, which is why the ceiling keeps 40%.
 logs_requests = sum(len(r["expected_workflows"]) for r in records)
+workflow = Path("../../.github/workflows/fleet-logs.yml").read_text()
+log_budget = int(re.search(r"--github-request-budget (\d+)", workflow)[1])
+assert logs_requests < log_budget, (
+    f"GitHub logs budget {log_budget} leaves no room for archives after {logs_requests} listings"
+)
+assert metrics_requests + log_budget <= TOKEN_LIMIT_PER_HOUR * HEADROOM, (
+    f"Estimated metrics requests ({metrics_requests}) and the logs cap ({log_budget}) "
+    "leave too little headroom in the GitHub repository quota"
+)
 count = metrics_requests + logs_requests
 budget = int(TOKEN_LIMIT_PER_HOUR * HEADROOM)
 assert count < budget, (

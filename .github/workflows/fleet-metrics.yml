@@ -1,0 +1,37 @@
+name: Fleet Metrics
+
+on:
+  schedule:
+    - cron: "10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fleet-metrics
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: actions/fleet-monitor
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install pipenv
+          pipenv install --deploy
+      - name: Publish metrics and heartbeat
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GRAFANA_PUSH_URL: ${{ vars.GRAFANA_PUSH_URL }}
+          GRAFANA_PUSH_USER: ${{ vars.GRAFANA_PUSH_USER }}
+          GRAFANA_PUSH_KEY: ${{ secrets.GRAFANA_PUSH_KEY }}
+        run: pipenv run python main.py run-metrics --config-dir ../pipeline-manager

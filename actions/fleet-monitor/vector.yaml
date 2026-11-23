@@ -1,0 +1,53 @@
+sources:
+  fleet:
+    type: http_server
+    address: 0.0.0.0:8687
+    path: /logs
+    strict_path: true
+    framing:
+      method: newline_delimited
+    decoding:
+      codec: json
+
+transforms:
+  timestamp:
+    type: remap
+    inputs: [fleet]
+    source: |
+      .timestamp = from_unix_timestamp!(to_int!(del(.timestamp_ns)), unit: "nanoseconds")
+
+sinks:
+  loki:
+    type: loki
+    inputs: [timestamp]
+    endpoint: "${LOKI_ENDPOINT}"
+    path: /loki/api/v1/push
+    auth:
+      strategy: basic
+      user: "${GRAFANA_LOGS_USER}"
+      password: "${GRAFANA_LOGS_KEY}"
+    healthcheck:
+      enabled: false
+    labels:
+      "*": "{{ labels }}"
+    structured_metadata:
+      "*": "{{ metadata }}"
+    encoding:
+      codec: text
+    compression: gzip
+    acknowledgements:
+      enabled: true
+    buffer:
+      type: memory
+      when_full: block
+      max_events: 10000
+    batch:
+      # The cap is on events before serialization. Leave headroom for overhead.
+      max_bytes: 500000
+      timeout_secs: 0.25
+    request:
+      concurrency: 1
+      rate_limit_num: 2
+      rate_limit_duration_secs: 1
+      retry_attempts: 2
+      timeout_secs: 10

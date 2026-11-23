@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 import zipfile
 from io import BytesIO
@@ -30,6 +31,9 @@ def cli():
 )
 @click.option("--metrics-only", is_flag=True, help="Collect metrics only.")
 @click.option("--logs-only", is_flag=True, help="Harvest and ship run logs only.")
+@click.option("--via-vector", is_flag=True, help="Deliver logs through the local Vector container.")
+@click.option("--github-request-budget", type=click.IntRange(min=1),
+              help="Maximum GitHub REST attempts for live log collection, including retries.")
 @click.option("--dry-run", is_flag=True, help="Print the encoded payload instead of pushing.")
 @click.option(
     "--poller-records",
@@ -62,8 +66,8 @@ def cli():
     help="Fleet config stem to skip (repeatable). Pass --exclude-fleet= to monitor every "
          "fleet discovery finds, including non-production ones.",
 )
-def collect(config_dir, metrics_only, logs_only, dry_run, poller_records, log_fixture,
-            watermark_file, timestamp, exclude_fleets):
+def collect(config_dir, metrics_only, logs_only, via_vector, github_request_budget,
+            dry_run, poller_records, log_fixture, watermark_file, timestamp, exclude_fleets):
     """Poll the fleet and push (or print) Grafana Cloud metric and/or log payloads.
 
     Both legs share collect's exit contract — a degraded sweep must never look
@@ -78,6 +82,8 @@ def collect(config_dir, metrics_only, logs_only, dry_run, poller_records, log_fi
     """
     if not (metrics_only or logs_only):
         raise click.ClickException("pass --metrics-only and/or --logs-only")
+    if (via_vector or github_request_budget is not None) and not logs_only:
+        raise click.ClickException("Vector and the GitHub request budget require --logs-only")
     failures = []
     if metrics_only:
         try:
@@ -88,7 +94,8 @@ def collect(config_dir, metrics_only, logs_only, dry_run, poller_records, log_fi
     if logs_only:
         try:
             log_errors = _collect_logs(config_dir, log_fixture, watermark_file, dry_run,
-                                       _harvest_now(timestamp), exclude_fleets)
+                                       _harvest_now(timestamp), exclude_fleets,
+                                       via_vector=via_vector, request_budget=github_request_budget)
             if log_errors:
                 failures.append(f"log harvest errors on {len(log_errors)} target(s)")
         except click.ClickException as e:
@@ -180,6 +187,25 @@ def run(config_dir, dry_run, poller_records, log_fixture, watermark_file, timest
     live harvest, or ``--log-fixture`` offline); a metrics-only invocation
     (``--poller-records`` alone) skips it.
     """
+    _publish_scheduled_metrics(config_dir, poller_records, dry_run, timestamp, exclude_fleets)
+
+    if config_dir is not None or log_fixture is not None:
+        _collect_logs(config_dir, log_fixture, watermark_file, dry_run,
+                      _harvest_now(timestamp), exclude_fleets)
+
+
+@cli.command("run-metrics")
+@click.option("--config-dir", type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--poller-records", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option("--dry-run", is_flag=True)
+@click.option("--timestamp", type=int)
+@click.option("--exclude-fleet", "exclude_fleets", multiple=True, default=EXCLUDED_FLEETS)
+def run_metrics(config_dir, poller_records, dry_run, timestamp, exclude_fleets):
+    """Publish fleet metrics and the collector heartbeat."""
+    _publish_scheduled_metrics(config_dir, poller_records, dry_run, timestamp, exclude_fleets)
+
+
+def _publish_scheduled_metrics(config_dir, poller_records, dry_run, timestamp, exclude_fleets):
     records = _load_records(config_dir, poller_records, exclude_fleets)
 
     errored = _report_poll_errors(records)
@@ -194,10 +220,6 @@ def run(config_dir, dry_run, poller_records, log_fixture, watermark_file, timest
         click.echo(payload, nl=False)
     else:
         _push(payload)
-
-    if config_dir is not None or log_fixture is not None:
-        _collect_logs(config_dir, log_fixture, watermark_file, dry_run,
-                      _harvest_now(timestamp), exclude_fleets)
 
 
 def _load_records(config_dir, poller_records, exclude_fleets=EXCLUDED_FLEETS):
@@ -310,7 +332,8 @@ def _harvest_now(timestamp):
     return datetime.now(timezone.utc)
 
 
-def _log_sources(config_dir, log_fixture, now, exclude_fleets=EXCLUDED_FLEETS):
+def _log_sources(config_dir, log_fixture, now, exclude_fleets=EXCLUDED_FLEETS,
+                 request_budget=None):
     """Resolve (jurisdictions, fetch_runs, fetch_archive) for the logs leg: an
     offline fixture directory, or a live GitHub harvest of the fleet config.
     ``now`` is the harvest anchor, threaded into the live fetchers so pagination
@@ -324,7 +347,7 @@ def _log_sources(config_dir, log_fixture, now, exclude_fleets=EXCLUDED_FLEETS):
             jurisdictions = read_fleet(config_dir, exclude_fleets)
         except (ValueError, yaml.YAMLError) as e:
             raise click.ClickException(str(e)) from e
-        fetch_runs, fetch_archive = github_log_fetchers(now)
+        fetch_runs, fetch_archive = github_log_fetchers(now, request_budget=request_budget)
         return jurisdictions, fetch_runs, fetch_archive
     raise click.ClickException(
         "pass --config-dir (live harvest) or --log-fixture (offline) for logs"
@@ -356,7 +379,8 @@ def _load_log_fixture(directory):
     return jurisdictions, fetch_runs, fetch_archive
 
 
-def _collect_logs(config_dir, log_fixture, watermark_file, dry_run, now, exclude_fleets):
+def _collect_logs(config_dir, log_fixture, watermark_file, dry_run, now, exclude_fleets,
+                  *, via_vector=False, request_budget=None):
     """Harvest new-run logs and print (dry-run) or push them to Loki. Returns the
     per-repo harvest errors so ``collect`` can turn them into a nonzero exit while
     ``run`` keeps them green.
@@ -378,7 +402,7 @@ def _collect_logs(config_dir, log_fixture, watermark_file, dry_run, now, exclude
     fleet's progress.
     """
     jurisdictions, fetch_runs, fetch_archive = _log_sources(config_dir, log_fixture, now,
-                                                            exclude_fleets)
+                                                            exclude_fleets, request_budget)
     watermarks = (
         load_watermarks(watermark_file, warn=lambda message: click.echo(message, err=True))
         if watermark_file
@@ -398,6 +422,7 @@ def _collect_logs(config_dir, log_fixture, watermark_file, dry_run, now, exclude
         return errors
 
     from logs_push import push_logs
+    from vector_push import push_to_vector, push_heartbeat
 
     by_key = {}
     for batch in batches:
@@ -406,7 +431,10 @@ def _collect_logs(config_dir, log_fixture, watermark_file, dry_run, now, exclude
     push_errors = []
     for key in sorted(by_key):
         try:
-            push_logs(encode_logs(by_key[key]))
+            if via_vector:
+                push_to_vector(by_key[key])
+            else:
+                push_logs(encode_logs(by_key[key]))
         except RuntimeError as e:
             push_errors.append(f"{key}: {e}")
             continue
@@ -417,15 +445,28 @@ def _collect_logs(config_dir, log_fixture, watermark_file, dry_run, now, exclude
     if watermark_file is not None:
         save_watermarks(watermark_file, saved)
 
+    shipped = len(by_key) - len(push_errors)
     if by_key:
-        shipped = len(by_key) - len(push_errors)
         click.echo(f"pushed logs for {shipped} of {len(by_key)} workflows", err=True)
     for error in push_errors:
         click.echo(f"log push error: {error}", err=True)
+    summary = os.environ.get("GITHUB_STEP_SUMMARY") if via_vector else None
+    if summary:
+        deferred = sum("GitHub request budget exhausted" in error for error in errors)
+        with open(summary, "a", encoding="utf-8") as file:
+            file.write(
+                f"\n- Log delivery: {shipped} of {len(by_key)} workflows acknowledged\n"
+                f"- Harvest errors: {len(errors)} ({deferred} deferred by the GitHub request budget)\n"
+            )
     if push_errors:
         raise click.ClickException(
             f"log push failed for {len(push_errors)} of {len(by_key)} workflows"
         )
+    if via_vector and not errors:
+        try:
+            push_heartbeat(now)
+        except RuntimeError as error:
+            raise click.ClickException(f"log heartbeat failed: {error}") from error
     return errors
 
 

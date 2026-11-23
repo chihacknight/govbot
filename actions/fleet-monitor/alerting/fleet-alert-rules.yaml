@@ -171,7 +171,7 @@ groups:
     annotations:
       summary: Fleet monitor has not reported in 6h
       description: The collector itself has stopped shipping, so every other rule here is now blind rather
-        than quiet — a green board means nothing until this clears. Check the fleet-monitor workflow's
+        than quiet — a green board means nothing until this clears. Check the Fleet Metrics workflow's
         recent runs.
       dashboard: $GRAFANA_DASHBOARD_URL/d/fleet-monitor-overview?from=now-24h&to=now
     for: 10m

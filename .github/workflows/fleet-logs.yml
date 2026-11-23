@@ -1,0 +1,85 @@
+name: Fleet Logs
+
+on:
+  schedule:
+    - cron: "35 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fleet-logs
+  cancel-in-progress: false
+
+env:
+  VECTOR_IMAGE: timberio/vector:0.62.0-debian@sha256:6266b1d35c844918ff1c48ea2ec4f57c2b0664c46f3e17fc2418d5dda1692068
+
+jobs:
+  collect:
+    # Allow a manual end-to-end check before enabling production collection.
+    if: github.event_name == 'workflow_dispatch' || vars.FLEET_LOGS_SCHEDULE_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: actions/fleet-monitor
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install pipenv
+          pipenv install --deploy
+      - name: Restore log watermark
+        id: watermark
+        uses: actions/cache/restore@v4
+        with:
+          path: actions/fleet-monitor/.watermarks
+          key: fleet-monitor-watermarks-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: fleet-monitor-watermarks-
+      - name: Start Vector
+        env:
+          GRAFANA_LOGS_URL: ${{ vars.GRAFANA_LOGS_URL }}
+          GRAFANA_LOGS_USER: ${{ vars.GRAFANA_LOGS_USER }}
+          GRAFANA_LOGS_KEY: ${{ secrets.GRAFANA_LOGS_KEY }}
+        run: |
+          : "${GRAFANA_LOGS_USER:?Set GRAFANA_LOGS_USER}"
+          : "${GRAFANA_LOGS_KEY:?Set GRAFANA_LOGS_KEY}"
+          case "${GRAFANA_LOGS_URL}" in
+            https://*/loki/api/v1/push) export LOKI_ENDPOINT="${GRAFANA_LOGS_URL%/loki/api/v1/push}" ;;
+            *) echo "::error::GRAFANA_LOGS_URL must be an HTTPS Loki push URL"; exit 1 ;;
+          esac
+          docker run --detach --name fleet-vector \
+            --publish 127.0.0.1:8687:8687 \
+            --mount "type=bind,source=${PWD}/vector.yaml,target=/etc/vector/vector.yaml,readonly" \
+            --env LOKI_ENDPOINT --env GRAFANA_LOGS_USER --env GRAFANA_LOGS_KEY \
+            "$VECTOR_IMAGE" --config /etc/vector/vector.yaml --dangerously-allow-env-var-interpolation
+          # Any HTTP response establishes that the Vector listener is ready.
+          curl --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 \
+            --max-time 2 --output /dev/null http://127.0.0.1:8687/logs
+      - name: Harvest and deliver logs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RESTORED_KEY: ${{ steps.watermark.outputs.cache-matched-key }}
+        run: |
+          if [[ -z "$RESTORED_KEY" ]]; then
+            echo 'No log watermark cache restored. Collection uses the 24-hour window.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          pipenv run python main.py collect --logs-only --via-vector --github-request-budget 300 \
+            --config-dir ../pipeline-manager --watermark-file .watermarks/logs.json
+      - name: Save log watermark
+        if: "!cancelled() && hashFiles('actions/fleet-monitor/.watermarks/logs.json') != ''"
+        uses: actions/cache/save@v4
+        with:
+          path: actions/fleet-monitor/.watermarks
+          key: fleet-monitor-watermarks-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Show Vector diagnostics and stop it
+        if: always()
+        run: |
+          if docker inspect fleet-vector >/dev/null 2>&1; then
+            docker logs fleet-vector
+            docker stop fleet-vector
+          fi
