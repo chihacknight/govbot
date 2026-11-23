@@ -106,6 +106,7 @@ def request_with_retry(
     timeout=DEFAULT_TIMEOUT,
     max_retries=DEFAULT_MAX_RETRIES,
     sleep=time.sleep,
+    before_attempt=None,
 ):
     """Return the response body (bytes) for a request, retrying transient failures.
 
@@ -117,6 +118,8 @@ def request_with_retry(
     method = method or ("POST" if data is not None else "GET")
     last_error = None
     for attempt in range(max_retries):
+        if before_attempt is not None:
+            before_attempt()
         request = urllib.request.Request(url, data=data, headers=headers or {}, method=method)
         try:
             with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -145,6 +148,10 @@ def request_with_retry(
     raise RequestFailed(f"{method} {url}: giving up after {max_retries} attempts ({last_error})")
 
 
-def request_json(url, *, headers=None, timeout=DEFAULT_TIMEOUT, max_retries=DEFAULT_MAX_RETRIES):
+def request_json(url, *, headers=None, timeout=DEFAULT_TIMEOUT, max_retries=DEFAULT_MAX_RETRIES,
+                 before_attempt=None):
     """GET a URL and parse the JSON response body."""
-    return json.loads(request_with_retry(url, headers=headers, timeout=timeout, max_retries=max_retries))
+    return json.loads(request_with_retry(
+        url, headers=headers, timeout=timeout, max_retries=max_retries,
+        before_attempt=before_attempt,
+    ))

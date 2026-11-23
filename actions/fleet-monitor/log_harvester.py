@@ -316,7 +316,7 @@ def harvest_logs(jurisdictions, watermarks, fetch_runs, fetch_archive, now):
     return batches, new_watermarks, errors
 
 
-def github_log_fetchers(now=None):
+def github_log_fetchers(now=None, *, request_budget=None):
     """Live GitHub fetchers for run listings and log archives, authenticated with
     GITHUB_TOKEN when present (public reads work without it, at a lower rate limit).
     Mirrors fleet_poller's header construction; the archive endpoint 302-redirects
@@ -348,6 +348,14 @@ def github_log_fetchers(now=None):
     if token:
         headers["Authorization"] = f"Bearer {token}"
 
+    def count_attempt():
+        nonlocal request_budget
+        if request_budget == 0:
+            raise RuntimeError("GitHub request budget exhausted; deferred to the next sweep")
+        request_budget -= 1
+
+    budget_options = {} if request_budget is None else {"before_attempt": count_attempt}
+
     def fetch_runs(org, repo, workflow):
         # One hour of slack past the look-back so a run created right at the
         # boundary is fetched by the same sweep that would select it.
@@ -359,7 +367,7 @@ def github_log_fetchers(now=None):
                 {"per_page": RUNS_PER_PAGE, "exclude_pull_requests": "true", "page": page}
             )
             url = f"{GITHUB_API}/repos/{org}/{repo}/actions/workflows/{workflow}/runs?{query}"
-            page_runs = request_json(url, headers=headers).get("workflow_runs", [])
+            page_runs = request_json(url, headers=headers, **budget_options).get("workflow_runs", [])
             runs.extend(page_runs)
             if len(page_runs) < RUNS_PER_PAGE:
                 break
@@ -379,7 +387,8 @@ def github_log_fetchers(now=None):
 
     def fetch_archive(org, repo, run_id):
         return request_with_retry(
-            f"{GITHUB_API}/repos/{org}/{repo}/actions/runs/{run_id}/logs", headers=headers
+            f"{GITHUB_API}/repos/{org}/{repo}/actions/runs/{run_id}/logs",
+            headers=headers, **budget_options,
         )
 
     return fetch_runs, fetch_archive

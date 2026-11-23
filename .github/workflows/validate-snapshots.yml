@@ -35,7 +35,7 @@ jobs:
             # fleet-monitor also watches pipeline-manager: its render-snapshots.sh
             # smoke-tests the real pipeline-manager config, so config changes there
             # must run the fleet-monitor job too.
-            "fleet-monitor:actions/fleet-monitor actions/pipeline-manager"
+            "fleet-monitor:actions/fleet-monitor actions/pipeline-manager .github/workflows/fleet-logs.yml .github/workflows/fleet-metrics.yml"
           )
 
           # Always run all tests on main branch or workflow_dispatch
@@ -74,7 +74,7 @@ jobs:
               DIRECTORIES="${module#*:}"
               MATCHED=false
               for dir in $DIRECTORIES; do
-                if echo "$CHANGED_FILES" | grep -q "$dir/"; then
+                if grep -Fq "$dir/" <<< "$CHANGED_FILES" || grep -Fxq "$dir" <<< "$CHANGED_FILES"; then
                   MATCHED=true
                 fi
               done
@@ -131,6 +131,10 @@ jobs:
           ../../scripts/before-snapshots.sh __snapshots__
           ./render-snapshots.sh
           ../../scripts/verify-snapshots.sh __snapshots__
+
+      - name: Test Vector delivery and watermarks
+        working-directory: actions/fleet-monitor
+        run: pipenv run python -m unittest -v test_vector_delivery
 
   report-publisher-snapshots:
     runs-on: ubuntu-latest

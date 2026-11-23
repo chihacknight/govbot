@@ -99,10 +99,9 @@ run logs to Grafana Cloud Loki — never the same run twice — in three modules
   encoder from labeled batches to the Loki push payload (reusing http_util's
   retry/backoff POST). Stream labels are capped at `org`/`state`/`workflow`/`outcome`;
   run id, job, and the original `event_time` are high-cardinality, so they ride in
-  each entry's Loki **structured metadata**, never as labels. Pushes go **per workflow** — one payload
-  per watermark entry, each watermark advancing only after its own payload lands —
-  so one un-pushable payload (an oversized recovery sweep, say) fails only its own
-  workflow's logs and holds only its own watermark, never the whole fleet's.
+  each entry's Loki **structured metadata**. The scheduled workflow uses
+  [Vector](vector.yaml) for Loki encoding and delivery. Python sends each workflow's
+  entries together and advances its watermark after acknowledgement.
 
 ### Ingest window (the retired risk)
 
@@ -526,9 +525,10 @@ pipenv run python main.py provision-alerts
 # GRAFANA_* vars; exits 0 with a notice when they're absent):
 pipenv run python main.py live-check --config-dir ../pipeline-manager
 
-# The unattended sweep the hourly workflow runs: poll, push metrics + a collector
-# heartbeat, then harvest + ship new run logs. Exits nonzero only on an outright
-# collector failure (config/poll error, or a failed push) — per-repo errors stay green:
+# Publish scheduled metrics and heartbeat:
+pipenv run python main.py run-metrics --config-dir ../pipeline-manager
+
+# Run a combined sweep locally using the direct Loki client:
 pipenv run python main.py run --config-dir ../pipeline-manager \
   --watermark-file .watermarks/logs.json
 ```
@@ -549,19 +549,24 @@ folder, so the CLI runs against fixtures or the real config. Options can also be
 `FLEET_MONITOR_*` environment variables (click's `auto_envvar_prefix`, matching sibling
 actions), e.g. `FLEET_MONITOR_LIST_FLEET_CONFIG_DIR`.
 
-### Running the hourly workflow
+### Running the hourly workflows
 
-[`.github/workflows/fleet-monitor.yml`](../../.github/workflows/fleet-monitor.yml) runs the
-orchestrator (`run`) once an hour against the real `actions/pipeline-manager` config and pushes
-metrics + the collector heartbeat to Grafana Cloud and new run logs to Loki. It's read-only on
-GitHub (the default `GITHUB_TOKEN` covers all reads), bounded by a 20-minute job timeout, and
-serialized by a `fleet-monitor` concurrency group so a manual dispatch never overlaps a
-scheduled sweep. The log watermark is carried between sweeps by the Actions cache (restore by
-prefix before the sweep, save a fresh `run_id` key after), so the logs leg stays incremental; a
-cold cache is safe — the harvester falls back to a bounded 24 h look-back.
+[Fleet Metrics](../../.github/workflows/fleet-metrics.yml) runs at minute 10 UTC and uses
+`run-metrics` to publish metrics and the existing heartbeat. [Fleet Logs](../../.github/workflows/fleet-logs.yml)
+runs at minute 35 UTC and sends logs through one Vector container. Each workflow has its own
+manual trigger, job timeout, concurrency group, and Grafana credentials.
 
-To bring it up in a fork against your own Grafana Cloud account, set **two secrets** and **four
-variables** on the repo (Settings → Secrets and variables → Actions):
+The logs workflow limits a sweep to 300 GitHub REST attempts, including retries. The Actions cache
+carries only the log watermarks, with a fresh key per run attempt. A missing cache starts collection
+within the same 24-hour window. An outage that outlasts that window can leave a gap in Loki.
+
+Python sends one workflow's events at a time to Vector's localhost HTTP input. Vector batches
+and retries requests to Loki, limits request concurrency to one, and caps request throughput
+at two requests per second. Its 500,000-byte batch limit applies before serialization. A successful
+Vector response advances that workflow's watermark. If a later batch fails, a future sweep can
+replay batches Loki already accepted. The logs job summary reports delivery and harvest counts.
+
+Configure these secrets and variables under Settings → Secrets and variables → Actions:
 
 | Kind | Name | Value |
 | --- | --- | --- |
@@ -571,20 +576,28 @@ variables** on the repo (Settings → Secrets and variables → Actions):
 | Variable | `GRAFANA_PUSH_USER` | Metrics instance ID |
 | Variable | `GRAFANA_LOGS_URL` | Loki push endpoint, `https://logs-…/loki/api/v1/push` |
 | Variable | `GRAFANA_LOGS_USER` | Logs instance ID |
+| Variable | `FLEET_LOGS_SCHEDULE_ENABLED` | Set to `true` after verifying a manual logs run |
 
-The endpoint and instance ID aren't secret, so they're repo **variables** (`vars`), keeping the
-Grafana write key the single secret. Then enable Actions on the fork (the Actions tab, if a fresh
-fork has workflows disabled) and trigger a first sweep by hand — **Actions → Fleet Monitor → Run
-workflow** (`workflow_dispatch`) — to confirm it goes green and the metrics land before the hourly
-schedule takes over. A forced failure (e.g. a bad `GRAFANA_PUSH_KEY`) exits nonzero and the run
-shows red, which is what the `heartbeat absent` alert keys off.
+Enable Actions on a fresh fork, then manually dispatch Fleet Metrics and verify that the
+`fleet_collector_heartbeat_repos` series is fresh. Dispatch Fleet Logs separately and confirm
+a real GitHub run is searchable in Loki. A healthy logs sweep also writes one marker, even if
+there were no new logs. Check it in Explore with `{service="fleet-logs"}`. Once both checks pass,
+set `FLEET_LOGS_SCHEDULE_ENABLED` to `true`.
+
+For an independent logs alert, create a [Grafana-managed alert using Loki data](https://grafana.com/docs/grafana/latest/datasources/loki/alerting/) on
+`absent_over_time({service="fleet-logs"}[6h])`. The query returns 1 when no marker appeared in
+six hours and no series while the pipeline is healthy. Use a threshold above 0 and set No Data
+to Normal. Create it after confirming the marker in Explore. The metrics heartbeat alert
+continues to use the Prometheus data source.
+
+Run the Vector integration test with Docker available from this directory:
+`pipenv run python -m unittest -v test_vector_delivery`. It uses a local fake Loki endpoint.
 
 ### As a GitHub Action
 
 See [action.yml](action.yml). Optional `config-dir` input, default `actions/pipeline-manager`.
 The composite Action exposes `list-fleet` for consumers embedding fleet discovery in their own
-workflows; the hourly monitor above invokes the `run` orchestrator directly rather than through
-the Action.
+workflows. The hourly workflows invoke their collector commands directly.
 
 ## Testing
 
