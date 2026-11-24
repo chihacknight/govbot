@@ -1,6 +1,6 @@
 ---
 name: il
-description: IL is out of session and its scraper is paused on purpose while the team migrates scraping to a new system, so bills filed after 2026-09-24 are expected to be missing for now. A volunteer's ilga.gov scan led to a field audit. One of the per-state files indexed in tamara-notes/state-specific/README.md.
+description: IL is out of session and its scraper is paused on purpose while the team migrates scraping to a new system, so bills filed after 2026-09-24 are expected to be missing for now. Michael Neuman's ilga.gov scan led to a field audit. One of the per-state files indexed in tamara-notes/state-specific/README.md.
 metadata:
   type: project
 ---
@@ -9,11 +9,11 @@ metadata:
 
 ## Status: ⏸️ Paused on purpose (out of session; scrapers paused during the migration to a new system)
 
-## What was found (volunteer ilga.gov scan, 2026-10)
+## What was found (Michael Neuman's ilga.gov scan, 2026-10)
 
-A volunteer walked every section of <https://ilga.gov/Legislation/> and checked each bill
-number against `govbot-data/il-legislation` (`country:us/state:il/sessions/104th/bills/`).
-Findings:
+**Michael Neuman** walked every section of <https://ilga.gov/Legislation/> and checked each bill
+number against `govbot-data/il-legislation` (`country:us/state:il/sessions/104th/bills/`),
+shared in Slack. Findings:
 
 1. **11 recent bills on ilga.gov but not in our repo:** HB5817, HB5818, HB5819, HR1037–HR1044.
    Confirmed 2026-10-09: `HB5816` / `HR1036` (filed 2026-09-24) exist, everything after does not.
@@ -47,7 +47,7 @@ Their absence from `il-legislation` is expected, not a data gap.
 
 ## Field audit
 
-The volunteer's next steps (empty fields, fields on ilga.gov we don't capture, values that
+Michael's proposed next steps (empty fields, fields on ilga.gov we don't capture, values that
 differ) are investigated in `actions/openstates-scrape-audits/internal/il_field_audit.py`, with
 the report alongside it in `internal/audit_output/`.
 

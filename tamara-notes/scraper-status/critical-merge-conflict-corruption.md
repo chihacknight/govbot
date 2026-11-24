@@ -71,6 +71,43 @@ cleanly resolve here isn't root-caused yet — plausible theories, not yet verif
 - **Completely unknown whether any other state hit this same corruption.** GA was found by
   accident; there's no reason to believe it's the only one. This needs a real audit, not a guess.
 
+## Follow-up (2026-07-27): exact trigger found, concurrency guard already exists but landed too late
+
+Traced the precise mechanism via GH Actions run history + commit timestamps on both
+`govbot-openstates-scrapers/ga-legislation` and `govbot-data/ga-legislation`:
+
+1. An earlier GA run hit real connectivity flakiness (`Temporary failure in name resolution`,
+   `"The server's not playing nice. We can't keep slamming it."`) — logged elsewhere as GA's
+   `N2_CONNECTIVITY` issue. This is a **separate, unrelated bug** (network-level, not git-level).
+2. Someone manually re-dispatched GA to retry. That `workflow_dispatch` run started `05:59:22 UTC`
+   on 2026-07-21, survived the flakiness, and pushed a scrape commit at `06:25:19`.
+3. The **regular cron schedule** fired independently at `06:23:31` — 2 minutes before the manual
+   retry finished — unaware a retry was already in flight against the same `_data/ga/` path.
+4. That scheduled run finished at `07:07:00` and tried to push. The branch had moved (step 2's
+   commit), `git pull --no-rebase` hit a real conflict, and the flawed
+   `git checkout --ours "_data/${state}/" || true` fallback silently no-op'd instead of resolving
+   — producing the corrupted `0ea65a5e` commit one second later at `07:07:01`.
+
+So: connectivity flake → manual retry-dispatch → collided with the next cron firing → race on
+`git push` → flawed conflict resolution → corrupted commit. Confirms the doc's original theory #2
+("A schedule + manual dispatch race?") with exact timestamps.
+
+**Important: a concurrency guard for exactly this already exists.** Commit `1c7e7e19`
+("fix: prevent scrape data loss from cancelled/short-lived runs overwriting good data", #86) added
+`concurrency: group: scrape` / `cancel-in-progress: false` to
+`actions/pipeline-manager/templates/openstates-scrape/.github/workflows/openstates-scrape.yml` — but it
+merged at **09:06 CDT / 14:06 UTC on 2026-07-21, over 7 hours *after* the 07:07 UTC corruption**.
+Confirmed live today on GA's actual rolled-out workflow file (`govbot-openstates-scrapers/ga-legislation`).
+This was a same-day near-miss, not a broken or bypassed guard — no state should be able to hit this
+specific schedule-vs-dispatch overlap again.
+
+**What's still exposed:** the guard only reduces how often a real git conflict can occur (e.g. it
+doesn't cover a `force-update: true` dispatch racing a schedule, or other edge cases not yet
+enumerated). The underlying flaw — `git checkout --ours || true` can silently no-op and let a
+conflict-marker-laden file get `git add`ed and committed — is still live in `action.yml` today,
+unguarded. Priority-3 below (fix the conflict-resolution logic itself, don't just avoid triggering
+it) is the part that's still genuinely unaddressed.
+
 ## What to do next session (in priority order)
 
 1. **Audit every state's committed `_data/{state}/` for conflict markers**, not just GA. A quick
