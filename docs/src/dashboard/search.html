@@ -466,7 +466,8 @@
       var billstr = (h.bills || []).map(function (b) { return b.id + " " + b.title; }).join(" ");
       if (!matchAll(hay([h.title, h.committee, stateName(h.jurisdiction), billstr, h.location]), t)) return;
       out.push({
-        title: h.title || h.committee || "Hearing",
+        // A Chicago meeting's title is a note ("Votes may be taken."): lead with the committee.
+        title: (h.jurisdiction === "chi" ? h.committee : h.title || h.committee) || "Hearing",
         // Some sources' display time is raw ISO ("2026-10-14T13:00:00"): show the date.
         sub: [h.committee, /^\d{4}-\d{2}-\d{2}/.test(h.scheduled_display || "") ? prettyDate(h.scheduled_display)
               : h.scheduled_display].filter(Boolean).join("  ·  "),

@@ -198,7 +198,8 @@
     oh: "Ohio", ok: "Oklahoma", or: "Oregon", pa: "Pennsylvania", ri: "Rhode Island", sc: "South Carolina",
     sd: "South Dakota", tn: "Tennessee", tx: "Texas", ut: "Utah", vt: "Vermont", va: "Virginia",
     wa: "Washington", wv: "West Virginia", wi: "Wisconsin", wy: "Wyoming", dc: "District of Columbia",
-    pr: "Puerto Rico", gu: "Guam", vi: "Virgin Islands", as: "American Samoa", mp: "Northern Mariana Islands" };
+    pr: "Puerto Rico", gu: "Guam", vi: "Virgin Islands", as: "American Samoa", mp: "Northern Mariana Islands",
+    chi: "Chicago City Council" };
   function jurisName(code) {
     var k = String(code || "").toLowerCase();
     return JURIS[k] || (code ? String(code).toUpperCase() : "");
