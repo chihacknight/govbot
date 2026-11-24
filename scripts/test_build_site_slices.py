@@ -47,6 +47,17 @@ def run():
     assert rows[2][5] == [1], "unknown tags are dropped, known ones become ids"
     assert s["search/il.json"]["tags"] == ["housing", "education"]
     assert [r[2] for r in s["search/wy.json"]["bills"]] == ["SF1", "SF2"], "one file per jurisdiction"
+    assert "aux_counts" not in idx, "no aux records, no aux_counts"
+
+    # Chicago's routine matters ("aux") go to their own file, out of counts, recent and search.
+    aux = dict(data, bills=data["bills"] + [dict(bill("chi", "O1", "2026-09-29"), aux=True),
+                                            bill("chi", "O2", "2026-09-01")])
+    a = m.build_slices(aux, recent=2, il_days=200, today=dt.date(2026, 10, 1))
+    assert [b["id"] for b in a["chi.json"]["bills"]] == ["O2"]
+    assert [b["id"] for b in a["chi_aux.json"]["bills"]] == ["O1"]
+    assert a["index.json"]["counts"]["chi"] == 1 and a["index.json"]["aux_counts"] == {"chi": 1}
+    assert [b["id"] for b in a["index.json"]["recent"]["chi"]] == ["O2"]
+    assert [r[2] for r in a["search/chi.json"]["bills"]] == ["O2"]
     print("ok - build_site_slices: all assertions passed")
     run_downloads(data)
 

@@ -725,6 +725,13 @@
   @media (max-width: 900px) { .ee-mapcol { flex-direction: column; } .ee-detail { width: auto; } }
   /* Results view header (shown when a jurisdiction/search is active) */
   .results-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+  .cat-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
+  .cat-tabs[hidden] { display: none; }
+  .cat-tab { padding: 7px 14px; border: 2px solid var(--gb-text); border-radius: 999px;
+    background: transparent; color: var(--gb-text); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .cat-tab[aria-pressed="true"] { background: var(--gb-primary); border-color: var(--gb-primary); color: var(--gb-on-primary); }
+  .cat-tab:focus-visible { outline: 3px solid var(--gb-link); outline-offset: 2px; }
+  .cat-tab-note { flex-basis: 100%; margin: 2px 0 0; font-size: 13px; }
   .results-head h2 { margin: 0; }
   .results-head .sub { margin: 0; margin-left: auto; }
 
@@ -941,7 +948,7 @@
             <div class="ee-zpct" id="ee-zpct">100%</div>
           </div>
           <div class="ee-terr">
-            <span class="ee-terr-lbl">Federal &amp; territories</span>
+            <span class="ee-terr-lbl">Federal, territories &amp; cities</span>
             <div class="ee-terr-chips" id="ee-terr-chips"></div>
           </div>
           <div class="ee-legend">
@@ -1145,6 +1152,8 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
         <button type="button" class="dl-btn is-sm is-rainbow" id="dl-cat" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span id="dl-cat-t">Download all bills (CSV)</span></button>
       </div>
     </div>
+    <!-- Legislation / Auxiliary tabs: only for a jurisdiction with routine matters (Chicago). -->
+    <div class="cat-tabs" id="cat-tabs" hidden></div>
     <div class="results-search">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
       <input type="search" id="results-search" placeholder="Search these bills — title, number, sponsor, topic…" aria-label="Search bills in this list">
@@ -1349,8 +1358,13 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
       if (code) {
         loadState(code).then((bills) => {
           const b = bills.find((x) => billKey(x) === key);
-          if (!b) return;
-          openBillInCatalog(b);
+          if (b) { openBillInCatalog(b); return; }
+          if (!(state.data.aux_counts || {})[code]) return;
+          // Not in the main list: a shared link to an Auxiliary item opens that tab under it.
+          loadState(code + "_aux").then((aux) => {
+            const a = aux.find((x) => billKey(x) === key);
+            if (a) openCatalogTab(code, true).then(() => openDetails(a));
+          });
         });
         return false;
       }
@@ -1400,6 +1414,39 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
         .then((d) => (d && d.bills) || []);
     }
     return stateBills[code];
+  }
+
+  // Chicago's routine matters (parking permits, vehicle claims, commendations; the Clerk marks
+  // them "routine") ride in bills/<code>_aux.json behind an "Auxiliary" tab, fetched only when
+  // that tab opens. bills/index.json's aux_counts says which jurisdictions have them.
+  let catAux = false;
+  function openCatalogTab(code, aux) {
+    return loadState(aux ? code + "_aux" : code).then((bills) => {
+      catAux = aux;
+      state.data.bills = bills;
+      rebuildFilterOptions();
+      eeOpenCatalog(code);
+    });
+  }
+  function syncCatTabs(code) {
+    const host = $("cat-tabs"); if (!host) return;
+    const nAux = (state.data.aux_counts || {})[code] || 0;
+    host.hidden = !nAux; host.textContent = "";
+    if (!nAux) return;
+    const tab = (aux, label) => {
+      const b = mkel("button", "cat-tab", label); b.type = "button";
+      b.setAttribute("aria-pressed", String(catAux === aux));
+      b.addEventListener("click", () => {
+        if (catAux === aux) return;
+        b.textContent = "Loading…";
+        openCatalogTab(code, aux);
+      });
+      return b;
+    };
+    host.append(tab(false, "Legislation (" + fmt((state.data.counts || {})[code] || 0) + ")"),
+      tab(true, "Auxiliary (" + fmt(nAux) + ")"));
+    if (catAux) host.append(mkel("p", "cat-tab-note",
+      "Routine matters the City Clerk handles in bulk: parking permits, vehicle-damage claims, commendations and similar."));
   }
 
   // Topic / session / chamber choices for the open state's bills (rebuilt per state).
@@ -1566,7 +1613,7 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
   function resultsTitle(n) {
     if (state.filters.states.size === 1) {
       const code = Array.from(state.filters.states)[0];
-      return eeNameFor(code) + " bills (" + fmt(n) + ")";
+      return eeNameFor(code) + (catAux ? " · Auxiliary" : " bills") + " (" + fmt(n) + ")";
     }
     return "Bills (" + fmt(n) + ")";
   }
@@ -2172,7 +2219,10 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
   const EE_FILL = { "-1": "url(#ee-hatch)", "0": "#202638", "1": "#1D4A34", "2": "#25875A", "3": "#4FE395" };
   const EE_LBL = { "-1": "Not yet tracked", "0": "No current bills", "1": "Some activity", "2": "Active", "3": "Busy" };
   const EE_DOT = { "-1": "#8A93A6", "0": "#8A93A6", "1": "#25875A", "2": "#3DDC84", "3": "#7CEBB0" };
-  const EE_TERR = [["gu", "Guam"], ["pr", "Puerto Rico"], ["vi", "U.S. Virgin Islands"], ["mp", "N. Mariana Islands"]];
+  // Jurisdictions the 50-state map can't hold: the territories, and cities (Chicago City Council, from the
+  // City Clerk's eLMS API via scripts/build_chicago_matters.py). The third field is the list card's kind.
+  const EE_TERR = [["gu", "Guam"], ["pr", "Puerto Rico"], ["vi", "U.S. Virgin Islands"], ["mp", "N. Mariana Islands"],
+    ["chi", "Chicago City Council", "City"]];
   let eeGeo = null, eeSel = null, eeScale = 1, eeX = 0, eeY = 0, eeLevel = {}, eeCounts = {}, eeTracked = null, eeWired = false, eeDidDrag = false, eeLoaded = false;
   let eeSort = "az";   // list-view sort: az (default, Federal first) | za | count-desc | count-asc
 
@@ -2276,7 +2326,7 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     const host = $("ee-cards"); if (!host) return; host.textContent = "";
     const items = [];
     eeGeo.states.forEach((g) => { const c = g.id.toLowerCase(); if (eeTracked.has(c)) items.push({ code: c, name: g.name, kind: "State" }); });
-    EE_TERR.forEach((t) => items.push({ code: t[0], name: t[1], kind: "Territory" }));
+    EE_TERR.forEach((t) => items.push({ code: t[0], name: t[1], kind: t[2] || "Territory" }));
     items.push({ code: "usa", name: "United States (Federal)", kind: "Federal" });
     const cnt = (x) => eeCounts[x.code] || 0;
     if (eeSort === "count-desc")      items.sort((a, b) => cnt(b) - cnt(a) || a.name.localeCompare(b.name));
@@ -2337,6 +2387,7 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     if (btn && first) { btn.dataset.label = btn.textContent; btn.textContent = "Loading bills…"; btn.disabled = true; }
     return loadState(code).then((bills) => {
       if (btn && first) { btn.textContent = btn.dataset.label; btn.disabled = false; }
+      catAux = false;
       state.data.bills = bills;
       rebuildFilterOptions();   // this state's sessions / chambers / topic counts
       eeOpenCatalog(code);
@@ -2358,6 +2409,7 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     state.filters.session = ""; const fs = $("f-session"); if (fs) fs.value = "";
     state.filters.chamber = ""; const fc = $("f-chamber"); if (fc) fc.value = "";
     resetDateRange();
+    syncCatTabs(code);
     syncMultiSelects(); render();   // render() -> setMode() pops up the results card over the map
   }
   // Close the results popup and clear the jurisdiction filter (X / backdrop / Escape).
@@ -2689,10 +2741,21 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     if (/governor|signed into law|public act|chaptered|enacted|approved by governor|became law|delivered to (the )?governor/.test(all)) i = Math.max(i, 4);
     return i;
   }
+  // A Chicago City Council matter's path, read off the Clerk's own status ("In Committee: Referred",
+  // "Council Consideration: …", or its final outcome: "Passed", "Adopted", "Placed on File", …).
+  const CITY_STAGES = ["Filed", "Committee", "Council vote", "Final action"];
+  function cityStageIndex(b) {
+    const d = (b.latest_action_desc || "").toLowerCase();
+    if (/^(submitted to clerk|council introduction|filed)/.test(d)) return 0;
+    if (/^in committee/.test(d)) return 1;
+    if (/^council consideration/.test(d)) return 2;
+    return 3;
+  }
   function stageTimeline(b, meta) {
-    const idx = billStageIndex(b, meta);
+    const city = b.state === "chi";
+    const idx = city ? cityStageIndex(b) : billStageIndex(b, meta);
     const tl = mkel("div", "gb-timeline");
-    STAGES.forEach((label, i) => {
+    (city ? CITY_STAGES : STAGES).forEach((label, i) => {
       if (i > 0) tl.append(mkel("div", "bar" + (i <= idx ? " done" : "")));
       const step = mkel("div", "step" + (i < idx ? " done" : i === idx ? " current" : ""));
       step.append(mkel("div", "node"), mkel("div", "lbl", label));
@@ -2814,7 +2877,8 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     } catch (e) { /* history unavailable — the modal still works */ }
 
     Promise.all([
-      fetch(govbotMetaUrl(b)).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      b.state === "chi" ? null   // a city matter has no govbot-data metadata file
+        : fetch(govbotMetaUrl(b)).then((r) => (r.ok ? r.json() : null)).catch(() => null),
       loadStateSummaries(b.state),
     ]).then(([meta]) => { if (myKey === modalKey) renderDetailsBody(body, b, meta); });
   }
@@ -2844,7 +2908,7 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
 
   function renderDetailsBody(body, b, meta) {
     body.textContent = "";
-    if (!meta) {
+    if (!meta && b.state !== "chi") {   // a Chicago matter has no fuller record to load
       body.append(mkel("p", "m-muted",
         "The full govbot record couldn’t be loaded for this bill — showing the basics; use the links below for the official source."));
     }
@@ -2901,7 +2965,8 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
 
     { const wrap = mkel("div", "m-stage");
       wrap.append(stageTimeline(b, meta),
-        mkel("p", "m-stage-cap", "Progress is inferred from the recorded actions below."));
+        mkel("p", "m-stage-cap", b.state === "chi" ? "Progress is read from the City Clerk’s status for this matter."
+          : "Progress is inferred from the recorded actions below."));
       addSection(body, "Status", wrap); }
 
     if (meta && meta.sponsorships && meta.sponsorships.length) {
@@ -2987,12 +3052,15 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     // Name whose site it is: "Official Michigan Legislature site", "Official U.S. Congress site".
     if (officialUrl) {
       const body2 = b.state === "usa" ? "U.S. Congress" : b.state === "dc" ? "D.C. Council"
+        : b.state === "chi" ? "Chicago City Clerk"
         : (state.stateNames[b.state] || (b.state || "").toUpperCase()) + " Legislature";
       links.append(mlink("Official " + body2 + " site ↗", officialUrl));
     }
-    links.append(mlink("govbot record ↗", govbotRecordUrl(b)));
-    links.append(mlink("Open States ↗",
-      "https://openstates.org/" + b.state + "/bills/" + encodeURIComponent(b.session) + "/" + encodeURIComponent(billDirId(b.id)) + "/"));
+    if (b.state !== "chi") {   // city matters come from the Clerk, not govbot-data / Open States
+      links.append(mlink("govbot record ↗", govbotRecordUrl(b)));
+      links.append(mlink("Open States ↗",
+        "https://openstates.org/" + b.state + "/bills/" + encodeURIComponent(b.session) + "/" + encodeURIComponent(billDirId(b.id)) + "/"));
+    }
     // Upstream scraper sources usually arrive with an empty note, so label each
     // by its host (what the link points at), skip any that merely repeat the
     // official source, drop raw API / bulk-data endpoints a reader can't use,
