@@ -36,7 +36,8 @@ On every Pages deploy (and on a daily 8am UTC schedule), the workflow runs
 `*-legislation` repos, in govbot's OCD-files layout), tags the bills with govbot's
 embedding model, and rebuilds `data.json` from all of them, so the published
 dashboard covers every tracked jurisdiction. (The embedding tagger needs that
-layout — `govbot logs`/`govbot tag` read the per-bill `logs/` structure, which the
+layout — `govbot logs`/`govbot tag` read each bill's `action_logs.jsonl` (or, in a repo not
+yet converted, its `logs/` folder), which the
 raw OpenStates scraper repos don't have.) The topic taxonomy lives in
 [`scripts/govbot-dashboard.yml`](https://github.com/chihacknight/govbot/blob/main/scripts/govbot-dashboard.yml);
 `scripts/dashboard_tags.json` mirrors the same topic names as a keyword fallback for

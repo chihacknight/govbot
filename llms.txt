@@ -35,7 +35,18 @@ country:us/state:{code}/sessions/{session}/bills/{bill_id}/metadata.json
 - `{session}` is usually a year (e.g. `2025`, `2026`) or, for Congress, a number.
 - `{bill_id}` is the bill number as the government writes it, e.g. `HB0001`, `SB0813`.
 - `metadata.json` is the bill's full record.
-- A sibling `logs/` folder holds the bill's timeline as individual events.
+- Beside it, the bill's activity log, one JSON object per line (append-only, oldest
+  first, so the last lines are the newest activity):
+  - `action_logs.jsonl`: every action. Each line has `action.occurred_at` (when it
+    happened, per the government), `first_seen` (when Govbot first recorded it;
+    filter on this for "what's new since yesterday"), a plain `chamber`, and the
+    bill's official `sources`.
+  - `vote_event_logs.jsonl`: every roll call (`vote_event`, with `result`,
+    `counts` and each member's vote). A correction repeats the same `id` on a
+    later line; the last line for an `id` is current.
+  - Repositories not yet moved to this layout instead have a `logs/` folder with
+    one JSON file per action or vote, named by date
+    (`20250114T210515Z_…json`). If `action_logs.jsonl` is missing, look there.
 
 To turn any bill into a fetchable URL, use the raw-file base:
 

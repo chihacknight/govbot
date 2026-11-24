@@ -135,13 +135,18 @@ pub fn extract_description(entry: &Value) -> String {
                 action_parts.push(format!("description: {}", desc));
             }
 
+            // Log actions come in two shapes: the writer's current one (occurred_at,
+            // classifications, jurisdiction_id) and OpenStates' own, still in older
+            // logs (date, classification, organization_id). Read either.
+            let either = |current: &str, old: &str| action.get(current).or_else(|| action.get(old));
+
             // Action date
-            if let Some(date) = action.get("date").and_then(|d| d.as_str()) {
+            if let Some(date) = either("occurred_at", "date").and_then(|d| d.as_str()) {
                 action_parts.push(format!("date: {}", date));
             }
 
             // Action classification (if array)
-            if let Some(classification) = action.get("classification") {
+            if let Some(classification) = either("classifications", "classification") {
                 if let Some(class_arr) = classification.as_array() {
                     if !class_arr.is_empty() {
                         let classes: Vec<String> = class_arr
@@ -160,7 +165,7 @@ pub fn extract_description(entry: &Value) -> String {
             }
 
             // Organization ID
-            if let Some(org_id) = action.get("organization_id").and_then(|o| o.as_str()) {
+            if let Some(org_id) = either("jurisdiction_id", "organization_id").and_then(|o| o.as_str()) {
                 action_parts.push(format!("organization_id: {}", org_id));
             }
 

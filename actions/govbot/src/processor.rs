@@ -5,10 +5,10 @@ use crate::types::{
     FileWithTimestamp, LogContent, LogEntry, Metadata,
     VoteEventResult,
 };
+use crate::logs_jsonl::{self, LogKind, LogRecord};
 use async_stream::stream;
 use futures::Stream;
 use jwalk::WalkDir;
-use regex::Regex;
 use std::path::Path;
 
 /// Main processor for pipeline log files
@@ -64,10 +64,9 @@ impl PipelineProcessor {
         })
     }
 
-    /// Discover all JSON files with 'logs/' in their path
-    /// Uses jwalk for fast parallel filesystem traversal
+    /// Discover every bill log entry, in either layout (see `crate::logs_jsonl`).
+    /// Uses jwalk for fast parallel filesystem traversal.
     fn discover_files_internal(config: &Config) -> Result<Vec<FileWithTimestamp>> {
-        let timestamp_regex = Regex::new(r"/logs/(\d{8}T\d{6}Z)_")?;
         let mut files = Vec::new();
         let search_dir = &config.git_dir;
 
@@ -88,49 +87,40 @@ impl PipelineProcessor {
                 continue;
             }
 
-            // Use jwalk for fast parallel traversal
-            // jwalk uses rayon internally for parallel processing
-            for entry_result in WalkDir::new(&search_path)
-                .process_read_dir(|_depth, _path, _read_dir_state, _children| {
-                    // Optional: customize directory reading behavior
-                })
-                .into_iter()
-            {
+            for entry_result in WalkDir::new(&search_path).into_iter() {
                 let entry = match entry_result {
                     Ok(e) => e,
                     Err(_) => continue,
                 };
-
+                // Real files only (jwalk doesn't follow symlinks): skips the old
+                // sessions/{s}/logs/ symlinks to the bill-level files.
                 if !entry.file_type().is_file() {
                     continue;
                 }
-
                 let path = entry.path();
-                if let Some(ext) = path.extension() {
-                    if ext == "json" {
-                        let path_str = path.to_string_lossy();
-                        if path_str.contains("/logs/") {
-                            // Extract timestamp
-                            let timestamp = timestamp_regex
-                                .captures(&path_str)
-                                .and_then(|caps| caps.get(1))
-                                .map(|m| m.as_str().to_string());
-
-                            // Calculate relative path
-                            let relative_path = Self::calculate_relative_path(&path, search_dir)?;
-
-                            files.push(FileWithTimestamp {
-                                path: path.to_path_buf(),
-                                timestamp,
-                                relative_path,
-                            });
-                        }
-                    }
-                }
+                let Some(records) = logs_jsonl::read_log_records(&path) else {
+                    continue;
+                };
+                let relative_path = Self::calculate_relative_path(&path, search_dir)?;
+                files.extend(records.into_iter().map(|record| Self::with_record(&path, &relative_path, record)));
             }
         }
 
         Ok(files)
+    }
+
+    /// One discovered entry. A `.jsonl` line's relative path gets `#{id}`, so each
+    /// entry keeps its own stable name.
+    fn with_record(path: &Path, relative_path: &str, record: LogRecord) -> FileWithTimestamp {
+        FileWithTimestamp {
+            path: path.to_path_buf(),
+            timestamp: record.timestamp.clone(),
+            relative_path: match &record.anchor {
+                Some(id) => format!("{relative_path}#{id}"),
+                None => relative_path.to_string(),
+            },
+            record: Some(record),
+        }
     }
 
     /// Process files from stdin (one path per line)
@@ -141,49 +131,32 @@ impl PipelineProcessor {
     ) -> impl Stream<Item = Result<LogEntry>> {
         let config = config.clone();
         Box::pin(stream! {
-            let timestamp_regex = match Regex::new(r"/logs/(\d{8}T\d{6}Z)_") {
-                Ok(r) => r,
-                Err(e) => {
-                    yield Err(Error::Regex(e));
-                    return;
-                }
-            };
-
             let mut files_with_timestamps = Vec::new();
 
             // Collect and parse all paths from stdin
             for path_str in paths {
                 let path = Path::new(&path_str);
-                if !path.exists() || !path.is_file() {
+                let is_real_file = std::fs::symlink_metadata(path).is_ok_and(|m| m.is_file());
+                if !is_real_file {
                     continue;
                 }
+                let Some(records) = logs_jsonl::read_log_records(path) else {
+                    continue;
+                };
 
-                if path.extension().map(|e| e == "json").unwrap_or(false) {
-                    let path_str_lossy = path.to_string_lossy();
-                    if path_str_lossy.contains("/logs/") {
-                        let timestamp = timestamp_regex
-                            .captures(&path_str_lossy)
-                            .and_then(|caps| caps.get(1))
-                            .map(|m| m.as_str().to_string());
-
-                        // For stdin mode, use the path as-is or make it relative to git_dir
-                        let git_dir_str = config.git_dir.to_string_lossy();
-                        let relative_path = if path_str.starts_with(&*git_dir_str) {
-                            path.strip_prefix(&config.git_dir)
-                                .ok()
-                                .map(|p| p.to_string_lossy().to_string())
-                                .unwrap_or_else(|| path_str.clone())
-                        } else {
-                            path_str.clone()
-                        };
-
-                        files_with_timestamps.push(FileWithTimestamp {
-                            path: path.to_path_buf(),
-                            timestamp,
-                            relative_path,
-                        });
-                    }
-                }
+                // For stdin mode, use the path as-is or make it relative to git_dir
+                let git_dir_str = config.git_dir.to_string_lossy();
+                let relative_path = if path_str.starts_with(&*git_dir_str) {
+                    path.strip_prefix(&config.git_dir)
+                        .ok()
+                        .map(|p| p.to_string_lossy().to_string())
+                        .unwrap_or_else(|| path_str.clone())
+                } else {
+                    path_str.clone()
+                };
+                files_with_timestamps.extend(
+                    records.into_iter().map(|record| Self::with_record(path, &relative_path, record)),
+                );
             }
 
             // Sort files
@@ -279,52 +252,31 @@ impl PipelineProcessor {
         }
     }
 
-    /// Process a single file and return a log entry
-    async fn process_file_internal(config: &Config, file: &FileWithTimestamp) -> Result<Option<LogEntry>> {
-        // Check if it's a vote event file
-        let is_vote_event = file.relative_path.contains(".vote_event.");
-
-        if is_vote_event {
-            Self::process_vote_event_file_internal(config, file).await
-        } else {
-            Self::process_regular_file_internal(config, file).await
-        }
-    }
-
-    /// Process a vote event file
-    async fn process_vote_event_file_internal(_config: &Config, file: &FileWithTimestamp) -> Result<Option<LogEntry>> {
-        // Extract vote event result from filename
-        let vote_event_regex = Regex::new(r"\.vote_event\.([^.]+)\.")?;
-        let result = vote_event_regex
-            .captures(&file.relative_path)
-            .and_then(|caps| caps.get(1))
-            .map(|m| VoteEventResult::from(m.as_str()))
-            .unwrap_or(VoteEventResult::Unknown);
-
-        let log_content = LogContent::VoteEvent { result };
-
-        let entry = LogEntry {
-            log: log_content,
-            filename: file.relative_path.clone(),
+    /// Turn one discovered entry into a log entry. A vote event carries just its
+    /// result; anything else carries its full JSON.
+    async fn process_file_internal(_config: &Config, file: &FileWithTimestamp) -> Result<Option<LogEntry>> {
+        let record = match &file.record {
+            Some(record) => record.clone(),
+            None => {
+                let Some(mut records) = logs_jsonl::read_log_records(&file.path) else {
+                    return Ok(None);
+                };
+                if records.is_empty() {
+                    return Ok(None);
+                }
+                records.remove(0)
+            }
         };
-
-        Ok(Some(entry))
-    }
-
-    /// Process a regular (non-vote-event) file
-    async fn process_regular_file_internal(_config: &Config, file: &FileWithTimestamp) -> Result<Option<LogEntry>> {
-        // Read and parse JSON content
-        let json_content = tokio::fs::read_to_string(&file.path).await?;
-        let log_value: serde_json::Value = serde_json::from_str(&json_content)?;
-
-        let log_content = LogContent::Full(log_value);
-
-        let entry = LogEntry {
-            log: log_content,
-            filename: file.relative_path.clone(),
+        let log = match record.kind {
+            LogKind::VoteEvent => LogContent::VoteEvent {
+                result: VoteEventResult::from(record.value.get("result").and_then(|r| r.as_str()).unwrap_or("unknown")),
+            },
+            LogKind::Action => LogContent::Full(record.value),
         };
-
-        Ok(Some(entry))
+        Ok(Some(LogEntry {
+            log,
+            filename: file.relative_path.clone(),
+        }))
     }
 
     /// Load metadata from metadata.json if it exists and join options require it

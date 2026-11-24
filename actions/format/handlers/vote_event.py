@@ -1,10 +1,11 @@
 import json
 from pathlib import Path
+from typing import Optional
 from utils.file_utils import (
     format_timestamp,
     validate_required_field,
-    write_vote_event_log,
 )
+from utils.log_jsonl import append_votes, vote_event_line
 from utils.timestamp_tracker import (
     update_latest_timestamp,
     to_dt_obj,
@@ -20,13 +21,18 @@ def handle_vote_event(
     DATA_NOT_PROCESSED_FOLDER: Path,
     filename: str,
     latest_timestamps: LatestTimestamps,
+    first_seen: Optional[str] = None,
 ) -> bool:
     """
     Handles a vote_event JSON file by:
 
     1. Creating the associated bill folder (and placeholder if missing)
-    2. Saving the full vote_event as a timestamped log file using result info
-       Format: YYYYMMDDT000000Z_vote_event_<result>.json
+    2. Appending the vote to the bill's vote_event_logs.jsonl, unless the same
+       vote is already there with the same substance (see utils/log_jsonl.py).
+       A vote seen again with different counts/result/member votes is appended
+       as a correction. Every vote in the scrape is checked, whatever its date:
+       the old "newer than the newest vote seen" gate silently dropped votes
+       that arrived late (10,476 across 14 states as of 2026-11-24).
 
     Skips and logs errors if bill_identifier is missing.
     """
@@ -49,7 +55,6 @@ def handle_vote_event(
         DATA_PROCESSED_FOLDER, STATE_ABBR, session_id, referenced_bill_id
     )
 
-    (save_path / "logs").mkdir(parents=True, exist_ok=True)
     (save_path / "files").mkdir(parents=True, exist_ok=True)
 
     # Add placeholder if bill doesn't exist
@@ -59,10 +64,12 @@ def handle_vote_event(
         with open(placeholder_file, "w", encoding="utf-8") as f:
             json.dump(placeholder_data, f, indent=2)
 
-    # Save timestamped vote log
+    # Keep the vote watermark current; audits report it. It no longer gates anything.
     date = data.get("start_date")
     timestamp = format_timestamp(date)
-    if timestamp == "unknown":
+    # format_timestamp returns None (not "unknown") for a missing/unparseable
+    # date. Such a vote is still logged; it just can't move the watermark.
+    if not timestamp:
         print(
             f"⚠️ Vote Event {referenced_bill_id} has unrecognized timestamp format: {date}"
         )
@@ -75,5 +82,5 @@ def handle_vote_event(
             latest_timestamps,
         )
 
-    write_vote_event_log(data, save_path / "logs")
+    append_votes(save_path, [vote_event_line(data, first_seen)])
     return True

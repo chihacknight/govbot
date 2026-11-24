@@ -10,8 +10,9 @@ use insta;
 ///   cargo insta review
 #[tokio::test]
 async fn test_pipeline_processor_snapshot() {
-    // Use the same test data directory as the example
-    let git_dir = "tmp/git/repos";
+    // The committed mocks (it used to point at tmp/git/repos, which nothing creates,
+    // so the test always skipped itself).
+    let git_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/mocks/govbot_data/repos");
     
     // Build configuration matching the render-snapshots.sh script
     let config = ConfigBuilder::new(git_dir)

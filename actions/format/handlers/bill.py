@@ -1,11 +1,11 @@
 from pathlib import Path
 import json
-from typing import Any
+from typing import Any, Optional
 from utils.file_utils import (
     format_timestamp,
     validate_required_field,
-    write_action_logs,
 )
+from utils.log_jsonl import action_line, append_actions
 from utils.timestamp_tracker import (
     LatestTimestamps,
     to_dt_obj,
@@ -29,14 +29,14 @@ def _update_actions_watermark(
 
     Mirrors handlers/event.py's pattern for its own "events" category, but
     keyed on each action's own "date" field (the government's recorded date,
-    same field write_action_logs() uses for log filenames) rather than
+    same field the action log line's `occurred_at` comes from) rather than
     "start_date" -- bill actions and top-level Event/VoteEvent records use
     different field names for the same concept.
 
     Implausible (source-data-error) dates are guarded centrally inside
     update_latest_timestamp() itself, not here -- see that function's
-    docstring in timestamp_tracker.py. write_action_logs() already wrote
-    every action to logs/ untouched before this runs regardless, preserving
+    docstring in timestamp_tracker.py. append_actions() already wrote
+    every action to action_logs.jsonl untouched before this runs regardless, preserving
     a faithful record of exactly what the government published.
     """
     for action in actions:
@@ -94,12 +94,15 @@ def handle_bill(
     DATA_NOT_PROCESSED_FOLDER: Path,
     filename: str,
     latest_timestamps: LatestTimestamps,
+    first_seen: Optional[str] = None,
 ) -> bool:
     """
     Handles a bill JSON file by saving:
 
     1. Bill metadata as metadata.json in the bill folder
-    2. One separate JSON file per action in logs/, each timestamped and slugified
+    2. Each action not yet logged, appended to action_logs.jsonl in the bill
+       folder (see utils/log_jsonl.py), stamped with `first_seen`: when the raw
+       scrape holding it was committed
     3. A files/ directory, ready for bill text files
 
     Skips and logs errors if required fields (e.g. identifier) are missing.
@@ -126,7 +129,6 @@ def handle_bill(
         DATA_PROCESSED_FOLDER, STATE_ABBR, session_id, bill_identifier
     )
 
-    (save_path / "logs").mkdir(parents=True, exist_ok=True)
     (save_path / "files").mkdir(parents=True, exist_ok=True)
 
     # Load existing metadata to check for incremental changes
@@ -142,8 +144,9 @@ def handle_bill(
 
         # Only write logs for new actions
         if new_actions:
-            write_action_logs(
-                new_actions, bill_identifier, sources, session_id, save_path / "logs"
+            logged = append_actions(
+                save_path,
+                [action_line(a, bill_identifier, sources, session_id, first_seen) for a in new_actions],
             )
 
             # Add processing timestamps to new actions
@@ -151,7 +154,7 @@ def handle_bill(
                 add_processing_timestamp(action, "log_file_created")
 
             _update_actions_watermark(new_actions, latest_timestamps)
-            _record_action_log_files_created(len(new_actions), latest_timestamps)
+            _record_action_log_files_created(logged, latest_timestamps)
 
         # Merge actions: preserve existing _processing fields, add new actions
         data["actions"] = merge_actions(existing_actions, actions)
@@ -165,7 +168,7 @@ def handle_bill(
             data["_processing"].update(existing_metadata["_processing"])
 
         # Update logs timestamp -- gated on new_actions, not unconditional:
-        # this field is meant to mean "the last time this bill's logs/
+        # this field is meant to mean "the last time this bill's action log
         # actually changed," and previously got bumped to the current run
         # time on every single call regardless of whether anything new was
         # found, which made it useless as a staleness signal (see
@@ -176,8 +179,9 @@ def handle_bill(
         # New bill: process all actions
         _record_new_bill_seen(latest_timestamps)
         if actions:
-            write_action_logs(
-                actions, bill_identifier, sources, session_id, save_path / "logs"
+            logged = append_actions(
+                save_path,
+                [action_line(a, bill_identifier, sources, session_id, first_seen) for a in actions],
             )
 
             # Add processing timestamps to all actions
@@ -185,10 +189,10 @@ def handle_bill(
                 add_processing_timestamp(action, "log_file_created")
 
             _update_actions_watermark(actions, latest_timestamps)
-            _record_action_log_files_created(len(actions), latest_timestamps)
+            _record_action_log_files_created(logged, latest_timestamps)
 
         # Set initial bill-level _processing. A brand-new bill with zero
-        # actions genuinely has no logs/ entry to date, so logs_latest_update
+        # actions genuinely has no action log entry to date, so logs_latest_update
         # is only set when there was something to log -- same gating as the
         # existing-bill branch above, kept consistent rather than always
         # stamping the current run time regardless of content.

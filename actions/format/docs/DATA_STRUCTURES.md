@@ -26,7 +26,8 @@ Complete specification of all data formats produced by the Windy Civi legislativ
 │       └── sessions/{session_id}/
 │           ├── bills/{bill_id}/
 │           │   ├── metadata.json            # Bill metadata
-│           │   ├── logs/                    # Action/vote logs
+│           │   ├── action_logs.jsonl        # Every action, one per line, append-only
+│           │   ├── vote_event_logs.jsonl    # Every roll call, one per line, append-only
 │           │   └── files/                   # Bill text
 │           └── events/                      # Committee hearings
 │               └── {timestamp}_{event}.json
@@ -278,116 +279,90 @@ The primary data structure for all bills. Includes all bill information plus pro
 
 ---
 
-## 📝 Action Log (`logs/*.json`)
+## 📝 Action and vote logs (`action_logs.jsonl`, `vote_event_logs.jsonl`)
 
-Individual action logs are saved as separate files in the `logs/` directory. Each file is timestamped and named based on the action description.
+Every night's scrape is the whole dataset. These two files, one pair per bill, mark
+what is **new**: each action or roll call is appended once, the first night the
+pipeline sees it. They are **append-only**: lines are never edited, reordered or
+removed. So:
 
-### Filename Format
+- `git diff` of a night's commit lists exactly the bills with new activity, and the
+  added lines are exactly the new entries.
+- The last lines of a file are the newest activity on that bill.
+- "What's new since yesterday" = lines whose `first_seen` is after yesterday.
 
-```
-{ISO8601_timestamp}_{slugified_description}.json
-```
+Written by `actions/format/utils/log_jsonl.py`; line schemas in
+`actions/format/schemas/action_log.schema.json` and `vote_event_log.schema.json`.
 
-Example: `20250409T040000Z_introduced_in_senate.json`
+### Fields on every line
 
-### Schema
+| Field | Meaning |
+|---|---|
+| `id` | Stable id within the file. It is the old per-entry filename minus `.json` (e.g. `20250114T210515Z.classification.introduction.upper`), with a `~<hash>` suffix when two different entries would otherwise share it. |
+| `first_seen` | When the raw scrape that first contained the entry was committed to the scraper repo (ISO 8601). Not the formatter's run time, so a backfill from the raw history gets the right night. `null` for entries converted from the old layout with no record of when they were first seen. |
+| `chamber` | Plain chamber (`upper`, `lower`, `legislature`, `executive`, …) decoded from the `~{"classification": …}` string beside it. `null` when there is none. |
+| `bill_id` | The bill identifier. |
 
-```json
-{
-  "bill_identifier": "string (required)",
-  "action": {
-    "description": "string (required)",
-    "date": "ISO 8601 datetime (required)",
-    "organization_id": "string",
-    "classification": ["array of strings"],
-    "related_entities": [
-      {
-        "name": "string",
-        "entity_type": "string"
-      }
-    ]
-  }
-}
-```
-
-### Example
+### `action_logs.jsonl`
 
 ```json
-{
-  "bill_identifier": "S 1379",
-  "action": {
-    "description": "Introduced in Senate",
-    "date": "2025-04-09T04:00:00+00:00",
-    "organization_id": "~{\"classification\": \"upper\"}",
-    "classification": ["introduction"],
-    "related_entities": []
-  }
-}
+{"id": "20250131T030931Z.classification.introduction.lower", "first_seen": "2025-11-25T00:00:00+00:00", "chamber": "lower",
+ "action": {"description": "H Introduced and Referred to H05", "occurred_at": "2025-01-31T03:09:31+00:00",
+            "jurisdiction_id": "~{\"classification\": \"lower\"}", "session_id": "2025", "entity_type": "bill",
+            "classifications": ["introduction", "referral-committee"], "related_entities": [],
+            "sources": [{"url": "https://wyoleg.gov/Legislation/2025/HB0001", "note": ""}]},
+ "bill_id": "HB0001"}
 ```
 
----
+(Shown wrapped; in the file each entry is one line.) `action.occurred_at` is the
+government's date. `action.sources` is the bill's official page, copied onto every
+action on purpose so a log line passed around on its own always leads back to the bill.
 
-## 🗳️ Vote Event Log (`logs/*.json`)
+**Same action:** same `occurred_at`, same description ignoring whitespace (some
+scrapers start emitting line breaks inside descriptions), same `jurisdiction_id`.
+An action already in the file is never written again.
 
-Vote events are saved in the bill's `logs/` directory with a specific naming pattern.
-
-### Filename Format
-
-```
-{ISO8601_timestamp}_vote_event_{result}.json
-```
-
-Example: `20250415T143000Z_vote_event_passed.json`
-
-### Schema
+### `vote_event_logs.jsonl`
 
 ```json
-{
-  "bill_identifier": "string (required)",
-  "identifier": "string (optional)",
-  "motion_text": "string",
-  "start_date": "ISO 8601 datetime (required)",
-  "result": "string (required)",
-  "organization": {
-    "name": "string",
-    "classification": "string"
-  },
-  "votes": [
-    {
-      "option": "string (yes/no/abstain/etc)",
-      "voter_name": "string",
-      "note": "string (optional)"
-    }
-  ],
-  "counts": [
-    {
-      "option": "string",
-      "value": "integer"
-    }
-  ]
-}
+{"id": "20250205T173055Z_vote_event_fail", "first_seen": "2025-11-25T00:00:00+00:00", "chamber": "upper",
+ "vote_event": {"identifier": "", "motion_text": "SF0001S2002: Amendment failed", "start_date": "2025-02-05T17:30:55+00:00",
+                "result": "fail", "organization": "~{\"classification\": \"upper\"}", "bill_identifier": "SF0001",
+                "votes": [{"option": "yes", "voter_name": "Anderson", "voter_id": "~{\"name\": \"Anderson\"}", "note": ""}, "…"],
+                "counts": [{"option": "yes", "value": 9}, "…"], "sources": ["…"], "extras": {}},
+ "bill_id": "SF0001"}
 ```
 
-### Example
+`vote_event` is the OpenStates vote event as published (minus the scraper's `_id`
+and `scraped_at`).
 
-```json
-{
-  "bill_identifier": "HR 1234",
-  "identifier": "vote-12345",
-  "motion_text": "On Passage",
-  "start_date": "2025-04-15T14:30:00+00:00",
-  "result": "passed",
-  "organization": {
-    "name": "House of Representatives",
-    "classification": "lower"
-  },
-  "counts": [
-    { "option": "yes", "value": 235 },
-    { "option": "no", "value": 195 },
-    { "option": "abstain", "value": 5 }
-  ]
-}
-```
+**Same vote:** same roll-call `identifier` when both have one; otherwise same
+`start_date`, motion, chamber and counts (date + motion + chamber alone is not
+unique: PA HB 1549 had two roll calls on one motion at the same moment).
+
+**Corrections:** when a later scrape changes a vote's substance (result, counts,
+member votes, motion), the corrected vote is appended as a new line with the
+**same `id`**. The last line for an `id` is current; earlier ones are the history.
+Changes that aren't substance (source URL format, a roll-call number filled in
+later, voter row order, the scraper's internal bill UUID) are not corrections.
+
+Every vote in each scrape is checked, whatever its date. (The old formatter only
+took votes newer than the newest it had seen, and its filenames let one vote
+overwrite another; together they lost 23% of votes in a 14-state check on
+2026-11-24.)
+
+### The old layout and converting a repo
+
+Before 2026-11, each bill had a `logs/` folder with one file per action or vote
+(`{timestamp}_{slug}.json`, `{timestamp}.classification.{c}.{chamber}.json`,
+`{timestamp}.vote_event.pass.{chamber}.json`, `{timestamp}_vote_event_{result}.json`),
+plus a symlink to each under `sessions/{session}/logs/`. Old action files hold either
+the current action shape or OpenStates' own (`date`, `organization_id`,
+`classification`); both convert to the current shape.
+
+`python3 actions/format/convert_logs.py <repo>` converts a repo in place (idempotent;
+unrecognised files are kept and listed). The formatter refuses to write to a repo
+that still has old-style `logs/` folders, so a bill is never split across layouts.
 
 ---
 
@@ -846,7 +821,8 @@ path = ... / f"state:{state_abbr}" / ...
 ├── country:us/state:{state}/sessions/{session}/
 │   ├── bills/{bill_id}/
 │   │   ├── metadata.json           ← Main bill data
-│   │   ├── logs/*.json             ← Actions, votes
+│   │   ├── action_logs.jsonl       ← Actions (append-only, one per line)
+│   │   ├── vote_event_logs.jsonl   ← Roll calls (append-only, one per line)
 │   │   └── files/*                 ← Bill text (PDF, XML, extracted)
 │   └── events/*.json               ← Committee hearings
 │

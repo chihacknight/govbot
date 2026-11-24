@@ -46,12 +46,21 @@ for repo in $repos; do
 
   truncated=$(echo "$tree_json" | jq -r '.truncated // false')
 
-  # Every logs/*.json filename starts with its action's own government-
-  # recorded date as YYYYMMDDTHHMMSSZ -- lexicographic sort == chronological
-  # sort for this format, so plain `sort | tail -1` finds the max without
-  # needing to parse dates.
+  # A repo converted to per-bill .jsonl logs keeps its dates inside the files,
+  # which a tree listing can't see: report it as JSONL and use
+  # audit-last-real-activity-local.sh for those.
+  if echo "$tree_json" | jq -e '.tree[]? | select(.path | test("/bills/[^/]+/(action|vote_event)_logs\\.jsonl$"))' >/dev/null; then
+    echo -e "${state}\tJSONL\t\t${truncated}" >> "$OUT"
+    echo "done: $state -> converted to .jsonl logs; use audit-last-real-activity-local.sh" >&2
+    continue
+  fi
+
+  # Old layout: every bills/<id>/logs/*.json filename starts with its action's
+  # own government-recorded date as YYYYMMDDTHHMMSSZ -- lexicographic sort ==
+  # chronological sort for this format, so plain `sort | tail -1` finds the max
+  # without needing to parse dates.
   last_ts=$(echo "$tree_json" \
-    | jq -r '.tree[]? | select(.path | test("/logs/.*\\.json$")) | .path' \
+    | jq -r '.tree[]? | select(.path | test("/bills/[^/]+/logs/.*\\.json$")) | .path' \
     | sed -E 's#.*/([0-9]{8}T[0-9]{6}Z).*#\1#' \
     | grep -E '^[0-9]{8}T[0-9]{6}Z$' \
     | sort \

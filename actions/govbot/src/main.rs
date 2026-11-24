@@ -851,329 +851,60 @@ async fn run_logs_command(cmd: Command) -> anyhow::Result<()> {
             continue;
         }
 
-        // Walk the repo directory to find log files matching the pattern:
-        // repo_name/country:{country}/state:{state}/sessions/{session_name}/logs/*.json
+        // Every bill's log entries, in either layout (govbot::logs_jsonl): the
+        // per-bill action_logs.jsonl / vote_event_logs.jsonl, or the old
+        // bills/{bill_id}/logs/*.json files.
+        let run = LogsRun {
+            join_specs: &join_specs,
+            join_tags,
+            git_dir: &git_dir,
+            select: select.as_str(),
+            filter_manager: &filter_manager,
+        };
         let mut file_count = 0;
-        
-        for entry_result in WalkDir::new(&repo_path)
-            .process_read_dir(|_depth, _path, _read_dir_state, _children| {
-                // Optional: customize directory reading behavior
-            })
-            .into_iter()
-        {
+
+        for entry_result in WalkDir::new(&repo_path).into_iter() {
             let entry = match entry_result {
                 Ok(e) => e,
                 Err(_) => continue,
             };
 
-            // Check per-repo limit
-            if let Some(limit) = per_repo_limit {
-                if file_count >= limit {
-                    break;
-                }
+            if per_repo_limit.is_some_and(|limit| file_count >= limit) {
+                break;
+            }
+
+            // Real files only. jwalk doesn't follow symlinks, so this skips the old
+            // sessions/{s}/logs/ folder, which held a symlink to every bill-level log
+            // file and made every entry print twice.
+            if !entry.file_type().is_file() {
+                continue;
             }
 
             let path = entry.path();
-            
-            // Check if it's a JSON file in a logs directory
-            if !path.is_file() {
-                continue;
-            }
-
-            if path.extension().and_then(|s| s.to_str()) != Some("json") {
-                continue;
-            }
-
-            // Check if path matches: country:{country}/state:{state}/sessions/{session_name}/logs/*.json
-            let path_str = path.to_string_lossy();
-            let repo_prefix = repo_path.to_string_lossy();
-            
-            // Get relative path by stripping the repo prefix
-            // Handle both absolute and relative paths
-            let relative_path = if let Some(stripped) = path_str.strip_prefix(&*repo_prefix) {
-                // Remove leading slash if present
-                stripped.strip_prefix('/').unwrap_or(stripped)
-            } else {
-                // If prefix doesn't match, skip this file
+            let Some(records) = govbot::logs_jsonl::read_log_records(&path) else {
                 continue;
             };
-            
-            // Match pattern: country:*/state:*/sessions/*/logs/*.json
-            // Use a simple regex-like check: must have these components in order
-            if relative_path.starts_with("country:") 
-                && relative_path.contains("/state:") 
-                && relative_path.contains("/sessions/")
-                && relative_path.contains("/logs/")
-                && relative_path.ends_with(".json")
-            {
-                // Verify order by checking positions
-                let country_pos = relative_path.find("country:").unwrap_or(0);
-                let state_pos = relative_path.find("/state:").unwrap_or(usize::MAX);
-                let sessions_pos = relative_path.find("/sessions/").unwrap_or(usize::MAX);
-                let logs_pos = relative_path.find("/logs/").unwrap_or(usize::MAX);
-                
-                // Verify order: country < state < sessions < logs
-                if country_pos < state_pos && state_pos < sessions_pos && sessions_pos < logs_pos {
-                    // Compute relative source path
-                    let source_path_str = compute_relative_source_path(&path, &git_dir);
-                    
-                    // Read JSON file, parse it, and build extensible output structure
-                    match fs::read_to_string(&path) {
-                        Ok(contents) => {
-                            // Parse JSON
-                            match serde_json::from_str::<serde_json::Value>(&contents) {
-                                Ok(json_value) => {
-                                    // Extract bill_id early (before moving json_value)
-                                    // The json_value IS the log data, so bill_id is at the top level
-                                    let bill_id_opt = json_value
-                                        .get("bill_id")
-                                        .or_else(|| json_value.get("bill_identifier"))
-                                        .and_then(|id| id.as_str())
-                                        .map(|s| s.to_string());
-                                    
-                                    // Build output with extensible structure:
-                                    // - Data keys (log, bill, etc.) are singular entity names matching source keys
-                                    // - sources object automatically tracks all data sources
-                                    let mut output = serde_json::Map::new();
-                                    
-                                    // Add the log data with key "log" (matching sources.log)
-                                    output.insert("log".to_string(), json_value);
-                                    
-                                    // Add sources with the log path
-                                    let mut sources = serde_json::Map::new();
-                                    sources.insert("log".to_string(), serde_json::Value::String(source_path_str.clone()));
-                                    
-                                    // Join additional datasets if requested
-                                    for (dataset_name, field_path) in &join_specs {
-                                        match dataset_name.as_str() {
-                                            "bill" => {
-                                                // Hardcoded: metadata.json is in the parent directory of logs/
-                                                // log path: .../bills/{bill_id}/logs/file.json
-                                                // metadata path: .../bills/{bill_id}/metadata.json
-                                                let canonical_log_path = match path.canonicalize() {
-                                                    Ok(p) => p,
-                                                    Err(_) => path.clone(),
-                                                };
-                                                
-                                                let metadata_path = canonical_log_path.parent()
-                                                    .and_then(|logs_dir| {
-                                                        logs_dir.parent().map(|bill_dir| {
-                                                            bill_dir.join("metadata.json")
-                                                        })
-                                                    });
-                                                
-                                                if let Some(ref metadata_path) = metadata_path {
-                                                    if metadata_path.exists() {
-                                                        match fs::read_to_string(metadata_path) {
-                                                            Ok(metadata_contents) => {
-                                                                match serde_json::from_str::<serde_json::Value>(&metadata_contents) {
-                                                                    Ok(metadata_value) => {
-                                                                        // If field_path is specified, extract just that field
-                                                                        // Otherwise, include the full bill data
-                                                                        if field_path.is_empty() {
-                                                                            // No field path specified, include full bill data
-                                                                            output.insert("bill".to_string(), metadata_value);
-                                                                        } else {
-                                                                            // Extract specific field(s) from bill data
-                                                                            if let Some(field_value) = extract_json_field(&metadata_value, field_path) {
-                                                                                // Use the full join path as the key (e.g., "bill.title")
-                                                                                let output_key = format!("{}.{}", dataset_name, field_path.join("."));
-                                                                                output.insert(output_key, field_value);
-                                                                            } else {
-                                                                                eprintln!("Warning: Field path {:?} not found in metadata from {}", field_path, metadata_path.display());
-                                                                            }
-                                                                        }
-                                                                        
-                                                                        // Add bill source path
-                                                                        let bill_source_path = compute_relative_source_path(metadata_path, &git_dir);
-                                                                        sources.insert("bill".to_string(), serde_json::Value::String(bill_source_path));
-                                                                    }
-                                                                    Err(e) => {
-                                                                        eprintln!("Error parsing metadata JSON from {}: {}", metadata_path.display(), e);
-                                                                    }
-                                                                }
-                                                            }
-                                                            Err(e) => {
-                                                                eprintln!("Error reading metadata from {}: {}", metadata_path.display(), e);
-                                                            }
-                                                        }
-                                                    } else {
-                                                        eprintln!("Warning: Metadata file does not exist: {}", metadata_path.display());
-                                                    }
-                                                } else {
-                                                    eprintln!("Warning: Could not determine metadata path for log file: {}", relative_path);
-                                                }
-                                            }
-                                            _ => {
-                                                eprintln!("Warning: Unknown join dataset: {}", dataset_name);
-                                            }
-                                        }
-                                    }
-                                    
-                                    // Join tags if requested
-                                    if join_tags {
-                                        // Extract country, state, session_id from the path
-                                        if let Some((country, state, session_id)) = extract_path_info(&source_path_str) {
-                                            // Use bill_id extracted earlier
-                                            if let Some(ref bill_id) = bill_id_opt {
-                                                // Look for tags in cwd/country:us/state:{state}/sessions/{session_id}/tags/
-                                                let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-                                                let tags_dir = cwd
-                                                    .join(&format!("country:{}", country))
-                                                    .join(&format!("state:{}", state))
-                                                    .join("sessions")
-                                                    .join(&session_id)
-                                                    .join("tags");
-                                                
-                                                if tags_dir.exists() && tags_dir.is_dir() {
-                                                    let mut matched_tags = serde_json::Map::new();
-                                                    if let Ok(entries) = fs::read_dir(&tags_dir) {
-                                                        for entry in entries.flatten() {
-                                                            let path = entry.path();
-                                                            // Check for both .tag.json and .json files
-                                                            if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
-                                                                if ext == "json" {
-                                                                    if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
-                                                                        // Remove .tag suffix if present (e.g., "budget.tag" -> "budget")
-                                                                        let tag_name = stem.strip_suffix(".tag").unwrap_or(stem);
-                                                                        match fs::read_to_string(&path) {
-                                                                            Ok(contents) => {
-                                                                                if let Ok(tag_file) = serde_json::from_str::<govbot::TagFile>(&contents) {
-                                                                                    // Check if bill_id exists in bills map
-                                                                                    if let Some(bill_result) = tag_file.bills.get(bill_id) {
-                                                                                        // Return the score breakdown
-                                                                                        matched_tags.insert(tag_name.to_string(), serde_json::to_value(&bill_result.score).unwrap_or(serde_json::Value::Null));
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                            Err(_) => {}
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                    if !matched_tags.is_empty() {
-                                                        output.insert("tags".to_string(), serde_json::Value::Object(matched_tags));
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    
-                                    output.insert("sources".to_string(), serde_json::Value::Object(sources));
-                                    
-                                    // Extract timestamp from sources.log path (after "logs/" and before "_")
-                                    // Do this after sources is inserted so we can use the final sources.log value
-                                    let timestamp = extract_timestamp_from_path(&source_path_str);
-                                    if let Some(ref ts) = timestamp {
-                                        output.insert("timestamp".to_string(), serde_json::Value::String(ts.clone()));
-                                    }
-                                    
-                                    let mut output_value = serde_json::Value::Object(output);
-                                    
-                                    // Apply select transformation if requested
-                                    if select == "default" {
-                                        // Select specific keys from nested objects, preserving structure
-                                        let mut selected_output = serde_json::Map::new();
-                                        
-                                        // Top: id (from log.bill_id), then log object with selected fields
-                                        if let Some(id) = output_value.get("log").and_then(|l| l.get("bill_id").or_else(|| l.get("bill_identifier"))).and_then(|v| v.as_str()) {
-                                            selected_output.insert("id".to_string(), serde_json::Value::String(id.to_string()));
-                                        }
-                                        
-                                        // Create log object with only action and bill_id
-                                        if let Some(log) = output_value.get("log") {
-                                            let mut log_obj = serde_json::Map::new();
-                                            if let Some(action) = log.get("action") {
-                                                log_obj.insert("action".to_string(), action.clone());
-                                            }
-                                            if let Some(bill_id) = log.get("bill_id").or_else(|| log.get("bill_identifier")) {
-                                                log_obj.insert("bill_id".to_string(), bill_id.clone());
-                                            }
-                                            if !log_obj.is_empty() {
-                                                selected_output.insert("log".to_string(), serde_json::Value::Object(log_obj));
-                                            }
-                                        }
-                                        
-                                        // Create bill object with only selected fields
-                                        if let Some(bill) = output_value.get("bill") {
-                                            let mut bill_obj = serde_json::Map::new();
-                                            if let Some(title) = bill.get("title") {
-                                                bill_obj.insert("title".to_string(), title.clone());
-                                            }
-                                            if let Some(abstracts) = bill.get("abstracts") {
-                                                bill_obj.insert("abstracts".to_string(), abstracts.clone());
-                                            }
-                                            if let Some(subject) = bill.get("subject") {
-                                                bill_obj.insert("subject".to_string(), subject.clone());
-                                            }
-                                            if let Some(identifier) = bill.get("identifier") {
-                                                bill_obj.insert("identifier".to_string(), identifier.clone());
-                                            }
-                                            if let Some(session) = bill.get("legislative_session") {
-                                                bill_obj.insert("legislative_session".to_string(), session.clone());
-                                            }
-                                            if let Some(org) = bill.get("from_organization") {
-                                                bill_obj.insert("from_organization".to_string(), org.clone());
-                                            }
-                                            if !bill_obj.is_empty() {
-                                                selected_output.insert("bill".to_string(), serde_json::Value::Object(bill_obj));
-                                            }
-                                        }
-                                        
-                                        // Always include tags (even if empty/null) since it's part of the default selector
-                                        if let Some(tags) = output_value.get("tags") {
-                                            selected_output.insert("tags".to_string(), tags.clone());
-                                        } else {
-                                            // Include empty tags object if not present
-                                            selected_output.insert("tags".to_string(), serde_json::Value::Null);
-                                        }
-                                        
-                                        // Bottom: sources, timestamp
-                                        if let Some(sources) = output_value.get("sources") {
-                                            selected_output.insert("sources".to_string(), sources.clone());
-                                        }
-                                        if let Some(timestamp) = output_value.get("timestamp") {
-                                            selected_output.insert("timestamp".to_string(), timestamp.clone());
-                                        }
-                                        
-                                        output_value = serde_json::Value::Object(selected_output);
-                                    }
-                                    
-                                    // Apply filter
-                                    let should_output = match filter_manager.should_keep(&output_value, &repo_name) {
-                                        govbot::FilterResult::Keep => true,
-                                        govbot::FilterResult::FilterOut => false,
-                                    };
-                                    
-                                    if should_output {
-                                        // Deep prune empty/null values before serialization
-                                        let pruned_value = deep_prune_json(output_value);
-                                        
-                                        // Serialize as compact JSON (single line)
-                                        match serde_json::to_string(&pruned_value) {
-                                            Ok(json_line) => {
-                                                // Ignore broken pipe errors (e.g., when piped to yq/jq that closes early)
-                                                if write_json_line(&json_line).is_ok() {
-                                                    file_count += 1;
-                                                }
-                                            }
-                                            Err(e) => {
-                                                eprintln!("Error serializing JSON from {}: {}", path.display(), e);
-                                            }
-                                        }
-                                    }
-                                }
-                                Err(e) => {
-                                    eprintln!("Error parsing JSON from {}: {}", path.display(), e);
-                                }
-                            }
-                        }
-                        Err(e) => {
-                            eprintln!("Error reading {}: {}", path.display(), e);
-                        }
-                    }
+            let file_source = compute_relative_source_path(&path, &git_dir);
+
+            for record in records {
+                if per_repo_limit.is_some_and(|limit| file_count >= limit) {
+                    break;
+                }
+                // A .jsonl line is named by the file plus its id: stable across
+                // nights (lines are only ever appended), so it works as an RSS guid.
+                let source_path_str = match &record.anchor {
+                    Some(id) => format!("{}#{}", file_source, id),
+                    None => file_source.clone(),
+                };
+                if emit_log_entry(
+                    &run,
+                    record.value,
+                    &source_path_str,
+                    &record.bill_dir,
+                    record.timestamp.as_deref(),
+                    &repo_name,
+                ) {
+                    file_count += 1;
                 }
             }
         }
@@ -1182,6 +913,263 @@ async fn run_logs_command(cmd: Command) -> anyhow::Result<()> {
     Ok(())
 }
 
+
+/// Shared state for one `govbot logs` run.
+struct LogsRun<'a> {
+    join_specs: &'a [(String, Vec<String>)],
+    join_tags: bool,
+    git_dir: &'a PathBuf,
+    select: &'a str,
+    filter_manager: &'a govbot::FilterManager,
+}
+
+/// Build, filter and print one `govbot logs` line for a log entry. Returns whether
+/// it was printed.
+///
+/// `json_value` is the entry in the shape the old per-entry files held (see
+/// `govbot::logs_jsonl`); `source_path_str` is what goes in `sources.log`; `bill_dir`
+/// is the bill folder holding metadata.json.
+fn emit_log_entry(
+    run: &LogsRun,
+    json_value: serde_json::Value,
+    source_path_str: &str,
+    bill_dir: &std::path::Path,
+    timestamp: Option<&str>,
+    repo_name: &str,
+) -> bool {
+    let LogsRun { join_specs, join_tags, git_dir, select, filter_manager } = run;
+    let (join_tags, select) = (*join_tags, *select);
+    let git_dir: &PathBuf = git_dir;
+    // Extract bill_id early (before moving json_value)
+    // The json_value IS the log data, so bill_id is at the top level
+    let bill_id_opt = json_value
+        .get("bill_id")
+        .or_else(|| json_value.get("bill_identifier"))
+        .and_then(|id| id.as_str())
+        .map(|s| s.to_string());
+
+    // Build output with extensible structure:
+    // - Data keys (log, bill, etc.) are singular entity names matching source keys
+    // - sources object automatically tracks all data sources
+    let mut output = serde_json::Map::new();
+
+    // Add the log data with key "log" (matching sources.log)
+    output.insert("log".to_string(), json_value);
+
+    // Add sources with the log path
+    let mut sources = serde_json::Map::new();
+    sources.insert("log".to_string(), serde_json::Value::String(source_path_str.to_string()));
+
+    // Join additional datasets if requested
+    for (dataset_name, field_path) in join_specs.iter() {
+        match dataset_name.as_str() {
+            "bill" => {
+                // metadata.json sits in the bill folder, beside the .jsonl logs
+                // (or one level above an old-layout logs/ folder).
+                let metadata_path = Some(bill_dir.join("metadata.json"));
+
+                if let Some(ref metadata_path) = metadata_path {
+                    if metadata_path.exists() {
+                        match fs::read_to_string(metadata_path) {
+                            Ok(metadata_contents) => {
+                                match serde_json::from_str::<serde_json::Value>(&metadata_contents) {
+                                    Ok(metadata_value) => {
+                                        // If field_path is specified, extract just that field
+                                        // Otherwise, include the full bill data
+                                        if field_path.is_empty() {
+                                            // No field path specified, include full bill data
+                                            output.insert("bill".to_string(), metadata_value);
+                                        } else {
+                                            // Extract specific field(s) from bill data
+                                            if let Some(field_value) = extract_json_field(&metadata_value, field_path) {
+                                                // Use the full join path as the key (e.g., "bill.title")
+                                                let output_key = format!("{}.{}", dataset_name, field_path.join("."));
+                                                output.insert(output_key, field_value);
+                                            } else {
+                                                eprintln!("Warning: Field path {:?} not found in metadata from {}", field_path, metadata_path.display());
+                                            }
+                                        }
+
+                                        // Add bill source path
+                                        let bill_source_path = compute_relative_source_path(metadata_path, &git_dir);
+                                        sources.insert("bill".to_string(), serde_json::Value::String(bill_source_path));
+                                    }
+                                    Err(e) => {
+                                        eprintln!("Error parsing metadata JSON from {}: {}", metadata_path.display(), e);
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                eprintln!("Error reading metadata from {}: {}", metadata_path.display(), e);
+                            }
+                        }
+                    } else {
+                        eprintln!("Warning: Metadata file does not exist: {}", metadata_path.display());
+                    }
+                } else {
+                    eprintln!("Warning: Could not determine metadata path for log entry: {}", source_path_str);
+                }
+            }
+            _ => {
+                eprintln!("Warning: Unknown join dataset: {}", dataset_name);
+            }
+        }
+    }
+
+    // Join tags if requested
+    if join_tags {
+        // Extract country, state, session_id from the path
+        if let Some((country, state, session_id)) = extract_path_info(source_path_str) {
+            // Use bill_id extracted earlier
+            if let Some(ref bill_id) = bill_id_opt {
+                // Look for tags in cwd/country:us/state:{state}/sessions/{session_id}/tags/
+                let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+                let tags_dir = cwd
+                    .join(&format!("country:{}", country))
+                    .join(&format!("state:{}", state))
+                    .join("sessions")
+                    .join(&session_id)
+                    .join("tags");
+
+                if tags_dir.exists() && tags_dir.is_dir() {
+                    let mut matched_tags = serde_json::Map::new();
+                    if let Ok(entries) = fs::read_dir(&tags_dir) {
+                        for entry in entries.flatten() {
+                            let path = entry.path();
+                            // Check for both .tag.json and .json files
+                            if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
+                                if ext == "json" {
+                                    if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                                        // Remove .tag suffix if present (e.g., "budget.tag" -> "budget")
+                                        let tag_name = stem.strip_suffix(".tag").unwrap_or(stem);
+                                        match fs::read_to_string(&path) {
+                                            Ok(contents) => {
+                                                if let Ok(tag_file) = serde_json::from_str::<govbot::TagFile>(&contents) {
+                                                    // Check if bill_id exists in bills map
+                                                    if let Some(bill_result) = tag_file.bills.get(bill_id) {
+                                                        // Return the score breakdown
+                                                        matched_tags.insert(tag_name.to_string(), serde_json::to_value(&bill_result.score).unwrap_or(serde_json::Value::Null));
+                                                    }
+                                                }
+                                            }
+                                            Err(_) => {}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if !matched_tags.is_empty() {
+                        output.insert("tags".to_string(), serde_json::Value::Object(matched_tags));
+                    }
+                }
+            }
+        }
+    }
+
+    output.insert("sources".to_string(), serde_json::Value::Object(sources));
+
+    // The entry's own date (YYYYMMDDTHHMMSSZ). It used to be read from the old
+    // filenames, and only from the underscore form, so introductions, passages and
+    // other dotted-name entries had none.
+    if let Some(ts) = timestamp {
+        output.insert("timestamp".to_string(), serde_json::Value::String(ts.to_string()));
+    }
+
+    let mut output_value = serde_json::Value::Object(output);
+
+    // Apply select transformation if requested
+    if select == "default" {
+        // Select specific keys from nested objects, preserving structure
+        let mut selected_output = serde_json::Map::new();
+
+        // Top: id (from log.bill_id), then log object with selected fields
+        if let Some(id) = output_value.get("log").and_then(|l| l.get("bill_id").or_else(|| l.get("bill_identifier"))).and_then(|v| v.as_str()) {
+            selected_output.insert("id".to_string(), serde_json::Value::String(id.to_string()));
+        }
+
+        // Create log object with only action and bill_id
+        if let Some(log) = output_value.get("log") {
+            let mut log_obj = serde_json::Map::new();
+            if let Some(action) = log.get("action") {
+                log_obj.insert("action".to_string(), action.clone());
+            }
+            if let Some(bill_id) = log.get("bill_id").or_else(|| log.get("bill_identifier")) {
+                log_obj.insert("bill_id".to_string(), bill_id.clone());
+            }
+            if !log_obj.is_empty() {
+                selected_output.insert("log".to_string(), serde_json::Value::Object(log_obj));
+            }
+        }
+
+        // Create bill object with only selected fields
+        if let Some(bill) = output_value.get("bill") {
+            let mut bill_obj = serde_json::Map::new();
+            if let Some(title) = bill.get("title") {
+                bill_obj.insert("title".to_string(), title.clone());
+            }
+            if let Some(abstracts) = bill.get("abstracts") {
+                bill_obj.insert("abstracts".to_string(), abstracts.clone());
+            }
+            if let Some(subject) = bill.get("subject") {
+                bill_obj.insert("subject".to_string(), subject.clone());
+            }
+            if let Some(identifier) = bill.get("identifier") {
+                bill_obj.insert("identifier".to_string(), identifier.clone());
+            }
+            if let Some(session) = bill.get("legislative_session") {
+                bill_obj.insert("legislative_session".to_string(), session.clone());
+            }
+            if let Some(org) = bill.get("from_organization") {
+                bill_obj.insert("from_organization".to_string(), org.clone());
+            }
+            if !bill_obj.is_empty() {
+                selected_output.insert("bill".to_string(), serde_json::Value::Object(bill_obj));
+            }
+        }
+
+        // Always include tags (even if empty/null) since it's part of the default selector
+        if let Some(tags) = output_value.get("tags") {
+            selected_output.insert("tags".to_string(), tags.clone());
+        } else {
+            // Include empty tags object if not present
+            selected_output.insert("tags".to_string(), serde_json::Value::Null);
+        }
+
+        // Bottom: sources, timestamp
+        if let Some(sources) = output_value.get("sources") {
+            selected_output.insert("sources".to_string(), sources.clone());
+        }
+        if let Some(timestamp) = output_value.get("timestamp") {
+            selected_output.insert("timestamp".to_string(), timestamp.clone());
+        }
+
+        output_value = serde_json::Value::Object(selected_output);
+    }
+
+    // Apply filter
+    let should_output = match filter_manager.should_keep(&output_value, repo_name) {
+        govbot::FilterResult::Keep => true,
+        govbot::FilterResult::FilterOut => false,
+    };
+
+    if should_output {
+        // Deep prune empty/null values before serialization
+        let pruned_value = deep_prune_json(output_value);
+
+        // Serialize as compact JSON (single line)
+        match serde_json::to_string(&pruned_value) {
+            Ok(json_line) => {
+                // Ignore broken pipe errors (e.g., when piped to yq/jq that closes early)
+                return write_json_line(&json_line).is_ok();
+            }
+            Err(e) => {
+                eprintln!("Error serializing JSON from {}: {}", source_path_str, e);
+            }
+        }
+    }
+    false
+}
 
 /// Parse a join string like "bill.title" into (dataset_name, field_path)
 fn parse_join_string(join_str: &str) -> Option<(String, Vec<String>)> {
@@ -1265,25 +1253,6 @@ fn deep_prune_json(value: serde_json::Value) -> serde_json::Value {
         // For numbers, booleans, keep as-is
         other => other,
     }
-}
-
-/// Extract timestamp from a path string (after "logs/" and before "_")
-/// Example: "path/to/logs/20250121T000000Z_filename.json" -> "20250121T000000Z"
-fn extract_timestamp_from_path(path: &str) -> Option<String> {
-    // Find the position of "/logs/"
-    if let Some(logs_pos) = path.find("/logs/") {
-        // Get the substring after "/logs/"
-        let after_logs = &path[logs_pos + 6..];
-        // Find the position of "_" after "logs/"
-        if let Some(underscore_pos) = after_logs.find('_') {
-            // Extract the timestamp (between "logs/" and "_")
-            let timestamp = &after_logs[..underscore_pos];
-            if !timestamp.is_empty() {
-                return Some(timestamp.to_string());
-            }
-        }
-    }
-    None
 }
 
 /// Compute relative path from git_dir to a file, following symlinks

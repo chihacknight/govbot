@@ -5,36 +5,11 @@ use std::process::Command;
 
 use insta;
 
-/// Helper function to get the path to the built binary
-/// Always builds the binary to ensure we're using the latest version
+/// The govbot binary Cargo built for this test run. Cargo builds every binary
+/// target before running integration tests and passes its real path, which also
+/// honours a custom CARGO_TARGET_DIR (a hard-coded target/debug path doesn't).
 fn get_binary_path() -> PathBuf {
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-
-    // Always build the binary to ensure we're using the latest code
-    // Cargo will handle incremental builds, so this is fast if nothing changed
-    eprintln!("Building binary to ensure latest version...");
-    let status = Command::new("cargo")
-        .args(&["build", "--bin", "govbot"])
-        .current_dir(&manifest_dir)
-        .status()
-        .expect("Failed to run cargo build");
-
-    if !status.success() {
-        panic!("Failed to build binary");
-    }
-
-    // Use debug build for tests (faster to build, and cargo test uses debug by default)
-    let debug_path = manifest_dir.join("target").join("debug").join("govbot");
-
-    // Verify the binary exists after building
-    if !debug_path.exists() {
-        panic!(
-            "Binary was not created at expected path: {}",
-            debug_path.display()
-        );
-    }
-
-    debug_path
+    PathBuf::from(env!("CARGO_BIN_EXE_govbot"))
 }
 
 /// Helper to check if test data exists

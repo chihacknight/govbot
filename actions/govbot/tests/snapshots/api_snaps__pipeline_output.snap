@@ -1,0 +1,471 @@
+---
+source: tests/api_snaps.rs
+expression: json_output
+---
+[
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "reading-1"
+        ],
+        "description": "Bill Number Assigned",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"executive\"}",
+        "occurred_at": "2025-12-01T17:15:11+00:00",
+        "related_entities": [],
+        "session_id": "2026",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2026/HB0006"
+          }
+        ]
+      },
+      "bill_id": "HB0006"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2026/bills/HB0006/action_logs.jsonl#20251201T171511Z_bill_number_assigned"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "reading-1"
+        ],
+        "description": "Bill Number Assigned",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"executive\"}",
+        "occurred_at": "2025-12-01T17:12:03+00:00",
+        "related_entities": [],
+        "session_id": "2026",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2026/HB0005"
+          }
+        ]
+      },
+      "bill_id": "HB0005"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2026/bills/HB0005/action_logs.jsonl#20251201T171203Z_bill_number_assigned"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "reading-1"
+        ],
+        "description": "Bill Number Assigned",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"executive\"}",
+        "occurred_at": "2025-12-01T17:02:54+00:00",
+        "related_entities": [],
+        "session_id": "2026",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2026/HB0004"
+          }
+        ]
+      },
+      "bill_id": "HB0004"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2026/bills/HB0004/action_logs.jsonl#20251201T170254Z_bill_number_assigned"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "reading-1"
+        ],
+        "description": "Bill Number Assigned",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"executive\"}",
+        "occurred_at": "2025-12-01T16:59:30+00:00",
+        "related_entities": [],
+        "session_id": "2026",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2026/HB0003"
+          }
+        ]
+      },
+      "bill_id": "HB0003"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2026/bills/HB0003/action_logs.jsonl#20251201T165930Z_bill_number_assigned"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "reading-1"
+        ],
+        "description": "Bill Number Assigned",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"executive\"}",
+        "occurred_at": "2025-12-01T16:55:06+00:00",
+        "related_entities": [],
+        "session_id": "2026",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2026/HB0002"
+          }
+        ]
+      },
+      "bill_id": "HB0002"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2026/bills/HB0002/action_logs.jsonl#20251201T165506Z_bill_number_assigned"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "introduction",
+          "referral-committee"
+        ],
+        "description": "H Introduced and Referred to HCOW",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"lower\"}",
+        "occurred_at": "2025-01-31T03:09:31+00:00",
+        "related_entities": [],
+        "session_id": "2025",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2025/HB0001"
+          }
+        ]
+      },
+      "bill_id": "HB0001"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0001/action_logs.jsonl#20250131T030931Z.classification.introduction.lower"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "filing"
+        ],
+        "description": "H Received for Introduction",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"lower\"}",
+        "occurred_at": "2025-01-29T17:06:54+00:00",
+        "related_entities": [],
+        "session_id": "2025",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2025/HB0001"
+          }
+        ]
+      },
+      "bill_id": "HB0001"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0001/action_logs.jsonl#20250129T170654Z_h_received_for_introduction"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "reading-1"
+        ],
+        "description": "Bill Number Assigned",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"executive\"}",
+        "occurred_at": "2025-01-29T02:27:03+00:00",
+        "related_entities": [],
+        "session_id": "2025",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2025/HB0001"
+          }
+        ]
+      },
+      "bill_id": "HB0001"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0001/action_logs.jsonl#20250129T022703Z_bill_number_assigned"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "introduction",
+          "referral-committee"
+        ],
+        "description": "H Introduced and Referred to H06 - Travel",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"lower\"}",
+        "occurred_at": "2025-01-16T18:14:23+00:00",
+        "related_entities": [],
+        "session_id": "2025",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2025/HB0004"
+          }
+        ]
+      },
+      "bill_id": "HB0004"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0004/action_logs.jsonl#20250116T181423Z.classification.introduction.lower"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "introduction",
+          "referral-committee"
+        ],
+        "description": "H Introduced and Referred to H06 - Travel",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"lower\"}",
+        "occurred_at": "2025-01-16T18:14:01+00:00",
+        "related_entities": [],
+        "session_id": "2025",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2025/HB0003"
+          }
+        ]
+      },
+      "bill_id": "HB0003"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0003/action_logs.jsonl#20250116T181401Z.classification.introduction.lower"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "introduction",
+          "referral-committee"
+        ],
+        "description": "H Introduced and Referred to H06 - Travel",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"lower\"}",
+        "occurred_at": "2025-01-16T18:13:36+00:00",
+        "related_entities": [],
+        "session_id": "2025",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2025/HB0002"
+          }
+        ]
+      },
+      "bill_id": "HB0002"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0002/action_logs.jsonl#20250116T181336Z.classification.introduction.lower"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "introduction",
+          "referral-committee"
+        ],
+        "description": "H Introduced and Referred to H06 - Travel",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"lower\"}",
+        "occurred_at": "2025-01-14T22:25:01+00:00",
+        "related_entities": [],
+        "session_id": "2025",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2025/HB0005"
+          }
+        ]
+      },
+      "bill_id": "HB0005"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0005/action_logs.jsonl#20250114T222501Z.classification.introduction.lower"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "filing"
+        ],
+        "description": "H Received for Introduction",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"lower\"}",
+        "occurred_at": "2025-01-02T19:18:48+00:00",
+        "related_entities": [],
+        "session_id": "2025",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2025/HB0005"
+          }
+        ]
+      },
+      "bill_id": "HB0005"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0005/action_logs.jsonl#20250102T191848Z_h_received_for_introduction"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "filing"
+        ],
+        "description": "H Received for Introduction",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"lower\"}",
+        "occurred_at": "2025-01-02T19:17:44+00:00",
+        "related_entities": [],
+        "session_id": "2025",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2025/HB0004"
+          }
+        ]
+      },
+      "bill_id": "HB0004"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0004/action_logs.jsonl#20250102T191744Z_h_received_for_introduction"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "filing"
+        ],
+        "description": "H Received for Introduction",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"lower\"}",
+        "occurred_at": "2025-01-02T19:17:11+00:00",
+        "related_entities": [],
+        "session_id": "2025",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2025/HB0003"
+          }
+        ]
+      },
+      "bill_id": "HB0003"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0003/action_logs.jsonl#20250102T191711Z_h_received_for_introduction"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "filing"
+        ],
+        "description": "H Received for Introduction",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"lower\"}",
+        "occurred_at": "2025-01-02T19:16:16+00:00",
+        "related_entities": [],
+        "session_id": "2025",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2025/HB0002"
+          }
+        ]
+      },
+      "bill_id": "HB0002"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0002/action_logs.jsonl#20250102T191616Z_h_received_for_introduction"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "reading-1"
+        ],
+        "description": "Bill Number Assigned",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"executive\"}",
+        "occurred_at": "2024-12-03T00:59:06+00:00",
+        "related_entities": [],
+        "session_id": "2025",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2025/HB0005"
+          }
+        ]
+      },
+      "bill_id": "HB0005"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0005/action_logs.jsonl#20241203T005906Z_bill_number_assigned"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "reading-1"
+        ],
+        "description": "Bill Number Assigned",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"executive\"}",
+        "occurred_at": "2024-12-03T00:57:20+00:00",
+        "related_entities": [],
+        "session_id": "2025",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2025/HB0004"
+          }
+        ]
+      },
+      "bill_id": "HB0004"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0004/action_logs.jsonl#20241203T005720Z_bill_number_assigned"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "reading-1"
+        ],
+        "description": "Bill Number Assigned",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"executive\"}",
+        "occurred_at": "2024-12-03T00:54:09+00:00",
+        "related_entities": [],
+        "session_id": "2025",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2025/HB0003"
+          }
+        ]
+      },
+      "bill_id": "HB0003"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0003/action_logs.jsonl#20241203T005409Z_bill_number_assigned"
+  },
+  {
+    "log": {
+      "action": {
+        "classifications": [
+          "reading-1"
+        ],
+        "description": "Bill Number Assigned",
+        "entity_type": "bill",
+        "jurisdiction_id": "~{\"classification\": \"executive\"}",
+        "occurred_at": "2024-12-03T00:51:58+00:00",
+        "related_entities": [],
+        "session_id": "2025",
+        "sources": [
+          {
+            "note": "",
+            "url": "https://wyoleg.gov/Legislation/2025/HB0002"
+          }
+        ]
+      },
+      "bill_id": "HB0002"
+    },
+    "filename": "wy-legislation/country:us/state:wy/sessions/2025/bills/HB0002/action_logs.jsonl#20241203T005158Z_bill_number_assigned"
+  }
+]
