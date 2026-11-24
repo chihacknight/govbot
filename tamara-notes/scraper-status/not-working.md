@@ -33,7 +33,7 @@ In/out of session per LegiScan's `session-calendar-2026.md` (as of 2026-07-13, c
 | MP | Out | ✅ Resolved 2026-07-26, live on custom image pending upstream merge (same pattern as AZ). Two bugs on `HCommRes 24-6`/`24-7` (blank title + unspaced bill_id breaking a lookup) — confirmed via a real GitHub Actions run (321 bills, zero tracebacks), not just local. Upstream PR [#5744](https://github.com/openstates/openstates-scrapers/pull/5744) + issue [#1394](https://github.com/openstates/issues/issues/1394) filed. |
 | NE | Out | `H3_RATE_LIMITED`, likely shared-proxy congestion rather than a new site-specific block; not yet retried on genuine self-hosted. |
 | NH | Out | ✅ Resolved 2026-07-26 (moved to `working-out-of-session.md`) — dropping `--fastmode` (PR #95) confirmed sufficient via two real completed scrapes, `fix/nh-rate-limit`'s extra RPM cap likely unneeded. **The 6am-9pm ET block window is still real and separately unaddressed** (confirmed from NH's own site logs) — see `pending-branches.md`. |
-| NM | Out | Intermittent FTP server issue (confirmed via direct `curl` testing) — not a permanent dead end, just unlucky timing on the last run. |
+| NM | Out | Intermittent FTP server issue (confirmed via direct `curl` testing) — not a permanent dead end, just unlucky timing on the last run. Re-confirmed 2026-07-28: same `EOFError`/no-welcome-banner failure again (run 30255717450), 9 total connection attempts across 3 scrape retries, all identical. Fell back to nightly (816 files, 812 distinct bills unchanged) reported as `✅ Success`. Not related to issue #1381 (closed, different bug) — see the "Open threads" section below. |
 | VI | **In** | Source server itself offline (`billtracking.legvi.org:8082`) — not a code or hosting problem, fails on every path since the site is down. Genuine dead end, not actionable on our end. |
 
 **Read before acting on any row below:** a "current problem" today doesn't always mean something is
@@ -248,6 +248,96 @@ self-hosted` config flag — confirmed via `runner_group_name` on two real cance
 2026-07-25, one killed at exactly the GitHub-hosted 6h00m hard cap. Fixed with a new
 `force_self_hosted` locale config field, applied live via `apply.py`.
 
+#### Precise scope of what a `flhouse.gov` block actually costs — confirmed 2026-08-05
+
+Walked a locally-running FL scrape's folded logs end-to-end (a run hitting a **100% block
+rate** on `HouseSearchPage` across an extended stretch of consecutive bills — both HB and SB
+numbers alike, since `HouseSearchPage` is queried for every bill regardless of origin
+chamber) to answer "are we actually losing bills or data?" concretely, instead of assuming
+from the `SKIPPED BILL:` log line alone. Checked both raw scraper output
+(`govbot-openstates-scrapers/fl-legislation/_data/fl`) and the formatted/deduped output
+(`govbot-data/fl-legislation`), plus read `fl/bills.py` upstream source directly.
+
+**Bills are not lost.** Pulled a real blocked bill's JSON (`HB 955`, flagged via
+`extras.scrape_warnings`) — full title, sponsors, subjects, citations, and complete
+cross-chamber action/history timeline (Filed → Referred x3 → 1st Reading → Died in
+committee) all present and correct, because that history comes from `flsenate.gov`'s own
+bill-history page (`BillDetail.process_history()`), which tracks both chambers and never
+depends on `flhouse.gov` at all.
+
+**House floor votes are not lost either.** `BillDetail.process_votes()` (flsenate.gov) yields
+a `FloorVote` (chamber="lower") for any vote-history row whose PDF link contains
+`"HouseVote"` — sourced entirely from the Senate's own site. Confirmed unaffected by the
+House block by construction, not just by inference.
+
+**The one genuinely, irrecoverably lost thing: House *committee* roll-call votes.**
+`HouseSearchPage`'s own docstring in `fl/bills.py` says it outright: "House committee roll
+calls are not available on the Senate's website." When the `HouseSearchPage` →
+`HouseBillPage` → `HouseComVote` chain gets blocked, that bill loses committee name, vote
+date, motion text, pass/fail result, and yes/no/not-voting counts for any House committee
+vote it had — recoverable only by a future successful scrape reaching that bill again, never
+from any other source in the pipeline. Confirmed what this data looks like when it *does*
+get through: a real committee vote on HB 755 (`vote_event_0ab7d8ca-89a5-11f1-a2f5-b64c0bfbe6f8.json`)
+pulled directly from `_data/fl`:
+
+```json
+{
+  "motion_text": "Favorable (State Affairs Committee)",
+  "motion_classification": ["committee-passage"],
+  "organization": "~{\"classification\": \"lower\"}",
+  "result": "pass",
+  "counts": [
+    {"option": "yes", "value": 21},
+    {"option": "no", "value": 0},
+    {"option": "not voting", "value": 5}
+  ],
+  "sources": [{"url": "https://flhouse.gov/Sections/Committees/billvote.aspx?VoteId=76695&IsPCB=0&BillId=83388&"}]
+}
+```
+
+So when the scrape isn't blocked, this is the level of detail we get for House committee
+votes — committee, date, motion, pass/fail, yes/no/not-voting counts, sourced straight from
+`flhouse.gov`. That's exactly the data type that goes missing on any bill scraped during a
+block window.
+
+Summary table:
+
+| Vote type | Source | Affected by `flhouse.gov` block? |
+|---|---|---|
+| House floor votes (3rd reading, passage) | `flsenate.gov` | No — always captured |
+| Senate floor/committee votes | `flsenate.gov` | No — always captured |
+| House committee votes | `flhouse.gov` only | Yes — lost if blocked, no other source has it |
+
+Practical implication: don't read "N bills flagged `SKIPPED BILL` this run" as "N bills
+damaged." A bill that died before ever reaching a committee vote (like HB 955) loses nothing
+real when flagged — there was no committee vote to capture regardless. The real cost scales
+with how many *of the affected bills actually had a House committee vote*, which is smaller
+than the flagged count and not something the log line alone tells you.
+
+**Also confirmed while investigating this**: raw `_data/fl` currently has ~11,667 `bill_*.json`
+files against a real distinct count of **1,878 bills** (1,873 in the `2026` session + 5 in
+`2026F`, counted directly from `govbot-data/fl-legislation`'s deduped output) — matches the
+already-known duplicate-bloat figure from 2026-07-26 almost exactly, just grown further from
+more accumulated runs since. This is expected/inert, not a new problem: `actions/format`'s
+dedup guardrails are the thing that resolves this on the way into `govbot-data`, and the raw
+repo itself won't visibly clean up until a full successful scrape completes its
+wipe-and-replace step. Don't chase the raw file count as a health signal for FL — check
+`govbot-data/fl-legislation`'s session bill counts instead.
+
+**Update 2026-08-07**: grown further, ~20,000 raw files vs ~2,000 real distinct bills (10x).
+Confirmed the mechanism precisely this session — `actions/scrape/scrape.sh` only does the
+`rm -rf` + full rewrite when a run is judged a genuine non-shrink (compares distinct
+`identifier` counts, not file counts); any run that gets cancelled/interrupted before reaching
+that step just adds its own files on top without ever clearing prior runs' leftovers. Given
+FL's track record (bot detection, timeouts, cancelled long runs), it may realistically never
+land a fully clean run to trigger the wipe on its own. Since upstream (`actions/format` →
+`govbot-data`) already dedupes correctly regardless, this is still cosmetic/inert for the
+*published* data — but it's real, unbounded disk/repo growth in the raw `fl-legislation` repo
+itself, so **worth periodically wiping `_data/fl` completely by hand** (not waiting on a clean
+scrape) rather than letting it grow indefinitely. Not yet done — next person picking this up
+should just do a manual full wipe + let the next scrape rebuild from scratch, no dedup-by-ID
+logic needed since a full wipe sidesteps the shrink-guard question entirely.
+
 ### AZ — ✅ resolved 2026-07-24, real root cause found (not the long-standing cookie theory)
 
 AZ had never produced a single bill. Original diagnosis was a Sucuri WAF blocking the
@@ -456,7 +546,7 @@ congestion rather than a per-state block (NE, WA — though WA isn't even self-h
   (`--fastmode` cache poisoning), confirmed working live. See dedicated writeup above and
   `tamara-notes/scraper-status/upstream-pr-todo.md` for the revert-once-merged checklist.
 - **FL** PR [#5724](https://github.com/openstates/openstates-scrapers/pull/5724) — updated 2026-07-23 per maintainer feedback (opt-in `allow_partial` flag + a newly-found `flhouse.gov` timeout fix), then again 2026-07-26 with a third fix (single-bill failures crashing the whole session, both a plain timeout and a `RejectedResponse` bot-detection variant) — pushed and commented, all three fixes verified live. CI green, awaiting maintainer re-review. Still don't assume merged/live in the official docker image yet — `fl-legislation` runs from a temporary custom image (`ghcr.io/tamara-builds/openstates-scrapers:fl-fix-test`, now config-driven) until it merges. See the dedicated FL section above and `openstates-responses.md` for full detail.
-- **NM** — waiting on maintainer to re-open issue [#1381](https://github.com/openstates/issues/issues/1381); we have a PR ready (`urllib.request.urlopen()` swap).
+- **NM** — issue [#1381](https://github.com/openstates/issues/issues/1381) is **closed** (2026-07-02) and was about a *different* bug than the one we're actually hitting now — correcting this doc's stale claim of "waiting on maintainer to re-open, PR ready." #1381's real story (per the issue thread itself): originally misdiagnosed as "scrapelib doesn't support FTP"; corrected the same day to "`LegInfo26.zip` was published 10 weeks late (session-timing issue), and separately the regex matching the FTP listing didn't match scrapelib's response format even though it matched fine against a raw `urllib.request.urlopen()` listing." The proposed `urllib.request.urlopen()` swap would address *that* mismatch — but no PR was ever actually filed (confirmed via issue thread + `git log --all` equivalent check), and the issue's been closed with no further activity since. **Re-confirmed 2026-07-28** (run [30255717450](https://github.com/govbot-openstates-scrapers/nm-legislation/actions/runs/30255717450/job/89943729869)) that today's failure is the *other*, already-tracked NM issue instead — the intermittent `EOFError`/no-FTP-welcome-banner connectivity problem (see this doc's NM row above and `pending-branches.md`'s "Known, no new info" section), not a regex/listing-format issue at all. Neither #1381 nor its proposed fix would touch today's failure mode either way — nothing actionable here, this is still the same "retry later" intermittent case.
 - **WV** — real 39-vs-2975 bill discrepancy from early July is resolved (self-hosted fix confirmed at exactly 2,975), but the *original* root cause of that discrepancy was never actually explained — see `openstates-responses.md`'s WV section before reopening any related work.
 - **Node.js 20 deprecation** — all actions still show deprecation warnings (`actions/checkout@v4`, `setup-python@v5`, `cache@v4`, `upload-artifact@v4`, `action-gh-release@v2` all need bumping; `andelf/nightly-release@v1` has no newer version and needs a replacement). Not urgent but will eventually break.
 - **MI — `legislature.mi.gov` doesn't serve its full TLS certificate chain** (missing DigiCert intermediate, confirmed via `openssl s_client`). 🔄 Fix drafted and looking very promising 2026-07-24 — see the dedicated row above and `pending-branches.md` for full detail (bundled the intermediate into the Docker CA store, verified working, live test in progress).

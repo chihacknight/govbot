@@ -25,6 +25,38 @@ other states hit the same thing. Full writeup and priority-ordered next steps in
 
 ## Do first, time-sensitive
 
+- **MA `extract-text.yml` hand-fixed live 2026-07-28, but `chn-openstates-files.yml` config not
+  updated to match** — `govbot-data/ma-legislation`'s live workflow was still hardcoded
+  `runs-on: ubuntu-latest` (malegislature.gov downloads hang on Azure IPs, same reason scrape
+  needs self-hosted) and its auto-restart step was still wired to the never-provisioned
+  `secrets.PAT_WORKFLOW_TRIGGER` instead of the GitHub App token fix from PR #93 (already in the
+  shared template, already applied to MT). Hand-pasted the correctly-rendered file (rendered with
+  `runner: self-hosted`) directly into the live repo and manually triggered a run — but
+  `actions/pipeline-manager/chn-openstates-files.yml`'s `ma` entry was never given
+  `runner: self-hosted`, so the next `apply.py` run against `govbot-data` will silently overwrite
+  this back to `ubuntu-latest`. Add the config flag and confirm via a dry-run diff before that
+  happens again.
+
+- **Discovered while testing the above: no self-hosted runner existed for the `govbot-data` org
+  at all** — all 6 registered runners (`MacBookPro-1` through `-8`) are registered only to
+  `govbot-openstates-scrapers`, a completely different org; a runner registered to one org is
+  invisible to another regardless of matching labels. MA's extraction job queued forever with no
+  error shown anywhere, then got auto-cancelled and re-dispatched by the PR #93 restart fix in an
+  infinite loop (no compute burned, just Actions-tab/API spam) — disabled `extract-text.yml`
+  temporarily to stop the churn. **Registered `MacBook-20` under `govbot-data`** (nested inside
+  `actions-runner-7`'s directory) and confirmed it picks up jobs after also fixing the runner
+  group's repository access (defaulted to a restricted "selected repositories" list that didn't
+  include `ma-legislation` — a job already queued before that permission fix doesn't retroactively
+  get picked up, needs a fresh dispatch after the fix lands). Re-enabled the workflow. **Still to
+  confirm:** does a full extraction run actually complete now, end to end?
+
+- **Related, not yet checked:** the other 30 `runner: self-hosted` locales flagged in
+  `state-problems.md`'s MA entry (all inherited the Tinyproxy default from PR #75) — do any of
+  their *data*-repo (`govbot-data`) extraction/format workflows have the same "no runner exists
+  for this org" gap MA just hit, or was MA's `govbot-data` org simply never given a runner at all
+  regardless of the Tinyproxy issue? Worth checking which `govbot-data` repos have `runner:
+  self-hosted` set in `chn-openstates-files.yml` and whether a runner actually exists for that org.
+
 - **MP live GitHub Actions test in progress — first real (not just local) confirmation before
   any upstream PR.** Re-checked `fix/mp-blank-title` before trusting it: found the doc's claimed
   second commit (`4f3af9c54`, bill_id spacing normalization) had never actually been pushed —
@@ -141,6 +173,52 @@ stuck — other "success"-reporting states could be silently frozen the same way
 - **FL** — third fix (single-bill failures) on `fix/fl-streaming-bills`, not yet verified live —
   its verification run got blocked by the shrink-guard bug (now fixed) and was cancelled. Needs
   a fresh live-test run now that the shrink-guard issue is out of the way.
+
+## Small polish items
+
+- **Job name doesn't include the state.** Both `openstates-scrape.yml` templates
+  (`templates/openstates-scrape/` and `templates/openstates-scrape-paused/`) hardcode
+  `name: "🕷️ Scrape Data"` on the job — identical across all 56 state repos, so a run list
+  (e.g. `gh run list`, or eyeballing multiple tabs open at once) can't tell which state a run is
+  for without opening it. Add the state, e.g. `name: "🕷️ Scrape Data (✏️{ locale.key }✏️)"`.
+- **`error_count`/`errors` mismatch in the new `audit-summary.json` artifact.** First real run
+  (UT, 2026-07-28, run
+  [30327407237](https://github.com/govbot-openstates-scrapers/ut-legislation/actions/runs/30327407237))
+  came back clean overall but with `"error_count": 1, "errors": []` — the count and the actual
+  captured content disagree. Same *class* of bug as the already-fixed `SKIPPED_COUNT` double-print
+  issue (see `pending-branches.md`'s shrink-guard writeup), likely in `scrape.sh`'s
+  error-counting/capture logic, not new from tonight's artifact-upload change (it just made the
+  mismatch visible for the first time). Not urgent, but worth root-causing before trusting
+  `error_count` as a signal in the 56-state audit.
+- **Docker containers don't carry the state name either** — same blind spot as the job-name
+  issue above, one level down. `docker run` (in `actions/scrape/scrape.sh`) doesn't pass `--name`,
+  so every scraper container gets a random Docker-assigned name (`cranky_sutherland`,
+  `quizzical_kepler`, etc.) — `docker ps -a` across multiple local test runs (FL, MI, and others)
+  gives no way to tell which container belongs to which state without inspecting each one. Add
+  `--name ${STATE}-scrape-$(date +%s)` (or similar) to the `docker run` invocation(s).
+
+## Follow-up from 2026-07-28 branch/cleanup session
+
+- **MA scrape tripped a real (small) shrink-guard, not the duplicate-UUID false alarm.** 07-27
+  scheduled run (13h31m, self-hosted, run
+  [30244147536](https://github.com/govbot-openstates-scrapers/ma-legislation/actions/runs/30244147536)):
+  raw file count dropped 21931 → 11154 (that part's just the usual stale-duplicate cleanup the
+  guard already knows to ignore), but the *distinct bill identifier* count also genuinely dropped,
+  11153 → 11150 -- 3 fewer real bills than what's already committed. Guard correctly refused to
+  overwrite. Note: the job summary's "Distinct bills (before → after)" row is misleading here --
+  it shows 11153 → 11153 (a no-op, since nothing got committed) rather than the actual
+  fresh-vs-existing comparison that triggered the guard (11150 vs 11153); that comparison only
+  shows up in the raw scrape log. **Still need to check:** which 3 bill identifiers dropped out --
+  real site-side removal/merge/withdrawal (expected, nothing to fix) vs. this scrape genuinely
+  missing 3 bills out of ~11k (worth a look). Diff the fresh scrape's identifier list against
+  what's committed to tell which.
+
+- **Review `docs/state-scraper-rabbit-holes` branch** (Tamara-authored, 10 commits ahead of main,
+  no open PR — its earlier PR #67 already merged, these commits came after). Not just docs despite
+  the name: adds `runner: self-hosted` and un-pauses several locales (ny, il, in, ne, nv, nm, nc,
+  va, wv, vi, gu, usa) in `chn-openstates-scrape.yml`, plus an older-style `scrape.sh` edit that
+  looks superseded by what's already on main. Confirm what's actually still needed before
+  merging/closing.
 
 ## Reference
 
