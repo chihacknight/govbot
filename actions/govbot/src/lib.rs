@@ -9,6 +9,7 @@ pub mod error;
 pub mod filter;
 pub mod git;
 pub mod locale_generated;
+pub mod logs_jsonl;
 pub mod pipeline;
 pub mod processor;
 pub mod publish;

@@ -109,7 +109,8 @@ Each jurisdiction has its own repo. The root of that repo IS the dataset — no 
 │       └── sessions/{session_id}/
 │           ├── bills/{bill_id}/
 │           │   ├── metadata.json      # Bill metadata + _processing timestamps
-│           │   ├── logs/              # Action/vote-event logs
+│           │   ├── action_logs.jsonl  # Every action, one per line, append-only (repos not yet converted: logs/*.json)
+│           │   ├── vote_event_logs.jsonl  # Every roll call, one per line, append-only
 │           │   └── files/             # Bill text: original .pdf/.xml/.html + *_extracted.txt
 │           └── events/                # Committee hearings, etc.
 └── .windycivi/                        # Pipeline metadata (committed & reused)

@@ -21,7 +21,6 @@ def load_json_files(
     state_abbr: str,
     data_processed_folder: Path,
 ):
-    vote_events_ts = latest_timestamps["vote_events"]
     events_ts = latest_timestamps["events"]
 
     all_data = []
@@ -50,11 +49,10 @@ def load_json_files(
 
                     # Different count or new bill - pass to processing
                     # (Will be handled in handle_bill with granular action comparison)
-                elif filename.startswith("vote_event"):
-                    if not is_newer_than_latest(
-                        data, vote_events_ts, "vote_events", DATA_NOT_PROCESSED_FOLDER
-                    ):
-                        continue
+                # vote_event files are not gated here: every vote in the scrape
+                # goes to handle_vote_event, which skips ones already in the
+                # bill's vote_event_logs.jsonl. The old "newer than the newest
+                # vote seen" check dropped every vote that arrived late.
                 elif filename.startswith("event"):
                     if not is_newer_than_latest(
                         data, events_ts, "events", DATA_NOT_PROCESSED_FOLDER

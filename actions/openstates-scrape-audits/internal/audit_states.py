@@ -92,51 +92,75 @@ def count_bills(repo_dir: Path) -> int | None:
         return None
 
 
-# Log filenames encode the government's own recorded action date, e.g.
-# "20250116T180038Z_h09_mineralsrecommend..." or
-# "20250114T223718Z.classification.introduction.lower.json" -- always a
-# 15-char YYYYMMDDTHHMMSSZ prefix before the first "_" or ".".
+# Each log entry carries the government's own recorded date: `action.occurred_at`
+# in bills/<id>/action_logs.jsonl, `vote_event.start_date` in vote_event_logs.jsonl.
+# In the old one-file-per-log layout the same date was the filename's
+# YYYYMMDDTHHMMSSZ prefix ("20250114T223718Z.classification.introduction.lower.json").
 _LOG_TS_RE = re.compile(r"^(\d{8}T\d{6}Z)")
 
 
+def _entry_timestamp(line: dict) -> str | None:
+    obj = line.get("action") or {}
+    date = obj.get("occurred_at") if obj else (line.get("vote_event") or {}).get("start_date")
+    try:
+        return datetime.fromisoformat(date).strftime("%Y%m%dT%H%M%SZ")
+    except Exception:
+        return None
+
+
 def log_date_range(repo_dir: Path) -> tuple[str | None, str | None, int, dict[str, int]]:
-    """Scan every bill's logs/*.json filename (not contents -- fast) and
-    return (earliest, latest, count, daily histogram) across the whole state.
+    """Scan every bill's log entries and return (earliest, latest, count, daily
+    histogram) across the whole state.
 
     IMPORTANT distinction from .windycivi's action_log_files_created: that
     field is keyed by the date *we ran format*, deliberately independent of
     bill content, specifically so a garbage source date can't corrupt it
     (see timestamp_tracker.py's docstrings). The histogram built here is the
-    opposite axis on purpose -- it's keyed by each action's own
-    *government-recorded* date (same field write_action_logs() uses for the
-    filename), bucketed across every log file we already have on disk. The
-    two answer different questions: that field asks "did OUR pipeline run
-    that day," this one asks "did a real action HAPPEN that day, per the
-    government's own record." Don't merge these into one signal -- same
-    reasoning that kept the two original fields independent cross-checks.
+    opposite axis on purpose -- it's keyed by each entry's own
+    *government-recorded* date. The two answer different questions: that
+    field asks "did OUR pipeline run that day," this one asks "did a real
+    action HAPPEN that day, per the government's own record." Don't merge
+    these into one signal -- same reasoning that kept the two original
+    fields independent cross-checks.
 
-    This one is retroactively computable right now from already-committed
-    data (no future format run needed), which is what makes it useful for
-    this first-pass audit while action_log_files_created is still empty
-    everywhere.
+    Reads the per-bill .jsonl files; a repo not yet converted is read from the
+    old filenames instead (real files only: the sessions/<s>/logs/ symlinks
+    used to be counted too, doubling the count).
     """
     country_dir = repo_dir / "country:us"
     if not country_dir.is_dir():
         return None, None, 0, {}
-    try:
-        out = subprocess.run(
-            ["find", str(country_dir), "-path", "*/logs/*.json"],
-            capture_output=True, text=True, timeout=60,
-        )
-    except Exception:
-        return None, None, 0, {}
 
     timestamps = []
-    for line in out.stdout.splitlines():
-        name = line.rsplit("/", 1)[-1]
-        m = _LOG_TS_RE.match(name)
-        if m:
-            timestamps.append(m.group(1))
+    jsonl_files = list(country_dir.glob("*/sessions/*/bills/*/action_logs.jsonl")) + list(
+        country_dir.glob("*/sessions/*/bills/*/vote_event_logs.jsonl")
+    )
+    if jsonl_files:
+        for path in jsonl_files:
+            seen_ids = set()
+            for raw in path.read_text(encoding="utf-8").splitlines():
+                if not raw.strip():
+                    continue
+                line = json.loads(raw)
+                # A vote correction repeats its id; count the vote once.
+                if line.get("id") in seen_ids:
+                    continue
+                seen_ids.add(line.get("id"))
+                ts = _entry_timestamp(line)
+                if ts:
+                    timestamps.append(ts)
+    else:
+        try:
+            out = subprocess.run(
+                ["find", str(country_dir), "-type", "f", "-path", "*/bills/*/logs/*.json"],
+                capture_output=True, text=True, timeout=60,
+            )
+        except Exception:
+            return None, None, 0, {}
+        for line in out.stdout.splitlines():
+            m = _LOG_TS_RE.match(line.rsplit("/", 1)[-1])
+            if m:
+                timestamps.append(m.group(1))
 
     if not timestamps:
         return None, None, 0, {}

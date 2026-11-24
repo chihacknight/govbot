@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List
+from utils.log_jsonl import VOTE_EVENT_LOG_FILE, read_lines
 
 
 def load_orphan_tracking(repo_root: Path) -> Dict:
@@ -117,19 +118,15 @@ def cleanup_placeholders(repo_root: Path) -> Dict[str, int]:
             # Orphan! Bill never came through, but we have votes/events for it
             orphans_current_run.add(bill_id)
 
-            # Check what data we do have
-            logs_folder = bill_folder / "logs"
-            has_logs = logs_folder.exists()
-
-            vote_count = 0
+            # Check what data we do have: votes recorded for this bill. (Events
+            # never land in a bill folder -- they go to sessions/{s}/events/ --
+            # so event_count stays 0; kept for existing tracking files.)
+            vote_ids = {
+                line.get("id")
+                for line in read_lines(bill_folder / VOTE_EVENT_LOG_FILE)
+            }
+            vote_count = len(vote_ids)
             event_count = 0
-
-            if has_logs:
-                for log_file in logs_folder.glob("*.json"):
-                    if "vote" in log_file.name:
-                        vote_count += 1
-                    elif "event" in log_file.name:
-                        event_count += 1
 
             # Update tracking
             if bill_id in orphan_tracking:

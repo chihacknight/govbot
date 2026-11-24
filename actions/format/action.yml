@@ -39,7 +39,10 @@ runs:
       shell: bash
       run: |
         echo "📥 Cloning data from ${{ inputs.scraper-repo }}..."
-        git clone --depth 1 https://github.com/${{ inputs.scraper-repo }}.git scraper-data
+        # Not --depth 1: the newest commit is sometimes a template update, not a
+        # scrape, and the step below needs the last commit that touched _data/
+        # (its SHA and its time, which becomes each new log entry's first_seen).
+        git clone --depth 20 https://github.com/${{ inputs.scraper-repo }}.git scraper-data
 
         # Check if _data folder exists
         if [ -d "scraper-data/_data/${{ inputs.state }}" ]; then
@@ -95,6 +98,12 @@ runs:
         fi
 
         echo "🔍 Scraper data SHA: ${SCRAPER_DATA_SHA:0:8}"
+
+        # When that scrape was committed: stamped as first_seen on every action
+        # and vote this run logs (see actions/format/utils/log_jsonl.py).
+        SCRAPE_COMMITTED_AT=$(git -C scraper-data log -1 --format="%cI" "$SCRAPER_DATA_SHA")
+        echo "OSDF_FIRST_SEEN=${SCRAPE_COMMITTED_AT}" >> "$GITHUB_ENV"
+        echo "🕒 Scrape committed at ${SCRAPE_COMMITTED_AT}"
 
         # Force update bypasses the staleness check
         if [ "${{ inputs.force-update }}" = "true" ]; then
@@ -175,14 +184,21 @@ runs:
         # Ensure we're in the action directory
         cd "$ACTION_DIR"
 
-        # Use main.sh with pipenv command pre-set for CI
+        # Use main.sh with pipenv command pre-set for CI. A formatter failure
+        # fails this step (it used to be swallowed with `|| true`, so a crash
+        # still showed green and nothing was committed).
+        FORMATTER_STATUS=0
         FORMATTER_OUTPUT=$("$ACTION_DIR/main.sh" \
           "$STATE" \
           "$OPENSTATE_DATA_FOLDER" \
           "$GIT_REPO_FOLDER" \
-          "pipenv" 2>&1) || true
+          "pipenv" 2>&1) || FORMATTER_STATUS=$?
 
         echo "$FORMATTER_OUTPUT"
+        if [ "$FORMATTER_STATUS" -ne 0 ]; then
+          echo "::error::Formatter exited with status $FORMATTER_STATUS (see output above)"
+          exit "$FORMATTER_STATUS"
+        fi
 
         # Extract summary statistics for GitHub Actions summary
         BILLS_SAVED=$(echo "$FORMATTER_OUTPUT" | grep -oP 'Bills saved: \K\d+' || echo "0")
@@ -201,85 +217,6 @@ runs:
         echo "| Orphaned Bills Found | $ORPHANS_FOUND |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "✅ **Status:** Complete" >> $GITHUB_STEP_SUMMARY
-
-    - name: Create session-level log symlinks
-      if: steps.check-new-data.outputs.data-is-new == 'true'
-      shell: bash
-      working-directory: ${{ github.action_path }}
-      run: |
-        set -euo pipefail
-        ACTION_DIR="${{ github.action_path }}"
-        REPO_ROOT="${{ github.workspace }}"
-        STATE_CODE="${{ inputs.state }}"
-
-        # Find the state directory (could be country:us/state:{state} or just state:{state})
-        STATE_DIR=""
-        if [ -d "$REPO_ROOT/country:us/state:$STATE_CODE" ]; then
-          STATE_DIR="$REPO_ROOT/country:us/state:$STATE_CODE"
-        elif [ -d "$REPO_ROOT/state:$STATE_CODE" ]; then
-          STATE_DIR="$REPO_ROOT/state:$STATE_CODE"
-        else
-          echo "⚠️ State directory not found, skipping log symlinks"
-          exit 0
-        fi
-
-        # Find all session directories
-        SESSIONS_DIR="$STATE_DIR/sessions"
-        if [ ! -d "$SESSIONS_DIR" ]; then
-          echo "⚠️ No sessions directory found, skipping log symlinks"
-          exit 0
-        fi
-
-        # Process each session
-        TOTAL_SESSIONS=0
-        PROCESSED_SESSIONS=0
-        FAILED_SESSIONS=0
-
-        while IFS= read -r session_dir; do
-          if [ ! -d "$session_dir" ]; then
-            continue
-          fi
-
-          SESSION_ID=$(basename "$session_dir")
-          BILLS_PATH="$session_dir/bills"
-
-          # Check if this session has bills with logs
-          if [ ! -d "$BILLS_PATH" ]; then
-            continue
-          fi
-
-          # Check if there are any log files
-          LOG_COUNT=$(find "$BILLS_PATH" -type f -path "*/logs/*.json" 2>/dev/null | wc -l | tr -d ' ')
-          if [ "$LOG_COUNT" -eq 0 ]; then
-            continue
-          fi
-
-          TOTAL_SESSIONS=$((TOTAL_SESSIONS + 1))
-          TARGET_LOGS_DIR="$session_dir/logs"
-
-          echo "📦 Processing: $STATE_CODE / $SESSION_ID ($LOG_COUNT log files)"
-
-          # Run symlink-logs Python script
-          if python3 "$ACTION_DIR/symlink_logs.py" \
-            --root "$STATE_DIR" \
-            --session "$SESSION_ID" \
-            --target "$TARGET_LOGS_DIR"; then
-            PROCESSED_SESSIONS=$((PROCESSED_SESSIONS + 1))
-            echo "✅ Linked logs for $STATE_CODE / $SESSION_ID"
-          else
-            FAILED_SESSIONS=$((FAILED_SESSIONS + 1))
-            echo "❌ Failed to process $STATE_CODE / $SESSION_ID"
-          fi
-        done < <(find "$SESSIONS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort || true)
-
-        if [ "$TOTAL_SESSIONS" -eq 0 ]; then
-          echo "ℹ️ No sessions with log files found"
-        else
-          echo "✅ Processed $PROCESSED_SESSIONS/$TOTAL_SESSIONS sessions"
-          if [ "$FAILED_SESSIONS" -gt 0 ]; then
-            echo "⚠️ $FAILED_SESSIONS sessions failed"
-          fi
-        fi
 
     - name: Generate DCAT data.json
       if: steps.check-new-data.outputs.data-is-new == 'true'

@@ -148,6 +148,33 @@ Mock legislative data is available for offline development:
 - Contains: Wyoming (wy) and Guam (gu) sample data
 - Usage: `govbot logs --govbot-dir ./actions/govbot/mocks/govbot_data`
 
+## Bill activity logs (`action_logs.jsonl`, `vote_event_logs.jsonl`)
+
+Each bill folder holds `metadata.json` plus two append-only JSON Lines logs, written by
+`actions/format/utils/log_jsonl.py`: `action_logs.jsonl` (every action) and
+`vote_event_logs.jsonl` (every roll call). Their purpose is "what's new since yesterday":
+the nightly scrape is the whole dataset, and each new entry is appended once, stamped with
+`first_seen` = the raw scrape's **commit time** (not the formatter's run time), so `git diff`
+of a night is exactly the new lines. Lines are never edited or reordered. A vote whose
+substance changes later is appended again under the same `id` (readers take the last line
+per `id`). Votes are deduped by roll-call `identifier`, else date + motion + chamber +
+counts; there is no "newer than the newest vote" gate any more (it silently lost late
+votes). Line schemas: `actions/format/schemas/action_log.schema.json` /
+`vote_event_log.schema.json` (copies in `/schemas`). Full reference: "Action and vote
+logs" in `actions/format/docs/DATA_STRUCTURES.md`. Decisions and evidence:
+`tamara-notes/processes/workstreams/jsonl-logs.md`.
+
+The **old layout** (`bills/<id>/logs/*.json`, one file per entry, plus symlinks to each
+under `sessions/<s>/logs/`, made by the deleted `symlink_logs.py`) is still in the live
+`govbot-data` repos until they're converted with `python3 actions/format/convert_logs.py
+<repo>` (plus the backfill from the raw scraper history). Readers handle both layouts
+through one helper each side (Rust: `actions/govbot/src/logs_jsonl.rs`; Python:
+`log_jsonl.py`); the formatter refuses to write to an unconverted repo. Old action files
+come in two shapes (`occurred_at`/`jurisdiction_id`/`classifications`, and OpenStates' own
+`date`/`organization_id`/`classification`); readers accept both, conversion normalizes to
+the first. Tests: `cd actions/format && python3 test_log_jsonl.py`;
+`actions/govbot/tests/logs_layout_snaps.rs`.
+
 ## Pages Dashboard
 
 The GitHub Pages dashboard's topic taxonomy lives in `scripts/govbot-dashboard.yml`

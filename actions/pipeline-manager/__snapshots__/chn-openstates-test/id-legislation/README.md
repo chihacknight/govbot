@@ -95,7 +95,8 @@ id-legislation/
 │               │       │   ├── *.xml          # Original XMLs
 │               │       │   ├── *.html         # Original HTML
 │               │       │   └── *_extracted.txt # Extracted text
-│               │       └── logs/              # Action/event/vote logs
+│               │       ├── action_logs.jsonl  # Every action, one per line, append-only
+│               │       └── vote_event_logs.jsonl # Every roll call, one per line, append-only
 │               └── events/                    # Committee hearings
 │                   └── {timestamp}_hearing.json
 ├── .windycivi/                      # Pipeline metadata (committed)
@@ -125,7 +126,9 @@ Formatted metadata is saved to `country:us/state:id/sessions/`, organized by ses
 Each bill directory contains:
 
 - `metadata.json` – structured information about the bill **with `_processing` timestamps**
-- `logs/` – action, event, and vote logs
+- `action_logs.jsonl` – every action on the bill, one JSON object per line, appended the night it was first seen (`first_seen`); the last lines are the newest
+- `vote_event_logs.jsonl` – every roll call, one per line; a correction repeats the vote's `id` on a later line
+- (a repo not yet converted to this layout has a `logs/` folder with one file per action or vote instead)
 - `files/` – original documents and extracted text
 
 **Example `metadata.json` structure:**
@@ -201,7 +204,7 @@ Tracks **orphaned bills** - bills that have vote events or hearings but no actua
 
 ### Formatting Logs
 
-- Logs are saved per bill under `logs/`
+- New actions and votes are appended to each bill's `action_logs.jsonl` / `vote_event_logs.jsonl`
 - Processing summary shows total bills, events, and votes processed
 - Session mapping tracks bill-to-session relationships
 - **Orphan tracking** shows new, existing, and resolved orphans

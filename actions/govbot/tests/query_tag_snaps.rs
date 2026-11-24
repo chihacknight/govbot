@@ -445,6 +445,7 @@ fn copy_dir(from: &Path, to: &Path) {
 /// HB0002 (a session with no tag file). HB0001 has two, so ranking within a bill
 /// is visible. Smith votes in all of them; Jones only on HB0002.
 fn wy_with_votes() -> tempfile::TempDir {
+    use std::io::Write;
     let dir = tempfile::tempdir().unwrap();
     let repo = dir.path().join("repos").join("wy-legislation");
     copy_dir(
@@ -471,16 +472,17 @@ fn wy_with_votes() -> tempfile::TempDir {
             "votes": votes,
             "counts": [{ "option": "yes", "value": voters.len() }],
         });
-        std::fs::write(
-            sessions
-                .join(session)
-                .join("bills")
-                .join(bill)
-                .join("logs")
-                .join(format!("{stamp}.vote_event.pass.lower.json")),
-            serde_json::to_string_pretty(&event).unwrap(),
-        )
-        .unwrap();
+        // One line of the bill's vote_event_logs.jsonl (actions/format/utils/log_jsonl.py).
+        let line = json!({
+            "id": format!("{stamp}.vote_event.pass.lower"),
+            "first_seen": "2025-11-25T00:00:00+00:00",
+            "chamber": "lower",
+            "vote_event": event,
+            "bill_id": bill,
+        });
+        let path = sessions.join(session).join("bills").join(bill).join("vote_event_logs.jsonl");
+        let mut file = std::fs::OpenOptions::new().create(true).append(true).open(path).unwrap();
+        writeln!(file, "{}", serde_json::to_string(&line).unwrap()).unwrap();
     }
     dir
 }

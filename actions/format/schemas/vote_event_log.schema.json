@@ -1,96 +1,45 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/windy-civi/toolkit/actions/format/schemas/vote_event_log.schema.json",
-  "title": "Vote Event Log Schema",
-  "description": "Schema for validating vote event log files from formatted snapshots",
+  "$id": "https://github.com/chihacknight/govbot/actions/format/schemas/vote_event_log.schema.json",
+  "title": "Vote event log line",
+  "description": "One line of a bill's vote_event_logs.jsonl (bills/{bill_id}/vote_event_logs.jsonl): one roll call, appended the first time the pipeline saw it, or again (same id) when a later scrape corrects its result, counts or member votes. Append-only.",
   "type": "object",
   "required": [
-    "identifier",
-    "motion_text",
-    "motion_classification",
-    "start_date",
-    "result",
-    "organization",
-    "legislative_session",
-    "bill",
-    "bill_action",
-    "bill_identifier",
-    "votes",
-    "counts",
-    "sources",
-    "extras"
+    "id",
+    "first_seen",
+    "chamber",
+    "vote_event",
+    "bill_id"
   ],
   "properties": {
-    "identifier": {
+    "id": {
       "type": "string",
-      "description": "Optional identifier for the vote event (may be empty string)"
+      "description": "Stable id within this bill's file: the old per-entry filename without .json (e.g. '20250114T210515Z.classification.introduction.upper'), with a '~<hash>' suffix when two different entries would otherwise share it. In vote_event_logs.jsonl a correction repeats the id of the vote it corrects; the last line for an id is current."
     },
-    "motion_text": {
-      "type": "string",
-      "description": "Text describing the motion being voted on"
-    },
-    "motion_classification": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Array of motion classification strings"
-    },
-    "start_date": {
-      "type": "string",
+    "first_seen": {
+      "type": [
+        "string",
+        "null"
+      ],
       "format": "date-time",
-      "description": "ISO 8601 timestamp of when the vote occurred"
+      "description": "When the raw scrape that first contained this entry was committed to the scraper repo (git commit time, ISO 8601). Filter on this for 'what is new since yesterday'. null for entries converted from the old layout with no record of when they were first seen."
     },
-    "result": {
-      "type": "string",
-      "enum": ["pass", "fail", "tie", "other"],
-      "description": "Result of the vote"
+    "chamber": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Plain chamber classification ('upper', 'lower', 'legislature', 'executive', ...) decoded from the '~{\"classification\": ...}' string; null when there is none."
     },
-    "organization": {
-      "type": "string",
-      "description": "The organization conducting the vote, may be a JSON string"
+    "vote_event": {
+      "$ref": "#/definitions/VoteEvent"
     },
-    "legislative_session": {
-      "type": "string",
-      "description": "The legislative session identifier"
-    },
-    "bill": {
-      "type": "string",
-      "description": "ID reference to the related bill"
-    },
-    "bill_action": {
-      "type": ["string", "null"],
-      "description": "Optional reference to a specific bill action"
-    },
-    "bill_identifier": {
-      "type": "string",
-      "description": "The bill identifier (e.g., SF0001)"
-    },
-    "votes": {
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/Vote"
-      },
-      "description": "Array of individual vote objects"
-    },
-    "counts": {
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/VoteCount"
-      },
-      "description": "Array of vote count objects"
-    },
-    "sources": {
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/Source"
-      },
-      "description": "Array of source objects"
-    },
-    "extras": {
-      "type": "object",
-      "additionalProperties": true,
-      "description": "Additional metadata specific to the jurisdiction"
+    "bill_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The bill identifier (e.g. SF0001)"
     }
   },
   "additionalProperties": false,
@@ -106,7 +55,16 @@
       "properties": {
         "option": {
           "type": "string",
-          "enum": ["yes", "no", "abstain", "absent", "excused", "other"],
+          "enum": [
+            "yes",
+            "no",
+            "abstain",
+            "absent",
+            "excused",
+            "not voting",
+            "paired",
+            "other"
+          ],
           "description": "The vote option"
         },
         "voter_name": {
@@ -133,7 +91,16 @@
       "properties": {
         "option": {
           "type": "string",
-          "enum": ["yes", "no", "abstain", "absent", "excused", "other"],
+          "enum": [
+            "yes",
+            "no",
+            "abstain",
+            "absent",
+            "excused",
+            "not voting",
+            "paired",
+            "other"
+          ],
           "description": "The vote option"
         },
         "value": {
@@ -146,7 +113,9 @@
     },
     "Source": {
       "type": "object",
-      "required": ["url"],
+      "required": [
+        "url"
+      ],
       "properties": {
         "url": {
           "type": "string",
@@ -159,7 +128,108 @@
         }
       },
       "additionalProperties": false
+    },
+    "VoteEvent": {
+      "type": "object",
+      "required": [
+        "identifier",
+        "motion_text",
+        "motion_classification",
+        "start_date",
+        "result",
+        "organization",
+        "legislative_session",
+        "bill",
+        "bill_action",
+        "bill_identifier",
+        "votes",
+        "counts",
+        "sources",
+        "extras"
+      ],
+      "properties": {
+        "identifier": {
+          "type": "string",
+          "description": "Optional identifier for the vote event (may be empty string)"
+        },
+        "motion_text": {
+          "type": "string",
+          "description": "Text describing the motion being voted on"
+        },
+        "motion_classification": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Array of motion classification strings"
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of when the vote occurred"
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fail",
+            "tie",
+            "other"
+          ],
+          "description": "Result of the vote"
+        },
+        "organization": {
+          "type": "string",
+          "description": "The organization conducting the vote, may be a JSON string"
+        },
+        "legislative_session": {
+          "type": "string",
+          "description": "The legislative session identifier"
+        },
+        "bill": {
+          "type": "string",
+          "description": "ID reference to the related bill"
+        },
+        "bill_action": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Optional reference to a specific bill action"
+        },
+        "bill_identifier": {
+          "type": "string",
+          "description": "The bill identifier (e.g., SF0001)"
+        },
+        "votes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Vote"
+          },
+          "description": "Array of individual vote objects"
+        },
+        "counts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VoteCount"
+          },
+          "description": "Array of vote count objects"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Source"
+          },
+          "description": "Array of source objects"
+        },
+        "extras": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Additional metadata specific to the jurisdiction"
+        }
+      },
+      "description": "The OpenStates vote event as published (minus the scraper's _id and scraped_at). Extra fields some scrapers add (e.g. California's dedupe_key) are kept.",
+      "additionalProperties": true
     }
   }
 }
-

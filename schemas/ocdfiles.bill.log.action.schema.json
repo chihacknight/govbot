@@ -1,21 +1,45 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/windy-civi/toolkit/actions/format/schemas/action_log.schema.json",
-  "title": "Action Log Schema",
-  "description": "Schema for validating action log files from formatted snapshots (includes both action logs and classification logs)",
+  "$id": "https://github.com/chihacknight/govbot/actions/format/schemas/action_log.schema.json",
+  "title": "Action log line",
+  "description": "One line of a bill's action_logs.jsonl (bills/{bill_id}/action_logs.jsonl): one action, appended the first time the pipeline saw it. The file is append-only; lines are never edited or reordered.",
   "type": "object",
   "required": [
+    "id",
+    "first_seen",
+    "chamber",
     "action",
     "bill_id"
   ],
   "properties": {
+    "id": {
+      "type": "string",
+      "description": "Stable id within this bill's file: the old per-entry filename without .json (e.g. '20250114T210515Z.classification.introduction.upper'), with a '~<hash>' suffix when two different entries would otherwise share it. In vote_event_logs.jsonl a correction repeats the id of the vote it corrects; the last line for an id is current."
+    },
+    "first_seen": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "When the raw scrape that first contained this entry was committed to the scraper repo (git commit time, ISO 8601). Filter on this for 'what is new since yesterday'. null for entries converted from the old layout with no record of when they were first seen."
+    },
+    "chamber": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Plain chamber classification ('upper', 'lower', 'legislature', 'executive', ...) decoded from the '~{\"classification\": ...}' string; null when there is none."
+    },
     "action": {
-      "$ref": "#/definitions/Action",
-      "description": "The action object"
+      "$ref": "#/definitions/Action"
     },
     "bill_id": {
-      "type": "string",
-      "description": "The bill identifier (e.g., SF0001)"
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The bill identifier (e.g. SF0001)"
     }
   },
   "additionalProperties": false,
@@ -24,43 +48,68 @@
       "type": "object",
       "required": [
         "description",
-        "date",
-        "organization_id",
-        "classification",
-        "related_entities"
+        "occurred_at",
+        "jurisdiction_id",
+        "session_id",
+        "entity_type",
+        "classifications",
+        "related_entities",
+        "sources"
       ],
       "properties": {
         "description": {
           "type": "string",
-          "description": "Description of the action"
+          "description": "The action as the legislature published it"
         },
-        "date": {
+        "occurred_at": {
           "type": "string",
-          "format": "date-time",
-          "description": "ISO 8601 timestamp of when the action occurred"
+          "description": "When the action happened, per the government (ISO 8601; 'no_date' if missing)"
         },
-        "organization_id": {
+        "jurisdiction_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The body that took the action, as OpenStates gives it, e.g. '~{\"classification\": \"lower\"}'"
+        },
+        "session_id": {
+          "type": "string"
+        },
+        "entity_type": {
           "type": "string",
-          "description": "The organization that performed the action, may be a JSON string"
+          "enum": [
+            "bill"
+          ]
         },
-        "classification": {
+        "classifications": {
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "description": "Array of classification strings"
+          }
         },
         "related_entities": {
           "type": "array",
           "items": {
+            "type": "object"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
             "type": "object",
-            "additionalProperties": true
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "note": {
+                "type": "string"
+              }
+            }
           },
-          "description": "Array of related entity objects"
+          "description": "The bill's sources (its official page), copied onto every action so a lone log line always leads back to the bill"
         }
       },
       "additionalProperties": false
     }
   }
 }
-

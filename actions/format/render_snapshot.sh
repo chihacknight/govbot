@@ -25,7 +25,8 @@ if [ ! -d "$INPUT_DIR" ]; then
 fi
 cp -r "$INPUT_DIR" "$TMP_DIR"
 
-# Run the main formatter script
-"$SCRIPT_DIR/main.sh" "$STATE" "$TMP_DIR" "$OUTPUT_DIR"
+# Run the main formatter script. first_seen is pinned to the mock scrape's date
+# (prod-mocks-2025-11-25) so the snapshot doesn't change with the day it's rendered.
+OSDF_FIRST_SEEN="2025-11-25T00:00:00+00:00" "$SCRIPT_DIR/main.sh" "$STATE" "$TMP_DIR" "$OUTPUT_DIR"
 
 

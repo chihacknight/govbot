@@ -1,4 +1,5 @@
 import click
+from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import mkdtemp
 
@@ -13,6 +14,7 @@ from utils.process_utils import process_and_save
 from postprocessors.event_bill_linker import link_events_to_bills_pipeline
 from postprocessors.cleanup_placeholders import cleanup_placeholders
 from utils.file_utils import verify_folder_exists
+from utils.log_jsonl import has_legacy_logs
 
 session_mapping = {}
 
@@ -46,13 +48,36 @@ session_mapping = {}
         "from an unexpected session silently landing in this repo."
     ),
 )
+@click.option(
+    "--first-seen",
+    default=None,
+    help=(
+        "When the raw scrape being formatted was committed to the scraper repo "
+        "(ISO 8601, e.g. `git log -1 --format=%cI`). Stamped as `first_seen` on "
+        "every action and vote this run logs. Defaults to now, for local runs."
+    ),
+)
 def main(
     state: str,
     openstates_data_folder: Path,
     git_repo_folder: Path,
     expected_session: str = None,
+    first_seen: str = None,
 ):
     state_abbr = state.lower()
+
+    # A repo still in the old one-file-per-action layout must be converted (with
+    # the backfill from the raw history) before this formatter writes to it;
+    # otherwise one bill's history would be split across both layouts.
+    if has_legacy_logs(git_repo_folder):
+        raise click.ClickException(
+            f"{git_repo_folder} still has old-style logs/ folders. Convert it first: "
+            "python3 convert_logs.py <repo> (see actions/format/docs/DATA_STRUCTURES.md)."
+        )
+
+    if not first_seen:
+        first_seen = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    print(f"🕒 Logging new entries with first_seen={first_seen}")
 
     # New v2.0 structure: .windycivi/ contains all pipeline metadata
     windycivi_folder = git_repo_folder / ".windycivi"
@@ -104,6 +129,7 @@ def main(
         latest_timestamps,
         git_repo_folder,
         expected_session=expected_session,
+        first_seen=first_seen,
     )
 
     # 5. Link archived event logs to state sessions and save

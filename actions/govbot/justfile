@@ -220,34 +220,23 @@ mocks *LOCALES:
         find "$child" -type f \( -name "README.md" -o -name ".gitignore" \) -delete 2>/dev/null || true
     }
     
+    function convert_logs {
+        local child="$1"
+        [ -d "$child" ] || return 0
+        # Live repos not yet converted still have one file per log entry; give
+        # the mocks the current per-bill .jsonl layout.
+        (cd ../format && python3 convert_logs.py "$OLDPWD/$child" >/dev/null)
+    }
+
     function prune_logs {
         local child="$1"
         [ -d "$child" ] || return 0
-        # For each logs directory (both bill-level and session-level), keep only the first $LOG_LIMIT log files
-        # This handles both regular files and symlinks
-        while IFS= read -r logs_dir; do
-            [ -d "$logs_dir" ] || continue
-            
-            local log_files=()
-            # Find both regular files and symlinks (symlinks are type l, but we want to check all entries)
-            while IFS= read -r log_file; do
-                [ -e "$log_file" ] && log_files+=("$log_file")
-            done < <(find "$logs_dir" -mindepth 1 -maxdepth 1 \( -type f -o -type l \) -name "*.json" 2>/dev/null | sort)
-            
-            local log_count=${#log_files[@]}
-            if (( log_count <= LOG_LIMIT )); then
-                continue
-            fi
-            
-            for ((i=LOG_LIMIT; i<log_count; i++)); do
-                local excess_file="${log_files[i]}"
-                if [ -n "$excess_file" ] && [ -e "$excess_file" ]; then
-                    rm -f "$excess_file"
-                fi
-            done
-        done < <(find "$child" -type d -name "logs" 2>/dev/null)
+        # Keep only the first $LOG_LIMIT lines of each bill's action/vote log
+        while IFS= read -r log_file; do
+            head -n "$LOG_LIMIT" "$log_file" > "$log_file.tmp" && mv "$log_file.tmp" "$log_file"
+        done < <(find "$child" -type f -name "*_logs.jsonl" 2>/dev/null)
     }
-    
+
     function prune_bills {
         local child="$1"
         [ -d "$child" ] || return 0
@@ -280,24 +269,6 @@ mocks *LOCALES:
         rm -rf "$child/.git"
     }
     
-    function remove_dead_symlinks {
-        local child="$1"
-        [ -d "$child" ] || return 0
-        # Find all dead symlinks in logs directories and remove them
-        # This is needed because pruning bills can leave symlinks pointing to deleted files
-        local dead_count=0
-        while IFS= read -r symlink; do
-            # Check if symlink is dead (target doesn't exist)
-            if [ ! -e "$symlink" ]; then
-                rm -f "$symlink" && ((dead_count++))
-            fi
-        done < <(find "$child" -type l -path "*/logs/*" 2>/dev/null)
-        
-        if [ $dead_count -gt 0 ]; then
-            echo "Removed $dead_count dead symlink(s) from logs directories"
-        fi
-    }
-    
     # For each repo, do some pruning/cleanup
     echo ""
     echo "🧹 Cleaning up mocks..."
@@ -305,11 +276,10 @@ mocks *LOCALES:
         if [ -d "$child" ]; then
             delete_unnecessary_dirs "$child"
             delete_files_dir "$child"
+            convert_logs "$child"
             prune_bills "$child"
             prune_logs "$child"
             delete_git_dir "$child"
-            # Remove dead symlinks after pruning (pruning bills can break symlinks in logs)
-            remove_dead_symlinks "$child"
         fi
     done
     

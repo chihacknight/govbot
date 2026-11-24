@@ -55,10 +55,12 @@ pub struct Metadata {
     // Note: sponsors field removed - use the new join system instead
 }
 
-/// Internal representation of a file with its timestamp
+/// Internal representation of one log entry (a file, or a line of a .jsonl file)
 #[derive(Debug, Clone)]
 pub struct FileWithTimestamp {
     pub path: PathBuf,
     pub timestamp: Option<String>,
     pub relative_path: String,
+    /// The entry itself, already read (a `.jsonl` file holds many).
+    pub record: Option<crate::logs_jsonl::LogRecord>,
 }

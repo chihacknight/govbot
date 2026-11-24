@@ -15,6 +15,7 @@ def route_handler(
     DATA_PROCESSED_FOLDER: Path,
     latest_timestamps: LatestTimestamps,
     output_folder: Path,
+    first_seen: Optional[str] = None,
 ) -> Optional[str]:
 
     if "bill_" in filename:
@@ -25,6 +26,7 @@ def route_handler(
             DATA_NOT_PROCESSED_FOLDER,
             filename,
             latest_timestamps,
+            first_seen=first_seen,
         )
         return "bill" if success else None
 
@@ -36,6 +38,7 @@ def route_handler(
             DATA_NOT_PROCESSED_FOLDER,
             filename,
             latest_timestamps,
+            first_seen=first_seen,
         )
         return "vote_event" if success else None
 
@@ -65,6 +68,7 @@ def process_and_save(
     latest_timestamps: LatestTimestamps,
     output_folder: Path,
     expected_session: Optional[str] = None,
+    first_seen: Optional[str] = None,
 ) -> dict[str, int]:
     bill_count = 0
     event_count = 0
@@ -112,6 +116,7 @@ def process_and_save(
             DATA_PROCESSED_FOLDER,
             latest_timestamps,
             output_folder,
+            first_seen=first_seen,
         )
         if result not in ("bill", "event", "vote_event"):
             print(f"⚠️ Unrecognized result from handler for {filename}: {result}")

@@ -11,14 +11,6 @@ class SessionInfo(TypedDict):
     date_folder: str
 
 
-TRACKER_CLASSIFICATIONS = {
-    "introduction",
-    "passage",
-    "executive-receipt",
-    "became-law",
-}
-
-
 def verify_folder_exists(folder_path):
     """Raise an error if the specified folder does not exist."""
     folder = Path(folder_path)
@@ -204,103 +196,6 @@ def record_error_file(
     with open(folder / filename, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
     print(f"📄 Saved error file to: {folder / filename}")
-
-
-def slugify(text: str, max_length=100):
-    """
-    Converts a string to a safe, lowercase, underscore-separated slug.
-    Strips punctuation (including dashes) and truncates long filenames.
-    """
-    text = text.lower()
-    text = re.sub(r"[^\w\s]", "", text)
-    text = re.sub(r"\s+", "_", text)
-    text = text.strip("_")
-    return text[:max_length]
-
-
-def write_action_logs(
-    actions: list[dict[str, Any]], bill_identifier: str, sources: list[dict[str, Any]], session_id: str, log_folder: Union[str, Path]
-) -> None:
-    """
-    Writes one JSON file per action for a bill.
-
-    If the action has a classification, file is named:
-        {timestamp}.classification.{classification}.{org_class}.json
-    Otherwise:
-        {timestamp}_{slugified_description}.json
-    """
-    for action in actions:
-        date = action.get("date")
-        desc = action.get("description", "no_description")
-        timestamp = format_timestamp(date) if date else "unknown"
-
-        classifications = action.get("classification", [])
-        org_id = action.get("organization_id", "")
-
-        if classifications and classifications[0] in TRACKER_CLASSIFICATIONS:
-            classification = classifications[0]
-            # Extract org classification like "lower" or "upper" from string: '~{"classification": "lower"}'
-            org_class = "unknown"
-            if "classification" in org_id:
-                try:
-                    org_dict = json.loads(org_id.strip("~"))
-                    org_class = org_dict.get("classification", "unknown")
-                except Exception:
-                    pass
-
-            filename = f"{timestamp}.classification.{classification}.{org_class}.json"
-        else:
-            slug = slugify(desc)
-            filename = f"{timestamp}_{slug}.json"
-
-        output_file = Path(log_folder) / filename
-        action_log = {
-            "action": {
-                "description": action.get("description", "no_description"),
-                "occurred_at": action.get("date", "no_date"),
-                "jurisdiction_id": action.get("organization_id", "no_jurisdiction"),
-                "session_id": session_id,
-                "entity_type": "bill",
-                "classifications": action.get("classification", []),
-                "related_entities": action.get("related_entities", []),
-                "sources": sources,
-            },
-            "bill_id": bill_identifier
-        }
-
-        with open(output_file, "w", encoding="utf-8") as f:
-            json.dump(action_log, f, indent=2)
-
-
-def write_vote_event_log(vote_event: dict[str, Any], log_folder: Union[str, Path]) -> None:
-    """
-    Saves a single vote_event file as a timestamped log.
-
-    - If result == "pass":
-        YYYYMMDDT000000Z.vote_event.pass.{org_class}.json
-    - Else:
-        YYYYMMDDT000000Z_vote_event_<result>.json
-    """
-    date = vote_event.get("start_date")
-    timestamp = format_timestamp(date) if date else "unknown"
-    result = vote_event.get("result", "unknown")
-
-    if result == "pass":
-        org_id = vote_event.get("organization", "")
-        org_class = "unknown"
-        if "classification" in org_id:
-            try:
-                org_dict = json.loads(org_id.strip("~"))
-                org_class = org_dict.get("classification", "unknown")
-            except Exception:
-                pass
-        filename = f"{timestamp}.vote_event.pass.{org_class}.json"
-    else:
-        filename = f"{timestamp}_vote_event_{slugify(result)}.json"
-
-    output_file = Path(log_folder) / filename
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(vote_event, f, indent=2)
 
 
 def list_json_files(folder: Path) -> list[Path]:

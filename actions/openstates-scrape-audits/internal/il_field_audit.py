@@ -231,16 +231,25 @@ def stratified_sample(bills, n, seed):
 
 
 def vote_counts(repo):
-    """Vote events are separate files (bills/<id>/logs/*.vote_event.*.json); count per bill from
-    the git tree so a metadata-only sparse checkout is enough."""
+    """Distinct vote events per bill. Reads bills/<id>/vote_event_logs.jsonl (one line per
+    vote, a correction repeats its id); falls back to the old one-file-per-vote layout
+    (bills/<id>/logs/*vote_event*.json) from the git tree, so a metadata-only sparse
+    checkout of an unconverted repo still works."""
+    c = collections.Counter()
+    jsonl = sorted((Path(repo) / SESSION_DIR).glob("*/vote_event_logs.jsonl"))
+    if jsonl:
+        for f in jsonl:
+            ids = {json.loads(l).get("id") for l in f.read_text(encoding="utf-8").splitlines() if l.strip()}
+            c[f.parent.name] = len(ids)
+        return c
     try:
         names = subprocess.run(["git", "-C", str(repo), "ls-tree", "-r", "--name-only", "HEAD", SESSION_DIR],
                                capture_output=True, text=True, check=True).stdout.splitlines()
     except Exception:  # noqa: BLE001 - not a git checkout: votes just aren't counted
         return None
-    c = collections.Counter()
     for n in names:
-        if ".vote_event." in n:
+        # Both old naming forms: "<ts>.vote_event.pass.<chamber>.json" and "<ts>_vote_event_<result>.json"
+        if "/logs/" in n and "vote_event" in n.rsplit("/", 1)[-1]:
             c[n.split("/")[5]] += 1
     return c
 

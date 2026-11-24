@@ -5,10 +5,10 @@
 # truncated=true), so for a repo too big for one API response, this reads the
 # same signal off a full local clone instead, where there's no such cap.
 #
-# Same underlying logic as the API version: actions/format only writes a new
-# file under a bill's logs/ when find_new_actions() finds something genuinely
-# new, and the filename is prefixed with the action's own government-recorded
-# date (%Y%m%dT%H%M%SZ). The max of those filenames across a state's repo is
+# Same underlying logic as the API version: actions/format only logs an entry
+# (a line in a bill's action_logs.jsonl / vote_event_logs.jsonl) when it's
+# genuinely new, and each entry carries the government's own recorded date.
+# The max of those dates across a state's repo is
 # "the most recent real legislative activity we have on record" -- see that
 # script's own header comment and tamara-notes/processes/dream-list.md for
 # why the existing .windycivi timestamp files can't be trusted for this.
@@ -16,7 +16,7 @@
 # Prerequisite: a local clone via the govbot CLI, e.g.
 #   govbot clone all --govbot-dir /path/to/govbot_data
 # (depth-50 shallow by default -- fine here, since this reads working-tree
-# file names, not git history.)
+# files, not git history.)
 #
 # Usage: ./audit-last-real-activity-local.sh <govbot-dir>/repos [output-file]
 #   <govbot-dir>/repos should contain one folder per state, e.g.
@@ -39,16 +39,38 @@ for repo_dir in "$REPOS_DIR"/*-legislation/; do
   repo=$(basename "$repo_dir")
   state="${repo%-legislation}"
 
-  # Every logs/*.json filename starts with its action's own government-
-  # recorded date as YYYYMMDDTHHMMSSZ -- lexicographic sort == chronological
-  # sort for this format.
-  # -exec basename (not GNU find's -printf '%f') -- portable across BSD
-  # find (macOS) and GNU find (Linux CI runners).
-  last_ts=$(find "$repo_dir" -path '*/logs/*.json' -type f -exec basename {} \; 2>/dev/null \
-    | sed -E 's/^([0-9]{8}T[0-9]{6}Z).*/\1/' \
-    | grep -E '^[0-9]{8}T[0-9]{6}Z$' \
-    | sort \
-    | tail -1)
+  # Newest government-recorded date across every log entry: action.occurred_at
+  # in bills/<id>/action_logs.jsonl and vote_event.start_date in
+  # vote_event_logs.jsonl, as YYYYMMDDTHHMMSSZ in the source's own clock time
+  # (not converted to UTC -- the old filenames weren't either, so both layouts
+  # agree). A repo not yet converted is read from the old filenames, which start
+  # with that same timestamp, skipping the sessions/<s>/logs/ symlinks.
+  last_ts=$(python3 - "$repo_dir" <<'PY'
+import json, re, sys
+from datetime import datetime
+from pathlib import Path
+root = Path(sys.argv[1])
+best = ""
+files = list(root.glob("country:*/state:*/sessions/*/bills/*/action_logs.jsonl")) + \
+        list(root.glob("country:*/state:*/sessions/*/bills/*/vote_event_logs.jsonl"))
+for f in files:
+    for raw in f.read_text(encoding="utf-8").splitlines():
+        if not raw.strip():
+            continue
+        line = json.loads(raw)
+        date = (line.get("action") or {}).get("occurred_at") or (line.get("vote_event") or {}).get("start_date")
+        try:
+            best = max(best, datetime.fromisoformat(date).strftime("%Y%m%dT%H%M%SZ"))
+        except Exception:
+            pass
+if not files:
+    for f in root.glob("country:*/state:*/sessions/*/bills/*/logs/*.json"):
+        m = re.match(r"(\d{8}T\d{6}Z)", f.name)
+        if m and not f.is_symlink():
+            best = max(best, m.group(1))
+print(best)
+PY
+)
 
   if [ -z "$last_ts" ]; then
     echo -e "${state}\tNONE\t" >> "$OUT"

@@ -6,9 +6,13 @@
 //! {locale}-legislation/
 //!   country:us/state:{code}/sessions/{session}/bills/{bill_id}/
 //!     metadata.json
+//!     vote_event_logs.jsonl                          # one roll call per line
+//!     # repos not yet converted instead have one file per vote:
 //!     logs/{ts}.vote_event.{result}.{chamber}.json   # dot form
 //!     logs/{ts}_vote_event_{result}.json             # underscore form
 //! ```
+//!
+//! Both layouts are read through `crate::logs_jsonl`.
 //!
 //! Two things here are deliberately not shared with the rest of the crate.
 //!
@@ -276,7 +280,7 @@ impl Sponsorship {
     }
 }
 
-/// One roll call, as read from a `logs/*vote_event*.json` file.
+/// One roll call, from a bill's `vote_event_logs.jsonl` (or an old `logs/*vote_event*.json`).
 #[derive(Debug, Clone)]
 pub struct VoteEventRecord {
     pub bill_identifier: String,
@@ -400,11 +404,6 @@ fn string_array(value: Option<&Value>) -> Vec<String> {
         .unwrap_or_default()
 }
 
-/// Whether a log filename is a vote event, in either naming convention.
-fn is_vote_event_file(file_name: &str) -> bool {
-    file_name.contains(".vote_event.") || file_name.contains("_vote_event_")
-}
-
 /// The directory holding a jurisdiction's sessions, or `None` if it isn't cloned.
 pub fn jurisdiction_root(repos_dir: &Path, jurisdiction: &Jurisdiction) -> Option<PathBuf> {
     let root = repos_dir
@@ -526,34 +525,24 @@ pub enum ControlFlow {
     Stop,
 }
 
-/// Read the roll calls attached to one bill.
+/// Read the roll calls attached to one bill. In the .jsonl layout a corrected vote
+/// appears once, in its newest version.
 pub fn vote_events(bill: &BillRecord, repos_dir: &Path) -> Vec<VoteEventRecord> {
-    let logs_dir = bill.dir.join("logs");
-    let Ok(entries) = std::fs::read_dir(&logs_dir) else {
-        return Vec::new();
-    };
-
-    let mut paths: Vec<PathBuf> = entries
-        .filter_map(|entry| entry.ok())
-        .map(|entry| entry.path())
-        .filter(|path| {
-            path.file_name()
-                .and_then(|name| name.to_str())
-                .is_some_and(is_vote_event_file)
+    crate::logs_jsonl::bill_log_records(&bill.dir)
+        .into_iter()
+        .filter(|record| record.kind == crate::logs_jsonl::LogKind::VoteEvent)
+        .filter_map(|record| {
+            let mut path = relative_path(&record.file, repos_dir, &bill.citation.repo);
+            if let Some(n) = record.line {
+                // GitHub's line anchor: the citation opens on the exact line.
+                path.push_str(&format!("#L{n}"));
+            }
+            read_vote_event(record.value, path, bill)
         })
-        .collect();
-    paths.sort();
-
-    paths
-        .iter()
-        .filter_map(|path| read_vote_event(path, bill, repos_dir))
         .collect()
 }
 
-fn read_vote_event(path: &Path, bill: &BillRecord, repos_dir: &Path) -> Option<VoteEventRecord> {
-    let raw = std::fs::read_to_string(path).ok()?;
-    let value: Value = serde_json::from_str(&raw).ok()?;
-
+fn read_vote_event(value: Value, citation_path: String, bill: &BillRecord) -> Option<VoteEventRecord> {
     // The body is authoritative for `result`, not the filename.
     let result = value
         .get("result")
@@ -626,7 +615,7 @@ fn read_vote_event(path: &Path, bill: &BillRecord, repos_dir: &Path) -> Option<V
         citation: Citation {
             repo: bill.citation.repo.clone(),
             commit: bill.citation.commit.clone(),
-            path: relative_path(path, repos_dir, &bill.citation.repo),
+            path: citation_path,
             // The vote event's own source (the roll-call document), not the bill's.
             source_url: official_source_url(&value),
         },
@@ -648,12 +637,12 @@ mod tests {
 
     #[test]
     fn recognises_both_vote_event_filename_conventions() {
-        assert!(is_vote_event_file("20250522T105400Z.vote_event.pass.lower.json"));
-        assert!(is_vote_event_file("20250522T104600Z_vote_event_fail.json"));
-        assert!(!is_vote_event_file(
+        assert!(crate::logs_jsonl::is_legacy_vote_file("20250522T105400Z.vote_event.pass.lower.json"));
+        assert!(crate::logs_jsonl::is_legacy_vote_file("20250522T104600Z_vote_event_fail.json"));
+        assert!(!crate::logs_jsonl::is_legacy_vote_file(
             "20250129T022703Z_bill_number_assigned.json"
         ));
-        assert!(!is_vote_event_file(
+        assert!(!crate::logs_jsonl::is_legacy_vote_file(
             "20250131T030931Z.classification.introduction.lower.json"
         ));
     }

@@ -239,23 +239,22 @@ jobs:
                   errors.append(f"{metadata_file}: {error_msg}")
                   print(f"✗ {metadata_file}: {error_msg}")
 
-          # Validate all log files
-          for log_file in snapshots_dir.rglob("logs/*.json"):
-              try:
-                  data = json.load(open(log_file))
-                  # Determine schema based on file structure
-                  if "action" in data and "bill_id" in data:
-                      validate(instance=data, schema=action_log_schema)
-                  elif "votes" in data and "counts" in data:
-                      validate(instance=data, schema=vote_event_log_schema)
-                  else:
-                      print(f"⚠ {log_file}: Unknown log type, skipping")
-                      continue
+          # Validate every line of every bill's action/vote log
+          for kind, schema in (("action_logs.jsonl", action_log_schema), ("vote_event_logs.jsonl", vote_event_log_schema)):
+              for log_file in snapshots_dir.rglob(kind):
+                  for n, raw in enumerate(open(log_file, encoding="utf-8"), start=1):
+                      if not raw.strip():
+                          continue
+                      try:
+                          validate(instance=json.loads(raw), schema=schema)
+                      except (ValidationError, json.JSONDecodeError) as e:
+                          errors.append(f"{log_file}:{n}: {e}")
+                          print(f"✗ {log_file}:{n}: {e}")
                   print(f"✓ {log_file}")
-              except ValidationError as e:
-                  error_msg = str(e)
-                  errors.append(f"{log_file}: {error_msg}")
-                  print(f"✗ {log_file}: {error_msg}")
+
+          # The old one-file-per-log layout must not come back
+          for stray in snapshots_dir.rglob("logs/*.json"):
+              errors.append(f"{stray}: old-style log file (logs now live in action_logs.jsonl / vote_event_logs.jsonl)")
 
           if errors:
               print(f"\n{len(errors)} validation error(s) found:")
