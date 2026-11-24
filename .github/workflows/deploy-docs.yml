@@ -290,11 +290,11 @@ jobs:
           fi
           ls -lh docs/src/dashboard/data.json
 
-      # Chicago City Council: Govbot's first city. Every non-routine matter of the current
-      # council term (ordinances, orders, resolutions, appointments, executive orders; ~5,000)
-      # from the City Clerk's keyless eLMS API, added to data.json as jurisdiction "chi"
-      # (scripts/build_chicago_matters.py; ~15 s, ~11 requests). Fail-soft: an API outage
-      # leaves data.json as the step above built it, without Chicago.
+      # Chicago City Council: Govbot's first city. Every matter of the current council term
+      # (~26,000) from the City Clerk's keyless eLMS API, added to data.json as jurisdiction
+      # "chi"; the Clerk's routine ones (parking permits, claims, commendations) are marked
+      # "aux" for the catalog's Auxiliary tab (scripts/build_chicago_matters.py; ~45 s, ~53
+      # requests). Fail-soft: an API outage leaves data.json without Chicago.
       - name: Add Chicago City Council legislation
         if: steps.gate.outputs.refresh == 'true'
         run: |

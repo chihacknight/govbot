@@ -182,12 +182,15 @@ its bubble shows. mdbook's docs-search scripts + ~600 KB `searchindex.json` load
 homepage (`index.hbs` loader skips `.gb-landing`).
 
 **Chicago City Council, the first city (Nov 2026).** `scripts/build_chicago_matters.py` (deploy-docs.yml "Add
-Chicago City Council legislation", full path only, right after the bill data build; ~15 s, ~11 requests) adds every
-**non-routine** matter of the current council term (since May 15, 2023; ~5,100: ordinances, orders, resolutions,
-appointments, executive orders) from the City Clerk's keyless eLMS API (`api.chicityclerkelms.chicago.gov/matter`,
-`routine eq 'NO'`) to `data.json` as jurisdiction **`chi`** ("Chicago City Council", session `2023-2027`, chamber
-`council`). Routine matters (parking permits, vehicle claims, commendations, ~80% of the Clerk's records) and plain
-communications/reports are left out. Each record has the state-bill shape: the filing sponsor flipped to "First
+Chicago City Council legislation", full path only, right after the bill data build; ~45 s, ~53 requests) adds every
+matter of the current council term (since May 15, 2023; ~26,200: ordinances, orders, resolutions, appointments,
+executive orders, claims) from the City Clerk's keyless eLMS API (`api.chicityclerkelms.chicago.gov/matter`) to
+`data.json` as jurisdiction **`chi`** ("Chicago City Council", session `2023-2027`, chamber `council`). The Clerk's
+**routine** matters (parking permits, vehicle-damage claims, commendations; ~20,200) carry `"aux": true`:
+`build_site_slices.py` writes them to **`bills/chi_aux.json`** (index `aux_counts`), out of `counts`, `recent` and
+the search index, and legislation's Chicago catalog shows them under an **"Auxiliary" tab** beside "Legislation"
+(`#cat-tabs`, `openCatalogTab` / `syncCatTabs`, fetched only when the tab opens; a `#bill=` link to an auxiliary item
+opens that tab under its card). The CSV downloads include both. Plain communications/reports are left out. Each record has the state-bill shape: the filing sponsor flipped to "First
 Last" (offices like "Dept./Agency" dropped), the Clerk's status as the latest action ("Passed", "In Committee:
 Referred"; a step dated in the future reads "Filed with the Clerk" on the filing date), the Clerk's matter page as
 `url`, and the same keyword topic tags (`dashboard_tags.json`) on the title + the Clerk's category. Idempotent

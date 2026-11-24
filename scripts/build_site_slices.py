@@ -56,9 +56,12 @@ def _newest_first(bills):
 def build_slices(data, recent=RECENT_PER_STATE, il_days=IL_RECENT_DAYS, today=None):
     """Return {filename: object} for every slice. Pure — no I/O."""
     bills = data.get("bills") or []
-    by_state = defaultdict(list)
+    # Records marked "aux" (Chicago's routine matters: parking permits, vehicle claims,
+    # commendations) get their own <code>_aux.json, fetched only when the catalog's
+    # "Auxiliary" tab opens; they stay out of the counts, the recent lists and search.
+    by_state, aux_by_state = defaultdict(list), defaultdict(list)
     for b in bills:
-        by_state[(b.get("state") or "").lower()].append(b)
+        (aux_by_state if b.get("aux") else by_state)[(b.get("state") or "").lower()].append(b)
 
     tags = data.get("tags") or []
     tag_ids = {t.get("name"): i for i, t in enumerate(tags)}
@@ -73,10 +76,15 @@ def build_slices(data, recent=RECENT_PER_STATE, il_days=IL_RECENT_DAYS, today=No
         "recent": {code: [b for b in _newest_first(v) if b.get("latest_action")][:recent]
                    for code, v in sorted(by_state.items()) if code},
     }
+    if aux_by_state:
+        index["aux_counts"] = {code: len(v) for code, v in sorted(aux_by_state.items()) if code}
     out = {"index.json": index}
     for code, v in by_state.items():
         if code:
             out[code + ".json"] = {"generated_at": data.get("generated_at"), "state": code, "bills": v}
+    for code, v in aux_by_state.items():
+        if code:
+            out[code + "_aux.json"] = {"generated_at": data.get("generated_at"), "state": code, "bills": v}
 
     today = today or dt.date.today()
     since = (today - dt.timedelta(days=il_days)).isoformat()

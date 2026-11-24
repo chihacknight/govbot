@@ -55,6 +55,14 @@ class ChicagoMatters(unittest.TestCase):
                                           "finalActionDate": "2026-06-18T15:00:00+00:00"}, TODAY),
                          ("2026-06-18", "Passed"))
 
+    def test_routine_matters_marked_aux(self):
+        rows = {r["recordNumber"]: r for r in json.loads(PAGE)["data"]}
+        aux = [b for b in self.bills if b.get("aux")]
+        self.assertTrue(aux)
+        self.assertTrue(all(rows[b["id"]]["routine"] == "YES" for b in aux))
+        self.assertTrue(all(rows[b["id"]]["routine"] == "NO" for b in self.bills if not b.get("aux")))
+        self.assertTrue(any(rows[b["id"]]["type"] == "Claim" for b in aux))   # vehicle claims kept, as aux
+
     def test_merge_is_idempotent(self):
         doc = {"states": [{"code": "il", "name": "Illinois"}], "bills": [{"state": "il", "id": "HB1"}]}
         once = m.merge(json.loads(json.dumps(doc)), self.bills)

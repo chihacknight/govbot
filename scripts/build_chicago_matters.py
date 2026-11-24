@@ -3,11 +3,12 @@
 
 Chicago is Govbot's first city. Its legislation comes from the City Clerk's
 keyless, documented eLMS API (api.chicityclerkelms.chicago.gov, see its
-/swagger.json), not Open States. We list every NON-routine matter introduced in
-the current council term: ordinances, orders, resolutions, appointments and
-executive orders (~5,000). Routine matters (parking permits, vehicle-damage
-claims, commendations: ~80% of the Clerk's records) and plain communications
-or reports are left out, as they aren't legislation people follow.
+/swagger.json), not Open States. We list every matter introduced in the current
+council term: ordinances, orders, resolutions, appointments, executive orders and
+claims (~26,000). The Clerk's ROUTINE matters (parking permits, vehicle-damage
+claims, commendations: ~80% of them) are marked "aux": true, so the site shows
+them in their own "Auxiliary" tab, out of the counts, recent lists and search.
+Plain communications and reports are left out.
 
 Each matter becomes a record in the same shape build_dashboard_data.py writes
 for state bills, under jurisdiction code "chi" (three letters, so it never
@@ -36,14 +37,14 @@ MATTER_PAGE = "https://chicityclerkelms.chicago.gov/Matter/?matterId="
 CODE, NAME = "chi", "Chicago City Council"
 # The current council term began with the inauguration on May 15, 2023.
 TERM_START, SESSION = "2023-05-15", "2023-2027"
-KEEP_TYPES = {"Ordinance", "Order", "Resolution", "Appointment", "Executive Order"}
+KEEP_TYPES = {"Ordinance", "Order", "Resolution", "Appointment", "Executive Order", "Claim"}
 PAGE = 500                      # the API's maximum page size
-MAX_PAGES = 40                  # ~20,000 records: far above a term's non-routine count
+MAX_PAGES = 120                 # 60,000 records: about twice a whole term
 UA = "chihacknight-civic-data/1.0"
 
 
 def matters_url(skip):
-    q = {"filter": f"introductionDate gt {TERM_START}T00:00:00Z and routine eq 'NO'",
+    q = {"filter": f"introductionDate gt {TERM_START}T00:00:00Z",
          "sort": "introductionDate desc", "top": str(PAGE), "skip": str(skip)}
     return API + "?" + urllib.parse.urlencode(q)
 
@@ -95,7 +96,7 @@ def matter_to_bill(m, compiled_tags, today):
     hay = f"{title} {category}".lower()
     date, desc = latest_action(m, today)
     person = sponsor_name(m)
-    return {
+    rec = {
         "state": CODE,
         "session": SESSION,
         "id": m["recordNumber"],
@@ -107,6 +108,9 @@ def matter_to_bill(m, compiled_tags, today):
         "url": MATTER_PAGE + urllib.parse.quote(m["matterId"]),
         "tags": sorted(name for name, pats in compiled_tags if any(p.search(hay) for p in pats)),
     }
+    if (m.get("routine") or "").upper() == "YES":   # parking permits, claims, commendations
+        rec["aux"] = True
+    return rec
 
 
 def parse_matters(json_text, compiled_tags, today):

@@ -725,6 +725,13 @@
   @media (max-width: 900px) { .ee-mapcol { flex-direction: column; } .ee-detail { width: auto; } }
   /* Results view header (shown when a jurisdiction/search is active) */
   .results-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+  .cat-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
+  .cat-tabs[hidden] { display: none; }
+  .cat-tab { padding: 7px 14px; border: 2px solid var(--gb-text); border-radius: 999px;
+    background: transparent; color: var(--gb-text); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .cat-tab[aria-pressed="true"] { background: var(--gb-primary); border-color: var(--gb-primary); color: var(--gb-on-primary); }
+  .cat-tab:focus-visible { outline: 3px solid var(--gb-link); outline-offset: 2px; }
+  .cat-tab-note { flex-basis: 100%; margin: 2px 0 0; font-size: 13px; }
   .results-head h2 { margin: 0; }
   .results-head .sub { margin: 0; margin-left: auto; }
 
@@ -1145,6 +1152,8 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
         <button type="button" class="dl-btn is-sm is-rainbow" id="dl-cat" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span id="dl-cat-t">Download all bills (CSV)</span></button>
       </div>
     </div>
+    <!-- Legislation / Auxiliary tabs: only for a jurisdiction with routine matters (Chicago). -->
+    <div class="cat-tabs" id="cat-tabs" hidden></div>
     <div class="results-search">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
       <input type="search" id="results-search" placeholder="Search these bills — title, number, sponsor, topic…" aria-label="Search bills in this list">
@@ -1349,8 +1358,13 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
       if (code) {
         loadState(code).then((bills) => {
           const b = bills.find((x) => billKey(x) === key);
-          if (!b) return;
-          openBillInCatalog(b);
+          if (b) { openBillInCatalog(b); return; }
+          if (!(state.data.aux_counts || {})[code]) return;
+          // Not in the main list: a shared link to an Auxiliary item opens that tab under it.
+          loadState(code + "_aux").then((aux) => {
+            const a = aux.find((x) => billKey(x) === key);
+            if (a) openCatalogTab(code, true).then(() => openDetails(a));
+          });
         });
         return false;
       }
@@ -1400,6 +1414,39 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
         .then((d) => (d && d.bills) || []);
     }
     return stateBills[code];
+  }
+
+  // Chicago's routine matters (parking permits, vehicle claims, commendations; the Clerk marks
+  // them "routine") ride in bills/<code>_aux.json behind an "Auxiliary" tab, fetched only when
+  // that tab opens. bills/index.json's aux_counts says which jurisdictions have them.
+  let catAux = false;
+  function openCatalogTab(code, aux) {
+    return loadState(aux ? code + "_aux" : code).then((bills) => {
+      catAux = aux;
+      state.data.bills = bills;
+      rebuildFilterOptions();
+      eeOpenCatalog(code);
+    });
+  }
+  function syncCatTabs(code) {
+    const host = $("cat-tabs"); if (!host) return;
+    const nAux = (state.data.aux_counts || {})[code] || 0;
+    host.hidden = !nAux; host.textContent = "";
+    if (!nAux) return;
+    const tab = (aux, label) => {
+      const b = mkel("button", "cat-tab", label); b.type = "button";
+      b.setAttribute("aria-pressed", String(catAux === aux));
+      b.addEventListener("click", () => {
+        if (catAux === aux) return;
+        b.textContent = "Loading…";
+        openCatalogTab(code, aux);
+      });
+      return b;
+    };
+    host.append(tab(false, "Legislation (" + fmt((state.data.counts || {})[code] || 0) + ")"),
+      tab(true, "Auxiliary (" + fmt(nAux) + ")"));
+    if (catAux) host.append(mkel("p", "cat-tab-note",
+      "Routine matters the City Clerk handles in bulk: parking permits, vehicle-damage claims, commendations and similar."));
   }
 
   // Topic / session / chamber choices for the open state's bills (rebuilt per state).
@@ -1566,7 +1613,7 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
   function resultsTitle(n) {
     if (state.filters.states.size === 1) {
       const code = Array.from(state.filters.states)[0];
-      return eeNameFor(code) + " bills (" + fmt(n) + ")";
+      return eeNameFor(code) + (catAux ? " · Auxiliary" : " bills") + " (" + fmt(n) + ")";
     }
     return "Bills (" + fmt(n) + ")";
   }
@@ -2340,6 +2387,7 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     if (btn && first) { btn.dataset.label = btn.textContent; btn.textContent = "Loading bills…"; btn.disabled = true; }
     return loadState(code).then((bills) => {
       if (btn && first) { btn.textContent = btn.dataset.label; btn.disabled = false; }
+      catAux = false;
       state.data.bills = bills;
       rebuildFilterOptions();   // this state's sessions / chambers / topic counts
       eeOpenCatalog(code);
@@ -2361,6 +2409,7 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     state.filters.session = ""; const fs = $("f-session"); if (fs) fs.value = "";
     state.filters.chamber = ""; const fc = $("f-chamber"); if (fc) fc.value = "";
     resetDateRange();
+    syncCatTabs(code);
     syncMultiSelects(); render();   // render() -> setMode() pops up the results card over the map
   }
   // Close the results popup and clear the jurisdiction filter (X / backdrop / Escape).
