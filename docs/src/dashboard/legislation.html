@@ -941,7 +941,7 @@
             <div class="ee-zpct" id="ee-zpct">100%</div>
           </div>
           <div class="ee-terr">
-            <span class="ee-terr-lbl">Federal &amp; territories</span>
+            <span class="ee-terr-lbl">Federal, territories &amp; cities</span>
             <div class="ee-terr-chips" id="ee-terr-chips"></div>
           </div>
           <div class="ee-legend">
@@ -2172,7 +2172,10 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
   const EE_FILL = { "-1": "url(#ee-hatch)", "0": "#202638", "1": "#1D4A34", "2": "#25875A", "3": "#4FE395" };
   const EE_LBL = { "-1": "Not yet tracked", "0": "No current bills", "1": "Some activity", "2": "Active", "3": "Busy" };
   const EE_DOT = { "-1": "#8A93A6", "0": "#8A93A6", "1": "#25875A", "2": "#3DDC84", "3": "#7CEBB0" };
-  const EE_TERR = [["gu", "Guam"], ["pr", "Puerto Rico"], ["vi", "U.S. Virgin Islands"], ["mp", "N. Mariana Islands"]];
+  // Jurisdictions the 50-state map can't hold: the territories, and cities (Chicago City Council, from the
+  // City Clerk's eLMS API via scripts/build_chicago_matters.py). The third field is the list card's kind.
+  const EE_TERR = [["gu", "Guam"], ["pr", "Puerto Rico"], ["vi", "U.S. Virgin Islands"], ["mp", "N. Mariana Islands"],
+    ["chi", "Chicago City Council", "City"]];
   let eeGeo = null, eeSel = null, eeScale = 1, eeX = 0, eeY = 0, eeLevel = {}, eeCounts = {}, eeTracked = null, eeWired = false, eeDidDrag = false, eeLoaded = false;
   let eeSort = "az";   // list-view sort: az (default, Federal first) | za | count-desc | count-asc
 
@@ -2276,7 +2279,7 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     const host = $("ee-cards"); if (!host) return; host.textContent = "";
     const items = [];
     eeGeo.states.forEach((g) => { const c = g.id.toLowerCase(); if (eeTracked.has(c)) items.push({ code: c, name: g.name, kind: "State" }); });
-    EE_TERR.forEach((t) => items.push({ code: t[0], name: t[1], kind: "Territory" }));
+    EE_TERR.forEach((t) => items.push({ code: t[0], name: t[1], kind: t[2] || "Territory" }));
     items.push({ code: "usa", name: "United States (Federal)", kind: "Federal" });
     const cnt = (x) => eeCounts[x.code] || 0;
     if (eeSort === "count-desc")      items.sort((a, b) => cnt(b) - cnt(a) || a.name.localeCompare(b.name));
@@ -2689,10 +2692,21 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     if (/governor|signed into law|public act|chaptered|enacted|approved by governor|became law|delivered to (the )?governor/.test(all)) i = Math.max(i, 4);
     return i;
   }
+  // A Chicago City Council matter's path, read off the Clerk's own status ("In Committee: Referred",
+  // "Council Consideration: …", or its final outcome: "Passed", "Adopted", "Placed on File", …).
+  const CITY_STAGES = ["Filed", "Committee", "Council vote", "Final action"];
+  function cityStageIndex(b) {
+    const d = (b.latest_action_desc || "").toLowerCase();
+    if (/^(submitted to clerk|council introduction|filed)/.test(d)) return 0;
+    if (/^in committee/.test(d)) return 1;
+    if (/^council consideration/.test(d)) return 2;
+    return 3;
+  }
   function stageTimeline(b, meta) {
-    const idx = billStageIndex(b, meta);
+    const city = b.state === "chi";
+    const idx = city ? cityStageIndex(b) : billStageIndex(b, meta);
     const tl = mkel("div", "gb-timeline");
-    STAGES.forEach((label, i) => {
+    (city ? CITY_STAGES : STAGES).forEach((label, i) => {
       if (i > 0) tl.append(mkel("div", "bar" + (i <= idx ? " done" : "")));
       const step = mkel("div", "step" + (i < idx ? " done" : i === idx ? " current" : ""));
       step.append(mkel("div", "node"), mkel("div", "lbl", label));
@@ -2814,7 +2828,8 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     } catch (e) { /* history unavailable — the modal still works */ }
 
     Promise.all([
-      fetch(govbotMetaUrl(b)).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      b.state === "chi" ? null   // a city matter has no govbot-data metadata file
+        : fetch(govbotMetaUrl(b)).then((r) => (r.ok ? r.json() : null)).catch(() => null),
       loadStateSummaries(b.state),
     ]).then(([meta]) => { if (myKey === modalKey) renderDetailsBody(body, b, meta); });
   }
@@ -2844,7 +2859,7 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
 
   function renderDetailsBody(body, b, meta) {
     body.textContent = "";
-    if (!meta) {
+    if (!meta && b.state !== "chi") {   // a Chicago matter has no fuller record to load
       body.append(mkel("p", "m-muted",
         "The full govbot record couldn’t be loaded for this bill — showing the basics; use the links below for the official source."));
     }
@@ -2901,7 +2916,8 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
 
     { const wrap = mkel("div", "m-stage");
       wrap.append(stageTimeline(b, meta),
-        mkel("p", "m-stage-cap", "Progress is inferred from the recorded actions below."));
+        mkel("p", "m-stage-cap", b.state === "chi" ? "Progress is read from the City Clerk’s status for this matter."
+          : "Progress is inferred from the recorded actions below."));
       addSection(body, "Status", wrap); }
 
     if (meta && meta.sponsorships && meta.sponsorships.length) {
@@ -2987,12 +3003,15 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     // Name whose site it is: "Official Michigan Legislature site", "Official U.S. Congress site".
     if (officialUrl) {
       const body2 = b.state === "usa" ? "U.S. Congress" : b.state === "dc" ? "D.C. Council"
+        : b.state === "chi" ? "Chicago City Clerk"
         : (state.stateNames[b.state] || (b.state || "").toUpperCase()) + " Legislature";
       links.append(mlink("Official " + body2 + " site ↗", officialUrl));
     }
-    links.append(mlink("govbot record ↗", govbotRecordUrl(b)));
-    links.append(mlink("Open States ↗",
-      "https://openstates.org/" + b.state + "/bills/" + encodeURIComponent(b.session) + "/" + encodeURIComponent(billDirId(b.id)) + "/"));
+    if (b.state !== "chi") {   // city matters come from the Clerk, not govbot-data / Open States
+      links.append(mlink("govbot record ↗", govbotRecordUrl(b)));
+      links.append(mlink("Open States ↗",
+        "https://openstates.org/" + b.state + "/bills/" + encodeURIComponent(b.session) + "/" + encodeURIComponent(billDirId(b.id)) + "/"));
+    }
     // Upstream scraper sources usually arrive with an empty note, so label each
     // by its host (what the link points at), skip any that merely repeat the
     // official source, drop raw API / bulk-data endpoints a reader can't use,

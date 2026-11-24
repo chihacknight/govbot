@@ -290,6 +290,19 @@ jobs:
           fi
           ls -lh docs/src/dashboard/data.json
 
+      # Chicago City Council: Govbot's first city. Every non-routine matter of the current
+      # council term (ordinances, orders, resolutions, appointments, executive orders; ~5,000)
+      # from the City Clerk's keyless eLMS API, added to data.json as jurisdiction "chi"
+      # (scripts/build_chicago_matters.py; ~15 s, ~11 requests). Fail-soft: an API outage
+      # leaves data.json as the step above built it, without Chicago.
+      - name: Add Chicago City Council legislation
+        if: steps.gate.outputs.refresh == 'true'
+        run: |
+          python3 scripts/build_chicago_matters.py \
+            --data docs/src/dashboard/data.json \
+            --tags-config scripts/dashboard_tags.json \
+            || echo "::warning::Chicago City Council matters unavailable; continuing without them"
+
       # Vendor sponsor headshots for the bills the homepage shows. Public CC0
       # legislator photos (Open States ``image:`` URLs) are downloaded ONLY for
       # the sponsors of the on-screen recent bills, into an asset dir + manifest

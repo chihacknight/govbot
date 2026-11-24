@@ -181,6 +181,23 @@ used to animate `filter`/`box-shadow`, a repaint every frame), and the cursor-ch
 its bubble shows. mdbook's docs-search scripts + ~600 KB `searchindex.json` load only on doc pages, not the
 homepage (`index.hbs` loader skips `.gb-landing`).
 
+**Chicago City Council, the first city (Nov 2026).** `scripts/build_chicago_matters.py` (deploy-docs.yml "Add
+Chicago City Council legislation", full path only, right after the bill data build; ~15 s, ~11 requests) adds every
+**non-routine** matter of the current council term (since May 15, 2023; ~5,100: ordinances, orders, resolutions,
+appointments, executive orders) from the City Clerk's keyless eLMS API (`api.chicityclerkelms.chicago.gov/matter`,
+`routine eq 'NO'`) to `data.json` as jurisdiction **`chi`** ("Chicago City Council", session `2023-2027`, chamber
+`council`). Routine matters (parking permits, vehicle claims, commendations, ~80% of the Clerk's records) and plain
+communications/reports are left out. Each record has the state-bill shape: the filing sponsor flipped to "First
+Last" (offices like "Dept./Agency" dropped), the Clerk's status as the latest action ("Passed", "In Committee:
+Referred"; a step dated in the future reads "Filed with the Clerk" on the filing date), the Clerk's matter page as
+`url`, and the same keyword topic tags (`dashboard_tags.json`) on the title + the Clerk's category. Idempotent
+(replaces existing `chi` records), fail-soft (an outage leaves `data.json` without Chicago). Offline-tested:
+`python3 scripts/test_build_chicago_matters.py` (fixture `scripts/__snapshots__/chicago/matters_page.json`). On
+legislation.html Chicago rides with the territories (`EE_TERR`, chip "CHI", list kind "City", label "Federal,
+territories & cities"); its bill card links "Official Chicago City Clerk site", skips the govbot-data metadata fetch,
+the govbot-record and Open States links, and shows a city timeline (`CITY_STAGES`: Filed → Committee → Council vote →
+Final action, read from the Clerk's status). The slices, search index and CSV downloads needed no change.
+
 **Download the data (Explore Legislation, CC BY 4.0).** Anyone can take the bill data: a **"Download the
 data"** pill in legislation.html's hero (`#dl-open`, `.is-rainbow`: a 3px border in six colours —
 `--dl-rainbow`: #5EBD3E, #FFB900, #F78200, #E23838, #973999, #009CDF — that travels around it, a spinning
