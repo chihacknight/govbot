@@ -485,11 +485,94 @@ def _sort_key(line: dict[str, Any], kind: str) -> tuple:
     return (stamp is None, stamp or "", line.get("id") or "")
 
 
+def _parse_time(stamp: Optional[str]) -> Optional[datetime]:
+    if not stamp:
+        return None
+    try:
+        # Python 3.9 (the action's version) doesn't read a trailing "Z".
+        return datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _earlier(a: Optional[str], b: Optional[str]) -> Optional[str]:
+    """The earlier of two first_seen stamps; a missing or unreadable one loses."""
+    ta, tb = _parse_time(a), _parse_time(b)
+    if ta is None:
+        return b if tb is not None else a or b
+    if tb is None or ta <= tb:
+        return a
+    return b
+
+
+def _same_vote(a: dict[str, Any], b: dict[str, Any]) -> bool:
+    id_a, fallback_a = vote_keys(a)
+    id_b, fallback_b = vote_keys(b)
+    return bool(id_a and id_b and id_a == id_b) or fallback_a == fallback_b
+
+
+def _rename(later: list[dict[str, Any]], old_id: str, new_id: str) -> None:
+    """Give every line with id `old_id` the id `new_id`, unless another entry already
+    uses `new_id` (then the backfill's id stays, so ids stay unique)."""
+    if old_id == new_id or any(line.get("id") == new_id for line in later):
+        return
+    for line in later:
+        if line.get("id") == old_id:
+            line["id"] = new_id
+
+
+def _fold_into_later(kind: str, converted: list[dict[str, Any]], later: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Merge old-file lines with lines already in the .jsonl file, which on a
+    converted repo come from backfill_logs.py (the raw scraper history) or the
+    nightly formatter. Returns the old-file lines to keep; edits `later` in place.
+
+    An old file that duplicates a later line is dropped: the later line has the
+    scrape's commit time, the old file only the formatter's run time
+    (_processing.log_file_created, which a reformat rewrites: 12,240 KY actions say
+    July 2026) or nothing (votes). The later line keeps the earlier of the two
+    first_seen values, since an entry seen before the raw history began
+    (Nov 2025) is better dated by the old file, and takes the old file's id, the
+    name people and tools already know.
+
+    A vote also has versions. An old vote file equal to one of the later versions
+    is a duplicate as above. One with the same identity but different substance
+    from every later version is an older version from before the raw history: it
+    is kept, goes first, and shares the vote's id, as the start of its history.
+    """
+    kept = []
+    for old in converted:
+        if kind == "action":
+            key = action_key(old["action"])
+            match = next((l for l in later if action_key(l.get("action") or {}) == key), None)
+            if match is None:
+                kept.append(old)
+                continue
+            match["first_seen"] = _earlier(old.get("first_seen"), match.get("first_seen"))
+            _rename(later, match["id"], old["id"])
+            continue
+
+        vote = old["vote_event"]
+        versions = [l for l in later if _same_vote(l.get("vote_event") or {}, vote)]
+        if not versions:
+            kept.append(old)
+            continue
+        _rename(later, versions[0]["id"], old["id"])
+        same = next((l for l in versions if vote_substance(l["vote_event"]) == vote_substance(vote)), None)
+        if same is not None:
+            same["first_seen"] = _earlier(old.get("first_seen"), same.get("first_seen"))
+            continue
+        old["id"] = versions[0]["id"]  # after the rename: one id for the vote's whole history
+        kept.append(old)
+    return kept
+
+
 def convert_bill(bill_dir: Union[str, Path]) -> ConvertStats:
     """Fold bills/{id}/logs/*.json into the bill's two .jsonl files, then delete them.
 
     Converted lines go before anything already in the .jsonl files (they are older),
     so this rewrites the files once, the only time anything but appending happens.
+    Where an old file and a line already in the .jsonl file are the same entry,
+    the .jsonl line wins (see _fold_into_later).
     """
     bill_dir = Path(bill_dir)
     stats = ConvertStats()
@@ -526,12 +609,13 @@ def convert_bill(bill_dir: Union[str, Path]) -> ConvertStats:
             continue
         path = bill_dir / filename
         later = read_lines(path)
-        # Write converted lines first, then re-add anything already in the new
-        # file through the normal duplicate checks.
+        kept = _fold_into_later(kind, lines, later)
+        # Write the old-file lines that remain first, then re-add anything already
+        # in the new file through the normal duplicate checks.
         tmp = path.with_name(filename + ".tmp")
         if tmp.exists():
             tmp.unlink()
-        added = append_at(tmp, lines)
+        added = append_at(tmp, kept)
         # Lines already in the new-layout file keep their first-seen order.
         added += append_at(tmp, later, keep_order=True)
         stats.duplicates_dropped += len(lines) + len(later) - added

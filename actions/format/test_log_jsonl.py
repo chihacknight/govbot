@@ -259,6 +259,48 @@ class ConversionTests(unittest.TestCase):
         acts = lines(self.bill / L.ACTION_LOG_FILE)
         self.assertEqual([a["action"]["description"] for a in acts], ["Number assigned", "Introduced", "Signed"])
 
+    def test_duplicate_action_keeps_backfill_line_with_old_id_and_earlier_first_seen(self):
+        # The old file says 2026-07-01 (a reformat's run time); the backfill saw it
+        # in the 2026-09-28 scrape, so the old stamp is earlier and wins here.
+        dup = L.action_line(action("Introduced", cls=["introduction"]), "SF0015", SOURCES, "2025", SEEN_1)
+        dup["id"] = "20250114T210515Z.classification.introduction.upper~abcd1234"  # backfill had a collision
+        L.append_actions(self.bill, [dup])
+        stats = L.convert_bill(self.bill)
+        acts = lines(self.bill / L.ACTION_LOG_FILE)
+        [intro] = [a for a in acts if a["action"]["description"] == "Introduced"]
+        self.assertEqual(intro["id"], "20250114T210515Z.classification.introduction.upper")
+        self.assertEqual(intro["first_seen"], "2026-07-01T07:00:00Z")
+        self.assertEqual(stats.duplicates_dropped, 1)
+
+    def test_duplicate_action_takes_backfill_first_seen_when_earlier(self):
+        early = "2025-11-27T10:00:00+00:00"
+        L.append_actions(self.bill, [L.action_line(action("Introduced", cls=["introduction"]), "SF0015", SOURCES, "2025", early)])
+        L.convert_bill(self.bill)
+        [intro] = [a for a in lines(self.bill / L.ACTION_LOG_FILE) if a["action"]["description"] == "Introduced"]
+        self.assertEqual(intro["first_seen"], early)
+
+    def test_duplicate_vote_keeps_backfill_first_seen_and_old_id(self):
+        backfilled = L.vote_event_line(vote(), SEEN_1)
+        backfilled["id"] = "something_else"
+        L.append_votes(self.bill, [backfilled])
+        L.convert_bill(self.bill)
+        [v] = lines(self.bill / L.VOTE_EVENT_LOG_FILE)
+        self.assertEqual(v["id"], "20260217T181005Z.vote_event.pass.upper")
+        self.assertEqual(v["first_seen"], SEEN_1)  # the old file had null
+
+    def test_older_vote_version_goes_first_under_the_same_id(self):
+        # The old file holds 20-11; the raw history only ever saw 21-10 then 21-9.
+        # (Counts are part of the fallback key, so the roll-call identifier is what
+        # makes these one vote.)
+        self.write("20260217T181005Z.vote_event.pass.upper.json", vote(identifier="RC 12"))
+        L.append_votes(self.bill, [L.vote_event_line(vote(identifier="RC 12", counts=(("yes", 21), ("no", 10))), SEEN_1)])
+        L.append_votes(self.bill, [L.vote_event_line(vote(identifier="RC 12", counts=(("yes", 21), ("no", 9))), SEEN_2)])
+        L.convert_bill(self.bill)
+        got = lines(self.bill / L.VOTE_EVENT_LOG_FILE)
+        self.assertEqual([[c["value"] for c in v["vote_event"]["counts"]] for v in got], [[20, 11], [21, 10], [21, 9]])
+        self.assertEqual({v["id"] for v in got}, {"20260217T181005Z.vote_event.pass.upper"})
+        self.assertEqual([v["first_seen"] for v in got], [None, SEEN_1, SEEN_2])
+
     def test_existing_new_layout_lines_keep_their_order(self):
         # Two nights, appended in first-seen order (the second backdated).
         L.append_actions(self.bill, [L.action_line(action("Signed", date="2025-03-01"), "SF0015", SOURCES, "2025", SEEN_1)])
