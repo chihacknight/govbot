@@ -13,9 +13,6 @@
 //! are the history. An action keeps its first line's `first_seen`, a vote takes the
 //! correction's.
 //!
-//! ```text
-//! ```
-//!
 //! Each line is `{"id", "first_seen", "chamber", "action" | "vote_event", "bill_id"}`.
 //!
 //! Old layout, still in repos not yet converted: one file per entry in
