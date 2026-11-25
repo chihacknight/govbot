@@ -294,6 +294,13 @@ def main() -> int:
         )
         return 2
 
+    # Lineage: which version of the rules (utils/log_jsonl.py) wrote these lines.
+    here = Path(__file__).resolve().parent
+    code = {
+        "govbot_commit": git(here, "rev-parse", "HEAD").strip(),
+        "uncommitted_changes": bool(git(here, "status", "--porcelain", "--", ".").strip()),
+    }
+
     replay = Replay(repo, state)
     blobs = Blobs(raw_repo)
     started = time.time()
@@ -332,6 +339,7 @@ def main() -> int:
         "last_scrape_at": commits[-1][1] if commits else (previous or {}).get("last_scrape_at"),
         "finished_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "dry_run": args.dry_run,
+        **code,
         **replay.stats,
         "bills_touched": bills_touched,
         "bills_missing": len(missing),
