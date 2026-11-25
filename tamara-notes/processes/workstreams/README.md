@@ -11,6 +11,7 @@ own branch, so two chats running at once can't overwrite each other's work.
 | Scraper fixes (goal 6) | [scraper-fixes.md](scraper-fixes.md) | `~/my_work/govbot-scrapers` | `scraper-triage` | Now |
 | Repo rewrite (goals 1, 2, 4) | [repo-rewrite.md](repo-rewrite.md) | `~/my_work/govbot-repo-rewrite` | `repo-rewrite` | After the JSONL layout is settled |
 | Presentation | [presentation.md](presentation.md) | `~/my_work/govbot` (read only) | `main` | Any time |
+| Lean data org (goal 7) | [lean-org.md](lean-org.md) | None yet | None yet | After the JSONL push and the Python fix |
 
 ## How to start a chat
 
