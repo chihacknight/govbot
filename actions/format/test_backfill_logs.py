@@ -15,7 +15,8 @@ from datetime import datetime
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-NIGHTS = ["2026-01-05T10:00:00+00:00", "2026-01-06T10:00:00+00:00", "2026-01-07T10:00:00+00:00"]
+NIGHTS = ["2026-01-05T10:00:00+00:00", "2026-01-06T10:00:00+00:00", "2026-01-07T10:00:00+00:00",
+          "2026-01-08T10:00:00+00:00"]
 UPPER = '~{"classification": "upper"}'
 
 
@@ -62,6 +63,9 @@ class BackfillTest(unittest.TestCase):
              bill("SB 9", [intro])],
         ]
         nights.append(nights[1])  # night 3: the same data, new filenames
+        # Night 4: the scraper rewords an action it already published.
+        nights.append([bill("SB 1", [("Passed", "2026-01-04"), ("Referred", "2026-01-03"), ("Introduced in Senate", "2026-01-02")]),
+                       vote("SB 1", 21, 9), vote("SB 2", 5, 30, rc="RC 0", start="2025-12-01T15:00:00+00:00")])
         for night, records in zip(NIGHTS, nights):
             self.commit_scrape(night, records)
         # A commit that doesn't touch _data/ (template update): ignored.
@@ -101,7 +105,9 @@ class BackfillTest(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         acts = lines(self.bills / "SB1" / "action_logs.jsonl")
         self.assertEqual([(a["action"]["description"], when(a["first_seen"])) for a in acts],
-                         [("Introduced", when(NIGHTS[0])), ("Referred", when(NIGHTS[1])), ("Passed", when(NIGHTS[1]))])
+                         [("Introduced", when(NIGHTS[0])), ("Referred", when(NIGHTS[1])), ("Passed", when(NIGHTS[1])),
+                          ("Introduced in Senate", when(NIGHTS[3]))])
+        self.assertEqual(acts[3]["id"], acts[0]["id"])  # a rewording, not a new action
         votes = lines(self.bills / "SB1" / "vote_event_logs.jsonl")
         self.assertEqual([(v["vote_event"]["counts"][0]["value"], when(v["first_seen"])) for v in votes],
                          [(20, when(NIGHTS[0])), (21, when(NIGHTS[1]))])
@@ -111,7 +117,9 @@ class BackfillTest(unittest.TestCase):
         self.assertFalse((self.bills / "SB9").exists())  # never created
 
         report = json.loads((self.reports / "log_backfill-zz.json").read_text())
-        self.assertEqual(report["scrapes_replayed"], 3)
+        self.assertEqual(report["scrapes_replayed"], 4)
+        self.assertEqual(report["action_corrections"], 1)
+        self.assertEqual(report["action_rewordings_unpaired"], 0)
         self.assertEqual(report["vote_corrections"], 1)
         self.assertEqual(report["bills_missing_list"], [{"bill": "2026/SB9", "raw_files": 1}])
 

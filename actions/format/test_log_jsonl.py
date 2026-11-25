@@ -126,6 +126,56 @@ class ActionLogTests(Tmp):
             self.add_actions([action("A")])
 
 
+class RewordingTests(Tmp):
+    LOWER = '~{"classification": "lower"}'
+
+    def a(self, desc, date="2025-02-26T15:00:00+00:00"):
+        return action(desc, date=date, org=self.LOWER)
+
+    def test_mt_first_reading_is_a_correction_not_a_new_action(self):
+        # MT 2026-08-10: "(H) First Reading" -> "(H) 1st Reading" on every past bill.
+        before = [self.a("(H) Introduced", "2025-02-25T15:00:00+00:00"), self.a("(H) First Reading")]
+        after = [self.a("(H) Introduced", "2025-02-25T15:00:00+00:00"), self.a("(H) 1st Reading")]
+        L.append_actions(self.bill, [L.action_line(x, "HB794", SOURCES, "2025", SEEN_1) for x in before])
+        added = L.append_actions(self.bill, [L.action_line(x, "HB794", SOURCES, "2025", SEEN_2) for x in after],
+                                 rewordings=L.find_rewordings(before, after))
+        self.assertEqual(added, 1)
+        got = lines(self.bill / L.ACTION_LOG_FILE)
+        self.assertEqual([g["action"]["description"] for g in got], ["(H) Introduced", "(H) First Reading", "(H) 1st Reading"])
+        self.assertEqual(got[1]["id"], got[2]["id"])  # same action, new wording
+        # A later rewording of the rewording stays under the same id.
+        again = [after[0], self.a("(H) 1st Reading (Floor)")]
+        L.append_actions(self.bill, [L.action_line(x, "HB794", SOURCES, "2025", SEEN_2) for x in again],
+                         rewordings=L.find_rewordings(after, again))
+        self.assertEqual(lines(self.bill / L.ACTION_LOG_FILE)[3]["id"], got[1]["id"])
+
+    def test_pairs_changed_actions_slot_by_slot(self):
+        day = "2025-03-01"
+        before = [self.a("A", day), self.a("B", day), self.a("C", day)]
+        after = [self.a("A", day), self.a("B2", day), self.a("C2", day)]
+        r = L.find_rewordings(before, after)
+        self.assertEqual(r.pairs, {L.raw_action_key(after[1]): L.raw_action_key(before[1]),
+                                   L.raw_action_key(after[2]): L.raw_action_key(before[2])})
+        self.assertEqual(r.unpaired, 0)
+
+    def test_different_count_on_the_date_is_not_paired(self):
+        day = "2025-03-01"
+        r = L.find_rewordings([self.a("Referred to Committee on Judiciary", day)],
+                              [self.a("Referred to Senate Committee on Judiciary", day), self.a("Hearing", day)])
+        self.assertEqual((r.pairs, r.unpaired), ({}, 2))
+
+    def test_unchanged_actions_reordered_is_not_paired(self):
+        day = "2025-03-01"
+        r = L.find_rewordings([self.a("A", day), self.a("B", day), self.a("C", day)],
+                              [self.a("B", day), self.a("A", day), self.a("C2", day)])
+        self.assertEqual((r.pairs, r.unpaired), ({}, 1))
+
+    def test_new_bill_and_new_date_have_nothing_to_reword(self):
+        self.assertEqual(L.find_rewordings(None, [self.a("A")]).pairs, {})
+        r = L.find_rewordings([self.a("A", "2025-03-01")], [self.a("A", "2025-03-01"), self.a("B", "2025-03-02")])
+        self.assertEqual((r.pairs, r.unpaired), ({}, 0))  # a new date is just new
+
+
 class VoteLogTests(Tmp):
     def test_rerun_adds_nothing(self):
         self.assertEqual(self.add_votes([vote()]), 1)
@@ -338,6 +388,19 @@ class ConversionTests(unittest.TestCase):
                                for d, m in (("third", 3), ("first", 1), ("second", 2))])
         got = [a["action"]["description"] for a in lines(tmp / L.ACTION_LOG_FILE)]
         self.assertEqual(got, ["first", "second", "third"])
+
+    def test_conversion_keeps_a_rewordings_shared_id(self):
+        # Backfilled: "Signed" then its new wording, one id. The old files hold neither.
+        before = [action("Signed", date="2025-02-24")]
+        after = [action("Signed by Governor", date="2025-02-24")]
+        L.append_actions(self.bill, [L.action_line(before[0], "SF0015", SOURCES, "2025", SEEN_1)])
+        L.append_actions(self.bill, [L.action_line(after[0], "SF0015", SOURCES, "2025", SEEN_2)],
+                         rewordings=L.find_rewordings(before, after))
+        L.convert_bill(self.bill)
+        got = [a for a in lines(self.bill / L.ACTION_LOG_FILE) if a["action"]["description"].startswith("Signed")]
+        self.assertEqual([a["action"]["description"] for a in got], ["Signed", "Signed by Governor"])
+        self.assertEqual(got[0]["id"], got[1]["id"])
+        self.assertNotIn("~", got[0]["id"])
 
     def test_old_logs_folder_jsonl_is_folded(self):
         # IL, 2026-09-22..25: the formatter wrote {"action", "bill_id"} lines to

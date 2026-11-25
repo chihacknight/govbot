@@ -293,31 +293,118 @@ def _unique_id(line: dict[str, Any], taken: set[str], identity: Any) -> None:
     taken.add(line["id"])
 
 
-def append_actions(bill_dir: Union[str, Path], new_lines: Iterable[dict[str, Any]]) -> int:
-    """Append the actions not already in the bill's action_logs.jsonl. Returns how many."""
-    return _append_actions_at(Path(bill_dir) / ACTION_LOG_FILE, new_lines)
+def append_actions(
+    bill_dir: Union[str, Path], new_lines: Iterable[dict[str, Any]], rewordings: Optional["Rewordings"] = None
+) -> int:
+    """Append the actions not already in the bill's action_logs.jsonl. Returns how
+    many. Pass find_rewordings(previous scrape's actions, tonight's) so a reworded
+    action is logged as a correction of the one it rewords (see find_rewordings)."""
+    return _append_actions_at(Path(bill_dir) / ACTION_LOG_FILE, new_lines, rewordings=rewordings)
 
 
-def select_new_actions(seen: set, taken: set, new_lines: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+def raw_action_key(action: dict[str, Any]) -> tuple:
+    """action_key() of a scraped action (OpenStates shape), as action_line() would log it."""
+    return action_key({
+        "occurred_at": action.get("date", "no_date"),
+        "description": action.get("description", "no_description"),
+        "jurisdiction_id": action.get("organization_id", "no_jurisdiction"),
+    })
+
+
+class Rewordings:
+    """Actions the scraper reworded since the previous scrape: {new key: old key}
+    (action_key()s), plus how many changed actions couldn't be paired."""
+
+    def __init__(self) -> None:
+        self.pairs: dict[tuple, tuple] = {}
+        self.unpaired = 0
+
+
+def find_rewordings(previous: Optional[list[dict[str, Any]]], current: list[dict[str, Any]]) -> Rewordings:
+    """Which of a bill's scraped actions are rewordings of the previous scrape's.
+
+    `previous` is the bill's actions in the previous scrape (the nightly writer
+    reads them from metadata.json, which keeps the scrape's list and order;
+    the backfill keeps the last version it saw), `current` tonight's. A scraper
+    sometimes rewords actions it already published (MT 2026-08-10: "(H) First
+    Reading" -> "(H) 1st Reading" on every past bill; KS: "Referred to Committee
+    on Judiciary" -> "Referred to Senate Committee on Judiciary"), and without
+    this each new wording was logged as a new action, dated that night.
+
+    Per date and chamber, the actions pair up when (agreed 2026-11-25):
+    - both scrapes have the same number of actions on that date and chamber, and
+    - the actions whose wording didn't change are in the same relative order.
+    The changed ones then pair slot by slot: [A, B, C] -> [A, B', C'] pairs B
+    with B' and C with C'. Otherwise nothing on that date is paired and each new
+    wording is logged as a new action (counted in `unpaired`). No text-similarity
+    matching. A new bill (no previous) has nothing to reword.
+    """
+    out = Rewordings()
+    if not previous:
+        return out
+
+    def by_slot(actions):
+        groups: dict[tuple, list[tuple]] = {}
+        for a in actions:
+            groups.setdefault((a.get("date"), a.get("organization_id")), []).append(raw_action_key(a))
+        return groups
+
+    before, now = by_slot(previous), by_slot(current)
+    for slot, new_keys in now.items():
+        old_keys = before.get(slot, [])
+        old_set, new_set = set(old_keys), set(new_keys)
+        changed_new = [k for k in new_keys if k not in old_set]
+        if not changed_new:
+            continue
+        changed_old = [k for k in old_keys if k not in new_set]
+        same_order = [k for k in old_keys if k in new_set] == [k for k in new_keys if k in old_set]
+        if len(old_keys) == len(new_keys) and same_order and len(changed_old) == len(changed_new):
+            out.pairs.update(zip(changed_new, changed_old))
+        elif old_keys:
+            out.unpaired += len(changed_new)
+    return out
+
+
+def select_new_actions(
+    seen: set,
+    taken: set,
+    new_lines: Iterable[dict[str, Any]],
+    rewordings: Optional[Rewordings] = None,
+    id_of: Optional[dict[tuple, str]] = None,
+) -> list[dict[str, Any]]:
     """The lines of `new_lines` whose action isn't in `seen` (action_key()s already
     in the file), with ids made unique against `taken`. Updates both sets. The
-    nightly writer and backfill_logs.py both decide "is this new?" here."""
+    nightly writer and backfill_logs.py both decide "is this new?" here.
+
+    A line that `rewordings` pairs with an action already in the file is a
+    correction: it takes that action's id (`id_of`: action_key -> id of the
+    file's lines, updated here), and readers show the last line per id."""
     to_add = []
+    pairs = rewordings.pairs if rewordings else {}
     for line in new_lines:
         key = action_key(line["action"])
         if key in seen:
             continue
         seen.add(key)
-        _unique_id(line, taken, key)
+        old_id = id_of.get(pairs[key]) if id_of is not None and key in pairs else None
+        if old_id is not None:
+            line["id"] = old_id  # a rewording keeps the id of the action it rewords
+        else:
+            _unique_id(line, taken, key)
+        if id_of is not None:
+            id_of[key] = line["id"]
         to_add.append(line)
     return to_add
 
 
-def _append_actions_at(path: Path, new_lines: Iterable[dict[str, Any]], keep_order: bool = False) -> int:
+def _append_actions_at(
+    path: Path, new_lines: Iterable[dict[str, Any]], keep_order: bool = False, rewordings: Optional["Rewordings"] = None
+) -> int:
     existing = read_lines(path)
     seen = {action_key(line.get("action") or {}) for line in existing}
     taken = {line.get("id") for line in existing}
-    to_add = select_new_actions(seen, taken, new_lines)
+    id_of = {action_key(line.get("action") or {}): line.get("id") for line in existing}
+    to_add = select_new_actions(seen, taken, new_lines, rewordings, id_of)
     _append(path, to_add, "action", keep_order)
     return len(to_add)
 
@@ -675,8 +762,22 @@ def convert_bill(bill_dir: Union[str, Path]) -> ConvertStats:
         if tmp.exists():
             tmp.unlink()
         added = append_at(tmp, kept)
-        # Lines already in the new-layout file keep their first-seen order.
-        added += append_at(tmp, later, keep_order=True)
+        if kind == "action":
+            # _fold_into_later already dropped the old files these lines duplicate,
+            # so they go in as they are. Not through the duplicate checks: a
+            # rewording repeats its action's id on purpose. Only an id an old file
+            # now uses moves aside (the whole group, so its rewordings follow).
+            old_ids = {l.get("id") for l in read_lines(tmp)}
+            moved: dict[str, str] = {}
+            for l in later:
+                if l.get("id") in old_ids:
+                    moved.setdefault(l["id"], f"{l['id']}~{_short_hash(action_key(l['action']))}")
+                    l["id"] = moved[l["id"]]
+            _append(tmp, later, "action", keep_order=True)
+            added += len(later)
+        else:
+            # Lines already in the new-layout file keep their first-seen order.
+            added += append_at(tmp, later, keep_order=True)
         stats.duplicates_dropped += len(lines) + len(later) - added
         tmp.replace(path)
 

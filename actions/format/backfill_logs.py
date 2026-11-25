@@ -128,6 +128,12 @@ class BillLog:
         actions = L.read_lines(bill_dir / L.ACTION_LOG_FILE)
         self.action_seen = {L.action_key(line.get("action") or {}) for line in actions}
         self.action_ids = {line.get("id") for line in actions}
+        self.action_id_of = {L.action_key(line.get("action") or {}): line.get("id") for line in actions}
+        # The bill's actions in the last scrape that had it, and that file's blob:
+        # find_rewordings() compares tonight's actions with these, as the nightly
+        # writer compares with metadata.json.
+        self.prev_actions: Optional[list[dict[str, Any]]] = None
+        self.prev_blob: Optional[bytes] = None
         self.votes = L.read_lines(bill_dir / L.VOTE_EVENT_LOG_FILE)
         self.vote_ids = {line.get("id") for line in self.votes}
         self.votes_on_disk = len(self.votes)
@@ -147,7 +153,8 @@ class Replay:
         self.state = state
         self.bills: dict[Path, Optional[BillLog]] = {}
         self.missing: dict[str, int] = {}  # "session/bill" -> raw files naming it
-        self.bill_blobs_done: set[bytes] = set()
+        # bill blob -> its bill folder (None: a bill with no folder, never re-read)
+        self.bill_blobs_done: dict[bytes, Optional[Path]] = {}
         self.vote_blobs_done: dict[bytes, tuple[Path, int]] = {}
         self.unreadable: dict[str, int] = {}  # scrape date -> files that aren't valid JSON
         self.unreadable_examples: list[dict[str, Any]] = []
@@ -158,6 +165,8 @@ class Replay:
             "actions_added": 0,
             "votes_added": 0,
             "vote_corrections": 0,
+            "action_corrections": 0,
+            "action_rewordings_unpaired": 0,
             "files_unreadable": 0,
             "files_without_bill_or_session": 0,
         }
@@ -173,13 +182,18 @@ class Replay:
         return log
 
     def wants(self, blob: str, name: str) -> bool:
-        """Whether a raw file could add anything. A bill file's actions only ever
-        get added once, so a bill blob replayed before adds nothing. A vote blob
+        """Whether a raw file could add anything. A bill blob replayed before adds
+        no action, and is skipped when it is also its bill's latest version (so the
+        "previous scrape" find_rewordings() needs stays right). A vote blob
         replayed before adds nothing as long as its bill's vote log hasn't changed
         since (otherwise it might now be a correction back to an earlier version)."""
         key = bytes.fromhex(blob)
         if name.startswith("bill_"):
-            return key not in self.bill_blobs_done
+            if key not in self.bill_blobs_done:
+                return True
+            bill_dir = self.bill_blobs_done[key]
+            log = self.bills.get(bill_dir) if bill_dir is not None else None
+            return log is not None and log.prev_blob != key
         done = self.vote_blobs_done.get(key)
         if done is None:
             return True
@@ -199,27 +213,37 @@ class Replay:
                 self.unreadable_examples.append({"scrape": first_seen, "file": name, "bytes": len(raw), "error": str(e)})
             return
         if name.startswith("bill_"):
-            self.bill_blobs_done.add(bytes.fromhex(blob))
-            self.apply_bill(data, first_seen)
+            log = self.apply_bill(data, first_seen)
+            self.bill_blobs_done[bytes.fromhex(blob)] = log.dir if log is not None else None
+            if log is not None:
+                log.prev_blob = bytes.fromhex(blob)
         else:
             log = self.apply_vote(data, first_seen)
             if log is not None:
                 self.vote_blobs_done[bytes.fromhex(blob)] = (log.dir, log.vote_version)
 
-    def apply_bill(self, data: dict[str, Any], first_seen: str) -> None:
+    def apply_bill(self, data: dict[str, Any], first_seen: str) -> Optional[BillLog]:
         # Same fields handlers/bill.py uses.
         identifier, session = data.get("identifier"), data.get("legislative_session")
         if not identifier or not session:
             self.stats["files_without_bill_or_session"] += 1
-            return
+            return None
         log = self.bill_log(session, identifier)
         if log is None:
-            return
+            return None
         sources = data.get("sources", [])
-        lines = [L.action_line(a, identifier, sources, session, first_seen) for a in data.get("actions", [])]
-        added = L.select_new_actions(log.action_seen, log.action_ids, lines)
+        actions = data.get("actions", [])
+        rewordings = L.find_rewordings(log.prev_actions, actions)
+        lines = [L.action_line(a, identifier, sources, session, first_seen) for a in actions]
+        ids_before = len(log.action_ids)
+        added = L.select_new_actions(log.action_seen, log.action_ids, lines, rewordings, log.action_id_of)
         log.new_actions.extend(L.order_batch(added, "action"))
+        log.prev_actions = actions
         self.stats["actions_added"] += len(added)
+        # A new action adds an id; a rewording reuses one.
+        self.stats["action_corrections"] += len(added) - (len(log.action_ids) - ids_before)
+        self.stats["action_rewordings_unpaired"] += rewordings.unpaired
+        return log
 
     def apply_vote(self, data: dict[str, Any], first_seen: str) -> Optional[BillLog]:
         # Same fields handlers/vote_event.py uses.
