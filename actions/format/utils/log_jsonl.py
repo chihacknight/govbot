@@ -247,17 +247,20 @@ def read_lines(path: Union[str, Path]) -> list[dict[str, Any]]:
     return lines
 
 
-def _append(path: Path, lines: list[dict[str, Any]], kind: str, keep_order: bool = False) -> None:
-    """Append one batch (one night's new entries for one bill) to the file.
+def order_batch(lines: list[dict[str, Any]], kind: str) -> list[dict[str, Any]]:
+    """One batch (one night's new entries for one bill) in the government's date
+    order -- scrapers list actions in no fixed order (WY newest-first) -- so a new
+    bill's history reads forwards."""
+    return sorted(lines, key=lambda l: _sort_key(l, kind))
 
-    Within the batch, entries go in the government's date order -- scrapers list
-    actions in no fixed order (WY newest-first) -- so a new bill's history reads
-    forwards. Lines already in the file are never touched.
-    """
+
+def _append(path: Path, lines: list[dict[str, Any]], kind: str, keep_order: bool = False) -> None:
+    """Append one batch to the file (ordered by order_batch unless keep_order).
+    Lines already in the file are never touched."""
     if not lines:
         return
     if not keep_order:
-        lines = sorted(lines, key=lambda l: _sort_key(l, kind))
+        lines = order_batch(lines, kind)
     path.parent.mkdir(parents=True, exist_ok=True)
     # A file that doesn't end in a newline (an interrupted write) would glue the
     # next line onto the last one; start on a fresh line instead.
@@ -283,10 +286,10 @@ def append_actions(bill_dir: Union[str, Path], new_lines: Iterable[dict[str, Any
     return _append_actions_at(Path(bill_dir) / ACTION_LOG_FILE, new_lines)
 
 
-def _append_actions_at(path: Path, new_lines: Iterable[dict[str, Any]], keep_order: bool = False) -> int:
-    existing = read_lines(path)
-    seen = {action_key(line.get("action") or {}) for line in existing}
-    taken = {line.get("id") for line in existing}
+def select_new_actions(seen: set, taken: set, new_lines: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The lines of `new_lines` whose action isn't in `seen` (action_key()s already
+    in the file), with ids made unique against `taken`. Updates both sets. The
+    nightly writer and backfill_logs.py both decide "is this new?" here."""
     to_add = []
     for line in new_lines:
         key = action_key(line["action"])
@@ -295,6 +298,14 @@ def _append_actions_at(path: Path, new_lines: Iterable[dict[str, Any]], keep_ord
         seen.add(key)
         _unique_id(line, taken, key)
         to_add.append(line)
+    return to_add
+
+
+def _append_actions_at(path: Path, new_lines: Iterable[dict[str, Any]], keep_order: bool = False) -> int:
+    existing = read_lines(path)
+    seen = {action_key(line.get("action") or {}) for line in existing}
+    taken = {line.get("id") for line in existing}
+    to_add = select_new_actions(seen, taken, new_lines)
     _append(path, to_add, "action", keep_order)
     return len(to_add)
 
@@ -322,6 +333,18 @@ def append_votes(bill_dir: Union[str, Path], new_lines: Iterable[dict[str, Any]]
 def _append_votes_at(path: Path, new_lines: Iterable[dict[str, Any]], keep_order: bool = False) -> int:
     existing = read_lines(path)
     taken = {line.get("id") for line in existing}
+    to_add = select_new_votes(existing, taken, new_lines)
+    _append(path, to_add, "vote_event", keep_order)
+    return len(to_add)
+
+
+def select_new_votes(
+    existing: list[dict[str, Any]], taken: set, new_lines: Iterable[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """The lines of `new_lines` that are new votes or corrections of a vote in
+    `existing` (the file's lines, in file order). Ids are made unique against
+    `taken` (updated); a correction takes the id of the vote it corrects. The
+    nightly writer and backfill_logs.py both decide "is this new?" here."""
     to_add = []
     for line in new_lines:
         vote = line["vote_event"]
@@ -333,8 +356,7 @@ def _append_votes_at(path: Path, new_lines: Iterable[dict[str, Any]], keep_order
         else:
             _unique_id(line, taken, vote_keys(vote))
         to_add.append(line)
-    _append(path, to_add, "vote_event", keep_order)
-    return len(to_add)
+    return to_add
 
 
 # --------------------------------------------------------------------------
