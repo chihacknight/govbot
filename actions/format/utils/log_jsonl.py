@@ -356,13 +356,22 @@ def select_new_votes(
     """The lines of `new_lines` that are new votes or corrections of a vote in
     `existing` (the file's lines, in file order). Ids are made unique against
     `taken` (updated); a correction takes the id of the vote it corrects. The
-    nightly writer and backfill_logs.py both decide "is this new?" here."""
+    nightly writer and backfill_logs.py both decide "is this new?" here.
+
+    A version is logged only if it differs from *every* version already logged
+    for that vote, not just the last one. Some scrapes hold two versions of one
+    vote (OH HB 14: one 6-0 "Reported" vote as both pass and fail; MT: "Sen Elect
+    Gregg Hunter" in one copy, "Gregg Hunter" in the other), and comparing with
+    the last line only logged A, B, A, B... every night (TN: 13,276 lines). The
+    cost, accepted 2026-11-25: a genuine revert (A -> B -> A) isn't logged again."""
     to_add = []
     for line in new_lines:
         vote = line["vote_event"]
-        match = _find_vote(existing + to_add, vote)
+        lines = existing + to_add
+        match = _find_vote(lines, vote)
         if match is not None:
-            if vote_substance(match["vote_event"]) == vote_substance(vote):
+            substance = vote_substance(vote)
+            if any(vote_substance(l["vote_event"]) == substance for l in lines if l.get("id") == match["id"]):
                 continue
             line["id"] = match["id"]  # a correction keeps the id of what it corrects
         else:

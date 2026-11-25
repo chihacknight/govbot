@@ -153,6 +153,16 @@ class VoteLogTests(Tmp):
         self.assertEqual(second["first_seen"], SEEN_2)
         self.assertEqual(second["vote_event"]["votes"][1]["option"], "yes")
 
+    def test_flip_flop_logs_each_version_once(self):
+        # OH HB 14: each scrape holds the same 6-0 vote as both pass and fail.
+        a, b = vote(result="pass"), vote(result="fail")
+        self.assertEqual(self.add_votes([a, b]), 2)  # A, then B as a correction
+        for seen in (SEEN_2, "2026-09-30T10:00:00+00:00", "2026-10-01T10:00:00+00:00"):
+            self.assertEqual(self.add_votes([vote(result="pass"), vote(result="fail")], seen=seen), 0)
+        got = lines(self.bill / L.VOTE_EVENT_LOG_FILE)
+        self.assertEqual([v["vote_event"]["result"] for v in got], ["pass", "fail"])
+        self.assertEqual(got[0]["id"], got[1]["id"])
+
     def test_matching_roll_call_numbers_are_the_same_vote(self):
         self.add_votes([vote(identifier="RCS#9")])
         changed_counts = vote(identifier="RCS#9", counts=(("yes", 21), ("no", 10)))
