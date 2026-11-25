@@ -380,6 +380,13 @@ A repo is converted in two steps, on a full-history clone:
 The formatter refuses to write to a repo that still has old-style `logs/` folders,
 so a bill is never split across layouts.
 
+**Any change to a vote's member rows is a correction, renames included** (decided
+2026-11-24). On 2026-01-01 GA's scraper renamed one voter from "ISLAM PARKES" to
+"PARKES" across past roll calls, which gave 756 GA votes a second line with nothing
+else changed; KY's 116 corrections are its scraper dropping duplicate House member
+rows (101–102 rows down to 100). The rule stays simple: what the legislature
+publishes about who voted how is substance, and readers take the last line per `id`.
+
 ---
 
 ## 📅 Event (`events/*.json`)
