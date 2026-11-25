@@ -155,3 +155,14 @@ repo makes the formatter stop as soon as it gets new data.
     across past roll calls. 912 raw files in the 2026-07-21 "Auto-merge: kept scraped
     data" commit hold committed git conflict markers (unparseable; both parent scrapes
     are replayed, so nothing lost). Every old file covered; schema clean.
+  - **CT pilot** (full-history clone `/Volumes/govbot-data/govbot_data/full/ct-legislation`,
+    61 commits since its 2026-07-21 re-creation): 155 scrapes in 64 s, then convert. 11,611
+    actions on 1,283 bills (old layout 11,599; the 12 extra are May/Feb passages and
+    adoptions first scraped 2026-07-02, before the repo existed). No votes (CT's raw history
+    has none). Schema clean, no null first_seen. `govbot logs --repos ct` reads 11,611 (old
+    layout 11,599); the formatter accepts the repo and adds 0 lines on the latest scrape.
+    Diff = 1,283 `action_logs.jsonl` added, 11,599 log files + 11,599 symlinks deleted.
+    **Committed locally (`2fd0710a`), not pushed.** The raw history also holds 4,076
+    session-2025 bills with no folder here (this repo is 2026-only): goal 1's business.
+    Same 2026-07-21 auto-merge conflict-marker problem as GA (1,834 files).
+  - Reports + re-run cursors: `/Volumes/govbot-data/scratch/backfill/reports/`.
