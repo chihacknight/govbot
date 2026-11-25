@@ -66,7 +66,7 @@ Red dates in the PDF = estimated by LegiScan, not necessarily final.
 | sd | South Dakota | 2026 Regular Session | 2026-01-13 | 2026-03-30 | ⏸️ | |
 | tn | Tennessee | 114th General Assembly | 2026-01-13 | 2026-04-24 | ⏸️ | |
 | tx | Texas | No Regular Session | — | — | ⏸️ | No regular session in 2026 |
-| usa | US Congress | 119th Congress | 2026-01-03 | 2026-10-30 | ✅ | |
+| usa | US Congress | 119th Congress | 2026-01-03 | 2026-10-30 | ✅ | 2026-11-24: in the post-election lame-duck session (back since the week of Nov 9; funding runs out Dec 11), so still in session past the 10-30 estimate. |
 | ut | Utah | 2026 Regular Session | 2026-01-20 | 2026-03-07 | ⏸️ | |
 | va | Virginia | 2026 Regular Session | 2026-01-14 | 2026-03-14 | ⏸️ | |
 | vi | Virgin Islands | 36th Legislature | 2025-01-06 | 2026-12-31 | ✅ | Year-round; regular sessions called as needed. Not a LegiScan jurisdiction. Source: legvi.org |

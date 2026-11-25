@@ -14,8 +14,8 @@ not a replacement for the state-specific detail in `state-problems.md`.
 ## Read these first, in order
 
 1. **`docs/src/state-status-reference.md`** — one row per jurisdiction: scrape/extraction
-   health, session timing, bill-text format. The "Hosting Path History" table at the bottom
-   tells you what's actually been tried (Tinyproxy / self-hosted / plain GitHub-hosted) and
+   health, session timing, bill-text format. The "Hosting Path History" table (now
+   `archived_docs/hosting-path-history-2026-07.md`) tells you what's actually been tried (Tinyproxy / self-hosted / plain GitHub-hosted) and
    what worked, per state — check this before re-trying a hosting fix that's already been
    ruled out.
 2. **`tamara-notes/state-problems.md`** — the working notes behind that table. Only states

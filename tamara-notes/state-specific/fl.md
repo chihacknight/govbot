@@ -213,7 +213,7 @@ shrink-guard bug and got cancelled — needed a fresh live test once that was ou
 ### 2026-08-07 (this session) — Live investigation: skip-rate reality check + a new, sharper finding
 
 Walked a real in-progress/completed local FL run end-to-end instead of assuming from the
-`SKIPPED BILL:` log line alone. See `not-working.md`'s FL section for the full writeup; summary:
+`SKIPPED BILL:` log line alone. See `archived_docs/not-working.md`'s FL section for the full writeup; summary:
 
 - **Bills are not lost, and neither are floor votes.** A blocked bill's JSON still has full
   title/sponsors/subjects/citations and the complete cross-chamber action/history timeline
@@ -254,6 +254,16 @@ Walked a real in-progress/completed local FL run end-to-end instead of assuming 
   file. This is a genuinely new thread, not a rediscovery of something already tracked.
 
 ---
+
+## Update 2026-11-24
+
+- PR [#5724](https://github.com/openstates/openstates-scrapers/pull/5724) was **closed
+  without merging** on 2026-08-08 (by us, planning a consolidated fix later). FL still runs on
+  `ghcr.io/tamara-builds/openstates-scrapers:fl-fix-test` (the `docker_image` field in
+  `chn-openstates-scrape.yml`).
+- The last scrape commit in `fl-legislation` is 2026-08-07. FL's final runs before the pause
+  (2026-09-27 to 09-29) were all cancelled after waiting 24h for a self-hosted runner.
+- The list below is the August picture; nothing has run since.
 
 ## What's actually true right now (as of 2026-08-07)
 
@@ -307,9 +317,9 @@ Walked a real in-progress/completed local FL run end-to-end instead of assuming 
   `text-extraction-summary.md`, `TODO.md`, `2026-07-14-recovery-summary.md`,
   `2026-07-21-session-handoff.md`, `2026-07-21-notes-for-sartaj.md` — scattered FL mentions,
   all folded into the timeline above.
-- `tamara-notes/scraper-status/not-working.md` — current FL status row + the detailed
-  House-vote-scope writeup from this session (2026-08-05/07).
-- `tamara-notes/scraper-status/pending-branches.md`, `morning-todo.md` — shrink-guard bug FL
+- `tamara-notes/archived_docs/not-working.md` — FL status row as of July + the detailed
+  House-vote-scope writeup (2026-08-05/07).
+- `tamara-notes/archived_docs/pending-branches.md`, `morning-todo.md` — shrink-guard bug FL
   details.
 - `tamara-notes/session-dates/session-calendar-2026.md`, `session-dates-comparison.md` — FL's
   actual session dates.

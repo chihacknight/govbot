@@ -11,12 +11,17 @@ shares a root cause or was found in the same investigation. See `fl.md` for the 
 example of the pattern (built specifically because FL's history was scattered across 15+
 other files before being consolidated).
 
-## States with open issues (as of 2026-10-03)
+## States with open issues (as of 2026-10-03; PA and AZ updated 2026-11-24)
+
+The current status of every state, including these, is the master list:
+`docs/src/state-status-reference.md`. If this table and the master list disagree, the master
+list wins.
 
 | State | Status | Summary | File |
 |---|---|---|---|
 | ⏸️ IL | Paused on purpose | Out of session, and scrapers are paused during the migration to a new system, so bills filed after 2026-09-24 are expected to be missing for now. A volunteer's ilga.gov scan led to a field audit (synopsis and statutes amended are never stored); EO/JSR documented as out of scope. | [`il.md`](il.md) |
-| 🔴 PA | Broken, ongoing | 100% failure rate for 19+ days — confirmed IP-reputation block on the proxy's egress IP. Needs a new egress path; not fixed. | [`pa.md`](pa.md) |
+| 🟡 PA | Block cleared, see master list | The October IP block on the proxy had cleared by 2026-10-29 (5,259 bills scraped, held back by the shrink guard). Down since 2026-10-30 with every active state. | [`pa.md`](pa.md) |
+| 🟡 AZ | Will break when unpaused | Worked only on our custom image; the 2026-09-30 pause sync removed it and upstream PR #5742 was closed unmerged. Drop `--fastmode` for AZ or pin the image before unpausing. | [`az.md`](az.md) |
 | 🔴 VI | Broken, ongoing | Same symptom as PA, but confirmed as a likely genuine destination-side outage, not a block. Probably self-resolves; nothing to fix on our end. | [`vi.md`](vi.md) |
 | 🟡 GU | Broken, not fixed | Real scraper bug — a bill version's empty `note` field fails schema validation and crashes the whole scrape. Root cause not yet traced into source. | [`gu.md`](gu.md) |
 | 🟢 USA | Resolved | Unhandled `KeyError` on a Senate vote crashed the scrape, masked by a misclassified rate-limit annotation. PR [#5847](https://github.com/openstates/openstates-scrapers/pull/5847) merged 2026-10-06; confirmed live in the rebuilt official image and the `docker_image` override reverted 2026-10-13. | [`usa.md`](usa.md) |
@@ -41,12 +46,8 @@ build a file here for a state the next time it actually comes up with an issue, 
 these first eight got created. If a state isn't listed above, check the older docs in
 `archived_docs/` for any pre-2026-10 history before assuming it has none.
 
-`docs/src/state-status-reference.md` is the public-facing, one-row-per-state summary table
-(uses the same failure-type codes as this index and `scrape.sh`) — it predates this system,
-went stale (last updated 2026-07-25, mostly `TBD`), and isn't automatically fed by anything
-yet. Worth deciding later whether to revive it as a mechanically-generated summary of this
-directory, rather than hand-maintained prose, now that the daily/weekly audits
-(`actions/openstates-scrape-audits/`) produce structured per-state signal that could drive it.
+`docs/src/state-status-reference.md` is the master list: one row per jurisdiction, rebuilt
+and re-checked 2026-11-24. Update a state's row there whenever its file here changes.
 
 ## Related systems
 

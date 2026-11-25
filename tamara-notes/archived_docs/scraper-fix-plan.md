@@ -14,7 +14,7 @@ GitHub-hosted path, **Tinyproxy is the first thing to try, your MacBookPro (self
 last resort** -- it doesn't require your laptop to be on, and tonight's audit shows it performs
 at least as well as self-hosted everywhere it's actually been tried.
 
-Source data: `docs/src/state-status-reference.md`'s Hosting Path History table (2026-07-24
+Source data: `hosting-path-history-2026-07.md` (formerly in `docs/src/state-status-reference.md`) (2026-07-24
 audit of the last 10 scrape runs per state) and tonight's investigation notes in
 `tamara-notes/state-problems.md`.
 

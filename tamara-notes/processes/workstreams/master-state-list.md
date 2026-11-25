@@ -43,4 +43,11 @@ the master list.
 
 ## Status
 
-- 2026-11-24: not started.
+- 2026-11-24: done, on `docs/master-state-list`. `docs/src/state-status-reference.md` is the
+  master list: every row re-checked 2026-11-24 against GitHub runs, raw-repo commits and the
+  local clones. The 7 `scraper-status/` docs moved to `archived_docs/` with a banner
+  (`scraper-status/not-working.md` is a pointer, since code comments link to it). The four
+  unverified files' claims were checked: NM's committed ✅ is right (no FTP now); no conflict
+  markers anywhere at HEAD, but the bug is still in `action.yml`; FL #5724 and AZ #5742 were
+  closed unmerged; PA's block has cleared. New: every active scraper has failed since
+  2026-10-30 (Python 3.9 on Ubuntu 26.04), which goes to the scraper-fixes chat.

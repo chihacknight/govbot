@@ -1,3 +1,8 @@
+> **Archived 2026-11-24.** Superseded by the master state list, `docs/src/state-status-reference.md`.
+> Kept as history; its claims were last true on the dates written below. Anything still open
+> from this file is in the master list's "Open across states" section or the state's own file in
+> `tamara-notes/state-specific/`.
+
 # Pending local branches
 
 Live-tracked, not chronological — update in place as branches move, don't just append.

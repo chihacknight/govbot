@@ -69,7 +69,7 @@ Upstream only rebuilds `openstates/scrapers:latest` on their own cadence. Before
    few days, it's probably rebuilt by now."
 3. Only then revert the override and verify live.
 
-See `tamara-notes/scraper-status/upstream-pr-todo.md` for the per-state tracking template this
+See `tamara-notes/archived_docs/upstream-pr-todo.md` for the per-state tracking template this
 feeds into, and its USA entry for a worked example of the full cycle (filed → merged → verified
 live → override reverted).
 
