@@ -156,8 +156,13 @@ Each bill folder holds `metadata.json` plus two append-only JSON Lines logs, wri
 the nightly scrape is the whole dataset, and each new entry is appended once, stamped with
 `first_seen` = the raw scrape's **commit time** (not the formatter's run time), so `git diff`
 of a night is exactly the new lines. Lines are never edited or reordered. A vote whose
-substance changes later is appended again under the same `id` (readers take the last line
-per `id`). Votes are deduped by roll-call `identifier` + date + motion (VA and MT reuse one
+substance changes later is appended again under the same `id`, only if it differs from every
+version already logged (some scrapes hold two versions of one vote; comparing with the last
+line only logged A, B, A, B nightly). An action the scraper rewords (MT "(H) First Reading" →
+"(H) 1st Reading") is appended under the paired action's `id` when the previous scrape
+(`metadata.json`) and tonight's have the same count on that date + chamber with unchanged
+actions in the same order (`find_rewordings`). Readers take the last line per `id`; an action
+keeps its first line's `first_seen`, a vote its correction's. Votes are deduped by roll-call `identifier` + date + motion (VA and MT reuse one
 identifier across different votes), else date + motion + chamber + counts; there is no "newer than the newest vote" gate any more (it silently lost late
 votes). Line schemas: `actions/format/schemas/action_log.schema.json` /
 `vote_event_log.schema.json` (copies in `/schemas`). Full reference: "Action and vote

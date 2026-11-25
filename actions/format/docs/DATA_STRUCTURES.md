@@ -322,6 +322,17 @@ action on purpose so a log line passed around on its own always leads back to th
 scrapers start emitting line breaks inside descriptions), same `jurisdiction_id`.
 An action already in the file is never written again.
 
+**Reworded actions:** when a scraper rewords an action it already published (MT,
+2026-08-10: "(H) First Reading" → "(H) 1st Reading" on every past bill), the new
+wording is appended under the **same `id`**, so it isn't logged as a new action.
+The writer compares the bill's previous scrape (its `metadata.json`) with tonight's,
+per date and chamber: when both have the same number of actions there and the
+actions whose wording didn't change are in the same order, the changed ones pair
+slot by slot. Otherwise the new wording is logged as a new action. No
+text-similarity matching. Readers show the last line per `id` (the current
+wording) with the **first** line's `first_seen`, since a rewording isn't news. An
+`id` repeats only within one date and chamber.
+
 ### `vote_event_logs.jsonl`
 
 ```json
@@ -345,6 +356,11 @@ unique: PA HB 1549 had two roll calls on one motion at the same moment).
 **Corrections:** when a later scrape changes a vote's substance (result, counts,
 member votes), the corrected vote is appended as a new line with the
 **same `id`**. The last line for an `id` is current; earlier ones are the history.
+A version is appended only if it differs from **every** version already logged for
+that vote, not just the last: some scrapes hold two versions of one vote (OH HB 14
+as both `pass` and `fail`), which used to log A, B, A, B… every night (TN: 13,276
+lines). A genuine revert (A → B → A) is therefore not logged again (accepted
+2026-11-25).
 Changes that aren't substance (source URL format, a roll-call number filled in
 later, voter row order, the scraper's internal bill UUID) are not corrections.
 

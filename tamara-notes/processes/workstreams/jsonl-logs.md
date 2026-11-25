@@ -78,6 +78,17 @@ Sartaj's vector tagging, which reads `govbot logs`).
   got 51,535 bogus corrections), else date + motion + chamber + counts. A change in substance (result, counts, member votes, motion) is
   appended as a correction under the same `id`; readers take the last line per `id`.
   Cosmetic changes (URL format, roll-call number filled in later, voter order) aren't.
+  A version is logged only if it differs from *every* logged version of that vote (2026-11-25:
+  scrapes holding two versions of one vote flip-flopped A, B, A nightly; TN 13,276 lines). A
+  genuine A → B → A revert isn't re-logged; accepted.
+- **Reworded actions** (2026-11-25): a new wording of an action the previous scrape had is
+  appended under the paired action's `id`. Previous = the bill's `metadata.json` (nightly) or
+  the last version seen (backfill). Per date + chamber: same count and unchanged actions in the
+  same order → pair the changed ones slot by slot; else log as new (the backfill counts these
+  as "unpaired"). No text similarity. Readers show the last line per `id` with the first line's
+  `first_seen`. Needs bill-skip option C before the scrapers are unpaused, or the nightly writer
+  never sees a night that only rewords. Details and the per-state counts:
+  `shared-docs/jsonl-log-conversion-results.md`.
 - **Session symlinks (`sessions/<s>/logs/`) removed**, with `symlink_logs.py`. They doubled
   the file count and made `govbot logs` emit every action twice (GA: 61,256 lines for
   30,628 actions) and the weekly audit count double.
