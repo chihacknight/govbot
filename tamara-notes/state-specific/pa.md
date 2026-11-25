@@ -1,13 +1,20 @@
 ---
 name: pa
-description: PA scrape has failed 100% of runs for 19+ days via a confirmed IP-reputation block on govbot-proxy's egress IP, silently masked by fallback + green checkmarks. One of the per-state files indexed in tamara-notes/state-specific/README.md.
+description: PA's October IP-reputation block on govbot-proxy had cleared by 2026-10-29 (5,259 bills scraped, held back by the shrink guard); down since 2026-10-30 with every active state (Python 3.9 on Ubuntu 26.04). One of the per-state files indexed in tamara-notes/state-specific/README.md.
 metadata:
   type: project
 ---
 
 # Pennsylvania
 
-## Status: 🔴 Broken — sustained, ongoing, unresolved
+## Status: 🟡 Block cleared by 2026-10-29; scraper down since 2026-10-30 like every active state
+
+**Update 2026-11-24:** the proxy block below had cleared by 2026-10-29. That day's run
+([40858185348](https://github.com/govbot-openstates-scrapers/pa-legislation/actions/runs/40858185348))
+scraped 5,259 bills, but the shrink guard refused to commit them because 5,264 were already
+saved (`P1_SHRINKING_OUTPUT`). Which 5 bills dropped out isn't checked. Since 2026-10-30 every
+run fails at "Setup Python" (Ubuntu 26.04 has no Python 3.9), the same as all active states.
+When the block cleared isn't known. The rest of this file is the October diagnosis.
 
 **Active state** (`runner: self-hosted` in `chn-openstates-scrape.yml`), scheduled daily.
 
@@ -68,6 +75,8 @@ retroactively cover the 19 days before the fields existed.
   different, unrelated usa-legislation bug the same day).
 - **2026-10-03**: root-caused via live SSH diagnostics into `govbot-proxy`. See "Root cause"
   above for the full evidence trail.
+- **By 2026-10-29**: block cleared; fresh scrape of 5,259 bills, held back by the shrink guard.
+- **2026-10-30 →**: every run fails at "Setup Python" (Ubuntu 26.04 runner, no Python 3.9).
 
 ## Related
 

@@ -168,10 +168,9 @@ here from across several sessions' worth of threads so nothing gets lost going b
 
 - `tamara-notes/session-dates/session-dates-comparison.md` — LegiScan vs. OpenStates session
   date comparison, the starting point for the "outside source" question in step 1.
-- `tamara-notes/scraper-status/not-working.md` / `working-in-session.md` /
-  `working-out-of-session.md` — current per-state status, last audited 2026-07-21/24, not
-  yet run through this audit's bar.
-- `tamara-notes/scraper-status/critical-merge-conflict-corruption.md` — separate, deprioritized
+- `docs/src/state-status-reference.md` — the master state list (current per-state status,
+  re-checked 2026-11-24). The July status docs it replaced are in `tamara-notes/archived_docs/`.
+- `tamara-notes/archived_docs/critical-merge-conflict-corruption.md` — separate, deprioritized
   finding (self-heals nightly; concurrency guard already covers the specific race that caused
   it — see session notes 2026-07-27/28). Not part of this audit's scope.
 - `actions/pipeline-manager/check-sessions.py` — the disabled automated session-pause script;
