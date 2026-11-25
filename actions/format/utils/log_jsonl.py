@@ -452,12 +452,18 @@ def _append_votes_each(path: Path, lines: Iterable[dict[str, Any]], keep_order: 
     return len(to_add)
 
 
-def _nd_service_unavailable(vote: dict[str, Any], last: Optional[dict[str, Any]]) -> bool:
-    # On nights ndlegis.gov is down the scraper saves the error page's text as a
-    # voter: 5,818 versions on 6 nights, 2025-12-30 to 2026-08-11 (HB 1626,
-    # 2026-01-22: "Daniel R. Vollmer" -> "Service Unavailable"). Not reported to
-    # OpenStates yet; see tamara-notes/state-specific/nd.md.
-    return any((row.get("voter_name") or "").strip() == "Service Unavailable" for row in vote.get("votes") or [])
+# Error-page titles ND's scraper has saved as a voter's name. An explicit list,
+# not a pattern: add a title when another error page turns up.
+_ND_ERROR_PAGES = {"Service Unavailable", "Proxy Error"}
+
+
+def _nd_error_page(vote: dict[str, Any], last: Optional[dict[str, Any]]) -> bool:
+    # On nights ndlegis.gov is down the scraper saves the error page's title as a
+    # voter. "Service Unavailable": 5,818 versions on 6 nights, 2025-12-30 to
+    # 2026-08-11 (HB 1626, 2026-01-22: "Daniel R. Vollmer" -> "Service
+    # Unavailable"). "Proxy Error": 1,181 votes on 2026-08-29 and 2026-09-19.
+    # Not reported to OpenStates yet; see tamara-notes/state-specific/nd.md.
+    return any((row.get("voter_name") or "").strip() in _ND_ERROR_PAGES for row in vote.get("votes") or [])
 
 
 def _tn_empty_roll_call(vote: dict[str, Any], last: Optional[dict[str, Any]]) -> bool:
@@ -474,7 +480,7 @@ def _tn_empty_roll_call(vote: dict[str, Any], last: Optional[dict[str, Any]]) ->
 # Such a version is treated as not scraped that night. Each entry is a stopgap
 # for an OpenStates scraper bug; delete it (and its test) once that's fixed.
 SCRAPER_FAILURES = {
-    "nd": _nd_service_unavailable,
+    "nd": _nd_error_page,
     "tn": _tn_empty_roll_call,
 }
 

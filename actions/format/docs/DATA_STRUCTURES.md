@@ -366,8 +366,8 @@ per scrape, all together:
    night), even if it repeats an earlier version: a real revert (A → B → A) shows.
 
 Known per-state scraper failures are treated as not scraped (`SCRAPER_FAILURES` in
-`utils/log_jsonl.py`): `nd`, a voter named "Service Unavailable" (the site was
-down); `tn`, an empty roll call when the last logged version has voters. Each entry
+`utils/log_jsonl.py`): `nd`, a voter named "Service Unavailable" or "Proxy Error"
+(the site was down; an explicit list of error-page titles); `tn`, an empty roll call when the last logged version has voters. Each entry
 is a stopgap for an OpenStates bug and is deleted once that's fixed.
 Changes that aren't substance (source URL format, a roll-call number filled in
 later, voter row order, the scraper's internal bill UUID) are not corrections.

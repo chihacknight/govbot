@@ -161,7 +161,7 @@ the latest scrape: each bill's votes are checked once per scrape, nothing is log
 whose last line is in tonight's scrape (some scrapes hold two versions of one vote, which
 flip-flopped A, B, A nightly), else a changed version is logged even if it repeats an earlier
 one (a real revert). `SCRAPER_FAILURES` in `log_jsonl.py` skips known per-state scraper
-failures (ND "Service Unavailable" voters, TN roll calls gone empty; delete an entry when
+failures (ND "Service Unavailable" / "Proxy Error" voters, TN roll calls gone empty; delete an entry when
 OpenStates fixes it, see `tamara-notes/state-specific/nd.md` / `tn.md`). An action the scraper rewords (MT "(H) First Reading" →
 "(H) 1st Reading") is appended under the paired action's `id` when the previous scrape
 (`metadata.json`) and tonight's have the same count on that date + chamber with unchanged

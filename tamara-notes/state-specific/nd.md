@@ -33,14 +33,27 @@ logs, by the night the bad version was first seen:
 That's 5,818 bad versions on 1,170 of ND's 2,180 votes. Each bad night garbles different
 voters, so no two bad versions match.
 
+The same bug shows up with a different error page. On two more nights, roll calls came back
+with a single voter named **"Proxy Error"**, and the real names returned the next night
+(found in run 3 of the conversion, report `run3.md` in the same folder):
+
+| Night | Votes with a "Proxy Error" voter |
+|---|---|
+| 2026-08-29 | 1,166 |
+| 2026-09-19 | 15 |
+
+Example: HB 1626, 2026-01-22, Motion for Final Passage:
+`['Dennis Nehring', 'Donna Henderson'] → ['Proxy Error']`.
+
 Root cause not traced into the scraper source yet. It's probably the vote page parser not
 checking for an error response before reading names.
 
 ## Workaround in govbot
 
 `actions/format/utils/log_jsonl.py` has a per-state table of scraper-failure rules. ND's entry
-treats a vote version with a voter named "Service Unavailable" as not scraped that night, so
-it's never logged. Status as of 2026-11-25: added in PR #308 (`_nd_service_unavailable`, tested in
+treats a vote version with a voter named "Service Unavailable" or "Proxy Error" (an explicit
+list, extended when another error page turns up) as not scraped that night, so it's never logged.
+"Proxy Error" was added after run 3. Status as of 2026-11-25: added in PR #308 (`_nd_error_page` and its list `_ND_ERROR_PAGES`, tested in
 `test_log_jsonl.py`; see `tamara-notes/processes/workstreams/shared-docs/jsonl-log-conversion-results.md`,
 section 3). Without it, ND's logs would show a garbled roll call as current on more than 1,100
 votes.
@@ -48,7 +61,8 @@ votes.
 ## What would actually fix this
 
 1. File the bug with OpenStates (`openstates/issues`; see the contribution notes in memory).
-   Include the HB 1626 example and the six nights. Ask for the scraper to fail, or skip the
+   Include the HB 1626 examples, the six "Service Unavailable" nights and the two "Proxy Error"
+   nights. Ask for the scraper to fail, or skip the
    vote, when the vote page returns an error instead of a roll call.
 2. Or fix it ourselves: a PR to `openstates-scrapers` (`scrapers/nd/`) that detects the error
    page.
@@ -59,7 +73,9 @@ its test), then update this file and the README index.
 ## Timeline
 
 - 2025-12-30 to 2026-08-11: six nights of "Service Unavailable" voters in the raw scrapes.
-- 2026-11-25: found during the JSONL log conversion. Per-state workaround agreed.
+- 2026-08-29 and 2026-09-19: "Proxy Error" voters (1,166 and 15 votes).
+- 2026-11-25: found during the JSONL log conversion. Per-state workaround agreed, then
+  extended to "Proxy Error" after run 3.
 
 ## Related
 

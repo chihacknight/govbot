@@ -88,7 +88,7 @@ Sartaj's vector tagging, which reads `govbot logs`).
   line, keeping every version.
 - **Per-state scraper failures** (`SCRAPER_FAILURES` in `log_jsonl.py`): a version the table
   flags is treated as not scraped. `nd`: a voter named "Service Unavailable" (site down, 6
-  nights). `tn`: an empty roll call when the last logged version has voters (6,787 votes). Not
+  nights) or "Proxy Error" (2 nights, added after run 3), an explicit list. `tn`: an empty roll call when the last logged version has voters (6,787 votes). Not
   a general rule: in OK and HI a change to an empty roll call is the scraper fixing its
   parsing. Each entry is a stopgap; delete it when OpenStates fixes the bug
   (`tamara-notes/state-specific/nd.md`, `tn.md`).

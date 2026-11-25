@@ -237,6 +237,13 @@ class VoteLogTests(Tmp):
         # A new vote seen only on a bad night waits for a good one.
         self.assertEqual(self.add_votes([dict(bad, motion_text="Another motion")], seen=SEEN_2, state="nd"), 0)
 
+    def test_nd_proxy_error_night_logs_nothing(self):
+        self.add_votes([vote()], state="nd")
+        bad = vote(rows=[{"option": "yes", "voter_name": "Proxy Error", "voter_id": "~{}", "note": ""}])
+        self.assertEqual(self.add_votes([bad], seen=SEEN_2, state="nd"), 0)
+        self.assertEqual(self.add_votes([vote()], seen="2026-09-30T10:00:00+00:00", state="nd"), 0)
+        self.assertEqual(len(lines(self.bill / L.VOTE_EVENT_LOG_FILE)), 1)
+
     def test_tn_empty_roll_call_logs_nothing(self):
         self.add_votes([vote()], state="tn")
         self.assertEqual(self.add_votes([vote(rows=[])], seen=SEEN_2, state="tn"), 0)
