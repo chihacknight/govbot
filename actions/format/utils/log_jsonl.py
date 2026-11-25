@@ -487,6 +487,42 @@ def legacy_file_to_line(
     return None
 
 
+def legacy_jsonl_to_lines(
+    path: Path, first_logged: dict[tuple, str], session_id: str = "", sources: Optional[list] = None
+) -> Optional[list[tuple[str, dict[str, Any]]]]:
+    """An old logs/action_logs.jsonl -> [("action", line), ...], or None if any
+    line isn't an action we recognise (then the whole file is left in place).
+
+    The formatter briefly wrote this form (Taha's first JSONL step: one
+    {"action", "bill_id"} object per line, inside logs/) to 118 IL bills between
+    2026-09-22 and 09-25. Each line is an old action file's content without the
+    file, so its id is the filename the old writer would have given it.
+    """
+    try:
+        raw_lines = [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines() if l.strip()]
+    except Exception:
+        return None
+    out = []
+    for content in raw_lines:
+        if not isinstance(content, dict) or not isinstance(content.get("action"), dict):
+            return None
+        action = _current_action_shape(content["action"], session_id, sources or [])
+        stem = legacy_action_id({
+            "date": action.get("occurred_at"),
+            "description": action.get("description", "no_description"),
+            "classification": action.get("classifications") or [],
+            "organization_id": action.get("jurisdiction_id"),
+        })
+        out.append(("action", {
+            "id": stem,
+            "first_seen": first_logged.get(action_key(action)),
+            "chamber": chamber_of(action.get("jurisdiction_id")),
+            "action": action,
+            "bill_id": content.get("bill_id"),
+        }))
+    return out
+
+
 def _sort_key(line: dict[str, Any], kind: str) -> tuple:
     # The government's date, then id. Used to order one batch of new entries, and
     # converted entries (which have no record of the order they were first seen in;
@@ -600,16 +636,18 @@ def convert_bill(bill_dir: Union[str, Path]) -> ConvertStats:
     folded: list[Path] = []
     converted: dict[str, list[dict[str, Any]]] = {"action": [], "vote_event": []}
     for path in sorted(legacy_dir.iterdir()):
-        parsed = (
-            legacy_file_to_line(path, first_logged, session_id, sources)
-            if path.is_file() and path.suffix == ".json"
-            else None
-        )
-        if parsed is None:
+        if path.is_file() and path.name == ACTION_LOG_FILE:
+            parsed_many = legacy_jsonl_to_lines(path, first_logged, session_id, sources)
+        elif path.is_file() and path.suffix == ".json":
+            one = legacy_file_to_line(path, first_logged, session_id, sources)
+            parsed_many = [one] if one else None
+        else:
+            parsed_many = None
+        if parsed_many is None:
             stats.left_in_place.append(str(path))
             continue
-        kind, line = parsed
-        converted[kind].append(line)
+        for kind, line in parsed_many:
+            converted[kind].append(line)
         folded.append(path)
 
     for kind, filename, append_at in (

@@ -358,7 +358,9 @@ overwrite another; together they lost 23% of votes in a 14-state check on
 Before 2026-11, each bill had a `logs/` folder with one file per action or vote
 (`{timestamp}_{slug}.json`, `{timestamp}.classification.{c}.{chamber}.json`,
 `{timestamp}.vote_event.pass.{chamber}.json`, `{timestamp}_vote_event_{result}.json`),
-plus a symlink to each under `sessions/{session}/logs/`. Old action files hold either
+plus a symlink to each under `sessions/{session}/logs/`. For a few days in Sept 2026 the formatter wrote 118 IL bills' actions
+as `logs/action_logs.jsonl` instead (one old-file object per line); the converter folds
+those lines in the same way. Old action files hold either
 the current action shape or OpenStates' own (`date`, `organization_id`,
 `classification`); both convert to the current shape.
 

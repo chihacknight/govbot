@@ -329,6 +329,29 @@ class ConversionTests(unittest.TestCase):
         got = [a["action"]["description"] for a in lines(tmp / L.ACTION_LOG_FILE)]
         self.assertEqual(got, ["first", "second", "third"])
 
+    def test_old_logs_folder_jsonl_is_folded(self):
+        # IL, 2026-09-22..25: the formatter wrote {"action", "bill_id"} lines to
+        # bills/<id>/logs/action_logs.jsonl (Taha's first JSONL step).
+        amended = L.action_line(action("Added Co-Sponsor Rep. Regan Deering", date="2026-09-21"), "SF0015", SOURCES, "2025", None)
+        intro = L.action_line(action("Introduced", cls=["introduction"]), "SF0015", SOURCES, "2025", None)  # also an old .json file
+        (self.bill / "logs" / L.ACTION_LOG_FILE).write_text(
+            "".join(json.dumps({"action": l["action"], "bill_id": "SF0015"}) + "\n" for l in (amended, intro)))
+        stats = L.convert_bill(self.bill)
+        self.assertNotIn(str(self.bill / "logs" / L.ACTION_LOG_FILE), stats.left_in_place)
+        self.assertFalse((self.bill / "logs" / L.ACTION_LOG_FILE).exists())
+        acts = lines(self.bill / L.ACTION_LOG_FILE)
+        self.assertEqual([a["id"] for a in acts], [
+            "20241205T022742Z_number_assigned",
+            "20250114T210515Z.classification.introduction.upper",
+            "20260921T000000Z_added_cosponsor_rep_regan_deering",
+        ])
+
+    def test_unrecognised_line_leaves_the_old_jsonl_in_place(self):
+        (self.bill / "logs" / L.ACTION_LOG_FILE).write_text('{"something": "else"}\n')
+        stats = L.convert_bill(self.bill)
+        self.assertIn(str(self.bill / "logs" / L.ACTION_LOG_FILE), stats.left_in_place)
+        self.assertTrue((self.bill / "logs" / L.ACTION_LOG_FILE).exists())
+
     def test_session_symlink_folder_keeps_real_files(self):
         (self.session / "logs" / "real.json").write_text("{}")
         stats = L.convert_repo(self.repo).as_dict()
