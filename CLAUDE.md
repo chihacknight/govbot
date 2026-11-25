@@ -157,8 +157,8 @@ the nightly scrape is the whole dataset, and each new entry is appended once, st
 `first_seen` = the raw scrape's **commit time** (not the formatter's run time), so `git diff`
 of a night is exactly the new lines. Lines are never edited or reordered. A vote whose
 substance changes later is appended again under the same `id` (readers take the last line
-per `id`). Votes are deduped by roll-call `identifier`, else date + motion + chamber +
-counts; there is no "newer than the newest vote" gate any more (it silently lost late
+per `id`). Votes are deduped by roll-call `identifier` + date + motion (VA and MT reuse one
+identifier across different votes), else date + motion + chamber + counts; there is no "newer than the newest vote" gate any more (it silently lost late
 votes). Line schemas: `actions/format/schemas/action_log.schema.json` /
 `vote_event_log.schema.json` (copies in `/schemas`). Full reference: "Action and vote
 logs" in `actions/format/docs/DATA_STRUCTURES.md`. Decisions and evidence:

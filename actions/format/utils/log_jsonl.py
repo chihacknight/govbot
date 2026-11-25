@@ -42,7 +42,8 @@ One line, vote_event_logs.jsonl:
 
 Duplicates: an action is the same action when its date, description (ignoring
 whitespace, since some scrapers start emitting line breaks inside descriptions)
-and chamber match. A vote is the same vote when its roll-call identifier matches,
+and chamber match. A vote is the same vote when its roll-call identifier, date and
+motion match (scrapers reuse identifiers across votes; see vote_keys),
 or, failing that, its date, motion, chamber and counts match. A vote seen again
 with different substance (result, counts, member votes, motion) is a correction:
 it is appended as a new line with the same id, and readers take the last line
@@ -133,18 +134,29 @@ def action_key(action: dict[str, Any]) -> tuple:
     return (action.get("occurred_at"), _squash(action.get("description")), action.get("jurisdiction_id"))
 
 
-def vote_keys(vote: dict[str, Any]) -> tuple[Optional[str], tuple]:
-    """(roll-call identifier or None, fallback key). Two votes are the same vote
-    when both have an identifier and they match, or when their fallback keys match.
+def vote_keys(vote: dict[str, Any]) -> tuple[Optional[tuple], tuple]:
+    """(identifier key or None, fallback key). Two votes are the same vote when
+    both have an identifier key and they match, or when their fallback keys match.
+
+    The identifier key is the roll-call identifier plus the date and motion,
+    because scrapers reuse one identifier across different votes: VA puts the
+    bill's document number ("26200060D") on every procedural entry ("Presented",
+    "Laid on Clerk's Desk", same day), and MT gives a committee vote and the later
+    floor vote the same id ("2025-SB 80-562"). With the identifier alone those
+    were read as one vote, re-logged as a "correction" every night (51,535 VA
+    lines in the backfill). Within one identifier, date and motion, a change in
+    counts or member votes is still a correction.
 
     The fallback includes the counts because date + motion + chamber alone is not
     unique: PA HB 1549 had two committee roll calls on one tabling motion at the
     same time (roll calls 649 and 650).
     """
-    identifier = (vote.get("identifier") or "").strip() or None
+    identifier = (vote.get("identifier") or "").strip()
+    motion = _squash(vote.get("motion_text"))
+    id_key = (identifier, vote.get("start_date"), motion) if identifier else None
     counts = sorted((c.get("option"), c.get("value")) for c in vote.get("counts") or [])
-    fallback = (vote.get("start_date"), _squash(vote.get("motion_text")), vote.get("organization"), tuple(counts))
-    return identifier, fallback
+    fallback = (vote.get("start_date"), motion, vote.get("organization"), tuple(counts))
+    return id_key, fallback
 
 
 def vote_substance(vote: dict[str, Any]) -> str:

@@ -161,6 +161,18 @@ class VoteLogTests(Tmp):
         self.assertEqual(len(got), 2)
         self.assertEqual(got[0]["id"], got[1]["id"])  # a correction, not a new vote
 
+    def test_reused_identifier_on_different_votes_is_not_one_vote(self):
+        # VA: the bill's document number on every procedural entry, same day.
+        # MT: a committee vote and the later floor vote share one id.
+        va = [vote(identifier="26200060D", motion=m, counts=(("yes", 0), ("no", 0)), result="fail")
+              for m in ("Presented 26200060D", "Laid on Clerk's Desk")]
+        mt = [vote(identifier="2025-SB 80-562", motion="do_pass", start="2025-01-30T22:29:58+00:00", counts=(("yes", 11), ("no", 0))),
+              vote(identifier="2025-SB 80-562", motion="Do Pass", start="2025-02-04T20:21:02+00:00", counts=(("yes", 50), ("no", 0)))]
+        self.assertEqual(self.add_votes(va + mt), 4)
+        # Every later night: nothing, not a "correction" per entry.
+        self.assertEqual(self.add_votes(va + mt, seen=SEEN_2), 0)
+        self.assertEqual(len({l["id"] for l in lines(self.bill / L.VOTE_EVENT_LOG_FILE)}), 4)
+
     def test_two_roll_calls_on_one_motion_are_two_votes(self):
         # PA HB 1549: roll calls 649 and 650 on the same tabling motion, same time.
         self.add_votes([vote(counts=(("yes", 15), ("no", 8))), vote(counts=(("yes", 11), ("no", 14)), result="fail")])

@@ -336,12 +336,14 @@ An action already in the file is never written again.
 `vote_event` is the OpenStates vote event as published (minus the scraper's `_id`
 and `scraped_at`).
 
-**Same vote:** same roll-call `identifier` when both have one; otherwise same
+**Same vote:** same roll-call `identifier`, `start_date` and motion when both have an
+identifier (the identifier alone isn't enough: VA puts the bill's document number on
+every procedural entry, MT gives a committee vote and the floor vote one id); otherwise same
 `start_date`, motion, chamber and counts (date + motion + chamber alone is not
 unique: PA HB 1549 had two roll calls on one motion at the same moment).
 
 **Corrections:** when a later scrape changes a vote's substance (result, counts,
-member votes, motion), the corrected vote is appended as a new line with the
+member votes), the corrected vote is appended as a new line with the
 **same `id`**. The last line for an `id` is current; earlier ones are the history.
 Changes that aren't substance (source URL format, a roll-call number filled in
 later, voter row order, the scraper's internal bill UUID) are not corrections.

@@ -73,8 +73,9 @@ Sartaj's vector tagging, which reads `govbot logs`).
 - **`first_seen` = the raw scrape's commit time**, not the formatter's run time, so the
   backfill gets the right night. `scraped_at` stays out of `metadata.json` (it changes
   every night and would make every bill look changed).
-- **Votes:** no date watermark; dedupe by roll-call `identifier`, else date + motion +
-  chamber + counts. A change in substance (result, counts, member votes, motion) is
+- **Votes:** no date watermark; dedupe by roll-call `identifier` + date + motion (changed
+  2026-11-24 from identifier alone: VA and MT reuse identifiers across votes, VA's backfill
+  got 51,535 bogus corrections), else date + motion + chamber + counts. A change in substance (result, counts, member votes, motion) is
   appended as a correction under the same `id`; readers take the last line per `id`.
   Cosmetic changes (URL format, roll-call number filled in later, voter order) aren't.
 - **Session symlinks (`sessions/<s>/logs/`) removed**, with `symlink_logs.py`. They doubled
