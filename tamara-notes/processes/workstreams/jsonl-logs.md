@@ -112,15 +112,21 @@ cleanup (goal 2) and the `.windycivi` rename (goal 4), so each repo is rewritten
 1. Full-history clone of the formatted repo; record counts (bills, old log files).
 2. **Backfill first:** replay the raw history oldest → newest, appending each scrape's
    actions and votes with `first_seen` = that scrape's commit time (the writer's dedupe
-   and correction rules do the rest). Tool still to write: `backfill_logs.py`, reusing
-   `utils/log_jsonl.py`; it touches only the two log files, not `metadata.json`.
+   and correction rules do the rest): `python3 actions/format/backfill_logs.py <repo>
+   <raw-repo> --report-dir <dir>`. It touches only the two log files, writes only into
+   existing bill folders (the rest are listed in the report) and keeps its re-run cursor
+   in `<dir>/log_backfill-<state>.json`, not in the repo.
 3. **Then fold in the old files:** `python3 actions/format/convert_logs.py <repo>`. Entries
-   already recovered from the raw history are dropped as duplicates; the rest (older than
+   already recovered from the raw history are dropped as duplicates (the backfilled line
+   keeps the earlier `first_seen` of the two and the old file's id); the rest (older than
    the raw history, or no longer in the scrapes) go first in each file, with `first_seen`
-   from `metadata.json`'s `_processing.log_file_created`, else null. It also deletes the
+   from `metadata.json`'s `_processing.log_file_created`, else null. An old vote matching
+   a backfilled vote's identity but none of its versions goes first under the same id. It also deletes the
    session symlinks. Anything it can't recognise is listed and left in place: stop and look.
 4. Validate every line against `actions/format/schemas/*.schema.json`; compare counts with
-   step 1 (no action lost; votes ≥ before).
+   step 1 (no action lost; votes ≥ before):
+   `/Volumes/govbot-data/scratch/backfill/check_conversion.py <original> <converted> <govbot>`
+   (run with that folder's `venv/bin/python`, which has jsonschema).
 5. One commit, pushed. After that the formatter accepts the repo.
 
 Order: CT pilot first, then the rest **before the scrapers are unpaused**: an unconverted
@@ -136,3 +142,16 @@ repo makes the formatter stop as soon as it gets new data.
   README, about, DATA_STRUCTURES, data-repo README template). Still to do: the Rust readers
   (`govbot logs`, `govbot query votes`, library API + snapshots; needs Rust, to be
   installed on the SSD), the backfill tool.
+- 2026-11-24 (later): PR #306 merged. On `backfill-logs`: `backfill_logs.py` (+
+  `test_backfill_logs.py`), `log_jsonl.py`'s is-this-new rules split into
+  `select_new_actions` / `select_new_votes` / `order_batch` (pure refactor), and
+  `convert_bill` fixed to keep the backfilled line on a duplicate (it used to keep the
+  old file, losing the scrape dates). Tested on SSD copies (`scratch/backfill/`):
+  - KY: 290 scrapes, 73 s. 22,204 actions, 2,290 votes (old layout 1,588) + 116
+    corrections (the scraper dropped duplicate House member rows on 2026-09-19). Every
+    old file was in the raw history; no `first_seen` null; schema clean.
+  - GA: 280 scrapes, 6 min. 28,190 actions, 2,798 votes (old 2,510) + 756 corrections,
+    all one change: on 2026-01-01 the scraper renamed voter "ISLAM PARKES" to "PARKES"
+    across past roll calls. 912 raw files in the 2026-07-21 "Auto-merge: kept scraped
+    data" commit hold committed git conflict markers (unparseable; both parent scrapes
+    are replayed, so nothing lost). Every old file covered; schema clean.

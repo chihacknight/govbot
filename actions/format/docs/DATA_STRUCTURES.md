@@ -360,9 +360,25 @@ plus a symlink to each under `sessions/{session}/logs/`. Old action files hold e
 the current action shape or OpenStates' own (`date`, `organization_id`,
 `classification`); both convert to the current shape.
 
-`python3 actions/format/convert_logs.py <repo>` converts a repo in place (idempotent;
-unrecognised files are kept and listed). The formatter refuses to write to a repo
-that still has old-style `logs/` folders, so a bill is never split across layouts.
+A repo is converted in two steps, on a full-history clone:
+
+1. `python3 actions/format/backfill_logs.py <repo> <raw-scraper-repo> --report-dir <dir>`
+   replays the raw scraper repo's history (every commit to `_data/<state>/`, oldest
+   first) into the two `.jsonl` files with the nightly writer's rules, each entry
+   stamped with the commit time of the scrape that first held it. It writes only
+   into existing bill folders (bills with no folder are listed in the report) and
+   touches nothing but the two log files. The last scrape replayed is recorded in
+   `<dir>/log_backfill-<state>.json`, outside the repo, so a re-run resumes instead
+   of replaying a corrected vote's history twice.
+2. `python3 actions/format/convert_logs.py <repo>` folds in the old files
+   (idempotent; unrecognised files are kept and listed). Where an old file and a
+   backfilled line are the same entry, the backfilled line stays, with the earlier
+   `first_seen` of the two and the old file's id. Old entries the raw history
+   doesn't have go first; an old vote whose content matches none of a backfilled
+   vote's versions goes first under that vote's id, as its earliest version.
+
+The formatter refuses to write to a repo that still has old-style `logs/` folders,
+so a bill is never split across layouts.
 
 ---
 

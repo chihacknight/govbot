@@ -166,13 +166,15 @@ logs" in `actions/format/docs/DATA_STRUCTURES.md`. Decisions and evidence:
 
 The **old layout** (`bills/<id>/logs/*.json`, one file per entry, plus symlinks to each
 under `sessions/<s>/logs/`, made by the deleted `symlink_logs.py`) is still in the live
-`govbot-data` repos until they're converted with `python3 actions/format/convert_logs.py
-<repo>` (plus the backfill from the raw scraper history). Readers handle both layouts
+`govbot-data` repos until they're converted: first `python3 actions/format/backfill_logs.py
+<repo> <raw-scraper-repo> --report-dir <dir>` (replays the raw scraper history; re-run cursor
+kept in the report dir, not the repo), then `python3 actions/format/convert_logs.py <repo>`
+(on a duplicate the backfilled line wins). Readers handle both layouts
 through one helper each side (Rust: `actions/govbot/src/logs_jsonl.rs`; Python:
 `log_jsonl.py`); the formatter refuses to write to an unconverted repo. Old action files
 come in two shapes (`occurred_at`/`jurisdiction_id`/`classifications`, and OpenStates' own
 `date`/`organization_id`/`classification`); readers accept both, conversion normalizes to
-the first. Tests: `cd actions/format && python3 test_log_jsonl.py`;
+the first. Tests: `cd actions/format && python3 test_log_jsonl.py && python3 test_backfill_logs.py`;
 `actions/govbot/tests/logs_layout_snaps.rs`.
 
 ## Pages Dashboard
