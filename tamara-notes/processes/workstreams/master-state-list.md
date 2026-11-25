@@ -23,13 +23,12 @@ overlapping docs disagree. Pick one, merge the others into it, and retire the re
 - `tamara-notes/state-specific/` (one file per state). Keep these for detail and link to them
   from the master list.
 
-## Open item: four tracking files committed unverified
+## Open item: four tracking files committed unverified (resolved 2026-11-24)
 
-These were committed as-is on Nov 24 (PR #304) and their claims have not been re-checked:
+These were committed as-is on Nov 24 (PR #304) without re-checking:
 `not-working.md`, `critical-merge-conflict-corruption.md`, `morning-todo.md`,
-`session-calendar-2026.md`. `not-working.md` contains a correction that suggests the New Mexico
-row in the committed table is wrong. Verify each claim against current data before it goes into
-the master list.
+`session-calendar-2026.md`. All four were checked against current data on 2026-11-24; see
+"Status" below for what held up.
 
 ## Deliverables
 
@@ -41,13 +40,49 @@ the master list.
 
 - Fixing scrapers. Record what's broken; the scraper-fixes chat fixes it.
 
-## Status
+## Status: done 2026-11-24, in review
 
-- 2026-11-24: done, on `docs/master-state-list`. `docs/src/state-status-reference.md` is the
-  master list: every row re-checked 2026-11-24 against GitHub runs, raw-repo commits and the
-  local clones. The 7 `scraper-status/` docs moved to `archived_docs/` with a banner
-  (`scraper-status/not-working.md` is a pointer, since code comments link to it). The four
-  unverified files' claims were checked: NM's committed ✅ is right (no FTP now); no conflict
-  markers anywhere at HEAD, but the bug is still in `action.yml`; FL #5724 and AZ #5742 were
-  closed unmerged; PA's block has cleared. New: every active scraper has failed since
-  2026-10-30 (Python 3.9 on Ubuntu 26.04), which goes to the scraper-fixes chat.
+**PR:** [#307](https://github.com/chihacknight/govbot/pull/307) (branch `docs/master-state-list`).
+
+**The master list:** [`docs/src/state-status-reference.md`](https://github.com/chihacknight/govbot/blob/docs/master-state-list/docs/src/state-status-reference.md).
+It goes on the site (State Status Reference) once the PR merges. Every one of the 56 rows was
+checked on 2026-11-24 against each state's GitHub run history, the raw repos' scrape commits and
+the local clones on the `govbot-data` drive.
+
+### Most important finding
+
+**No scraper has run since 2026-10-29.** All 9 active scrapers (DC, GU, MI, MP, NJ, OH, PA, USA,
+VI) have failed every day since 2026-10-30. GitHub's `ubuntu-latest` runner is now Ubuntu 26.04,
+which has no Python 3.9, and `actions/scrape/action.yml` line 54 asks for `python-version: "3.9"`.
+The run stops at "Setup Python" before anything is scraped. The daily digest (#202) has listed
+all 9 every day, but no issue exists yet. **This needs to go to the scraper-fixes work.**
+
+### What happened to the old docs
+
+- The 7 files in `tamara-notes/scraper-status/` moved to `tamara-notes/archived_docs/`, each with
+  a "superseded" note at the top: `not-working.md`, `working-in-session.md`,
+  `working-out-of-session.md`, `morning-todo.md`, `critical-merge-conflict-corruption.md`,
+  `pending-branches.md`, `upstream-pr-todo.md`.
+- `scraper-status/not-working.md` stays as a one-line pointer, because code comments link to it.
+- The July "Hosting Path History" table moved to `archived_docs/hosting-path-history-2026-07.md`.
+- `tamara-notes/state-specific/` stays as the place for each state's detail. Added `az.md`;
+  updated `pa.md`, `fl.md` and the index.
+
+### What checking the old claims turned up
+
+| Claim | Finding |
+|---|---|
+| NM is broken (July FTP outage) | Wrong. NM's last run (Sept 29) was clean: 812 bills, over HTTPS, no FTP. |
+| Conflict markers may have corrupted more states | No data is corrupted: none in any of the 112 repos. The bug is still in `action.yml`, though. Its fix (#100) was reverted the day it merged, with no reason given. |
+| FL and AZ are waiting on upstream PRs | Wrong. Both (#5724, #5742) were closed unmerged. AZ will break again when unpaused (see `az.md`). |
+| PA is blocked by our proxy | No longer. The Oct 29 run scraped 5,259 bills; the shrink guard held them back (5,264 already saved). |
+| TX needs our own machines | Its config doesn't ask for one. Check before unpausing. |
+| Session dates | USA is still in session (lame duck since Nov 9). No other special sessions found. |
+
+### Hand-offs
+
+- **Scraper fixes:** the Python 3.9 outage; GU's empty `note` crash; VI's unreachable site;
+  AZ's image before unpausing; FL, MA and WI's runner and timeout problems; UT's "no sessions" error.
+- **Open question for Tamara:** why was the conflict-marker fix (#100) reverted?
+- **Keeping it current:** when a state's status changes, update its row and its "Last checked"
+  date. Put the long version in its `state-specific/` file.
