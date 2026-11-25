@@ -11,6 +11,7 @@ import sys
 import tempfile
 import unittest
 import uuid
+from datetime import datetime
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -29,6 +30,11 @@ def vote(identifier, yes, no, rc="RC 1", start="2026-01-04T15:00:00+00:00"):
             "result": "pass" if yes > no else "fail", "organization": UPPER, "legislative_session": "2026",
             "bill_identifier": identifier, "votes": [],
             "counts": [{"option": "yes", "value": yes}, {"option": "no", "value": no}], "sources": [], "extras": {}}
+
+
+def when(stamp):
+    """first_seen as an instant: git writes UTC as "Z" or "+00:00" depending on version."""
+    return datetime.fromisoformat(stamp.replace("Z", "+00:00"))
 
 
 def lines(path):
@@ -94,14 +100,14 @@ class BackfillTest(unittest.TestCase):
         done = self.run_backfill()
         self.assertEqual(done.returncode, 0, done.stderr)
         acts = lines(self.bills / "SB1" / "action_logs.jsonl")
-        self.assertEqual([(a["action"]["description"], a["first_seen"]) for a in acts],
-                         [("Introduced", NIGHTS[0]), ("Referred", NIGHTS[1]), ("Passed", NIGHTS[1])])
+        self.assertEqual([(a["action"]["description"], when(a["first_seen"])) for a in acts],
+                         [("Introduced", when(NIGHTS[0])), ("Referred", when(NIGHTS[1])), ("Passed", when(NIGHTS[1]))])
         votes = lines(self.bills / "SB1" / "vote_event_logs.jsonl")
-        self.assertEqual([(v["vote_event"]["counts"][0]["value"], v["first_seen"]) for v in votes],
-                         [(20, NIGHTS[0]), (21, NIGHTS[1])])
+        self.assertEqual([(v["vote_event"]["counts"][0]["value"], when(v["first_seen"])) for v in votes],
+                         [(20, when(NIGHTS[0])), (21, when(NIGHTS[1]))])
         self.assertEqual(votes[0]["id"], votes[1]["id"])  # a correction keeps the id
         [late] = lines(self.bills / "SB2" / "vote_event_logs.jsonl")
-        self.assertEqual(late["first_seen"], NIGHTS[1])
+        self.assertEqual(when(late["first_seen"]), when(NIGHTS[1]))
         self.assertFalse((self.bills / "SB9").exists())  # never created
 
         report = json.loads((self.reports / "log_backfill-zz.json").read_text())
