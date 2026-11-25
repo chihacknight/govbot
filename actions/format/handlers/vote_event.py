@@ -22,17 +22,19 @@ def handle_vote_event(
     filename: str,
     latest_timestamps: LatestTimestamps,
     first_seen: Optional[str] = None,
+    pending_votes: Optional[dict[Path, list]] = None,
 ) -> bool:
     """
     Handles a vote_event JSON file by:
 
     1. Creating the associated bill folder (and placeholder if missing)
-    2. Appending the vote to the bill's vote_event_logs.jsonl, unless the same
-       vote is already there with the same substance (see utils/log_jsonl.py).
-       A vote seen again with different counts/result/member votes is appended
-       as a correction. Every vote in the scrape is checked, whatever its date:
-       the old "newer than the newest vote seen" gate silently dropped votes
-       that arrived late (10,476 across 14 states as of 2026-11-24).
+    2. Queuing the vote in `pending_votes` (bill folder -> lines), which
+       process_and_save writes with append_votes once per bill, so the log rules
+       see every version of a vote in the scrape at once (utils/log_jsonl.py,
+       select_new_votes). Without `pending_votes` the vote is appended now.
+       Every vote in the scrape is checked, whatever its date: the old "newer
+       than the newest vote seen" gate silently dropped votes that arrived late
+       (10,476 across 14 states as of 2026-11-24).
 
     Skips and logs errors if bill_identifier is missing.
     """
@@ -82,5 +84,9 @@ def handle_vote_event(
             latest_timestamps,
         )
 
-    append_votes(save_path, [vote_event_line(data, first_seen)])
+    line = vote_event_line(data, first_seen)
+    if pending_votes is None:
+        append_votes(save_path, [line], STATE_ABBR)
+    else:
+        pending_votes.setdefault(save_path, []).append(line)
     return True

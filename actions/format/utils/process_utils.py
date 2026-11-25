@@ -4,6 +4,7 @@ from pathlib import Path
 from collections.abc import Callable
 from handlers import bill, vote_event, event
 from utils.file_utils import record_error_file
+from utils.log_jsonl import append_votes
 from utils.timestamp_tracker import write_latest_timestamp_file, LatestTimestamps
 
 
@@ -16,6 +17,7 @@ def route_handler(
     latest_timestamps: LatestTimestamps,
     output_folder: Path,
     first_seen: Optional[str] = None,
+    pending_votes: Optional[dict[Path, list]] = None,
 ) -> Optional[str]:
 
     if "bill_" in filename:
@@ -39,6 +41,7 @@ def route_handler(
             filename,
             latest_timestamps,
             first_seen=first_seen,
+            pending_votes=pending_votes,
         )
         return "vote_event" if success else None
 
@@ -73,6 +76,9 @@ def process_and_save(
     bill_count = 0
     event_count = 0
     vote_event_count = 0
+    # Each bill's votes are written once, after the whole scrape is read (see
+    # handle_vote_event).
+    pending_votes: dict[Path, list] = {}
 
     for filename, data in data:
         session = data.get("legislative_session")
@@ -117,6 +123,7 @@ def process_and_save(
             latest_timestamps,
             output_folder,
             first_seen=first_seen,
+            pending_votes=pending_votes,
         )
         if result not in ("bill", "event", "vote_event"):
             print(f"⚠️ Unrecognized result from handler for {filename}: {result}")
@@ -128,6 +135,8 @@ def process_and_save(
             event_count += 1
         elif result == "vote_event":
             vote_event_count += 1
+    for bill_dir, lines in pending_votes.items():
+        append_votes(bill_dir, lines, STATE_ABBR)
     write_latest_timestamp_file(output_folder, latest_timestamps)
     print("\n✅ File processing complete.")
     return {

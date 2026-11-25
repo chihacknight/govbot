@@ -9,10 +9,11 @@ whole dataset. This replays those commits oldest to newest and, for each one,
 appends the actions and votes not yet in each bill's action_logs.jsonl /
 vote_event_logs.jsonl, stamped with first_seen = that scrape's commit time. That
 is what the nightly formatter would have written had the .jsonl layout existed
-all along, using the same rules (utils/log_jsonl.py): one batch per raw file in
-the government's date order, the same duplicate checks, vote corrections under
-the same id. It recovers votes the old layout lost and gives every entry the
-night it first appeared.
+all along, using the same rules (utils/log_jsonl.py): one batch per bill file in
+the government's date order, each bill's votes in one batch per scrape, the same
+duplicate checks, vote corrections under the same id, the same per-state
+scraper-failure table. It recovers votes the old layout lost and gives every
+entry the night it first appeared.
 
 Differences from the nightly formatter, on purpose:
 - It touches only the two .jsonl files. No metadata.json, no placeholders.
@@ -138,9 +139,11 @@ class BillLog:
         self.vote_ids = {line.get("id") for line in self.votes}
         self.votes_on_disk = len(self.votes)
         self.new_actions: list[dict[str, Any]] = []
-        # Bumped whenever a vote line is added, so a vote file seen before can be
-        # skipped only if nothing in this bill's vote log changed since.
+        # Bumped whenever a vote line is added. A scrape with exactly the vote
+        # files this bill had when its votes were last checked, at the same
+        # version, adds nothing (the rules are idempotent), so it's skipped.
         self.vote_version = 0
+        self.votes_checked: Optional[tuple[frozenset, int]] = None
 
     def write(self) -> None:
         L._append(self.dir / L.ACTION_LOG_FILE, self.new_actions, "action", keep_order=True)
@@ -155,7 +158,11 @@ class Replay:
         self.missing: dict[str, int] = {}  # "session/bill" -> raw files naming it
         # bill blob -> its bill folder (None: a bill with no folder, never re-read)
         self.bill_blobs_done: dict[bytes, Optional[Path]] = {}
-        self.vote_blobs_done: dict[bytes, tuple[Path, int]] = {}
+        # vote blob -> its bill folder (None: unreadable, or a bill with no folder)
+        self.vote_blob_bill: dict[bytes, Optional[Path]] = {}
+        # Distinct vote versions SCRAPER_FAILURES rejected (a bad version seen on
+        # several nights counts once).
+        self.failed_versions: set[int] = set()
         self.unreadable: dict[str, int] = {}  # scrape date -> files that aren't valid JSON
         self.unreadable_examples: list[dict[str, Any]] = []
         self.stats = {
@@ -165,6 +172,7 @@ class Replay:
             "actions_added": 0,
             "votes_added": 0,
             "vote_corrections": 0,
+            "vote_versions_skipped_as_scraper_failures": 0,
             "action_corrections": 0,
             "action_rewordings_unpaired": 0,
             "files_unreadable": 0,
@@ -181,46 +189,35 @@ class Replay:
             self.missing[key] = self.missing.get(key, 0) + 1
         return log
 
-    def wants(self, blob: str, name: str) -> bool:
-        """Whether a raw file could add anything. A bill blob replayed before adds
+    def wants(self, blob: str) -> bool:
+        """Whether a bill file could add anything. A bill blob replayed before adds
         no action, and is skipped when it is also its bill's latest version (so the
-        "previous scrape" find_rewordings() needs stays right). A vote blob
-        replayed before adds nothing as long as its bill's vote log hasn't changed
-        since (otherwise it might now be a correction back to an earlier version)."""
+        "previous scrape" find_rewordings() needs stays right)."""
         key = bytes.fromhex(blob)
-        if name.startswith("bill_"):
-            if key not in self.bill_blobs_done:
-                return True
-            bill_dir = self.bill_blobs_done[key]
-            log = self.bills.get(bill_dir) if bill_dir is not None else None
-            return log is not None and log.prev_blob != key
-        done = self.vote_blobs_done.get(key)
-        if done is None:
+        if key not in self.bill_blobs_done:
             return True
-        bill_dir, version = done
-        log = self.bills.get(bill_dir)
-        return log is None or log.vote_version != version
+        bill_dir = self.bill_blobs_done[key]
+        log = self.bills.get(bill_dir) if bill_dir is not None else None
+        return log is not None and log.prev_blob != key
 
-    def apply(self, blob: str, name: str, raw: bytes, first_seen: str) -> None:
+    def parse(self, name: str, raw: bytes, first_seen: str) -> Optional[dict[str, Any]]:
         self.stats["files_parsed"] += 1
         try:
-            data = json.loads(raw)
+            return json.loads(raw)
         except ValueError as e:
             # The nightly formatter files these under .windycivi/errors/invalid_json.
             self.stats["files_unreadable"] += 1
             self.unreadable[first_seen[:10]] = self.unreadable.get(first_seen[:10], 0) + 1
             if len(self.unreadable_examples) < 10:
                 self.unreadable_examples.append({"scrape": first_seen, "file": name, "bytes": len(raw), "error": str(e)})
-            return
-        if name.startswith("bill_"):
-            log = self.apply_bill(data, first_seen)
-            self.bill_blobs_done[bytes.fromhex(blob)] = log.dir if log is not None else None
-            if log is not None:
-                log.prev_blob = bytes.fromhex(blob)
-        else:
-            log = self.apply_vote(data, first_seen)
-            if log is not None:
-                self.vote_blobs_done[bytes.fromhex(blob)] = (log.dir, log.vote_version)
+            return None
+
+    def apply_bill_file(self, blob: str, name: str, raw: bytes, first_seen: str) -> None:
+        data = self.parse(name, raw, first_seen)
+        log = self.apply_bill(data, first_seen) if data is not None else None
+        self.bill_blobs_done[bytes.fromhex(blob)] = log.dir if log is not None else None
+        if log is not None:
+            log.prev_blob = bytes.fromhex(blob)
 
     def apply_bill(self, data: dict[str, Any], first_seen: str) -> Optional[BillLog]:
         # Same fields handlers/bill.py uses.
@@ -245,24 +242,56 @@ class Replay:
         self.stats["action_rewordings_unpaired"] += rewordings.unpaired
         return log
 
-    def apply_vote(self, data: dict[str, Any], first_seen: str) -> Optional[BillLog]:
+    def vote_bill(self, data: Optional[dict[str, Any]]) -> Optional[Path]:
+        if data is None:
+            return None
         # Same fields handlers/vote_event.py uses.
         identifier, session = data.get("bill_identifier"), data.get("legislative_session")
         if not identifier or not session:
             self.stats["files_without_bill_or_session"] += 1
             return None
         log = self.bill_log(session, identifier)
-        if log is None:
-            return None
-        ids_before = len(log.vote_ids)
-        added = L.select_new_votes(log.votes, log.vote_ids, [L.vote_event_line(data, first_seen)])
-        if added:
-            log.votes.extend(added)
-            log.vote_version += 1
-            self.stats["votes_added"] += len(added)
-            # A new vote adds an id; a correction reuses one.
-            self.stats["vote_corrections"] += len(added) - (len(log.vote_ids) - ids_before)
-        return log
+        return log.dir if log is not None else None
+
+    def apply_votes(self, files: list[tuple[str, str]], first_seen: str, blobs: Blobs) -> None:
+        """One scrape's vote files: each bill's votes go to select_new_votes in one
+        batch, as the nightly formatter writes them, so it sees every version of a
+        vote that the scrape holds."""
+        parsed: dict[str, Optional[dict[str, Any]]] = {}
+        names = dict(files)
+        unknown = sorted({b for b, _ in files if bytes.fromhex(b) not in self.vote_blob_bill})
+        for blob, raw in blobs.read_many(unknown):
+            parsed[blob] = self.parse(names[blob], raw, first_seen)
+            self.vote_blob_bill[bytes.fromhex(blob)] = self.vote_bill(parsed[blob])
+        by_bill: dict[Path, list[str]] = {}
+        for blob, _ in files:
+            bill_dir = self.vote_blob_bill[bytes.fromhex(blob)]
+            if bill_dir is not None:
+                by_bill.setdefault(bill_dir, []).append(blob)
+        todo = {}
+        for bill_dir, bill_blobs in by_bill.items():
+            log = self.bills[bill_dir]
+            seen = (frozenset(bill_blobs), log.vote_version)
+            if log.votes_checked != seen:
+                todo[bill_dir] = (log, bill_blobs)
+        need = sorted({b for _, bl in todo.values() for b in bl if b not in parsed})
+        for blob, raw in blobs.read_many(need):
+            parsed[blob] = json.loads(raw)  # read fine before, when its bill was found
+        for log, bill_blobs in todo.values():
+            lines = [L.vote_event_line(parsed[b], first_seen) for b in bill_blobs]
+            ids_before = len(log.vote_ids)
+            skipped: list[dict[str, Any]] = []
+            added = L.select_new_votes(log.votes, log.vote_ids, lines, self.state, skipped)
+            for line in skipped:
+                self.failed_versions.add(hash((log.dir, L.vote_substance(line["vote_event"]))))
+            self.stats["vote_versions_skipped_as_scraper_failures"] = len(self.failed_versions)
+            if added:
+                log.votes.extend(added)
+                log.vote_version += 1
+                self.stats["votes_added"] += len(added)
+                # A new vote adds an id; a correction reuses one.
+                self.stats["vote_corrections"] += len(added) - (len(log.vote_ids) - ids_before)
+            log.votes_checked = (frozenset(bill_blobs), log.vote_version)
 
     def write(self) -> int:
         touched = 0
@@ -332,16 +361,17 @@ def main() -> int:
         for n, (sha, committed_at) in enumerate(commits, start=1):
             files = scrape_files(raw_repo, sha, state)
             replay.stats["files_seen"] += len(files)
-            # Read what's needed in one batch, then apply in filename order. A file
-            # skipped by the batch is checked again when its turn comes, since an
-            # earlier file in this scrape may have changed its bill's vote log.
-            fetched = dict(blobs.read_many(sorted({blob for blob, name in files if replay.wants(blob, name)})))
-            for blob, name in files:
+            # Bill files: read what's needed in one batch, then apply in filename
+            # order. One skipped by the batch is checked again when its turn comes.
+            bill_files = [f for f in files if f[1].startswith("bill_")]
+            fetched = dict(blobs.read_many(sorted({blob for blob, _ in bill_files if replay.wants(blob)})))
+            for blob, name in bill_files:
                 if blob in fetched:
-                    replay.apply(blob, name, fetched[blob], committed_at)
-                elif replay.wants(blob, name):
+                    replay.apply_bill_file(blob, name, fetched[blob], committed_at)
+                elif replay.wants(blob):
                     [(_, raw)] = blobs.read_many([blob])
-                    replay.apply(blob, name, raw, committed_at)
+                    replay.apply_bill_file(blob, name, raw, committed_at)
+            replay.apply_votes([f for f in files if not f[1].startswith("bill_")], committed_at, blobs)
             replay.stats["scrapes_replayed"] += 1
             if n % 10 == 0 or n == len(commits):
                 print(

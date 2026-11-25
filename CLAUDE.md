@@ -156,9 +156,13 @@ Each bill folder holds `metadata.json` plus two append-only JSON Lines logs, wri
 the nightly scrape is the whole dataset, and each new entry is appended once, stamped with
 `first_seen` = the raw scrape's **commit time** (not the formatter's run time), so `git diff`
 of a night is exactly the new lines. Lines are never edited or reordered. A vote whose
-substance changes later is appended again under the same `id`, only if it differs from every
-version already logged (some scrapes hold two versions of one vote; comparing with the last
-line only logged A, B, A, B nightly). An action the scraper rewords (MT "(H) First Reading" →
+substance changes later is appended again under the same `id`, so the last line always matches
+the latest scrape: each bill's votes are checked once per scrape, nothing is logged for a vote
+whose last line is in tonight's scrape (some scrapes hold two versions of one vote, which
+flip-flopped A, B, A nightly), else a changed version is logged even if it repeats an earlier
+one (a real revert). `SCRAPER_FAILURES` in `log_jsonl.py` skips known per-state scraper
+failures (ND "Service Unavailable" voters, TN roll calls gone empty; delete an entry when
+OpenStates fixes it, see `tamara-notes/state-specific/nd.md` / `tn.md`). An action the scraper rewords (MT "(H) First Reading" →
 "(H) 1st Reading") is appended under the paired action's `id` when the previous scrape
 (`metadata.json`) and tonight's have the same count on that date + chamber with unchanged
 actions in the same order (`find_rewordings`). Readers take the last line per `id`; an action

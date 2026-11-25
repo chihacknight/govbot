@@ -129,6 +129,22 @@ class BackfillTest(unittest.TestCase):
         self.assertEqual(again.returncode, 0, again.stderr)
         self.assertEqual({p: p.read_bytes() for p in self.bills.rglob("*.jsonl")}, before)
 
+    def test_votes_are_checked_one_scrape_at_a_time(self):
+        # A scrape holding two versions of one vote (OH HB 14) logs one; the same
+        # pair again logs nothing; a new version and then a revert are both logged,
+        # so the last line always matches the latest scrape.
+        later = ["2026-01-09T10:00:00+00:00", "2026-01-10T10:00:00+00:00", "2026-01-11T10:00:00+00:00",
+                 "2026-01-12T10:00:00+00:00"]
+        pair = [vote("SB 2", 20, 10, rc="RC 7"), vote("SB 2", 10, 20, rc="RC 7")]
+        for night, records in zip(later, [pair, pair, [vote("SB 2", 15, 15, rc="RC 7")], [pair[0]]]):
+            self.commit_scrape(night, records)
+        done = self.run_backfill()
+        self.assertEqual(done.returncode, 0, done.stderr)
+        rc7 = [v for v in lines(self.bills / "SB2" / "vote_event_logs.jsonl") if v["vote_event"]["identifier"] == "RC 7"]
+        self.assertEqual([when(v["first_seen"]) for v in rc7], [when(n) for n in (later[0], later[2], later[3])])
+        self.assertEqual([v["vote_event"]["counts"][0]["value"] for v in rc7[1:]], [15, 20])
+        self.assertEqual(len({v["id"] for v in rc7}), 1)
+
     def test_refuses_repo_with_logs_and_no_cursor(self):
         (self.bills / "SB1" / "action_logs.jsonl").write_text("")
         done = self.run_backfill()

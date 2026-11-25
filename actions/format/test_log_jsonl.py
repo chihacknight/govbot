@@ -61,8 +61,11 @@ class Tmp(unittest.TestCase):
     def add_actions(self, actions, seen=SEEN_1):
         return L.append_actions(self.bill, [L.action_line(a, "SF0015", SOURCES, "2025", seen) for a in actions])
 
-    def add_votes(self, votes, seen=SEEN_1):
-        return L.append_votes(self.bill, [L.vote_event_line(v, seen) for v in votes])
+    def add_votes(self, votes, seen=SEEN_1, state=None):
+        return L.append_votes(self.bill, [L.vote_event_line(v, seen) for v in votes], state)
+
+    def last_vote(self):
+        return lines(self.bill / L.VOTE_EVENT_LOG_FILE)[-1]["vote_event"]
 
 
 class ActionLogTests(Tmp):
@@ -203,15 +206,51 @@ class VoteLogTests(Tmp):
         self.assertEqual(second["first_seen"], SEEN_2)
         self.assertEqual(second["vote_event"]["votes"][1]["option"], "yes")
 
-    def test_flip_flop_logs_each_version_once(self):
+    def test_in_scrape_flip_flop_logs_once(self):
         # OH HB 14: each scrape holds the same 6-0 vote as both pass and fail.
-        a, b = vote(result="pass"), vote(result="fail")
-        self.assertEqual(self.add_votes([a, b]), 2)  # A, then B as a correction
+        self.assertEqual(self.add_votes([vote(result="pass"), vote(result="fail")]), 1)
         for seen in (SEEN_2, "2026-09-30T10:00:00+00:00", "2026-10-01T10:00:00+00:00"):
-            self.assertEqual(self.add_votes([vote(result="pass"), vote(result="fail")], seen=seen), 0)
+            self.assertEqual(self.add_votes([vote(result="fail"), vote(result="pass")], seen=seen), 0)
+        self.assertEqual(len(lines(self.bill / L.VOTE_EVENT_LOG_FILE)), 1)
+
+    def test_revert_is_logged_so_the_last_line_matches_the_scrape(self):
+        # DE SB 315: pass -> fail -> pass. The reader shows the last line.
+        self.add_votes([vote(result="pass")])
+        self.assertEqual(self.add_votes([vote(result="fail")], seen=SEEN_2), 1)
+        self.assertEqual(self.add_votes([vote(result="pass")], seen="2026-09-30T10:00:00+00:00"), 1)
         got = lines(self.bill / L.VOTE_EVENT_LOG_FILE)
-        self.assertEqual([v["vote_event"]["result"] for v in got], ["pass", "fail"])
-        self.assertEqual(got[0]["id"], got[1]["id"])
+        self.assertEqual([v["vote_event"]["result"] for v in got], ["pass", "fail", "pass"])
+        self.assertEqual(len({v["id"] for v in got}), 1)
+
+    def test_two_new_versions_in_one_scrape_log_one_correction(self):
+        self.add_votes([vote(result="pass")])
+        self.assertEqual(self.add_votes([vote(result="fail"), vote(result="fail", counts=(("yes", 20), ("no", 11)), rows=[])], seen=SEEN_2), 1)
+        self.assertEqual(self.last_vote()["result"], "fail")
+
+    def test_nd_service_unavailable_night_logs_nothing(self):
+        self.add_votes([vote()], state="nd")
+        bad = vote(rows=[{"option": "yes", "voter_name": "Service Unavailable", "voter_id": "~{}", "note": ""},
+                         {"option": "no", "voter_name": "Baker", "voter_id": "~{}", "note": ""}])
+        self.assertEqual(self.add_votes([bad], seen=SEEN_2, state="nd"), 0)
+        self.assertEqual(self.add_votes([vote()], seen="2026-09-30T10:00:00+00:00", state="nd"), 0)
+        self.assertEqual(self.last_vote()["votes"][0]["voter_name"], "Anderson")
+        # A new vote seen only on a bad night waits for a good one.
+        self.assertEqual(self.add_votes([dict(bad, motion_text="Another motion")], seen=SEEN_2, state="nd"), 0)
+
+    def test_tn_empty_roll_call_logs_nothing(self):
+        self.add_votes([vote()], state="tn")
+        self.assertEqual(self.add_votes([vote(rows=[])], seen=SEEN_2, state="tn"), 0)
+        self.assertEqual(self.add_votes([vote()], seen="2026-09-30T10:00:00+00:00", state="tn"), 0)
+        self.assertEqual(len(lines(self.bill / L.VOTE_EVENT_LOG_FILE)), 1)
+        # A vote first seen with no voters is still logged: no earlier names to lose.
+        self.assertEqual(self.add_votes([vote(motion="Another motion", rows=[])], seen=SEEN_2, state="tn"), 1)
+
+    def test_change_to_an_empty_roll_call_is_logged_elsewhere(self):
+        # OK HB 2374: ['STRIKE THE TITLE - ADOPTED'] -> [] is the scraper fixing its parsing.
+        junk = [{"option": "yes", "voter_name": "STRIKE THE TITLE - ADOPTED", "voter_id": "~{}", "note": ""}]
+        self.add_votes([vote(rows=junk)], state="ok")
+        self.assertEqual(self.add_votes([vote(rows=[])], seen=SEEN_2, state="ok"), 1)
+        self.assertEqual(self.last_vote()["votes"], [])
 
     def test_matching_roll_call_numbers_are_the_same_vote(self):
         self.add_votes([vote(identifier="RCS#9")])
@@ -359,6 +398,17 @@ class ConversionTests(unittest.TestCase):
         [v] = lines(self.bill / L.VOTE_EVENT_LOG_FILE)
         self.assertEqual(v["id"], "20260217T181005Z.vote_event.pass.upper")
         self.assertEqual(v["first_seen"], SEEN_1)  # the old file had null
+
+    def test_conversion_keeps_a_backfilled_revert(self):
+        # The backfill logged A, B, then A again (a real revert); conversion keeps all three.
+        b = vote()
+        b["votes"][1]["option"] = "yes"
+        for v, seen in ((vote(), SEEN_1), (b, SEEN_2), (vote(), "2026-09-30T10:00:00+00:00")):
+            L.append_votes(self.bill, [L.vote_event_line(v, seen)])
+        L.convert_bill(self.bill)
+        got = lines(self.bill / L.VOTE_EVENT_LOG_FILE)
+        self.assertEqual([v["vote_event"]["votes"][1]["option"] for v in got], ["no", "yes", "no"])
+        self.assertEqual(len({v["id"] for v in got}), 1)
 
     def test_older_vote_version_goes_first_under_the_same_id(self):
         # The old file holds 20-11; the raw history only ever saw 21-10 then 21-9.

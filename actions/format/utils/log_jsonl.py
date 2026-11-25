@@ -419,47 +419,112 @@ def _find_vote(existing: list[dict[str, Any]], vote: dict[str, Any]) -> Optional
     return None
 
 
-def append_votes(bill_dir: Union[str, Path], new_lines: Iterable[dict[str, Any]]) -> int:
+def append_votes(bill_dir: Union[str, Path], new_lines: Iterable[dict[str, Any]], state: Optional[str] = None) -> int:
     """Append new votes and corrections to the bill's vote_event_logs.jsonl.
 
-    A vote already recorded with the same substance is skipped. One recorded with
-    different substance is appended again under the same id (a correction).
-    Returns how many lines were added.
+    `new_lines` is every vote tonight's scrape holds for the bill, in one call
+    (see select_new_votes for why). A vote whose last line matches tonight's
+    scrape is skipped; one that changed is appended again under the same id (a
+    correction). Returns how many lines were added.
     """
-    return _append_votes_at(Path(bill_dir) / VOTE_EVENT_LOG_FILE, new_lines)
+    return _append_votes_at(Path(bill_dir) / VOTE_EVENT_LOG_FILE, new_lines, state=state)
 
 
-def _append_votes_at(path: Path, new_lines: Iterable[dict[str, Any]], keep_order: bool = False) -> int:
+def _append_votes_at(
+    path: Path, new_lines: Iterable[dict[str, Any]], keep_order: bool = False, state: Optional[str] = None
+) -> int:
     existing = read_lines(path)
     taken = {line.get("id") for line in existing}
-    to_add = select_new_votes(existing, taken, new_lines)
+    to_add = select_new_votes(existing, taken, new_lines, state)
     _append(path, to_add, "vote_event", keep_order)
     return len(to_add)
 
 
+def _append_votes_each(path: Path, lines: Iterable[dict[str, Any]], keep_order: bool = False) -> int:
+    """For convert_bill: lines from logs already written (old files, then the
+    backfill's), each its own night, so every version they hold is kept, in order."""
+    existing = read_lines(path)
+    taken = {line.get("id") for line in existing}
+    to_add: list[dict[str, Any]] = []
+    for line in lines:
+        to_add += select_new_votes(existing + to_add, taken, [line])
+    _append(path, to_add, "vote_event", keep_order)
+    return len(to_add)
+
+
+def _nd_service_unavailable(vote: dict[str, Any], last: Optional[dict[str, Any]]) -> bool:
+    # On nights ndlegis.gov is down the scraper saves the error page's text as a
+    # voter: 5,818 versions on 6 nights, 2025-12-30 to 2026-08-11 (HB 1626,
+    # 2026-01-22: "Daniel R. Vollmer" -> "Service Unavailable"). Not reported to
+    # OpenStates yet; see tamara-notes/state-specific/nd.md.
+    return any((row.get("voter_name") or "").strip() == "Service Unavailable" for row in vote.get("votes") or [])
+
+
+def _tn_empty_roll_call(vote: dict[str, Any], last: Optional[dict[str, Any]]) -> bool:
+    # The scraper sometimes saves a roll call with no voters, and the names come
+    # back later: 6,787 votes, 5,839 of them on 2026-07-02 (HB 6005, 2025-01-29:
+    # ['Baum', 'Boyd', ...] -> []). Not a general rule: in OK and HI the same
+    # change is the scraper fixing its parsing. Not reported to OpenStates yet;
+    # see tamara-notes/state-specific/tn.md.
+    return not vote.get("votes") and last is not None and bool(last.get("votes"))
+
+
+# Scraper failures caught per state: state code -> test(version, last logged
+# version or None), True when the version is a failed scrape rather than news.
+# Such a version is treated as not scraped that night. Each entry is a stopgap
+# for an OpenStates scraper bug; delete it (and its test) once that's fixed.
+SCRAPER_FAILURES = {
+    "nd": _nd_service_unavailable,
+    "tn": _tn_empty_roll_call,
+}
+
+
 def select_new_votes(
-    existing: list[dict[str, Any]], taken: set, new_lines: Iterable[dict[str, Any]]
+    existing: list[dict[str, Any]],
+    taken: set,
+    new_lines: Iterable[dict[str, Any]],
+    state: Optional[str] = None,
+    skipped: Optional[list[dict[str, Any]]] = None,
 ) -> list[dict[str, Any]]:
     """The lines of `new_lines` that are new votes or corrections of a vote in
-    `existing` (the file's lines, in file order). Ids are made unique against
-    `taken` (updated); a correction takes the id of the vote it corrects. The
-    nightly writer and backfill_logs.py both decide "is this new?" here.
+    `existing` (the file's lines, in file order). `new_lines` is everything one
+    scrape holds for the bill. Ids are made unique against `taken` (updated); a
+    correction takes the id of the vote it corrects. The nightly writer and
+    backfill_logs.py both decide "is this new?" here.
 
-    A version is logged only if it differs from *every* version already logged
-    for that vote, not just the last one. Some scrapes hold two versions of one
-    vote (OH HB 14: one 6-0 "Reported" vote as both pass and fail; MT: "Sen Elect
-    Gregg Hunter" in one copy, "Gregg Hunter" in the other), and comparing with
-    the last line only logged A, B, A, B... every night (TN: 13,276 lines). The
-    cost, accepted 2026-11-25: a genuine revert (A -> B -> A) isn't logged again."""
-    to_add = []
+    Readers show the last line per id, so the last line must match the scrape:
+    1. If tonight's scrape holds the version that's already the vote's last line,
+       log nothing. Some scrapes hold two versions of one vote (OH HB 14: one 6-0
+       "Reported" vote as both pass and fail; MT: "Sen Elect Gregg Hunter" in one
+       copy, "Gregg Hunter" in the other); comparing each with the last line
+       logged A, B, A, B... every night (TN: 13,276 lines).
+    2. Otherwise a version that differs from the last line is logged, even if it
+       matches an earlier one: a real revert (DE SB 315 pass -> fail -> pass).
+       Only one correction per vote per night.
+    A version `SCRAPER_FAILURES[state]` flags is treated as not scraped; those go
+    to `skipped` when given."""
+    new_lines = list(new_lines)
+    test = SCRAPER_FAILURES.get(state or "")
+    # Which logged vote each of tonight's versions is, and tonight's substances.
+    tonight = [(_find_vote(existing, l["vote_event"]), vote_substance(l["vote_event"])) for l in new_lines]
+    to_add: list[dict[str, Any]] = []
     for line in new_lines:
         vote = line["vote_event"]
         lines = existing + to_add
         match = _find_vote(lines, vote)
+        last = None
         if match is not None:
-            substance = vote_substance(vote)
-            if any(vote_substance(l["vote_event"]) == substance for l in lines if l.get("id") == match["id"]):
-                continue
+            last = next(l for l in reversed(lines) if l.get("id") == match["id"])
+        if test is not None and test(vote, last["vote_event"] if last else None):
+            if skipped is not None:
+                skipped.append(line)
+            continue
+        if match is not None:
+            if any(l is last for l in to_add):
+                continue  # already logged tonight (a second version, or a new vote's twin)
+            last_substance = vote_substance(last["vote_event"])
+            if any(m is not None and m["id"] == match["id"] and s == last_substance for m, s in tonight):
+                continue  # rule 1
             line["id"] = match["id"]  # a correction keeps the id of what it corrects
         else:
             _unique_id(line, taken, vote_keys(vote))
@@ -748,7 +813,7 @@ def convert_bill(bill_dir: Union[str, Path]) -> ConvertStats:
 
     for kind, filename, append_at in (
         ("action", ACTION_LOG_FILE, _append_actions_at),
-        ("vote_event", VOTE_EVENT_LOG_FILE, _append_votes_at),
+        ("vote_event", VOTE_EVENT_LOG_FILE, _append_votes_each),
     ):
         lines = converted[kind]
         if not lines:

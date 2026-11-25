@@ -355,12 +355,20 @@ unique: PA HB 1549 had two roll calls on one motion at the same moment).
 
 **Corrections:** when a later scrape changes a vote's substance (result, counts,
 member votes), the corrected vote is appended as a new line with the
-**same `id`**. The last line for an `id` is current; earlier ones are the history.
-A version is appended only if it differs from **every** version already logged for
-that vote, not just the last: some scrapes hold two versions of one vote (OH HB 14
-as both `pass` and `fail`), which used to log A, B, A, B… every night (TN: 13,276
-lines). A genuine revert (A → B → A) is therefore not logged again (accepted
-2026-11-25).
+**same `id`**. The last line for an `id` is current; earlier ones are the history,
+so the last line must match the latest scrape. Each bill's votes are checked once
+per scrape, all together:
+
+1. If the scrape holds the version that's already the vote's last line, nothing is
+   logged. Some scrapes hold two versions of one vote (OH HB 14 as both `pass` and
+   `fail`), which used to log A, B, A, B… every night (TN: 13,276 lines).
+2. Otherwise a version that differs from the last line is logged (one per vote per
+   night), even if it repeats an earlier version: a real revert (A → B → A) shows.
+
+Known per-state scraper failures are treated as not scraped (`SCRAPER_FAILURES` in
+`utils/log_jsonl.py`): `nd`, a voter named "Service Unavailable" (the site was
+down); `tn`, an empty roll call when the last logged version has voters. Each entry
+is a stopgap for an OpenStates bug and is deleted once that's fixed.
 Changes that aren't substance (source URL format, a roll-call number filled in
 later, voter row order, the scraper's internal bill UUID) are not corrections.
 

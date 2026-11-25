@@ -78,9 +78,20 @@ Sartaj's vector tagging, which reads `govbot logs`).
   got 51,535 bogus corrections), else date + motion + chamber + counts. A change in substance (result, counts, member votes, motion) is
   appended as a correction under the same `id`; readers take the last line per `id`.
   Cosmetic changes (URL format, roll-call number filled in later, voter order) aren't.
-  A version is logged only if it differs from *every* logged version of that vote (2026-11-25:
-  scrapes holding two versions of one vote flip-flopped A, B, A nightly; TN 13,276 lines). A
-  genuine A → B → A revert isn't re-logged; accepted.
+  The last line must match the latest scrape (2026-11-25, replacing that day's "differs from
+  every logged version" rule, which left 8,000+ ND/TN votes showing a bad version as current).
+  Each bill's votes are checked once per scrape: (1) if tonight's scrape holds the vote's last
+  logged version, log nothing (scrapes holding two versions of one vote flip-flopped A, B, A
+  nightly; TN 13,276 lines); (2) else a changed version is logged, even if it repeats an
+  earlier one, so a real revert (DE SB 315 pass → fail → pass) shows. The nightly formatter
+  now writes each bill's votes after reading the whole scrape. Conversion merges logs line by
+  line, keeping every version.
+- **Per-state scraper failures** (`SCRAPER_FAILURES` in `log_jsonl.py`): a version the table
+  flags is treated as not scraped. `nd`: a voter named "Service Unavailable" (site down, 6
+  nights). `tn`: an empty roll call when the last logged version has voters (6,787 votes). Not
+  a general rule: in OK and HI a change to an empty roll call is the scraper fixing its
+  parsing. Each entry is a stopgap; delete it when OpenStates fixes the bug
+  (`tamara-notes/state-specific/nd.md`, `tn.md`).
 - **Reworded actions** (2026-11-25): a new wording of an action the previous scrape had is
   appended under the paired action's `id`. Previous = the bill's `metadata.json` (nightly) or
   the last version seen (backfill). Per date + chamber: same count and unchanged actions in the
