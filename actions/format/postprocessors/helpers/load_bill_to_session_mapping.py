@@ -35,7 +35,12 @@ def load_bill_to_session_mapping(
     if session_mapping is None:
         raise ValueError("❌ session_mapping is required when rebuilding.")
 
-    for bill_path in data_processed_folder.glob("**/bills/*"):
+    # Sorted, here and in json.dump below, so the same bill folders always give
+    # the same file. glob() follows the folder listing, which differs between
+    # machines and runs, so the file was rewritten in a new key order every
+    # night, an unchanged night's diff included. Sorting here also makes it fixed
+    # which session wins if one bill ID is in two sessions (the last one).
+    for bill_path in sorted(data_processed_folder.glob("**/bills/*")):
         if not bill_path.is_dir():
             continue
         bill_id = bill_path.name
@@ -55,7 +60,7 @@ def load_bill_to_session_mapping(
             }
 
     with open(mapping_file, "w", encoding="utf-8") as f:
-        json.dump(bill_to_session, f, indent=2)
+        json.dump(bill_to_session, f, indent=2, sort_keys=True)
     print(f"✅ Saved bill-to-session mapping to {mapping_file}")
 
     return bill_to_session
