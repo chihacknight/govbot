@@ -5,7 +5,8 @@ from utils.file_utils import (
     format_timestamp,
     validate_required_field,
 )
-from utils.log_jsonl import action_line, append_actions, find_rewordings
+from utils.bill_guards import BillGuards
+from utils.log_jsonl import action_key, action_line, append_actions, find_rewordings, raw_action_key
 from utils.timestamp_tracker import (
     LatestTimestamps,
     to_dt_obj,
@@ -13,7 +14,6 @@ from utils.timestamp_tracker import (
 )
 from utils.processing_tracker import (
     load_existing_metadata,
-    find_new_actions,
     merge_actions,
     add_processing_timestamp,
     get_current_timestamp,
@@ -95,6 +95,7 @@ def handle_bill(
     filename: str,
     latest_timestamps: LatestTimestamps,
     first_seen: Optional[str] = None,
+    guards: Optional[BillGuards] = None,
 ) -> bool:
     """
     Handles a bill JSON file by saving:
@@ -103,6 +104,10 @@ def handle_bill(
     2. Each action not yet logged, appended to action_logs.jsonl in the bill
        folder (see utils/log_jsonl.py), stamped with `first_seen`: when the raw
        scrape holding it was committed
+
+    Every bill is processed every night. For a bill we already have, a field
+    tonight's scrape has empty keeps last night's value (`guards`, see
+    utils/bill_guards.py).
     3. A files/ directory, ready for bill text files
 
     Skips and logs errors if required fields (e.g. identifier) are missing.
@@ -134,33 +139,40 @@ def handle_bill(
     # Load existing metadata to check for incremental changes
     existing_metadata = load_existing_metadata(DATA_PROCESSED_FOLDER, STATE_ABBR, data)
 
-    actions = data.get("actions", [])
-    sources = data.get("sources", [])
-
-    # Determine which actions are new and need processing
     if existing_metadata:
         existing_actions = existing_metadata.get("actions", [])
-        new_actions = find_new_actions(existing_actions, actions)
+        if guards is not None:
+            guards.keep_nonempty(f"{session_id}/{bill_identifier}", existing_metadata, data)
+        actions = data.get("actions", [])
+        sources = data.get("sources", [])
 
-        # Only write logs for new actions. A new wording of an action the
-        # previous scrape had (metadata.json keeps that scrape's list, in order)
-        # is logged as a correction of it, not as a new action.
-        if new_actions:
-            logged = append_actions(
-                save_path,
-                [action_line(a, bill_identifier, sources, session_id, first_seen) for a in new_actions],
-                rewordings=find_rewordings(existing_actions, actions),
-            )
-
-            # Add processing timestamps to new actions
-            for action in new_actions:
-                add_processing_timestamp(action, "log_file_created")
-
-            _update_actions_watermark(new_actions, latest_timestamps)
-            _record_action_log_files_created(logged, latest_timestamps)
+        # Every scraped action goes to the log, which keeps only the ones it
+        # doesn't have (date + description ignoring whitespace + chamber). A new
+        # wording of an action the previous scrape had (metadata.json keeps that
+        # scrape's list, in order) is logged as a correction of it, not as a new
+        # action.
+        rewordings = find_rewordings(existing_actions, actions)
+        added: list[dict[str, Any]] = []
+        logged = append_actions(
+            save_path,
+            [action_line(a, bill_identifier, sources, session_id, first_seen) for a in actions],
+            rewordings=rewordings,
+            added=added,
+        )
 
         # Merge actions: preserve existing _processing fields, add new actions
-        data["actions"] = merge_actions(existing_actions, actions)
+        data["actions"] = merge_actions(existing_actions, actions, rewordings)
+
+        # Stamp the actions logged tonight (an action already in the log but
+        # missing from metadata.json, which the old action-count skip could
+        # leave behind, was logged by someone else and gets no stamp).
+        added_keys = {action_key(line["action"]) for line in added}
+        newly_logged = [a for a in data["actions"] if raw_action_key(a) in added_keys]
+        for action in newly_logged:
+            if not (action.get("_processing") or {}).get("log_file_created"):
+                add_processing_timestamp(action, "log_file_created")
+        _update_actions_watermark(newly_logged, latest_timestamps)
+        _record_action_log_files_created(logged, latest_timestamps)
 
         # Update bill-level _processing timestamp
         if "_processing" not in data:
@@ -170,17 +182,19 @@ def handle_bill(
         if "_processing" in existing_metadata:
             data["_processing"].update(existing_metadata["_processing"])
 
-        # Update logs timestamp -- gated on new_actions, not unconditional:
-        # this field is meant to mean "the last time this bill's action log
-        # actually changed," and previously got bumped to the current run
-        # time on every single call regardless of whether anything new was
+        # Update logs timestamp -- gated on lines actually being logged, not
+        # unconditional: this field is meant to mean "the last time this bill's
+        # action log actually changed," and previously got bumped to the current
+        # run time on every single call regardless of whether anything new was
         # found, which made it useless as a staleness signal (see
         # tamara-notes/processes/dream-list.md item 2).
-        if new_actions:
+        if logged:
             data["_processing"]["logs_latest_update"] = get_current_timestamp()
     else:
         # New bill: process all actions
         _record_new_bill_seen(latest_timestamps)
+        actions = data.get("actions", [])
+        sources = data.get("sources", [])
         if actions:
             logged = append_actions(
                 save_path,
@@ -203,9 +217,12 @@ def handle_bill(
             {"logs_latest_update": get_current_timestamp()} if actions else {}
         )
 
-    # Save bill metadata with _processing fields
+    # Save bill metadata with _processing fields. Every bill is rewritten every
+    # night, so only write when something changed: an unchanged night leaves
+    # the file untouched.
     metadata_file = save_path / "metadata.json"
-    with open(metadata_file, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
+    text = json.dumps(data, indent=2)
+    if not metadata_file.exists() or metadata_file.read_text(encoding="utf-8") != text:
+        metadata_file.write_text(text, encoding="utf-8")
 
     return True

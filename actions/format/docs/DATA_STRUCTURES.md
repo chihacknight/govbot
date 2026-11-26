@@ -333,6 +333,36 @@ text-similarity matching. Readers show the last line per `id` (the current
 wording) with the **first** line's `first_seen`, since a rewording isn't news. An
 `id` repeats only within one date and chamber.
 
+**Every bill, every night.** Each bill in the scrape is processed every night, and
+every scraped action is checked against the bill's `action_logs.jsonl` (not against
+`metadata.json`), so only what the log lacks is appended. (Until Nov 2026 a bill whose
+action count matched `metadata.json` was skipped, which lost new cosponsors, versions
+and title fixes, and missed rewordings.) `metadata.json` is rewritten from tonight's
+scrape only when it changed, so a quiet night leaves it byte-for-byte untouched, with
+three guards (`utils/bill_guards.py`, `merge_actions` in `utils/processing_tracker.py`):
+
+- **(a) An empty field never replaces a filled one.** For `title`, `sponsorships`,
+  `actions`, `versions`, `documents`, `abstracts`, `other_titles`, `subject` and
+  `sources`, a field tonight's scrape has empty (or missing) keeps last night's value
+  until it comes back. Each bill and field kept is listed in
+  `.windycivi/errors/kept_empty_fields.json` (`{"<session>/<bill>": {"<field>":
+  {"first_kept": …}}}`, the commit time of the scrape it was first kept on). Only the
+  first night is recorded, so the file changes when a field is first kept or comes
+  back, not every night it stays missing (each night prints a "Kept last night's …"
+  line instead). Removed when nothing is kept. IL's scrape has had no abstracts since 2026-07-13, KY's no sponsors
+  since 2026-08-20.
+- **(b) Whitespace-only description changes are the same action** in `metadata.json`
+  too, so the action keeps its `_processing.log_file_created`. A reworded action takes
+  tonight's wording and keeps the stamp of the action it rewords.
+- **(c) A field vanishing from most bills in one night is flagged.** When more than 50%
+  of the bills that had a field (at least 20 bills) have it empty tonight, the run
+  prints a GitHub `::warning::` and writes `.windycivi/errors/field_regressions.json`:
+  a list, one entry per field, `{"state", "night", "field", "bills_lost",
+  "bills_had"}`, removed on a night nothing fires. The run carries on (guard (a) kept
+  the data). The threshold is `FIELD_REGRESSION_THRESHOLD`, measured on the raw
+  history of eight states: real failures lose 69–100% of a field, everything else
+  under 20%.
+
 ### `vote_event_logs.jsonl`
 
 ```json

@@ -166,7 +166,18 @@ OpenStates fixes it, see `tamara-notes/state-specific/nd.md` / `tn.md`). An acti
 "(H) 1st Reading") is appended under the paired action's `id` when the previous scrape
 (`metadata.json`) and tonight's have the same count on that date + chamber with unchanged
 actions in the same order (`find_rewordings`). Readers take the last line per `id`; an action
-keeps its first line's `first_seen`, a vote its correction's. Votes are deduped by roll-call `identifier` + date + motion (VA and MT reuse one
+keeps its first line's `first_seen`, a vote its correction's. **Every bill is processed every
+night** (the old "same action count → skip the bill" shortcut is gone: it lost GA's new
+cosponsors, versions and title fixes): every scraped action is checked against the log, not
+`metadata.json` (so the other chamber's identically worded action is logged), and
+`metadata.json` is rewritten only when it changed, with three guards (`utils/bill_guards.py`):
+(a) an empty field (title, sponsors, actions, versions, documents, abstracts, other titles,
+subjects, sources) keeps last night's value, listed in `.windycivi/errors/kept_empty_fields.json`
+(IL abstracts gone since 2026-07-13, KY sponsors since 2026-08-20); (b) whitespace-only
+description changes are the same action (`merge_actions`); (c) a field empty tonight on more than
+50% of the ≥20 bills that had it prints a `::warning::` and writes
+`.windycivi/errors/field_regressions.json` (one entry per field: state, night, field,
+bills_lost, bills_had) for the daily audit; the run goes on. Votes are deduped by roll-call `identifier` + date + motion (VA and MT reuse one
 identifier across different votes), else date + motion + chamber + counts; there is no "newer than the newest vote" gate any more (it silently lost late
 votes). Line schemas: `actions/format/schemas/action_log.schema.json` /
 `vote_event_log.schema.json` (copies in `/schemas`). Full reference: "Action and vote

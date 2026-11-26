@@ -111,7 +111,13 @@ Sartaj's vector tagging, which reads `govbot logs`).
 - Not in this PR: **bill skip, option C** (always process every bill; never replace a
   non-empty field with an empty one; whitespace-only action differences are the same
   action; a field vanishing on most bills goes to the error digest). Evidence: GA lost real
-  updates; KY's 2026-09-29 scrape has no sponsors on 1,707/1,737 bills.
+  updates; KY's 2026-09-29 scrape has no sponsors on 1,707/1,737 bills. Implemented
+  2026-11-25 on branch `bill-skip-option-c` (in review): the skip and the description + date
+  pre-filter are gone (new actions are checked against the log, which closes the chamber
+  gap); guards in `actions/format/utils/bill_guards.py` (a: keep last night's value, listed in
+  `.windycivi/errors/kept_empty_fields.json`; c: `::warning::` + `field_regressions.json`
+  above 50% of ≥20 bills, threshold confirmed on 8 states' raw history) and `merge_actions`
+  (b). Dry run and review: `shared-docs/bill-skip-option-c.md`.
 
 ### Evidence (local copies on `/Volumes/govbot-data`, 2026-11-24)
 

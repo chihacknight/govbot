@@ -1,16 +1,17 @@
 """
 Processing Tracker Utilities
 
-This module provides utilities for tracking what data has been processed
-and what is new. Used for incremental processing to avoid reprocessing
-existing data while ensuring no new data is missed.
+Helpers for updating a bill's metadata.json from tonight's scrape. Every bill is
+processed every night; what is new is decided against the bill's action log
+(utils/log_jsonl.py), not here.
 """
 
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional, Tuple
+from typing import Optional
 
+from .log_jsonl import raw_action_key
 from .path_utils import build_bill_path
 
 
@@ -51,76 +52,43 @@ def load_existing_metadata(
         return None
 
 
-def create_action_identifier(action: dict) -> str:
+def merge_actions(existing_actions: list, incoming_actions: list, rewordings=None) -> list:
     """
-    Create a unique identifier for an action using description + date.
+    Tonight's actions, in tonight's order, each replaced by the same action from
+    existing metadata when there is one, so it keeps its _processing timestamps.
 
-    Args:
-        action: Action dict with 'description' and 'date' keys
+    "The same action" is what the action log means by it (raw_action_key: date,
+    description ignoring whitespace, chamber). Ignoring whitespace: KY's scraper
+    started putting line breaks inside descriptions, and an exact match would read
+    each as a new action and drop its _processing.log_file_created. Chamber: two
+    chambers often record identically worded actions on one date ("Read first
+    time"); without it both collapsed onto one of the existing actions.
 
-    Returns:
-        Unique identifier string
-    """
-    description = action.get("description", "")
-    date = action.get("date", "")
-    return f"{description}|{date}"
-
-
-def find_new_actions(existing_actions: list, incoming_actions: list) -> list:
-    """
-    Find actions in incoming list that don't exist in existing list.
-
-    Uses description + date to identify unique actions.
-
-    Args:
-        existing_actions: List of actions from existing metadata
-        incoming_actions: List of actions from new scrape
-
-    Returns:
-        List of new actions that need to be processed
-    """
-    existing_ids = {create_action_identifier(action) for action in existing_actions}
-
-    new_actions = []
-    for action in incoming_actions:
-        action_id = create_action_identifier(action)
-        if action_id not in existing_ids:
-            new_actions.append(action)
-
-    return new_actions
-
-
-def merge_actions(existing_actions: list, incoming_actions: list) -> list:
-    """
-    Merge existing and incoming actions, preserving _processing timestamps.
-
-    For actions that exist in both lists, keeps the existing action with its
-    _processing timestamps. For new actions, includes them from incoming list.
+    A rewording (`rewordings`, from find_rewordings) takes tonight's wording and
+    keeps the _processing of the action it rewords, as its log line keeps that
+    action's id (WY HB0144, 2026-02-23: "H COW:H Motion to move Bill up for
+    Consideration Failed…" -> "H Motion to move Bill up in General File Failed…").
 
     Args:
         existing_actions: List of actions from existing metadata (with _processing fields)
         incoming_actions: List of actions from new scrape (no _processing fields)
+        rewordings: log_jsonl.Rewordings for these two lists, or None
 
     Returns:
         Merged list with all actions, preserving existing _processing timestamps
     """
-    # Create a map of existing actions by identifier
-    existing_map = {}
-    for action in existing_actions:
-        action_id = create_action_identifier(action)
-        existing_map[action_id] = action
-
-    # Build merged list
+    existing_map = {raw_action_key(action): action for action in existing_actions}
+    pairs = rewordings.pairs if rewordings else {}
     merged = []
     for action in incoming_actions:
-        action_id = create_action_identifier(action)
-        if action_id in existing_map:
-            # Use existing action (has _processing timestamps)
-            merged.append(existing_map[action_id])
-        else:
-            # New action - use incoming data
-            merged.append(action)
-
+        key = raw_action_key(action)
+        if key in existing_map:
+            merged.append(existing_map[key])
+            continue
+        reworded = existing_map.get(pairs.get(key))
+        if reworded is not None and "_processing" in reworded:
+            action = {**action, "_processing": dict(reworded["_processing"])}
+        merged.append(action)
     return merged
 
 
@@ -162,33 +130,3 @@ def get_current_date() -> str:
         Date string, e.g. '2026-09-30'
     """
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-
-def compare_action_counts(
-    existing_metadata: Optional[dict], incoming_data: dict
-) -> Tuple[bool, int, int]:
-    """
-    Compare action counts between existing and incoming data.
-
-    Args:
-        existing_metadata: Existing metadata dict (or None if new bill)
-        incoming_data: Incoming scraped data
-
-    Returns:
-        Tuple of (should_process, existing_count, incoming_count)
-        - should_process: True if counts differ or bill is new
-        - existing_count: Number of actions in existing metadata
-        - incoming_count: Number of actions in incoming data
-    """
-    incoming_count = len(incoming_data.get("actions", []))
-
-    if existing_metadata is None:
-        # New bill - always process
-        return (True, 0, incoming_count)
-
-    existing_count = len(existing_metadata.get("actions", []))
-
-    # Process if counts are different
-    should_process = existing_count != incoming_count
-
-    return (should_process, existing_count, incoming_count)

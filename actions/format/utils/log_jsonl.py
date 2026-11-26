@@ -294,12 +294,16 @@ def _unique_id(line: dict[str, Any], taken: set[str], identity: Any) -> None:
 
 
 def append_actions(
-    bill_dir: Union[str, Path], new_lines: Iterable[dict[str, Any]], rewordings: Optional["Rewordings"] = None
+    bill_dir: Union[str, Path],
+    new_lines: Iterable[dict[str, Any]],
+    rewordings: Optional["Rewordings"] = None,
+    added: Optional[list[dict[str, Any]]] = None,
 ) -> int:
     """Append the actions not already in the bill's action_logs.jsonl. Returns how
-    many. Pass find_rewordings(previous scrape's actions, tonight's) so a reworded
-    action is logged as a correction of the one it rewords (see find_rewordings)."""
-    return _append_actions_at(Path(bill_dir) / ACTION_LOG_FILE, new_lines, rewordings=rewordings)
+    many, and puts the appended lines in `added` when given. Pass
+    find_rewordings(previous scrape's actions, tonight's) so a reworded action is
+    logged as a correction of the one it rewords (see find_rewordings)."""
+    return _append_actions_at(Path(bill_dir) / ACTION_LOG_FILE, new_lines, rewordings=rewordings, added=added)
 
 
 def raw_action_key(action: dict[str, Any]) -> tuple:
@@ -398,7 +402,11 @@ def select_new_actions(
 
 
 def _append_actions_at(
-    path: Path, new_lines: Iterable[dict[str, Any]], keep_order: bool = False, rewordings: Optional["Rewordings"] = None
+    path: Path,
+    new_lines: Iterable[dict[str, Any]],
+    keep_order: bool = False,
+    rewordings: Optional["Rewordings"] = None,
+    added: Optional[list[dict[str, Any]]] = None,
 ) -> int:
     existing = read_lines(path)
     seen = {action_key(line.get("action") or {}) for line in existing}
@@ -406,6 +414,8 @@ def _append_actions_at(
     id_of = {action_key(line.get("action") or {}): line.get("id") for line in existing}
     to_add = select_new_actions(seen, taken, new_lines, rewordings, id_of)
     _append(path, to_add, "action", keep_order)
+    if added is not None:
+        added.extend(to_add)
     return len(to_add)
 
 
