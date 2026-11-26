@@ -576,7 +576,7 @@ load the entry stays hidden and the rest of the page is unaffected. Below it, th
 `RECENT_PER_STATE` (2) per jurisdiction so one busy state can't monopolize the strip, up to
 `RECENT_MAX` (12) cards; each card wears a full 2px border that **alternates blue (`--series-1`) / true
 gold (`--rc-gold`, `#E5B94E` dark / `#8A6100` light) each time the state changes** (`renderRecent` sets
-`.is-gold`, so neighbouring states differ and a state's two cards match when adjacent) and shows the state badge · bill id · relative date · title · latest
+`.is-gold`, so neighbouring states differ and a state's two cards match when adjacent) and shows the state badge · bill id (`.rc-id`, full-contrast bold text, never dimmed — it used to be small blue) · relative date · title · latest
 action · the bill's **topic chips** (`.rc-tags`, colored dots from `state.tagColor`, omitted when a
 bill has no tags); a gold `.recent-toggle` "Show / Hide recent activity" pill in the section
 head **is always visible and toggles the strip open/closed at any time** (`toggleRecent()` flips a
