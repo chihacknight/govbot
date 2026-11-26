@@ -30,6 +30,8 @@ output/
   audit_tracking.json            live state the weekly audit commits back each run --
                                   separate from the code so a scheduled run's output diff
                                   never looks like a code change in git history
+history/                         the state history scanner: replays each state's whole raw
+                                  scrape history into SQLite (history/README.md)
 internal/                        manual investigation scratch work from building this
                                   (one-off scripts, raw per-state audit output, planning
                                   notes) -- kept for reference, not part of the production

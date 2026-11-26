@@ -286,6 +286,62 @@ Walked a real in-progress/completed local FL run end-to-end instead of assuming 
   (raw side), and can also silently fail to propagate into `govbot-data` even when the raw
   scrape *did* capture it (format side). Neither has a root-caused fix yet.
 
+## Reading FL's raw history (rules, 2026-11-26)
+
+FL's raw history misleads more than any other state's. These are the rules for reading it
+(Tamara, 2026-11-26). The history scanner carries them as `CAVEATS["fl"]` in
+`actions/openstates-scrape-audits/history/known_events.py`, and FL's report and profile print
+them.
+
+- **A scrape that looks complete isn't.**
+  - `flhouse.gov`'s bot detection returns a "Request Rejected" page with HTTP 200, so a blocked
+    page looks like a good one, and blocked runs finish green.
+  - 1,480 of 1,902 bills (78%) were blocked on 08-07, and 98.5% on 07-26.
+  - Treat every FL scrape as a sample, not the truth. Judge a bill by the best version ever seen,
+    not the last one.
+- **A block costs one thing: House committee roll-call votes.**
+  - Blocked bills keep their title, sponsors, actions and floor votes, which all come from
+    `flsenate.gov`. A blocked bill's actions still say the committee voted ("Favorable by State
+    Affairs Committee").
+  - House committee votes come only from `flhouse.gov`, so a blocked rescrape deletes a
+    committee vote captured earlier (HB 755: ~07-25, gone 08-07).
+  - `extras.scrape_warnings` (from 07-24) marks a bill whose `flhouse.gov` pages were skipped.
+    That field going away means the bill wasn't blocked that night.
+- **Measured 2026-11-26 (history scanner):**
+  - 2,724 distinct votes were ever seen; 988 of them are missing from their bill's last scrape
+    (452 bills).
+  - **987 are House committee votes:**
+    - 454 went missing on 08-07, in a run with a 78–99% block rate;
+    - 533 went missing on four nights during the session (02-12: 76, 02-25: 133, 03-01: 24,
+      03-03: 300), under the old scraper, which didn't record block rates. Nothing else went
+      missing on those nights, which fits blocks, but it can't be proven.
+  - **The only other one** is SB 7040's Senate floor vote (Third Reading, 02-11), missing
+    from 03-14 on. It's unexplained, and separate from the blocks.
+  - **None of the 988 is a key change.** None is in its bill's last scrape under another key
+    (unlike TN's chamber swap).
+- **The scraper isn't one scraper.**
+  - Before 07-23 it held the whole session in memory and often saved zero bills, or crashed on
+    one bad bill.
+  - From 07-23 it's our custom image `fl-fix-test` (streaming, timeouts, single-bill resilience).
+  - Treat 07-23 as a change point. Don't compare across it as if nothing changed.
+- **Count distinct bills, never files.**
+  - Stale copies pile up between full runs: 3,123 files for 1,878 bills, then 5,330, up to 11
+    copies of one bill, and 13,807 files for 1,902 bills on 08-07.
+  - Each full run cleans them up.
+- **Commits in July and August are not nights.** Partial runs were auto-saved up to 40 times a
+  day (07-21 to 08-07).
+- **Known events, not new findings:**
+  - 07-21: a short "successful" run overwrote a longer run's data.
+  - The regular session ended 03-13.
+  - The regular session left the scrape from 04-25 to 07-24 (the scrape followed the 2026D
+    special session).
+  - SPB bills vanishing is normal: they're filed as numbered SBs.
+  - `subject` holds the junk values "subject index" and "(vetoed)".
+- **The history ends on 08-07 on purpose.** The 09-27 to 09-29 runs were cancelled waiting for a
+  self-hosted runner. That's an outage, not data loss.
+- **"Blocked or just slow?" is settled:** both happened. Bot detection is the usual case; a real
+  IP block happened on 07-21. See "Threads that have gone in circles" below.
+
 ## Threads that have gone in circles (read before re-investigating)
 
 1. **"Is FL IP-blocked or just slow?"** — answered at least 3 times (07-02, 07-13/14, 07-21)
