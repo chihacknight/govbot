@@ -1,12 +1,13 @@
 # JSONL logs (goal 3) — PRIORITY
 
-**Folder:** `~/my_work/govbot-jsonl` · **Branch:** `jsonl-logs`
+**Folder:** `~/my_work/govbot-jsonl` · **Branch:** a fresh branch off `main` (`jsonl-logs`
+became #306, `backfill-logs` became #308; both squash-merged, don't reuse them)
 
 ## Kickoff prompt
 
 > Read `tamara-notes/processes/handoff-2026-11-24.md` and
 > `tamara-notes/processes/workstreams/jsonl-logs.md`, then work on the JSONL logs goal. Stay in
-> this folder and on the `jsonl-logs` branch.
+> this folder, on a fresh branch off `main`.
 
 ## Goal
 
@@ -189,3 +190,11 @@ repo makes the formatter stop as soon as it gets new data.
     session-2025 bills with no folder here (this repo is 2026-only): goal 1's business.
     Same 2026-07-21 auto-merge conflict-marker problem as GA (1,834 files).
   - Reports + re-run cursors: `/Volumes/govbot-data/scratch/backfill/reports/`.
+- 2026-11-25: every repo converted and pushed, in three runs, with the rules in the
+  Decisions above (vote identity, reworded actions, the last-line vote rule, the ND/TN
+  scraper-failure table). 39 pushed after run 1; the 16 held (CA, CO, DC, DE, HI, IL, MI,
+  MO, MT, ND, NJ, OH, OK, RI, SC, TN) after run 3, ND after a re-run with "Proxy Error".
+  In every one of the 16, each vote's last line matches the latest raw scrape. GU has no
+  logs. Results, per-repo table and the next steps (4: rebuild the 39 pushed under the
+  earlier rules; 5: bill-skip option C; 6: the auto-merge conflict markers):
+  `shared-docs/jsonl-log-conversion-results.md`. #308 ready to merge, CI green.
