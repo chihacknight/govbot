@@ -101,6 +101,14 @@ Sartaj's vector tagging, which reads `govbot logs`).
   `first_seen`. Needs bill-skip option C before the scrapers are unpaused, or the nightly writer
   never sees a night that only rewords. Details and the per-state counts:
   `shared-docs/jsonl-log-conversion-results.md`.
+- **No rebuild of the 39 repos pushed under the earlier rules** (2026-11-25, Tamara). The
+  focus is getting future nights right; the duplicates are known and documented. In those
+  repos an action reworded before the rule appears twice (old and new wording, two ids,
+  about 2–19% of action lines in KS, NH and others); rewordings from now on are corrections
+  under one id. Votes correct themselves: on the first nightly run, a vote whose last line
+  differs from that scrape gets the current version appended (rule 2). Only votes no longer
+  in the scrape keep their old last line. Don't reopen this unless a reader or user is
+  actually hurt by the duplicates. Step 4 in `shared-docs/jsonl-log-conversion-results.md`.
 - **Session symlinks (`sessions/<s>/logs/`) removed**, with `symlink_logs.py`. They doubled
   the file count and made `govbot logs` emit every action twice (GA: 61,256 lines for
   30,628 actions) and the weekly audit count double.
@@ -195,6 +203,6 @@ repo makes the formatter stop as soon as it gets new data.
   scraper-failure table). 39 pushed after run 1; the 16 held (CA, CO, DC, DE, HI, IL, MI,
   MO, MT, ND, NJ, OH, OK, RI, SC, TN) after run 3, ND after a re-run with "Proxy Error".
   In every one of the 16, each vote's last line matches the latest raw scrape. GU has no
-  logs. Results, per-repo table and the next steps (4: rebuild the 39 pushed under the
-  earlier rules; 5: bill-skip option C; 6: the auto-merge conflict markers):
-  `shared-docs/jsonl-log-conversion-results.md`. #308 ready to merge, CI green.
+  logs. #308 merged (4a645850). Results and per-repo table:
+  `shared-docs/jsonl-log-conversion-results.md`. Left before the scrapers are unpaused:
+  bill-skip option C (step 5) and the auto-merge conflict markers (step 6).
