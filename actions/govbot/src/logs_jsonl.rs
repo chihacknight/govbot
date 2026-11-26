@@ -3,10 +3,15 @@
 //! Current layout (written by `actions/format/utils/log_jsonl.py`):
 //!
 //! ```text
-//! sessions/{session}/bills/{bill_id}/action_logs.jsonl      # one action per line, append-only
+//! sessions/{session}/bills/{bill_id}/action_logs.jsonl      # one action per line, append-only; a
+//!                                                           #   rewording repeats the action's id
 //! sessions/{session}/bills/{bill_id}/vote_event_logs.jsonl  # one roll call per line; a correction
 //!                                                           #   repeats the vote's id later on
 //! ```
+//!
+//! Readers show the last line per id (the current wording or version); earlier lines
+//! are the history. An action keeps its first line's `first_seen`, a vote takes the
+//! correction's.
 //!
 //! Each line is `{"id", "first_seen", "chamber", "action" | "vote_event", "bill_id"}`.
 //!
@@ -164,6 +169,7 @@ fn read_jsonl(path: &Path, kind: LogKind) -> Vec<LogRecord> {
     };
 
     let mut records: Vec<LogRecord> = Vec::new();
+    let mut index_of: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
     for (index, raw) in contents.lines().enumerate() {
         if raw.trim().is_empty() {
             continue;
@@ -202,16 +208,23 @@ fn read_jsonl(path: &Path, kind: LogKind) -> Vec<LogRecord> {
             timestamp: date.as_deref().and_then(timestamp_of),
             first_seen,
         };
-        // A vote correction repeats the id of the vote it corrects: keep only the
-        // newest version of each vote, in the position the vote first appeared.
-        if kind == LogKind::VoteEvent {
-            if let Some(existing) = id
-                .as_ref()
-                .and_then(|id| records.iter_mut().find(|r| r.anchor.as_ref() == Some(id)))
-            {
-                *existing = record;
-                continue;
+        // A correction repeats the id of the entry it corrects: keep only the newest
+        // version of each entry, in the position the entry first appeared.
+        // - A vote correction (result, counts, member votes) is news, so it carries
+        //   its own first_seen.
+        // - An action correction is the scraper rewording an action it already
+        //   published (MT "(H) First Reading" -> "(H) 1st Reading"); that isn't news,
+        //   so it keeps the first line's first_seen.
+        if let Some(&at) = id.as_ref().and_then(|id| index_of.get(id)) {
+            let first_seen = records[at].first_seen.clone();
+            records[at] = record;
+            if kind == LogKind::Action {
+                records[at].first_seen = first_seen;
             }
+            continue;
+        }
+        if let Some(id) = id {
+            index_of.insert(id, records.len());
         }
         records.push(record);
     }
@@ -304,6 +317,29 @@ mod tests {
         assert_eq!(votes[0].anchor.as_deref(), Some("v1"));
         assert_eq!(votes[0].value["result"], "pass", "the correction replaces the first version");
         assert_eq!(votes[0].line, Some(3));
+        assert_eq!(votes[0].first_seen.as_deref(), Some("2026-09-29T10:33:32+00:00"), "a vote correction is news");
+    }
+
+    #[test]
+    fn a_reworded_action_shows_once_in_its_new_wording_and_keeps_its_first_seen() {
+        // MT 2026-08-10: "(H) First Reading" -> "(H) 1st Reading" on every past bill.
+        let tmp = tempfile::tempdir().unwrap();
+        let bill = bill(tmp.path());
+        std::fs::write(
+            bill.join(ACTION_LOG_FILE),
+            concat!(
+                r#"{"id": "a1", "first_seen": "2025-11-27T09:41:00+00:00", "chamber": "lower", "action": {"description": "(H) First Reading", "occurred_at": "2025-02-26T15:00:00+00:00"}, "bill_id": "HB794"}"#, "\n",
+                r#"{"id": "a2", "first_seen": "2025-11-27T09:41:00+00:00", "chamber": "lower", "action": {"description": "(H) Referred to Committee", "occurred_at": "2025-02-27T15:00:00+00:00"}, "bill_id": "HB794"}"#, "\n",
+                r#"{"id": "a1", "first_seen": "2026-08-10T07:00:00+00:00", "chamber": "lower", "action": {"description": "(H) 1st Reading", "occurred_at": "2025-02-26T15:00:00+00:00"}, "bill_id": "HB794"}"#, "\n",
+            ),
+        )
+        .unwrap();
+        let records = bill_log_records(&bill);
+        assert_eq!(records.len(), 2);
+        assert_eq!(records[0].value["action"]["description"], "(H) 1st Reading");
+        assert_eq!(records[0].first_seen.as_deref(), Some("2025-11-27T09:41:00+00:00"), "a rewording isn't news");
+        assert_eq!(records[0].line, Some(3));
+        assert_eq!(records[1].anchor.as_deref(), Some("a2"));
     }
 
     #[test]

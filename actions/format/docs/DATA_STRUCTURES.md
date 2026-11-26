@@ -322,6 +322,17 @@ action on purpose so a log line passed around on its own always leads back to th
 scrapers start emitting line breaks inside descriptions), same `jurisdiction_id`.
 An action already in the file is never written again.
 
+**Reworded actions:** when a scraper rewords an action it already published (MT,
+2026-08-10: "(H) First Reading" → "(H) 1st Reading" on every past bill), the new
+wording is appended under the **same `id`**, so it isn't logged as a new action.
+The writer compares the bill's previous scrape (its `metadata.json`) with tonight's,
+per date and chamber: when both have the same number of actions there and the
+actions whose wording didn't change are in the same order, the changed ones pair
+slot by slot. Otherwise the new wording is logged as a new action. No
+text-similarity matching. Readers show the last line per `id` (the current
+wording) with the **first** line's `first_seen`, since a rewording isn't news. An
+`id` repeats only within one date and chamber.
+
 ### `vote_event_logs.jsonl`
 
 ```json
@@ -336,13 +347,28 @@ An action already in the file is never written again.
 `vote_event` is the OpenStates vote event as published (minus the scraper's `_id`
 and `scraped_at`).
 
-**Same vote:** same roll-call `identifier` when both have one; otherwise same
+**Same vote:** same roll-call `identifier`, `start_date` and motion when both have an
+identifier (the identifier alone isn't enough: VA puts the bill's document number on
+every procedural entry, MT gives a committee vote and the floor vote one id); otherwise same
 `start_date`, motion, chamber and counts (date + motion + chamber alone is not
 unique: PA HB 1549 had two roll calls on one motion at the same moment).
 
 **Corrections:** when a later scrape changes a vote's substance (result, counts,
-member votes, motion), the corrected vote is appended as a new line with the
-**same `id`**. The last line for an `id` is current; earlier ones are the history.
+member votes), the corrected vote is appended as a new line with the
+**same `id`**. The last line for an `id` is current; earlier ones are the history,
+so the last line must match the latest scrape. Each bill's votes are checked once
+per scrape, all together:
+
+1. If the scrape holds the version that's already the vote's last line, nothing is
+   logged. Some scrapes hold two versions of one vote (OH HB 14 as both `pass` and
+   `fail`), which used to log A, B, A, B… every night (TN: 13,276 lines).
+2. Otherwise a version that differs from the last line is logged (one per vote per
+   night), even if it repeats an earlier version: a real revert (A → B → A) shows.
+
+Known per-state scraper failures are treated as not scraped (`SCRAPER_FAILURES` in
+`utils/log_jsonl.py`): `nd`, a voter named "Service Unavailable" or "Proxy Error"
+(the site was down; an explicit list of error-page titles); `tn`, an empty roll call when the last logged version has voters. Each entry
+is a stopgap for an OpenStates bug and is deleted once that's fixed.
 Changes that aren't substance (source URL format, a roll-call number filled in
 later, voter row order, the scraper's internal bill UUID) are not corrections.
 
@@ -356,13 +382,38 @@ overwrite another; together they lost 23% of votes in a 14-state check on
 Before 2026-11, each bill had a `logs/` folder with one file per action or vote
 (`{timestamp}_{slug}.json`, `{timestamp}.classification.{c}.{chamber}.json`,
 `{timestamp}.vote_event.pass.{chamber}.json`, `{timestamp}_vote_event_{result}.json`),
-plus a symlink to each under `sessions/{session}/logs/`. Old action files hold either
+plus a symlink to each under `sessions/{session}/logs/`. For a few days in Sept 2026 the formatter wrote 118 IL bills' actions
+as `logs/action_logs.jsonl` instead (one old-file object per line); the converter folds
+those lines in the same way. Old action files hold either
 the current action shape or OpenStates' own (`date`, `organization_id`,
 `classification`); both convert to the current shape.
 
-`python3 actions/format/convert_logs.py <repo>` converts a repo in place (idempotent;
-unrecognised files are kept and listed). The formatter refuses to write to a repo
-that still has old-style `logs/` folders, so a bill is never split across layouts.
+A repo is converted in two steps, on a full-history clone:
+
+1. `python3 actions/format/backfill_logs.py <repo> <raw-scraper-repo> --report-dir <dir>`
+   replays the raw scraper repo's history (every commit to `_data/<state>/`, oldest
+   first) into the two `.jsonl` files with the nightly writer's rules, each entry
+   stamped with the commit time of the scrape that first held it. It writes only
+   into existing bill folders (bills with no folder are listed in the report) and
+   touches nothing but the two log files. The last scrape replayed is recorded in
+   `<dir>/log_backfill-<state>.json`, outside the repo, so a re-run resumes instead
+   of replaying a corrected vote's history twice.
+2. `python3 actions/format/convert_logs.py <repo>` folds in the old files
+   (idempotent; unrecognised files are kept and listed). Where an old file and a
+   backfilled line are the same entry, the backfilled line stays, with the earlier
+   `first_seen` of the two and the old file's id. Old entries the raw history
+   doesn't have go first; an old vote whose content matches none of a backfilled
+   vote's versions goes first under that vote's id, as its earliest version.
+
+The formatter refuses to write to a repo that still has old-style `logs/` folders,
+so a bill is never split across layouts.
+
+**Any change to a vote's member rows is a correction, renames included** (decided
+2026-11-24). On 2026-01-01 GA's scraper renamed one voter from "ISLAM PARKES" to
+"PARKES" across past roll calls, which gave 756 GA votes a second line with nothing
+else changed; KY's 116 corrections are its scraper dropping duplicate House member
+rows (101–102 rows down to 100). The rule stays simple: what the legislature
+publishes about who voted how is substance, and readers take the last line per `id`.
 
 ---
 

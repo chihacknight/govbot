@@ -61,8 +61,11 @@ class Tmp(unittest.TestCase):
     def add_actions(self, actions, seen=SEEN_1):
         return L.append_actions(self.bill, [L.action_line(a, "SF0015", SOURCES, "2025", seen) for a in actions])
 
-    def add_votes(self, votes, seen=SEEN_1):
-        return L.append_votes(self.bill, [L.vote_event_line(v, seen) for v in votes])
+    def add_votes(self, votes, seen=SEEN_1, state=None):
+        return L.append_votes(self.bill, [L.vote_event_line(v, seen) for v in votes], state)
+
+    def last_vote(self):
+        return lines(self.bill / L.VOTE_EVENT_LOG_FILE)[-1]["vote_event"]
 
 
 class ActionLogTests(Tmp):
@@ -126,6 +129,56 @@ class ActionLogTests(Tmp):
             self.add_actions([action("A")])
 
 
+class RewordingTests(Tmp):
+    LOWER = '~{"classification": "lower"}'
+
+    def a(self, desc, date="2025-02-26T15:00:00+00:00"):
+        return action(desc, date=date, org=self.LOWER)
+
+    def test_mt_first_reading_is_a_correction_not_a_new_action(self):
+        # MT 2026-08-10: "(H) First Reading" -> "(H) 1st Reading" on every past bill.
+        before = [self.a("(H) Introduced", "2025-02-25T15:00:00+00:00"), self.a("(H) First Reading")]
+        after = [self.a("(H) Introduced", "2025-02-25T15:00:00+00:00"), self.a("(H) 1st Reading")]
+        L.append_actions(self.bill, [L.action_line(x, "HB794", SOURCES, "2025", SEEN_1) for x in before])
+        added = L.append_actions(self.bill, [L.action_line(x, "HB794", SOURCES, "2025", SEEN_2) for x in after],
+                                 rewordings=L.find_rewordings(before, after))
+        self.assertEqual(added, 1)
+        got = lines(self.bill / L.ACTION_LOG_FILE)
+        self.assertEqual([g["action"]["description"] for g in got], ["(H) Introduced", "(H) First Reading", "(H) 1st Reading"])
+        self.assertEqual(got[1]["id"], got[2]["id"])  # same action, new wording
+        # A later rewording of the rewording stays under the same id.
+        again = [after[0], self.a("(H) 1st Reading (Floor)")]
+        L.append_actions(self.bill, [L.action_line(x, "HB794", SOURCES, "2025", SEEN_2) for x in again],
+                         rewordings=L.find_rewordings(after, again))
+        self.assertEqual(lines(self.bill / L.ACTION_LOG_FILE)[3]["id"], got[1]["id"])
+
+    def test_pairs_changed_actions_slot_by_slot(self):
+        day = "2025-03-01"
+        before = [self.a("A", day), self.a("B", day), self.a("C", day)]
+        after = [self.a("A", day), self.a("B2", day), self.a("C2", day)]
+        r = L.find_rewordings(before, after)
+        self.assertEqual(r.pairs, {L.raw_action_key(after[1]): L.raw_action_key(before[1]),
+                                   L.raw_action_key(after[2]): L.raw_action_key(before[2])})
+        self.assertEqual(r.unpaired, 0)
+
+    def test_different_count_on_the_date_is_not_paired(self):
+        day = "2025-03-01"
+        r = L.find_rewordings([self.a("Referred to Committee on Judiciary", day)],
+                              [self.a("Referred to Senate Committee on Judiciary", day), self.a("Hearing", day)])
+        self.assertEqual((r.pairs, r.unpaired), ({}, 2))
+
+    def test_unchanged_actions_reordered_is_not_paired(self):
+        day = "2025-03-01"
+        r = L.find_rewordings([self.a("A", day), self.a("B", day), self.a("C", day)],
+                              [self.a("B", day), self.a("A", day), self.a("C2", day)])
+        self.assertEqual((r.pairs, r.unpaired), ({}, 1))
+
+    def test_new_bill_and_new_date_have_nothing_to_reword(self):
+        self.assertEqual(L.find_rewordings(None, [self.a("A")]).pairs, {})
+        r = L.find_rewordings([self.a("A", "2025-03-01")], [self.a("A", "2025-03-01"), self.a("B", "2025-03-02")])
+        self.assertEqual((r.pairs, r.unpaired), ({}, 0))  # a new date is just new
+
+
 class VoteLogTests(Tmp):
     def test_rerun_adds_nothing(self):
         self.assertEqual(self.add_votes([vote()]), 1)
@@ -153,6 +206,59 @@ class VoteLogTests(Tmp):
         self.assertEqual(second["first_seen"], SEEN_2)
         self.assertEqual(second["vote_event"]["votes"][1]["option"], "yes")
 
+    def test_in_scrape_flip_flop_logs_once(self):
+        # OH HB 14: each scrape holds the same 6-0 vote as both pass and fail.
+        self.assertEqual(self.add_votes([vote(result="pass"), vote(result="fail")]), 1)
+        for seen in (SEEN_2, "2026-09-30T10:00:00+00:00", "2026-10-01T10:00:00+00:00"):
+            self.assertEqual(self.add_votes([vote(result="fail"), vote(result="pass")], seen=seen), 0)
+        self.assertEqual(len(lines(self.bill / L.VOTE_EVENT_LOG_FILE)), 1)
+
+    def test_revert_is_logged_so_the_last_line_matches_the_scrape(self):
+        # DE SB 315: pass -> fail -> pass. The reader shows the last line.
+        self.add_votes([vote(result="pass")])
+        self.assertEqual(self.add_votes([vote(result="fail")], seen=SEEN_2), 1)
+        self.assertEqual(self.add_votes([vote(result="pass")], seen="2026-09-30T10:00:00+00:00"), 1)
+        got = lines(self.bill / L.VOTE_EVENT_LOG_FILE)
+        self.assertEqual([v["vote_event"]["result"] for v in got], ["pass", "fail", "pass"])
+        self.assertEqual(len({v["id"] for v in got}), 1)
+
+    def test_two_new_versions_in_one_scrape_log_one_correction(self):
+        self.add_votes([vote(result="pass")])
+        self.assertEqual(self.add_votes([vote(result="fail"), vote(result="fail", counts=(("yes", 20), ("no", 11)), rows=[])], seen=SEEN_2), 1)
+        self.assertEqual(self.last_vote()["result"], "fail")
+
+    def test_nd_service_unavailable_night_logs_nothing(self):
+        self.add_votes([vote()], state="nd")
+        bad = vote(rows=[{"option": "yes", "voter_name": "Service Unavailable", "voter_id": "~{}", "note": ""},
+                         {"option": "no", "voter_name": "Baker", "voter_id": "~{}", "note": ""}])
+        self.assertEqual(self.add_votes([bad], seen=SEEN_2, state="nd"), 0)
+        self.assertEqual(self.add_votes([vote()], seen="2026-09-30T10:00:00+00:00", state="nd"), 0)
+        self.assertEqual(self.last_vote()["votes"][0]["voter_name"], "Anderson")
+        # A new vote seen only on a bad night waits for a good one.
+        self.assertEqual(self.add_votes([dict(bad, motion_text="Another motion")], seen=SEEN_2, state="nd"), 0)
+
+    def test_nd_proxy_error_night_logs_nothing(self):
+        self.add_votes([vote()], state="nd")
+        bad = vote(rows=[{"option": "yes", "voter_name": "Proxy Error", "voter_id": "~{}", "note": ""}])
+        self.assertEqual(self.add_votes([bad], seen=SEEN_2, state="nd"), 0)
+        self.assertEqual(self.add_votes([vote()], seen="2026-09-30T10:00:00+00:00", state="nd"), 0)
+        self.assertEqual(len(lines(self.bill / L.VOTE_EVENT_LOG_FILE)), 1)
+
+    def test_tn_empty_roll_call_logs_nothing(self):
+        self.add_votes([vote()], state="tn")
+        self.assertEqual(self.add_votes([vote(rows=[])], seen=SEEN_2, state="tn"), 0)
+        self.assertEqual(self.add_votes([vote()], seen="2026-09-30T10:00:00+00:00", state="tn"), 0)
+        self.assertEqual(len(lines(self.bill / L.VOTE_EVENT_LOG_FILE)), 1)
+        # A vote first seen with no voters is still logged: no earlier names to lose.
+        self.assertEqual(self.add_votes([vote(motion="Another motion", rows=[])], seen=SEEN_2, state="tn"), 1)
+
+    def test_change_to_an_empty_roll_call_is_logged_elsewhere(self):
+        # OK HB 2374: ['STRIKE THE TITLE - ADOPTED'] -> [] is the scraper fixing its parsing.
+        junk = [{"option": "yes", "voter_name": "STRIKE THE TITLE - ADOPTED", "voter_id": "~{}", "note": ""}]
+        self.add_votes([vote(rows=junk)], state="ok")
+        self.assertEqual(self.add_votes([vote(rows=[])], seen=SEEN_2, state="ok"), 1)
+        self.assertEqual(self.last_vote()["votes"], [])
+
     def test_matching_roll_call_numbers_are_the_same_vote(self):
         self.add_votes([vote(identifier="RCS#9")])
         changed_counts = vote(identifier="RCS#9", counts=(("yes", 21), ("no", 10)))
@@ -160,6 +266,18 @@ class VoteLogTests(Tmp):
         got = lines(self.bill / L.VOTE_EVENT_LOG_FILE)
         self.assertEqual(len(got), 2)
         self.assertEqual(got[0]["id"], got[1]["id"])  # a correction, not a new vote
+
+    def test_reused_identifier_on_different_votes_is_not_one_vote(self):
+        # VA: the bill's document number on every procedural entry, same day.
+        # MT: a committee vote and the later floor vote share one id.
+        va = [vote(identifier="26200060D", motion=m, counts=(("yes", 0), ("no", 0)), result="fail")
+              for m in ("Presented 26200060D", "Laid on Clerk's Desk")]
+        mt = [vote(identifier="2025-SB 80-562", motion="do_pass", start="2025-01-30T22:29:58+00:00", counts=(("yes", 11), ("no", 0))),
+              vote(identifier="2025-SB 80-562", motion="Do Pass", start="2025-02-04T20:21:02+00:00", counts=(("yes", 50), ("no", 0)))]
+        self.assertEqual(self.add_votes(va + mt), 4)
+        # Every later night: nothing, not a "correction" per entry.
+        self.assertEqual(self.add_votes(va + mt, seen=SEEN_2), 0)
+        self.assertEqual(len({l["id"] for l in lines(self.bill / L.VOTE_EVENT_LOG_FILE)}), 4)
 
     def test_two_roll_calls_on_one_motion_are_two_votes(self):
         # PA HB 1549: roll calls 649 and 650 on the same tabling motion, same time.
@@ -259,6 +377,59 @@ class ConversionTests(unittest.TestCase):
         acts = lines(self.bill / L.ACTION_LOG_FILE)
         self.assertEqual([a["action"]["description"] for a in acts], ["Number assigned", "Introduced", "Signed"])
 
+    def test_duplicate_action_keeps_backfill_line_with_old_id_and_earlier_first_seen(self):
+        # The old file says 2026-07-01 (a reformat's run time); the backfill saw it
+        # in the 2026-09-28 scrape, so the old stamp is earlier and wins here.
+        dup = L.action_line(action("Introduced", cls=["introduction"]), "SF0015", SOURCES, "2025", SEEN_1)
+        dup["id"] = "20250114T210515Z.classification.introduction.upper~abcd1234"  # backfill had a collision
+        L.append_actions(self.bill, [dup])
+        stats = L.convert_bill(self.bill)
+        acts = lines(self.bill / L.ACTION_LOG_FILE)
+        [intro] = [a for a in acts if a["action"]["description"] == "Introduced"]
+        self.assertEqual(intro["id"], "20250114T210515Z.classification.introduction.upper")
+        self.assertEqual(intro["first_seen"], "2026-07-01T07:00:00Z")
+        self.assertEqual(stats.duplicates_dropped, 1)
+
+    def test_duplicate_action_takes_backfill_first_seen_when_earlier(self):
+        early = "2025-11-27T10:00:00+00:00"
+        L.append_actions(self.bill, [L.action_line(action("Introduced", cls=["introduction"]), "SF0015", SOURCES, "2025", early)])
+        L.convert_bill(self.bill)
+        [intro] = [a for a in lines(self.bill / L.ACTION_LOG_FILE) if a["action"]["description"] == "Introduced"]
+        self.assertEqual(intro["first_seen"], early)
+
+    def test_duplicate_vote_keeps_backfill_first_seen_and_old_id(self):
+        backfilled = L.vote_event_line(vote(), SEEN_1)
+        backfilled["id"] = "something_else"
+        L.append_votes(self.bill, [backfilled])
+        L.convert_bill(self.bill)
+        [v] = lines(self.bill / L.VOTE_EVENT_LOG_FILE)
+        self.assertEqual(v["id"], "20260217T181005Z.vote_event.pass.upper")
+        self.assertEqual(v["first_seen"], SEEN_1)  # the old file had null
+
+    def test_conversion_keeps_a_backfilled_revert(self):
+        # The backfill logged A, B, then A again (a real revert); conversion keeps all three.
+        b = vote()
+        b["votes"][1]["option"] = "yes"
+        for v, seen in ((vote(), SEEN_1), (b, SEEN_2), (vote(), "2026-09-30T10:00:00+00:00")):
+            L.append_votes(self.bill, [L.vote_event_line(v, seen)])
+        L.convert_bill(self.bill)
+        got = lines(self.bill / L.VOTE_EVENT_LOG_FILE)
+        self.assertEqual([v["vote_event"]["votes"][1]["option"] for v in got], ["no", "yes", "no"])
+        self.assertEqual(len({v["id"] for v in got}), 1)
+
+    def test_older_vote_version_goes_first_under_the_same_id(self):
+        # The old file holds 20-11; the raw history only ever saw 21-10 then 21-9.
+        # (Counts are part of the fallback key, so the roll-call identifier is what
+        # makes these one vote.)
+        self.write("20260217T181005Z.vote_event.pass.upper.json", vote(identifier="RC 12"))
+        L.append_votes(self.bill, [L.vote_event_line(vote(identifier="RC 12", counts=(("yes", 21), ("no", 10))), SEEN_1)])
+        L.append_votes(self.bill, [L.vote_event_line(vote(identifier="RC 12", counts=(("yes", 21), ("no", 9))), SEEN_2)])
+        L.convert_bill(self.bill)
+        got = lines(self.bill / L.VOTE_EVENT_LOG_FILE)
+        self.assertEqual([[c["value"] for c in v["vote_event"]["counts"]] for v in got], [[20, 11], [21, 10], [21, 9]])
+        self.assertEqual({v["id"] for v in got}, {"20260217T181005Z.vote_event.pass.upper"})
+        self.assertEqual([v["first_seen"] for v in got], [None, SEEN_1, SEEN_2])
+
     def test_existing_new_layout_lines_keep_their_order(self):
         # Two nights, appended in first-seen order (the second backdated).
         L.append_actions(self.bill, [L.action_line(action("Signed", date="2025-03-01"), "SF0015", SOURCES, "2025", SEEN_1)])
@@ -274,6 +445,42 @@ class ConversionTests(unittest.TestCase):
                                for d, m in (("third", 3), ("first", 1), ("second", 2))])
         got = [a["action"]["description"] for a in lines(tmp / L.ACTION_LOG_FILE)]
         self.assertEqual(got, ["first", "second", "third"])
+
+    def test_conversion_keeps_a_rewordings_shared_id(self):
+        # Backfilled: "Signed" then its new wording, one id. The old files hold neither.
+        before = [action("Signed", date="2025-02-24")]
+        after = [action("Signed by Governor", date="2025-02-24")]
+        L.append_actions(self.bill, [L.action_line(before[0], "SF0015", SOURCES, "2025", SEEN_1)])
+        L.append_actions(self.bill, [L.action_line(after[0], "SF0015", SOURCES, "2025", SEEN_2)],
+                         rewordings=L.find_rewordings(before, after))
+        L.convert_bill(self.bill)
+        got = [a for a in lines(self.bill / L.ACTION_LOG_FILE) if a["action"]["description"].startswith("Signed")]
+        self.assertEqual([a["action"]["description"] for a in got], ["Signed", "Signed by Governor"])
+        self.assertEqual(got[0]["id"], got[1]["id"])
+        self.assertNotIn("~", got[0]["id"])
+
+    def test_old_logs_folder_jsonl_is_folded(self):
+        # IL, 2026-09-22..25: the formatter wrote {"action", "bill_id"} lines to
+        # bills/<id>/logs/action_logs.jsonl (Taha's first JSONL step).
+        amended = L.action_line(action("Added Co-Sponsor Rep. Regan Deering", date="2026-09-21"), "SF0015", SOURCES, "2025", None)
+        intro = L.action_line(action("Introduced", cls=["introduction"]), "SF0015", SOURCES, "2025", None)  # also an old .json file
+        (self.bill / "logs" / L.ACTION_LOG_FILE).write_text(
+            "".join(json.dumps({"action": l["action"], "bill_id": "SF0015"}) + "\n" for l in (amended, intro)))
+        stats = L.convert_bill(self.bill)
+        self.assertNotIn(str(self.bill / "logs" / L.ACTION_LOG_FILE), stats.left_in_place)
+        self.assertFalse((self.bill / "logs" / L.ACTION_LOG_FILE).exists())
+        acts = lines(self.bill / L.ACTION_LOG_FILE)
+        self.assertEqual([a["id"] for a in acts], [
+            "20241205T022742Z_number_assigned",
+            "20250114T210515Z.classification.introduction.upper",
+            "20260921T000000Z_added_cosponsor_rep_regan_deering",
+        ])
+
+    def test_unrecognised_line_leaves_the_old_jsonl_in_place(self):
+        (self.bill / "logs" / L.ACTION_LOG_FILE).write_text('{"something": "else"}\n')
+        stats = L.convert_bill(self.bill)
+        self.assertIn(str(self.bill / "logs" / L.ACTION_LOG_FILE), stats.left_in_place)
+        self.assertTrue((self.bill / "logs" / L.ACTION_LOG_FILE).exists())
 
     def test_session_symlink_folder_keeps_real_files(self):
         (self.session / "logs" / "real.json").write_text("{}")

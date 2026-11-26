@@ -14,7 +14,7 @@
   "properties": {
     "id": {
       "type": "string",
-      "description": "Stable id within this bill's file: the old per-entry filename without .json (e.g. '20250114T210515Z.classification.introduction.upper'), with a '~<hash>' suffix when two different entries would otherwise share it. In vote_event_logs.jsonl a correction repeats the id of the vote it corrects; the last line for an id is current."
+      "description": "Stable id within this bill's file: the old per-entry filename without .json (e.g. '20250114T210515Z.classification.introduction.upper'), with a '~<hash>' suffix when two different entries would otherwise share it. A later line may repeat an id: in action_logs.jsonl a new wording of the same action (same date and chamber), in vote_event_logs.jsonl a correction of the vote. The last line for an id is current; earlier lines are the history."
     },
     "first_seen": {
       "type": [

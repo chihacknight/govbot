@@ -40,10 +40,14 @@ country:us/state:{code}/sessions/{session}/bills/{bill_id}/metadata.json
   - `action_logs.jsonl`: every action. Each line has `action.occurred_at` (when it
     happened, per the government), `first_seen` (when Govbot first recorded it;
     filter on this for "what's new since yesterday"), a plain `chamber`, and the
-    bill's official `sources`.
+    bill's official `sources`. When the government rewords an action it already
+    published, the new wording is a later line with the same `id`.
   - `vote_event_logs.jsonl`: every roll call (`vote_event`, with `result`,
     `counts` and each member's vote). A correction repeats the same `id` on a
-    later line; the last line for an `id` is current.
+    later line.
+  - In both files the last line for an `id` is current (its wording or version);
+    earlier lines are the history. A reworded action isn't new: use the first
+    line's `first_seen` for it. A corrected vote is: use the correction's.
   - Repositories not yet moved to this layout instead have a `logs/` folder with
     one JSON file per action or vote, named by date
     (`20250114T210515Z_…json`). If `action_logs.jsonl` is missing, look there.

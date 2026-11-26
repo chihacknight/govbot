@@ -142,7 +142,8 @@ def log_date_range(repo_dir: Path) -> tuple[str | None, str | None, int, dict[st
                 if not raw.strip():
                     continue
                 line = json.loads(raw)
-                # A vote correction repeats its id; count the vote once.
+                # A vote correction or a reworded action repeats its id; count
+                # the entry once.
                 if line.get("id") in seen_ids:
                     continue
                 seen_ids.add(line.get("id"))

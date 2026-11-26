@@ -209,6 +209,12 @@ jobs:
         run: |
           pip install jsonschema
 
+      - name: Log writer and backfill tests
+        run: |
+          cd actions/format
+          python3 test_log_jsonl.py
+          python3 test_backfill_logs.py
+
       - name: Validate snapshots against schemas
         run: |
           cd actions/format

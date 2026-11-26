@@ -156,9 +156,18 @@ Each bill folder holds `metadata.json` plus two append-only JSON Lines logs, wri
 the nightly scrape is the whole dataset, and each new entry is appended once, stamped with
 `first_seen` = the raw scrape's **commit time** (not the formatter's run time), so `git diff`
 of a night is exactly the new lines. Lines are never edited or reordered. A vote whose
-substance changes later is appended again under the same `id` (readers take the last line
-per `id`). Votes are deduped by roll-call `identifier`, else date + motion + chamber +
-counts; there is no "newer than the newest vote" gate any more (it silently lost late
+substance changes later is appended again under the same `id`, so the last line always matches
+the latest scrape: each bill's votes are checked once per scrape, nothing is logged for a vote
+whose last line is in tonight's scrape (some scrapes hold two versions of one vote, which
+flip-flopped A, B, A nightly), else a changed version is logged even if it repeats an earlier
+one (a real revert). `SCRAPER_FAILURES` in `log_jsonl.py` skips known per-state scraper
+failures (ND "Service Unavailable" / "Proxy Error" voters, TN roll calls gone empty; delete an entry when
+OpenStates fixes it, see `tamara-notes/state-specific/nd.md` / `tn.md`). An action the scraper rewords (MT "(H) First Reading" →
+"(H) 1st Reading") is appended under the paired action's `id` when the previous scrape
+(`metadata.json`) and tonight's have the same count on that date + chamber with unchanged
+actions in the same order (`find_rewordings`). Readers take the last line per `id`; an action
+keeps its first line's `first_seen`, a vote its correction's. Votes are deduped by roll-call `identifier` + date + motion (VA and MT reuse one
+identifier across different votes), else date + motion + chamber + counts; there is no "newer than the newest vote" gate any more (it silently lost late
 votes). Line schemas: `actions/format/schemas/action_log.schema.json` /
 `vote_event_log.schema.json` (copies in `/schemas`). Full reference: "Action and vote
 logs" in `actions/format/docs/DATA_STRUCTURES.md`. Decisions and evidence:
@@ -166,13 +175,15 @@ logs" in `actions/format/docs/DATA_STRUCTURES.md`. Decisions and evidence:
 
 The **old layout** (`bills/<id>/logs/*.json`, one file per entry, plus symlinks to each
 under `sessions/<s>/logs/`, made by the deleted `symlink_logs.py`) is still in the live
-`govbot-data` repos until they're converted with `python3 actions/format/convert_logs.py
-<repo>` (plus the backfill from the raw scraper history). Readers handle both layouts
+`govbot-data` repos until they're converted: first `python3 actions/format/backfill_logs.py
+<repo> <raw-scraper-repo> --report-dir <dir>` (replays the raw scraper history; re-run cursor
+kept in the report dir, not the repo), then `python3 actions/format/convert_logs.py <repo>`
+(on a duplicate the backfilled line wins). Readers handle both layouts
 through one helper each side (Rust: `actions/govbot/src/logs_jsonl.rs`; Python:
 `log_jsonl.py`); the formatter refuses to write to an unconverted repo. Old action files
 come in two shapes (`occurred_at`/`jurisdiction_id`/`classifications`, and OpenStates' own
 `date`/`organization_id`/`classification`); readers accept both, conversion normalizes to
-the first. Tests: `cd actions/format && python3 test_log_jsonl.py`;
+the first. Tests: `cd actions/format && python3 test_log_jsonl.py && python3 test_backfill_logs.py`;
 `actions/govbot/tests/logs_layout_snaps.rs`.
 
 ## Pages Dashboard

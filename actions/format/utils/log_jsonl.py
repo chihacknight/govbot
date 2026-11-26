@@ -42,7 +42,8 @@ One line, vote_event_logs.jsonl:
 
 Duplicates: an action is the same action when its date, description (ignoring
 whitespace, since some scrapers start emitting line breaks inside descriptions)
-and chamber match. A vote is the same vote when its roll-call identifier matches,
+and chamber match. A vote is the same vote when its roll-call identifier, date and
+motion match (scrapers reuse identifiers across votes; see vote_keys),
 or, failing that, its date, motion, chamber and counts match. A vote seen again
 with different substance (result, counts, member votes, motion) is a correction:
 it is appended as a new line with the same id, and readers take the last line
@@ -133,18 +134,29 @@ def action_key(action: dict[str, Any]) -> tuple:
     return (action.get("occurred_at"), _squash(action.get("description")), action.get("jurisdiction_id"))
 
 
-def vote_keys(vote: dict[str, Any]) -> tuple[Optional[str], tuple]:
-    """(roll-call identifier or None, fallback key). Two votes are the same vote
-    when both have an identifier and they match, or when their fallback keys match.
+def vote_keys(vote: dict[str, Any]) -> tuple[Optional[tuple], tuple]:
+    """(identifier key or None, fallback key). Two votes are the same vote when
+    both have an identifier key and they match, or when their fallback keys match.
+
+    The identifier key is the roll-call identifier plus the date and motion,
+    because scrapers reuse one identifier across different votes: VA puts the
+    bill's document number ("26200060D") on every procedural entry ("Presented",
+    "Laid on Clerk's Desk", same day), and MT gives a committee vote and the later
+    floor vote the same id ("2025-SB 80-562"). With the identifier alone those
+    were read as one vote, re-logged as a "correction" every night (51,535 VA
+    lines in the backfill). Within one identifier, date and motion, a change in
+    counts or member votes is still a correction.
 
     The fallback includes the counts because date + motion + chamber alone is not
     unique: PA HB 1549 had two committee roll calls on one tabling motion at the
     same time (roll calls 649 and 650).
     """
-    identifier = (vote.get("identifier") or "").strip() or None
+    identifier = (vote.get("identifier") or "").strip()
+    motion = _squash(vote.get("motion_text"))
+    id_key = (identifier, vote.get("start_date"), motion) if identifier else None
     counts = sorted((c.get("option"), c.get("value")) for c in vote.get("counts") or [])
-    fallback = (vote.get("start_date"), _squash(vote.get("motion_text")), vote.get("organization"), tuple(counts))
-    return identifier, fallback
+    fallback = (vote.get("start_date"), motion, vote.get("organization"), tuple(counts))
+    return id_key, fallback
 
 
 def vote_substance(vote: dict[str, Any]) -> str:
@@ -247,17 +259,20 @@ def read_lines(path: Union[str, Path]) -> list[dict[str, Any]]:
     return lines
 
 
-def _append(path: Path, lines: list[dict[str, Any]], kind: str, keep_order: bool = False) -> None:
-    """Append one batch (one night's new entries for one bill) to the file.
+def order_batch(lines: list[dict[str, Any]], kind: str) -> list[dict[str, Any]]:
+    """One batch (one night's new entries for one bill) in the government's date
+    order -- scrapers list actions in no fixed order (WY newest-first) -- so a new
+    bill's history reads forwards."""
+    return sorted(lines, key=lambda l: _sort_key(l, kind))
 
-    Within the batch, entries go in the government's date order -- scrapers list
-    actions in no fixed order (WY newest-first) -- so a new bill's history reads
-    forwards. Lines already in the file are never touched.
-    """
+
+def _append(path: Path, lines: list[dict[str, Any]], kind: str, keep_order: bool = False) -> None:
+    """Append one batch to the file (ordered by order_batch unless keep_order).
+    Lines already in the file are never touched."""
     if not lines:
         return
     if not keep_order:
-        lines = sorted(lines, key=lambda l: _sort_key(l, kind))
+        lines = order_batch(lines, kind)
     path.parent.mkdir(parents=True, exist_ok=True)
     # A file that doesn't end in a newline (an interrupted write) would glue the
     # next line onto the last one; start on a fresh line instead.
@@ -278,23 +293,118 @@ def _unique_id(line: dict[str, Any], taken: set[str], identity: Any) -> None:
     taken.add(line["id"])
 
 
-def append_actions(bill_dir: Union[str, Path], new_lines: Iterable[dict[str, Any]]) -> int:
-    """Append the actions not already in the bill's action_logs.jsonl. Returns how many."""
-    return _append_actions_at(Path(bill_dir) / ACTION_LOG_FILE, new_lines)
+def append_actions(
+    bill_dir: Union[str, Path], new_lines: Iterable[dict[str, Any]], rewordings: Optional["Rewordings"] = None
+) -> int:
+    """Append the actions not already in the bill's action_logs.jsonl. Returns how
+    many. Pass find_rewordings(previous scrape's actions, tonight's) so a reworded
+    action is logged as a correction of the one it rewords (see find_rewordings)."""
+    return _append_actions_at(Path(bill_dir) / ACTION_LOG_FILE, new_lines, rewordings=rewordings)
 
 
-def _append_actions_at(path: Path, new_lines: Iterable[dict[str, Any]], keep_order: bool = False) -> int:
-    existing = read_lines(path)
-    seen = {action_key(line.get("action") or {}) for line in existing}
-    taken = {line.get("id") for line in existing}
+def raw_action_key(action: dict[str, Any]) -> tuple:
+    """action_key() of a scraped action (OpenStates shape), as action_line() would log it."""
+    return action_key({
+        "occurred_at": action.get("date", "no_date"),
+        "description": action.get("description", "no_description"),
+        "jurisdiction_id": action.get("organization_id", "no_jurisdiction"),
+    })
+
+
+class Rewordings:
+    """Actions the scraper reworded since the previous scrape: {new key: old key}
+    (action_key()s), plus how many changed actions couldn't be paired."""
+
+    def __init__(self) -> None:
+        self.pairs: dict[tuple, tuple] = {}
+        self.unpaired = 0
+
+
+def find_rewordings(previous: Optional[list[dict[str, Any]]], current: list[dict[str, Any]]) -> Rewordings:
+    """Which of a bill's scraped actions are rewordings of the previous scrape's.
+
+    `previous` is the bill's actions in the previous scrape (the nightly writer
+    reads them from metadata.json, which keeps the scrape's list and order;
+    the backfill keeps the last version it saw), `current` tonight's. A scraper
+    sometimes rewords actions it already published (MT 2026-08-10: "(H) First
+    Reading" -> "(H) 1st Reading" on every past bill; KS: "Referred to Committee
+    on Judiciary" -> "Referred to Senate Committee on Judiciary"), and without
+    this each new wording was logged as a new action, dated that night.
+
+    Per date and chamber, the actions pair up when (agreed 2026-11-25):
+    - both scrapes have the same number of actions on that date and chamber, and
+    - the actions whose wording didn't change are in the same relative order.
+    The changed ones then pair slot by slot: [A, B, C] -> [A, B', C'] pairs B
+    with B' and C with C'. Otherwise nothing on that date is paired and each new
+    wording is logged as a new action (counted in `unpaired`). No text-similarity
+    matching. A new bill (no previous) has nothing to reword.
+    """
+    out = Rewordings()
+    if not previous:
+        return out
+
+    def by_slot(actions):
+        groups: dict[tuple, list[tuple]] = {}
+        for a in actions:
+            groups.setdefault((a.get("date"), a.get("organization_id")), []).append(raw_action_key(a))
+        return groups
+
+    before, now = by_slot(previous), by_slot(current)
+    for slot, new_keys in now.items():
+        old_keys = before.get(slot, [])
+        old_set, new_set = set(old_keys), set(new_keys)
+        changed_new = [k for k in new_keys if k not in old_set]
+        if not changed_new:
+            continue
+        changed_old = [k for k in old_keys if k not in new_set]
+        same_order = [k for k in old_keys if k in new_set] == [k for k in new_keys if k in old_set]
+        if len(old_keys) == len(new_keys) and same_order and len(changed_old) == len(changed_new):
+            out.pairs.update(zip(changed_new, changed_old))
+        elif old_keys:
+            out.unpaired += len(changed_new)
+    return out
+
+
+def select_new_actions(
+    seen: set,
+    taken: set,
+    new_lines: Iterable[dict[str, Any]],
+    rewordings: Optional[Rewordings] = None,
+    id_of: Optional[dict[tuple, str]] = None,
+) -> list[dict[str, Any]]:
+    """The lines of `new_lines` whose action isn't in `seen` (action_key()s already
+    in the file), with ids made unique against `taken`. Updates both sets. The
+    nightly writer and backfill_logs.py both decide "is this new?" here.
+
+    A line that `rewordings` pairs with an action already in the file is a
+    correction: it takes that action's id (`id_of`: action_key -> id of the
+    file's lines, updated here), and readers show the last line per id."""
     to_add = []
+    pairs = rewordings.pairs if rewordings else {}
     for line in new_lines:
         key = action_key(line["action"])
         if key in seen:
             continue
         seen.add(key)
-        _unique_id(line, taken, key)
+        old_id = id_of.get(pairs[key]) if id_of is not None and key in pairs else None
+        if old_id is not None:
+            line["id"] = old_id  # a rewording keeps the id of the action it rewords
+        else:
+            _unique_id(line, taken, key)
+        if id_of is not None:
+            id_of[key] = line["id"]
         to_add.append(line)
+    return to_add
+
+
+def _append_actions_at(
+    path: Path, new_lines: Iterable[dict[str, Any]], keep_order: bool = False, rewordings: Optional["Rewordings"] = None
+) -> int:
+    existing = read_lines(path)
+    seen = {action_key(line.get("action") or {}) for line in existing}
+    taken = {line.get("id") for line in existing}
+    id_of = {action_key(line.get("action") or {}): line.get("id") for line in existing}
+    to_add = select_new_actions(seen, taken, new_lines, rewordings, id_of)
     _append(path, to_add, "action", keep_order)
     return len(to_add)
 
@@ -309,32 +419,123 @@ def _find_vote(existing: list[dict[str, Any]], vote: dict[str, Any]) -> Optional
     return None
 
 
-def append_votes(bill_dir: Union[str, Path], new_lines: Iterable[dict[str, Any]]) -> int:
+def append_votes(bill_dir: Union[str, Path], new_lines: Iterable[dict[str, Any]], state: Optional[str] = None) -> int:
     """Append new votes and corrections to the bill's vote_event_logs.jsonl.
 
-    A vote already recorded with the same substance is skipped. One recorded with
-    different substance is appended again under the same id (a correction).
-    Returns how many lines were added.
+    `new_lines` is every vote tonight's scrape holds for the bill, in one call
+    (see select_new_votes for why). A vote whose last line matches tonight's
+    scrape is skipped; one that changed is appended again under the same id (a
+    correction). Returns how many lines were added.
     """
-    return _append_votes_at(Path(bill_dir) / VOTE_EVENT_LOG_FILE, new_lines)
+    return _append_votes_at(Path(bill_dir) / VOTE_EVENT_LOG_FILE, new_lines, state=state)
 
 
-def _append_votes_at(path: Path, new_lines: Iterable[dict[str, Any]], keep_order: bool = False) -> int:
+def _append_votes_at(
+    path: Path, new_lines: Iterable[dict[str, Any]], keep_order: bool = False, state: Optional[str] = None
+) -> int:
     existing = read_lines(path)
     taken = {line.get("id") for line in existing}
-    to_add = []
+    to_add = select_new_votes(existing, taken, new_lines, state)
+    _append(path, to_add, "vote_event", keep_order)
+    return len(to_add)
+
+
+def _append_votes_each(path: Path, lines: Iterable[dict[str, Any]], keep_order: bool = False) -> int:
+    """For convert_bill: lines from logs already written (old files, then the
+    backfill's), each its own night, so every version they hold is kept, in order."""
+    existing = read_lines(path)
+    taken = {line.get("id") for line in existing}
+    to_add: list[dict[str, Any]] = []
+    for line in lines:
+        to_add += select_new_votes(existing + to_add, taken, [line])
+    _append(path, to_add, "vote_event", keep_order)
+    return len(to_add)
+
+
+# Error-page titles ND's scraper has saved as a voter's name. An explicit list,
+# not a pattern: add a title when another error page turns up.
+_ND_ERROR_PAGES = {"Service Unavailable", "Proxy Error"}
+
+
+def _nd_error_page(vote: dict[str, Any], last: Optional[dict[str, Any]]) -> bool:
+    # On nights ndlegis.gov is down the scraper saves the error page's title as a
+    # voter. "Service Unavailable": 5,818 versions on 6 nights, 2025-12-30 to
+    # 2026-08-11 (HB 1626, 2026-01-22: "Daniel R. Vollmer" -> "Service
+    # Unavailable"). "Proxy Error": 1,181 votes on 2026-08-29 and 2026-09-19.
+    # Not reported to OpenStates yet; see tamara-notes/state-specific/nd.md.
+    return any((row.get("voter_name") or "").strip() in _ND_ERROR_PAGES for row in vote.get("votes") or [])
+
+
+def _tn_empty_roll_call(vote: dict[str, Any], last: Optional[dict[str, Any]]) -> bool:
+    # The scraper sometimes saves a roll call with no voters, and the names come
+    # back later: 6,787 votes, 5,839 of them on 2026-07-02 (HB 6005, 2025-01-29:
+    # ['Baum', 'Boyd', ...] -> []). Not a general rule: in OK and HI the same
+    # change is the scraper fixing its parsing. Not reported to OpenStates yet;
+    # see tamara-notes/state-specific/tn.md.
+    return not vote.get("votes") and last is not None and bool(last.get("votes"))
+
+
+# Scraper failures caught per state: state code -> test(version, last logged
+# version or None), True when the version is a failed scrape rather than news.
+# Such a version is treated as not scraped that night. Each entry is a stopgap
+# for an OpenStates scraper bug; delete it (and its test) once that's fixed.
+SCRAPER_FAILURES = {
+    "nd": _nd_error_page,
+    "tn": _tn_empty_roll_call,
+}
+
+
+def select_new_votes(
+    existing: list[dict[str, Any]],
+    taken: set,
+    new_lines: Iterable[dict[str, Any]],
+    state: Optional[str] = None,
+    skipped: Optional[list[dict[str, Any]]] = None,
+) -> list[dict[str, Any]]:
+    """The lines of `new_lines` that are new votes or corrections of a vote in
+    `existing` (the file's lines, in file order). `new_lines` is everything one
+    scrape holds for the bill. Ids are made unique against `taken` (updated); a
+    correction takes the id of the vote it corrects. The nightly writer and
+    backfill_logs.py both decide "is this new?" here.
+
+    Readers show the last line per id, so the last line must match the scrape:
+    1. If tonight's scrape holds the version that's already the vote's last line,
+       log nothing. Some scrapes hold two versions of one vote (OH HB 14: one 6-0
+       "Reported" vote as both pass and fail; MT: "Sen Elect Gregg Hunter" in one
+       copy, "Gregg Hunter" in the other); comparing each with the last line
+       logged A, B, A, B... every night (TN: 13,276 lines).
+    2. Otherwise a version that differs from the last line is logged, even if it
+       matches an earlier one: a real revert (DE SB 315 pass -> fail -> pass).
+       Only one correction per vote per night.
+    A version `SCRAPER_FAILURES[state]` flags is treated as not scraped; those go
+    to `skipped` when given."""
+    new_lines = list(new_lines)
+    test = SCRAPER_FAILURES.get(state or "")
+    # Which logged vote each of tonight's versions is, and tonight's substances.
+    tonight = [(_find_vote(existing, l["vote_event"]), vote_substance(l["vote_event"])) for l in new_lines]
+    to_add: list[dict[str, Any]] = []
     for line in new_lines:
         vote = line["vote_event"]
-        match = _find_vote(existing + to_add, vote)
+        lines = existing + to_add
+        match = _find_vote(lines, vote)
+        last = None
         if match is not None:
-            if vote_substance(match["vote_event"]) == vote_substance(vote):
-                continue
+            last = next(l for l in reversed(lines) if l.get("id") == match["id"])
+        if test is not None and test(vote, last["vote_event"] if last else None):
+            if skipped is not None:
+                skipped.append(line)
+            continue
+        if match is not None:
+            if any(l is last for l in to_add):
+                continue  # already logged tonight (a second version, or a new vote's twin)
+            last_substance = vote_substance(last["vote_event"])
+            if any(m is not None and m["id"] == match["id"] and s == last_substance for m, s in tonight):
+                continue  # rule 1
             line["id"] = match["id"]  # a correction keeps the id of what it corrects
         else:
             _unique_id(line, taken, vote_keys(vote))
         to_add.append(line)
-    _append(path, to_add, "vote_event", keep_order)
-    return len(to_add)
+    return to_add
 
 
 # --------------------------------------------------------------------------
@@ -453,6 +654,42 @@ def legacy_file_to_line(
     return None
 
 
+def legacy_jsonl_to_lines(
+    path: Path, first_logged: dict[tuple, str], session_id: str = "", sources: Optional[list] = None
+) -> Optional[list[tuple[str, dict[str, Any]]]]:
+    """An old logs/action_logs.jsonl -> [("action", line), ...], or None if any
+    line isn't an action we recognise (then the whole file is left in place).
+
+    The formatter briefly wrote this form (Taha's first JSONL step: one
+    {"action", "bill_id"} object per line, inside logs/) to 118 IL bills between
+    2026-09-22 and 09-25. Each line is an old action file's content without the
+    file, so its id is the filename the old writer would have given it.
+    """
+    try:
+        raw_lines = [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines() if l.strip()]
+    except Exception:
+        return None
+    out = []
+    for content in raw_lines:
+        if not isinstance(content, dict) or not isinstance(content.get("action"), dict):
+            return None
+        action = _current_action_shape(content["action"], session_id, sources or [])
+        stem = legacy_action_id({
+            "date": action.get("occurred_at"),
+            "description": action.get("description", "no_description"),
+            "classification": action.get("classifications") or [],
+            "organization_id": action.get("jurisdiction_id"),
+        })
+        out.append(("action", {
+            "id": stem,
+            "first_seen": first_logged.get(action_key(action)),
+            "chamber": chamber_of(action.get("jurisdiction_id")),
+            "action": action,
+            "bill_id": content.get("bill_id"),
+        }))
+    return out
+
+
 def _sort_key(line: dict[str, Any], kind: str) -> tuple:
     # The government's date, then id. Used to order one batch of new entries, and
     # converted entries (which have no record of the order they were first seen in;
@@ -463,11 +700,94 @@ def _sort_key(line: dict[str, Any], kind: str) -> tuple:
     return (stamp is None, stamp or "", line.get("id") or "")
 
 
+def _parse_time(stamp: Optional[str]) -> Optional[datetime]:
+    if not stamp:
+        return None
+    try:
+        # Python 3.9 (the action's version) doesn't read a trailing "Z".
+        return datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _earlier(a: Optional[str], b: Optional[str]) -> Optional[str]:
+    """The earlier of two first_seen stamps; a missing or unreadable one loses."""
+    ta, tb = _parse_time(a), _parse_time(b)
+    if ta is None:
+        return b if tb is not None else a or b
+    if tb is None or ta <= tb:
+        return a
+    return b
+
+
+def _same_vote(a: dict[str, Any], b: dict[str, Any]) -> bool:
+    id_a, fallback_a = vote_keys(a)
+    id_b, fallback_b = vote_keys(b)
+    return bool(id_a and id_b and id_a == id_b) or fallback_a == fallback_b
+
+
+def _rename(later: list[dict[str, Any]], old_id: str, new_id: str) -> None:
+    """Give every line with id `old_id` the id `new_id`, unless another entry already
+    uses `new_id` (then the backfill's id stays, so ids stay unique)."""
+    if old_id == new_id or any(line.get("id") == new_id for line in later):
+        return
+    for line in later:
+        if line.get("id") == old_id:
+            line["id"] = new_id
+
+
+def _fold_into_later(kind: str, converted: list[dict[str, Any]], later: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Merge old-file lines with lines already in the .jsonl file, which on a
+    converted repo come from backfill_logs.py (the raw scraper history) or the
+    nightly formatter. Returns the old-file lines to keep; edits `later` in place.
+
+    An old file that duplicates a later line is dropped: the later line has the
+    scrape's commit time, the old file only the formatter's run time
+    (_processing.log_file_created, which a reformat rewrites: 12,240 KY actions say
+    July 2026) or nothing (votes). The later line keeps the earlier of the two
+    first_seen values, since an entry seen before the raw history began
+    (Nov 2025) is better dated by the old file, and takes the old file's id, the
+    name people and tools already know.
+
+    A vote also has versions. An old vote file equal to one of the later versions
+    is a duplicate as above. One with the same identity but different substance
+    from every later version is an older version from before the raw history: it
+    is kept, goes first, and shares the vote's id, as the start of its history.
+    """
+    kept = []
+    for old in converted:
+        if kind == "action":
+            key = action_key(old["action"])
+            match = next((l for l in later if action_key(l.get("action") or {}) == key), None)
+            if match is None:
+                kept.append(old)
+                continue
+            match["first_seen"] = _earlier(old.get("first_seen"), match.get("first_seen"))
+            _rename(later, match["id"], old["id"])
+            continue
+
+        vote = old["vote_event"]
+        versions = [l for l in later if _same_vote(l.get("vote_event") or {}, vote)]
+        if not versions:
+            kept.append(old)
+            continue
+        _rename(later, versions[0]["id"], old["id"])
+        same = next((l for l in versions if vote_substance(l["vote_event"]) == vote_substance(vote)), None)
+        if same is not None:
+            same["first_seen"] = _earlier(old.get("first_seen"), same.get("first_seen"))
+            continue
+        old["id"] = versions[0]["id"]  # after the rename: one id for the vote's whole history
+        kept.append(old)
+    return kept
+
+
 def convert_bill(bill_dir: Union[str, Path]) -> ConvertStats:
     """Fold bills/{id}/logs/*.json into the bill's two .jsonl files, then delete them.
 
     Converted lines go before anything already in the .jsonl files (they are older),
     so this rewrites the files once, the only time anything but appending happens.
+    Where an old file and a line already in the .jsonl file are the same entry,
+    the .jsonl line wins (see _fold_into_later).
     """
     bill_dir = Path(bill_dir)
     stats = ConvertStats()
@@ -483,35 +803,52 @@ def convert_bill(bill_dir: Union[str, Path]) -> ConvertStats:
     folded: list[Path] = []
     converted: dict[str, list[dict[str, Any]]] = {"action": [], "vote_event": []}
     for path in sorted(legacy_dir.iterdir()):
-        parsed = (
-            legacy_file_to_line(path, first_logged, session_id, sources)
-            if path.is_file() and path.suffix == ".json"
-            else None
-        )
-        if parsed is None:
+        if path.is_file() and path.name == ACTION_LOG_FILE:
+            parsed_many = legacy_jsonl_to_lines(path, first_logged, session_id, sources)
+        elif path.is_file() and path.suffix == ".json":
+            one = legacy_file_to_line(path, first_logged, session_id, sources)
+            parsed_many = [one] if one else None
+        else:
+            parsed_many = None
+        if parsed_many is None:
             stats.left_in_place.append(str(path))
             continue
-        kind, line = parsed
-        converted[kind].append(line)
+        for kind, line in parsed_many:
+            converted[kind].append(line)
         folded.append(path)
 
     for kind, filename, append_at in (
         ("action", ACTION_LOG_FILE, _append_actions_at),
-        ("vote_event", VOTE_EVENT_LOG_FILE, _append_votes_at),
+        ("vote_event", VOTE_EVENT_LOG_FILE, _append_votes_each),
     ):
         lines = converted[kind]
         if not lines:
             continue
         path = bill_dir / filename
         later = read_lines(path)
-        # Write converted lines first, then re-add anything already in the new
-        # file through the normal duplicate checks.
+        kept = _fold_into_later(kind, lines, later)
+        # Write the old-file lines that remain first, then re-add anything already
+        # in the new file through the normal duplicate checks.
         tmp = path.with_name(filename + ".tmp")
         if tmp.exists():
             tmp.unlink()
-        added = append_at(tmp, lines)
-        # Lines already in the new-layout file keep their first-seen order.
-        added += append_at(tmp, later, keep_order=True)
+        added = append_at(tmp, kept)
+        if kind == "action":
+            # _fold_into_later already dropped the old files these lines duplicate,
+            # so they go in as they are. Not through the duplicate checks: a
+            # rewording repeats its action's id on purpose. Only an id an old file
+            # now uses moves aside (the whole group, so its rewordings follow).
+            old_ids = {l.get("id") for l in read_lines(tmp)}
+            moved: dict[str, str] = {}
+            for l in later:
+                if l.get("id") in old_ids:
+                    moved.setdefault(l["id"], f"{l['id']}~{_short_hash(action_key(l['action']))}")
+                    l["id"] = moved[l["id"]]
+            _append(tmp, later, "action", keep_order=True)
+            added += len(later)
+        else:
+            # Lines already in the new-layout file keep their first-seen order.
+            added += append_at(tmp, later, keep_order=True)
         stats.duplicates_dropped += len(lines) + len(later) - added
         tmp.replace(path)
 

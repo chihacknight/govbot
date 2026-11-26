@@ -6,7 +6,7 @@ own branch, so two chats running at once can't overwrite each other's work.
 
 | Chat | Brief | Folder to open the chat in | Branch | Start |
 |---|---|---|---|---|
-| JSONL logs (goal 3) | [jsonl-logs.md](jsonl-logs.md) | `~/my_work/govbot-jsonl` | `jsonl-logs` | Now |
+| JSONL logs (goal 3) | [jsonl-logs.md](jsonl-logs.md) | `~/my_work/govbot-jsonl` | a fresh branch off `main` (#306 and #308 merged) | Done: all repos converted; step 4 next |
 | Master state list (goal 5) | [master-state-list.md](master-state-list.md) | `~/my_work/govbot-master-list` | `docs/master-state-list` | Now |
 | Scraper fixes (goal 6) | [scraper-fixes.md](scraper-fixes.md) | `~/my_work/govbot-scrapers` | `scraper-triage` | Now |
 | Repo rewrite (goals 1, 2, 4) | [repo-rewrite.md](repo-rewrite.md) | `~/my_work/govbot-repo-rewrite` | `repo-rewrite` | After the JSONL layout is settled |

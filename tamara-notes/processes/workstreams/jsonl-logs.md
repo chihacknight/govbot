@@ -1,12 +1,13 @@
 # JSONL logs (goal 3) — PRIORITY
 
-**Folder:** `~/my_work/govbot-jsonl` · **Branch:** `jsonl-logs`
+**Folder:** `~/my_work/govbot-jsonl` · **Branch:** a fresh branch off `main` (`jsonl-logs`
+became #306, `backfill-logs` became #308; both squash-merged, don't reuse them)
 
 ## Kickoff prompt
 
 > Read `tamara-notes/processes/handoff-2026-11-24.md` and
 > `tamara-notes/processes/workstreams/jsonl-logs.md`, then work on the JSONL logs goal. Stay in
-> this folder and on the `jsonl-logs` branch.
+> this folder, on a fresh branch off `main`.
 
 ## Goal
 
@@ -73,10 +74,33 @@ Sartaj's vector tagging, which reads `govbot logs`).
 - **`first_seen` = the raw scrape's commit time**, not the formatter's run time, so the
   backfill gets the right night. `scraped_at` stays out of `metadata.json` (it changes
   every night and would make every bill look changed).
-- **Votes:** no date watermark; dedupe by roll-call `identifier`, else date + motion +
-  chamber + counts. A change in substance (result, counts, member votes, motion) is
+- **Votes:** no date watermark; dedupe by roll-call `identifier` + date + motion (changed
+  2026-11-24 from identifier alone: VA and MT reuse identifiers across votes, VA's backfill
+  got 51,535 bogus corrections), else date + motion + chamber + counts. A change in substance (result, counts, member votes, motion) is
   appended as a correction under the same `id`; readers take the last line per `id`.
   Cosmetic changes (URL format, roll-call number filled in later, voter order) aren't.
+  The last line must match the latest scrape (2026-11-25, replacing that day's "differs from
+  every logged version" rule, which left 8,000+ ND/TN votes showing a bad version as current).
+  Each bill's votes are checked once per scrape: (1) if tonight's scrape holds the vote's last
+  logged version, log nothing (scrapes holding two versions of one vote flip-flopped A, B, A
+  nightly; TN 13,276 lines); (2) else a changed version is logged, even if it repeats an
+  earlier one, so a real revert (DE SB 315 pass → fail → pass) shows. The nightly formatter
+  now writes each bill's votes after reading the whole scrape. Conversion merges logs line by
+  line, keeping every version.
+- **Per-state scraper failures** (`SCRAPER_FAILURES` in `log_jsonl.py`): a version the table
+  flags is treated as not scraped. `nd`: a voter named "Service Unavailable" (site down, 6
+  nights) or "Proxy Error" (2 nights, added after run 3), an explicit list. `tn`: an empty roll call when the last logged version has voters (6,787 votes). Not
+  a general rule: in OK and HI a change to an empty roll call is the scraper fixing its
+  parsing. Each entry is a stopgap; delete it when OpenStates fixes the bug
+  (`tamara-notes/state-specific/nd.md`, `tn.md`).
+- **Reworded actions** (2026-11-25): a new wording of an action the previous scrape had is
+  appended under the paired action's `id`. Previous = the bill's `metadata.json` (nightly) or
+  the last version seen (backfill). Per date + chamber: same count and unchanged actions in the
+  same order → pair the changed ones slot by slot; else log as new (the backfill counts these
+  as "unpaired"). No text similarity. Readers show the last line per `id` with the first line's
+  `first_seen`. Needs bill-skip option C before the scrapers are unpaused, or the nightly writer
+  never sees a night that only rewords. Details and the per-state counts:
+  `shared-docs/jsonl-log-conversion-results.md`.
 - **Session symlinks (`sessions/<s>/logs/`) removed**, with `symlink_logs.py`. They doubled
   the file count and made `govbot logs` emit every action twice (GA: 61,256 lines for
   30,628 actions) and the weekly audit count double.
@@ -112,15 +136,21 @@ cleanup (goal 2) and the `.windycivi` rename (goal 4), so each repo is rewritten
 1. Full-history clone of the formatted repo; record counts (bills, old log files).
 2. **Backfill first:** replay the raw history oldest → newest, appending each scrape's
    actions and votes with `first_seen` = that scrape's commit time (the writer's dedupe
-   and correction rules do the rest). Tool still to write: `backfill_logs.py`, reusing
-   `utils/log_jsonl.py`; it touches only the two log files, not `metadata.json`.
+   and correction rules do the rest): `python3 actions/format/backfill_logs.py <repo>
+   <raw-repo> --report-dir <dir>`. It touches only the two log files, writes only into
+   existing bill folders (the rest are listed in the report) and keeps its re-run cursor
+   in `<dir>/log_backfill-<state>.json`, not in the repo.
 3. **Then fold in the old files:** `python3 actions/format/convert_logs.py <repo>`. Entries
-   already recovered from the raw history are dropped as duplicates; the rest (older than
+   already recovered from the raw history are dropped as duplicates (the backfilled line
+   keeps the earlier `first_seen` of the two and the old file's id); the rest (older than
    the raw history, or no longer in the scrapes) go first in each file, with `first_seen`
-   from `metadata.json`'s `_processing.log_file_created`, else null. It also deletes the
+   from `metadata.json`'s `_processing.log_file_created`, else null. An old vote matching
+   a backfilled vote's identity but none of its versions goes first under the same id. It also deletes the
    session symlinks. Anything it can't recognise is listed and left in place: stop and look.
 4. Validate every line against `actions/format/schemas/*.schema.json`; compare counts with
-   step 1 (no action lost; votes ≥ before).
+   step 1 (no action lost; votes ≥ before):
+   `/Volumes/govbot-data/scratch/backfill/check_conversion.py <original> <converted> <govbot>`
+   (run with that folder's `venv/bin/python`, which has jsonschema).
 5. One commit, pushed. After that the formatter accepts the repo.
 
 Order: CT pilot first, then the rest **before the scrapers are unpaused**: an unconverted
@@ -136,3 +166,35 @@ repo makes the formatter stop as soon as it gets new data.
   README, about, DATA_STRUCTURES, data-repo README template). Still to do: the Rust readers
   (`govbot logs`, `govbot query votes`, library API + snapshots; needs Rust, to be
   installed on the SSD), the backfill tool.
+- 2026-11-24 (later): PR #306 merged. On `backfill-logs`: `backfill_logs.py` (+
+  `test_backfill_logs.py`), `log_jsonl.py`'s is-this-new rules split into
+  `select_new_actions` / `select_new_votes` / `order_batch` (pure refactor), and
+  `convert_bill` fixed to keep the backfilled line on a duplicate (it used to keep the
+  old file, losing the scrape dates). Tested on SSD copies (`scratch/backfill/`):
+  - KY: 290 scrapes, 73 s. 22,204 actions, 2,290 votes (old layout 1,588) + 116
+    corrections (the scraper dropped duplicate House member rows on 2026-09-19). Every
+    old file was in the raw history; no `first_seen` null; schema clean.
+  - GA: 280 scrapes, 6 min. 28,190 actions, 2,798 votes (old 2,510) + 756 corrections,
+    all one change: on 2026-01-01 the scraper renamed voter "ISLAM PARKES" to "PARKES"
+    across past roll calls. 912 raw files in the 2026-07-21 "Auto-merge: kept scraped
+    data" commit hold committed git conflict markers (unparseable; both parent scrapes
+    are replayed, so nothing lost). Every old file covered; schema clean.
+  - **CT pilot** (full-history clone `/Volumes/govbot-data/govbot_data/full/ct-legislation`,
+    61 commits since its 2026-07-21 re-creation): 155 scrapes in 64 s, then convert. 11,611
+    actions on 1,283 bills (old layout 11,599; the 12 extra are May/Feb passages and
+    adoptions first scraped 2026-07-02, before the repo existed). No votes (CT's raw history
+    has none). Schema clean, no null first_seen. `govbot logs --repos ct` reads 11,611 (old
+    layout 11,599); the formatter accepts the repo and adds 0 lines on the latest scrape.
+    Diff = 1,283 `action_logs.jsonl` added, 11,599 log files + 11,599 symlinks deleted.
+    **Committed locally (`2fd0710a`), not pushed.** The raw history also holds 4,076
+    session-2025 bills with no folder here (this repo is 2026-only): goal 1's business.
+    Same 2026-07-21 auto-merge conflict-marker problem as GA (1,834 files).
+  - Reports + re-run cursors: `/Volumes/govbot-data/scratch/backfill/reports/`.
+- 2026-11-25: every repo converted and pushed, in three runs, with the rules in the
+  Decisions above (vote identity, reworded actions, the last-line vote rule, the ND/TN
+  scraper-failure table). 39 pushed after run 1; the 16 held (CA, CO, DC, DE, HI, IL, MI,
+  MO, MT, ND, NJ, OH, OK, RI, SC, TN) after run 3, ND after a re-run with "Proxy Error".
+  In every one of the 16, each vote's last line matches the latest raw scrape. GU has no
+  logs. Results, per-repo table and the next steps (4: rebuild the 39 pushed under the
+  earlier rules; 5: bill-skip option C; 6: the auto-merge conflict markers):
+  `shared-docs/jsonl-log-conversion-results.md`. #308 ready to merge, CI green.

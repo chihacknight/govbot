@@ -5,7 +5,7 @@ from utils.file_utils import (
     format_timestamp,
     validate_required_field,
 )
-from utils.log_jsonl import action_line, append_actions
+from utils.log_jsonl import action_line, append_actions, find_rewordings
 from utils.timestamp_tracker import (
     LatestTimestamps,
     to_dt_obj,
@@ -142,11 +142,14 @@ def handle_bill(
         existing_actions = existing_metadata.get("actions", [])
         new_actions = find_new_actions(existing_actions, actions)
 
-        # Only write logs for new actions
+        # Only write logs for new actions. A new wording of an action the
+        # previous scrape had (metadata.json keeps that scrape's list, in order)
+        # is logged as a correction of it, not as a new action.
         if new_actions:
             logged = append_actions(
                 save_path,
                 [action_line(a, bill_identifier, sources, session_id, first_seen) for a in new_actions],
+                rewordings=find_rewordings(existing_actions, actions),
             )
 
             # Add processing timestamps to new actions

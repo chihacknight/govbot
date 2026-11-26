@@ -29,6 +29,8 @@ list wins.
 | 🟡 WI | Unresolved | Last run before pausing hit GitHub-hosted runners' 6-hour execution cap mid-scrape. Likely needs FL's self-hosted + longer-timeout fix; not confirmed. | [`wi.md`](wi.md) |
 | 🟡 MA | Unresolved on latest finding | Last run before pausing was cancelled after a 24h runner-queue wait (same shape as FL, never started). Also has older, separate silent-data-loss history. | [`ma.md`](ma.md) |
 | 🟢 CO | Low priority | Genuine, correctly-classified rate-limit (429) on its last run before pausing. Not a bug — will likely clear on next dispatch. | [`co.md`](co.md) |
+| 🟡 ND | Worked around, not reported | The scraper saves the site's error page ("Service Unavailable", "Proxy Error") as a voter on nights the site is down (8 nights, up to ~1,170 votes each). A per-state rule in `log_jsonl.py` skips those versions; delete it when OpenStates fixes the scraper. Found 2026-11-25. | [`nd.md`](nd.md) |
+| 🟡 TN | Worked around, not reported | The scraper sometimes saves roll calls with no voters (6,787 votes, mostly 2026-07-02); the names return later. A per-state rule in `log_jsonl.py` skips those versions; delete it when OpenStates fixes the scraper. Found 2026-11-25. | [`tn.md`](tn.md) |
 | 🟣 FL | Long-running, mostly resolved | The deepest history here (streaming fix, timeout fix, per-bill resilience, proxy/runner saga). Several root causes fixed and confirmed working; a couple of threads (committee-vote regression, upstream PR limbo) still open. Read this one as the reference example of the per-state format. | [`fl.md`](fl.md) |
 
 **Legend**: 🔴 actively broken, no fix yet · 🟡 unresolved or fix in flight · 🟢 low priority /
