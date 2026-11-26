@@ -69,6 +69,20 @@ The analysis also feeds two other things:
 3. **Recoveries.** Data that's still in the raw history can be restored, for example IL's 8,648
    synopses (already wanted).
 
+**Found 2026-11-25: the `govbot-archive` org holds the formatted repos from before the
+2026-07-21 rebuild.** Today's `govbot-data` repos were created on 07-21 with only each state's
+current session, so the sessions "missing from the data repo" (Q2) are there, not lost. Checked:
+
+- AR `2025`: 1,928 bills;
+- GA `2025_26`: 5,480;
+- TX `89R`: 11,503 and `891`: 592.
+
+There are 112 repos (~11.5 GB): 56 `<st>-legislation` frozen in mid-July (`chn-openstates-files`
+redirects there, and `govbot_data/repos/` on the SSD holds clones of most of them) and 56 archived
+`<st>-legislation-pre-rebuild-2026-07-21` snapshots. For Q2, the session table (Table 3) compares
+the raw history with **both** today's data repo and the archive. A session in neither is a real
+gap. Bringing archived sessions back into the data repos is a later decision.
+
 **A later source, not used in this run:** the old `windy-civi-pipelines` orgs hold formatted data
 from before our raw history begins (2025-11-27). Example: `windy-civi-pipelines/ar-data-pipeline`
 has AR's `sessions/2025/bills`, and the 2025 session ran January–May 2025. Once this analysis
@@ -192,8 +206,10 @@ auditor, **B** = the bill-information project, **R** = recoveries.
 
    (A, R)
 2. **Are whole sessions in the raw history missing from the data repo?** Examples: GA 5,480 bills,
-   TX 11,503, NJ 11,795, CT 4,076, AR 1,928. Also why: by design (one session per repo, older
-   sessions archived elsewhere) or lost? (R, A)
+   TX 11,503, NJ 11,795, CT 4,076, AR 1,928. **Partly answered:** the 07-21 rebuild kept only
+   current sessions, and AR's, GA's and TX's older sessions are in `govbot-archive` (section 0).
+   Still to check for all 56: is every older session in the archive, or are some in neither?
+   (R, A)
 3. **Did individual bills disappear and never come back?** Bills present in some scrapes and
    absent from every later one, while the session continued. (A, R)
 4. **Does the state have fewer bills than the legislature?** This needs an outside count, so it's
@@ -314,9 +330,10 @@ This answers Q3 (bills that vanished for good) and part of Q8. It's also where r
 ### Table 3: one row per session
 
 Sessions seen in the raw history, with their first and last scrape and their bill count, next to
-the same session's bill count in the data repo (`govbot_data/full/<st>-legislation`). Zero means
-missing (Q2: GA, TX, NJ, CT, AR). Reading the data repo is the only time the pass looks outside the
-raw history.
+the same session's bill count in the data repo (`govbot_data/full/<st>-legislation`) and in the
+`govbot-archive` copies (both the July `<st>-legislation` and the `-pre-rebuild-2026-07-21`
+snapshot). Zero in all of them means really missing (Q2). Reading those repos is the only time
+the pass looks outside the raw history.
 
 ### The field inventory (Q5), also kept per state
 
