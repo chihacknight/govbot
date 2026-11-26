@@ -205,15 +205,18 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install jsonschema
+      - name: Install jsonschema and click
         run: |
-          pip install jsonschema
+          # click: test_bill_nightly.py runs the formatter's own modules
+          # (utils/process_utils.py imports it); version as in Pipfile.
+          pip install jsonschema click==8.1.7
 
-      - name: Log writer and backfill tests
+      - name: Log writer, backfill and nightly bill tests
         run: |
           cd actions/format
           python3 test_log_jsonl.py
           python3 test_backfill_logs.py
+          python3 test_bill_nightly.py
 
       - name: Validate snapshots against schemas
         run: |
