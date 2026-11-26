@@ -292,6 +292,8 @@ Then stop and wait for review before committing.
     `.windycivi/bill_session_mapping.json` (key order follows the folder listing, so it differs
     between machines) and `latest_timestamp_seen.txt`. Both identical between old and new code.
   - **Runtime:** at most 1.7× (IL 24 s → 41 s), from reading each bill's action log every night.
+- **25 Nov, PR open: #311** (https://github.com/chihacknight/govbot/pull/311), approved by
+  Tamara to commit and push; not merged. Commit `47f879bb` on `bill-skip-option-c`.
 
 ## Review
 
