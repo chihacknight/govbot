@@ -12,7 +12,7 @@ class LatestTimestamps(TypedDict):
     vote_events: datetime
     events: datetime
     # Most recent government-recorded date among genuinely new bill actions
-    # this run (handlers/bill.py, gated on find_new_actions() finding
+    # this run (handlers/bill.py, gated on append_actions() logging
     # something new -- unlike events/vote_events, which are separate
     # top-level OCD record types many states never populate at all, this
     # covers ordinary bill activity and is the one most states will actually

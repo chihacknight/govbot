@@ -7,10 +7,6 @@ from utils.timestamp_tracker import (
     is_newer_than_latest,
     LatestTimestamps,
 )
-from utils.processing_tracker import (
-    load_existing_metadata,
-    compare_action_counts,
-)
 
 
 def load_json_files(
@@ -18,8 +14,6 @@ def load_json_files(
     EVENT_ARCHIVE_FOLDER: Union[str, Path],
     DATA_NOT_PROCESSED_FOLDER: Union[str, Path],
     latest_timestamps: LatestTimestamps,
-    state_abbr: str,
-    data_processed_folder: Path,
 ):
     events_ts = latest_timestamps["events"]
 
@@ -33,27 +27,17 @@ def load_json_files(
             with open(filepath, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-                # Determine type for timestamp comparison
-                if filename.startswith("bill"):
-                    # Use smart filtering: compare action counts
-                    existing_metadata = load_existing_metadata(
-                        data_processed_folder, state_abbr, data
-                    )
-                    should_process, existing_count, incoming_count = (
-                        compare_action_counts(existing_metadata, data)
-                    )
-
-                    if not should_process:
-                        # Same action count - likely no changes, skip
-                        continue
-
-                    # Different count or new bill - pass to processing
-                    # (Will be handled in handle_bill with granular action comparison)
-                # vote_event files are not gated here: every vote in the scrape
-                # goes to handle_vote_event, which skips ones already in the
-                # bill's vote_event_logs.jsonl. The old "newer than the newest
-                # vote seen" check dropped every vote that arrived late.
-                elif filename.startswith("event"):
+                # bill_*.json files are not gated here: every bill in the scrape
+                # goes to handle_bill every night, which decides what's new
+                # against the bill's action_logs.jsonl. The old "same number of
+                # actions as metadata.json -> skip the bill" shortcut lost real
+                # updates (GA HB69's new cosponsor, SR3's new version, HR13's
+                # title fix) and rewordings, and let metadata.json fall behind.
+                # Nor are vote_event files: every vote in the scrape goes to
+                # handle_vote_event, which skips ones already in the bill's
+                # vote_event_logs.jsonl. The old "newer than the newest vote
+                # seen" check dropped every vote that arrived late.
+                if filename.startswith("event"):
                     if not is_newer_than_latest(
                         data, events_ts, "events", DATA_NOT_PROCESSED_FOLDER
                     ):

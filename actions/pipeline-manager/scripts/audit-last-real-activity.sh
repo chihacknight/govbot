@@ -8,7 +8,7 @@
 # alternative (.windycivi/latest_timestamp_seen.txt) doesn't work either.
 #
 # Real signal: actions/format only writes a new file under a bill's logs/
-# when find_new_actions() (processing_tracker.py) finds a genuinely new
+# when it finds a genuinely new
 # action or vote event -- and that file's name is prefixed with the ACTION'S
 # OWN government-recorded date (format_timestamp(), %Y%m%dT%H%M%SZ), not a
 # processing timestamp. So the max timestamp across every logs/*.json

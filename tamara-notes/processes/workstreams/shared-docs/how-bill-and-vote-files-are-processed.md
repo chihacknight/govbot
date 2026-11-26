@@ -62,16 +62,21 @@ differ.
 
 For each `bill_*.json` in the scrape:
 
-**1. The skip check** (`io_utils.load_json_files`). If the bill already has a `metadata.json`
-with **the same number of actions**, the bill is skipped entirely that night: no metadata
-update, no log lines. This is the old shortcut. Option C, still to do before the scrapers are
-unpaused, removes it so every bill is processed every night (see "Still open").
+**1. Every bill, every night.** There is no skip check. (Until option C, Nov 2026, a bill whose
+`metadata.json` had **the same number of actions** was skipped entirely that night. That lost
+GA HB69's new cosponsor, SR3's new version and HR13's title fix, missed rewordings, and let
+`metadata.json` fall behind.)
 
-**2. Which actions are new** (`handlers/bill.py`). The formatter compares tonight's actions
-with those saved in `metadata.json` (the previous scrape that changed this bill) by
-description + date. Anything not found there is a candidate. A brand-new bill has no
-`metadata.json`, so all its actions are candidates.
-
+**2. Guard (a): an empty field never replaces a filled one** (`utils/bill_guards.py`). For
+`title`, `sponsorships`, `actions`, `versions`, `documents`, `abstracts`, `other_titles`,
+`subject` and `sources`, a field tonight's scrape has empty or missing keeps the value in
+`metadata.json` until it comes back. Each bill and field kept is listed in
+`.windycivi/errors/kept_empty_fields.json` with the scrape it was first kept on (only that,
+so the file doesn't change every night a field stays missing).
+Scrapers lose a field on every bill at once and sometimes never get it back: IL's scrape has had
+no abstracts since 2026-07-13 (8,648 bills), KY's no sponsors since 2026-08-20 (1,707). If guard
+(a) keeps `actions`, the kept list is also what the next night's rewording check compares
+against.
 **3. Rewordings** (`find_rewordings`). Scrapers sometimes reword actions they already published.
 Two examples: on 2026-08-10, MT changed "(H) First Reading" to "(H) 1st Reading" on every past
 bill, and KS changed "Referred to Committee on Judiciary" to "Referred to Senate Committee on
@@ -85,8 +90,9 @@ The changed ones then pair slot by slot: `[A, B, C] → [A, B', C']` pairs B wit
 C'. If either condition fails, nothing in that group is paired and each new wording is logged
 as a new action. There is no text-similarity matching.
 
-**4. Dedupe against the log and append** (`append_actions` → `select_new_actions`). Each
-candidate is checked against the bill's `action_logs.jsonl`. Two actions are the same action
+**4. Dedupe against the log and append** (`append_actions` → `select_new_actions`). Every
+scraped action is checked against the bill's `action_logs.jsonl` (there is no pre-filter against
+`metadata.json` any more). Two actions are the same action
 when date, description (ignoring whitespace) and chamber all match. The ones that aren't
 already there:
 
@@ -98,9 +104,22 @@ already there:
 The night's new lines are sorted by the government's date before being appended, so a new
 bill's history reads forwards. Lines already in the file are not touched.
 
-**5. Save `metadata.json`**. This is the full bill as scraped tonight. Its `actions` list
-keeps each action's `_processing.log_file_created` stamp from earlier nights. It is also what
-tomorrow night's step 2 and step 3 compare against.
+**5. Save `metadata.json`**. This is the full bill as scraped tonight, after guard (a). Its
+`actions` list keeps each action's `_processing.log_file_created` stamp from earlier nights,
+matched the way the log matches (guard (b): whitespace ignored, chamber included, so KY's line
+breaks inside descriptions don't drop a stamp); a reworded action takes tonight's wording and
+the stamp of the action it rewords. Actions appended tonight get a new stamp, and
+`_processing.logs_latest_update` moves only when a line was appended. The file is written only
+when its content changed, so a quiet night leaves it byte-for-byte untouched. It is what
+tomorrow night's step 3 compares against.
+
+**6. Guard (c): a field vanishing from most bills** (`BillGuards.finish`, after all bills).
+When more than 50% of the bills that had a field in `metadata.json` (at least 20 bills) have it
+empty tonight, the run prints a GitHub `::warning::` and writes
+`.windycivi/errors/field_regressions.json`: one entry per field with state, night, field,
+`bills_lost` and `bills_had`, for the daily audit to read. The file is removed on a night nothing
+fires, and the run carries on. The threshold (`FIELD_REGRESSION_THRESHOLD`) was measured on the
+raw history of eight states: real failures lose 69–100% of a field, everything else under 20%.
 
 One action line:
 
@@ -254,11 +273,6 @@ at the end of `.jsonl` files. A night's new activity is those added lines.
   `identifier` (ND's are empty, for example).
 - **A vote or action that drops out of the scrape stays in the log.** Nothing is ever removed.
   Run 3 found such votes in every repo (OH: 16, DE: 126), mostly from older sessions.
-- **The nightly new-action check ignores chamber.** Step 2 of the bill path matches on
-  description + date only. If one chamber's action is already in `metadata.json` and the other
-  chamber's identically worded action on the same date arrives on a later night, it isn't
-  logged. The backfill doesn't have this gap, because it compares against the log, which
-  includes chamber.
 - **Parsing errors from the scraper are logged as scraped.** For example, TN SB1414 has a voter
   named "Lafferty -- 1. HB1242 by Helton-Haynes", and MI HB5697 has one named "sections 279 and
   679.". The logs show what OpenStates published; such errors are reported upstream rather than
@@ -266,13 +280,9 @@ at the end of `.jsonl` files. A night's new activity is those added lines.
 
 ## Still open before the scrapers are unpaused
 
-1. **Bill-skip option C:** remove the same-action-count skip so every bill is processed every
-   night. Without it, a rewording on a night when the count didn't change is never seen, and
-   `metadata.json` (what tomorrow's rewording check compares against) falls behind. The agreed
-   guards: never replace a non-empty field with an empty one, treat whitespace-only description
-   changes as the same action, and flag a field vanishing from most of a state's bills as a
-   scraper regression. Removing the description + date pre-filter in step 2 at the same time
-   would also close the chamber gap above, since step 4 already dedupes against the log.
+1. **Bill-skip option C**: implemented, in review (branch `bill-skip-option-c`, see
+   `shared-docs/bill-skip-option-c.md`); this document already describes it. Every bill is processed every night, new actions are
+   checked against the log (closing the old chamber gap), with the three guards above.
 2. **The auto-merge step** that saved conflict markers into raw commits (first find out why #100
    was reverted).
 

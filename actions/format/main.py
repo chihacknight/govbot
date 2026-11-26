@@ -114,8 +114,6 @@ def main(
         event_archive_folder,
         errors_folder,
         latest_timestamps,
-        state_abbr,
-        repo_root,
     )
 
     # 4. Route and process by handler (returns counts)
