@@ -51,6 +51,35 @@ Michael's proposed next steps (empty fields, fields on ilga.gov we don't capture
 differ) are investigated in `actions/openstates-scrape-audits/internal/il_field_audit.py`, with
 the report alongside it in `internal/audit_output/`.
 
+## The synopsis (`abstracts`) disappeared from the scrape on 2026-07-13
+
+Status: 🟡 Scraper regression, not reported upstream yet. Found 2026-11-25 by replaying the raw
+history (`/Volumes/govbot-data/scratch/backfill/field_loss.py`).
+
+- **What:** until the 2026-07-01 scrape, every IL bill carried the official synopsis as its
+  `abstracts`. Example: SB2310, "Amends the Public Utilities Act. Changes the name of the
+  Retail Electric Competition Article…". From the 2026-07-13 22:55 scrape on, no bill has one:
+  8,648 of 8,648 lost it, and 0 of 400 sampled bills in the latest scrape (2026-09-25) have it.
+- **This explains two things already in the repo:**
+  - The field audit's finding that the synopsis is "never stored". It was stored until July.
+  - `scripts/build_il_summaries.py`, which pulls "SYNOPSIS AS INTRODUCED" out of each bill's PDF
+    for the dashboard. It works around this regression.
+- **Why `il-legislation` has none:** the data repo was created on 2026-07-21, eight days after the
+  loss, so no `metadata.json` ever had an abstract. Option C's empty-field guard (PR #311) had
+  nothing to keep.
+- **Possible cause, unconfirmed:** IL moved to the self-hosted runner on 2026-07-14, the day after.
+  A different scraper image or settings might have dropped the field. Not traced.
+- **Two empty scrapes were committed just before:** 2026-07-03 04:46 and 2026-07-13 21:00 have
+  **0 bill files** in `_data/il/`. They show up in the history as green runs. A case for the
+  state auditor.
+- **Recovery: wanted** (Tamara, 2026-11-25). The synopses for the 8,648 bills scraped by 07-01
+  are in the raw history, to be restored into `metadata.json`. Getting as much information about
+  each bill as possible, from non-PDF sources first, is the next major project, and a structured
+  synopsis is far more reliable than one pulled out of a PDF. Bills filed after 07-01 still need
+  the PDF route until the scraper is fixed.
+- **Fix:** report it to OpenStates (`openstates/issues`) with the SB2310 example and the dates.
+  Check first whether the `il` scraper still reads abstracts.
+
 ## Related
 
 - `tamara-notes/session-dates/session-dates-comparison.md`: the OpenStates IL session-date mismatch.
