@@ -282,6 +282,7 @@ locales:
     - working
   nv:
     template: openstates-scrape-paused
+    moved_to: govbot-history/nv-legislation-scraper  # 2026-11-27, repo reorg batch 3
     name: Nevada
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -318,6 +319,7 @@ locales:
     - working
   ny:
     template: openstates-scrape-paused
+    moved_to: govbot-history/ny-legislation-scraper  # 2026-11-27, repo reorg batch 3
     name: New York
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -351,6 +353,7 @@ locales:
     runner: self-hosted
   ok:
     template: openstates-scrape-paused
+    moved_to: govbot-history/ok-legislation-scraper  # 2026-11-27, repo reorg batch 3
     name: Oklahoma
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -359,6 +362,7 @@ locales:
     - working
   or:
     template: openstates-scrape-paused
+    moved_to: govbot-history/or-legislation-scraper  # 2026-11-27, repo reorg batch 3
     name: Oregon
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -377,6 +381,7 @@ locales:
     - working
   ri:
     template: openstates-scrape-paused
+    moved_to: govbot-history/ri-legislation-scraper  # 2026-11-27, repo reorg batch 3
     name: Rhode Island
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -385,6 +390,7 @@ locales:
     - working
   sc:
     template: openstates-scrape-paused
+    moved_to: govbot-history/sc-legislation-scraper  # 2026-11-27, repo reorg batch 3
     name: South Carolina
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -394,12 +400,14 @@ locales:
     - working
   sd:
     template: openstates-scrape-paused
+    moved_to: govbot-history/sd-legislation-scraper  # 2026-11-27, repo reorg batch 3
     name: South Dakota
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 5 * * *"  # Central
   tn:
     template: openstates-scrape-paused
+    moved_to: govbot-history/tn-legislation-scraper  # 2026-11-27, repo reorg batch 3
     name: Tennessee
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -409,6 +417,7 @@ locales:
     - working
   tx:
     template: openstates-scrape-paused
+    moved_to: govbot-history/tx-legislation-scraper  # 2026-11-27, repo reorg batch 3
     name: Texas
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -417,6 +426,7 @@ locales:
     - working
   ut:
     template: openstates-scrape-paused
+    moved_to: govbot-history/ut-legislation-scraper  # 2026-11-27, repo reorg batch 3
     name: Utah
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -425,6 +435,7 @@ locales:
     - working
   vt:
     template: openstates-scrape-paused
+    moved_to: govbot-history/vt-legislation-scraper  # 2026-11-27, repo reorg batch 3
     name: Vermont
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -434,6 +445,7 @@ locales:
     - working
   va:
     template: openstates-scrape-paused
+    moved_to: govbot-history/va-legislation-scraper  # 2026-11-27, repo reorg batch 3
     name: Virginia
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -441,6 +453,7 @@ locales:
     runner: self-hosted
   wa:
     template: openstates-scrape-paused
+    moved_to: govbot-history/wa-legislation-scraper  # 2026-11-27, repo reorg batch 3
     name: Washington
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -450,6 +463,7 @@ locales:
     - working
   wv:
     template: openstates-scrape-paused
+    moved_to: govbot-history/wv-legislation-scraper  # 2026-11-27, repo reorg batch 3
     name: West Virginia
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -459,6 +473,7 @@ locales:
     - working
   wi:
     template: openstates-scrape-paused
+    moved_to: govbot-history/wi-legislation-scraper  # 2026-11-27, repo reorg batch 3
     name: Wisconsin
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -476,6 +491,7 @@ locales:
     - working
   pr:
     template: openstates-scrape-paused
+    moved_to: govbot-history/pr-legislation-scraper  # 2026-11-27, repo reorg batch 3
     name: Puerto Rico
     toolkit_branch: main
     scrape_timeout_minutes: "720"
