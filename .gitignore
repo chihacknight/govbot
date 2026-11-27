@@ -146,3 +146,6 @@ docs/src/dashboard/il_summaries.json
 # extracted during the Pages deploy (scripts/build_bill_summaries.py), cached between
 # runs by actions/cache and published with the site — not committed.
 docs/src/dashboard/summaries/
+
+# Tamara's working notes live in a private repo (moved 2026-11-27); keep any local copy out of git.
+tamara-notes/

@@ -36,7 +36,7 @@ without checking dimension 3 first.
 ### 3. Session-awareness — "should this state even be active right now"
 
 Built earlier this session: the LegiScan-based session calendar
-(`tamara-notes/session-dates/session-calendar-2026.md`) and the 46-state pause
+(`actions/openstates-scrape-audits/session-calendar-2026.md`) and the 46-state pause
 rollout (PR #178 area / `feat/pause-out-of-session-pipelines`, merged). This is what
 turns "no new data" from an alarm into an expected, correct fact for an out-of-session
 state. Staleness and session-status are two separate facts that must be combined by

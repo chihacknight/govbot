@@ -1,7 +1,7 @@
 # 2026 Legislative Session Calendar
 
 Source: LegiScan 2026 Legislative Schedule, updated August 20, 2026
-(`tamara-notes/session-dates/8-20-2026_Session_Calendar.pdf`).
+(the 2026-08-20 LegiScan calendar PDF, kept in the maintainer's private notes).
 Territories (PR, GU, MP, VI) are not covered by this LegiScan calendar at all — their
 session dates come from each territory's own legislature site (see notes below and
 `session-dates-comparison.md`).

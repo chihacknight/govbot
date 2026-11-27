@@ -43,7 +43,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 PIPELINE_MANAGER = REPO_ROOT / "actions" / "pipeline-manager"
-SESSION_CALENDAR = REPO_ROOT / "tamara-notes" / "session-dates" / "session-calendar-2026.md"
+SESSION_CALENDAR = REPO_ROOT / "actions" / "openstates-scrape-audits" / "session-calendar-2026.md"
 
 FLATLINE_THRESHOLD_DAYS = 7
 
