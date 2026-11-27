@@ -16,6 +16,10 @@ locales:
     template: bare
     name: Ex
     managed: false # render.py skips unmanaged locales; this one must emit no record
+  ww:
+    template: marked
+    name: Moved
+    moved_to: test-history/ww-data # repo moved out of this org; must emit no record
   yy:
     template: marked
     name: Wye

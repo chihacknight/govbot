@@ -17,6 +17,15 @@ import json
 import shutil
 from pathlib import Path
 from typing import Dict, Set, List, Tuple, Optional
+import importlib.util
+
+# moved.py sits next to this file; loaded by path because close_session.py and
+# rebuild_data_repos.py load this file by path too (not as a package).
+_moved_spec = importlib.util.spec_from_file_location(
+    "moved", Path(__file__).parent / "moved.py"
+)
+moved_mod = importlib.util.module_from_spec(_moved_spec)
+_moved_spec.loader.exec_module(moved_mod)
 
 
 def run_shell(cmd: str, check: bool = True, capture_output: bool = True) -> str:
@@ -162,6 +171,14 @@ def get_expected_repos(
         if managed == "false":
             continue
 
+        # A moved locale's repo now lives elsewhere (see moved.py): never
+        # create it again here, and never push templates into it through the
+        # old name's redirect (that would bring its workflows back).
+        moved_to = render.get_config_value(config_str, moved_mod.MOVED_KEY, "")
+        if moved_to:
+            print(f"  ↪️  Skipping {locale}: moved to {moved_to}")
+            continue
+
         # Get folder name (repo name)
         folder_name = locale  # default
         if template in templates and "folder-name" in templates[template]:
@@ -262,12 +279,35 @@ def get_actual_repos(org: str) -> Set[str]:
 
 
 def create_repo(
-    org: str, repo_name: str, locale: str, generated_path: Path, dry_run: bool = False
+    org: str,
+    repo_name: str,
+    locale: str,
+    generated_path: Path,
+    dry_run: bool = False,
+    allow_redirect_to: Optional[str] = None,
 ) -> bool:
-    """Create a new repository and push template files."""
+    """Create a new repository and push template files.
+
+    Refuses unless GitHub confirms the name is free (moved.refuse_to_create):
+    a name that redirects to a moved repo is never re-created, since that
+    ends the redirect. `allow_redirect_to` is only for close_session.py /
+    rebuild_data_repos.py re-creating a name they just moved to that repo.
+    """
     full_repo = f"{org}/{repo_name}"
 
     print(f"  🔨 Creating repository: {full_repo}")
+
+    if dry_run and allow_redirect_to:
+        # Nothing has moved yet in a dry run, so the name still exists.
+        print(
+            f"     [DRY RUN] Would first check that {full_repo} is free or "
+            f"redirects only to {allow_redirect_to}"
+        )
+    else:
+        reason = moved_mod.refuse_to_create(full_repo, allow_redirect_to)
+        if reason:
+            print(f"     ❌ Refusing to create: {reason}", file=sys.stderr)
+            return False
 
     if dry_run:
         print(f"     [DRY RUN] Would create repo and push files")

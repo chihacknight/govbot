@@ -101,6 +101,11 @@
               },
               "description": "Labels for the locale (e.g., 'working')"
             },
+            "moved_to": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$",
+              "description": "owner/name of the repo this locale's repo moved to (e.g. 'govbot-history/wy-legislation-data'). apply.py then never creates or updates the old name (re-creating it would end GitHub's redirect), fleet-monitor emits no record, and close_session.py / rebuild_data_repos.py refuse the locale. See moved.py."
+            },
             "session": {
               "type": "string",
               "description": "Identifier for the legislative session this locale's repo currently holds (e.g. '2025-2026', '2026-ss1' for a special session). Set by close_session.py when rotating repos; used to name the archived repo on transfer. Informational only — does not affect the active repo's name."

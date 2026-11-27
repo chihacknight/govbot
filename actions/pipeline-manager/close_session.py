@@ -69,6 +69,7 @@ def _load_module(name: str, path: Path):
 
 apply_mod = _load_module("apply", SCRIPT_DIR / "apply.py")
 render_mod = _load_module("render", SCRIPT_DIR / "render.py")
+moved_mod = apply_mod.moved_mod
 
 
 def slugify_session(session: str) -> str:
@@ -170,6 +171,12 @@ def close_session(
     dry_run: bool,
 ) -> None:
     config = load_config(config_path)
+    refusal = moved_mod.refuse_moved_locale(
+        locale, (config.get("locales") or {}).get(locale), config_path.name
+    )
+    if refusal:
+        print(f"❌ {refusal}", file=sys.stderr)
+        sys.exit(1)
     active_org = config["org"]["username"]
     repo_name = repo_name_for_locale(config, locale)
     active_full = f"{active_org}/{repo_name}"
@@ -198,6 +205,16 @@ def close_session(
     active_info = get_repo_info(active_full)
     if active_info is None:
         print(f"❌ {active_full} does not exist", file=sys.stderr)
+        sys.exit(1)
+    if active_info.get("full_name", active_full).lower() != active_full.lower():
+        # `gh api` followed a redirect: the repo moved without a `moved_to`
+        # marker. Operating on it would move or re-create the wrong repo.
+        print(
+            f"❌ {active_full} redirects to {active_info['full_name']} — it has moved. "
+            f"Add `{moved_mod.MOVED_KEY}: {active_info['full_name']}` to locales.{locale} "
+            f"in {config_path.name}.",
+            file=sys.stderr,
+        )
         sys.exit(1)
     if active_info.get("archived"):
         print(f"❌ {active_full} is already archived — nothing to close", file=sys.stderr)
@@ -254,9 +271,22 @@ def close_session(
 
     # --- 5. Recreate active repo for the next session -----------------------
     print("\n5/6 Creating fresh repo for the next session...")
-    apply_mod.create_repo(
-        active_org, repo_name, locale, repo_info["generated_path"], dry_run=dry_run
-    )
+    # The old name now redirects to the archived repo; only that redirect may
+    # be replaced (this script's design until the per-session rewrite).
+    if not apply_mod.create_repo(
+        active_org,
+        repo_name,
+        locale,
+        repo_info["generated_path"],
+        dry_run=dry_run,
+        allow_redirect_to=archive_full,
+    ):
+        print(
+            f"❌ Could not re-create {active_full}; the archive step is done "
+            f"({archive_full}). Config not updated.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     # --- 6. Update config (session field, mirrored in both files) ----------
     print("\n6/6 Updating config...")
