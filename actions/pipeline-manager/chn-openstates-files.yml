@@ -323,6 +323,7 @@ locales:
       - working
   wy:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/wy-legislation-data  # 2026-11-27, repo reorg step 3
     toolkit_branch: main
     name: Wyoming
     labels:
