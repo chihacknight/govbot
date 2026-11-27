@@ -20,12 +20,14 @@ templates:
 locales:
   al:
     template: openstates-scrape-paused
+    moved_to: govbot-history/al-legislation-scraper  # 2026-11-27, repo reorg batch 1
     name: Alabama
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 5 * * *"  # Central
   ak:
     template: openstates-scrape-paused
+    moved_to: govbot-history/ak-legislation-scraper  # 2026-11-27, repo reorg batch 1
     name: Alaska
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -33,6 +35,7 @@ locales:
     runner: self-hosted
   az:
     template: openstates-scrape-paused
+    moved_to: govbot-history/az-legislation-scraper  # 2026-11-27, repo reorg batch 1
     name: Arizona
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -40,6 +43,7 @@ locales:
     runner: self-hosted
   ar:
     template: openstates-scrape-paused
+    moved_to: govbot-history/ar-legislation-scraper  # 2026-11-27, repo reorg batch 1
     name: Arkansas
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -49,18 +53,21 @@ locales:
     - working
   ca:
     template: openstates-scrape-paused
+    moved_to: govbot-history/ca-legislation-scraper  # 2026-11-27, repo reorg batch 1
     name: California
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 7 * * *"  # Pacific
   co:
     template: openstates-scrape-paused
+    moved_to: govbot-history/co-legislation-scraper  # 2026-11-27, repo reorg batch 1
     name: Colorado
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 6 * * *"  # Mountain
   ct:
     template: openstates-scrape-paused
+    moved_to: govbot-history/ct-legislation-scraper  # 2026-11-27, repo reorg batch 1
     name: Connecticut
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -74,6 +81,7 @@ locales:
     scrape_cron: "0 4 * * *"  # Eastern
   de:
     template: openstates-scrape-paused
+    moved_to: govbot-history/de-legislation-scraper  # 2026-11-27, repo reorg batch 1
     name: Delaware
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -82,6 +90,7 @@ locales:
     - working
   fl:
     template: openstates-scrape-paused
+    moved_to: govbot-history/fl-legislation-scraper  # 2026-11-27, repo reorg batch 1
     name: Florida
     toolkit_branch: main
     scrape_timeout_minutes: "2520"
@@ -105,6 +114,7 @@ locales:
     - working
   ga:
     template: openstates-scrape-paused
+    moved_to: govbot-history/ga-legislation-scraper  # 2026-11-27, repo reorg batch 1
     name: Georgia
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -114,6 +124,7 @@ locales:
     - working
   hi:
     template: openstates-scrape-paused
+    moved_to: govbot-history/hi-legislation-scraper  # 2026-11-27, repo reorg batch 1
     name: Hawaii
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -121,12 +132,14 @@ locales:
     runner: self-hosted
   id:
     template: openstates-scrape-paused
+    moved_to: govbot-history/id-legislation-scraper  # 2026-11-27, repo reorg batch 1
     name: Idaho
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 6 * * *"  # Mountain
   il:
     template: openstates-scrape-paused
+    moved_to: govbot-history/il-legislation-scraper  # 2026-11-27, repo reorg batch 1
     name: Illinois
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -136,6 +149,7 @@ locales:
     - working
   in:
     template: openstates-scrape-paused
+    moved_to: govbot-history/in-legislation-scraper  # 2026-11-27, repo reorg batch 1
     name: Indiana
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -143,6 +157,7 @@ locales:
     runner: self-hosted
   ia:
     template: openstates-scrape-paused
+    moved_to: govbot-history/ia-legislation-scraper  # 2026-11-27, repo reorg batch 1
     name: Iowa
     toolkit_branch: main
     scrape_timeout_minutes: "720"
