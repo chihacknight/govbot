@@ -33,7 +33,7 @@ runs:
     - name: Setup Python
       uses: actions/setup-python@v6
       with:
-        python-version: "3.9"
+        python-version: "3.11"  # match Pipfile; 3.9 has no Ubuntu 26.04 build
 
     - name: Clone scraper repo for data
       shell: bash

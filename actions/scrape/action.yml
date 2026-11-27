@@ -48,11 +48,10 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Setup Python
-      uses: actions/setup-python@v6
-      with:
-        python-version: "3.9"
-
+    # No Setup Python step: nothing here runs Python on the runner itself. The
+    # scrape runs inside the OpenStates Docker image (its own Python), and the
+    # rest is bash + awk + git. The old 3.9 pin broke every run once
+    # ubuntu-latest became Ubuntu 26.04, which has no 3.9 build (2026-10-30).
     - name: Prep working dirs
       shell: bash
       run: |
