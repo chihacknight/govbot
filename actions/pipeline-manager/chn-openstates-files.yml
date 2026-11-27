@@ -134,36 +134,42 @@ locales:
       - working
   ks:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/ks-legislation-data  # 2026-11-27, repo reorg batch 2
     toolkit_branch: main
     name: Kansas
     labels:
       - working
   ky:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/ky-legislation-data  # 2026-11-27, repo reorg batch 2
     toolkit_branch: main
     name: Kentucky
     labels:
       - working
   la:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/la-legislation-data  # 2026-11-27, repo reorg batch 2
     toolkit_branch: main
     name: Louisiana
     labels:
       - working
   me:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/me-legislation-data  # 2026-11-27, repo reorg batch 2
     toolkit_branch: main
     name: Maine
     labels:
       - working
   md:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/md-legislation-data  # 2026-11-27, repo reorg batch 2
     toolkit_branch: main
     name: Maryland
     labels:
       - working
   ma:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/ma-legislation-data  # 2026-11-27, repo reorg batch 2
     toolkit_branch: main
     name: Massachusetts
     labels:
@@ -176,30 +182,35 @@ locales:
       - working
   mn:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/mn-legislation-data  # 2026-11-27, repo reorg batch 2
     toolkit_branch: main
     name: Minnesota
     labels:
       - working
   ms:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/ms-legislation-data  # 2026-11-27, repo reorg batch 2
     toolkit_branch: main
     name: Mississippi
     labels:
       - working
   mo:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/mo-legislation-data  # 2026-11-27, repo reorg batch 2
     toolkit_branch: main
     name: Missouri
     labels:
       - working
   mt:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/mt-legislation-data  # 2026-11-27, repo reorg batch 2
     toolkit_branch: main
     name: Montana
     labels:
       - working
   ne:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/ne-legislation-data  # 2026-11-27, repo reorg batch 2
     toolkit_branch: main
     name: Nebraska
     labels:
@@ -212,6 +223,7 @@ locales:
       - working
   nh:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/nh-legislation-data  # 2026-11-27, repo reorg batch 2
     toolkit_branch: main
     name: New Hampshire
     labels:
@@ -224,6 +236,7 @@ locales:
       - working
   nm:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/nm-legislation-data  # 2026-11-27, repo reorg batch 2
     toolkit_branch: main
     name: New Mexico
     labels:
@@ -236,12 +249,14 @@ locales:
       - working
   nc:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/nc-legislation-data  # 2026-11-27, repo reorg batch 2
     toolkit_branch: main
     name: North Carolina
     labels:
       - working
   nd:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/nd-legislation-data  # 2026-11-27, repo reorg batch 2
     toolkit_branch: main
     name: North Dakota
     labels:

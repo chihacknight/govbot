@@ -166,6 +166,7 @@ locales:
     - working
   ks:
     template: openstates-scrape-paused
+    moved_to: govbot-history/ks-legislation-scraper  # 2026-11-27, repo reorg batch 2
     name: Kansas
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -174,6 +175,7 @@ locales:
     - working
   ky:
     template: openstates-scrape-paused
+    moved_to: govbot-history/ky-legislation-scraper  # 2026-11-27, repo reorg batch 2
     name: Kentucky
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -182,6 +184,7 @@ locales:
     - working
   la:
     template: openstates-scrape-paused
+    moved_to: govbot-history/la-legislation-scraper  # 2026-11-27, repo reorg batch 2
     name: Louisiana
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -190,18 +193,21 @@ locales:
     - working
   me:
     template: openstates-scrape-paused
+    moved_to: govbot-history/me-legislation-scraper  # 2026-11-27, repo reorg batch 2
     name: Maine
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 4 * * *"  # Eastern
   md:
     template: openstates-scrape-paused
+    moved_to: govbot-history/md-legislation-scraper  # 2026-11-27, repo reorg batch 2
     name: Maryland
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 4 * * *"  # Eastern
   ma:
     template: openstates-scrape-paused
+    moved_to: govbot-history/ma-legislation-scraper  # 2026-11-27, repo reorg batch 2
     name: Massachusetts
     toolkit_branch: main
     scrape_timeout_minutes: "1440"
@@ -229,6 +235,7 @@ locales:
     runner: self-hosted
   mn:
     template: openstates-scrape-paused
+    moved_to: govbot-history/mn-legislation-scraper  # 2026-11-27, repo reorg batch 2
     name: Minnesota
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -238,12 +245,14 @@ locales:
     - working
   ms:
     template: openstates-scrape-paused
+    moved_to: govbot-history/ms-legislation-scraper  # 2026-11-27, repo reorg batch 2
     name: Mississippi
     toolkit_branch: main
     scrape_timeout_minutes: "720"
     scrape_cron: "0 5 * * *"  # Central
   mo:
     template: openstates-scrape-paused
+    moved_to: govbot-history/mo-legislation-scraper  # 2026-11-27, repo reorg batch 2
     name: Missouri
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -253,6 +262,7 @@ locales:
     - working
   mt:
     template: openstates-scrape-paused
+    moved_to: govbot-history/mt-legislation-scraper  # 2026-11-27, repo reorg batch 2
     name: Montana
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -262,6 +272,7 @@ locales:
     - working
   ne:
     template: openstates-scrape-paused
+    moved_to: govbot-history/ne-legislation-scraper  # 2026-11-27, repo reorg batch 2
     name: Nebraska
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -280,6 +291,7 @@ locales:
     - working
   nh:
     template: openstates-scrape-paused
+    moved_to: govbot-history/nh-legislation-scraper  # 2026-11-27, repo reorg batch 2
     name: New Hampshire
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -296,6 +308,7 @@ locales:
     - working
   nm:
     template: openstates-scrape-paused
+    moved_to: govbot-history/nm-legislation-scraper  # 2026-11-27, repo reorg batch 2
     name: New Mexico
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -312,6 +325,7 @@ locales:
     runner: self-hosted
   nc:
     template: openstates-scrape-paused
+    moved_to: govbot-history/nc-legislation-scraper  # 2026-11-27, repo reorg batch 2
     name: North Carolina
     toolkit_branch: main
     scrape_timeout_minutes: "720"
@@ -321,6 +335,7 @@ locales:
     - working
   nd:
     template: openstates-scrape-paused
+    moved_to: govbot-history/nd-legislation-scraper  # 2026-11-27, repo reorg batch 2
     name: North Dakota
     toolkit_branch: main
     scrape_timeout_minutes: "720"
