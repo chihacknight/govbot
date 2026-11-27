@@ -11,12 +11,12 @@ Welcome to govbot! Let's set up your project.
 > Select specific states
 
 Available states/jurisdictions:
-  ak, al, ar, ca, co, de, fl, ga, gu, hi
-  ia, id, il, in, ks, ky, la, ma, md, me
-  mi, mn, mo, mp, ms, mt, nc, nd, ne, nh
-  nj, nm, nv, ny, oh, ok, or, pa, pr, ri
-  sc, sd, tn, usa, ut, vi, vt, wa, wi, wv
-  wy
+  ak, al, ar, az, ca, co, ct, dc, de, fl
+  ga, gu, hi, ia, id, il, in, ks, ky, la
+  ma, md, me, mi, mn, mo, mp, ms, mt, nc
+  nd, ne, nh, nj, nm, nv, ny, oh, ok, or
+  pa, pr, ri, sc, sd, tn, tx, usa, ut, va
+  vi, vt, wa, wi, wv, wy
 
 ? Enter state codes separated by spaces: il ca ny
 
