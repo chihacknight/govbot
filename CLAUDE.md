@@ -162,7 +162,7 @@ whose last line is in tonight's scrape (some scrapes hold two versions of one vo
 flip-flopped A, B, A nightly), else a changed version is logged even if it repeats an earlier
 one (a real revert). `SCRAPER_FAILURES` in `log_jsonl.py` skips known per-state scraper
 failures (ND "Service Unavailable" / "Proxy Error" voters, TN roll calls gone empty; delete an entry when
-OpenStates fixes it, see `tamara-notes/state-specific/nd.md` / `tn.md`). An action the scraper rewords (MT "(H) First Reading" →
+OpenStates fixes it; details in Tamara's private notes). An action the scraper rewords (MT "(H) First Reading" →
 "(H) 1st Reading") is appended under the paired action's `id` when the previous scrape
 (`metadata.json`) and tonight's have the same count on that date + chamber with unchanged
 actions in the same order (`find_rewordings`). Readers take the last line per `id`; an action
@@ -182,7 +182,7 @@ identifier across different votes), else date + motion + chamber + counts; there
 votes). Line schemas: `actions/format/schemas/action_log.schema.json` /
 `vote_event_log.schema.json` (copies in `/schemas`). Full reference: "Action and vote
 logs" in `actions/format/docs/DATA_STRUCTURES.md`. Decisions and evidence:
-`tamara-notes/processes/workstreams/jsonl-logs.md`.
+Tamara's private notes (`briefs/jsonl-logs.md`).
 
 The **old layout** (`bills/<id>/logs/*.json`, one file per entry, plus symlinks to each
 under `sessions/<s>/logs/`, made by the deleted `symlink_logs.py`) is still in the live
@@ -316,7 +316,7 @@ so bills filed after that are expected to be missing (e.g. Illinois, out of sess
 Illinois field-completeness / accuracy audit: `actions/openstates-scrape-audits/internal/il_field_audit.py`
 (report in `internal/audit_output/`; values match ilga.gov, but the synopsis and statutes amended are never
 stored). Illinois Executive Orders and Joint Session Resolutions are not collected by design (the OpenStates
-`il` scraper doesn't scrape them). Notes: `tamara-notes/state-specific/il.md`.
+`il` scraper doesn't scrape them). Notes: Tamara's private notes (`states/il.md`).
 
 **Shared helpers, one copy.** `docs/src/dashboard/assets/govbot-utils.js` (plain ES5, `window.GB`) holds
 the small functions several pages used to copy-paste: `GB.billKey` (the `state~session~id` key behind every
@@ -328,7 +328,7 @@ tooltip / "pending jurisdictions" note, elections' old Illinois county finder, b
 flag, and the old tab-bar / brandbar / theme-pill CSS on every page) was deleted — don't look for it.
 
 **Civic redesign (in progress).** The dashboard is being revamped into a dark-mode-first
-"civic institution" per the design brief in `tamara-notes/`. **Brand colour = a lively green ("Spring"),
+"civic institution" per a design brief (now in Tamara's private notes). **Brand colour = a lively green ("Spring"),
 not gold** (chosen on the "Govbot Green" Design canvas): `govbot.css` defines `--gb-primary` (dark
 `#3DDC84` / light `#0B7D45`), `--gb-primary-hi` (`#7CEBB0` / `#075C33`), `--gb-on-primary` (text on a
 primary fill: `#04140B` dark / white light) and `--gb-glow-primary`, and **`--gb-gold`, `--gb-gold-hi` and
@@ -988,7 +988,7 @@ the data pipeline reads** — `actions/**`, `scripts/**`, `schemas/**`, **this w
 push to main touching **only site files** — anything under **`docs/**`** (the landing, docs pages, the
 civic theme `docs/theme/**`, `book.toml`, images, the dashboards, and any future sub-site at
 `docs/src/<name>/` → `github.io/govbot/<name>/`), Markdown docs anywhere (`*.md`), the root `llms.txt` /
-`catalog.json`, `tamara-notes/**`, or `.github/**` other than `deploy-docs.yml` — and **every pull
+`catalog.json`, or `.github/**` other than `deploy-docs.yml` — and **every pull
 request**, take a **fast path**: a `Determine build scope` step (`git diff` of the pushed range — it strips
 those paths, and full-refreshes only if anything else remains; PRs always skip) sets `refresh=false`, and the
 pipeline steps are all guarded `if: steps.gate.outputs.refresh == 'true'`, so they're skipped and mdbook

@@ -21,7 +21,7 @@
 # trusted. Also: this answers "how current is our data," not "is the
 # pipeline currently running" -- a state correctly out of session will
 # legitimately show an old date here, that's not itself a bug. Cross-reference
-# against tamara-notes/session-dates/session-calendar-2026.md before reading
+# against actions/openstates-scrape-audits/session-calendar-2026.md before reading
 # an old date as a problem.
 #
 # Usage: ./audit-last-real-activity.sh [output-file]

@@ -4,11 +4,7 @@ The master list of all 56 jurisdictions (50 states, DC, federal, 4 territories).
 whether the legislature is in session, whether we're scraping it, when new data last landed,
 and whether the scraper works. **If a row and another doc disagree, this page wins.**
 
-Detail lives in one file per state under
-[`tamara-notes/state-specific/`](https://github.com/chihacknight/govbot/tree/main/tamara-notes/state-specific),
-linked from the last column. Older tracking docs are in
-[`tamara-notes/archived_docs/`](https://github.com/chihacknight/govbot/tree/main/tamara-notes/archived_docs)
-for history only.
+The detail behind each row lives in the maintainer's per-state notes, which are kept privately.
 
 ## Right now (checked 2026-11-24)
 
@@ -25,7 +21,7 @@ for history only.
 ## Columns
 
 - **In session**: ✅ / ⏸️. From
-  [`session-calendar-2026.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/session-dates/session-calendar-2026.md)
+  [`session-calendar-2026.md`](https://github.com/chihacknight/govbot/blob/main/actions/openstates-scrape-audits/session-calendar-2026.md)
   (LegiScan, Aug 20 PDF, checked by hand on 2026-09-29). Re-checked 2026-11-24: USA is in
   its lame-duck session (back since Nov 9); no other special sessions found. Territories GU,
   MP and VI meet all year.
@@ -45,8 +41,8 @@ for history only.
   month as unknown.
 - **Notes**: the short version. The state file has the full story.
 
-For failure-type codes (`S6_VALIDATION`, `P1_SHRINKING_OUTPUT`, …) see
-[`scrape-failure-types.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/archived_docs/scrape-failure-types.md).
+Failure-type codes (`S6_VALIDATION`, `P1_SHRINKING_OUTPUT`, …) are set by the scrape action's
+[`scrape.sh`](https://github.com/chihacknight/govbot/blob/main/actions/scrape/scrape.sh).
 
 ## The list
 
@@ -55,24 +51,24 @@ For failure-type codes (`S6_VALIDATION`, `P1_SHRINKING_OUTPUT`, …) see
 | AK | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | One session ("34") covers the whole 2-year Legislature, so the 2026 special sessions are included. |
 | AL | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | |
 | AR | ⏸️ | ⏸️ | 2026-08-21 | — | ✅ | 2026-11-24 | Current session (2026S1) has only 2 bills; a small count is correct. |
-| AZ | ⏸️ | ⏸️ | 2026-09-29 | — | 🟡 | 2026-11-24 | Final run was clean, but only on our custom image `az-fix-test`. The 09-30 pause sync removed that image, and upstream PR #5742 was closed unmerged, so AZ will break again when unpaused. [`az.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/state-specific/az.md) |
+| AZ | ⏸️ | ⏸️ | 2026-09-29 | — | 🟡 | 2026-11-24 | Final run was clean, but only on our custom image `az-fix-test`. The 09-30 pause sync removed that image, and upstream PR #5742 was closed unmerged, so AZ will break again when unpaused. |
 | CA | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | |
-| CO | ⏸️ | ⏸️ | 2026-08-26 | — | 🟡 | 2026-11-24 | Final run hit a real 429 rate limit. Low priority. [`co.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/state-specific/co.md) |
+| CO | ⏸️ | ⏸️ | 2026-08-26 | — | 🟡 | 2026-11-24 | Final run hit a real 429 rate limit. Low priority. |
 | CT | ⏸️ | ⏸️ | 2026-09-25 | — | ✅ | 2026-11-24 | |
 | DC | ✅ | ✅ | 2026-10-29 | 70 | ❌ | 2026-11-24 | Down since 10-30 (Python 3.9, see top). Clean on 10-29 (1,937 bills). |
 | DE | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | |
-| FL | ⏸️ | ⏸️ | 2026-08-07 | — | ❌ | 2026-11-24 | Final runs were cancelled after waiting 24h for a self-hosted runner. Runs on our custom image `fl-fix-test`; upstream PR #5724 was closed unmerged on 2026-08-08. `flhouse.gov` bot detection loses House committee votes. [`fl.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/state-specific/fl.md) |
+| FL | ⏸️ | ⏸️ | 2026-08-07 | — | ❌ | 2026-11-24 | Final runs were cancelled after waiting 24h for a self-hosted runner. Runs on our custom image `fl-fix-test`; upstream PR #5724 was closed unmerged on 2026-08-08. `flhouse.gov` bot detection loses House committee votes. |
 | GA | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | Data was corrupted by git conflict markers on 2026-07-21 and replaced by a clean run; none at HEAD now (see "Open across states"). |
-| GU | ✅ | ✅ | 2026-10-29 | — | ❌ | 2026-11-24 | Down since 10-30 (see top). Before that: a bill version's empty `note` fails validation (`S6_VALIDATION`), still happening on 10-29. [`gu.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/state-specific/gu.md) |
+| GU | ✅ | ✅ | 2026-10-29 | — | ❌ | 2026-11-24 | Down since 10-30 (see top). Before that: a bill version's empty `note` fails validation (`S6_VALIDATION`), still happening on 10-29. |
 | HI | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | Text extraction (not scraping) is blocked by Cloudflare. |
 | IA | ⏸️ | ⏸️ | 2026-09-24 | — | ✅ | 2026-11-24 | |
 | ID | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | May undercount finished sessions (see "Open across states"). |
-| IL | ⏸️ | ⏸️ | 2026-09-24 | — | ✅ | 2026-11-24 | Needs self-hosted. Executive Orders and Joint Session Resolutions are not collected, by design. [`il.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/state-specific/il.md) |
+| IL | ⏸️ | ⏸️ | 2026-09-24 | — | ✅ | 2026-11-24 | Needs self-hosted. Executive Orders and Joint Session Resolutions are not collected, by design. |
 | IN | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | |
 | KS | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | |
 | KY | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | |
 | LA | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | |
-| MA | ⏸️ | ⏸️ | 2026-08-07 | — | ❌ | 2026-11-24 | Final runs were cancelled after waiting 24h for a self-hosted runner. [`ma.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/state-specific/ma.md) |
+| MA | ⏸️ | ⏸️ | 2026-08-07 | — | ❌ | 2026-11-24 | Final runs were cancelled after waiting 24h for a self-hosted runner. |
 | MD | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | May undercount finished sessions (see "Open across states"). |
 | ME | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | |
 | MI | ✅ | ✅ | 2026-10-29 | 47 | ❌ | 2026-11-24 | Down since 10-30 (see top). Clean on 10-29 (4,242 bills). |
@@ -92,20 +88,20 @@ For failure-type codes (`S6_VALIDATION`, `P1_SHRINKING_OUTPUT`, …) see
 | OH | ✅ | ✅ | 2026-10-29 | 40 | ❌ | 2026-11-24 | Down since 10-30 (see top). Clean on 10-29 (2,614 bills). |
 | OK | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | |
 | OR | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | |
-| PA | ✅ | ✅ | 2026-10-29 | 397 | ❌ | 2026-11-24 | Down since 10-30 (see top). The October block on our proxy had cleared: 10-29 scraped 5,259 bills, but the shrink guard held the commit (5,259 vs 5,264 saved). In session until about 11-30. [`pa.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/state-specific/pa.md) |
+| PA | ✅ | ✅ | 2026-10-29 | 397 | ❌ | 2026-11-24 | Down since 10-30 (see top). The October block on our proxy had cleared: 10-29 scraped 5,259 bills, but the shrink guard held the commit (5,259 vs 5,264 saved). In session until about 11-30. |
 | PR | ⏸️ | ⏸️ | 2026-10-01 | — | ✅ | 2026-11-24 | Regular session ended 06-30. |
 | RI | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | |
 | SC | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | |
 | SD | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | |
 | TN | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | |
-| TX | ⏸️ | ⏸️ | 2026-09-27 | — | ✅ | 2026-11-24 | No regular session in 2026. Blocks GitHub's IPs, yet the config has no `runner: self-hosted`; check before unpausing. See [`tx-backfill-runbook.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/archived_docs/tx-backfill-runbook.md). |
-| USA | ✅ | ✅ | 2026-10-29 | 155 | ❌ | 2026-11-24 | Down since 10-30 (see top). Clean on 10-29 (19,782 bills); Senate vote fix merged upstream (#5847). [`usa.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/state-specific/usa.md) |
-| UT | ⏸️ | ⏸️ | 2026-08-12 | — | ❌ | 2026-11-24 | Final run: `CommandError: no sessions`. Not root-caused. May also undercount finished sessions. [`ut.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/state-specific/ut.md) |
+| TX | ⏸️ | ⏸️ | 2026-09-27 | — | ✅ | 2026-11-24 | No regular session in 2026. Blocks GitHub's IPs, yet the config has no `runner: self-hosted`; check before unpausing. See [`tx-backfill-runbook.md`](https://github.com/chihacknight/govbot/blob/main/actions/scrape/tx-backfill-runbook.md). |
+| USA | ✅ | ✅ | 2026-10-29 | 155 | ❌ | 2026-11-24 | Down since 10-30 (see top). Clean on 10-29 (19,782 bills); Senate vote fix merged upstream (#5847). |
+| UT | ⏸️ | ⏸️ | 2026-08-12 | — | ❌ | 2026-11-24 | Final run: `CommandError: no sessions`. Not root-caused. May also undercount finished sessions. |
 | VA | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | |
-| VI | ✅ | ✅ | 2026-10-29 | — | ❌ | 2026-11-24 | Down since 10-30 (see top). Before that: 0 bills, `billtracking.legvi.org:8082` unreachable (still true on 10-29). [`vi.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/state-specific/vi.md) |
+| VI | ✅ | ✅ | 2026-10-29 | — | ❌ | 2026-11-24 | Down since 10-30 (see top). Before that: 0 bills, `billtracking.legvi.org:8082` unreachable (still true on 10-29). |
 | VT | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | |
 | WA | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | |
-| WI | ⏸️ | ⏸️ | 2026-09-26 | — | ❌ | 2026-11-24 | Final run hit GitHub's 6-hour limit. Probably needs self-hosted and a longer timeout, like FL. [`wi.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/state-specific/wi.md) |
+| WI | ⏸️ | ⏸️ | 2026-09-26 | — | ❌ | 2026-11-24 | Final run hit GitHub's 6-hour limit. Probably needs self-hosted and a longer timeout, like FL. |
 | WV | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | Needs self-hosted. |
 | WY | ⏸️ | ⏸️ | 2026-09-29 | — | ✅ | 2026-11-24 | May undercount finished sessions (see "Open across states"). |
 
@@ -124,7 +120,7 @@ Problems that affect more than one state. "Verified" means checked on the date g
    2026-07-21. A fix (#100) merged on 2026-07-27 and was reverted the same day; the revert
    doesn't say why. A grep of all 56 raw repos and all 56 `govbot-data` repos (local clones from
    2026-11-24) found **no** conflict markers at HEAD, so no data is corrupted today.
-   History: [`critical-merge-conflict-corruption.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/archived_docs/critical-merge-conflict-corruption.md).
+   History: in the maintainer's private notes (`critical-merge-conflict-corruption.md`).
 3. **Raw repos keep duplicate files (verified 2026-11-24 for PA).** Each scrape gives every bill a
    new file name, and cancelled runs never clean up. PA's raw repo has 53,685 files for 5,264
    bills. `actions/format` removes the duplicates, so the published data is fine; it's disk
@@ -169,17 +165,15 @@ change, so it isn't on the same schedule as the list above.
 ## Keeping this page current
 
 - Update a row when you learn something about that state, and set its "Last checked" date.
-  Put the long version in the state's file under `tamara-notes/state-specific/` (start one from
-  the [index](https://github.com/chihacknight/govbot/blob/main/tamara-notes/state-specific/README.md)
-  if it doesn't exist).
+  Put the long version in that state's file in the maintainer's private notes (`states/<st>.md`).
 - A green ✅ on a GitHub run is not proof. A run can say "success" while falling back to old
   data. Check the run's scrape summary for the failure type and bill count.
 - Sources used for the 2026-11-24 check: `gh run list` on every
   `govbot-openstates-scrapers/<state>-legislation` repo, the logs of each active state's last
   successful run, the 2026-10-03
-  [paused-states audit](https://github.com/chihacknight/govbot/blob/main/tamara-notes/archived_docs/paused-states-audit-2026-10.md),
+  paused-states audit (private notes),
   and local clones of all 112 repos on the `govbot-data` drive.
-- Older history: [`hosting-path-history-2026-07.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/archived_docs/hosting-path-history-2026-07.md)
+- Older history, in the private notes: `hosting-path-history-2026-07.md`
   (which runner each broken state used in July), and the retired tracking docs
   `not-working.md`, `working-in-session.md`, `working-out-of-session.md`, `morning-todo.md`,
-  `pending-branches.md` and `upstream-pr-todo.md`, all in `archived_docs/`.
+  `pending-branches.md` and `upstream-pr-todo.md`.
