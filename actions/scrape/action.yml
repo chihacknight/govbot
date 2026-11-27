@@ -33,6 +33,14 @@ inputs:
     description: "Full Docker image reference to use for scraping (e.g., ghcr.io/govbot-openstates-scrapers/openstates-scrapers:tx-89r-backfill). Defaults to openstates/scrapers:latest."
     required: false
     default: "openstates/scrapers:latest"
+  session:
+    description: "OpenStates session id to scrape (e.g. 90R, 2025_26), passed to every scraper as session=<id>. Empty = the sessions OpenStates' code marks active (the old behaviour). A per-session repo always sets it."
+    required: false
+    default: ""
+  scrapers:
+    description: "Space-separated OpenStates scrapers to run (e.g. \"bills votes\"). Empty = bills. CT IA KS MA MD NM OR PR TX keep roll calls in a separate votes scraper."
+    required: false
+    default: ""
 
 outputs:
   scrape-artifact-name:
@@ -100,6 +108,9 @@ runs:
       env:
         DOCKER_IMAGE: ${{ inputs.docker-image }}
         API_KEYS_JSON: ${{ inputs.api-keys }}
+        # Through env, not pasted into the script: the scripts validate both.
+        SCRAPE_SESSION: ${{ inputs.session }}
+        SCRAPE_SCRAPERS: ${{ inputs.scrapers }}
       run: |
         set -euo pipefail
         # Persist image for later steps (manifest)
@@ -111,9 +122,12 @@ runs:
         # Use CA-specific script for California (MySQL-based)
         if [ "${{ inputs.state }}" = "ca" ]; then
           echo "🏛️ Using California-specific MySQL scraper..."
-          bash "${{ github.action_path }}/scrape-ca.sh" "$(pwd)" "${{ github.workspace }}" "${DOCKER_IMAGE_TAG}" || true
+          if [ -n "${SCRAPE_SCRAPERS}" ] && [ "${SCRAPE_SCRAPERS}" != "bills" ]; then
+            echo "::warning::CA runs only its bills scraper; ignoring scrapers='${SCRAPE_SCRAPERS}'"
+          fi
+          bash "${{ github.action_path }}/scrape-ca.sh" "$(pwd)" "${{ github.workspace }}" "${DOCKER_IMAGE_TAG}" "${SCRAPE_SESSION}" || true
         else
-          bash "${{ github.action_path }}/scrape.sh" "${{ inputs.state }}" "${DOCKER_IMAGE}" "$(pwd)" "${{ github.workspace }}" "${API_KEYS_JSON}" "${{ inputs.branch }}" || true
+          bash "${{ github.action_path }}/scrape.sh" "${{ inputs.state }}" "${DOCKER_IMAGE}" "$(pwd)" "${{ github.workspace }}" "${API_KEYS_JSON}" "${{ inputs.branch }}" "${SCRAPE_SESSION}" "${SCRAPE_SCRAPERS}" || true
         fi
 
         # Check if tarball was created
@@ -147,6 +161,9 @@ runs:
     - name: Build archive manifest (immutable)
       if: env.SCRAPE_TARBALL == 'present'
       shell: bash
+      env:
+        SCRAPE_SESSION: ${{ inputs.session }}
+        SCRAPE_SCRAPERS: ${{ inputs.scrapers }}
       run: |
         set -euo pipefail
         set -x
@@ -182,7 +199,9 @@ runs:
           "date_utc": "${SNAP_DATE}",
           "files": ${COUNT},
           "sha256": "${SHA256}",
-          "source_image": "openstates/scrapers:${DOCKER_IMAGE_TAG}"
+          "source_image": "openstates/scrapers:${DOCKER_IMAGE_TAG}",
+          "session": "${SCRAPE_SESSION}",
+          "scrapers": "${SCRAPE_SCRAPERS:-bills}"
         }
         JSON
         echo "🧾 Manifest written: scrape-manifest.json"

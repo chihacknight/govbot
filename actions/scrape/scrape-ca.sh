@@ -2,15 +2,25 @@
 set -euo pipefail
 
 # California-specific scraper using MySQL dumps
-# Usage: scrape-ca.sh <working_dir> <output_dir> <docker_image_tag>
+# Usage: scrape-ca.sh <working_dir> <output_dir> <docker_image_tag> [session]
 #   working_dir: Working directory for MySQL data
 #   output_dir: Output directory for tarball
 #   docker_image_tag: Docker image tag (defaults to 'latest')
+#   session: Optional OpenStates session id (e.g. "20252026"); empty = OpenStates'
+#            active sessions (see scrape.sh). CA has no separate votes scraper.
 
 WORKING_DIR="${1:-$(pwd)}"
 OUTPUT_DIR="${2:-$(pwd)}"
 DOCKER_IMAGE_TAG="${3:-latest}"
+SESSION="${4:-}"
 STATE="ca"
+
+# Lands inside a bash -c string below, so allow only what real session ids use.
+if ! [[ "$SESSION" =~ ^[A-Za-z0-9._-]*$ ]]; then
+  echo "Error: session '${SESSION}' may only contain letters, digits, '.', '_' and '-'" >&2
+  exit 1
+fi
+SESSION_ARG="${SESSION:+ session=${SESSION}}"
 
 cd "$WORKING_DIR"
 mkdir -p _working/_data _working/_cache mysql_data
@@ -69,7 +79,7 @@ if docker run --rm \
   -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
   --entrypoint /bin/bash \
   openstates/scrapers:${DOCKER_IMAGE_TAG} \
-  -c "apt-get update -qq && apt-get install -y -qq pkg-config default-libmysqlclient-dev build-essential && /root/.cache/pypoetry/virtualenvs/*/bin/pip install -q 'sqlalchemy<2.0' pymysql mysqlclient && /root/.cache/pypoetry/virtualenvs/*/bin/os-update ca bills --scrape --fastmode" 2>&1 | tee -a "$SCRAPE_LOG"
+  -c "apt-get update -qq && apt-get install -y -qq pkg-config default-libmysqlclient-dev build-essential && /root/.cache/pypoetry/virtualenvs/*/bin/pip install -q 'sqlalchemy<2.0' pymysql mysqlclient && /root/.cache/pypoetry/virtualenvs/*/bin/os-update ca bills${SESSION_ARG} --scrape --fastmode" 2>&1 | tee -a "$SCRAPE_LOG"
 then
   echo "✅ California scrape completed" | tee -a "$SCRAPE_LOG"
 else
