@@ -1,6 +1,6 @@
 """Day-by-day views of the history, shared by profile.py and replay.py.
 
-- `calendar()`: each state's 2026 session window, from tamara-notes/session-dates/session-calendar-2026.md
+- `calendar()`: each state's 2026 session window, from tamara-notes/session-dates/old-notes/session-calendar-2026.md
   (LegiScan, one regular session per state; special sessions are not in it, so a special session
   counts as out of session).
 - `commit_times()`: every scrape commit time of every raw repo (all 56, not only the scanned
@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Optional
 
 HERE = Path(__file__).resolve().parent
-CALENDAR = HERE.parents[2] / "tamara-notes" / "session-dates" / "session-calendar-2026.md"
+CALENDAR = HERE.parents[2] / "tamara-notes" / "session-dates" / "old-notes" / "session-calendar-2026.md"
 PAUSE = date(2026, 9, 30)  # PR #180: scrapers paused for the migration; no alarms from here on
 # Full-time legislatures (and Congress, and the D.C. Council): in session all year, whatever the
 # calendar's convene/adjourn says. Their two-year sessions run the whole time, so news can come

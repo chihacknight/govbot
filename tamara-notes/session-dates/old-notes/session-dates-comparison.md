@@ -1,3 +1,5 @@
+> **Superseded by `../sessions.csv`** (built by `../build_sessions_csv.py`). Kept for history; scripts that still read this file are listed in `../README.md`.
+
 # Session Dates: LegiScan vs. OpenStates
 
 Side-by-side comparison of 2026 legislative session dates from the two sources we have

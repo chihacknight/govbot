@@ -1,0 +1,28 @@
+code,state,year,session,type,convenes,adjourns,convenes_estimated,adjourns_estimated,source,source_updated,notes
+wi,Wisconsin,2025,2025 regular session,regular,2025-01-06,2025-12-31,,,sources/multistate/2025/2025-12-31.pdf,2025-12-31,
+wi,Wisconsin,2026,2026 regular session,regular,2026-01-13,2026-03-17,,,sources/multistate/2026/2026-11-26.pdf,2026-11-26,
+wi,Wisconsin,2026,2025-2026 Biennium,regular,2026-01-13,2026-03-19,,,sources/legiscan/2026/2026-10-13.pdf,2026-10-13,
+wi,Wisconsin,2026,"Special session, gerrymandering",special,2026-04-14,2026-05-14,,,sources/multistate/2026/2026-11-26.pdf,2026-11-26,
+ak,Alaska,2026,34th Legislature,regular,2026-01-20,2026-05-20,,,sources/legiscan/2026/2026-10-13.pdf,2026-10-13,
+ak,Alaska,2026,3rd Special Session,special,2026-06-20,2026-07-16,,,session-calendar-2026.md,2026-09-29,LNG
+md,Maryland,2026,2026 Regular Session,regular,2026-01-14,2026-04-13,,,sources/legiscan/2026/2026-10-13.pdf,2026-10-13,
+md,Maryland,2026,Special Session August 3rd,special,2026-08-03,,,,sources/legiscan/2026/2026-08-20.pdf,2026-08-20,end date not in the PDF
+nj,New Jersey,2025,2025 regular session,regular,2025-01-14,2025-12-31,,,sources/multistate/2025/2025-12-31.pdf,2025-12-31,
+nj,New Jersey,2025,Recess 7/1/25 - 11/5/25,recess,2025-07-01,2025-11-05,,,sources/multistate/2025/2025-12-31.pdf,2025-12-31,
+nj,New Jersey,2025,Reconvened in lame duck 11/6/25,reconvene,2025-11-06,2025-11-06,,,sources/multistate/2025/2025-12-31.pdf,2025-12-31,one date given
+ma,Massachusetts,2026,2026 regular session,regular,2026-01-07,2026-07-31,,,sources/multistate/2026/2026-11-26.pdf,2026-11-26,
+ma,Massachusetts,2026,In informal session,informal,2026-08-01,2026-12-31,,,sources/multistate/2026/2026-11-26.pdf,2026-11-26,
+tx,Texas,2026,No Regular Session in 2026,none,,,,,sources/legiscan/2026/2026-10-13.pdf,2026-10-13,
+tx,Texas,2026,No regular session,none,,,,,sources/multistate/2026/2026-11-26.pdf,2026-11-26,
+tx,Texas,2027,90th Legislature,regular,2027-01-12,2027-05-31,,yes,sources/legiscan/2027/2026-11-23.pdf,2026-11-23,Prefiling
+nc,North Carolina,2026,2026 Regular Session,regular,2026-01-13,2026-08-31,,,sources/legiscan/2026/2026-10-13.pdf,2026-10-13,
+nc,North Carolina,2026,2026 regular session,regular,2026-01-13,2026-12-18,,,sources/multistate/2026/2026-11-26.pdf,2026-11-26,
+il,Illinois,2026,2026 regular session,regular,2026-01-13,2026-05-31,,,sources/multistate/2026/2026-11-26.pdf,2026-11-26,
+il,Illinois,2026,Veto session 11/17/26 - 12/3/26,veto,2026-11-17,2026-12-03,,,sources/multistate/2026/2026-11-26.pdf,2026-11-26,
+usa,US Congress,2026,"119th Congress, session 2",regular,2026-01-03,,,,congress.gov API (congress/congress-119.json),2026-11-26,open
+ar,Arkansas,2026,2026 regular session,regular,2026-04-08,,,,sources/multistate/2026/2026-11-26.pdf,2026-11-26,end date not shown
+ny,New York,2025,2025-2026 Biennium,regular,2025-01-08,2027-01-02,,yes,sources/legiscan/2025/2025-09-03.pdf,2025-09-03,Interim Recess June 17th
+ny,New York,2026,2025-2026 Biennium,regular,2026-01-07,2026-06-04,,,sources/legiscan/2026/2026-10-13.pdf,2026-10-13,
+sc,South Carolina,2026,2026 regular session,regular,2026-01-13,2026-05-07,,,sources/legiscan/2026/2026-10-13.pdf,2026-10-13,
+sc,South Carolina,2026,Special Session May 15th,special,2026-05-15,,,,sources/legiscan/2026/2026-07-08.pdf,2026-07-08,end date not in the PDF
+sc,South Carolina,2026,"Special session, 5/17/26 - 5/19/26",special,2026-05-17,2026-05-19,,,sources/multistate/2026/2026-11-26.pdf,2026-11-26,

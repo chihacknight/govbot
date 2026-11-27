@@ -25,7 +25,7 @@ for history only.
 ## Columns
 
 - **In session**: ✅ / ⏸️. From
-  [`session-calendar-2026.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/session-dates/session-calendar-2026.md)
+  [`session-calendar-2026.md`](https://github.com/chihacknight/govbot/blob/main/tamara-notes/session-dates/old-notes/session-calendar-2026.md)
   (LegiScan, Aug 20 PDF, checked by hand on 2026-09-29). Re-checked 2026-11-24: USA is in
   its lame-duck session (back since Nov 9); no other special sessions found. Territories GU,
   MP and VI meet all year.

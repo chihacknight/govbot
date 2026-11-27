@@ -61,23 +61,24 @@ EVENTS = [
     # frozen since 2025-12-14 (~2,709 -> 5,950 files), missed when the third-wave events were added.
     Event("wv", "unchanged", "2025-12-14", "2026-07-13", "stuck at ~2,709 files while green (the Dec 2025 freeze; "
           "Azure IP block)", "2026-07-14-recovery-summary.md; error-tracking.md § WV"),
-    # Confirmed by Tamara on 2026-11-26 (review of the overnight work, decision 1): freezes the
-    # held-out replay found and the notes never recorded. Each window runs from the day after
+    # NOT confirmed (relabelled 2026-11-26 for the session-status re-audit): freezes the overnight
+    # held-out replay found and the notes never recorded. The re-audit scores only the other
+    # events and reports these 14 separately, sorted by run history and session status. Each window runs from the day after
     # the last scrape with anything new to the day before the next one; in session there were
     # scrapes, but no new bill, action or vote.
-    Event("wi", "unchanged", "2025-11-27", "2026-05-13", "stuck at 1,624 bills: scraped, nothing new (unrecorded freeze)", "history scanner, confirmed by Tamara 2026-11-26"),
-    Event("wi", "unchanged", "2026-05-15", "2026-07-14", "stuck at ~1,626 bills: scraped, nothing new (unrecorded freeze)", "history scanner, confirmed by Tamara 2026-11-26"),
-    Event("wi", "unchanged", "2026-07-16", "2026-08-19", "stuck at 2,751 bills: scraped, nothing new (unrecorded freeze)", "history scanner, confirmed by Tamara 2026-11-26"),
-    Event("md", "unchanged", "2026-01-14", "2026-07-14", "stuck at 531 bills: scraped, nothing new (unrecorded freeze)", "history scanner, confirmed by Tamara 2026-11-26"),
-    Event("ks", "unchanged", "2025-11-27", "2026-05-08", "stuck at 781 bills: scraped, nothing new (unrecorded freeze)", "history scanner, confirmed by Tamara 2026-11-26"),
-    Event("id", "unchanged", "2026-01-14", "2026-07-14", "stuck at 1 bill: scraped, nothing new (unrecorded freeze)", "history scanner, confirmed by Tamara 2026-11-26"),
-    Event("sd", "unchanged", "2025-12-31", "2026-07-01", "stuck at 41 bills: scraped, nothing new (unrecorded freeze)", "history scanner, confirmed by Tamara 2026-11-26"),
-    Event("ms", "unchanged", "2026-01-08", "2026-02-03", "stuck at 18 bills: scraped, nothing new (unrecorded freeze)", "history scanner, confirmed by Tamara 2026-11-26"),
-    Event("ms", "unchanged", "2026-02-05", "2026-07-14", "stuck at 2,991 bills: scraped, nothing new (unrecorded freeze)", "history scanner, confirmed by Tamara 2026-11-26"),
-    Event("wa", "unchanged", "2025-11-27", "2026-04-21", "stuck at 2,075 bills: scraped, nothing new (unrecorded freeze)", "history scanner, confirmed by Tamara 2026-11-26"),
-    Event("mn", "unchanged", "2025-11-27", "2026-03-11", "stuck at 6,958 bills: scraped, nothing new (unrecorded freeze)", "history scanner, confirmed by Tamara 2026-11-26"),
-    Event("mn", "unchanged", "2026-03-29", "2026-07-14", "stuck at 9,808 bills: scraped, nothing new (unrecorded freeze)", "history scanner, confirmed by Tamara 2026-11-26"),
-    Event("or", "unchanged", "2026-01-31", "2026-07-14", "stuck at 264 bills: scraped, nothing new (unrecorded freeze)", "history scanner, confirmed by Tamara 2026-11-26"),
+    Event("wi", "unchanged", "2025-11-27", "2026-05-13", "stuck at 1,624 bills: scraped, nothing new (unrecorded freeze)", "history scanner, unconfirmed (re-audit)"),
+    Event("wi", "unchanged", "2026-05-15", "2026-07-14", "stuck at ~1,626 bills: scraped, nothing new (unrecorded freeze)", "history scanner, unconfirmed (re-audit)"),
+    Event("wi", "unchanged", "2026-07-16", "2026-08-19", "stuck at 2,751 bills: scraped, nothing new (unrecorded freeze)", "history scanner, unconfirmed (re-audit)"),
+    Event("md", "unchanged", "2026-01-14", "2026-07-14", "stuck at 531 bills: scraped, nothing new (unrecorded freeze)", "history scanner, unconfirmed (re-audit)"),
+    Event("ks", "unchanged", "2025-11-27", "2026-05-08", "stuck at 781 bills: scraped, nothing new (unrecorded freeze)", "history scanner, unconfirmed (re-audit)"),
+    Event("id", "unchanged", "2026-01-14", "2026-07-14", "stuck at 1 bill: scraped, nothing new (unrecorded freeze)", "history scanner, unconfirmed (re-audit)"),
+    Event("sd", "unchanged", "2025-12-31", "2026-07-01", "stuck at 41 bills: scraped, nothing new (unrecorded freeze)", "history scanner, unconfirmed (re-audit)"),
+    Event("ms", "unchanged", "2026-01-08", "2026-02-03", "stuck at 18 bills: scraped, nothing new (unrecorded freeze)", "history scanner, unconfirmed (re-audit)"),
+    Event("ms", "unchanged", "2026-02-05", "2026-07-14", "stuck at 2,991 bills: scraped, nothing new (unrecorded freeze)", "history scanner, unconfirmed (re-audit)"),
+    Event("wa", "unchanged", "2025-11-27", "2026-04-21", "stuck at 2,075 bills: scraped, nothing new (unrecorded freeze)", "history scanner, unconfirmed (re-audit)"),
+    Event("mn", "unchanged", "2025-11-27", "2026-03-11", "stuck at 6,958 bills: scraped, nothing new (unrecorded freeze)", "history scanner, unconfirmed (re-audit)"),
+    Event("mn", "unchanged", "2026-03-29", "2026-07-14", "stuck at 9,808 bills: scraped, nothing new (unrecorded freeze)", "history scanner, unconfirmed (re-audit)"),
+    Event("or", "unchanged", "2026-01-31", "2026-07-14", "stuck at 264 bills: scraped, nothing new (unrecorded freeze)", "history scanner, unconfirmed (re-audit)"),
     Event("ma", "no_new_bills", "2025-11-28", "2026-07-01", "exactly 8,975 bills; no new bills, actions still came",
           "Progress, first wave, finding 2"),
     # Empty: committed scrapes with no readable bill.
@@ -95,7 +96,7 @@ EVENTS = [
     Event("nh", "field_loss", "2025-12-30", "2025-12-30", "sponsorships 1,143 of 1,143", "bill-skip-option-c.md"),
     Event("nh", "field_loss", "2026-01-28", "2026-09-30", "documents 33 of 33, never back", "bill-skip-option-c.md; Progress"),
     Event("ks", "field_loss", "2026-05-09", "2026-09-30", "extras and other_titles on 781 of 781 bills, never back "
-          "(the scrape that ended KS's freeze)", "history scanner, confirmed by Tamara 2026-11-26"),
+          "(the scrape that ended KS's freeze)", "history scanner, unconfirmed (re-audit)"),
     Event("nh", "field_loss", "2026-08-21", "2026-08-21", "versions 1,126 of 1,155", "bill-skip-option-c.md"),
     # Roll calls saved broken.
     Event("tn", "broken_votes", "2026-06-26", "2026-09-30", "6,787 roll calls emptied over 63 nights, 5,839 on 07-02", "tn.md"),

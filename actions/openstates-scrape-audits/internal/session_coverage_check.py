@@ -37,7 +37,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-SESSION_CALENDAR = REPO_ROOT / "tamara-notes" / "session-dates" / "session-calendar-2026.md"
+SESSION_CALENDAR = REPO_ROOT / "tamara-notes" / "session-dates" / "old-notes" / "session-calendar-2026.md"
 AUDIT_OUTPUT = Path(__file__).parent / "audit_states_output.json"
 
 

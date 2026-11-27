@@ -1787,3 +1787,49 @@ labelled "after tuning" and isn't blind.
   values.
 
 **Next:** the PR (below). Then stop for review. TN's doubled-actions fix is still open.
+
+## 2026-11-26: Tamara on session status and pauses (reviewing chat)
+
+What Tamara said, and what it changes. **Read this before the steps in the overnight review.**
+
+**1. Session status becomes its own new process, run before the auditor.**
+- Don't build on `check-sessions.yml` / `close-session.yml` or the session fields in
+  `chn-openstates-scrape.yml`. They were never really turned on. They get retired.
+- The new process decides, per state and per day: in session, out of session, special session,
+  and which session the scrape should be on. The auditor only reads its output.
+- Not designed yet. Don't start it; it gets its own brief.
+- Until then, the replays keep using `session-calendar-2026.md` as is.
+
+**2. A long quiet stretch can be normal.** Out of session, or the scraper turned off on purpose
+(out of session, or causing problems). Tamara did this as a volunteer next to a full-time job and
+didn't watch it closely in 2026, so many of these were never written down.
+
+**3. So: don't record the "unrecorded freezes" as confirmed failures yet.** This replaces that
+step of the overnight review. Before any of them goes into `known_events.py`:
+- **There's no reliable record of pauses.** Tamara turned scrapers off and on by hand most of the
+  year. The paused template in `chn-openstates-scrape.yml` (#47 on 07-01, #75, #180, #185, #214,
+  #216) was built later and barely used, so its git history covers only a few pauses (the 09-30
+  pause of 46 jurisdictions is the big one). Don't treat a gap as "not paused" because the config
+  doesn't show a pause.
+- **Use GitHub's run history instead of guessing.** Each raw repo's Actions runs show whether the
+  scraper ran each day (`gh api repos/govbot-openstates-scrapers/<st>-legislation/actions/runs`).
+  It goes back to 2026-01-07 (checked on TN and WI). A day with no run means the scraper was off;
+  a failed run means it ran and broke; a successful run with nothing new is the real question.
+  Example: WI ran successfully nearly every day all year, apart from 07-02 to 07-20 (off), so its
+  147-day freeze wasn't a pause. It was a recess or a real problem. Before 2026-01-07, ask Tamara.
+- **Look again at "full-time" states.** WI's 147-day freeze is probably its legislature finishing
+  its floor period in the spring. "In session all year" is too broad for WI and maybe others (MI,
+  OH, PA have long recesses). Mark a freeze in a full-time state "maybe a recess" unless bills or
+  actions after it show the scrape missed something.
+- **What still counts as a failure:** a stretch where the legislature's own record (a later scrape
+  or the session calendar) shows activity that the scrape didn't have at the time. ID's 1 bill all
+  session and KS's lost fields stay failures. Every other freeze needs that evidence.
+
+**4. Scoring:** report the held-out result both ways: with these freezes as failures, and without
+them. The headline (16 of 17 known failures caught within 6 days) doesn't change.
+
+**Update, later 2026-11-26:** session status now has its own brief,
+`shared-docs/session-status-brief.md` (data first; LegiScan + MultiState in
+`tamara-notes/session-dates/sessions.csv`; GitHub run history to tell "off" from "ran, nothing
+new"). Its step 5 sorts the quiet stretches. Until it does, the scanner chat doesn't confirm any
+freeze except ID's and KS's.

@@ -1,3 +1,5 @@
+> **Superseded by `../sessions.csv`** (built by `../build_sessions_csv.py`). Kept for history; scripts that still read this file are listed in `../README.md`.
+
 # 2026 Legislative Session Calendar
 
 Source: LegiScan 2026 Legislative Schedule, updated August 20, 2026

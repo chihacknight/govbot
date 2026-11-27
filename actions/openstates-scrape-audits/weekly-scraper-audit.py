@@ -73,7 +73,7 @@ import yaml
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent.parent
 PIPELINE_MANAGER = REPO_ROOT / "actions" / "pipeline-manager"
-SESSION_CALENDAR = REPO_ROOT / "tamara-notes" / "session-dates" / "session-calendar-2026.md"
+SESSION_CALENDAR = REPO_ROOT / "tamara-notes" / "session-dates" / "old-notes" / "session-calendar-2026.md"
 TRACKING_FILE = SCRIPT_DIR / "output" / "audit_tracking.json"
 WEEKLY_BILL_COUNTS_FILE = SCRIPT_DIR / "output" / "weekly_bill_counts.json"
 
