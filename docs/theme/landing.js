@@ -328,28 +328,39 @@
     if (car.scrollLeft + car.clientWidth >= car.scrollWidth - 4) best = slides.length - 1;
     return best;
   }
-  function sync() {
+  // While a swipe is moving: only the cheap labels (counter, chips, arrows). Nothing that changes layout,
+  // because iPhone Safari stops snapping, and leaves the row between two slides, when the snapping row
+  // or its slides change size mid-swipe.
+  function label() {
     cur = nearest();
     for (var i = 0; i < chips.length; i++) chips[i].setAttribute("aria-pressed", i === cur ? "true" : "false");
+    if (countEl) countEl.textContent = (cur + 1) + " / " + slides.length;
+    if (prevBtn) prevBtn.disabled = cur === 0;
+    if (nextBtn) nextBtn.disabled = cur === slides.length - 1;
+  }
+  // Once it has come to rest: the active slide, the row's height, the chip in view, and a safety net
+  // that settles the row onto the nearest slide if it was left in between.
+  function sync() {
+    label();
     // A faded neighbour that only peeks in is inert: no tabbing into a mostly hidden
     // slide, and screen readers read only the one shown. Swiping still works (the
     // touch lands on the carousel itself).
     for (var k = 0; k < slides.length; k++) { slides[k].classList.toggle("is-active", k === cur); slides[k].inert = k !== cur; }
-    if (countEl) countEl.textContent = (cur + 1) + " / " + slides.length;
-    if (prevBtn) prevBtn.disabled = cur === 0;
-    if (nextBtn) nextBtn.disabled = cur === slides.length - 1;
     if (cur !== shown) { shown = cur; fitHeight(); followChip(); }
+    var atEnd = car.scrollLeft + car.clientWidth >= car.scrollWidth - 4;
+    if (!atEnd && Math.abs(car.scrollLeft - slides[cur].offsetLeft) > 2) go(cur);
   }
   function go(i) {
     i = Math.max(0, Math.min(slides.length - 1, i));
     car.scrollTo({ left: slides[i].offsetLeft, behavior: reduceMotion ? "auto" : "smooth" });
   }
   if (car && slides.length) {
-    var ticking = false;
+    var ticking = false, rest = 0;
     car.addEventListener("scroll", function () {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(function () { ticking = false; sync(); });
+      if (!ticking) { ticking = true; requestAnimationFrame(function () { ticking = false; label(); }); }
+      // Settled: 160 ms with no scroll (iPhone Safari has no reliable "scrollend").
+      clearTimeout(rest);
+      rest = setTimeout(sync, 160);
     }, { passive: true });
     for (var c = 0; c < chips.length; c++) {
       chips[c].addEventListener("click", function () { go(+this.getAttribute("data-slide")); });

@@ -213,11 +213,12 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
   background: transparent; color: var(--gb-text-2); font-size: 14.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .gl-chip:hover { border-color: var(--gb-gold); color: var(--gb-text); }
 .gl-chip[aria-pressed="true"] { background: var(--gb-gold); border-color: var(--gb-gold); color: var(--gb-on-primary); }
+/* No CSS smooth-scroll and no animated height on the snapping row: both fight the snap on iPhone Safari (the
+   script passes behavior to scrollTo itself, and changes the height only once a swipe has come to rest). */
 .gl-car { position: relative; display: flex; align-items: flex-start; gap: 20px; overflow-x: auto; overflow-y: hidden;
-  scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; padding-bottom: 4px;
-  transition: height .35s ease; }
+  scroll-snap-type: x mandatory; scrollbar-width: none; padding-bottom: 4px; overscroll-behavior-x: contain; }
 .gl-car::-webkit-scrollbar { display: none; }
-.gl-slide { flex: 0 0 84%; scroll-snap-align: start; box-sizing: border-box; display: grid;
+.gl-slide { flex: 0 0 84%; scroll-snap-align: start; scroll-snap-stop: always; box-sizing: border-box; display: grid;
   grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 28px; padding: 28px; border-radius: 22px;
   background: var(--gb-surface); border: 1px solid var(--gb-border); opacity: .55; transition: opacity .3s ease; }
 .gl-slide.is-active { opacity: 1; }
@@ -591,8 +592,7 @@ body:has(.gb-landing) .page { margin-top: 0 !important; }
   font-size: 11px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; color: var(--gb-text-2); z-index: 2; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
   .gb-landing .stream-bot-img, .stream-bot::before { animation: none; }
-  .gl-car, .gl-chips { scroll-behavior: auto; }
-  .gl-car { transition: none; }
+  .gl-chips { scroll-behavior: auto; }
   .gl-slide { transition: none; }
   .gl-timeline li.is-now::before, .gl-timeline li.is-now::after { animation: none; }
   .gl-bf-live { animation: none; }
