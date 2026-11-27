@@ -15,11 +15,11 @@ python-dateutil = "*"
 orjson = "*"
 rich = "*"
 pdfplumber = "*"
-PyPDF2 = "*"
-PyMuPDF = "*"
+pypdf2 = "*"
+pymupdf = "*"
 beautifulsoup4 = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.9"
+python_version = "3.11"

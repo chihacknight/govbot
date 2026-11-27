@@ -43,7 +43,7 @@ if [ -z "$PIPENV_CMD" ]; then
     
     # Check if Python 3 is available
     if ! command -v python3 &> /dev/null; then
-        echo "❌ Python 3 is not installed. Please install Python 3.9 or later."
+        echo "❌ Python 3 is not installed. Please install Python 3.11 or later."
         exit 1
     fi
     
