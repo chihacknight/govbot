@@ -217,6 +217,7 @@ locales:
       - working
   nv:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/nv-legislation-data  # 2026-11-27, repo reorg batch 3
     toolkit_branch: main
     name: Nevada
     labels:
@@ -243,6 +244,7 @@ locales:
       - working
   ny:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/ny-legislation-data  # 2026-11-27, repo reorg batch 3
     toolkit_branch: main
     name: New York
     labels:
@@ -269,12 +271,14 @@ locales:
       - working
   ok:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/ok-legislation-data  # 2026-11-27, repo reorg batch 3
     toolkit_branch: main
     name: Oklahoma
     labels:
       - working
   or:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/or-legislation-data  # 2026-11-27, repo reorg batch 3
     toolkit_branch: main
     name: Oregon
     labels:
@@ -287,66 +291,77 @@ locales:
       - working
   ri:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/ri-legislation-data  # 2026-11-27, repo reorg batch 3
     toolkit_branch: main
     name: Rhode Island
     labels:
       - working
   sc:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/sc-legislation-data  # 2026-11-27, repo reorg batch 3
     toolkit_branch: main
     name: South Carolina
     labels:
       - working
   sd:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/sd-legislation-data  # 2026-11-27, repo reorg batch 3
     toolkit_branch: main
     name: South Dakota
     labels:
       - working
   tn:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/tn-legislation-data  # 2026-11-27, repo reorg batch 3
     toolkit_branch: main
     name: Tennessee
     labels:
       - working
   tx:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/tx-legislation-data  # 2026-11-27, repo reorg batch 3
     toolkit_branch: main
     name: Texas
     labels:
       - working
   ut:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/ut-legislation-data  # 2026-11-27, repo reorg batch 3
     toolkit_branch: main
     name: Utah
     labels:
       - working
   vt:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/vt-legislation-data  # 2026-11-27, repo reorg batch 3
     toolkit_branch: main
     name: Vermont
     labels:
       - working
   va:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/va-legislation-data  # 2026-11-27, repo reorg batch 3
     toolkit_branch: main
     name: Virginia
     labels:
       - working
   wa:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/wa-legislation-data  # 2026-11-27, repo reorg batch 3
     toolkit_branch: main
     name: Washington
     labels:
       - working
   wv:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/wv-legislation-data  # 2026-11-27, repo reorg batch 3
     toolkit_branch: main
     name: West Virginia
     labels:
       - working
   wi:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/wi-legislation-data  # 2026-11-27, repo reorg batch 3
     toolkit_branch: main
     name: Wisconsin
     labels:
@@ -360,6 +375,7 @@ locales:
       - working
   pr:
     template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/pr-legislation-data  # 2026-11-27, repo reorg batch 3
     toolkit_branch: main
     name: Puerto Rico
     labels:
