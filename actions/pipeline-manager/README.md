@@ -30,6 +30,25 @@ Templates live in `templates/` and use `✏️{ variable }✏️` substitution s
 - **Weekdays**: applies changes only for locales whose template actually changed
 - **Sundays**: applies all 56 repos as a full reconciliation pass
 
+## Moved repos (`moved_to`)
+
+When a locale's repo moves out of the org a config manages (e.g. to `govbot-history` in the
+Nov 2026 repo reorganisation), keep the locale in the config and mark it:
+
+```yaml
+  wy:
+    template: openstates-to-ocd-files-paused
+    moved_to: govbot-history/wy-legislation-data
+```
+
+GitHub keeps redirecting the old address only while no new repo takes the old name. So
+`apply.py` skips a moved locale (no create, no template push through the redirect), the fleet
+monitor emits no record for it, and `close_session.py` / `rebuild_data_repos.py` refuse it.
+Don't delete the locale instead: `govbot clone all` is generated from `chn-openstates-files.yml`.
+
+`apply.py`'s `create_repo` also refuses any name GitHub doesn't confirm is free (a 404): a name
+that redirects is never re-created, marked or not (`moved.py`). Tests: `python3 test_moved.py`.
+
 ## Common commands
 
 ```bash

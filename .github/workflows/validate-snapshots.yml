@@ -104,6 +104,12 @@ jobs:
           ./render-snapshots.sh
           ../../scripts/verify-snapshots.sh __snapshots__
 
+      - name: Test the moved_to marker and the redirect guard
+        run: |
+          pip install pyyaml
+          cd actions/pipeline-manager
+          python3 test_moved.py
+
   fleet-monitor-snapshots:
     runs-on: ubuntu-latest
     needs: detect-changes

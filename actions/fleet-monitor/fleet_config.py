@@ -124,6 +124,12 @@ def _read_one_config(config_path, config, config_dir):
         managed = locale.get("managed", True)
         if managed is False or managed == "false":
             continue
+        # A locale whose repo moved out of this org (pipeline-manager's
+        # moved.py: `moved_to: govbot-history/wy-legislation-data`) is no longer
+        # part of the fleet; its workflows are off on purpose, so polling it
+        # through the old name's redirect would only show it as stale.
+        if locale.get("moved_to"):
+            continue
         template = locale.get("template", "")
         if template not in templates:
             raise ValueError(

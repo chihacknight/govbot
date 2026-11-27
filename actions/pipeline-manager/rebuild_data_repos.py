@@ -88,6 +88,12 @@ def rebuild_locale(
     dry_run: bool,
 ) -> bool:
     config = close_session_mod.load_config(config_path)
+    refusal = apply_mod.moved_mod.refuse_moved_locale(
+        locale, (config.get("locales") or {}).get(locale), config_path.name
+    )
+    if refusal:
+        print(f"❌ {refusal}", file=sys.stderr)
+        return False
     active_org = config["org"]["username"]
     repo_name = close_session_mod.repo_name_for_locale(config, locale)
     active_full = f"{active_org}/{repo_name}"
@@ -123,6 +129,16 @@ def rebuild_locale(
         else:
             print(f"❌ {active_full} does not exist -- skipping", file=sys.stderr)
             return False
+    elif active_info.get("full_name", active_full).lower() != active_full.lower():
+        # `gh api` followed a redirect: the repo moved without a `moved_to`
+        # marker (see moved.py). Never rebuild through a redirect.
+        print(
+            f"❌ {active_full} redirects to {active_info['full_name']} -- it has moved. "
+            f"Add `{apply_mod.moved_mod.MOVED_KEY}: {active_info['full_name']}` to "
+            f"locales.{locale} in {config_path.name}. Skipping.",
+            file=sys.stderr,
+        )
+        return False
     elif active_info.get("archived"):
         print(f"❌ {active_full} is already archived -- skipping", file=sys.stderr)
         return False
@@ -226,9 +242,22 @@ def _finish_rebuild(
             file=sys.stderr,
         )
         return False
-    apply_mod.create_repo(
-        active_org, repo_name, locale, repo_info["generated_path"], dry_run=dry_run
-    )
+    # After the rename + transfer the old name redirects to archive_full;
+    # only that redirect may be replaced (this script's design).
+    if not apply_mod.create_repo(
+        active_org,
+        repo_name,
+        locale,
+        repo_info["generated_path"],
+        dry_run=dry_run,
+        allow_redirect_to=archive_full,
+    ):
+        print(
+            f"❌ Could not re-create {active_full} (archived copy: {archive_full}). "
+            f"This locale has no active repo until one is created by hand.",
+            file=sys.stderr,
+        )
+        return False
 
     print(f"\n✅ {locale} done." if not dry_run else f"\n✅ {locale} dry run complete.")
     print(f"   Archived: {archive_full}")
