@@ -356,6 +356,13 @@ def process_locale(locale, config_str, templates_dir, output_dir, marker_open, m
             if key not in ("managed", "toolkit_branch", "runner", "force_self_hosted", "docker_image", "template", "disabled_jobs"):
                 extra_vars.append(f"{key}={value}")
 
+    # Optional per-locale values a template uses; an unset one would otherwise stay in
+    # the output as a literal marker. Empty = the scrape action's own default
+    # (OpenStates' active sessions; the bills scraper only).
+    for key in ("scrape_session", "scrapers"):
+        if not any(v.startswith(key + "=") for v in extra_vars):
+            extra_vars.append(f"{key}=")
+
     # Find all template files in the specific template directory
     template_dir = os.path.join(templates_dir, template)
     if not os.path.exists(template_dir):

@@ -11,6 +11,10 @@ on:
         type: boolean
         description: "Force self-hosted for this manual run instead of the default tinyproxy + GitHub-hosted path (only meaningful for locales configured runner: self-hosted; e.g. to test without the proxy)"
         default: false
+      session:
+        type: string
+        description: "OpenStates session id for this manual run (e.g. 90R). Empty = this repo's configured session, or OpenStates' active sessions if it has none"
+        default: ""
 
 # See the active (non-paused) template for the full explanation.
 concurrency:
@@ -47,6 +51,11 @@ jobs:
           commit-and-push: true
           force-update: ${{ inputs.force-update }}
           branch: main
+          # locale.scrape_session / locale.scrapers (config; both default empty = the old
+          # behaviour: OpenStates' active sessions, bills only). A manual run can name
+          # another session. CT IA KS MA MD NM OR PR TX need "bills votes" for roll calls.
+          session: ${{ inputs.session || '✏️{ locale.scrape_session }✏️' }}
+          scrapers: "✏️{ locale.scrapers }✏️"
           api-keys: |
             {
               "DC_API_KEY": "${{ secrets.DC_API_KEY }}",

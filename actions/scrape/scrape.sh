@@ -13,6 +13,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #   api_keys_json: Optional JSON object with API keys (defaults to "{}")
 #   branch: Git branch the incremental auto-save should push to (defaults to "main",
 #           should match whatever branch the caller's later "Commit and push" step uses)
+#   session: Optional OpenStates session id (e.g. "90R", "2025_26"). Empty = whatever
+#            OpenStates' code marks "active" (the old behaviour, which silently drops a
+#            session once OpenStates stops marking it active). A per-session repo always
+#            sets this.
+#   scrapers: Optional space-separated scraper names (e.g. "bills votes"). Empty = "bills".
+#             Nine states keep roll calls in a separate `votes` scraper (CT IA KS MA MD NM
+#             OR PR TX); without it their scrapes have no votes.
 
 STATE="${1:-}"
 DOCKER_IMAGE="${2:-openstates/scrapers:latest}"
@@ -20,10 +27,38 @@ WORKING_DIR="${3:-$(pwd)}"
 OUTPUT_DIR="${4:-$(pwd)}"
 API_KEYS_JSON="${5:-{}}"
 BRANCH="${6:-main}"
+SESSION="${7:-}"
+SCRAPERS="${8:-}"
 
 if [ -z "$STATE" ]; then
   echo "Error: State argument is required" >&2
   exit 1
+fi
+
+# Both reach the docker command line, so allow only what real ids and scraper names use.
+if ! [[ "$SESSION" =~ ^[A-Za-z0-9._-]*$ ]]; then
+  echo "Error: session '${SESSION}' may only contain letters, digits, '.', '_' and '-'" >&2
+  exit 1
+fi
+if ! [[ "$SCRAPERS" =~ ^[a-z_\ ]*$ ]]; then
+  echo "Error: scrapers '${SCRAPERS}' must be space-separated lowercase scraper names" >&2
+  exit 1
+fi
+
+# os-update reads "(scraper (key=value)*)+": a key=value belongs to the scraper named
+# just before it (openstates-core cli/update.py, do_update). So with a session, every
+# scraper gets its own session=: "bills session=90R votes session=90R". Note os-update
+# still requires the state to have SOME active session (check_session_list), even when
+# session= names an inactive one.
+SCRAPER_ARGS=()
+for scraper in ${SCRAPERS:-bills}; do
+  SCRAPER_ARGS+=("$scraper")
+  [ -n "$SESSION" ] && SCRAPER_ARGS+=("session=${SESSION}")
+done
+if [ -n "$SESSION" ]; then
+  echo "🗂️ Scraping session ${SESSION}: ${SCRAPER_ARGS[*]}"
+else
+  echo "🗂️ No session given, OpenStates' active sessions: ${SCRAPER_ARGS[*]}"
 fi
 
 cd "$WORKING_DIR"
@@ -154,8 +189,11 @@ if [ "${STATE}" = "nh" ]; then
   FASTMODE_FLAG=""
 fi
 
-if [ "${STATE}" = "va" ]; then
-  # Virginia uses csv_bills scraper for two sessions; run each independently with retries
+if [ "${STATE}" = "va" ] && [ -z "$SESSION" ] && [ -z "$SCRAPERS" ]; then
+  # Legacy va-legislation repo only (no session/scrapers given): csv_bills for two
+  # sessions, each run independently with retries. A per-session VA repo sets
+  # session= and scrapers= and takes the generic path below instead. Delete this
+  # branch once the legacy repo has moved to govbot-history (repo reorg).
   va_regular_exit=1
   for i in 1 2 3; do
     # A cold pull (fresh cache, or right after a new image push) prints one
@@ -217,7 +255,7 @@ else
         -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
         "${DOCKER_ENV_FLAGS[@]+"${DOCKER_ENV_FLAGS[@]}"}" \
         ${DOCKER_IMAGE} \
-        ${STATE} bills --scrape ${FASTMODE_FLAG} 2>&1 | tee -a "$SCRAPE_LOG" | awk -f "$FOLD_LOG"
+        ${STATE} "${SCRAPER_ARGS[@]}" --scrape ${FASTMODE_FLAG} 2>&1 | tee -a "$SCRAPE_LOG" | awk -f "$FOLD_LOG"
     then
       exit_code=0
       break
@@ -377,15 +415,25 @@ fi
 # Parse scrape log and create summary JSON
 SUMMARY_FILE="${OUTPUT_DIR}/scrape-summary.json"
 
-# Extract object counts from "object_type: N" patterns
+# Object counts from os-update's final report. It prints one block per run, headed
+# "<state> (scrape)", with an "objects:" list per scraper ("bills scrape:", "votes
+# scrape:", ...). Sum each type over the scrapers of the LAST block: a retry prints a
+# new block, and with two scrapers both can report vote_events (the bills scraper's
+# and the votes scraper's), so "last matching line" would undercount.
+report_count() {  # <object type>
+  awk -v st="$STATE" -v t="$1" '
+    index($0, st " (") == 1 { n = 0 }
+    $1 == t ":" && $2 ~ /^[0-9]+$/ { n += $2 }
+    END { print n + 0 }' "$SCRAPE_LOG" 2>/dev/null || echo 0
+}
 # Main data objects
-BILL_COUNT=$(grep -E '^\s*bill:\s*[0-9]+' "$SCRAPE_LOG" 2>/dev/null | grep -oE '[0-9]+$' | tail -1 || echo "0")
-VOTE_EVENT_COUNT=$(grep -E '^\s*vote_event:\s*[0-9]+' "$SCRAPE_LOG" 2>/dev/null | grep -oE '[0-9]+$' | tail -1 || echo "0")
-EVENT_COUNT=$(grep -E '^\s*event:\s*[0-9]+' "$SCRAPE_LOG" 2>/dev/null | grep -oE '[0-9]+$' | tail -1 || echo "0")
+BILL_COUNT=$(report_count bill)
+VOTE_EVENT_COUNT=$(report_count vote_event)
+EVENT_COUNT=$(report_count event)
 
 # Metadata objects
-JURISDICTION_COUNT=$(grep -E '^\s*jurisdiction:\s*[0-9]+' "$SCRAPE_LOG" 2>/dev/null | grep -oE '[0-9]+$' | tail -1 || echo "0")
-ORG_COUNT=$(grep -E '^\s*organization:\s*[0-9]+' "$SCRAPE_LOG" 2>/dev/null | grep -oE '[0-9]+$' | tail -1 || echo "0")
+JURISDICTION_COUNT=$(report_count jurisdiction)
+ORG_COUNT=$(report_count organization)
 
 # Extract duration from "duration: H:MM:SS" pattern (bills scrape)
 DURATION=$(grep -A2 'bills scrape:' "$SCRAPE_LOG" 2>/dev/null | grep -oE 'duration:\s*[0-9:.]+' | grep -oE '[0-9:.]+$' | head -1 || echo "unknown")
@@ -481,7 +529,11 @@ fi
 # last):" line is not useful on its own. Collapsed to one line and truncated so
 # it's safe to embed in a GHA ::warning::/::error:: annotation (which breaks on
 # embedded newlines) and doesn't blow up the summary.
-ERROR_SUMMARY=$(echo "$ERRORS" | grep -v '^\s*$' | tail -1 | tr '\n' ' ' | cut -c1-200)
+# `|| true`: with no error lines at all, grep -v selects nothing and exits 1, which
+# under `set -euo pipefail` ended the whole script right here -- so a clean scrape
+# wrote no scrape-summary.json and no warning_history entry (seen on OH's
+# 2026-11-27 run: the log stops at "Created local scrape tarball").
+ERROR_SUMMARY=$(echo "$ERRORS" | { grep -v '^\s*$' || true; } | tail -1 | tr '\n' ' ' | cut -c1-200)
 
 # Count unique error occurrences (rough estimate)
 if [ -n "$TRACEBACKS" ]; then
@@ -556,6 +608,8 @@ fi
 cat > "$SUMMARY_FILE" <<EOF
 {
   "state": "${STATE}",
+  "session": "${SESSION}",
+  "scrapers": "${SCRAPERS:-bills}",
   "exit_code": ${exit_code},
   "failure_type": "${FAILURE_TYPE}",
   "error_summary": $(echo "$ERROR_SUMMARY" | jq -R -s '. | rtrimstr("\n")'),

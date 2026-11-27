@@ -18,6 +18,10 @@ on:
         type: boolean
         description: "Force self-hosted for this manual run instead of the default tinyproxy + GitHub-hosted path (only meaningful for locales configured runner: self-hosted; e.g. to test without the proxy)"
         default: false
+      session:
+        type: string
+        description: "OpenStates session id for this manual run (e.g. 90R). Empty = this repo's configured session, or OpenStates' active sessions if it has none"
+        default: ""
 
 # A scrape can take hours (FL up to 24h). Without this, a new trigger
 # (schedule, manual dispatch, or a delayed cron catching up) cancels an
@@ -93,6 +97,11 @@ jobs:
           # merge) survives a template re-apply instead of reverting silently. A hand-edit
           # here used to do the same job but doesn't survive apply.py's fully_override_dirs.
           docker-image: ✏️{ locale.docker_image }✏️
+          # locale.scrape_session / locale.scrapers (config; both default empty = the old
+          # behaviour: OpenStates' active sessions, bills only). A manual run can name
+          # another session. CT IA KS MA MD NM OR PR TX need "bills votes" for roll calls.
+          session: ${{ inputs.session || '✏️{ locale.scrape_session }✏️' }}
+          scrapers: "✏️{ locale.scrapers }✏️"
           api-keys: |
             {
               "DC_API_KEY": "${{ secrets.DC_API_KEY }}",
