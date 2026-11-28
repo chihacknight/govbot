@@ -83,7 +83,7 @@ latest_nightly_tag() {
   if [[ -n "${GITHUB_TOKEN:-${GH_TOKEN:-}}" ]]; then
     auth=(-H "Authorization: Bearer ${GITHUB_TOKEN:-${GH_TOKEN}}")
   fi
-  code="$(curl -sSL "${auth[@]}" -o /dev/null -w '%{http_code}' "https://api.github.com/repos/${REPO}/releases/tags/nightly" 2>/dev/null || echo 000)"
+  code="$(curl -sSL ${auth[@]+"${auth[@]}"} -o /dev/null -w '%{http_code}' "https://api.github.com/repos/${REPO}/releases/tags/nightly" 2>/dev/null || echo 000)"
   case "${code}" in
     200) ;;
     403|429) log "GitHub API rate-limited this address (HTTP ${code}); trying the download anyway" ;;
