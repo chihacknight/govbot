@@ -22,7 +22,7 @@ Just `git clone` this repo — everything under `country:us/` is the dataset.
 This is the **formatted data repo** for Idaho — one of two repos per jurisdiction:
 
 1. **Scraper repo** (`govbot-openstates-scrapers/id-legislation`) — runs [OpenStates](https://github.com/openstates/openstates-scrapers) scrapers, produces raw scraped JSON
-2. **This repo** (`id-legislation`) — reads the scraper repo's output and:
+2. **This repo** (`govbot-data/id-legislation`) — reads the scraper repo's output and:
    1. 🧼 **Sanitizes** the data by removing ephemeral fields (`_id`, `scraped_at`) for deterministic output
    2. 🧠 **Formats** it into a blockchain-style, versioned structure with incremental processing
    3. 🔗 **Links** events to bills and sessions automatically

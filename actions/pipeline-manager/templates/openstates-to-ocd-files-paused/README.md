@@ -11,4 +11,4 @@ format (and, in turn, extract-text) pass even while paused.
 Unlike the scrape-paused template, there is currently no automated resume for this one —
 `check-sessions.py` only manages `chn-openstates-scrape.yml`, not `chn-openstates-files.yml`.
 Flip this locale back to the `openstates-to-ocd-files` template by hand once the state's next
-session begins, and re-run `apply.py`.
+session begins, and re-run `✏️{ locale.config_tool }✏️`.

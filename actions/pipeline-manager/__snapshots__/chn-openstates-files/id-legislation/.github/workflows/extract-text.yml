@@ -1,7 +1,7 @@
 # Example caller workflow for text extraction
 # Copy this to your state data repo as .github/workflows/extract-text.yml
 
-name: Text Extraction from Bills
+name: Text Extraction from Bills for id
 
 on:
   # Scheduled backup trigger removed -- id is currently out of

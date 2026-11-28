@@ -1,0 +1,781 @@
+# The single source of truth for every jurisdiction's repos (repo reorg, step 5).
+# Read and written by `jurisdictions.py`, which replaces apply.py. Generated once from the
+# old chn-openstates-scrape.yml / -files.yml / -test.yml by migrate_to_jurisdictions.py;
+# edit this file from now on.
+#
+# Per state:
+#   name, scrape_cron (its daily time, UTC), labels ("working" = in `govbot clone all`)
+#   runner: github | proxy (GitHub-hosted through tinyproxy; a manual run can pick
+#           self-hosted) | self-hosted (always the home runner)
+#   scrapers (default bills), scrape_timeout_minutes, docker_image, toolkit_branch
+#   repo_secrets: repo-level secrets a new pair's scraper repo needs set by hand
+#   sessions: one entry per session pair:
+#       id        OpenStates session identifier, exactly as in scrapers/<st>/__init__.py
+#       schedule  optional: a cron, or "manual" (no schedule); default: the state's scrape_cron
+#       anything else = an override of the state's settings, only where the session differs
+#     -> govbot-openstates-scrapers/<st>-<id>-scraper + govbot-data/<st>-<id>
+#        (lower-cased; characters outside [a-z0-9._-] become "-")
+#   old_repos: the one-repo-per-state pair. status: history (moved to govbot-history,
+#              read-only for the tool) or manual (still running, managed by hand).
+#              jurisdictions.py never writes to either.
+orgs:
+  scraper: govbot-openstates-scrapers
+  data: govbot-data
+defaults:
+  toolkit_branch: main
+  runner: github
+  scrape_timeout_minutes: 720
+  docker_image: openstates/scrapers:latest
+  scrapers: bills
+states:
+  ak:
+    name: Alaska
+    scrape_cron: 0 8 * * *
+    runner: proxy
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/ak-legislation-scraper
+      data: govbot-history/ak-legislation-data
+  al:
+    name: Alabama
+    scrape_cron: 0 5 * * *
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/al-legislation-scraper
+      data: govbot-history/al-legislation-data
+  ar:
+    name: Arkansas
+    scrape_cron: 0 5 * * *
+    runner: proxy
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/ar-legislation-scraper
+      data: govbot-history/ar-legislation-data
+  az:
+    name: Arizona
+    scrape_cron: 0 6 * * *
+    runner: proxy
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/az-legislation-scraper
+      data: govbot-history/az-legislation-data
+  ca:
+    name: California
+    scrape_cron: 0 7 * * *
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/ca-legislation-scraper
+      data: govbot-history/ca-legislation-data
+  co:
+    name: Colorado
+    scrape_cron: 0 6 * * *
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/co-legislation-scraper
+      data: govbot-history/co-legislation-data
+  ct:
+    name: Connecticut
+    scrape_cron: 0 4 * * *
+    runner: proxy
+    scrapers: bills votes
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/ct-legislation-scraper
+      data: govbot-history/ct-legislation-data
+  dc:
+    name: District of Columbia
+    scrape_cron: 0 4 * * *
+    repo_secrets:
+    - DC_API_KEY
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: manual
+      scraper: govbot-openstates-scrapers/dc-legislation
+      data: govbot-data/dc-legislation
+  de:
+    name: Delaware
+    scrape_cron: 0 4 * * *
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/de-legislation-scraper
+      data: govbot-history/de-legislation-data
+  fl:
+    name: Florida
+    scrape_cron: 0 4 * * *
+    scrape_timeout_minutes: 2520
+    runner: self-hosted
+    docker_image: ghcr.io/tamara-builds/openstates-scrapers:fl-fix-test
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/fl-legislation-scraper
+      data: govbot-history/fl-legislation-data
+  ga:
+    name: Georgia
+    scrape_cron: 0 4 * * *
+    runner: proxy
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/ga-legislation-scraper
+      data: govbot-history/ga-legislation-data
+  gu:
+    name: Guam
+    scrape_cron: 0 14 * * *
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: manual
+      scraper: govbot-openstates-scrapers/gu-legislation
+      data: govbot-data/gu-legislation
+  hi:
+    name: Hawaii
+    scrape_cron: 0 10 * * *
+    runner: proxy
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/hi-legislation-scraper
+      data: govbot-history/hi-legislation-data
+  ia:
+    name: Iowa
+    scrape_cron: 0 5 * * *
+    scrapers: bills votes
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/ia-legislation-scraper
+      data: govbot-history/ia-legislation-data
+  id:
+    name: Idaho
+    scrape_cron: 0 6 * * *
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/id-legislation-scraper
+      data: govbot-history/id-legislation-data
+  il:
+    name: Illinois
+    scrape_cron: 0 5 * * *
+    runner: proxy
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/il-legislation-scraper
+      data: govbot-history/il-legislation-data
+  in:
+    name: Indiana
+    scrape_cron: 0 4 * * *
+    runner: proxy
+    repo_secrets:
+    - INDIANA_API_KEY
+    - USER_AGENT
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/in-legislation-scraper
+      data: govbot-history/in-legislation-data
+  ks:
+    name: Kansas
+    scrape_cron: 0 5 * * *
+    scrapers: bills votes
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/ks-legislation-scraper
+      data: govbot-history/ks-legislation-data
+  ky:
+    name: Kentucky
+    scrape_cron: 0 4 * * *
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/ky-legislation-scraper
+      data: govbot-history/ky-legislation-data
+  la:
+    name: Louisiana
+    scrape_cron: 0 5 * * *
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/la-legislation-scraper
+      data: govbot-history/la-legislation-data
+  ma:
+    name: Massachusetts
+    scrape_cron: 0 4 * * *
+    scrape_timeout_minutes: 1440
+    runner: self-hosted
+    scrapers: bills votes
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/ma-legislation-scraper
+      data: govbot-history/ma-legislation-data
+  md:
+    name: Maryland
+    scrape_cron: 0 4 * * *
+    scrapers: bills votes
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/md-legislation-scraper
+      data: govbot-history/md-legislation-data
+  me:
+    name: Maine
+    scrape_cron: 0 4 * * *
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/me-legislation-scraper
+      data: govbot-history/me-legislation-data
+  mi:
+    name: Michigan
+    scrape_cron: 0 4 * * *
+    runner: proxy
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: manual
+      scraper: govbot-openstates-scrapers/mi-legislation
+      data: govbot-data/mi-legislation
+  mn:
+    name: Minnesota
+    scrape_cron: 0 5 * * *
+    runner: proxy
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/mn-legislation-scraper
+      data: govbot-history/mn-legislation-data
+  mo:
+    name: Missouri
+    scrape_cron: 0 5 * * *
+    runner: proxy
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/mo-legislation-scraper
+      data: govbot-history/mo-legislation-data
+  mp:
+    name: Northern Mariana Islands
+    scrape_cron: 0 14 * * *
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: manual
+      scraper: govbot-openstates-scrapers/mp-legislation
+      data: govbot-data/mp-legislation
+  ms:
+    name: Mississippi
+    scrape_cron: 0 5 * * *
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/ms-legislation-scraper
+      data: govbot-history/ms-legislation-data
+  mt:
+    name: Montana
+    scrape_cron: 0 6 * * *
+    runner: proxy
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/mt-legislation-scraper
+      data: govbot-history/mt-legislation-data
+  nc:
+    name: North Carolina
+    scrape_cron: 0 4 * * *
+    runner: proxy
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/nc-legislation-scraper
+      data: govbot-history/nc-legislation-data
+  nd:
+    name: North Dakota
+    scrape_cron: 0 5 * * *
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/nd-legislation-scraper
+      data: govbot-history/nd-legislation-data
+  ne:
+    name: Nebraska
+    scrape_cron: 0 5 * * *
+    runner: proxy
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/ne-legislation-scraper
+      data: govbot-history/ne-legislation-data
+  nh:
+    name: New Hampshire
+    scrape_cron: 0 4 * * *
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/nh-legislation-scraper
+      data: govbot-history/nh-legislation-data
+  nj:
+    name: New Jersey
+    scrape_cron: 0 4 * * *
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: manual
+      scraper: govbot-openstates-scrapers/nj-legislation
+      data: govbot-data/nj-legislation
+  nm:
+    name: New Mexico
+    scrape_cron: 0 6 * * *
+    runner: proxy
+    scrapers: bills votes
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/nm-legislation-scraper
+      data: govbot-history/nm-legislation-data
+  nv:
+    name: Nevada
+    scrape_cron: 0 7 * * *
+    runner: proxy
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/nv-legislation-scraper
+      data: govbot-history/nv-legislation-data
+  ny:
+    name: New York
+    scrape_cron: 0 4 * * *
+    runner: proxy
+    repo_secrets:
+    - NEW_YORK_API_KEY
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/ny-legislation-scraper
+      data: govbot-history/ny-legislation-data
+  oh:
+    name: Ohio
+    scrape_cron: 0 4 * * *
+    runner: proxy
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: manual
+      scraper: govbot-openstates-scrapers/oh-legislation
+      data: govbot-data/oh-legislation
+  ok:
+    name: Oklahoma
+    scrape_cron: 0 5 * * *
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/ok-legislation-scraper
+      data: govbot-history/ok-legislation-data
+  or:
+    name: Oregon
+    scrape_cron: 0 7 * * *
+    runner: proxy
+    scrapers: bills votes
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/or-legislation-scraper
+      data: govbot-history/or-legislation-data
+  pa:
+    name: Pennsylvania
+    scrape_cron: 0 4 * * *
+    runner: proxy
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: manual
+      scraper: govbot-openstates-scrapers/pa-legislation
+      data: govbot-data/pa-legislation
+  pr:
+    name: Puerto Rico
+    scrape_cron: 0 4 * * *
+    runner: proxy
+    scrapers: bills votes
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/pr-legislation-scraper
+      data: govbot-history/pr-legislation-data
+  ri:
+    name: Rhode Island
+    scrape_cron: 0 4 * * *
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/ri-legislation-scraper
+      data: govbot-history/ri-legislation-data
+  sc:
+    name: South Carolina
+    scrape_cron: 0 4 * * *
+    runner: proxy
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/sc-legislation-scraper
+      data: govbot-history/sc-legislation-data
+  sd:
+    name: South Dakota
+    scrape_cron: 0 5 * * *
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/sd-legislation-scraper
+      data: govbot-history/sd-legislation-data
+  tn:
+    name: Tennessee
+    scrape_cron: 0 5 * * *
+    runner: proxy
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/tn-legislation-scraper
+      data: govbot-history/tn-legislation-data
+  tx:
+    name: Texas
+    scrape_cron: 0 5 * * *
+    scrapers: bills votes
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions:
+    - id: 90R
+    old_repos:
+      status: history
+      scraper: govbot-history/tx-legislation-scraper
+      data: govbot-history/tx-legislation-data
+  usa:
+    name: United States
+    scrape_cron: 0 4 * * *
+    runner: proxy
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: manual
+      scraper: govbot-openstates-scrapers/usa-legislation
+      data: govbot-data/usa-legislation
+  ut:
+    name: Utah
+    scrape_cron: 0 6 * * *
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/ut-legislation-scraper
+      data: govbot-history/ut-legislation-data
+  va:
+    name: Virginia
+    scrape_cron: 0 4 * * *
+    runner: proxy
+    scrapers: csv_bills
+    repo_secrets:
+    - VIRGINIA_API_KEY
+    labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/va-legislation-scraper
+      data: govbot-history/va-legislation-data
+  vi:
+    name: U.S. Virgin Islands
+    scrape_cron: 0 4 * * *
+    runner: proxy
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: manual
+      scraper: govbot-openstates-scrapers/vi-legislation
+      data: govbot-data/vi-legislation
+  vt:
+    name: Vermont
+    scrape_cron: 0 4 * * *
+    runner: proxy
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/vt-legislation-scraper
+      data: govbot-history/vt-legislation-data
+  wa:
+    name: Washington
+    scrape_cron: 0 7 * * *
+    runner: proxy
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/wa-legislation-scraper
+      data: govbot-history/wa-legislation-data
+  wi:
+    name: Wisconsin
+    scrape_cron: 0 5 * * *
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/wi-legislation-scraper
+      data: govbot-history/wi-legislation-data
+  wv:
+    name: West Virginia
+    scrape_cron: 0 4 * * *
+    runner: proxy
+    repo_secrets:
+    - PROXY_URL
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/wv-legislation-scraper
+      data: govbot-history/wv-legislation-data
+  wy:
+    name: Wyoming
+    scrape_cron: 0 6 * * *
+    labels:
+    - working
+    scraper_labels:
+    - working
+    sessions: []
+    old_repos:
+      status: history
+      scraper: govbot-history/wy-legislation-scraper
+      data: govbot-history/wy-legislation-data
+test_fleet:
+  org: govbot-test
+  template: openstates-to-ocd-files
+  toolkit_branch: feat/session-scoped-repo-lifecycle
+  states:
+  - ak
+  - al
+  - ar
+  - az
+  - ca
+  - co
+  - ct
+  - dc
+  - de
+  - fl
+  - ga
+  - gu
+  - hi
+  - ia
+  - id
+  - il
+  - in
+  - ks
+  - ky
+  - la
+  - ma
+  - md
+  - me
+  - mi
+  - mn
+  - mo
+  - mp
+  - ms
+  - mt
+  - nc
+  - nd
+  - ne
+  - nh
+  - nj
+  - nm
+  - nv
+  - ny
+  - oh
+  - ok
+  - or
+  - pa
+  - pr
+  - ri
+  - sc
+  - sd
+  - tn
+  - tx
+  - usa
+  - ut
+  - va
+  - vi
+  - vt
+  - wa
+  - wi
+  - wv
+  - wy

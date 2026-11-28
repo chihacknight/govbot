@@ -59,3 +59,8 @@ done
 
 echo ""
 echo "✓ Snapshot generation complete. Output in $output_dir"
+
+# Session pairs from jurisdictions.yml (jurisdictions.py), every pair in the file.
+rm -rf "$output_dir/jurisdictions"
+python3 jurisdictions.py render -o "$output_dir/jurisdictions" > /dev/null
+echo "✓ Rendered session pairs into $output_dir/jurisdictions"

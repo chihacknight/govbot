@@ -1,7 +1,7 @@
 # Example caller workflow for text extraction
 # Copy this to your state data repo as .github/workflows/extract-text.yml
 
-name: Text Extraction from Bills
+name: Text Extraction from Bills for ✏️{ locale.label }✏️
 
 on:
   # Scheduled backup trigger removed -- ✏️{ locale.key }✏️ is currently out of
@@ -9,7 +9,7 @@ on:
   # this locale) and workflow_dispatch. See the active (non-paused) template
   # for the full trigger explanation.
   workflow_run:
-    workflows: ["Format Data for ✏️{ locale.key }✏️"]
+    workflows: ["Format Data for ✏️{ locale.label }✏️"]
     types: [completed]
   workflow_dispatch:
 

@@ -1,4 +1,4 @@
-name: Format Data for ✏️{ locale.key }✏️
+name: Format Data for ✏️{ locale.label }✏️
 
 on:
   # Scheduled backup trigger removed -- ✏️{ locale.key }✏️ is currently out of
@@ -22,7 +22,8 @@ concurrency:
 
 env:
   STATE_CODE: ✏️{ locale.key }✏️
-  SCRAPER_REPO: govbot-openstates-scrapers/✏️{ locale.key }✏️-legislation
+  # locale.scraper_repo (render.py default: govbot-openstates-scrapers/<state>-legislation)
+  SCRAPER_REPO: ✏️{ locale.scraper_repo }✏️
 
 jobs:
   format:

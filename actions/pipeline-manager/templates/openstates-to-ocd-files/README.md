@@ -21,8 +21,8 @@ Just `git clone` this repo — everything under `country:us/` is the dataset.
 
 This is the **formatted data repo** for ✏️{ locale.name }✏️ — one of two repos per jurisdiction:
 
-1. **Scraper repo** (`govbot-openstates-scrapers/✏️{ locale.key }✏️-legislation`) — runs [OpenStates](https://github.com/openstates/openstates-scrapers) scrapers, produces raw scraped JSON
-2. **This repo** (`✏️{ locale.key }✏️-legislation`) — reads the scraper repo's output and:
+1. **Scraper repo** (`✏️{ locale.scraper_repo }✏️`) — runs [OpenStates](https://github.com/openstates/openstates-scrapers) scrapers, produces raw scraped JSON
+2. **This repo** (`✏️{ locale.data_org }✏️/✏️{ locale.data_repo }✏️`) — reads the scraper repo's output and:
    1. 🧼 **Sanitizes** the data by removing ephemeral fields (`_id`, `scraped_at`) for deterministic output
    2. 🧠 **Formats** it into a blockchain-style, versioned structure with incremental processing
    3. 🔗 **Links** events to bills and sessions automatically
@@ -50,13 +50,13 @@ This split keeps scraping (which can be blocked/rate-limited per state) independ
 
 This repo is generated and kept up to date by [`actions/pipeline-manager`](https://github.com/chihacknight/govbot/tree/main/actions/pipeline-manager) in the main `chihacknight/govbot` repo — it is not set up by hand.
 
-To change ✏️{ locale.name }✏️'s configuration (branch pinning, runner, enabled jobs, labels), edit its entry in [`chn-openstates-files.yml`](https://github.com/chihacknight/govbot/blob/main/actions/pipeline-manager/chn-openstates-files.yml) and re-run `apply.py` — don't hand-edit the workflow files in this repo directly, since the next `apply.py` run will overwrite them.
+To change ✏️{ locale.name }✏️'s configuration (branch pinning, runner, enabled jobs, labels), edit its entry in [`✏️{ locale.config_file }✏️`](https://github.com/chihacknight/govbot/blob/main/actions/pipeline-manager/✏️{ locale.config_file }✏️) and re-run `✏️{ locale.config_tool }✏️` — don't hand-edit the workflow files in this repo directly, since the next `✏️{ locale.config_tool }✏️` run will overwrite them.
 
 Current settings for ✏️{ locale.name }✏️:
 
 - **State code**: `✏️{ locale.key }✏️`
 - **Toolkit branch**: `✏️{ locale.toolkit_branch }✏️`
-- **Scraper repo**: `govbot-openstates-scrapers/✏️{ locale.key }✏️-legislation`
+- **Scraper repo**: `✏️{ locale.scraper_repo }✏️`
 
 ---
 
@@ -79,7 +79,7 @@ Both can also be run manually via **Actions → [workflow] → Run workflow**.
 ## 📁 Folder Structure
 
 ```
-✏️{ locale.key }✏️-legislation/
+✏️{ locale.data_repo }✏️/
 ├── .github/workflows/
 │   ├── format.yml            # Format scraped data + link events/orphans
 │   └── extract-text.yml      # Text extraction (independent, longer-running)
@@ -252,7 +252,7 @@ Both workflows are fault-tolerant — if a single bill fails, the run continues 
 
 **No new data showing up**:
 
-- Check the scraper repo (`govbot-openstates-scrapers/✏️{ locale.key }✏️-legislation`) actually got fresh data first — this repo only formats what that repo has already scraped
+- Check the scraper repo (`✏️{ locale.scraper_repo }✏️`) actually got fresh data first — this repo only formats what that repo has already scraped
 - Check `.windycivi/last-processed-sha` against the scraper repo's latest commit
 
 **Text extraction fails or times out**:
@@ -271,7 +271,7 @@ Both workflows are fault-tolerant — if a single bill fails, the run continues 
 
 ## 🤝 Contributions & Support
 
-This repo is generated from a template in the [`chihacknight/govbot`](https://github.com/chihacknight/govbot) monorepo (`actions/pipeline-manager/templates/openstates-to-ocd-files/`). If you're fixing a bug in the pipeline itself (not this jurisdiction's data), open an issue or PR there — changes to this repo's workflow files will be overwritten on the next `apply.py` run.
+This repo is generated from a template in the [`chihacknight/govbot`](https://github.com/chihacknight/govbot) monorepo (`actions/pipeline-manager/templates/openstates-to-ocd-files/`). If you're fixing a bug in the pipeline itself (not this jurisdiction's data), open an issue or PR there — changes to this repo's workflow files will be overwritten on the next `✏️{ locale.config_tool }✏️` run.
 
 For discussions, join the Chi Hack Night community on Slack or GitHub Discussions.
 

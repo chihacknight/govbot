@@ -362,6 +362,17 @@ def process_locale(locale, config_str, templates_dir, output_dir, marker_open, m
     for key in ("scrape_session", "scrapers"):
         if not any(v.startswith(key + "=") for v in extra_vars):
             extra_vars.append(f"{key}=")
+    # Which repo a scraper dispatches to, and which a data repo reads. Defaults are the
+    # one-repo-per-state names; sessions.py sets them for per-session pairs.
+    for key, default in (("data_org", "govbot-data"),
+                         ("data_repo", f"{locale}-legislation"),
+                         ("scraper_repo", f"govbot-openstates-scrapers/{locale}-legislation"),
+                         # Workflow names; jurisdictions.py sets "<state> <session>".
+                         ("label", locale),
+                         ("config_file", "chn-openstates-files.yml"),
+                         ("config_tool", "apply.py")):
+        if not any(v.startswith(key + "=") for v in extra_vars):
+            extra_vars.append(f"{key}={default}")
 
     # Find all template files in the specific template directory
     template_dir = os.path.join(templates_dir, template)

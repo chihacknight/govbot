@@ -51,6 +51,10 @@ on:
 
 jobs:
   close-session:
+    # Retired 2026-11 (repo reorg, step 5): jurisdictions.yml and jurisdictions.py replace
+    # the old configs, apply.py and close_session.py. Nothing may write to those configs or
+    # to the old repos any more, so this job never runs. Deleted with them in PR B.
+    if: ${{ false }}
     name: "🔒 Close Session — ${{ inputs.locale }}"
     runs-on: ubuntu-latest
 
