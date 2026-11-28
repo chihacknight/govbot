@@ -1,7 +1,7 @@
 # Example caller workflow for text extraction
 # Copy this to your state data repo as .github/workflows/extract-text.yml
 
-name: Text Extraction from Bills
+name: Text Extraction from Bills for ✏️{ locale.label }✏️
 
 on:
   # Backup only -- the real trigger is workflow_run below, firing right after
@@ -10,7 +10,7 @@ on:
   schedule:
     - cron: "0 8 * * *" # Daily at 8 AM UTC (~3 AM ET, ~12 AM PT)
   workflow_run:
-    workflows: ["Format Data for ✏️{ locale.key }✏️"]
+    workflows: ["Format Data for ✏️{ locale.label }✏️"]
     types: [completed]
   workflow_dispatch:
 

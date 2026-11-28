@@ -101,6 +101,7 @@ jobs:
 
       - name: Run test runner
         run: |
+          pip install pyyaml
           cd actions/pipeline-manager
           ../../scripts/before-snapshots.sh __snapshots__
           ./render-snapshots.sh
@@ -111,6 +112,8 @@ jobs:
           pip install pyyaml
           cd actions/pipeline-manager
           python3 test_moved.py
+          python3 test_jurisdictions.py
+          python3 migrate_to_jurisdictions.py --check
 
   fleet-monitor-snapshots:
     runs-on: ubuntu-latest

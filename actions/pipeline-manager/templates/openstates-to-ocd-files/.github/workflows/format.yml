@@ -1,4 +1,4 @@
-name: Format Data for ✏️{ locale.key }✏️
+name: Format Data for ✏️{ locale.label }✏️
 
 on:
   # Backup only -- the real trigger is repository_dispatch from scrape
@@ -24,7 +24,8 @@ concurrency:
 
 env:
   STATE_CODE: ✏️{ locale.key }✏️
-  SCRAPER_REPO: govbot-openstates-scrapers/✏️{ locale.key }✏️-legislation
+  # locale.scraper_repo (render.py default: govbot-openstates-scrapers/<state>-legislation)
+  SCRAPER_REPO: ✏️{ locale.scraper_repo }✏️
 
 jobs:
   format:

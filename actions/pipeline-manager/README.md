@@ -2,6 +2,26 @@
 
 Manages all 57 scraper repos and 57 format repos via a declarative config + template system.
 
+## jurisdictions.yml and jurisdictions.py (since 2026-11)
+
+**`jurisdictions.yml` is the single source of truth** for every jurisdiction: its settings, its
+session pairs (`sessions:`) and its old one-repo-per-state repos (`old_repos:`). Each session is a
+pair `govbot-openstates-scrapers/<st>-<id>-scraper` + `govbot-data/<st>-<id>`.
+
+```bash
+python3 jurisdictions.py plan --session tx-90r    # dry run: names, workflows, secrets; reads GitHub only
+python3 jurisdictions.py render                   # render every pair (offline)
+python3 jurisdictions.py apply --session tx-90r   # create or update that pair
+```
+
+It replaces `apply.py`. It never deletes a repo, never writes to `old_repos` (history or manual),
+creates repos public, and only after `moved.py`'s `refuse_to_create` confirms a 404. Tests:
+`python3 test_jurisdictions.py` (`--report` prints the field-by-field check against the old configs).
+
+The old configs below are kept only for readers that still use them (the CLI's state list, the
+fleet monitor); nothing writes to them, and `apply-templates.yml`, `close-session.yml` and
+`check-sessions.yml` no longer run. They go away once every reader uses `jurisdictions.yml`.
+
 ## Config files
 
 - `chn-openstates-scrape.yml` — scraper repos (`govbot-openstates-scrapers/{state}-legislation`)

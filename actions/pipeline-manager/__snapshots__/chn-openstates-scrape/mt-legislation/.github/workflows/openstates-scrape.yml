@@ -76,15 +76,17 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          # locale.data_org / locale.data_repo: the data repo this scraper feeds
+          # (render.py default: govbot-data/<state>-legislation).
           owner: govbot-data
-          repositories: ${{ env.STATE_CODE }}-legislation
+          repositories: mt-legislation
 
-      - name: Trigger format workflow in govbot-data
+      - name: Trigger format workflow in govbot-data/mt-legislation
         if: always()
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          echo "🚀 Triggering format workflow for ${{ env.STATE_CODE }} in govbot-data..."
-          gh api "repos/govbot-data/${{ env.STATE_CODE }}-legislation/dispatches" \
+          echo "🚀 Triggering format workflow in govbot-data/mt-legislation..."
+          gh api "repos/govbot-data/mt-legislation/dispatches" \
             -f event_type='scrape-complete' \
             -F "client_payload[state]=${{ env.STATE_CODE }}"

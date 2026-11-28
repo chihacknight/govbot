@@ -1,4 +1,4 @@
-name: OpenStates Scrape for ✏️{ locale.key }✏️
+name: OpenStates Scrape for ✏️{ locale.label }✏️
 
 on:
   workflow_dispatch:
@@ -76,15 +76,17 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: govbot-data
-          repositories: ${{ env.STATE_CODE }}-legislation
+          # locale.data_org / locale.data_repo: the data repo this scraper feeds
+          # (render.py default: govbot-data/<state>-legislation).
+          owner: ✏️{ locale.data_org }✏️
+          repositories: ✏️{ locale.data_repo }✏️
 
-      - name: Trigger format workflow in govbot-data
+      - name: Trigger format workflow in ✏️{ locale.data_org }✏️/✏️{ locale.data_repo }✏️
         if: always()
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          echo "🚀 Triggering format workflow for ${{ env.STATE_CODE }} in govbot-data..."
-          gh api "repos/govbot-data/${{ env.STATE_CODE }}-legislation/dispatches" \
+          echo "🚀 Triggering format workflow in ✏️{ locale.data_org }✏️/✏️{ locale.data_repo }✏️..."
+          gh api "repos/✏️{ locale.data_org }✏️/✏️{ locale.data_repo }✏️/dispatches" \
             -f event_type='scrape-complete' \
             -F "client_payload[state]=${{ env.STATE_CODE }}"

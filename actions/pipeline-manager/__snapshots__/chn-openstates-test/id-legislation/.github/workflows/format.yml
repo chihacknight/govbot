@@ -24,6 +24,7 @@ concurrency:
 
 env:
   STATE_CODE: id
+  # locale.scraper_repo (render.py default: govbot-openstates-scrapers/<state>-legislation)
   SCRAPER_REPO: govbot-openstates-scrapers/id-legislation
 
 jobs:
