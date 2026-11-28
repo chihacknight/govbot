@@ -74,12 +74,15 @@ impl PipelineProcessor {
         let search_paths = if config.repos.is_empty() {
             vec![search_dir.clone()]
         } else {
+            // Every repo folder of each locale (old repo + session pairs)
             config
                 .repos
                 .iter()
-                .map(|repo| search_dir.join(git::build_repo_name(repo)))
+                .flat_map(|repo| git::repo_folders(repo))
+                .map(|folder| search_dir.join(folder))
                 .collect()
         };
+        let shadowed = git::shadowed_session_dirs(search_dir);
 
         for search_path in search_paths {
             if !search_path.exists() {
@@ -98,6 +101,9 @@ impl PipelineProcessor {
                     continue;
                 }
                 let path = entry.path();
+                if git::is_shadowed(&path, &shadowed) {
+                    continue;
+                }
                 let Some(records) = logs_jsonl::read_log_records(&path) else {
                     continue;
                 };

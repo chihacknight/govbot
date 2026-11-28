@@ -162,6 +162,60 @@ class Tool(unittest.TestCase):
         finally:
             tool.push_files = saved
 
+    def test_seed_copies_one_session_with_provenance_and_never_twice(self):
+        import subprocess
+        def git(*a, cwd=None):
+            subprocess.run(["git", *a], cwd=cwd, check=True, capture_output=True, text=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            # the old (history) data repo: two sessions, one bill each, with a log
+            work = base / "work-src"
+            for sid in ("104th", "103rd"):
+                bill = work / f"country:us/state:il/sessions/{sid}/bills/HB1"
+                bill.mkdir(parents=True)
+                (bill / "metadata.json").write_text('{"identifier": "HB1"}')
+                (bill / "action_logs.jsonl").write_text('{"id": "a1", "first_seen": "2025-01-09"}\n')
+            git("init", "-q", "-b", "main", cwd=work); git("add", "-A", cwd=work)
+            git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "history", cwd=work)
+            for name, src in (("govbot-history/il-legislation-data", work), ("govbot-data/il-104th", None)):
+                bare = base / f"{name}.git"; bare.parent.mkdir(parents=True, exist_ok=True)
+                if src:
+                    git("clone", "-q", "--bare", str(src), str(bare))
+                else:
+                    git("init", "-q", "--bare", "-b", "main", str(bare))
+                    seed_work = base / "work-dst"; seed_work.mkdir()
+                    (seed_work / "README.md").write_text("pair")
+                    git("init", "-q", "-b", "main", cwd=seed_work); git("add", "-A", cwd=seed_work)
+                    git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "init", cwd=seed_work)
+                    git("push", "-q", str(bare), "main", cwd=seed_work)
+                git("config", "uploadpack.allowFilter", "true", cwd=bare)
+            pair = {"data_full": "govbot-data/il-104th", "seed_from": "govbot-history/il-legislation-data",
+                    "state": "il", "session": "104th", "key": "il-104th"}
+            saved = tool.GITHUB
+            tool.GITHUB = "file://" + str(base)
+            try:
+                self.assertTrue(tool.seed_data_repo(pair, {"govbot-history/il-legislation-data"}, now="2026-11-28"))
+                self.assertFalse(tool.seed_data_repo(pair, set(), now="2026-11-28"), "never seeds twice")
+                with self.assertRaises(SystemExit):  # never into an old repo
+                    tool.seed_data_repo({**pair, "data_full": "govbot-history/il-legislation-data"},
+                                        {"govbot-history/il-legislation-data"})
+            finally:
+                tool.GITHUB = saved
+            out = base / "check"
+            git("clone", "-q", str(base / "govbot-data/il-104th.git"), str(out))
+            self.assertTrue((out / "country:us/state:il/sessions/104th/bills/HB1/action_logs.jsonl").is_file())
+            self.assertFalse((out / "country:us/state:il/sessions/103rd").exists(), "only the one session")
+            seed_md = (out / "SEED.md").read_text()
+            self.assertIn("govbot-history/il-legislation-data", seed_md)
+            self.assertIn("1 bills", seed_md)
+
+    def test_seed_flag_is_read_from_the_file(self):
+        pairs, _ = tool.load_pairs(NEW)
+        seeded = sorted(p["key"] for p in pairs if p["seed_from"])
+        # NC 2025E1 isn't in the old NC repo (it never held that session): starts empty
+        self.assertEqual(seeded, ["il-104th", "ma-194th", "nc-2025"])
+        self.assertTrue(all(p["seed_from"].startswith("govbot-history/") for p in pairs if p["seed_from"]))
+
     def test_apply_needs_named_sessions(self):
         with self.assertRaises(SystemExit):
             tool.main(["apply"])

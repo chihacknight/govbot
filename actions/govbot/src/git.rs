@@ -138,6 +138,43 @@ pub fn repo_folders(locale: &str) -> Vec<String> {
     repo_targets(locale).into_iter().map(|t| t.folder).collect()
 }
 
+/// Session folders whose data a session pair also holds, so readers must skip them.
+///
+/// A locale's old one-repo-per-state folder (`<locale>-legislation`) keeps every session it
+/// ever scraped. When a session gets its own pair (seeded from that history, then kept
+/// current), the pair's folder holds the same session: it is the live copy, and the old
+/// folder's `country:us/state:<x>/sessions/<id>` is shadowed. Only cloned folders count.
+pub fn shadowed_session_dirs(repos_dir: &Path) -> std::collections::HashSet<std::path::PathBuf> {
+    let mut shadowed = std::collections::HashSet::new();
+    for locale in crate::locale_generated::WorkingLocale::all() {
+        let folders = repo_folders(locale.as_lowercase());
+        let Some((old, pairs)) = folders.split_first() else { continue };
+        for pair in pairs {
+            let Ok(states) = std::fs::read_dir(repos_dir.join(pair).join("country:us")) else { continue };
+            for state in states.flatten() {
+                let Ok(sessions) = std::fs::read_dir(state.path().join("sessions")) else { continue };
+                for session in sessions.flatten() {
+                    let old_dir = repos_dir
+                        .join(old)
+                        .join("country:us")
+                        .join(state.file_name())
+                        .join("sessions")
+                        .join(session.file_name());
+                    if old_dir.is_dir() {
+                        shadowed.insert(old_dir);
+                    }
+                }
+            }
+        }
+    }
+    shadowed
+}
+
+/// True when `path` lies inside one of the shadowed session folders.
+pub fn is_shadowed(path: &Path, shadowed: &std::collections::HashSet<std::path::PathBuf>) -> bool {
+    !shadowed.is_empty() && path.ancestors().any(|a| shadowed.contains(a))
+}
+
 /// Get the default repos directory: $CWD/govbot_data/repos
 pub fn default_repos_dir() -> Result<PathBuf> {
     let cwd = std::env::current_dir()

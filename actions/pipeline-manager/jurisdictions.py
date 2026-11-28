@@ -24,6 +24,7 @@ What it will and won't do:
 
 import argparse
 import contextlib
+import datetime
 import importlib.util
 import io
 import os
@@ -38,6 +39,7 @@ import yaml
 
 HERE = Path(__file__).resolve().parent
 CONFIG = HERE / "jurisdictions.yml"
+GITHUB = "https://github.com"  # clone base; the tests point it at local repos
 MARKER_OPEN, MARKER_CLOSE = "✏️{", "}✏️"
 SESSION_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 SCRAPERS = re.compile(r"^[a-z_]+( [a-z_]+)*$")
@@ -85,7 +87,7 @@ def load_pairs(config):
             where = f"{st} {sid}"
             if not SESSION_ID.match(sid):
                 raise ConfigError(f"❌ {where}: session id has characters a repo name can't hold")
-            unknown = set(sess) - OVERRIDABLE - {"id", "schedule"}
+            unknown = set(sess) - OVERRIDABLE - {"id", "schedule", "seed"}
             if unknown:
                 raise ConfigError(f"❌ {where}: unknown session fields {sorted(unknown)}")
             s = {**defaults, **{k: v for k, v in entry.items() if k in OVERRIDABLE},
@@ -109,6 +111,9 @@ def load_pairs(config):
                 "key": key, "state": st, "session": sid, "name": entry["name"],
                 "schedule": schedule, "settings": s,
                 "repo_secrets": entry.get("repo_secrets") or [],
+                # seed: true = start the data repo from this session's folder in the state's
+                # old data repo (history), so its bills and logs (first_seen) carry on.
+                "seed_from": entry["old_repos"]["data"] if sess.get("seed") else None,
                 "scraper_full": scraper_full, "data_full": data_full, "data_org": orgs["data"],
             })
     return pairs, old
@@ -214,6 +219,50 @@ def push_files(full, folder, message):
         print(f"  ✅ pushed {full}")
 
 
+def seed_data_repo(pair, old, now=None):
+    """Copy the session's folder from the state's old data repo into the pair's data repo.
+
+    Writes only to the pair's data repo (refused if it is an old repo), only while that
+    session folder isn't there yet, and adds SEED.md with the source repo and commit. The
+    old repo is only read (a sparse, blob-filtered clone of that one folder).
+    """
+    target, source = pair["data_full"], pair["seed_from"]
+    check_target(target, old)
+    rel = f"country:us/state:{pair['state']}/sessions/{pair['session']}"
+    with tempfile.TemporaryDirectory() as tmp:
+        src, dst = Path(tmp) / "src", Path(tmp) / "dst"
+        run(["git", "clone", "--quiet", "--depth", "1", "--filter=blob:none", "--no-checkout",
+             f"{GITHUB}/{source}.git", str(src)])
+        run(["git", "sparse-checkout", "set", "--no-cone", f"/{rel}/"], cwd=src)
+        run(["git", "checkout", "--quiet"], cwd=src)
+        sha = run(["git", "rev-parse", "HEAD"], cwd=src).strip()
+        if not (src / rel).is_dir():
+            raise SystemExit(f"❌ {source} has no {rel} to seed from")
+        run(["git", "clone", "--quiet", "--depth", "1", f"{GITHUB}/{target}.git", str(dst)])
+        if (dst / rel).exists():
+            print(f"  ℹ️  {target} already has {rel}: not seeding again")
+            return False
+        shutil.copytree(src / rel, dst / rel)
+        bills = sum(1 for _ in (dst / rel / "bills").glob("*/metadata.json"))
+        files = sum(1 for f in (dst / rel).rglob("*") if f.is_file())
+        when = now or datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+        (dst / "SEED.md").write_text(
+            f"# Seeded from history\n\n"
+            f"`{rel}/` ({bills} bills, {files} files) was copied unchanged on {when} from\n"
+            f"[`{source}`](https://github.com/{source}) at commit\n"
+            f"[`{sha}`](https://github.com/{source}/tree/{sha}), so this session's bills and\n"
+            f"their action and vote logs (with their `first_seen` dates) carry on here. Everything\n"
+            f"after that commit comes from this pair's own scraper. The full earlier git history\n"
+            f"stays in `{source}`.\n")
+        run(["git", "add", "-A"], cwd=dst)
+        run(["git", "-c", "user.name=github-actions[bot]",
+             "-c", "user.email=github-actions[bot]@users.noreply.github.com",
+             "commit", "-q", "-m", f"Seed {rel} from {source}@{sha[:8]}"], cwd=dst)
+        run(["git", "-c", "http.postBuffer=524288000", "push", "-q", "origin", "HEAD:main"], cwd=dst)
+        print(f"  ✅ seeded {target}: {bills} bills from {source}@{sha[:8]}")
+        return True
+
+
 WANTED = re.compile(
     r"^\s*(name: (OpenStates Scrape|Format Data|Text Extraction)|- cron:|STATE_CODE:|SCRAPER_REPO:|"
     r"session: \$|scrapers:|owner:|repositories:|gh api \"repos/.*dispatches|workflows: \[|"
@@ -229,7 +278,7 @@ def describe(folder):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("command", choices=["plan", "render", "apply"])
+    ap.add_argument("command", choices=["plan", "render", "apply", "seed"])
     ap.add_argument("-c", "--config", default=str(CONFIG))
     ap.add_argument("-o", "--out", default=str(HERE / "generated" / "jurisdictions"))
     ap.add_argument("--session", action="append", default=[], help="pair key, e.g. tx-90r")
@@ -242,8 +291,8 @@ def main(argv=None):
         if unknown:
             raise SystemExit(f"❌ no such session pair: {sorted(unknown)}")
         pairs = [p for p in pairs if p["key"] in args.session]
-    elif args.command == "apply":
-        raise SystemExit("❌ apply needs --session for each pair to create or update")
+    elif args.command in ("apply", "seed"):
+        raise SystemExit(f"❌ {args.command} needs --session for each pair")
 
     for pair in pairs:
         rendered = render_pair(pair, args.out)
@@ -251,6 +300,11 @@ def main(argv=None):
         if args.command == "render":
             for full, folder in rendered.items():
                 print(f"  {full}: {folder}")
+            continue
+        if args.command == "seed":
+            if not pair["seed_from"]:
+                raise SystemExit(f"❌ {pair['key']} has no `seed: true` in jurisdictions.yml")
+            seed_data_repo(pair, old)
             continue
         for full, folder in rendered.items():
             status, detail = moved_mod.repo_status(full)
@@ -270,9 +324,14 @@ def main(argv=None):
             else:
                 desc = f"🏛️ {pair['name']}, session {pair['session']}"
                 if status == "missing":
-                    create_repo(full, folder, old, desc)
+                    created = create_repo(full, folder, old, desc)
+                    # Seed only a data repo this run just created: never re-seed a live one.
+                    if created and full == pair["data_full"] and pair["seed_from"]:
+                        seed_data_repo(pair, old)
                 else:
                     update_repo(full, folder, old)
+        if args.command == "plan" and pair["seed_from"]:
+            print(f"\n  on creation: seed {pair['data_full']} with sessions/{pair['session']} from {pair['seed_from']}")
         if args.command == "plan" and pair["repo_secrets"]:
             print(f"\n  set by hand on {pair['scraper_full']}: {', '.join(pair['repo_secrets'])}")
 

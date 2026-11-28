@@ -57,6 +57,7 @@
               "properties": {
                 "id": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$", "description": "OpenStates session identifier, exactly as in scrapers/<st>/__init__.py."},
                 "schedule": {"anyOf": [{"$ref": "#/$defs/cron"}, {"const": "manual"}]},
+                "seed": {"type": "boolean", "description": "On creation, copy this session's folder (bills + logs) from the state's old data repo into the new one, with a provenance note (SEED.md)."},
                 "scrapers": {"$ref": "#/$defs/scrapers"},
                 "runner": {"$ref": "#/$defs/runner"},
                 "extract_runner": {"$ref": "#/$defs/runner"},

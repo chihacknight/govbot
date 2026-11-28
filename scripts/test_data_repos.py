@@ -8,8 +8,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import data_repos as d  # noqa: E402
 
 repos = d.repo_map()
-# A moved state: its old repo is in govbot-history, by its real name.
-assert d.repo_for("il", "104th") == "govbot-history/il-legislation-data", d.repo_for("il", "104th")
+# A moved state: its old repo is in govbot-history, by its real name...
+assert d.repo_for("il", "103rd") == "govbot-history/il-legislation-data", d.repo_for("il", "103rd")
+# ...except a session with its own (seeded) pair, read there.
+assert d.repo_for("il", "104th") == "govbot-data/il-104th"
 # A running state keeps today's repo.
 assert d.repo_for("oh", "136") == "govbot-data/oh-legislation"
 # A session with its own pair; every other session of the state stays in the old repo.

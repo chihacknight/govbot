@@ -13,9 +13,13 @@ use std::sync::Mutex;
 static ENV: Mutex<()> = Mutex::new(());
 
 fn bill(repos: &Path, folder: &str, session: &str, id: &str) {
+    bill_in(repos, folder, "tx", session, id)
+}
+
+fn bill_in(repos: &Path, folder: &str, state: &str, session: &str, id: &str) {
     let dir = repos
         .join(folder)
-        .join("country:us/state:tx/sessions")
+        .join(format!("country:us/state:{}/sessions", state))
         .join(session)
         .join("bills")
         .join(id);
@@ -101,4 +105,36 @@ fn a_custom_url_template_keeps_one_repo_per_locale() {
     assert_eq!(targets.len(), 1);
     assert_eq!(targets[0].url, "https://example.org/acme/tx-data.git");
     assert_eq!(targets[0].folder, "tx-data");
+}
+
+#[test]
+fn a_seeded_session_is_read_from_its_pair_only() {
+    let _env = ENV.lock().unwrap_or_else(|e| e.into_inner());
+    let tmp = tempfile::tempdir().unwrap();
+    // The history repo holds 103rd and 104th; the il-104th pair was seeded with 104th.
+    bill_in(tmp.path(), "il-legislation", "il", "103rd", "HB1");
+    bill_in(tmp.path(), "il-legislation", "il", "104th", "HB2");
+    bill_in(tmp.path(), "il-104th", "il", "104th", "HB2");
+    let il = Jurisdiction::new("il");
+
+    assert_eq!(scan::sessions(tmp.path(), &il), vec!["103rd".to_string(), "104th".to_string()]);
+    let mut seen = Vec::new();
+    scan::for_each_bill(tmp.path(), &il, None, |b| {
+        seen.push((b.session_id.clone(), b.identifier.clone(), b.citation.repo.clone()));
+        Ok(ControlFlow::Continue)
+    })
+    .unwrap();
+    assert_eq!(
+        seen,
+        vec![
+            ("103rd".to_string(), "HB1".to_string(), "il-legislation".to_string()),
+            ("104th".to_string(), "HB2".to_string(), "il-104th".to_string()),
+        ]
+    );
+    let shadowed = git::shadowed_session_dirs(tmp.path());
+    assert!(git::is_shadowed(
+        &tmp.path().join("il-legislation/country:us/state:il/sessions/104th/bills/HB2/metadata.json"),
+        &shadowed
+    ));
+    assert!(!git::is_shadowed(&tmp.path().join("il-104th/country:us/state:il/sessions/104th"), &shadowed));
 }
