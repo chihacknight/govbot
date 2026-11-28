@@ -5,7 +5,7 @@ checkmark hides. Neither replaces the other — they watch for different failure
 different cadences.
 
 **Scope — OpenStates pipeline only.** This covers `actions/scrape/` (the OpenStates-based
-bill scraper, `chn-openstates-scrape.yml`, the `govbot-openstates-scrapers`/`govbot-data`
+bill scraper, `jurisdictions.yml`, the `govbot-openstates-scrapers`/`govbot-data`
 orgs) specifically — hence "openstates" in the name. It has **no visibility into the other
 scraper pipelines** in this repo: `actions/scrape-elections/`,
 `actions/scrape-maps/`. Those would need their own equivalent checks if/when they need one;
@@ -15,8 +15,8 @@ nothing here reads their output.
 repo/template provisioning — generating and pushing the per-state workflow files, managing
 which locales exist, flipping active/paused status. This is a different concern: watching the
 *output* of the OpenStates scrapers for health problems. The two share one real dependency
-(reading pipeline-manager's `chn-openstates-scrape.yml` for the active/paused locale list, via
-a relative path — see each script's header), but that's a read of one config file, not shared
+(reading pipeline-manager's `jurisdictions.yml` for which repos run, via `repos.py`), but
+that's a read of one config file, not shared
 ownership. Keeping this as its own action means someone looking at `actions/fleet-monitor/`
 (the other observability tool in this repo, built independently) can find this and understand
 what it does without first untangling it from template provisioning.

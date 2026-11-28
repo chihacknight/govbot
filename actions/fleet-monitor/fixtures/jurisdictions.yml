@@ -1,0 +1,48 @@
+# Fleet-monitor fixture in pipeline-manager's jurisdictions.yml format. Each state exercises
+# one rule of fleet_config.read_fleet; __snapshots__/fleet.jsonl is the expected output.
+orgs:
+  scraper: govbot-openstates-scrapers
+  data: govbot-data
+defaults:
+  runner: github
+states:
+  gu:
+    # still running in its old repos (manual): monitored, one record per org
+    name: Guam
+    old_repos:
+      status: manual
+      scraper: govbot-openstates-scrapers/gu-legislation
+      data: govbot-data/gu-legislation
+  wy:
+    # moved to govbot-history (workflows off): its old repos are NOT monitored, but its
+    # session pair is; runner proxy renders the self-hosted label
+    name: Wyoming
+    runner: proxy
+    sessions:
+    - id: "2027"
+    old_repos:
+      status: history
+      scraper: govbot-history/wy-legislation-scraper
+      data: govbot-history/wy-legislation-data
+  az:
+    # a manual-only session (schedule: manual) uses the paused scraper template
+    name: Arizona
+    sessions:
+    - id: 58th-1st-Regular
+      schedule: manual
+    old_repos:
+      status: history
+      scraper: govbot-history/az-legislation-scraper
+      data: govbot-history/az-legislation-data
+  ak:
+    # history and no sessions: no records at all
+    name: Alaska
+    old_repos:
+      status: history
+      scraper: govbot-history/ak-legislation-scraper
+      data: govbot-history/ak-legislation-data
+test_fleet:
+  # excluded by default (EXCLUDED_FLEETS)
+  org: govbot-test
+  template: openstates-to-ocd-files
+  states: [gu]

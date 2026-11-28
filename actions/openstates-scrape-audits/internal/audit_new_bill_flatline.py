@@ -39,7 +39,9 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
-import yaml
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from repos import state_repos  # noqa: E402  (jurisdictions.yml)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 PIPELINE_MANAGER = REPO_ROOT / "actions" / "pipeline-manager"
@@ -55,12 +57,9 @@ EXCEPTIONS = {
 
 
 def load_scraper_status() -> dict[str, str]:
-    with open(PIPELINE_MANAGER / "chn-openstates-scrape.yml") as f:
-        cfg = yaml.safe_load(f)
-    return {
-        code: ("paused" if "paused" in loc.get("template", "") else "active")
-        for code, loc in cfg["locales"].items()
-    }
+    """{code: "active" | "paused"}: active when any of the state's repos runs (jurisdictions.yml)."""
+    return {code: ("active" if any(r["running"] for r in repos) else "paused")
+            for code, repos in state_repos().items()}
 
 
 def load_session_info() -> dict[str, dict]:

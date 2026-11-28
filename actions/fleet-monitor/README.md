@@ -6,11 +6,12 @@ consumes its jurisdiction records.
 
 ## What It Does
 
-Reads the pipeline-manager fleet configs and emits one JSON Lines record per locale per
-fleet. **Discovery convention**: any top-level `*.yml`/`*.yaml` in `--config-dir` with a
-`locales` mapping is a fleet, named by the file's stem — today that means
-`chn-openstates-scrape.yml` and `chn-openstates-files.yml`; a new fleet config is picked
-up without code changes.
+Reads pipeline-manager's `jurisdictions.yml` (in `--config-dir`) and emits one JSON Lines
+record per monitored repo. Monitored = the repos that run: a state's old repos while they are
+`manual` (still running, managed by hand) and every session pair (`sessions:`). `history`
+repos (moved to `govbot-history`, workflows off) are not monitored. Records keep the fleet
+names the dashboards and alerts use: `chn-openstates-scrape` (scraper repos),
+`chn-openstates-files` (data repos) and `chn-openstates-test` (the `test_fleet` mirror).
 
 The record shape is the module's contract, declared in
 [schemas/fleet-record.schema.json](../../schemas/fleet-record.schema.json) and validated on

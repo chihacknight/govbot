@@ -31,7 +31,7 @@ jobs:
           MODULES=(
             "report-publisher:actions/report-publisher"
             "pipeline-manager:actions/pipeline-manager"
-            "govbot:actions/govbot"
+            "govbot:actions/govbot actions/pipeline-manager/jurisdictions.yml"
             "format:actions/format"
             "scrape:actions/scrape"
             # fleet-monitor also watches pipeline-manager: its render-snapshots.sh
@@ -107,13 +107,13 @@ jobs:
           ./render-snapshots.sh
           ../../scripts/verify-snapshots.sh __snapshots__
 
-      - name: Test the moved_to marker and the redirect guard
+      - name: Test jurisdictions.yml, jurisdictions.py and the redirect guard
         run: |
-          pip install pyyaml
+          pip install pyyaml jsonschema
           cd actions/pipeline-manager
           python3 test_moved.py
           python3 test_jurisdictions.py
-          python3 migrate_to_jurisdictions.py --check
+          python3 ../../scripts/build_catalog.py --check
 
   fleet-monitor-snapshots:
     runs-on: ubuntu-latest
@@ -200,6 +200,15 @@ jobs:
         run: |
           cd actions/govbot
           cargo test
+
+      # The CLI's state and repo list is generated from jurisdictions.yml. A stale copy is
+      # how AZ, CT, DC, TX and VA went missing from `govbot clone all` and the website.
+      - name: locale_generated.rs matches jurisdictions.yml
+        run: |
+          cd actions/govbot
+          cargo run -q --bin generate-locale-enum
+          git diff --exit-code src/locale_generated.rs || {
+            echo "::error::locale_generated.rs is stale: run 'just generate' in actions/govbot"; exit 1; }
 
   scrape-tests:
     runs-on: ubuntu-latest

@@ -99,11 +99,11 @@ echo "NH keeps its no-fastmode rule"
 run_case nh nh 2026 ""
 expect "docker args" "$ARGS" "nh bills session=2026 --scrape"
 
-echo "VA with no session: the legacy two-session csv_bills path"
-run_case va-legacy va "" ""
-expect "two csv_bills runs" "$ARGS" "$(printf 'va csv_bills --scrape session=2026 --fastmode\nva csv_bills --scrape session=2026S1 --fastmode')"
+echo "VA with no session: no special case any more (its old two-session repo has moved)"
+run_case va-plain va "" ""
+expect "docker args" "$ARGS" "va bills --scrape --fastmode"
 
-echo "VA with a session: the generic path"
+echo "VA with a session and its csv_bills scraper (jurisdictions.yml)"
 run_case va-2027 va 2027 "csv_bills"
 expect "docker args" "$ARGS" "va csv_bills session=2027 --scrape --fastmode"
 

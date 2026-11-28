@@ -38,6 +38,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_repos import repo_map, state_of_folder  # noqa: E402
+
 # Payload discipline: at ~140k bills every byte per bill is ~140KB of
 # output, and GitHub Pages rejects files over 100MB. Ship only fields the
 # dashboard page reads, truncated to what it can display.
@@ -268,7 +271,9 @@ def main():
     empty_repos = {}  # code -> display name for repos that cloned but had no bills
     for repo_dir in sorted(p for p in repos_dir.iterdir() if p.is_dir()):
         repo_bills = 0
-        repo_code = repo_dir.name.removesuffix("-legislation").lower()
+        # The state comes from the files, not the folder name: a session pair's folder is
+        # the repo's own name (tx-90r), the old repo's is tx-legislation.
+        repo_code = state_of_folder(repo_dir)
         # Layout-agnostic: OCD-files metadata.json plus raw OpenStates
         # scrape output (bill_<uuid>.json), each at any depth.
         candidates = sorted(repo_dir.rglob("metadata.json")) + sorted(repo_dir.rglob("bill_*.json"))
@@ -332,6 +337,10 @@ def main():
         "source": args.source_label or str(repos_dir),
         "states": [{"code": code, "name": name} for code, name in states],
         "empty_jurisdictions": empty,
+        # Which data repo holds each state's sessions (jurisdictions.yml): the old repo,
+        # plus any session pair. The site's bill cards link and fetch from these.
+        "repos": {code: repo_map()[code] for code in sorted({b["state"] for b in bills if b.get("state")})
+                  if code in repo_map()},
         "tags": [{"name": name, "description": tag_descriptions.get(name, "")}
                  for name in tag_names],
         "bills": bills,

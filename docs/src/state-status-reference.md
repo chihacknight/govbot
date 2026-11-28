@@ -25,8 +25,8 @@ The detail behind each row lives in the maintainer's per-state notes, which are 
   (LegiScan, Aug 20 PDF, checked by hand on 2026-09-29). Re-checked 2026-11-24: USA is in
   its lame-duck session (back since Nov 9); no other special sessions found. Territories GU,
   MP and VI meet all year.
-- **Scraping**: ✅ if `actions/pipeline-manager/chn-openstates-scrape.yml` gives the state the
-  `openstates-scrape` template, ⏸️ if `openstates-scrape-paused`.
+- **Scraping**: ✅ if `actions/pipeline-manager/jurisdictions.yml` has a repo of the state
+  running (its old repos `manual`, or a session pair with a schedule), ⏸️ if not.
 - **Last new data**: date of the last `🕷️ Scrape data for <state>` commit in
   `govbot-openstates-scrapers/<state>-legislation`. A commit is only made when the bills changed,
   so an old date on a working state can just mean nothing changed.

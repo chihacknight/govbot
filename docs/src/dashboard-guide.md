@@ -20,7 +20,7 @@ was built.
 
 Jurisdictions whose upstream scraper repo cloned but published no bills yet are
 listed as pending under the jurisdiction chart (rather than silently omitted), and
-appear automatically once their `*-legislation` repo starts carrying data.
+appear automatically once their data repo starts carrying data.
 
 ## Where the data comes from
 
@@ -32,8 +32,9 @@ output (`_data/<locale>/bill_<uuid>.json`) — and joins topic tags from
 `govbot tag` output (`tags/*.tag.json`).
 
 On every Pages deploy (and on a daily 8am UTC schedule), the workflow runs
-`govbot clone all` to fetch govbot's processed dataset (the `chn-openstates-files`
-`*-legislation` repos, in govbot's OCD-files layout), tags the bills with govbot's
+`govbot clone all` to fetch govbot's processed dataset (every data repo in
+`actions/pipeline-manager/jurisdictions.yml`: each state's older repo, in `govbot-history` for
+most, plus one repo per session from 2027, all in govbot's OCD-files layout), tags the bills with govbot's
 embedding model, and rebuilds `data.json` from all of them, so the published
 dashboard covers every tracked jurisdiction. (The embedding tagger needs that
 layout — `govbot logs`/`govbot tag` read each bill's `action_logs.jsonl` (or, in a repo not

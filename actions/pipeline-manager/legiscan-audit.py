@@ -41,7 +41,21 @@ import urllib.error
 import urllib.request
 from datetime import date
 
-CONFIG_FILE = os.path.join(os.path.dirname(__file__), "chn-openstates-scrape.yml")
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), "jurisdictions.yml")
+
+
+def data_repos(locale: str) -> dict:
+    """{"old": owner/name, "sessions": {session id: owner/name}} for a locale (jurisdictions.yml)."""
+    import re
+    import yaml
+    with open(CONFIG_FILE) as f:
+        config = yaml.safe_load(f)
+    st = config["states"][locale]
+    return {
+        "old": st["old_repos"]["data"],
+        "sessions": {str(s["id"]): f"{config['orgs']['data']}/" + re.sub(r"[^a-z0-9._-]", "-", f"{locale}-{s['id']}".lower())
+                     for s in st.get("sessions") or []},
+    }
 
 # Jurisdictions LegiScan does not track at all (confirmed via
 # session-dates-comparison.md). Flagged as "no coverage," never silently
@@ -154,10 +168,13 @@ def gh_api(path: str) -> list | dict | None:
 
 
 def fetch_our_session_dirs(locale: str) -> list:
-    contents = gh_api(f"repos/govbot-data/{locale}-legislation/contents/country:us/state:{locale}/sessions")
-    if not contents:
-        return []
-    return [item["name"] for item in contents if item.get("type") == "dir"]
+    """Session folders across all of a locale's data repos (old repo + session pairs)."""
+    repos = data_repos(locale)
+    found = set()
+    for repo in [repos["old"], *repos["sessions"].values()]:
+        contents = gh_api(f"repos/{repo}/contents/country:us/state:{locale}/sessions")
+        found.update(item["name"] for item in contents or [] if item.get("type") == "dir")
+    return sorted(found)
 
 
 def fetch_our_identifiers(locale: str, session_dir: str) -> dict:
@@ -166,7 +183,9 @@ def fetch_our_identifiers(locale: str, session_dir: str) -> dict:
     (confirmed via mocks/govbot_data, e.g. sessions/2026/bills/HB0006/), so
     this is a single directory listing, not a metadata.json fetch per bill.
     """
-    path = f"repos/govbot-data/{locale}-legislation/contents/country:us/state:{locale}/sessions/{session_dir}/bills"
+    repos = data_repos(locale)
+    repo = repos["sessions"].get(session_dir, repos["old"])
+    path = f"repos/{repo}/contents/country:us/state:{locale}/sessions/{session_dir}/bills"
     contents = gh_api(path)
     if not contents:
         return {}
@@ -284,7 +303,7 @@ def main():
 
     with open(CONFIG_FILE) as f:
         config = yaml.safe_load(f)
-    locales = sorted(config.get("locales", {}))
+    locales = sorted(config.get("states", {}))
     if args.only:
         wanted = {c.strip() for c in args.only.split(",")}
         locales = [c for c in locales if c in wanted]

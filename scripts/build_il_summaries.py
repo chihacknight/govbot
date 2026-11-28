@@ -49,6 +49,11 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_repos import repo_for  # noqa: E402
+
+RAW_BASE = "https://raw.githubusercontent.com"
+
 _UA = "govbot-il-summaries (+https://github.com/chihacknight/govbot)"
 
 # The ILGA synopsis label; the useful prose follows it. Some documents repeat it
@@ -131,8 +136,10 @@ def _bill_dir_id(bill_id):
     return re.sub(r"\s+", "", str(bill_id or ""))
 
 
-def govbot_meta_url(session, bill_id, repo_base):
-    return (repo_base.rstrip("/") + "/il-legislation/main/country:us/state:il/sessions/"
+def govbot_meta_url(session, bill_id, raw_base=RAW_BASE):
+    # The repo holding this IL session (jurisdictions.yml), by its real name.
+    repo = repo_for("il", session) or "govbot-data/il-legislation"
+    return (raw_base.rstrip("/") + "/" + repo + "/main/country:us/state:il/sessions/"
             + urllib.parse.quote(session) + "/bills/"
             + urllib.parse.quote(_bill_dir_id(bill_id)) + "/metadata.json")
 
@@ -204,7 +211,7 @@ def summarize_one(session, bill_id, get_json, get_bytes, pdf_text, repo_base):
 
 
 def build(bills, cache, cap, get_json=_default_get_json, get_bytes=_default_get_bytes,
-          pdf_text=pdftotext, repo_base="https://raw.githubusercontent.com/govbot-data"):
+          pdf_text=pdftotext, repo_base=RAW_BASE):
     """Merge new synopses into ``cache`` (a dict) for up to ``cap`` uncached bills.
 
     Returns (cache, added, attempted). Only HB/SB-style substantive bills are
@@ -235,7 +242,8 @@ def main():
     ap.add_argument("--cache", default=None, help="existing il_summaries.json to extend")
     ap.add_argument("--out", required=True, help="output il_summaries.json")
     ap.add_argument("--cap", type=int, default=1500, help="max new bills to summarize this run")
-    ap.add_argument("--repo-base", default="https://raw.githubusercontent.com/govbot-data")
+    ap.add_argument("--raw-base", dest="repo_base", default=RAW_BASE,
+                    help="raw-files host (the repo comes from jurisdictions.yml)")
     args = ap.parse_args()
 
     data = json.loads(Path(args.data).read_text())

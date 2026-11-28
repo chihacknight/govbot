@@ -1,0 +1,7 @@
+orgs:
+  scraper: govbot-openstates-scrapers
+  data: govbot-data
+states:
+  gu:
+    name: Guam
+    old_repos: {status: archived, scraper: a/b, data: a/c}

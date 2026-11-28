@@ -1,7 +1,8 @@
-# The single source of truth for every jurisdiction's repos (repo reorg, step 5).
-# Read and written by `jurisdictions.py`, which replaces apply.py. Generated once from the
-# old chn-openstates-scrape.yml / -files.yml / -test.yml by migrate_to_jurisdictions.py;
-# edit this file from now on.
+# yaml-language-server: $schema=./jurisdictions.schema.json
+# The single source of truth for every jurisdiction's repos (repo reorg, step 5). Edited by
+# hand; `jurisdictions.py` renders and creates the session pairs from it, and the govbot CLI
+# (`just generate`), the site build, the fleet monitor and the audits read it.
+# Generated on 2026-11-27 from the old chn-openstates-*.yml configs (PR #327), which are gone.
 #
 # Per state:
 #   name, scrape_cron (its daily time, UTC), labels ("working" = in `govbot clone all`)

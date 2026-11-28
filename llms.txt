@@ -7,12 +7,14 @@
 
 ## What this data is
 
-govbot publishes U.S. legislation as ordinary **public GitHub repositories** — one
-repository per jurisdiction (every state, the territories, and the federal Congress).
+govbot publishes U.S. legislation as ordinary **public GitHub repositories** (every state,
+the territories, and the federal Congress): one repository per jurisdiction for sessions up
+to 2026, and one repository per legislative session from 2027 on.
 Everything is plain JSON that you can fetch over HTTPS. There is nothing to download.
 
 - Directory of all jurisdictions (machine-readable): https://raw.githubusercontent.com/chihacknight/govbot/main/catalog.json
-- Browse the data on GitHub: https://github.com/govbot-data
+- Browse the data on GitHub: https://github.com/govbot-data (live) and
+  https://github.com/govbot-history (sessions up to 2026, with full git history)
 - Ready-made bulk downloads (one row per bill — state, session, number, title, chamber, latest
   action, sponsors, topics, links): https://chihacknight.github.io/govbot/dashboard/downloads/manifest.json
   lists every file — all bills as one zipped CSV (`govbot-bills-all.csv.zip`), one CSV per
@@ -22,9 +24,20 @@ Everything is plain JSON that you can fetch over HTTPS. There is nothing to down
 
 ## How the data is organized (the filing rule)
 
-Repositories are named `govbot-data/{code}-legislation`, where `{code}` is the
-two-letter postal code (`il`, `ca`, `ny`, `wy`, …), the federal code `usa`, or a
-territory code (`gu`, `pr`, `vi`, `mp`). Example: Illinois → `govbot-data/il-legislation`.
+`{code}` is the two-letter postal code (`il`, `ca`, `ny`, `wy`, …), the federal code
+`usa`, or a territory code (`gu`, `pr`, `vi`, `mp`). Which repository holds a session:
+
+- **A session with its own repository** (from 2027 on): `govbot-data/{code}-{session}`, the
+  session id lower-cased. Example: Texas 90R → `govbot-data/tx-90r`.
+- **Every other session**: the jurisdiction's older repository, which holds all its earlier
+  sessions: `govbot-history/{code}-legislation-data` for most (example: Illinois →
+  `govbot-history/il-legislation-data`), `govbot-data/{code}-legislation` for the few still
+  updated there (dc, gu, mi, mp, nj, oh, pa, usa, vi).
+- `catalog.json` lists every jurisdiction's repositories (`repos[]`, with the sessions each
+  holds). When unsure, read it. The old address `govbot-data/{code}-legislation` still
+  redirects to the moved repository.
+
+Below, `{repo}` means that owner/name (e.g. `govbot-history/il-legislation-data`).
 
 Inside each repository, every bill lives at a **predictable path**:
 
@@ -55,11 +68,11 @@ country:us/state:{code}/sessions/{session}/bills/{bill_id}/metadata.json
 To turn any bill into a fetchable URL, use the raw-file base:
 
 ```
-https://raw.githubusercontent.com/govbot-data/{code}-legislation/HEAD/country:us/state:{code}/sessions/{session}/bills/{bill_id}/metadata.json
+https://raw.githubusercontent.com/{repo}/HEAD/country:us/state:{code}/sessions/{session}/bills/{bill_id}/metadata.json
 ```
 
-Example (Wyoming HB0001, 2025 session):
-https://raw.githubusercontent.com/govbot-data/wy-legislation/HEAD/country:us/state:wy/sessions/2025/bills/HB0001/metadata.json
+Example (Wyoming HB0001, 2026 session):
+https://raw.githubusercontent.com/govbot-history/wy-legislation-data/HEAD/country:us/state:wy/sessions/2026/bills/HB0001/metadata.json
 
 **Authoritative layout:** each repo also has its own `data.json` at the root whose
 `ex:pathPattern` states that repo's exact layout. The federal (`usa`) repo can differ
@@ -88,11 +101,11 @@ Key fields you'll use to answer questions:
 **You need to discover sessions or bills** → list folders with the GitHub contents API
 (no login for modest use):
 
-- Sessions: `https://api.github.com/repos/govbot-data/{code}-legislation/contents/country:us/state:{code}/sessions`
-- Bills in a session: `https://api.github.com/repos/govbot-data/{code}-legislation/contents/country:us/state:{code}/sessions/{session}/bills`
+- Sessions: `https://api.github.com/repos/{repo}/contents/country:us/state:{code}/sessions`
+- Bills in a session: `https://api.github.com/repos/{repo}/contents/country:us/state:{code}/sessions/{session}/bills`
 
 **You want everything in one repo at once** → the recursive tree
-(`https://api.github.com/repos/govbot-data/{code}-legislation/git/trees/HEAD?recursive=1`)
+(`https://api.github.com/repos/{repo}/git/trees/HEAD?recursive=1`)
 lists every file path. Use for smaller jurisdictions; large states return a lot.
 
 ## Rules for answering well (please follow these)

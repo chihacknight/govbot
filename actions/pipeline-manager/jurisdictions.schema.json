@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/chihacknight/govbot/actions/pipeline-manager/jurisdictions.schema.json",
+  "title": "jurisdictions.yml",
+  "description": "Every jurisdiction's settings, session repo pairs and old repos. The single source of truth since the 2026-11 repo reorg; read by jurisdictions.py, the govbot CLI, the site build, the fleet monitor and the audits.",
+  "type": "object",
+  "required": ["orgs", "defaults", "states"],
+  "additionalProperties": false,
+  "$defs": {
+    "repo": {"type": "string", "pattern": "^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$"},
+    "runner": {"enum": ["github", "proxy", "self-hosted"]},
+    "scrapers": {"type": "string", "pattern": "^[a-z_]+( [a-z_]+)*$"},
+    "cron": {"type": "string", "pattern": "^\\S+ \\S+ \\S+ \\S+ \\S+$"}
+  },
+  "properties": {
+    "orgs": {
+      "type": "object",
+      "required": ["scraper", "data"],
+      "additionalProperties": false,
+      "properties": {"scraper": {"type": "string"}, "data": {"type": "string"}}
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "toolkit_branch": {"type": "string"},
+        "runner": {"$ref": "#/$defs/runner"},
+        "scrape_timeout_minutes": {"type": "integer", "minimum": 1},
+        "docker_image": {"type": "string"},
+        "scrapers": {"$ref": "#/$defs/scrapers"}
+      }
+    },
+    "states": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[a-z]{2,3}$"},
+      "additionalProperties": {
+        "type": "object",
+        "required": ["name", "scrape_cron", "labels", "sessions", "old_repos"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string"},
+          "scrape_cron": {"$ref": "#/$defs/cron", "description": "The state's daily scrape time (UTC); sessions use it unless they set schedule."},
+          "labels": {"type": "array", "items": {"type": "string"}, "description": "\"working\" = included in `govbot clone all`."},
+          "scraper_labels": {"type": "array", "items": {"type": "string"}},
+          "runner": {"$ref": "#/$defs/runner"},
+          "scrapers": {"$ref": "#/$defs/scrapers"},
+          "scrape_timeout_minutes": {"type": "integer", "minimum": 1},
+          "docker_image": {"type": "string"},
+          "toolkit_branch": {"type": "string"},
+          "repo_secrets": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z0-9_]+$"}, "description": "Repo-level secrets a new pair's scraper repo needs set by hand."},
+          "sessions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id"],
+              "additionalProperties": false,
+              "properties": {
+                "id": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$", "description": "OpenStates session identifier, exactly as in scrapers/<st>/__init__.py."},
+                "schedule": {"anyOf": [{"$ref": "#/$defs/cron"}, {"const": "manual"}]},
+                "scrapers": {"$ref": "#/$defs/scrapers"},
+                "runner": {"$ref": "#/$defs/runner"},
+                "extract_runner": {"$ref": "#/$defs/runner"},
+                "scrape_timeout_minutes": {"type": "integer", "minimum": 1},
+                "docker_image": {"type": "string"},
+                "toolkit_branch": {"type": "string"}
+              }
+            }
+          },
+          "old_repos": {
+            "type": "object",
+            "required": ["status", "scraper", "data"],
+            "additionalProperties": false,
+            "properties": {
+              "status": {"enum": ["history", "manual"], "description": "history: moved to govbot-history, read-only; manual: still running, managed by hand. jurisdictions.py writes to neither."},
+              "scraper": {"$ref": "#/$defs/repo"},
+              "data": {"$ref": "#/$defs/repo"}
+            }
+          }
+        }
+      }
+    },
+    "test_fleet": {
+      "type": "object",
+      "required": ["org", "template", "states"],
+      "additionalProperties": false,
+      "properties": {
+        "org": {"type": "string"},
+        "template": {"type": "string"},
+        "toolkit_branch": {"type": "string"},
+        "states": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

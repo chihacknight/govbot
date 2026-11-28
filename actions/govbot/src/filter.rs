@@ -55,8 +55,14 @@ impl FilterManager {
 
     /// Apply repo-specific filter if it exists
     fn apply_repo_filter(entry: &Value, repo_name: &str) -> FilterResult {
+        // Filters are per state: a session pair's folder (e.g. "tx-90r") uses its state's
+        // filter, the same as the old "<st>-legislation" folder.
+        let state_folder = match crate::locale_generated::locale_for_folder(repo_name) {
+            Some(locale) => format!("{}-legislation", locale),
+            None => repo_name.to_string(),
+        };
         // Map repo names to their filter modules
-        match repo_name {
+        match state_folder.as_str() {
             "ak-legislation" => ak_legislation::default::should_keep(entry),
             "al-legislation" => al_legislation::default::should_keep(entry),
             "ar-legislation" => ar_legislation::default::should_keep(entry),

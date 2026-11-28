@@ -307,22 +307,20 @@ fn process_single_locale(
     token_str: Option<&str>,
     verbose: bool,
 ) -> CloneResult {
-    let repo_name = git::build_repo_name(locale);
-    let target_dir = repos_dir.join(&repo_name);
-    
-    let local_size = if target_dir.exists() {
-        git::get_directory_size(&target_dir).unwrap_or(0)
-    } else {
-        0
+    // A locale may have several repos (old repo + session pairs): sum their folders
+    let size_on_disk = || -> u64 {
+        git::repo_folders(locale)
+            .iter()
+            .map(|folder| repos_dir.join(folder))
+            .filter(|dir| dir.exists())
+            .map(|dir| git::get_directory_size(&dir).unwrap_or(0))
+            .sum()
     };
+    let local_size = size_on_disk();
     
     match git::clone_or_pull_repo_quiet(locale, repos_dir, token_str, !verbose) {
         Ok(action) => {
-            let final_size = if target_dir.exists() {
-                git::get_directory_size(&target_dir).unwrap_or(0)
-            } else {
-                0
-            };
+            let final_size = size_on_disk();
             
             let result = match action {
                 "clone" => "🆕",
@@ -512,11 +510,11 @@ async fn run_clone_command(cmd: Command) -> anyhow::Result<()> {
         let all_locales = govbot::locale::WorkingLocale::all();
         for locale in all_locales {
             let locale_str = locale.as_lowercase();
-            let repo_name = git::build_repo_name(&locale_str);
-            let repo_path = repos_dir.join(&repo_name);
-            
-            // Check if this is a git repository
-            if repo_path.exists() && repo_path.join(".git").exists() {
+            // Any of the locale's repo folders cloned counts
+            let cloned = git::repo_folders(locale_str)
+                .iter()
+                .any(|folder| repos_dir.join(folder).join(".git").exists());
+            if cloned {
                 repos_to_clone.push(locale_str.to_string());
             }
         }
@@ -652,9 +650,8 @@ async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
     if total == 1 || num_jobs == 1 {
         // Sequential delete
         for (idx, locale) in locales_to_delete.iter().enumerate() {
-            let repo_name = format!("{}-data-pipeline", locale);
-            let target_dir = repos_dir.join(&repo_name);
-            let existed = target_dir.exists();
+            // Any of the locale's local clone folders (old repo + session pairs)
+            let existed = git::repo_folders(locale).iter().any(|f| repos_dir.join(f).exists());
             
             if verbose {
                 eprintln!("[{}/{}] Deleting {}...", idx + 1, total, locale);
@@ -691,9 +688,7 @@ async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
                 let verbose_flag = verbose;
                 
                 tokio::task::spawn_blocking(move || {
-                    let repo_name = format!("{}-data-pipeline", locale);
-                    let target_dir = repos_dir.join(&repo_name);
-                    
+
                     if verbose_flag {
                         let d = deleted.lock().unwrap();
                         let f = failed.lock().unwrap();
@@ -701,7 +696,7 @@ async fn run_delete_command(cmd: Command) -> anyhow::Result<()> {
                         eprintln!("[{}/{}] Deleting {}...", current, total, locale);
                     }
                     
-                    let existed = target_dir.exists();
+                    let existed = git::repo_folders(&locale).iter().any(|f| repos_dir.join(f).exists());
                     match git::delete_repo(&locale, &repos_dir) {
                         Ok(_) => {
                             if existed {
@@ -820,19 +815,27 @@ async fn run_logs_command(cmd: Command) -> anyhow::Result<()> {
             if git_dir.exists() {
                 let all_locales = govbot::locale::WorkingLocale::all();
                 for loc in all_locales {
-                    let locale_str = loc.as_lowercase();
-                    let repo_name = git::build_repo_name(&locale_str);
-                    let repo_path = git_dir.join(&repo_name);
-                    
-                    // Only add repos that actually exist (for logs, we don't need .git, just the directory)
-                    if repo_path.exists() && repo_path.is_dir() {
-                        repos_to_process.push(repo_name);
+                    // Every repo folder of the locale that exists (old repo + session pairs;
+                    // for logs, we don't need .git, just the directory)
+                    for folder in git::repo_folders(loc.as_lowercase()) {
+                        if git_dir.join(&folder).is_dir() {
+                            repos_to_process.push(folder);
+                        }
                     }
                 }
             }
+        } else if govbot::locale::locale_for_folder(&locale).is_some() && git_dir.join(&locale).is_dir() {
+            // A repo folder name (e.g. "tx-90r" or "tx-legislation") means just that folder
+            repos_to_process.push(locale.clone());
         } else {
-            // Convert locale name to repo name using build_repo_name
-            repos_to_process.push(git::build_repo_name(&locale));
+            // A locale stands for all its repo folders; the old one is kept even when it
+            // isn't cloned, so a missing repo is still reported as before
+            let folders = git::repo_folders(&locale);
+            for (i, folder) in folders.iter().enumerate() {
+                if i == 0 || git_dir.join(folder).is_dir() {
+                    repos_to_process.push(folder.clone());
+                }
+            }
         }
     }
 

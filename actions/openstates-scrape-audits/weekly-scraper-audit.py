@@ -48,12 +48,12 @@ separate from this script, so the directory's git history distinguishes
 
 This script lives in its own action (actions/openstates-scrape-audits/),
 scoped specifically to the OpenStates-based bill scraper pipeline
-(actions/scrape/, chn-openstates-scrape.yml) -- it has no visibility into
+(actions/scrape/, jurisdictions.yml) -- it has no visibility into
 the other scraper pipelines in this repo (actions/scrape-elections/,
 actions/scrape-maps/), hence the explicit
 "openstates" in the name. Separate from actions/pipeline-manager/
 (repo/template provisioning) -- the only functional tie to
-pipeline-manager is reading its locale config (chn-openstates-scrape.yml)
+pipeline-manager is reading its config (jurisdictions.yml)
 for the active/paused state list, via the relative path below, not shared
 ownership of any file here.
 
@@ -68,17 +68,16 @@ import urllib.error
 from datetime import datetime
 from pathlib import Path
 
-import yaml
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from repos import running_scrapers, state_repos  # noqa: E402  (jurisdictions.yml)
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent.parent
-PIPELINE_MANAGER = REPO_ROOT / "actions" / "pipeline-manager"
 SESSION_CALENDAR = REPO_ROOT / "actions" / "openstates-scrape-audits" / "session-calendar-2026.md"
 TRACKING_FILE = SCRIPT_DIR / "output" / "audit_tracking.json"
 WEEKLY_BILL_COUNTS_FILE = SCRIPT_DIR / "output" / "weekly_bill_counts.json"
 
-DATA_ORG = "govbot-data"
-SCRAPER_ORG = "govbot-openstates-scrapers"
 FLATLINE_THRESHOLD_DAYS = 7
 
 EXCEPTIONS = {
@@ -104,12 +103,26 @@ def fetch_raw(org: str, repo: str, path: str) -> dict | None:
 
 
 def load_scraper_status() -> dict[str, str]:
-    with open(PIPELINE_MANAGER / "chn-openstates-scrape.yml") as f:
-        cfg = yaml.safe_load(f)
-    return {
-        code: ("paused" if "paused" in loc.get("template", "") else "active")
-        for code, loc in cfg["locales"].items()
-    }
+    """{code: "active" | "paused"}: active when any of the state's repos runs
+    (jurisdictions.yml: a manual state's old repos, or a scheduled session pair)."""
+    return {code: ("active" if any(r["running"] for r in repos) else "paused")
+            for code, repos in state_repos().items()}
+
+
+def merged(histories: list[dict | None]) -> dict:
+    """Day-keyed dicts from several repos of one state, summed per day (numbers) or
+    first-seen (anything else)."""
+    out = {}
+    for h in histories:
+        for day, value in (h or {}).items():
+            if isinstance(value, (int, float)) and isinstance(out.get(day, 0), (int, float)):
+                out[day] = out.get(day, 0) + value
+            elif isinstance(value, dict) and isinstance(out.get(day), dict):
+                out[day] = {k: (out[day].get(k, 0) + v if isinstance(v, (int, float)) else out[day].get(k, v))
+                            for k, v in {**out[day], **value}.items()}
+            else:
+                out.setdefault(day, value)
+    return out
 
 
 def load_session_info() -> dict[str, dict]:
@@ -176,6 +189,7 @@ def main():
     args = parser.parse_args()
 
     scraper_status = load_scraper_status()
+    all_repos = state_repos()
     session_info = load_session_info()
     now = datetime.now()
     today_str = now.strftime("%Y-%m-%d")
@@ -188,8 +202,10 @@ def main():
     for i, code in enumerate(sorted(scraper_status.keys()), 1):
         print(f"[{i}/{len(scraper_status)}] {code}...", file=sys.stderr)
 
-        ts_data = fetch_raw(DATA_ORG, f"{code}-legislation", ".windycivi/latest_timestamp_seen.txt")
-        new_bills_hist = (ts_data or {}).get("new_bills_seen", {})
+        repos = all_repos[code]  # the state's old repo + session pairs (jurisdictions.yml)
+        new_bills_hist = merged([
+            (fetch_raw(*r["data"].split("/", 1), ".windycivi/latest_timestamp_seen.txt") or {}).get("new_bills_seen")
+            for r in repos])
         zero_days = find_zero_stretch(new_bills_hist, now)
         info = session_info.get(code)
         in_session = bool(info and info["status"] == "in")
@@ -207,7 +223,8 @@ def main():
         if code not in EXCEPTIONS and zero_days is not None and in_session and zero_days >= FLATLINE_THRESHOLD_DAYS:
             flagged_now[code] = {"zero_days": zero_days, "session": session_line(info)}
 
-        wh_data = fetch_raw(SCRAPER_ORG, f"{code}-legislation", ".windycivi/warning_history.json")
+        wh_data = merged([fetch_raw(*r["scraper"].split("/", 1), ".windycivi/warning_history.json")
+                          for r in repos])
         if wh_data:
             recent_days = sorted(wh_data.keys())[-7:]
             recent_total = sum(wh_data[d].get("warning_count", 0) for d in recent_days)

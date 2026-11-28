@@ -1,8 +1,8 @@
 name: OpenStates Scrape for tx 90R
 
 on:
-  # Staggered by the state capital's timezone (see locale.scrape_cron in
-  # chn-openstates-scrape.yml) so each state scrapes shortly after its own
+  # Staggered by the state capital's timezone (the state's scrape_cron, or the
+  # session's schedule, in jurisdictions.yml) so each state scrapes shortly after its own
   # legislative day ends, instead of every state firing at the same UTC
   # instant regardless of local time -- previously that meant western states
   # were effectively scraped in their own early evening/late night.
@@ -66,13 +66,11 @@ jobs:
   scrape:
     name: "🕷️ Scrape Data"
     runs-on: ${{ ('false' == 'true' || (github.event_name == 'workflow_dispatch' && inputs.use-self-hosted)) && 'self-hosted' || ('ubuntu-latest' == 'self-hosted' && 'ubuntu-latest' || 'ubuntu-latest') }}
-    # Per-locale override (locale.scrape_timeout_minutes in
-    # chn-openstates-scrape.yml) -- this used to be a one-off hand-edit
-    # directly on FL's live workflow file (raised to 24h after its default
-    # 12h was hit mid-scrape), which meant it silently reverted back to the
-    # template default the next time apply.py's fully_override_dirs pushed
-    # the shared template out. Routing it through config instead means a
-    # rollout can't quietly undo it again.
+    # Per-state override (scrape_timeout_minutes in jurisdictions.yml) -- this
+    # used to be a one-off hand-edit directly on FL's live workflow file (raised
+    # to 24h after its default 12h was hit mid-scrape), which silently reverted
+    # the next time the shared template was pushed out. Routing it through config
+    # means a rollout can't quietly undo it again.
     timeout-minutes: 720
     permissions:
       contents: write
@@ -95,7 +93,7 @@ jobs:
           # locale.docker_image (default matches action.yml's own default) -- config-driven
           # so a locale temporarily on a custom test image (e.g. while a fix awaits upstream
           # merge) survives a template re-apply instead of reverting silently. A hand-edit
-          # here used to do the same job but doesn't survive apply.py's fully_override_dirs.
+          # here used to do the same job but doesn't survive the next template push.
           docker-image: openstates/scrapers:latest
           # locale.scrape_session / locale.scrapers (config; both default empty = the old
           # behaviour: OpenStates' active sessions, bills only). A manual run can name

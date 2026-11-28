@@ -1910,7 +1910,15 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     if (!pid || pid[0] !== "~") return null;
     try { return chamberLabel(JSON.parse(pid.slice(1)).chamber); } catch (e) { return null; }
   }
-  function govbotRepo(state) { return (state === "usa" ? "usa" : state) + "-legislation"; }
+  // owner/name of the data repo holding a bill's session, from bills/index.json's `repos`
+  // (jurisdictions.yml): the session's own pair if it has one, else the state's old repo
+  // (govbot-history for moved states). Older index files have no map: today's name.
+  function govbotRepo(code, session) {
+    const repos = (state.data && state.data.repos) || {};
+    const entry = repos[code];
+    if (entry) return (entry.sessions && entry.sessions[session]) || entry.repo;
+    return "govbot-data/" + code + "-legislation";
+  }
   // The govbot data repos name each bill's directory after the identifier with
   // all whitespace removed ("H 5502" -> "H5502", "B 1-38" -> "B1-38"), while the
   // dashboard keeps the spaced display id. Build the path from the stripped form
@@ -1939,12 +1947,12 @@ bills = pd.read_csv("https://chihacknight.github.io/govbot/dashboard/downloads/b
     }
   }
   function govbotMetaUrl(b) {
-    return "https://raw.githubusercontent.com/govbot-data/" + govbotRepo(b.state) +
+    return "https://raw.githubusercontent.com/" + govbotRepo(b.state, b.session) +
       "/main/country:us/state:" + b.state + "/sessions/" + encodeURIComponent(b.session) +
       "/bills/" + encodeURIComponent(billDirId(b.id)) + "/metadata.json";
   }
   function govbotRecordUrl(b) {
-    return "https://github.com/govbot-data/" + govbotRepo(b.state) +
+    return "https://github.com/" + govbotRepo(b.state, b.session) +
       "/tree/main/country:us/state:" + b.state + "/sessions/" + encodeURIComponent(b.session) +
       "/bills/" + encodeURIComponent(billDirId(b.id));
   }

@@ -43,7 +43,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-import yaml
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from repos import state_repos  # noqa: E402  (jurisdictions.yml)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 PIPELINE_MANAGER = REPO_ROOT / "actions" / "pipeline-manager"
@@ -51,12 +53,9 @@ SESSION_CALENDAR = REPO_ROOT / "actions" / "openstates-scrape-audits" / "session
 
 
 def load_scraper_status() -> dict[str, str]:
-    with open(PIPELINE_MANAGER / "chn-openstates-scrape.yml") as f:
-        cfg = yaml.safe_load(f)
-    return {
-        code: ("paused" if "paused" in loc.get("template", "") else "active")
-        for code, loc in cfg["locales"].items()
-    }
+    """{code: "active" | "paused"}: active when any of the state's repos runs (jurisdictions.yml)."""
+    return {code: ("active" if any(r["running"] for r in repos) else "paused")
+            for code, repos in state_repos().items()}
 
 
 def load_session_status() -> dict[str, str]:
@@ -261,7 +260,9 @@ def load_fleet_monitor_snapshot() -> dict[str, dict]:
     by_state: dict[str, dict] = {}
     for r in records:
         code = r["state"]
-        slot = "data_repo" if r["config"] == "chn-openstates-files.yml" else "scraper_repo"
+        # `fleet` names the org kind; older snapshots only had the config file name
+        is_data = r.get("fleet") == "chn-openstates-files" or r.get("config") == "chn-openstates-files.yml"
+        slot = "data_repo" if is_data else "scraper_repo"
         by_state.setdefault(code, {})[slot] = {
             "data_commit_age_hours": r.get("data_commit_age_hours"),
             "workflows": r.get("workflows", []),

@@ -7,7 +7,8 @@ This file provides senior engineering-level guidance for Claude Code when workin
 This is **govbot** - a monorepo for distributed data analysis of government updates. Git repos function as datasets, including legislation from 56 jurisdictions (50 states, federal, DC and 4 territories). The `actions/` folder contains self-contained modules that can run as shell scripts or GitHub Actions.
 
 **AI-readable catalog access**: `llms.txt` (repo root) is a plain-language guide that
-teaches any AI assistant to read the `govbot-data/{code}-legislation` catalogs directly
+teaches any AI assistant to read the govbot data repos (`govbot-data` per-session repos, `govbot-history`
+for sessions up to 2026; `catalog.json` is generated from `jurisdictions.yml` by `scripts/build_catalog.py`) directly
 over HTTPS — no CLI, phone-friendly — and `catalog.json` (repo root) is the
 machine-readable directory of every jurisdiction repo plus the bill path pattern. Keep
 both in sync with the real data layout (they are also published at `chihacknight.github.io/govbot/llms.txt` and `/catalog.json`, copied into the build with `sitemap.xml` by `scripts/build_sitemap.py`, which the deploy workflow runs after `mdbook build` and which also finishes each page's `<head>` — a canonical address, social-share tags from the page's own title and description, the landing's real title, and FAQ markup generated from the landing's visible questions (so add or edit a question in `docs/src/readme.md` and the markup follows; `test_build_sitemap.py` guards it). The landing's site/organization/dataset JSON-LD is the static `<script>` at the end of `readme.md`; `docs/src/robots.txt` states the crawler policy) (the authoritative per-repo pattern lives in each
@@ -310,7 +311,8 @@ neutral initials when the name reads like a person (`personName`: "Sablan, JP" �
 matching `NOT_A_PERSON` — committee, Senate, House, Rules… — is left out). No photo is guessed for them.
 
 **Scrapers are paused on purpose (migration).** Since 2026-09-30 (PR #180) the OpenStates scrapers are
-paused while the team moves scraping to a new system, and the `check-sessions.yml` workflow is disabled —
+paused while the team moves scraping to a new system (one repo pair per session, from
+`actions/pipeline-manager/jurisdictions.yml`; `check-sessions.yml` and `apply.py` are gone) —
 so bills filed after that are expected to be missing (e.g. Illinois, out of session, newest bill
 2026-09-24). Don't "fix" a paused state by unpausing it. A volunteer's ilga.gov comparison produced an
 Illinois field-completeness / accuracy audit: `actions/openstates-scrape-audits/internal/il_field_audit.py`

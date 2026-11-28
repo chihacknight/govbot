@@ -71,6 +71,9 @@ def build_slices(data, recent=RECENT_PER_STATE, il_days=IL_RECENT_DAYS, today=No
         "source": data.get("source"),
         "states": data.get("states") or [],
         "empty_jurisdictions": data.get("empty_jurisdictions") or [],
+        # {state: {"repo": old data repo, "sessions": {id: session pair repo}}} — the bill
+        # card picks the repo for a bill's session from this (a few KB for every state).
+        "repos": data.get("repos") or {},
         "tags": tags,
         "counts": {code: len(v) for code, v in sorted(by_state.items()) if code},
         "recent": {code: [b for b in _newest_first(v) if b.get("latest_action")][:recent]
@@ -174,7 +177,7 @@ def _readme(data, total):
         "  bills-<code>.csv          one jurisdiction's bills\n"
         "  manifest.json             every file with its rows and size, for scripts\n"
         "  ../data.json              every bill as JSON; ../bills/<code>.json one jurisdiction as JSON\n"
-        "  Full per-bill records (all actions, votes, versions): the govbot-data/<code>-legislation\n"
+        "  Full per-bill records (all actions, votes, versions): the govbot-data and govbot-history\n"
         "  git repos on GitHub, or `govbot clone all` (see " + SITE + "about.html).\n\n"
         "Columns\n-------\n" + cols + "\n\n"
         "Note: in the CSV files a cell that starts with = + - or @ has a ' added in front so a\n"
