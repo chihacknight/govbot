@@ -845,6 +845,9 @@ async fn run_logs_command(cmd: Command) -> anyhow::Result<()> {
     // Initialize filter (now has default value "default")
     let filter_manager = govbot::FilterManager::new(govbot::FilterAlias::from(filter.as_str()));
 
+    // Sessions a session pair also holds are read from the pair only (git::shadowed_session_dirs)
+    let shadowed = git::shadowed_session_dirs(&git_dir);
+
     // Process each repo (with optional filtering)
     for repo_name in repos_to_process {
         let repo_path = git_dir.join(&repo_name);
@@ -884,6 +887,9 @@ async fn run_logs_command(cmd: Command) -> anyhow::Result<()> {
             }
 
             let path = entry.path();
+            if git::is_shadowed(&path, &shadowed) {
+                continue;
+            }
             let Some(records) = govbot::logs_jsonl::read_log_records(&path) else {
                 continue;
             };

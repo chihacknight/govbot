@@ -13,6 +13,8 @@
 #   sessions: one entry per session pair:
 #       id        OpenStates session identifier, exactly as in scrapers/<st>/__init__.py
 #       schedule  optional: a cron, or "manual" (no schedule); default: the state's scrape_cron
+#       seed      optional: true = on creation, copy this session's folder (bills + logs) from
+#                 the state's old data repo into the new one, with a provenance note
 #       anything else = an override of the state's settings, only where the session differs
 #     -> govbot-openstates-scrapers/<st>-<id>-scraper + govbot-data/<st>-<id>
 #        (lower-cased; characters outside [a-z0-9._-] become "-")
@@ -217,7 +219,10 @@ states:
     - working
     scraper_labels:
     - working
-    sessions: []
+    sessions:
+    - id: 104th
+      schedule: manual
+      seed: true
     old_repos:
       status: history
       scraper: govbot-history/il-legislation-scraper
@@ -283,7 +288,11 @@ states:
     scrapers: bills votes
     labels:
     - working
-    sessions: []
+    sessions:
+    - id: 194th
+      schedule: manual
+      seed: true
+      extract_runner: self-hosted
     old_repos:
       status: history
       scraper: govbot-history/ma-legislation-scraper
@@ -391,7 +400,12 @@ states:
     - working
     scraper_labels:
     - working
-    sessions: []
+    sessions:
+    - id: '2025'
+      schedule: manual
+      seed: true
+    - id: 2025E1
+      schedule: manual
     old_repos:
       status: history
       scraper: govbot-history/nc-legislation-scraper

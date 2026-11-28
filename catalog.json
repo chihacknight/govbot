@@ -272,9 +272,18 @@
         {
           "repo": "govbot-history/il-legislation-data",
           "status": "history",
-          "sessions": "all",
+          "sessions": "every session without its own repo below",
           "browse": "https://github.com/govbot-history/il-legislation-data",
           "data_json": "https://raw.githubusercontent.com/govbot-history/il-legislation-data/HEAD/data.json"
+        },
+        {
+          "repo": "govbot-data/il-104th",
+          "status": "session",
+          "sessions": [
+            "104th"
+          ],
+          "browse": "https://github.com/govbot-data/il-104th",
+          "data_json": "https://raw.githubusercontent.com/govbot-data/il-104th/HEAD/data.json"
         }
       ]
     },
@@ -351,9 +360,18 @@
         {
           "repo": "govbot-history/ma-legislation-data",
           "status": "history",
-          "sessions": "all",
+          "sessions": "every session without its own repo below",
           "browse": "https://github.com/govbot-history/ma-legislation-data",
           "data_json": "https://raw.githubusercontent.com/govbot-history/ma-legislation-data/HEAD/data.json"
+        },
+        {
+          "repo": "govbot-data/ma-194th",
+          "status": "session",
+          "sessions": [
+            "194th"
+          ],
+          "browse": "https://github.com/govbot-data/ma-194th",
+          "data_json": "https://raw.githubusercontent.com/govbot-data/ma-194th/HEAD/data.json"
         }
       ]
     },
@@ -486,9 +504,27 @@
         {
           "repo": "govbot-history/nc-legislation-data",
           "status": "history",
-          "sessions": "all",
+          "sessions": "every session without its own repo below",
           "browse": "https://github.com/govbot-history/nc-legislation-data",
           "data_json": "https://raw.githubusercontent.com/govbot-history/nc-legislation-data/HEAD/data.json"
+        },
+        {
+          "repo": "govbot-data/nc-2025",
+          "status": "session",
+          "sessions": [
+            "2025"
+          ],
+          "browse": "https://github.com/govbot-data/nc-2025",
+          "data_json": "https://raw.githubusercontent.com/govbot-data/nc-2025/HEAD/data.json"
+        },
+        {
+          "repo": "govbot-data/nc-2025e1",
+          "status": "session",
+          "sessions": [
+            "2025E1"
+          ],
+          "browse": "https://github.com/govbot-data/nc-2025e1",
+          "data_json": "https://raw.githubusercontent.com/govbot-data/nc-2025e1/HEAD/data.json"
         }
       ]
     },

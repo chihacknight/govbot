@@ -472,9 +472,10 @@ pub fn for_each_bill<F>(
 where
     F: FnMut(BillRecord) -> Result<ControlFlow>,
 {
+    let shadowed = crate::git::shadowed_session_dirs(repos_dir);
     for (repo_name, root) in cloned_roots(repos_dir, jurisdiction) {
         let commit = head_commit(&repos_dir.join(&repo_name));
-        if for_each_bill_in(repos_dir, jurisdiction, &repo_name, &commit, &root, session_filter, &mut visit)?
+        if for_each_bill_in(repos_dir, jurisdiction, &repo_name, &commit, &root, session_filter, &shadowed, &mut visit)?
             == ControlFlow::Stop
         {
             return Ok(());
@@ -491,6 +492,7 @@ fn for_each_bill_in<F>(
     commit: &Option<String>,
     root: &Path,
     session_filter: Option<&str>,
+    shadowed: &std::collections::HashSet<PathBuf>,
     visit: &mut F,
 ) -> Result<ControlFlow>
 where
@@ -498,6 +500,10 @@ where
 {
     let repo_name = repo_name.to_string();
     for session_id in session_ids(root) {
+        // A session pair holds this session too: read it there, not here.
+        if shadowed.contains(&root.join(&session_id)) {
+            continue;
+        }
         if let Some(wanted) = session_filter {
             if session_id != wanted {
                 continue;
