@@ -58,7 +58,9 @@ states:
     - working
     scraper_labels:
     - working
-    sessions: []
+    sessions:
+    - id: '2027'
+      schedule: manual
     old_repos:
       status: history
       scraper: govbot-history/ar-legislation-scraper
@@ -69,7 +71,9 @@ states:
     runner: proxy
     labels:
     - working
-    sessions: []
+    sessions:
+    - id: 58th-1st-regular
+      schedule: manual
     old_repos:
       status: history
       scraper: govbot-history/az-legislation-scraper
@@ -135,12 +139,13 @@ states:
     scrape_cron: 0 4 * * *
     scrape_timeout_minutes: 2520
     runner: self-hosted
-    docker_image: ghcr.io/tamara-builds/openstates-scrapers:fl-fix-test
     labels:
     - working
     scraper_labels:
     - working
-    sessions: []
+    sessions:
+    - id: '2027'
+      schedule: manual
     old_repos:
       status: history
       scraper: govbot-history/fl-legislation-scraper
@@ -226,7 +231,9 @@ states:
     - USER_AGENT
     labels:
     - working
-    sessions: []
+    sessions:
+    - id: '2027'
+      schedule: manual
     old_repos:
       status: history
       scraper: govbot-history/in-legislation-scraper
@@ -369,7 +376,9 @@ states:
     - working
     scraper_labels:
     - working
-    sessions: []
+    sessions:
+    - id: '2027'
+      schedule: manual
     old_repos:
       status: history
       scraper: govbot-history/mt-legislation-scraper
@@ -458,7 +467,9 @@ states:
     - working
     scraper_labels:
     - working
-    sessions: []
+    sessions:
+    - id: '84'
+      schedule: manual
     old_repos:
       status: history
       scraper: govbot-history/nv-legislation-scraper
@@ -494,7 +505,9 @@ states:
     - working
     scraper_labels:
     - working
-    sessions: []
+    sessions:
+    - id: '2027'
+      schedule: manual
     old_repos:
       status: history
       scraper: govbot-history/ok-legislation-scraper
@@ -583,7 +596,9 @@ states:
     - working
     scraper_labels:
     - working
-    sessions: []
+    sessions:
+    - id: '115'
+      schedule: manual
     old_repos:
       status: history
       scraper: govbot-history/tn-legislation-scraper
@@ -598,6 +613,7 @@ states:
     - working
     sessions:
     - id: 90R
+      schedule: manual
     old_repos:
       status: history
       scraper: govbot-history/tx-legislation-scraper
@@ -632,11 +648,11 @@ states:
     scrape_cron: 0 4 * * *
     runner: proxy
     scrapers: csv_bills
-    repo_secrets:
-    - VIRGINIA_API_KEY
     labels:
     - working
-    sessions: []
+    sessions:
+    - id: '2027'
+      schedule: manual
     old_repos:
       status: history
       scraper: govbot-history/va-legislation-scraper
@@ -714,7 +730,9 @@ states:
     - working
     scraper_labels:
     - working
-    sessions: []
+    sessions:
+    - id: '2027'
+      schedule: manual
     old_repos:
       status: history
       scraper: govbot-history/wy-legislation-scraper

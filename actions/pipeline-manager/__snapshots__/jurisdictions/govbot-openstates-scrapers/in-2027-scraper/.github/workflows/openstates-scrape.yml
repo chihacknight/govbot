@@ -1,0 +1,95 @@
+name: OpenStates Scrape for in 2027
+
+on:
+  workflow_dispatch:
+    inputs:
+      force-update:
+        type: boolean
+        description: "Force push even if upstream changed (use with caution)"
+        default: false
+      use-self-hosted:
+        type: boolean
+        description: "Force self-hosted for this manual run instead of the default tinyproxy + GitHub-hosted path (only meaningful for locales configured runner: self-hosted; e.g. to test without the proxy)"
+        default: false
+      session:
+        type: string
+        description: "OpenStates session id for this manual run (e.g. 90R). Empty = this repo's configured session, or OpenStates' active sessions if it has none"
+        default: ""
+
+# See the active (non-paused) template for the full explanation.
+concurrency:
+  group: scrape
+  cancel-in-progress: false
+
+env:
+  STATE_CODE: in
+  # See the active (non-paused) template for the full explanation -- same
+  # logic here, just no schedule trigger, since "paused" means dispatch-only
+  # by design.
+  USE_PROXY: ${{ 'self-hosted' == 'self-hosted' && 'false' != 'true' && !(github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) }}
+
+jobs:
+  scrape:
+    name: "🕷️ Scrape Data"
+    runs-on: ${{ ('false' == 'true' || (github.event_name == 'workflow_dispatch' && inputs.use-self-hosted)) && 'self-hosted' || ('self-hosted' == 'self-hosted' && 'ubuntu-latest' || 'self-hosted') }}
+    # Same runner, timeout and image settings as the scheduled template: a manual-only
+    # session's first runs are real scrapes (FL needs the home runner and > 12 h).
+    timeout-minutes: 720
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout state repo
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Run scraper action
+        id: scrape
+        uses: chihacknight/govbot/actions/scrape@main
+        with:
+          state: ${{ env.STATE_CODE }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          commit-and-push: true
+          force-update: ${{ inputs.force-update }}
+          branch: main
+          docker-image: openstates/scrapers:latest
+          # locale.scrape_session / locale.scrapers (config; both default empty = the old
+          # behaviour: OpenStates' active sessions, bills only). A manual run can name
+          # another session. CT IA KS MA MD NM OR PR TX need "bills votes" for roll calls.
+          session: ${{ inputs.session || '2027' }}
+          scrapers: ""
+          api-keys: |
+            {
+              "DC_API_KEY": "${{ secrets.DC_API_KEY }}",
+              "NEW_YORK_API_KEY": "${{ secrets.NEW_YORK_API_KEY }}",
+              "INDIANA_API_KEY": "${{ secrets.INDIANA_API_KEY }}",
+              "USER_AGENT": "${{ secrets.USER_AGENT }}",
+              "HTTPS_PROXY": "${{ env.USE_PROXY == 'true' && secrets.PROXY_URL || '' }}",
+              "HTTP_PROXY": "${{ env.USE_PROXY == 'true' && secrets.PROXY_URL || '' }}"
+            }
+
+      # See the active (non-paused) template for the full explanation of why
+      # this needs repository_dispatch + a GitHub App token rather than
+      # workflow_run or a plain PAT.
+      - name: Generate GitHub App token for cross-org dispatch
+        id: app-token
+        if: always()
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          # locale.data_org / locale.data_repo: the data repo this scraper feeds
+          # (render.py default: govbot-data/<state>-legislation).
+          owner: govbot-data
+          repositories: in-2027
+
+      - name: Trigger format workflow in govbot-data/in-2027
+        if: always()
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          echo "🚀 Triggering format workflow in govbot-data/in-2027..."
+          gh api "repos/govbot-data/in-2027/dispatches" \
+            -f event_type='scrape-complete' \
+            -F "client_payload[state]=${{ env.STATE_CODE }}"

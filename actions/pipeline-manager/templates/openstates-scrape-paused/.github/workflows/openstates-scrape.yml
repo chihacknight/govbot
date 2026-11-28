@@ -26,13 +26,15 @@ env:
   # See the active (non-paused) template for the full explanation -- same
   # logic here, just no schedule trigger, since "paused" means dispatch-only
   # by design.
-  USE_PROXY: ${{ '✏️{ locale.runner }✏️' == 'self-hosted' && !(github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) }}
+  USE_PROXY: ${{ '✏️{ locale.runner }✏️' == 'self-hosted' && '✏️{ locale.force_self_hosted }✏️' != 'true' && !(github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) }}
 
 jobs:
   scrape:
     name: "🕷️ Scrape Data"
-    runs-on: ${{ (github.event_name == 'workflow_dispatch' && inputs.use-self-hosted) && 'self-hosted' || ('✏️{ locale.runner }✏️' == 'self-hosted' && 'ubuntu-latest' || '✏️{ locale.runner }✏️') }}
-    timeout-minutes: 720
+    runs-on: ${{ ('✏️{ locale.force_self_hosted }✏️' == 'true' || (github.event_name == 'workflow_dispatch' && inputs.use-self-hosted)) && 'self-hosted' || ('✏️{ locale.runner }✏️' == 'self-hosted' && 'ubuntu-latest' || '✏️{ locale.runner }✏️') }}
+    # Same runner, timeout and image settings as the scheduled template: a manual-only
+    # session's first runs are real scrapes (FL needs the home runner and > 12 h).
+    timeout-minutes: ✏️{ locale.scrape_timeout_minutes }✏️
     permissions:
       contents: write
 
@@ -51,6 +53,7 @@ jobs:
           commit-and-push: true
           force-update: ${{ inputs.force-update }}
           branch: main
+          docker-image: ✏️{ locale.docker_image }✏️
           # locale.scrape_session / locale.scrapers (config; both default empty = the old
           # behaviour: OpenStates' active sessions, bills only). A manual run can name
           # another session. CT IA KS MA MD NM OR PR TX need "bills votes" for roll calls.

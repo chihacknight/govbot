@@ -63,9 +63,18 @@
         {
           "repo": "govbot-history/ar-legislation-data",
           "status": "history",
-          "sessions": "all",
+          "sessions": "every session without its own repo below",
           "browse": "https://github.com/govbot-history/ar-legislation-data",
           "data_json": "https://raw.githubusercontent.com/govbot-history/ar-legislation-data/HEAD/data.json"
+        },
+        {
+          "repo": "govbot-data/ar-2027",
+          "status": "session",
+          "sessions": [
+            "2027"
+          ],
+          "browse": "https://github.com/govbot-data/ar-2027",
+          "data_json": "https://raw.githubusercontent.com/govbot-data/ar-2027/HEAD/data.json"
         }
       ]
     },
@@ -77,9 +86,18 @@
         {
           "repo": "govbot-history/az-legislation-data",
           "status": "history",
-          "sessions": "all",
+          "sessions": "every session without its own repo below",
           "browse": "https://github.com/govbot-history/az-legislation-data",
           "data_json": "https://raw.githubusercontent.com/govbot-history/az-legislation-data/HEAD/data.json"
+        },
+        {
+          "repo": "govbot-data/az-58th-1st-regular",
+          "status": "session",
+          "sessions": [
+            "58th-1st-regular"
+          ],
+          "browse": "https://github.com/govbot-data/az-58th-1st-regular",
+          "data_json": "https://raw.githubusercontent.com/govbot-data/az-58th-1st-regular/HEAD/data.json"
         }
       ]
     },
@@ -161,9 +179,18 @@
         {
           "repo": "govbot-history/fl-legislation-data",
           "status": "history",
-          "sessions": "all",
+          "sessions": "every session without its own repo below",
           "browse": "https://github.com/govbot-history/fl-legislation-data",
           "data_json": "https://raw.githubusercontent.com/govbot-history/fl-legislation-data/HEAD/data.json"
+        },
+        {
+          "repo": "govbot-data/fl-2027",
+          "status": "session",
+          "sessions": [
+            "2027"
+          ],
+          "browse": "https://github.com/govbot-data/fl-2027",
+          "data_json": "https://raw.githubusercontent.com/govbot-data/fl-2027/HEAD/data.json"
         }
       ]
     },
@@ -259,9 +286,18 @@
         {
           "repo": "govbot-history/in-legislation-data",
           "status": "history",
-          "sessions": "all",
+          "sessions": "every session without its own repo below",
           "browse": "https://github.com/govbot-history/in-legislation-data",
           "data_json": "https://raw.githubusercontent.com/govbot-history/in-legislation-data/HEAD/data.json"
+        },
+        {
+          "repo": "govbot-data/in-2027",
+          "status": "session",
+          "sessions": [
+            "2027"
+          ],
+          "browse": "https://github.com/govbot-data/in-2027",
+          "data_json": "https://raw.githubusercontent.com/govbot-data/in-2027/HEAD/data.json"
         }
       ]
     },
@@ -427,9 +463,18 @@
         {
           "repo": "govbot-history/mt-legislation-data",
           "status": "history",
-          "sessions": "all",
+          "sessions": "every session without its own repo below",
           "browse": "https://github.com/govbot-history/mt-legislation-data",
           "data_json": "https://raw.githubusercontent.com/govbot-history/mt-legislation-data/HEAD/data.json"
+        },
+        {
+          "repo": "govbot-data/mt-2027",
+          "status": "session",
+          "sessions": [
+            "2027"
+          ],
+          "browse": "https://github.com/govbot-data/mt-2027",
+          "data_json": "https://raw.githubusercontent.com/govbot-data/mt-2027/HEAD/data.json"
         }
       ]
     },
@@ -525,9 +570,18 @@
         {
           "repo": "govbot-history/nv-legislation-data",
           "status": "history",
-          "sessions": "all",
+          "sessions": "every session without its own repo below",
           "browse": "https://github.com/govbot-history/nv-legislation-data",
           "data_json": "https://raw.githubusercontent.com/govbot-history/nv-legislation-data/HEAD/data.json"
+        },
+        {
+          "repo": "govbot-data/nv-84",
+          "status": "session",
+          "sessions": [
+            "84"
+          ],
+          "browse": "https://github.com/govbot-data/nv-84",
+          "data_json": "https://raw.githubusercontent.com/govbot-data/nv-84/HEAD/data.json"
         }
       ]
     },
@@ -567,9 +621,18 @@
         {
           "repo": "govbot-history/ok-legislation-data",
           "status": "history",
-          "sessions": "all",
+          "sessions": "every session without its own repo below",
           "browse": "https://github.com/govbot-history/ok-legislation-data",
           "data_json": "https://raw.githubusercontent.com/govbot-history/ok-legislation-data/HEAD/data.json"
+        },
+        {
+          "repo": "govbot-data/ok-2027",
+          "status": "session",
+          "sessions": [
+            "2027"
+          ],
+          "browse": "https://github.com/govbot-data/ok-2027",
+          "data_json": "https://raw.githubusercontent.com/govbot-data/ok-2027/HEAD/data.json"
         }
       ]
     },
@@ -665,9 +728,18 @@
         {
           "repo": "govbot-history/tn-legislation-data",
           "status": "history",
-          "sessions": "all",
+          "sessions": "every session without its own repo below",
           "browse": "https://github.com/govbot-history/tn-legislation-data",
           "data_json": "https://raw.githubusercontent.com/govbot-history/tn-legislation-data/HEAD/data.json"
+        },
+        {
+          "repo": "govbot-data/tn-115",
+          "status": "session",
+          "sessions": [
+            "115"
+          ],
+          "browse": "https://github.com/govbot-data/tn-115",
+          "data_json": "https://raw.githubusercontent.com/govbot-data/tn-115/HEAD/data.json"
         }
       ]
     },
@@ -730,9 +802,18 @@
         {
           "repo": "govbot-history/va-legislation-data",
           "status": "history",
-          "sessions": "all",
+          "sessions": "every session without its own repo below",
           "browse": "https://github.com/govbot-history/va-legislation-data",
           "data_json": "https://raw.githubusercontent.com/govbot-history/va-legislation-data/HEAD/data.json"
+        },
+        {
+          "repo": "govbot-data/va-2027",
+          "status": "session",
+          "sessions": [
+            "2027"
+          ],
+          "browse": "https://github.com/govbot-data/va-2027",
+          "data_json": "https://raw.githubusercontent.com/govbot-data/va-2027/HEAD/data.json"
         }
       ]
     },
@@ -814,9 +895,18 @@
         {
           "repo": "govbot-history/wy-legislation-data",
           "status": "history",
-          "sessions": "all",
+          "sessions": "every session without its own repo below",
           "browse": "https://github.com/govbot-history/wy-legislation-data",
           "data_json": "https://raw.githubusercontent.com/govbot-history/wy-legislation-data/HEAD/data.json"
+        },
+        {
+          "repo": "govbot-data/wy-2027",
+          "status": "session",
+          "sessions": [
+            "2027"
+          ],
+          "browse": "https://github.com/govbot-data/wy-2027",
+          "data_json": "https://raw.githubusercontent.com/govbot-data/wy-2027/HEAD/data.json"
         }
       ]
     }
