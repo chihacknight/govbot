@@ -1,1 +1,1 @@
-Error: fleet-broken: 'org' must be a mapping, not str
+Error: jurisdictions.yml: 'states' must be a mapping, not list

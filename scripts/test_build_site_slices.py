@@ -20,6 +20,7 @@ def run():
         "generated_at": "2026-10-01T00:00:00Z", "source": "test",
         "states": [{"code": "il", "name": "Illinois"}, {"code": "wy", "name": "Wyoming"}],
         "empty_jurisdictions": [], "tags": [{"name": "housing"}, {"name": "education"}],
+        "repos": {"il": {"repo": "govbot-history/il-legislation-data", "sessions": {}}},
         "bills": [
             bill("il", "HB1", "2026-09-30", ["housing"]),
             bill("il", "HB2", "2026-01-02"),            # older than the IL window
@@ -38,6 +39,7 @@ def run():
     assert [b["id"] for b in idx["recent"]["wy"]] == ["SF2"], "bills without an action are not 'recent'"
     assert idx["recent"]["il"][0]["url"] == "https://x/HB1", "recent rows are full records (the modal needs them)"
     assert idx["states"] == data["states"] and idx["tags"] == data["tags"]
+    assert idx["repos"] == data["repos"], "the bill card's repo map rides in the index"
 
     assert len(s["il.json"]["bills"]) == 4 and len(s["wy.json"]["bills"]) == 2
     assert [b["id"] for b in s["il_recent.json"]["bills"]] == ["HB1", "HB3", "HB4"], "last 200 days only"

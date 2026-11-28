@@ -189,81 +189,24 @@ if [ "${STATE}" = "nh" ]; then
   FASTMODE_FLAG=""
 fi
 
-if [ "${STATE}" = "va" ] && [ -z "$SESSION" ] && [ -z "$SCRAPERS" ]; then
-  # Legacy va-legislation repo only (no session/scrapers given): csv_bills for two
-  # sessions, each run independently with retries. A per-session VA repo sets
-  # session= and scrapers= and takes the generic path below instead. Delete this
-  # branch once the legacy repo has moved to govbot-history (repo reorg).
-  va_regular_exit=1
-  for i in 1 2 3; do
-    # A cold pull (fresh cache, or right after a new image push) prints one
-    # "Pulling fs layer"/"Verifying Checksum"/"Pull complete" set per image
-    # layer -- confirmed on a real run as 60 lines of pure noise before the
-    # scraper even starts. Folded the same way as git commit's output; safe
-    # to fold unconditionally since `|| true` already means a real pull
-    # failure here isn't fatal on its own -- the subsequent `docker run` just
-    # fails with its own clearer error if the image truly doesn't exist.
-    echo "::group::📥 docker pull ${DOCKER_IMAGE}"
-    docker pull ${DOCKER_IMAGE} || true
-    echo "::endgroup::"
-    if docker run \
-        --dns 8.8.8.8 --dns 1.1.1.1 \
-        -v "$(pwd)/_working/_data":/opt/openstates/openstates/_data \
-        -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
-        "${DOCKER_ENV_FLAGS[@]+"${DOCKER_ENV_FLAGS[@]}"}" \
-        ${DOCKER_IMAGE} \
-        ${STATE} csv_bills --scrape session=2026 --fastmode 2>&1 | tee -a "$SCRAPE_LOG" | awk -f "$FOLD_LOG"
-    then
-      va_regular_exit=0
-      break
-    fi
-    echo "⚠️ VA 2026 scrape attempt $i failed; sleeping 20s..." | tee -a "$SCRAPE_LOG"
-    sleep 20
-  done
-
-  va_special_exit=1
-  for i in 1 2 3; do
-    echo "::group::📥 docker pull ${DOCKER_IMAGE}"
-    docker pull ${DOCKER_IMAGE} || true
-    echo "::endgroup::"
-    if docker run \
-        --dns 8.8.8.8 --dns 1.1.1.1 \
-        -v "$(pwd)/_working/_data":/opt/openstates/openstates/_data \
-        -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
-        "${DOCKER_ENV_FLAGS[@]+"${DOCKER_ENV_FLAGS[@]}"}" \
-        ${DOCKER_IMAGE} \
-        ${STATE} csv_bills --scrape session=2026S1 --fastmode 2>&1 | tee -a "$SCRAPE_LOG" | awk -f "$FOLD_LOG"
-    then
-      va_special_exit=0
-      break
-    fi
-    echo "⚠️ VA 2026S1 scrape attempt $i failed; sleeping 20s..." | tee -a "$SCRAPE_LOG"
-    sleep 20
-  done
-
-  if [ $va_regular_exit -eq 0 ] && [ $va_special_exit -eq 0 ]; then
+for i in 1 2 3; do
+  echo "::group::📥 docker pull ${DOCKER_IMAGE}"
+  docker pull ${DOCKER_IMAGE} || true
+  echo "::endgroup::"
+  if docker run \
+      --dns 8.8.8.8 --dns 1.1.1.1 \
+      -v "$(pwd)/_working/_data":/opt/openstates/openstates/_data \
+      -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
+      "${DOCKER_ENV_FLAGS[@]+"${DOCKER_ENV_FLAGS[@]}"}" \
+      ${DOCKER_IMAGE} \
+      ${STATE} "${SCRAPER_ARGS[@]}" --scrape ${FASTMODE_FLAG} 2>&1 | tee -a "$SCRAPE_LOG" | awk -f "$FOLD_LOG"
+  then
     exit_code=0
+    break
   fi
-else
-  for i in 1 2 3; do
-    echo "::group::📥 docker pull ${DOCKER_IMAGE}"
-    docker pull ${DOCKER_IMAGE} || true
-    echo "::endgroup::"
-    if docker run \
-        --dns 8.8.8.8 --dns 1.1.1.1 \
-        -v "$(pwd)/_working/_data":/opt/openstates/openstates/_data \
-        -v "$(pwd)/_working/_cache":/opt/openstates/openstates/_cache \
-        "${DOCKER_ENV_FLAGS[@]+"${DOCKER_ENV_FLAGS[@]}"}" \
-        ${DOCKER_IMAGE} \
-        ${STATE} "${SCRAPER_ARGS[@]}" --scrape ${FASTMODE_FLAG} 2>&1 | tee -a "$SCRAPE_LOG" | awk -f "$FOLD_LOG"
-    then
-      exit_code=0
-      break
-    fi
-    echo "⚠️ scrape attempt $i failed; sleeping 20s..." | tee -a "$SCRAPE_LOG"
-    sleep 20
-  done
-fi
+  echo "⚠️ scrape attempt $i failed; sleeping 20s..." | tee -a "$SCRAPE_LOG"
+  sleep 20
+done
 
 # Stop the incremental auto-save now that the scrape itself is done (success
 # or not) -- the final wipe/rebuild block below is the authoritative save from

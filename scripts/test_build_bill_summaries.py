@@ -83,8 +83,15 @@ def run():
 
     # --- keying matches the frontend's billKey --------------------------------
     assert m.bill_key("mi", "2025-2026", "HB 4301") == "mi~2025-2026~HB%204301"
-    assert m.govbot_meta_url("mi", "2025-2026", "HB 4301", "https://raw.example/g") == \
-        "https://raw.example/g/mi-legislation/main/country:us/state:mi/sessions/2025-2026/bills/HB4301/metadata.json"
+    # MI is still running in its old repo (jurisdictions.yml: manual)
+    assert m.govbot_meta_url("mi", "2025-2026", "HB 4301", "https://raw.example") == \
+        "https://raw.example/govbot-data/mi-legislation/main/country:us/state:mi/sessions/2025-2026/bills/HB4301/metadata.json"
+    # A moved state reads its govbot-history repo by its real name
+    assert m.govbot_meta_url("tn", "114", "HB 1", "https://raw.example") == \
+        "https://raw.example/govbot-history/tn-legislation-data/main/country:us/state:tn/sessions/114/bills/HB1/metadata.json"
+    # A session with its own pair reads the pair
+    assert m.govbot_meta_url("tx", "90R", "HB 1", "https://raw.example") == \
+        "https://raw.example/govbot-data/tx-90r/main/country:us/state:tx/sessions/90R/bills/HB1/metadata.json"
 
     # --- build loop with injected fetchers ------------------------------------
     data = {"bills": [

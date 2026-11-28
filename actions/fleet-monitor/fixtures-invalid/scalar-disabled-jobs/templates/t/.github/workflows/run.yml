@@ -1,3 +1,0 @@
-# Fixture stub: only the file name matters to the config reader.
-name: Run
-on: workflow_dispatch

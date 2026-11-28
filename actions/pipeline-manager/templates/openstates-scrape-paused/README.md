@@ -4,5 +4,7 @@ Scheduled scraping is paused — ✏️{ locale.name }✏️ is currently out of
 
 The workflow can still be triggered manually via workflow_dispatch when needed.
 
-Session status is checked daily by the govbot `check-sessions` workflow, which will
-automatically switch this repo back to the active scrape template when a new session begins.
+It has no schedule because its session in
+[`jurisdictions.yml`](https://github.com/chihacknight/govbot/blob/main/actions/pipeline-manager/jurisdictions.yml)
+says `schedule: manual`. Give the session a schedule there and re-run `jurisdictions.py` to
+turn scheduled scraping back on.

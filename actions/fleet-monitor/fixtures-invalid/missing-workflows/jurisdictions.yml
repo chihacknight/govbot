@@ -1,0 +1,10 @@
+orgs:
+  scraper: govbot-openstates-scrapers
+  data: govbot-data
+states:
+  gu:
+    name: Guam
+    old_repos:
+      status: manual
+      scraper: govbot-openstates-scrapers/gu-legislation
+      data: govbot-data/gu-legislation

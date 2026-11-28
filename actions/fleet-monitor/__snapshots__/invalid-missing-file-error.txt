@@ -1,0 +1,1 @@
+Error: no jurisdictions.yml in fixtures-invalid/missing-file

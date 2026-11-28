@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Give each govbot-data/<code>-legislation repo a clear description, a homepage and topics.
+"""Give each live data repo (jurisdictions.yml) a clear description, a homepage and topics.
 
 Search engines and AI assistants read a repo's description, homepage and topics first.
 Run by an organization admin, once, with the GitHub CLI signed in (`gh auth login`):
@@ -17,10 +17,14 @@ The README is not touched: the pipeline-manager writes it from templates.
 """
 import argparse
 import json
+import re
 import subprocess
 import sys
+from pathlib import Path
 
-ORG = "govbot-data"
+import yaml
+
+JURISDICTIONS_YML = Path(__file__).resolve().parents[2] / "actions" / "pipeline-manager" / "jurisdictions.yml"
 HOMEPAGE = "https://chihacknight.github.io/govbot/"
 
 # code -> (name used in the description, topic for the place)
@@ -51,6 +55,22 @@ SHARED_TOPICS = [
     "legislation", "legislative-data", "open-data", "government-data", "civic-tech",
     "bills", "govbot", "openstates",
 ]
+
+
+def data_repos(codes):
+    """[(code, owner/name)] of the data repos that are still written to (jurisdictions.yml):
+    a `manual` state's current repo and every session pair. `history` repos (moved to
+    govbot-history, read-only) are left alone."""
+    config = yaml.safe_load(JURISDICTIONS_YML.read_text())
+    out = []
+    for code in codes:
+        st = config["states"][code]
+        if st["old_repos"]["status"] == "manual":
+            out.append((code, st["old_repos"]["data"]))
+        for s in st.get("sessions") or []:
+            key = re.sub(r"[^a-z0-9._-]", "-", f"{code}-{s['id']}".lower())
+            out.append((code, f"{config['orgs']['data']}/{key}"))
+    return out
 
 
 def placeholder(code):
@@ -105,8 +125,7 @@ def main():
     if unknown:
         sys.exit(f"Unknown code(s): {', '.join(unknown)}")
     failed = 0
-    for code in codes:
-        repo = f"{ORG}/{code}-legislation"
+    for code, repo in data_repos(codes):
         try:
             current = current_state(repo)
             changes = plan(code, current)

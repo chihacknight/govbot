@@ -43,8 +43,8 @@ session_mapping = {}
     help=(
         "If set, bills/events/votes whose legislative_session doesn't match this "
         "value are routed to .windycivi/errors/wrong_session/ instead of being "
-        "processed. Use this once a repo is scoped to a single session (see "
-        "actions/pipeline-manager/close_session.py) to guard against stray data "
+        "processed. Use this once a repo is scoped to a single session (a session "
+        "pair from actions/pipeline-manager/jurisdictions.yml) to guard against stray data "
         "from an unexpected session silently landing in this repo."
     ),
 )

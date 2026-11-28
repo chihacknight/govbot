@@ -58,6 +58,11 @@ from pathlib import Path
 
 from build_il_summaries import pdftotext
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from data_repos import repo_for  # noqa: E402
+
+RAW_BASE = "https://raw.githubusercontent.com"
+
 # Michigan's legislature site answers 403 to any User-Agent containing "bot" or a
 # URL, so this names the project plainly without either (no browser impersonation).
 _UA = "chihacknight-civic-data/1.0"
@@ -247,8 +252,11 @@ def bill_key(state, session, bill_id):
     return q(state) + "~" + q(session) + "~" + q(bill_id)
 
 
-def govbot_meta_url(state, session, bill_id, repo_base):
-    return (repo_base.rstrip("/") + "/" + state + "-legislation/main/country:us/state:" + state
+def govbot_meta_url(state, session, bill_id, raw_base=RAW_BASE):
+    # The repo holding this session (jurisdictions.yml): a session pair, or the state's
+    # old repo (govbot-history for moved states), by its real name, not a redirect.
+    repo = repo_for(state, session) or f"govbot-data/{state}-legislation"
+    return (raw_base.rstrip("/") + "/" + repo + "/main/country:us/state:" + state
             + "/sessions/" + urllib.parse.quote(session) + "/bills/"
             + urllib.parse.quote(re.sub(r"\s+", "", str(bill_id or ""))) + "/metadata.json")
 
@@ -321,7 +329,7 @@ def candidates(data, states, cache):
 
 
 def build(data, cache, cap, states=STATES, fetch_json=default_fetch_json,
-          fetch_text=default_fetch_text, repo_base="https://raw.githubusercontent.com/govbot-data",
+          fetch_text=default_fetch_text, repo_base=RAW_BASE,
           workers=6):
     """Fill ``cache`` ({state: {billKey: [summary, url]}}) for up to ``cap`` new bills.
     Returns (cache, added, attempted)."""
@@ -352,7 +360,8 @@ def main():
     ap.add_argument("--states", default=",".join(STATES))
     ap.add_argument("--cap", type=int, default=2000, help="max new bills to attempt this run")
     ap.add_argument("--workers", type=int, default=6)
-    ap.add_argument("--repo-base", default="https://raw.githubusercontent.com/govbot-data")
+    ap.add_argument("--raw-base", dest="repo_base", default=RAW_BASE,
+                    help="raw-files host (the repo comes from jurisdictions.yml)")
     args = ap.parse_args()
 
     states = [s for s in args.states.split(",") if s in EXTRACTORS]

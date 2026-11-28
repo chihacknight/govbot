@@ -111,7 +111,7 @@ LIMIT 10;
 
 # The data catalogs
 
-Formatted legislation data for all 56 jurisdictions lives at [github.com/govbot-data](https://github.com/orgs/govbot-data/repositories) — one repo per jurisdiction (`govbot-data/{code}-legislation`). The root of each repo *is* the dataset:
+Formatted legislation data for all 56 jurisdictions lives at [github.com/govbot-data](https://github.com/orgs/govbot-data/repositories) (one repo per legislative session from 2027, `govbot-data/{code}-{session}`) and [github.com/govbot-history](https://github.com/orgs/govbot-history/repositories) (one repo per jurisdiction with every session up to 2026, `govbot-history/{code}-legislation-data`). The root of each repo *is* the dataset:
 
 ```
 {state}-legislation/
@@ -190,7 +190,7 @@ Govbot began in 2022 with a simple goal: a place for simplified, summarized upda
 
 ## Can I see the code?
 
-Yes. The toolkit, the pipelines and this site are at [chihacknight/govbot](https://github.com/chihacknight/govbot). The data lives in one repo per jurisdiction at [govbot-data](https://github.com/orgs/govbot-data/repositories).
+Yes. The toolkit, the pipelines and this site are at [chihacknight/govbot](https://github.com/chihacknight/govbot). The data lives at [govbot-data](https://github.com/orgs/govbot-data/repositories) (per session, from 2027) and [govbot-history](https://github.com/orgs/govbot-history/repositories) (per jurisdiction, up to 2026).
 
 ## How is the data structured?
 
@@ -200,7 +200,7 @@ Each bill is a folder with its metadata, action logs and bill text — see [The 
 
 **No coding:** open [Explore Legislation → Download the data](dashboard/legislation.html#download) for every bill as a spreadsheet (CSV, opens in Excel or Google Sheets), one state at a time or all at once — or download exactly the bills you've searched for from a state's bills list. The same panel links the JSON files (`dashboard/data.json`, `dashboard/bills/<code>.json`) and a `manifest.json` for scripts. This data is licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) — please credit "Govbot (Chi Hack Night)".
 
-**Full records:** run `govbot clone il` (or `govbot clone all`), or browse and `git clone` any repo at [govbot-data](https://github.com/orgs/govbot-data/repositories).
+**Full records:** run `govbot clone il` (or `govbot clone all`), or browse and `git clone` any repo at [govbot-data](https://github.com/orgs/govbot-data/repositories) or [govbot-history](https://github.com/orgs/govbot-history/repositories).
 
 To add a **new** jurisdiction, each one is scraped by a GitHub Actions template explained in the [caller-repo README template](https://github.com/chihacknight/govbot/blob/main/actions/format/docs/for-caller-repos/README_TEMPLATE.md); to run many pipelines, see the [pipeline manager](https://github.com/chihacknight/govbot/tree/main/actions/pipeline-manager).
 

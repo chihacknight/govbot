@@ -90,7 +90,7 @@ govbot --help              # see all commands and options
 
 # 🏛️ Govbot Legislation Data Catalogs
 
-Formatted legislation data for all 56 jurisdictions is available at [github.com/govbot-data](https://github.com/orgs/govbot-data/repositories).
+Formatted legislation data for all 56 jurisdictions is available at [github.com/govbot-data](https://github.com/orgs/govbot-data/repositories) (live, one repo per legislative session from 2027) and [github.com/govbot-history](https://github.com/orgs/govbot-history/repositories) (one repo per jurisdiction with every session up to 2026, full git history). `govbot clone` gets both; [catalog.json](catalog.json) lists every repo.
 
 - All 50 US states
 - Federal (USA)

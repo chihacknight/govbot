@@ -1,7 +1,7 @@
 """Shared HTTP helper: stdlib urllib with retry/backoff, no client libraries.
 
 Used by the GitHub poller (GET) and the Grafana push (POST). Retry policy
-mirrors the proven pattern in actions/pipeline-manager/check-sessions.py:
+mirrors the proven pattern of pipeline-manager's former check-sessions.py:
 HTTP 429 honors Retry-After — as does a 403 that is really GitHub rate
 limiting (Retry-After present or X-RateLimit-Remaining exhausted) — 5xx and
 network errors back off exponentially, and any other 4xx fails immediately:

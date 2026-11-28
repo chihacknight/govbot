@@ -46,12 +46,12 @@ stale noise:
 
 This script lives in its own action (actions/openstates-scrape-audits/),
 scoped specifically to the OpenStates-based bill scraper pipeline
-(actions/scrape/, chn-openstates-scrape.yml) -- it has no visibility into
+(actions/scrape/, jurisdictions.yml) -- it has no visibility into
 the other scraper pipelines in this repo (actions/scrape-elections/,
 actions/scrape-maps/), hence the explicit
 "openstates" in the name. Separate from actions/pipeline-manager/
 (repo/template provisioning) -- the only functional tie to
-pipeline-manager is reading its locale config (chn-openstates-scrape.yml)
+pipeline-manager is reading its config (jurisdictions.yml)
 for the active/paused state list, via the relative path below, not shared
 ownership of any file here.
 
@@ -67,13 +67,12 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-import yaml
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from repos import running_scrapers, state_repos  # noqa: E402  (jurisdictions.yml)
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_ROOT = SCRIPT_DIR.parent.parent
-PIPELINE_MANAGER = REPO_ROOT / "actions" / "pipeline-manager"
 
-SCRAPER_ORG = "govbot-openstates-scrapers"
 GITHUB_API = "https://api.github.com"
 
 # Benign by construction -- a scraper telling you what session it picked, or
@@ -136,13 +135,11 @@ def _github_api_get(url: str) -> dict | None:
         return None
 
 
-def load_active_states() -> list[str]:
-    with open(PIPELINE_MANAGER / "chn-openstates-scrape.yml") as f:
-        cfg = yaml.safe_load(f)
-    return sorted(
-        code for code, loc in cfg["locales"].items()
-        if "paused" not in loc.get("template", "")
-    )
+def load_active_scrapers() -> list[tuple[str, str]]:
+    """[(label, owner/scraper-repo)] whose workflow runs (jurisdictions.yml): a manual
+    state's old scraper repo (label = the state code) and each scheduled session pair
+    (label = the pair, e.g. tx-90r)."""
+    return running_scrapers()
 
 
 def is_noise(failure_type: str, error_summary: str, sample_warnings: list[str]) -> bool:
@@ -163,8 +160,9 @@ def is_noise(failure_type: str, error_summary: str, sample_warnings: list[str]) 
     return all(any(p in w for p in NOISE_PATTERNS) for w in sample_warnings)
 
 
-def check_failure_signal(code: str, now: datetime) -> dict | None:
-    wh = fetch_raw_json(SCRAPER_ORG, f"{code}-legislation", ".windycivi/warning_history.json")
+def check_failure_signal(scraper: str, now: datetime) -> dict | None:
+    org, repo = scraper.split("/", 1)
+    wh = fetch_raw_json(org, repo, ".windycivi/warning_history.json")
     if not wh:
         return None
     # The most recent committed day, not a hardcoded "today" -- a nightly
@@ -200,10 +198,9 @@ def check_failure_signal(code: str, now: datetime) -> dict | None:
     }
 
 
-def check_runner_signal(code: str, now: datetime) -> dict | None:
-    repo = f"{code}-legislation"
+def check_runner_signal(scraper: str, now: datetime) -> dict | None:
     url = (
-        f"{GITHUB_API}/repos/{SCRAPER_ORG}/{repo}/actions/workflows/"
+        f"{GITHUB_API}/repos/{scraper}/actions/workflows/"
         f"openstates-scrape.yml/runs?{urllib.parse.urlencode({'per_page': 1})}"
     )
     data = _github_api_get(url)
@@ -238,17 +235,17 @@ def main():
 
     now = datetime.now(timezone.utc)
     today_str = now.strftime("%Y-%m-%d")
-    active_states = load_active_states()
+    active_scrapers = load_active_scrapers()
 
     failure_findings = {}
     runner_findings = {}
 
-    for i, code in enumerate(active_states, 1):
-        print(f"[{i}/{len(active_states)}] {code}...", file=sys.stderr)
-        finding = check_failure_signal(code, now)
+    for i, (code, scraper) in enumerate(active_scrapers, 1):
+        print(f"[{i}/{len(active_scrapers)}] {code} ({scraper})...", file=sys.stderr)
+        finding = check_failure_signal(scraper, now)
         if finding:
             failure_findings[code] = finding
-        runner_issue = check_runner_signal(code, now)
+        runner_issue = check_runner_signal(scraper, now)
         if runner_issue:
             runner_findings[code] = runner_issue
 

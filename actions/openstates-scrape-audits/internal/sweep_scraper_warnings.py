@@ -23,7 +23,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-import yaml
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from repos import state_repos  # noqa: E402  (jurisdictions.yml)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 ORG = "govbot-openstates-scrapers"
@@ -36,9 +38,7 @@ EXCLUDE_RE = re.compile(
 
 
 def load_states() -> list[str]:
-    with open(REPO_ROOT / "actions" / "pipeline-manager" / "chn-openstates-scrape.yml") as f:
-        cfg = yaml.safe_load(f)
-    return sorted(cfg["locales"].keys())
+    return sorted(state_repos())  # every state in jurisdictions.yml
 
 
 def latest_success_run(code: str) -> dict | None:

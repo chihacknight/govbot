@@ -27,8 +27,7 @@ repo_dir=${1:?usage: tag_dashboard_repo.sh <repo_dir>}
 : "${GOVBOT_DATA:?}" "${MODEL_DIR:?}" "${CACHE_DIR:?}" "${DASHBOARD_CONFIG:?}" "${FILTER_SCRIPT:?}"
 
 [ -d "$repo_dir" ] || exit 0
-name=$(basename "$repo_dir")
-locale=${name%-legislation}
+name=$(basename "$repo_dir")   # tx-legislation (old repo) or tx-90r (session pair)
 repo_cache="$CACHE_DIR/$name"
 mkdir -p "$repo_cache"
 
@@ -46,7 +45,17 @@ fi
 # 3. Tag only new/changed bills. --limit none: all bills; --filter none: don't
 # drop entries; --join bill: stable content (no self-injected tags); --overwrite:
 # actually re-tag a changed bill (the tagger otherwise skips by id presence).
-govbot logs --repos "$locale" --govbot-dir "$GOVBOT_DATA" \
+# A folder name means just this folder (a state can have several). A CLI older than the
+# 2026-11 repo reorg only knows state codes: for its <st>-legislation folders it then
+# answers nothing, and the state code (the old call) is used instead.
+repos_arg="$name"
+case "$name" in
+  *-legislation)
+    if [ -z "$(govbot logs --repos "$name" --govbot-dir "$GOVBOT_DATA" --limit 1 --filter none 2>/dev/null | head -1)" ]; then
+      repos_arg=${name%-legislation}
+    fi ;;
+esac
+govbot logs --repos "$repos_arg" --govbot-dir "$GOVBOT_DATA" \
     --join bill --limit none --filter none \
   | python3 "$FILTER_SCRIPT" --ledger "$repo_cache/ledger.json" \
   | ( cd "$repo_dir" && govbot tag --govbot-dir "$MODEL_DIR" --overwrite )

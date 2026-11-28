@@ -404,27 +404,39 @@ fn string_array(value: Option<&Value>) -> Vec<String> {
         .unwrap_or_default()
 }
 
-/// The directory holding a jurisdiction's sessions, or `None` if it isn't cloned.
-pub fn jurisdiction_root(repos_dir: &Path, jurisdiction: &Jurisdiction) -> Option<PathBuf> {
-    let root = repos_dir
-        .join(jurisdiction.repo_name())
-        .join("country:us")
-        .join(format!("state:{}", jurisdiction.path_segment()))
-        .join("sessions");
-    root.is_dir().then_some(root)
+/// A jurisdiction's local repo folders that are cloned, in a fixed order: the old
+/// one-repo-per-state folder (`<locale>-legislation`) first, then each session pair's
+/// (see git::repo_targets). Each is (folder name, its `.../state:<x>/sessions` dir).
+fn cloned_roots(repos_dir: &Path, jurisdiction: &Jurisdiction) -> Vec<(String, PathBuf)> {
+    let mut folders = crate::git::repo_folders(&jurisdiction.locale);
+    if !folders.contains(&jurisdiction.repo_name()) {
+        folders.insert(0, jurisdiction.repo_name());
+    }
+    folders
+        .into_iter()
+        .filter_map(|folder| {
+            let root = repos_dir
+                .join(&folder)
+                .join("country:us")
+                .join(format!("state:{}", jurisdiction.path_segment()))
+                .join("sessions");
+            root.is_dir().then_some((folder, root))
+        })
+        .collect()
 }
 
-/// The repository directory for a jurisdiction, cloned or not.
+/// The first cloned folder's sessions directory, or `None` if nothing is cloned.
+pub fn jurisdiction_root(repos_dir: &Path, jurisdiction: &Jurisdiction) -> Option<PathBuf> {
+    cloned_roots(repos_dir, jurisdiction).into_iter().next().map(|(_, root)| root)
+}
+
+/// The old one-repo-per-state directory for a jurisdiction, cloned or not.
 pub fn repo_dir(repos_dir: &Path, jurisdiction: &Jurisdiction) -> PathBuf {
     repos_dir.join(jurisdiction.repo_name())
 }
 
-/// Session ids present on disk for a jurisdiction.
-pub fn sessions(repos_dir: &Path, jurisdiction: &Jurisdiction) -> Vec<String> {
-    let Some(root) = jurisdiction_root(repos_dir, jurisdiction) else {
-        return Vec::new();
-    };
-    let Ok(entries) = std::fs::read_dir(&root) else {
+fn session_ids(root: &Path) -> Vec<String> {
+    let Ok(entries) = std::fs::read_dir(root) else {
         return Vec::new();
     };
     let mut ids: Vec<String> = entries
@@ -433,6 +445,17 @@ pub fn sessions(repos_dir: &Path, jurisdiction: &Jurisdiction) -> Vec<String> {
         .filter_map(|entry| entry.file_name().into_string().ok())
         .collect();
     ids.sort();
+    ids
+}
+
+/// Session ids present on disk for a jurisdiction, across all its repo folders.
+pub fn sessions(repos_dir: &Path, jurisdiction: &Jurisdiction) -> Vec<String> {
+    let mut ids: Vec<String> = cloned_roots(repos_dir, jurisdiction)
+        .iter()
+        .flat_map(|(_, root)| session_ids(root))
+        .collect();
+    ids.sort();
+    ids.dedup();
     ids
 }
 
@@ -449,13 +472,32 @@ pub fn for_each_bill<F>(
 where
     F: FnMut(BillRecord) -> Result<ControlFlow>,
 {
-    let Some(root) = jurisdiction_root(repos_dir, jurisdiction) else {
-        return Ok(());
-    };
-    let repo_name = jurisdiction.repo_name();
-    let commit = head_commit(&repo_dir(repos_dir, jurisdiction));
+    for (repo_name, root) in cloned_roots(repos_dir, jurisdiction) {
+        let commit = head_commit(&repos_dir.join(&repo_name));
+        if for_each_bill_in(repos_dir, jurisdiction, &repo_name, &commit, &root, session_filter, &mut visit)?
+            == ControlFlow::Stop
+        {
+            return Ok(());
+        }
+    }
+    Ok(())
+}
 
-    for session_id in sessions(repos_dir, jurisdiction) {
+/// The bills of one repo folder; returns Stop if the visitor stopped.
+fn for_each_bill_in<F>(
+    repos_dir: &Path,
+    jurisdiction: &Jurisdiction,
+    repo_name: &str,
+    commit: &Option<String>,
+    root: &Path,
+    session_filter: Option<&str>,
+    visit: &mut F,
+) -> Result<ControlFlow>
+where
+    F: FnMut(BillRecord) -> Result<ControlFlow>,
+{
+    let repo_name = repo_name.to_string();
+    for session_id in session_ids(root) {
         if let Some(wanted) = session_filter {
             if session_id != wanted {
                 continue;
@@ -511,11 +553,11 @@ where
             };
 
             if visit(record)? == ControlFlow::Stop {
-                return Ok(());
+                return Ok(ControlFlow::Stop);
             }
         }
     }
-    Ok(())
+    Ok(ControlFlow::Continue)
 }
 
 /// Whether a scan should keep going.

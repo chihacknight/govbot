@@ -1,0 +1,5 @@
+orgs:
+  scraper: govbot-openstates-scrapers
+  data: govbot-data
+states:
+  gu: Guam

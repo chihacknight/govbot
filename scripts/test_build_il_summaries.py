@@ -48,8 +48,9 @@ def run():
 
     # --- keying -----------------------------------------------------------
     assert m.bill_key("104th", "HB 10") == "il~104th~HB%2010"
-    assert m.govbot_meta_url("104th", "HB 10", "https://raw.example/govbot-data") == \
-        "https://raw.example/govbot-data/il-legislation/main/country:us/state:il/" \
+    # IL moved to govbot-history (jurisdictions.yml): read by the repo's real name
+    assert m.govbot_meta_url("104th", "HB 10", "https://raw.example") == \
+        "https://raw.example/govbot-history/il-legislation-data/main/country:us/state:il/" \
         "sessions/104th/bills/HB10/metadata.json"
 
     # --- pdf link picking -------------------------------------------------

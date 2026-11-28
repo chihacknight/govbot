@@ -104,8 +104,8 @@ def process_and_save(
             )
             continue
 
-        # This repo is meant to hold exactly one session's data (see
-        # actions/pipeline-manager/close_session.py). If the scraper repo
+        # This repo is meant to hold exactly one session's data (a session pair
+        # from actions/pipeline-manager/jurisdictions.yml). If the scraper repo
         # feeding this run isn't properly session-scoped, don't silently
         # create a second sessions/{id}/ folder here — route it to errors
         # for a human to notice instead.

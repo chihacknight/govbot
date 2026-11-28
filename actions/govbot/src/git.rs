@@ -92,6 +92,52 @@ pub fn build_repo_path(locale: &str) -> String {
     format!("{}/{}", org, repo_name)
 }
 
+/// One git repository to clone into one local folder.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RepoTarget {
+    pub url: String,
+    /// Folder under repos/: `<locale>-legislation` for the old repo, the repo's own name
+    /// for a session pair.
+    pub folder: String,
+    /// owner/name, for messages
+    pub path: String,
+    /// A session pair listed in jurisdictions.yml may not be created yet; a missing one is
+    /// skipped instead of failing the whole locale.
+    pub optional: bool,
+}
+
+/// Every repository a locale is cloned from. By default these come from
+/// pipeline-manager's jurisdictions.yml (see locale_generated::data_repos): the old
+/// one-repo-per-state repo (moved to govbot-history for most states) and each session
+/// pair. Setting GOVBOT_REPO_URL_TEMPLATE keeps the old one-repo-per-locale behaviour
+/// for a custom host.
+pub fn repo_targets(locale: &str) -> Vec<RepoTarget> {
+    let listed = crate::locale_generated::data_repos(locale);
+    if std::env::var("GOVBOT_REPO_URL_TEMPLATE").is_ok() || listed.is_empty() {
+        return vec![RepoTarget {
+            url: build_clone_url(locale),
+            folder: build_repo_name(locale),
+            path: build_repo_path(locale),
+            optional: false,
+        }];
+    }
+    listed
+        .iter()
+        .enumerate()
+        .map(|(i, (full, folder))| RepoTarget {
+            url: format!("https://github.com/{}.git", full),
+            folder: folder.to_string(),
+            path: full.to_string(),
+            optional: i > 0,
+        })
+        .collect()
+}
+
+/// The local folders of a locale's repositories (cloned or not).
+pub fn repo_folders(locale: &str) -> Vec<String> {
+    repo_targets(locale).into_iter().map(|t| t.folder).collect()
+}
+
 /// Get the default repos directory: $CWD/govbot_data/repos
 pub fn default_repos_dir() -> Result<PathBuf> {
     let cwd = std::env::current_dir()
@@ -148,17 +194,51 @@ fn build_callbacks(token: Option<&str>, show_progress: bool) -> RemoteCallbacks<
     callbacks
 }
 
-/// Clone or pull a repository for a given locale with quiet option
-/// Returns action: "clone", "pulled", or "no_updates"
+/// Clone or pull every repository of a locale (see repo_targets).
+/// Returns the strongest action taken: "recloned", "clone", "pulled" or "no_updates".
 pub fn clone_or_pull_repo_quiet(
     locale: &str,
     repos_dir: &Path,
     token: Option<&str>,
     quiet: bool,
 ) -> Result<&'static str> {
-    let clone_url = build_clone_url(locale);
-    let repo_name = build_repo_name(locale);
-    let repo_path = build_repo_path(locale);
+    let rank = |a: &str| match a {
+        "recloned" => 3,
+        "clone" => 2,
+        "pulled" => 1,
+        _ => 0,
+    };
+    let mut action = "no_updates";
+    for target in repo_targets(locale) {
+        match clone_or_pull_target(&target, repos_dir, token, quiet) {
+            Ok(a) => {
+                if rank(a) > rank(action) {
+                    action = a;
+                }
+            }
+            Err(e) if target.optional && !repos_dir.join(&target.folder).exists() => {
+                // A session pair named in jurisdictions.yml but not created yet.
+                if !quiet {
+                    eprintln!("Skipping {} (not available yet): {}", target.path, e);
+                }
+            }
+            Err(e) => return Err(e),
+        }
+    }
+    Ok(action)
+}
+
+/// Clone or pull one repository into its folder.
+/// Returns action: "clone", "recloned", "pulled", or "no_updates"
+fn clone_or_pull_target(
+    target: &RepoTarget,
+    repos_dir: &Path,
+    token: Option<&str>,
+    quiet: bool,
+) -> Result<&'static str> {
+    let clone_url = target.url.clone();
+    let repo_name = target.folder.clone();
+    let repo_path = target.path.clone();
     let target_dir = repos_dir.join(&repo_name);
     let mut is_reclone = false;
 
@@ -197,7 +277,7 @@ pub fn clone_or_pull_repo_quiet(
                     }
 
                     // Delete the repository
-                    delete_repo(locale, repos_dir)?;
+                    delete_folder(&repo_name, repos_dir)?;
 
                     // Mark that we're doing a reclone
                     is_reclone = true;
@@ -546,9 +626,15 @@ pub fn pull_repo_quiet(
     token: Option<&str>,
     quiet: bool,
 ) -> Result<()> {
-    let repo_name = build_repo_name(locale);
-    let repo_path = build_repo_path(locale);
-    let target_dir = repos_dir.join(&repo_name);
+    for target in repo_targets(locale) {
+        pull_target(&target, repos_dir, token, quiet)?;
+    }
+    Ok(())
+}
+
+fn pull_target(target: &RepoTarget, repos_dir: &Path, token: Option<&str>, quiet: bool) -> Result<()> {
+    let repo_path = target.path.clone();
+    let target_dir = repos_dir.join(&target.folder);
 
     let repo = match Repository::open(&target_dir) {
         Ok(repo) => repo,
@@ -734,6 +820,11 @@ pub fn get_available_locales(repos_dir: &Path) -> Result<Vec<String>> {
                         continue;
                     }
                 }
+                // A session pair's folder (e.g. tx-90r) belongs to its state's locale
+                if let Some(locale) = crate::locale_generated::locale_for_folder(dir_name) {
+                    locales.push(locale.to_string());
+                    continue;
+                }
                 // Fallback to old format for backward compatibility
                 if let Some(locale) = dir_name.strip_suffix("-data-pipeline") {
                     locales.push(locale.to_string());
@@ -742,6 +833,8 @@ pub fn get_available_locales(repos_dir: &Path) -> Result<Vec<String>> {
         }
     }
 
+    locales.sort();
+    locales.dedup();
     Ok(locales)
 }
 
@@ -849,10 +942,17 @@ fn remove_dir_all_robust(path: &Path) -> std::io::Result<()> {
     }
 }
 
-/// Delete a repository for a given locale
+/// Delete every local clone of a locale (its local folders only; nothing remote)
 pub fn delete_repo(locale: &str, repos_dir: &Path) -> Result<()> {
-    let repo_name = build_repo_name(locale);
-    let target_dir = repos_dir.join(&repo_name);
+    for folder in repo_folders(locale) {
+        delete_folder(&folder, repos_dir)?;
+    }
+    Ok(())
+}
+
+/// Delete one local clone folder under repos_dir
+fn delete_folder(repo_name: &str, repos_dir: &Path) -> Result<()> {
+    let target_dir = repos_dir.join(repo_name);
 
     if !target_dir.exists() {
         return Ok(()); // Repository doesn't exist, nothing to delete

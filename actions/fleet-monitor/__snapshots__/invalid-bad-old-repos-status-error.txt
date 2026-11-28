@@ -1,0 +1,1 @@
+Error: jurisdictions.yml: state 'gu' old_repos.status must be history or manual
